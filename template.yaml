@@ -87,11 +87,11 @@ Resources:
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
-        NvaDoi:
+        GetEvent:
           Type: Api
           Properties:
-            Path: /
-            Method: post
+            Path: /{identifier}
+            Method: get
             RestApiId: !Ref NvaPublicationApi
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
