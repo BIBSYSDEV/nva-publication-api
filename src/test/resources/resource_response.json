@@ -1,0 +1,41 @@
+{
+  "Items": [
+    {
+      "owner": "kjmo@unit.no",
+      "modifiedDate": "2020-02-06T09:12:23.162Z",
+      "createdDate": "2020-02-06T09:12:23.162Z",
+      "entityDescription": {
+        "date": {
+          "year": "1970"
+        },
+        "contributors": [
+          {
+            "name": "Frank, H. S.",
+            "nameType": "Personal",
+            "sequence": 0
+          }
+        ],
+        "type": "JournalArticle",
+        "mainTitle": "The Structure of Ordinary Water: New data and interpretations are yielding new insights into this fascinating substance"
+      },
+      "identifier": "0ea0dd31-c202-4bff-8521-afd42b1ad8db",
+      "status": "New"
+    }
+  ],
+  "Count": 1,
+  "ScannedCount": 1,
+  "ResponseMetadata": {
+    "RequestId": "ENH33I8EUG56QC7S4MHFUND8QJVV4KQNSO5AEMVJF66Q9ASUAAJG",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "server": "Server",
+      "date": "Thu, 06 Feb 2020 12:40:48 GMT",
+      "content-type": "application/x-amz-json-1.0",
+      "content-length": "584",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "ENH33I8EUG56QC7S4MHFUND8QJVV4KQNSO5AEMVJF66Q9ASUAAJG",
+      "x-amz-crc32": "3091494882"
+    },
+    "RetryAttempts": 0
+  }
+}

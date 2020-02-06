@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'pmd'
+}
+
+group 'no.unit.nva'
+version '1.0-SNAPSHOT'
+
+repositories {
+    jcenter()
+}
+
+def jacksonVersion = '2.10.2'
+def jerseyVersion = '2.30'
+
+dependencies {
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.714'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
+    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
+    implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: jerseyVersion
+    implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
+    implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: jerseyVersion
+    implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
+    implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.5.2'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
+    testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
+}
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+}
+
+pmd {
+    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
+    ruleSets = []
+    ignoreFailures = false
+}
+
+checkstyle {
+    configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
+    showViolations = true
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled false
+        html.enabled true
+        html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
+    }
+}
