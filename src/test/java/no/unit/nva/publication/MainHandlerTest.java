@@ -92,7 +92,7 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testNotFOundResponse() throws IOException {
+    public void testNotFoundResponse() throws IOException {
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         JsonNode jsonNode = objectMapper.readTree(getNoItemsExampleFile());
         when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString())).thenReturn(jsonNode);

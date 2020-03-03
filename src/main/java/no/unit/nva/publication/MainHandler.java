@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.ResourcePersistenceService;
 import org.apache.http.client.utils.URIBuilder;
 import org.zalando.problem.Problem;
@@ -40,7 +41,6 @@ public class MainHandler implements RequestStreamHandler {
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
-    public static final String BODY = "body";
     public static final String ALLOWED_ORIGIN_ENV = "ALLOWED_ORIGIN";
     public static final String API_HOST_ENV = "API_HOST";
     public static final String API_SCHEME_ENV = "API_SCHEME";
@@ -48,6 +48,8 @@ public class MainHandler implements RequestStreamHandler {
     public static final String MISSING_AUTHORIZATION_IN_HEADERS = "Missing Authorization in Headers";
     public static final String MISSING_IDENTIFIER_IN_PATH_PARAMETERS = "Missing identifier in path parameters";
     public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
+    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
+    public static final String ITEMS_0 = "/Items/0";
 
     private final transient String allowedOrigin;
     private final transient String apiHost;
@@ -104,12 +106,15 @@ public class MainHandler implements RequestStreamHandler {
                     .build();
 
             JsonNode resource = resourcePersistenceService.fetchResource(identifier, apiUrl.toString(), authorization);
-            JsonNode publication = resource.at("/Items/0");
+            JsonNode publication = resource.at(ITEMS_0);
 
             if (publication.isMissingNode()) {
                 objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                         Problem.valueOf(NOT_FOUND)), headers(), SC_NOT_FOUND));
+                return;
             }
+
+            ContextUtil.injectContext(publication, getPublicationContext());
 
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(publication), headers(), SC_OK));
@@ -122,6 +127,11 @@ public class MainHandler implements RequestStreamHandler {
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
         }
+    }
+
+    private JsonNode getPublicationContext() throws IOException {
+        return objectMapper.readTree(
+                Thread.currentThread().getContextClassLoader().getResourceAsStream(PUBLICATION_CONTEXT_JSON));
     }
 
     private Map<String,String> headers() {
