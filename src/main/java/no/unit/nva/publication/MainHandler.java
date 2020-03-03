@@ -130,8 +130,10 @@ public class MainHandler implements RequestStreamHandler {
     }
 
     private JsonNode getPublicationContext() throws IOException {
-        return objectMapper.readTree(
-                Thread.currentThread().getContextClassLoader().getResourceAsStream(PUBLICATION_CONTEXT_JSON));
+        try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(PUBLICATION_CONTEXT_JSON)) {
+            return objectMapper.readTree(inputStream);
+        }
     }
 
     private Map<String,String> headers() {
