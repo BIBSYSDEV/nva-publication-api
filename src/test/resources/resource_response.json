@@ -1,25 +1,81 @@
 {
   "Items": [
     {
-      "owner": "kjmo@unit.no",
-      "modifiedDate": "2020-02-06T09:12:23.162Z",
-      "createdDate": "2020-02-06T09:12:23.162Z",
-      "entityDescription": {
-        "date": {
-          "year": "1970"
-        },
-        "contributors": [
-          {
-            "name": "Frank, H. S.",
-            "nameType": "Personal",
-            "sequence": 0
-          }
-        ],
-        "type": "JournalArticle",
-        "mainTitle": "The Structure of Ordinary Water: New data and interpretations are yielding new insights into this fascinating substance"
+      "type" : "Publication",
+      "createdDate" : "2020-03-04T12:50:13.829Z",
+      "status" : "Draft",
+      "handle" : "http://example.org/handle/123",
+      "modifiedDate" : "2020-03-04T12:50:13.829Z",
+      "owner" : "eier@example.org",
+      "identifier" : "d81dde78-62ec-400a-a330-c0a5ea1172f9",
+      "link" : "http://example.org/link",
+      "publisher" : {
+        "type" : "Organization",
+        "id" : "http://example.org/org/123",
+        "labels" : {
+          "no" : "Eksempelforlaget"
+        }
       },
-      "identifier": "0ea0dd31-c202-4bff-8521-afd42b1ad8db",
-      "status": "New"
+      "entityDescription" : {
+        "type" : "EntityDescription",
+        "publicationType" : "JournalArticle",
+        "mainTitle" : "Hovedtittelen",
+        "alternativeTitles" : {
+          "en" : "English title"
+        },
+        "language" : "http://example.org/norsk",
+        "date" : {
+          "type" : "PublicationDate",
+          "year" : "2020",
+          "month" : "4",
+          "day" : "7"
+        },
+        "contributors" : [ {
+          "type" : "Contributor",
+          "identity" : {
+            "type" : "Identity",
+            "id" : "http://example.org/person/123",
+            "name" : "Navnesen, Navn",
+            "nameType" : "Personal",
+            "orcId" : "orc123",
+            "arpId" : "arp123"
+          },
+          "affiliation" : [ {
+            "type" : "Organization",
+            "labels" : {
+              "no" : "Affiliasjonen"
+            }
+          } ],
+          "role" : "Creator",
+          "sequence" : 0
+        } ]
+      },
+      "license" : {
+        "type" : "License",
+        "identifier" : "NTNU-CC-BY-4.0",
+        "labels" : {
+          "no" : "CC-BY 4.0"
+        },
+        "link" : "http://example.org/license/123"
+      },
+      "fileSet" : {
+        "type" : "FileSet",
+        "files" : [ {
+          "type" : "File",
+          "identifier" : "a5d1d2e1-601b-4581-8200-0c07dc8a60ef",
+          "name" : "new document(1)",
+          "mimeType" : "application/pdf",
+          "size" : 2,
+          "license" : {
+            "type" : "License",
+            "identifier" : "NTNU-CC-BY-4.0",
+            "labels" : {
+              "no" : "CC-BY 4.0"
+            },
+            "link" : "http://example.org/license/123"
+          }
+        } ]
+      }
     }
   ],
   "Count": 1,
