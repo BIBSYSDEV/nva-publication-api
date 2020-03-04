@@ -57,9 +57,13 @@ public class ResourcePersistenceService {
                 .GET()
                 .build();
 
-        HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-        return objectMapper.readTree(httpResponse.body());
+        try {
+            HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return objectMapper.readTree(httpResponse.body());
+        } catch (IOException e) {
+            System.out.println("Error communicating with remote service: " + uri.toString());
+            throw e;
+        }
     }
 
 }

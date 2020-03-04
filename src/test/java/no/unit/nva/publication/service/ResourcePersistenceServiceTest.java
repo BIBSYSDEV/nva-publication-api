@@ -2,6 +2,7 @@ package no.unit.nva.publication.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -33,6 +34,23 @@ public class ResourcePersistenceServiceTest {
         );
 
         assertNotNull(jsonNode);
+    }
+
+    @Test
+    public void testClientError() throws IOException, InterruptedException {
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
+
+        ResourcePersistenceService resourcePersistenceService = new ResourcePersistenceService(client);
+
+        Assertions.assertThrows(IOException.class, () -> {
+            resourcePersistenceService.fetchResource(
+                    UUID.randomUUID(),
+                    "http",
+                    "example.org",
+                    "some api key"
+            );
+        });
     }
 
 }
