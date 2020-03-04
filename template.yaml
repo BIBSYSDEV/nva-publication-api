@@ -79,7 +79,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: no.unit.nva.publication.MainHandler::handleRequest
-      Runtime: java8
+      Runtime: java11
       MemorySize: 512
       Environment:
         Variables:

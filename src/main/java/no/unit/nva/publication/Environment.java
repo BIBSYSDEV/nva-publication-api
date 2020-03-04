@@ -2,6 +2,8 @@ package no.unit.nva.publication;
 
 import java.util.Optional;
 
+import static java.util.Objects.isNull;
+
 public class Environment {
 
     /**
@@ -13,7 +15,7 @@ public class Environment {
     public Optional<String> get(String name) {
         String environmentVariable = System.getenv(name);
 
-        if (environmentVariable == null || environmentVariable.isEmpty()) {
+        if (isNull(environmentVariable) || environmentVariable.isEmpty()) {
             return Optional.empty();
         }
 

@@ -38,6 +38,7 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -139,7 +140,7 @@ public class MainHandlerTest {
     }
 
     @Test
-    public  void testBadGatewayErrorResponse() throws IOException {
+    public void testBadGatewayErrorResponse() throws IOException {
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString()))
                 .thenThrow(new WebApplicationException());
@@ -152,6 +153,14 @@ public class MainHandlerTest {
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+    }
+
+    @Test
+    public void testMissingPublicationContext() {
+        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        Optional<JsonNode> publicationContext = mainHandler.getPublicationContext("missing_file.json");
+        assertTrue(publicationContext.isEmpty());
     }
 
     private Context getMockContext() {

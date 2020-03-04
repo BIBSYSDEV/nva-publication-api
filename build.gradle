@@ -13,8 +13,12 @@ repositories {
     maven { url "https://jitpack.io" }
 }
 
+sourceCompatibility = JavaVersion.VERSION_11  // source-code version and must be <= targetCompatibility
+targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
+
 def jacksonVersion = '2.10.2'
 def jerseyVersion = '2.30'
+def junit5Version = '5.6.0'
 
 dependencies {
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'abd5b6b'
@@ -28,9 +32,18 @@ dependencies {
     implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: jerseyVersion
     implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
     implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.5.2'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
     testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
     testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+    testCompileOnly 'junit:junit:4.12'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.1.0'
+}
+
+test {
+    useJUnitPlatform()
+    failFast = true
+    finalizedBy jacocoTestReport
 }
 
 jacocoTestReport {

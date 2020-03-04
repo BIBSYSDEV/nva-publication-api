@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 public class GatewayResponse<T> {
@@ -27,7 +26,7 @@ public class GatewayResponse<T> {
             @JsonProperty("statusCode") final int statusCode) {
         this.statusCode = statusCode;
         this.body = body;
-        this.headers = Collections.unmodifiableMap(new HashMap<>(headers));
+        this.headers = Collections.unmodifiableMap(Map.copyOf(headers));
     }
 
     public T getBody() {

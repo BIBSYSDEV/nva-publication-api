@@ -114,7 +114,9 @@ public class MainHandler implements RequestStreamHandler {
                 return;
             }
 
-            ContextUtil.injectContext(publication, getPublicationContext());
+            getPublicationContext(PUBLICATION_CONTEXT_JSON).ifPresent(publicationContext -> {
+                ContextUtil.injectContext(publication, publicationContext);
+            });
 
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(publication), headers(), SC_OK));
@@ -129,10 +131,13 @@ public class MainHandler implements RequestStreamHandler {
         }
     }
 
-    private JsonNode getPublicationContext() throws IOException {
+    protected Optional<JsonNode> getPublicationContext(String publicationContextPath) {
         try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(PUBLICATION_CONTEXT_JSON)) {
-            return objectMapper.readTree(inputStream);
+                .getResourceAsStream(publicationContextPath)) {
+            return Optional.of(objectMapper.readTree(inputStream));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
         }
     }
 
