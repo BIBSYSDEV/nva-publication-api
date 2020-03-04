@@ -12,7 +12,6 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.mockito.Mockito;
 
-import javax.ws.rs.WebApplicationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,10 +25,10 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.singletonMap;
-import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
 import static no.unit.nva.publication.MainHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.MainHandler.API_HOST_ENV;
 import static no.unit.nva.publication.MainHandler.API_SCHEME_ENV;
+import static no.unit.nva.publication.service.ResourcePersistenceService.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -76,10 +75,11 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testOkResponse() throws IOException {
+    public void testOkResponse() throws IOException, InterruptedException {
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString())).thenReturn(jsonNode);
+        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+                .thenReturn(jsonNode);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
@@ -93,10 +93,11 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testNotFoundResponse() throws IOException {
+    public void testNotFoundResponse() throws IOException, InterruptedException {
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
         JsonNode jsonNode = objectMapper.readTree(getNoItemsExampleFile());
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString())).thenReturn(jsonNode);
+        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+                .thenReturn(jsonNode);
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
         OutputStream output = new ByteArrayOutputStream();
@@ -140,10 +141,10 @@ public class MainHandlerTest {
     }
 
     @Test
-    public void testBadGatewayErrorResponse() throws IOException {
+    public void testBadGatewayErrorResponse() throws IOException, InterruptedException {
         ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString()))
-                .thenThrow(new WebApplicationException());
+        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+                .thenThrow(new IOException());
         Context context = getMockContext();
         MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
 

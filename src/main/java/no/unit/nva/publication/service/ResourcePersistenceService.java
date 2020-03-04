@@ -1,40 +1,65 @@
 package no.unit.nva.publication.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.mikael.urlbuilder.UrlBuilder;
+import no.unit.nva.publication.MainHandler;
 
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.UUID;
-
-import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
 public class ResourcePersistenceService {
 
     public static final String PATH = "/resource";
-    private final Client client;
+    public static final String ACCEPT = "Accept";
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String AUTHORIZATION = "Authorization";
+    private final HttpClient client;
+    private final ObjectMapper objectMapper = MainHandler.createObjectMapper();
 
-    protected ResourcePersistenceService(Client client) {
+    protected ResourcePersistenceService(HttpClient client) {
         this.client = client;
     }
 
     public ResourcePersistenceService() {
-        this(ClientBuilder.newClient());
+        this(HttpClient.newHttpClient());
     }
 
     /**
      * Fetch Resource from Database.
      *
      * @param identifier  identifier
-     * @param apiUrl  apiUrl
+     * @param apiScheme  apiScheme
+     * @param apiHost  apiHost
      * @param authorization authorization
+     * @throws IOException IOException
+     * @throws InterruptedException InterruptedException
      */
 
-    public JsonNode fetchResource(UUID identifier, String apiUrl, String authorization) {
-        return client.target(apiUrl).path(PATH).path(identifier.toString())
-                .request(APPLICATION_JSON)
+    public JsonNode fetchResource(UUID identifier, String apiScheme, String apiHost, String authorization)
+            throws IOException, InterruptedException {
+
+        URI uri = UrlBuilder.empty()
+                .withScheme(apiScheme)
+                .withHost(apiHost)
+                .withPath(PATH)
+                .withPath(identifier.toString())
+                .toUri();
+
+        HttpRequest httpRequest = HttpRequest.newBuilder()
+                .uri(uri)
+                .header(ACCEPT, APPLICATION_JSON)
                 .header(AUTHORIZATION, authorization)
-                .get(JsonNode.class);
+                .GET()
+                .build();
+
+        HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+
+        return objectMapper.readTree(httpResponse.body());
     }
 
 }

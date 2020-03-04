@@ -17,7 +17,6 @@ sourceCompatibility = JavaVersion.VERSION_11  // source-code version and must be
 targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
 def jacksonVersion = '2.10.2'
-def jerseyVersion = '2.30'
 def junit5Version = '5.6.0'
 
 dependencies {
@@ -27,9 +26,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
     implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
-    implementation group: 'org.glassfish.jersey.core', name: 'jersey-client', version: jerseyVersion
-    implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
-    implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-json-jackson', version: jerseyVersion
+    implementation group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
     implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
     implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version

@@ -10,16 +10,12 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.ResourcePersistenceService;
-import org.apache.http.client.utils.URIBuilder;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
-import javax.ws.rs.ProcessingException;
-import javax.ws.rs.WebApplicationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -100,12 +96,7 @@ public class MainHandler implements RequestStreamHandler {
         log("Request for identifier: " + identifier.toString());
 
         try {
-            URI apiUrl = new URIBuilder()
-                    .setScheme(apiScheme)
-                    .setHost(apiHost)
-                    .build();
-
-            JsonNode resource = resourcePersistenceService.fetchResource(identifier, apiUrl.toString(), authorization);
+            JsonNode resource = resourcePersistenceService.fetchResource(identifier, apiScheme, apiHost, authorization);
             JsonNode publication = resource.at(ITEMS_0);
 
             if (publication.isMissingNode()) {
@@ -120,7 +111,7 @@ public class MainHandler implements RequestStreamHandler {
 
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(publication), headers(), SC_OK));
-        } catch (ProcessingException | WebApplicationException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
