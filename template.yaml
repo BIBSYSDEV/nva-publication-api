@@ -77,7 +77,7 @@ Resources:
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: .
+      CodeUri: fetch-publication
       Handler: no.unit.nva.publication.MainHandler::handleRequest
       Runtime: java11
       MemorySize: 512

@@ -1,2 +1,3 @@
 rootProject.name = 'nva-publication-api'
+include 'fetch-publication'
 
