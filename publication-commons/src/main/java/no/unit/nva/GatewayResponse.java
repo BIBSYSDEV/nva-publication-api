@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

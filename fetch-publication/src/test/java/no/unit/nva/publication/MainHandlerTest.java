@@ -3,6 +3,8 @@ package no.unit.nva.publication;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.Environment;
+import no.unit.nva.GatewayResponse;
 import no.unit.nva.publication.service.ResourcePersistenceService;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;

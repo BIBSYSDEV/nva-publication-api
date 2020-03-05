@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import no.unit.nva.Environment;
+import no.unit.nva.GatewayResponse;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.ResourcePersistenceService;
 import org.zalando.problem.Problem;

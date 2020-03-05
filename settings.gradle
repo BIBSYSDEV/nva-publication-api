@@ -1,3 +1,4 @@
 rootProject.name = 'nva-publication-api'
 include 'fetch-publication'
+include 'publication-commons'
 

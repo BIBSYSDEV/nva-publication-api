@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva;
 
 import org.junit.Rule;
 import org.junit.Test;
