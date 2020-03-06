@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.ResourcePersistenceService;
+import no.unit.nva.publication.service.ModifyResourceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
@@ -23,6 +23,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static no.unit.nva.Logger.log;
+import static no.unit.nva.Logger.logError;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -31,7 +33,7 @@ import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 
-public class MainHandler implements RequestStreamHandler {
+public class ModifyPublicationHandler implements RequestStreamHandler {
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
@@ -43,29 +45,32 @@ public class MainHandler implements RequestStreamHandler {
     public static final String MISSING_IDENTIFIER_IN_PATH_PARAMETERS = "Missing identifier in path parameters";
     public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
     public static final String BODY = "/body";
-    public static final String IDENTIFER_IN_PATH_PARAMETER_AND_BODY_IS_NOT_THE_SAME = "Identifer in path parameter and body is not the same";
+    public static final String NOT_SAME_IDENTIFIERS = "Identifer in path parameter and body is not the same";
+
+    public static final String APPLICATION_JSON = "application/json";
+    public static final String CONTENT_TYPE = "Content-Type";
 
     private final transient String allowedOrigin;
     private final transient String apiHost;
     private final transient String apiScheme;
     private final transient ObjectMapper objectMapper;
-    private final transient ResourcePersistenceService resourcePersistenceService;
+    private final transient ModifyResourceService modifyResourceService;
 
-    public MainHandler() {
-        this(createObjectMapper(), new ResourcePersistenceService(), new Environment());
+    public ModifyPublicationHandler() {
+        this(createObjectMapper(), new ModifyResourceService(), new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
      * @param objectMapper objectMapper
-     * @param resourcePersistenceService    resourcePersistenceService
+     * @param modifyResourceService    resourcePersistenceService
      * @param environment  environment
      */
-    public MainHandler(ObjectMapper objectMapper, ResourcePersistenceService resourcePersistenceService,
-                       Environment environment) {
+    public ModifyPublicationHandler(ObjectMapper objectMapper, ModifyResourceService modifyResourceService,
+                                    Environment environment) {
         this.objectMapper = objectMapper;
-        this.resourcePersistenceService = resourcePersistenceService;
+        this.modifyResourceService = modifyResourceService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + ALLOWED_ORIGIN_ENV));
         this.apiHost = environment.get(API_HOST_ENV)
@@ -87,29 +92,32 @@ public class MainHandler implements RequestStreamHandler {
                     .orElseThrow(() -> new IllegalArgumentException(MISSING_IDENTIFIER_IN_PATH_PARAMETERS)));
             publication = objectMapper.readValue(event.at(BODY).textValue(), Publication.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            logError(e);
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
             return;
         }
 
+        log("Identifier in path parameters " + identifier.toString());
+        log("Publication in request body " + objectMapper.writeValueAsString(publication));
+
         if (!publication.getIdentifier().equals(identifier)) {
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_REQUEST, IDENTIFER_IN_PATH_PARAMETER_AND_BODY_IS_NOT_THE_SAME)),
+                    Problem.valueOf(BAD_REQUEST, NOT_SAME_IDENTIFIERS)),
                     headers(), SC_BAD_REQUEST));
             return;
         }
 
         try {
-            resourcePersistenceService.modifyResource(identifier, publication, apiScheme, apiHost, authorization);
+            modifyResourceService.modifyResource(identifier, publication, apiScheme, apiHost, authorization);
             objectMapper.writeValue(output, new GatewayResponse<>(
                     null, headers(), SC_OK));
         } catch (IOException e) {
-            e.printStackTrace();
+            logError(e);
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
         } catch (Exception e) {
-            e.printStackTrace();
+            logError(e);
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
         }
@@ -118,6 +126,7 @@ public class MainHandler implements RequestStreamHandler {
     private Map<String,String> headers() {
         Map<String,String> headers = new ConcurrentHashMap<>();
         headers.put(ACCESS_CONTROL_ALLOW_ORIGIN, allowedOrigin);
+        headers.put(CONTENT_TYPE, APPLICATION_JSON);
         return headers;
     }
 
@@ -134,9 +143,5 @@ public class MainHandler implements RequestStreamHandler {
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
                 .setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
-
-    public static void log(String message) {
-        System.out.println(message);
     }
 }

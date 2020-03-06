@@ -15,7 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ResourcePersistenceServiceTest {
+public class FetchResourceServiceTest {
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -24,9 +24,9 @@ public class ResourcePersistenceServiceTest {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
         when((httpResponse.body())).thenReturn("{ \"status\": \"success\" }");
 
-        ResourcePersistenceService resourcePersistenceService = new ResourcePersistenceService(client);
+        FetchResourceService fetchResourceService = new FetchResourceService(client);
 
-        JsonNode jsonNode = resourcePersistenceService.fetchResource(
+        JsonNode jsonNode = fetchResourceService.fetchResource(
                 UUID.randomUUID(),
                 "http",
                 "example.org",
@@ -41,10 +41,10 @@ public class ResourcePersistenceServiceTest {
         HttpClient client = mock(HttpClient.class);
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
-        ResourcePersistenceService resourcePersistenceService = new ResourcePersistenceService(client);
+        FetchResourceService fetchResourceService = new FetchResourceService(client);
 
         Assertions.assertThrows(IOException.class, () -> {
-            resourcePersistenceService.fetchResource(
+            fetchResourceService.fetchResource(
                     UUID.randomUUID(),
                     "http",
                     "example.org",

@@ -11,7 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.nva.publication.service.ResourcePersistenceService;
+import no.unit.nva.publication.service.FetchResourceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 
@@ -35,7 +35,7 @@ import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
 
-public class MainHandler implements RequestStreamHandler {
+public class FetchPublicationHandler implements RequestStreamHandler {
 
     public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
@@ -53,23 +53,23 @@ public class MainHandler implements RequestStreamHandler {
     private final transient String apiHost;
     private final transient String apiScheme;
     private final transient ObjectMapper objectMapper;
-    private final transient ResourcePersistenceService resourcePersistenceService;
+    private final transient FetchResourceService fetchResourceService;
 
-    public MainHandler() {
-        this(createObjectMapper(), new ResourcePersistenceService(), new Environment());
+    public FetchPublicationHandler() {
+        this(createObjectMapper(), new FetchResourceService(), new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
      * @param objectMapper objectMapper
-     * @param resourcePersistenceService    resourcePersistenceService
+     * @param fetchResourceService    resourcePersistenceService
      * @param environment  environment
      */
-    public MainHandler(ObjectMapper objectMapper, ResourcePersistenceService resourcePersistenceService,
-                       Environment environment) {
+    public FetchPublicationHandler(ObjectMapper objectMapper, FetchResourceService fetchResourceService,
+                                   Environment environment) {
         this.objectMapper = objectMapper;
-        this.resourcePersistenceService = resourcePersistenceService;
+        this.fetchResourceService = fetchResourceService;
         this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + ALLOWED_ORIGIN_ENV));
         this.apiHost = environment.get(API_HOST_ENV)
@@ -98,7 +98,7 @@ public class MainHandler implements RequestStreamHandler {
         log("Request for identifier: " + identifier.toString());
 
         try {
-            JsonNode resource = resourcePersistenceService.fetchResource(identifier, apiScheme, apiHost, authorization);
+            JsonNode resource = fetchResourceService.fetchResource(identifier, apiScheme, apiHost, authorization);
             JsonNode publication = resource.at(ITEMS_0);
 
             if (publication.isMissingNode()) {

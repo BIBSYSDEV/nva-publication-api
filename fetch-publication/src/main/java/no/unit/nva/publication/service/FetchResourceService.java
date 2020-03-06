@@ -3,7 +3,7 @@ package no.unit.nva.publication.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
-import no.unit.nva.publication.MainHandler;
+import no.unit.nva.publication.FetchPublicationHandler;
 
 import java.io.IOException;
 import java.net.URI;
@@ -12,20 +12,20 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.UUID;
 
-public class ResourcePersistenceService {
+public class FetchResourceService {
 
     public static final String PATH = "/resource";
     public static final String ACCEPT = "Accept";
     public static final String APPLICATION_JSON = "application/json";
     public static final String AUTHORIZATION = "Authorization";
     private final HttpClient client;
-    private final ObjectMapper objectMapper = MainHandler.createObjectMapper();
+    private final ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
 
-    protected ResourcePersistenceService(HttpClient client) {
+    protected FetchResourceService(HttpClient client) {
         this.client = client;
     }
 
-    public ResourcePersistenceService() {
+    public FetchResourceService() {
         this(HttpClient.newHttpClient());
     }
 

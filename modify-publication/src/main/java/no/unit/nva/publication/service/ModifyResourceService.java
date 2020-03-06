@@ -1,9 +1,10 @@
 package no.unit.nva.publication.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.MainHandler;
+import no.unit.nva.publication.ModifyPublicationHandler;
 
 import java.io.IOException;
 import java.net.URI;
@@ -13,20 +14,23 @@ import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.UUID;
 
-public class ResourcePersistenceService {
+import static no.unit.nva.Logger.log;
+
+public class ModifyResourceService {
 
     public static final String PATH = "/resource";
     public static final String APPLICATION_JSON = "application/json";
     public static final String AUTHORIZATION = "Authorization";
     public static final String CONTENT_TYPE = "Content-Type";
+    public static final String ACCEPT = "Accept";
     private final HttpClient client;
-    private final ObjectMapper objectMapper = MainHandler.createObjectMapper();
+    private final ObjectMapper objectMapper = ModifyPublicationHandler.createObjectMapper();
 
-    protected ResourcePersistenceService(HttpClient client) {
+    protected ModifyResourceService(HttpClient client) {
         this.client = client;
     }
 
-    public ResourcePersistenceService() {
+    public ModifyResourceService() {
         this(HttpClient.newHttpClient());
     }
 
@@ -41,8 +45,8 @@ public class ResourcePersistenceService {
      * @throws InterruptedException InterruptedException
      */
 
-    public void modifyResource(UUID identifier, Publication publication, String apiScheme, String apiHost,
-                               String authorization)
+    public JsonNode modifyResource(UUID identifier, Publication publication, String apiScheme, String apiHost,
+                                   String authorization)
             throws IOException, InterruptedException {
 
         publication.setModifiedDate(Instant.now());
@@ -57,14 +61,16 @@ public class ResourcePersistenceService {
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(uri)
                 .header(AUTHORIZATION, authorization)
+                .header(ACCEPT, APPLICATION_JSON)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
                 .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(publication)))
                 .build();
 
         try {
-            client.send(httpRequest, HttpResponse.BodyHandlers.discarding());
+            HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            return objectMapper.readTree(httpResponse.body());
         } catch (IOException e) {
-            System.out.println("Error communicating with remote service: " + uri.toString());
+            log("Error communicating with remote service: " + uri.toString());
             throw e;
         }
     }

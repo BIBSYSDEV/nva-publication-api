@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
-import no.unit.nva.publication.service.ResourcePersistenceService;
+import no.unit.nva.publication.service.FetchResourceService;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -27,10 +27,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.singletonMap;
-import static no.unit.nva.publication.MainHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.MainHandler.API_HOST_ENV;
-import static no.unit.nva.publication.MainHandler.API_SCHEME_ENV;
-import static no.unit.nva.publication.service.ResourcePersistenceService.AUTHORIZATION;
+import static no.unit.nva.publication.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static no.unit.nva.publication.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.FetchPublicationHandler.API_HOST_ENV;
+import static no.unit.nva.publication.FetchPublicationHandler.API_SCHEME_ENV;
+import static no.unit.nva.publication.service.FetchResourceService.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -45,9 +46,17 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class MainHandlerTest {
+public class FetchPublicationHandlerTest {
 
-    private ObjectMapper objectMapper = MainHandler.createObjectMapper();
+    public static final String SOME_API_KEY = "some api key";
+    public static final String PATH_PARAMETERS = "pathParameters";
+    public static final String HEADERS = "headers";
+    public static final String IDENTIFIER = "identifier";
+    public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
+    public static final String RESOURCE_RESPONSE_JSON = "src/test/resources/resource_response.json";
+    public static final String EMPTY_RESPONSE_JSON = "src/test/resources/empty_response.json";
+    public static final String MISSING_FILE_JSON = "missing_file.json";
+    private ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
 
     private Environment environment;
 
@@ -72,56 +81,59 @@ public class MainHandlerTest {
         environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
         environmentVariables.set(API_HOST_ENV, "localhost:3000");
         environmentVariables.set(API_SCHEME_ENV, "http");
-        MainHandler mainHandler = new MainHandler();
-        assertNotNull(mainHandler);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler();
+        assertNotNull(fetchPublicationHandler);
     }
 
     @Test
     public void testOkResponse() throws IOException, InterruptedException {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenReturn(jsonNode);
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
-        mainHandler.handleRequest(inputStream(), output, context);
+        fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test
     public void testNotFoundResponse() throws IOException, InterruptedException {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getNoItemsExampleFile());
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenReturn(jsonNode);
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
         OutputStream output = new ByteArrayOutputStream();
 
-        mainHandler.handleRequest(inputStream(), output, context);
+        fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(MainHandler.ACCESS_CONTROL_ALLOW_ORIGIN));
+        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test
     public void testBadRequestResponse() throws IOException {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
 
         OutputStream output = new ByteArrayOutputStream();
 
 
-        mainHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
+        fetchPublicationHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -129,14 +141,15 @@ public class MainHandlerTest {
 
     @Test
     public  void testInternalServerErrorResponse() throws IOException {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
 
         OutputStream output = new ByteArrayOutputStream();
 
 
-        mainHandler.handleRequest(inputStream(), output, context);
+        fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
@@ -144,15 +157,16 @@ public class MainHandlerTest {
 
     @Test
     public void testBadGatewayErrorResponse() throws IOException, InterruptedException {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
-        when(resourcePersistenceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
+        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenThrow(new IOException());
         Context context = getMockContext();
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
 
         OutputStream output = new ByteArrayOutputStream();
 
-        mainHandler.handleRequest(inputStream(), output, context);
+        fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
@@ -160,9 +174,11 @@ public class MainHandlerTest {
 
     @Test
     public void testMissingPublicationContext() {
-        ResourcePersistenceService resourcePersistenceService = mock(ResourcePersistenceService.class);
-        MainHandler mainHandler = new MainHandler(objectMapper, resourcePersistenceService, environment);
-        Optional<JsonNode> publicationContext = mainHandler.getPublicationContext("missing_file.json");
+        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
+        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
+                fetchResourceService, environment);
+        Optional<JsonNode> publicationContext = fetchPublicationHandler
+                .getPublicationContext(MISSING_FILE_JSON);
         assertTrue(publicationContext.isEmpty());
     }
 
@@ -172,21 +188,19 @@ public class MainHandlerTest {
 
     private InputStream inputStream() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(getExampleFile());
-        event.put("body", body);
         Map<String,String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, "some api key");
+        headers.put(AUTHORIZATION, SOME_API_KEY);
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
-        event.put("headers", headers);
-        event.put("pathParameters", singletonMap("identifier", "0ea0dd31-c202-4bff-8521-afd42b1ad8db"));
+        event.put(HEADERS, headers);
+        event.put(PATH_PARAMETERS, singletonMap(IDENTIFIER, IDENTIFIER_VALUE));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
     private byte[] getExampleFile() throws IOException {
-        return Files.readAllBytes(Paths.get("src/test/resources/resource_response.json"));
+        return Files.readAllBytes(Paths.get(RESOURCE_RESPONSE_JSON));
     }
 
     private byte[] getNoItemsExampleFile() throws IOException {
-        return Files.readAllBytes(Paths.get("src/test/resources/empty_response.json"));
+        return Files.readAllBytes(Paths.get(EMPTY_RESPONSE_JSON));
     }
 }
