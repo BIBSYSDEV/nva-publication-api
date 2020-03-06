@@ -109,7 +109,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: fetch-publication
-      Handler: no.unit.nva.publication.MainHandler::handleRequest
+      Handler: no.unit.nva.publication.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Environment:
@@ -128,7 +128,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: modify-publication
-      Handler: no.unit.nva.publication.MainHandler::handleRequest
+      Handler: no.unit.nva.publication.ModifyPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Environment:
