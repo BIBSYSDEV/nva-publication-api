@@ -49,6 +49,8 @@ public class ModifyResourceService {
                                    String authorization)
             throws IOException, InterruptedException {
 
+        log("Sending request to modify resource " + identifier.toString());
+
         publication.setModifiedDate(Instant.now());
 
         URI uri = UrlBuilder.empty()
@@ -68,6 +70,7 @@ public class ModifyResourceService {
 
         try {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+            log("Received response for modify resource request on " + identifier.toString());
             return objectMapper.readTree(httpResponse.body());
         } catch (IOException e) {
             log("Error communicating with remote service: " + uri.toString());

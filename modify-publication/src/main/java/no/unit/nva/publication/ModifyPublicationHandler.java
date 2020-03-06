@@ -11,6 +11,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.ModifyResourceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
@@ -46,6 +47,7 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
     public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
     public static final String BODY = "/body";
     public static final String NOT_SAME_IDENTIFIERS = "Identifer in path parameter and body is not the same";
+    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
     public static final String APPLICATION_JSON = "application/json";
     public static final String CONTENT_TYPE = "Content-Type";
@@ -109,9 +111,13 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
         }
 
         try {
-            modifyResourceService.modifyResource(identifier, publication, apiScheme, apiHost, authorization);
+            JsonNode publicationResponse =
+                    modifyResourceService.modifyResource(identifier, publication, apiScheme, apiHost, authorization);
+            getPublicationContext(PUBLICATION_CONTEXT_JSON).ifPresent(publicationContext -> {
+                ContextUtil.injectContext(publicationResponse, publicationContext);
+            });
             objectMapper.writeValue(output, new GatewayResponse<>(
-                    null, headers(), SC_OK));
+                    objectMapper.writeValueAsString(publicationResponse), headers(), SC_OK));
         } catch (IOException e) {
             logError(e);
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
@@ -120,6 +126,16 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
             logError(e);
             objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
                     Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
+        }
+    }
+
+    protected Optional<JsonNode> getPublicationContext(String publicationContextPath) {
+        try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
+                .getResourceAsStream(publicationContextPath)) {
+            return Optional.of(objectMapper.readTree(inputStream));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
         }
     }
 
