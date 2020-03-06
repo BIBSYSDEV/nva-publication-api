@@ -1,0 +1,22 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk11
+    commands:
+      - pip3 install aws-sam-cli
+
+  build:
+    commands:
+      # Use AWS SAM to build and package the application by using AWS CloudFormation
+      - sam build  --debug
+      - sam package --debug --template-file .aws-sam/build/template.yaml --s3-bucket $S3_BUCKET --output-template-file sampackaged.yaml --force-upload
+  post_build:
+    commands:
+      # publishing to SAR
+      - sam publish --template sampackaged.yaml
+
+artifacts:
+  files:
+    - sampackaged.yaml

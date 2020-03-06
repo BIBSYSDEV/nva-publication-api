@@ -5,6 +5,15 @@ Description: >
 
   Sample SAM Template for AWS
 
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: nva-publication-api
+    Description: NVA publication API
+    Author: Unit
+    SemanticVersion: 1.0.0
+    SpdxLicenseId: MIT
+    LicenseUrl: LICENSE
+
 Globals:
   Function:
     Timeout: 20
