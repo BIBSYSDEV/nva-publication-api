@@ -18,7 +18,7 @@ import static no.unit.nva.Logger.log;
 
 public class ModifyResourceService {
 
-    public static final String PATH = "/resource";
+    public static final String PATH = "/resource/";
     public static final String APPLICATION_JSON = "application/json";
     public static final String AUTHORIZATION = "Authorization";
     public static final String CONTENT_TYPE = "Content-Type";
@@ -57,8 +57,7 @@ public class ModifyResourceService {
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
-                .withPath(PATH)
-                .withPath(identifier.toString())
+                .withPath(PATH + identifier.toString())
                 .toUri();
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
