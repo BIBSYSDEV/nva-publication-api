@@ -54,6 +54,8 @@ public class ModifyResourceService {
 
         publication.setModifiedDate(Instant.now());
 
+        log("Request body " + objectMapper.writeValueAsString(publication));
+
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
