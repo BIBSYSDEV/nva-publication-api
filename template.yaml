@@ -10,7 +10,7 @@ Globals:
     Timeout: 20
   Api:
     Cors:
-      AllowMethods: "'GET,OPTIONS'"
+      AllowMethods: "'PUT, GET,OPTIONS'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
       AllowOrigin: "'*'"
 
@@ -34,7 +34,7 @@ Resources:
       DefinitionBody:
         swagger: '2.0'
         info:
-          title: NVA Fetch Publication
+          title: NVA Publication API
           version: '1.0'
         paths:
           /{identifier}:
