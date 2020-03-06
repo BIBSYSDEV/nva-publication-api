@@ -35,6 +35,8 @@ public class ModifyResourceServiceTest {
         HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
         when((httpResponse.body())).thenReturn(objectMapper.writeValueAsString(publication));
+        when((httpResponse.statusCode())).thenReturn(200);
+
 
         ModifyResourceService modifyResourceService = new ModifyResourceService(client);
 

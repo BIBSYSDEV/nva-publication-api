@@ -23,6 +23,7 @@ public class ModifyResourceService {
     public static final String AUTHORIZATION = "Authorization";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String ACCEPT = "Accept";
+    private static final int OK = 200;
     private final HttpClient client;
     private final ObjectMapper objectMapper = ModifyPublicationHandler.createObjectMapper();
 
@@ -71,7 +72,12 @@ public class ModifyResourceService {
         try {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             log("Received response for modify resource request on " + identifier.toString());
-            return objectMapper.readTree(httpResponse.body());
+            if (httpResponse.statusCode() == OK) {
+                return objectMapper.readTree(httpResponse.body());
+            } else {
+                log("Error response from remote service: " + uri.toString());
+                throw new IOException(httpResponse.body());
+            }
         } catch (IOException e) {
             log("Error communicating with remote service: " + uri.toString());
             throw e;
