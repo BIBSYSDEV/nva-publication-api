@@ -14,7 +14,7 @@ import java.util.UUID;
 
 public class FetchResourceService {
 
-    public static final String PATH = "/resource";
+    public static final String PATH = "/resource/";
     public static final String ACCEPT = "Accept";
     public static final String APPLICATION_JSON = "application/json";
     public static final String AUTHORIZATION = "Authorization";
@@ -46,8 +46,7 @@ public class FetchResourceService {
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
-                .withPath(PATH)
-                .withPath(identifier.toString())
+                .withPath(PATH + identifier.toString())
                 .toUri();
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
