@@ -8,62 +8,65 @@ plugins {
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
-repositories {
-    jcenter()
-    maven { url "https://jitpack.io" }
-}
 
-sourceCompatibility = JavaVersion.VERSION_11  // source-code version and must be <= targetCompatibility
-targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
-def jacksonVersion = '2.10.2'
-def junit5Version = '5.6.0'
-
-dependencies {
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.1.0'
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.714'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    implementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
-    implementation group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
-    implementation group: 'org.zalando', name: 'problem', version: '0.23.0'
-    implementation group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
-    testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
-    testCompileOnly 'junit:junit:4.12'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.1.0'
-}
-
-test {
-    useJUnitPlatform()
-    failFast = true
-    finalizedBy jacocoTestReport
-}
-
-jacocoTestReport {
-    reports {
-        xml.enabled true
+allprojects {
+    repositories {
+        jcenter()
+        maven { url "https://jitpack.io" }
     }
 }
 
-pmd {
-    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-    ruleSets = []
-    ignoreFailures = false
-}
+subprojects {
 
-checkstyle {
-    configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
-    showViolations = true
-}
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+    apply plugin: 'checkstyle'
+    apply plugin: 'pmd'
 
-tasks.withType(Checkstyle) {
-    reports {
-        xml.enabled false
-        html.enabled true
-        html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
+    sourceCompatibility = JavaVersion.VERSION_11  // source-code version and must be <= targetCompatibility
+    targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
+
+    def junit5Version = '5.6.0'
+
+    dependencies {
+        testImplementation group: 'com.github.stefanbirkner', name: 'system-rules', version: '1.19.0'
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+        testCompileOnly 'junit:junit:4.12'
+        testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.1.0'
+    }
+
+    test {
+        useJUnitPlatform()
+        failFast = true
+        finalizedBy jacocoTestReport
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+        }
+    }
+
+    pmd {
+        ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
+        ruleSets = []
+        ignoreFailures = false
+    }
+
+    checkstyle {
+        configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
+        showViolations = true
+    }
+
+    tasks.withType(Checkstyle) {
+        reports {
+            xml.enabled false
+            html.enabled true
+            html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
+        }
     }
 }
+
