@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static no.unit.nva.Logger.logError;
+
 public abstract class PublicationHandler implements RequestStreamHandler {
 
     protected final ObjectMapper objectMapper;
@@ -32,6 +34,12 @@ public abstract class PublicationHandler implements RequestStreamHandler {
 
     protected final transient String allowedOrigin;
 
+    /**
+     * Constructor for abstract PublicationHandler.
+     *
+     * @param objectMapper  objectMapper
+     * @param environment   environment
+     */
     public PublicationHandler(ObjectMapper objectMapper, Environment environment) {
         this.objectMapper = objectMapper;
         this.environment = environment;
@@ -49,12 +57,18 @@ public abstract class PublicationHandler implements RequestStreamHandler {
         writeErrorResponse(output, status, exception.getMessage());
     }
 
+    /**
+     * Return the publication context file as JSON.
+     *
+     * @param publicationContextPath    publicationContextPath
+     * @return  optional publication context as json
+     */
     public Optional<JsonNode> getPublicationContext(String publicationContextPath) {
         try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(publicationContextPath)) {
             return Optional.of(objectMapper.readTree(inputStream));
         } catch (Exception e) {
-            e.printStackTrace();
+            logError(e);
             return Optional.empty();
         }
     }
