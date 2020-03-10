@@ -6,6 +6,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.ModifyPublicationHandler;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,9 +18,9 @@ import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ModifyResourceServiceTest {
 
     public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
@@ -27,16 +30,19 @@ public class ModifyResourceServiceTest {
 
     private ObjectMapper objectMapper = ModifyPublicationHandler.createObjectMapper();
 
+    @Mock
+    private HttpClient client;
+
+    @Mock
+    private HttpResponse<String> response;
+
     @Test
-    public void test() throws IOException, InterruptedException {
+    public void testServiceReturnsJsonObject() throws IOException, InterruptedException {
 
         Publication publication = getPublication();
-        HttpClient client = mock(HttpClient.class);
-        HttpResponse<String> httpResponse = mock(HttpResponse.class);
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
-        when((httpResponse.body())).thenReturn(objectMapper.writeValueAsString(publication));
-        when((httpResponse.statusCode())).thenReturn(200);
-
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        when((response.body())).thenReturn(objectMapper.writeValueAsString(publication));
+        when((response.statusCode())).thenReturn(200);
 
         ModifyResourceService modifyResourceService = new ModifyResourceService(client);
 
@@ -55,7 +61,6 @@ public class ModifyResourceServiceTest {
     public void testClientError() throws IOException, InterruptedException {
 
         Publication publication = getPublication();
-        HttpClient client = mock(HttpClient.class);
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
         ModifyResourceService modifyResourceService = new ModifyResourceService(client);

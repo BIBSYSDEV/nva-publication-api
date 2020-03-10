@@ -12,7 +12,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,9 +45,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class FetchPublicationHandlerTest {
 
     public static final String SOME_API_KEY = "some api key";
@@ -58,17 +60,30 @@ public class FetchPublicationHandlerTest {
     public static final String MISSING_FILE_JSON = "missing_file.json";
     private ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
 
+    @Mock
     private Environment environment;
+
+    @Mock
+    private FetchResourceService fetchResourceService;
+
+    @Mock
+    private Context context;
+
+    private OutputStream output;
+    private FetchPublicationHandler fetchPublicationHandler;
 
     /**
      * Set up environment.
      */
     @Before
     public void setUp() {
-        environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
         when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("localhost:3000"));
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
+
+        output = new ByteArrayOutputStream();
+        fetchPublicationHandler =
+                new FetchPublicationHandler(objectMapper, fetchResourceService, environment);
 
     }
 
@@ -87,14 +102,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testOkResponse() throws IOException, InterruptedException {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
         when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenReturn(jsonNode);
-        Context context = getMockContext();
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -106,14 +116,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testNotFoundResponse() throws IOException, InterruptedException {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getNoItemsExampleFile());
         when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenReturn(jsonNode);
-        Context context = getMockContext();
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -125,14 +130,6 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testBadRequestResponse() throws IOException {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
-        Context context = getMockContext();
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
-
-        OutputStream output = new ByteArrayOutputStream();
-
-
         fetchPublicationHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -141,14 +138,6 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public  void testInternalServerErrorResponse() throws IOException {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
-        Context context = getMockContext();
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
-
-        OutputStream output = new ByteArrayOutputStream();
-
-
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -157,14 +146,8 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testBadGatewayErrorResponse() throws IOException, InterruptedException {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
         when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
                 .thenThrow(new IOException());
-        Context context = getMockContext();
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
-
-        OutputStream output = new ByteArrayOutputStream();
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -174,16 +157,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testMissingPublicationContext() {
-        FetchResourceService fetchResourceService = mock(FetchResourceService.class);
-        FetchPublicationHandler fetchPublicationHandler = new FetchPublicationHandler(objectMapper,
-                fetchResourceService, environment);
         Optional<JsonNode> publicationContext = fetchPublicationHandler
                 .getPublicationContext(MISSING_FILE_JSON);
         assertTrue(publicationContext.isEmpty());
-    }
-
-    private Context getMockContext() {
-        return mock(Context.class);
     }
 
     private InputStream inputStream() throws IOException {

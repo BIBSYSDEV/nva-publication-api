@@ -13,7 +13,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,9 +44,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ModifyPublicationHandlerTest {
 
     public static final String SOME_API_KEY = "some api key";
@@ -57,17 +59,30 @@ public class ModifyPublicationHandlerTest {
 
     private ObjectMapper objectMapper = ModifyPublicationHandler.createObjectMapper();
 
+    @Mock
     private Environment environment;
+
+    @Mock
+    private ModifyResourceService modifyResourceService;
+
+    @Mock
+    private Context context;
+
+    private OutputStream output;
+    private ModifyPublicationHandler modifyPublicationHandler;
 
     /**
      * Set up environment.
      */
     @Before
     public void setUp() {
-        environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
         when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("localhost:3000"));
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
+
+        output = new ByteArrayOutputStream();
+        modifyPublicationHandler =
+                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
 
     }
 
@@ -86,15 +101,10 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     public void testOkResponse() throws IOException, InterruptedException {
-        ModifyResourceService modifyResourceService = mock(ModifyResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
         when(modifyResourceService.modifyResource(any(UUID.class), any(Publication.class), anyString(), anyString(),
                 anyString()))
                 .thenReturn(jsonNode);
-        Context context = getMockContext();
-        ModifyPublicationHandler modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
 
         modifyPublicationHandler.handleRequest(
                 inputStream(jsonNode.at(IDENTIFIER_JSON_POINTER).textValue()), output, context);
@@ -107,12 +117,6 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     public void testIdentifiersInPathParametersAndBodyAreNotTheSame() throws IOException {
-        ModifyResourceService modifyResourceService = mock(ModifyResourceService.class);
-        Context context = getMockContext();
-        ModifyPublicationHandler modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
-
         modifyPublicationHandler.handleRequest(inputStream(UUID.randomUUID().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -121,12 +125,6 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     public void testBadRequestMissingPathParameters() throws IOException {
-        ModifyResourceService modifyResourceService = mock(ModifyResourceService.class);
-        Context context = getMockContext();
-        ModifyPublicationHandler modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
-
         modifyPublicationHandler.handleRequest(inputStreamMissingPathParameters(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -135,15 +133,10 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     public void testBadGateWayResponse() throws IOException, InterruptedException {
-        ModifyResourceService modifyResourceService = mock(ModifyResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
         when(modifyResourceService.modifyResource(
                 any(UUID.class), any(Publication.class), anyString(), anyString(), anyString()))
                 .thenThrow(IOException.class);
-        Context context = getMockContext();
-        ModifyPublicationHandler modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
 
         modifyPublicationHandler.handleRequest(
                 inputStream(jsonNode.at(IDENTIFIER_JSON_POINTER).textValue()), output, context);
@@ -154,25 +147,16 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     public void testInternalServerErrorResponse() throws IOException, InterruptedException {
-        ModifyResourceService modifyResourceService = mock(ModifyResourceService.class);
         JsonNode jsonNode = objectMapper.readTree(getExampleFile());
         when(modifyResourceService.modifyResource(
                 any(UUID.class), any(Publication.class), anyString(), anyString(), anyString()))
                 .thenThrow(NullPointerException.class);
-        Context context = getMockContext();
-        ModifyPublicationHandler modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, modifyResourceService, environment);
-        OutputStream output = new ByteArrayOutputStream();
 
         modifyPublicationHandler.handleRequest(
                 inputStream(jsonNode.at(IDENTIFIER_JSON_POINTER).textValue()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-    }
-
-    private Context getMockContext() {
-        return mock(Context.class);
     }
 
     private InputStream inputStream(String identifier) throws IOException {
