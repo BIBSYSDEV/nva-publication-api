@@ -7,7 +7,7 @@ Description: >
 
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: nva-publication-api
+    Name: NvaPublicationApi
     Description: NVA publication API
     Author: Unit
     SemanticVersion: 1.0.0
