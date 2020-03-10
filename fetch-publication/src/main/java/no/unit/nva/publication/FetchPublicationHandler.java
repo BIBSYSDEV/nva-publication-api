@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static no.unit.nva.Logger.logError;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_GATEWAY;
@@ -87,7 +88,7 @@ public class FetchPublicationHandler implements RequestStreamHandler {
             identifier = UUID.fromString(Optional.ofNullable(event.at(PATH_PARAMETERS_IDENTIFIER).textValue())
                     .orElseThrow(() -> new IllegalArgumentException(MISSING_IDENTIFIER_IN_PATH_PARAMETERS)));
         } catch (Exception e) {
-            e.printStackTrace();
+            logError(e);
             writeErrorResponse(output, BAD_REQUEST, e);
             return;
         }
@@ -110,10 +111,10 @@ public class FetchPublicationHandler implements RequestStreamHandler {
             objectMapper.writeValue(output, new GatewayResponse<>(
                     objectMapper.writeValueAsString(publication), headers(), OK.getStatusCode()));
         } catch (IOException e) {
-            e.printStackTrace();
+            logError(e);
             writeErrorResponse(output, BAD_GATEWAY, e);
         } catch (Exception e) {
-            e.printStackTrace();
+            logError(e);
             writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
         }
     }
