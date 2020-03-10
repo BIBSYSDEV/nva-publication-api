@@ -14,6 +14,7 @@ import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.FetchResourceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
+import org.zalando.problem.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,16 +25,12 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.NOT_FOUND;
+import static org.zalando.problem.Status.OK;
 
 public class FetchPublicationHandler implements RequestStreamHandler {
 
@@ -48,6 +45,7 @@ public class FetchPublicationHandler implements RequestStreamHandler {
     public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
     public static final String ITEMS_0 = "/Items/0";
+    public static final String PUBLICATION_NOT_FOUND = "Publication not found.";
 
     private final transient String allowedOrigin;
     private final transient String apiHost;
@@ -90,8 +88,7 @@ public class FetchPublicationHandler implements RequestStreamHandler {
                     .orElseThrow(() -> new IllegalArgumentException(MISSING_IDENTIFIER_IN_PATH_PARAMETERS)));
         } catch (Exception e) {
             e.printStackTrace();
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
+            writeErrorResponse(output, BAD_REQUEST, e);
             return;
         }
 
@@ -102,8 +99,7 @@ public class FetchPublicationHandler implements RequestStreamHandler {
             JsonNode publication = resource.at(ITEMS_0);
 
             if (publication.isMissingNode()) {
-                objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                        Problem.valueOf(NOT_FOUND)), headers(), SC_NOT_FOUND));
+                writeErrorResponse(output, NOT_FOUND, PUBLICATION_NOT_FOUND);
                 return;
             }
 
@@ -112,16 +108,23 @@ public class FetchPublicationHandler implements RequestStreamHandler {
             });
 
             objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(publication), headers(), SC_OK));
+                    objectMapper.writeValueAsString(publication), headers(), OK.getStatusCode()));
         } catch (IOException e) {
             e.printStackTrace();
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
+            writeErrorResponse(output, BAD_GATEWAY, e);
         } catch (Exception e) {
             e.printStackTrace();
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
+            writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
         }
+    }
+
+    private void writeErrorResponse(OutputStream output, Status status, String message) throws IOException {
+        objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
+                Problem.valueOf(status, message)), headers(), status.getStatusCode()));
+    }
+
+    private void writeErrorResponse(OutputStream output, Status status, Exception exception) throws IOException {
+        writeErrorResponse(output, status, exception.getMessage());
     }
 
     protected Optional<JsonNode> getPublicationContext(String publicationContextPath) {

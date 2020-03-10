@@ -15,6 +15,7 @@ import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.service.ModifyResourceService;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
+import org.zalando.problem.Status;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,13 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.Logger.logError;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static org.zalando.problem.Status.OK;
 
 public class ModifyPublicationHandler implements RequestStreamHandler {
 
@@ -95,8 +93,7 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
             publication = objectMapper.readValue(event.at(BODY).textValue(), Publication.class);
         } catch (Exception e) {
             logError(e);
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_REQUEST, e.getMessage())), headers(), SC_BAD_REQUEST));
+            writeErrorResponse(output, BAD_REQUEST, e);
             return;
         }
 
@@ -104,9 +101,7 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
         log("Publication in request body " + objectMapper.writeValueAsString(publication));
 
         if (!publication.getIdentifier().equals(identifier)) {
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_REQUEST, NOT_SAME_IDENTIFIERS)),
-                    headers(), SC_BAD_REQUEST));
+            writeErrorResponse(output, BAD_REQUEST, NOT_SAME_IDENTIFIERS);
             return;
         }
 
@@ -117,16 +112,23 @@ public class ModifyPublicationHandler implements RequestStreamHandler {
                 ContextUtil.injectContext(publicationResponse, publicationContext);
             });
             objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(publicationResponse), headers(), SC_OK));
+                    objectMapper.writeValueAsString(publicationResponse), headers(), OK.getStatusCode()));
         } catch (IOException e) {
             logError(e);
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(BAD_GATEWAY, e.getMessage())), headers(), SC_BAD_GATEWAY));
+            writeErrorResponse(output, BAD_GATEWAY, e);
         } catch (Exception e) {
             logError(e);
-            objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
-                    Problem.valueOf(INTERNAL_SERVER_ERROR, e.getMessage())), headers(), SC_INTERNAL_SERVER_ERROR));
+            writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
         }
+    }
+
+    private void writeErrorResponse(OutputStream output, Status status, String message) throws IOException {
+        objectMapper.writeValue(output, new GatewayResponse<>(objectMapper.writeValueAsString(
+                Problem.valueOf(status, message)), headers(), status.getStatusCode()));
+    }
+
+    private void writeErrorResponse(OutputStream output, Status status, Exception exception) throws IOException {
+        writeErrorResponse(output, status, exception.getMessage());
     }
 
     protected Optional<JsonNode> getPublicationContext(String publicationContextPath) {
