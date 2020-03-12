@@ -92,8 +92,10 @@ public abstract class PublicationHandler implements RequestStreamHandler {
                 .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                // We want date-time format, not unix timestamps
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
-                .setSerializationInclusion(Include.NON_NULL); // Ignore null fields
+                // Ignore null fields
+                .setSerializationInclusion(Include.NON_NULL);
     }
 
 }
