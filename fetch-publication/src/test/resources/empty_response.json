@@ -1,0 +1,19 @@
+{
+  "Items": [],
+  "Count": 0,
+  "ScannedCount": 0,
+  "ResponseMetadata": {
+    "RequestId": "V7IASS59QELIQTDMLB1L7RJ9D7VV4KQNSO5AEMVJF66Q9ASUAAJG",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "server": "Server",
+      "date": "Thu, 06 Feb 2020 13:16:48 GMT",
+      "content-type": "application/x-amz-json-1.0",
+      "content-length": "39",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "V7IASS59QELIQTDMLB1L7RJ9D7VV4KQNSO5AEMVJF66Q9ASUAAJG",
+      "x-amz-crc32": "3413411624"
+    },
+    "RetryAttempts": 0
+  }
+}
