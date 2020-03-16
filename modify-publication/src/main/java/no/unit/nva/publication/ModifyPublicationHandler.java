@@ -8,11 +8,13 @@ import no.unit.nva.GatewayResponse;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.nva.publication.service.ModifyResourceService;
+import no.unit.nva.service.PublicationService;
+import no.unit.nva.service.impl.RestPublicationService;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.http.HttpClient;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,9 +31,6 @@ public class ModifyPublicationHandler extends PublicationHandler {
     public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
     public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
 
-    public static final String API_HOST_ENV = "API_HOST";
-    public static final String API_SCHEME_ENV = "API_SCHEME";
-
     public static final String MISSING_AUTHORIZATION_IN_HEADERS =
             "Missing Authorization in Headers";
     public static final String MISSING_IDENTIFIER_IN_PATH_PARAMETERS = "Missing identifier in path parameters";
@@ -39,29 +38,24 @@ public class ModifyPublicationHandler extends PublicationHandler {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
-    private final transient String apiHost;
-    private final transient String apiScheme;
-    private final transient ModifyResourceService modifyResourceService;
+    private final transient PublicationService publicationService;
 
     public ModifyPublicationHandler() {
-        this(createObjectMapper(), new ModifyResourceService(), new Environment());
+        this(createObjectMapper(), RestPublicationService.create(HttpClient.newHttpClient(), new Environment()),
+                new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
      * @param objectMapper objectMapper
-     * @param modifyResourceService    resourcePersistenceService
+     * @param publicationService    publicationService
      * @param environment  environment
      */
-    public ModifyPublicationHandler(ObjectMapper objectMapper, ModifyResourceService modifyResourceService,
+    public ModifyPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
                                     Environment environment) {
         super(objectMapper, environment);
-        this.modifyResourceService = modifyResourceService;
-        this.apiHost = environment.get(API_HOST_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
-        this.apiScheme = environment.get(API_SCHEME_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_SCHEME_ENV));
+        this.publicationService = publicationService;
     }
 
     @Override
@@ -91,13 +85,14 @@ public class ModifyPublicationHandler extends PublicationHandler {
         }
 
         try {
-            JsonNode publicationResponse =
-                    modifyResourceService.modifyResource(identifier, publication, apiScheme, apiHost, authorization);
+            Publication publicationResponse =
+                    publicationService.updatePublication(publication, authorization);
+            JsonNode publicationResponseJson = objectMapper.valueToTree(publicationResponse);
             getPublicationContext(PUBLICATION_CONTEXT_JSON).ifPresent(publicationContext -> {
-                ContextUtil.injectContext(publicationResponse, publicationContext);
+                ContextUtil.injectContext(publicationResponseJson, publicationContext);
             });
             objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(publicationResponse), headers(), OK.getStatusCode()));
+                    objectMapper.writeValueAsString(publicationResponseJson), headers(), OK.getStatusCode()));
         } catch (IOException e) {
             logError(e);
             writeErrorResponse(output, BAD_GATEWAY, e);

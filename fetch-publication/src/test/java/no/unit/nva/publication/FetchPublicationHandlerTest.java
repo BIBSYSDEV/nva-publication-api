@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
-import no.unit.nva.publication.service.FetchResourceService;
+import no.unit.nva.model.Publication;
+import no.unit.nva.service.PublicationService;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,9 +32,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.FetchPublicationHandler.API_HOST_ENV;
-import static no.unit.nva.publication.FetchPublicationHandler.API_SCHEME_ENV;
-import static no.unit.nva.publication.service.FetchResourceService.AUTHORIZATION;
+import static no.unit.nva.service.impl.RestPublicationService.API_HOST_ENV;
+import static no.unit.nva.service.impl.RestPublicationService.API_SCHEME_ENV;
+import static no.unit.nva.service.impl.RestPublicationService.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -57,6 +58,7 @@ public class FetchPublicationHandlerTest {
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final String RESOURCE_RESPONSE_JSON = "src/test/resources/resource_response.json";
     public static final String EMPTY_RESPONSE_JSON = "src/test/resources/empty_response.json";
+    public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
     public static final String MISSING_FILE_JSON = "missing_file.json";
     private ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
 
@@ -64,7 +66,7 @@ public class FetchPublicationHandlerTest {
     private Environment environment;
 
     @Mock
-    private FetchResourceService fetchResourceService;
+    private PublicationService publicationService;
 
     @Mock
     private Context context;
@@ -78,12 +80,10 @@ public class FetchPublicationHandlerTest {
     @Before
     public void setUp() {
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
-        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of("localhost:3000"));
-        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of("http"));
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(objectMapper, fetchResourceService, environment);
+                new FetchPublicationHandler(objectMapper, publicationService, environment);
 
     }
 
@@ -102,9 +102,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testOkResponse() throws IOException, InterruptedException {
-        JsonNode jsonNode = objectMapper.readTree(getExampleFile());
-        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
-                .thenReturn(jsonNode);
+        Publication publication = objectMapper.readValue(getExampleFile(), Publication.class);
+        when(publicationService.getPublication(any(UUID.class), anyString()))
+                .thenReturn(Optional.of(publication));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -116,9 +116,8 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testNotFoundResponse() throws IOException, InterruptedException {
-        JsonNode jsonNode = objectMapper.readTree(getNoItemsExampleFile());
-        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
-                .thenReturn(jsonNode);
+        when(publicationService.getPublication(any(UUID.class), anyString()))
+                .thenReturn(Optional.empty());
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -137,7 +136,10 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public  void testInternalServerErrorResponse() throws IOException {
+    public  void testInternalServerErrorResponse() throws IOException, InterruptedException {
+        when(publicationService.getPublication(any(UUID.class), anyString()))
+                .thenThrow(new NullPointerException());
+
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -146,7 +148,7 @@ public class FetchPublicationHandlerTest {
 
     @Test
     public void testBadGatewayErrorResponse() throws IOException, InterruptedException {
-        when(fetchResourceService.fetchResource(any(UUID.class), anyString(), anyString(), anyString()))
+        when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenThrow(new IOException());
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -173,10 +175,6 @@ public class FetchPublicationHandlerTest {
     }
 
     private byte[] getExampleFile() throws IOException {
-        return Files.readAllBytes(Paths.get(RESOURCE_RESPONSE_JSON));
-    }
-
-    private byte[] getNoItemsExampleFile() throws IOException {
-        return Files.readAllBytes(Paths.get(EMPTY_RESPONSE_JSON));
+        return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
     }
 }
