@@ -52,13 +52,16 @@ public class DynamoDBPublicationService implements PublicationService {
     public static DynamoDBPublicationService create(ObjectMapper objectMapper, Environment environment) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
         DynamoDB dynamoDB = new DynamoDB(client);
+
         String tableName = environment.get(TABLE_NAME_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
         Table table = dynamoDB.getTable(tableName);
+
         String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV)
                 .orElseThrow(() ->
                         new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
         Index byPublisherIndex = table.getIndex(byPublisherIndexName);
+
         return new DynamoDBPublicationService(objectMapper, byPublisherIndex);
     }
 
