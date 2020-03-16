@@ -1,27 +1,40 @@
 package no.unit.nva.model;
 
+import java.time.Instant;
+import java.util.UUID;
+
 public class PublicationSummary {
 
-    private String identifier;
-    private String title;
+    private UUID identifier;
+    private String mainTitle;
     private String owner;
-    private String date;
-    private String status;
+    private Instant modifiedDate;
+    private Instant createdDate;
+    private PublicationStatus status;
 
-    public String getIdentifier() {
+    private PublicationSummary(Builder builder) {
+        setIdentifier(builder.identifier);
+        setMainTitle(builder.mainTitle);
+        setOwner(builder.owner);
+        setModifiedDate(builder.modifiedDate);
+        setCreatedDate(builder.createdDate);
+        setStatus(builder.status);
+    }
+
+    public UUID getIdentifier() {
         return identifier;
     }
 
-    public void setIdentifier(String identifier) {
+    public void setIdentifier(UUID identifier) {
         this.identifier = identifier;
     }
 
-    public String getTitle() {
-        return title;
+    public String getMainTitle() {
+        return mainTitle;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setMainTitle(String mainTitle) {
+        this.mainTitle = mainTitle;
     }
 
     public String getOwner() {
@@ -32,19 +45,73 @@ public class PublicationSummary {
         this.owner = owner;
     }
 
-    public String getDate() {
-        return date;
+    public Instant getModifiedDate() {
+        return modifiedDate;
     }
 
-    public void setDate(String date) {
-        this.date = date;
+    public void setModifiedDate(Instant modifiedDate) {
+        this.modifiedDate = modifiedDate;
     }
 
-    public String getStatus() {
+    public Instant getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(Instant createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public PublicationStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(PublicationStatus status) {
         this.status = status;
+    }
+
+    public static final class Builder {
+        private UUID identifier;
+        private String mainTitle;
+        private String owner;
+        private Instant modifiedDate;
+        private Instant createdDate;
+        private PublicationStatus status;
+
+        public Builder() {
+        }
+
+        public Builder withIdentifier(UUID identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder withMainTitle(String mainTitle) {
+            this.mainTitle = mainTitle;
+            return this;
+        }
+
+        public Builder withOwner(String owner) {
+            this.owner = owner;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withCreatedDate(Instant createdDate) {
+            this.createdDate = createdDate;
+            return this;
+        }
+
+        public Builder withStatus(PublicationStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public PublicationSummary build() {
+            return new PublicationSummary(this);
+        }
     }
 }

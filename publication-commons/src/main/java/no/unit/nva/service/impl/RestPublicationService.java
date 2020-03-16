@@ -143,12 +143,12 @@ public class RestPublicationService implements PublicationService {
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization) {
+    public List<PublicationSummary> getPublicationsByPublisher(String publisherId, String authorization) {
         throw new RuntimeException(NOT_IMPLEMENTED);
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization) {
+    public List<PublicationSummary> getPublicationsByOwner(String owner, String publisherId, String authorization) {
         throw new RuntimeException(NOT_IMPLEMENTED);
     }
 }

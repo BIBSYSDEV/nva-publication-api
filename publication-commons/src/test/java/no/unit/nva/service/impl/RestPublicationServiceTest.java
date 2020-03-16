@@ -63,19 +63,16 @@ public class RestPublicationServiceTest {
     @Test
     public void testUpdatePublicationReturnsNotFound() throws IOException, InterruptedException {
 
-        Publication publication = getPublication();
-
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn("{\"message\": \"Forbidden\"}");
         when((response.statusCode())).thenReturn(403);
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(IOException.class, () -> {
-            publicationService.updatePublication(
-                    publication,
-                    SOME_API_KEY);
-        });
+        Publication publication = getPublication();
+        Assertions.assertThrows(IOException.class, () -> publicationService.updatePublication(
+                publication,
+                SOME_API_KEY));
     }
 
     @Test
@@ -84,12 +81,10 @@ public class RestPublicationServiceTest {
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(IOException.class, () -> {
-            publicationService.getPublication(
-                    UUID.randomUUID(),
-                    SOME_API_KEY
-            );
-        });
+        Assertions.assertThrows(IOException.class, () -> publicationService.getPublication(
+                UUID.randomUUID(),
+                SOME_API_KEY
+        ));
     }
 
     @Test
@@ -99,12 +94,10 @@ public class RestPublicationServiceTest {
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(IOException.class, () -> {
-            publicationService.updatePublication(
-                    publication,
-                    SOME_API_KEY
-            );
-        });
+        Assertions.assertThrows(IOException.class, () -> publicationService.updatePublication(
+                publication,
+                SOME_API_KEY
+        ));
     }
 
     @Test

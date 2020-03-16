@@ -8,6 +8,10 @@ public class PublicationsByOwnerResponse {
 
     private List<PublicationSummary> publications;
 
+    public PublicationsByOwnerResponse(List<PublicationSummary> publications) {
+        this.publications = publications;
+    }
+
     public List<PublicationSummary> getPublications() {
         return publications;
     }
