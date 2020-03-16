@@ -36,7 +36,8 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     private final PublicationService publicationService;
 
     public PublicationsByOwnerHandler() {
-        this(createObjectMapper(), DynamoDBPublicationService.create(new Environment()),
+        this(createObjectMapper(), DynamoDBPublicationService.create(PublicationHandler.createObjectMapper(),
+                new Environment()),
                 new Environment());
     }
 

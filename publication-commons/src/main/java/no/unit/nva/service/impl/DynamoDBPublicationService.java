@@ -1,24 +1,47 @@
 package no.unit.nva.service.impl;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
+import no.unit.nva.Logger;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationSummary;
 import no.unit.nva.service.PublicationService;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+
+import static no.unit.nva.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
 
 public class DynamoDBPublicationService implements PublicationService {
 
     public static final String NOT_IMPLEMENTED = "Not implemented";
+    public static final String TABLE_NAME_ENV = "TABLE_NAME";
+    public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
+
+    private final Index byPublisherIndex;
+    private final ObjectMapper objectMapper;
 
     /**
      * Constructor for DynamoDBPublicationService.
      *
      */
-    public DynamoDBPublicationService() {
-
+    public DynamoDBPublicationService(ObjectMapper objectMapper, Index byPublisherIndex) {
+        this.objectMapper = objectMapper;
+        this.byPublisherIndex = byPublisherIndex;
     }
 
     /**
@@ -26,8 +49,17 @@ public class DynamoDBPublicationService implements PublicationService {
      *
      * @return  DynamoDBPublicationService
      */
-    public static DynamoDBPublicationService create(Environment environment) {
-        return new DynamoDBPublicationService();
+    public static DynamoDBPublicationService create(ObjectMapper objectMapper, Environment environment) {
+        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
+        DynamoDB dynamoDB = new DynamoDB(client);
+        String tableName = environment.get(TABLE_NAME_ENV)
+                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
+        Table table = dynamoDB.getTable(tableName);
+        String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV)
+                .orElseThrow(() ->
+                        new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
+        Index byPublisherIndex = table.getIndex(byPublisherIndexName);
+        return new DynamoDBPublicationService(objectMapper, byPublisherIndex);
     }
 
     @Override
@@ -47,6 +79,34 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public List<PublicationSummary> getPublicationsByOwner(String owner, String publisherId, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+        Objects.requireNonNull(owner);
+        Objects.requireNonNull(publisherId);
+        Objects.isNull(authorization);
+
+        Map<String, String> nameMap = Map.of("#publisherId", "publisher.id", "#owner", "owner");
+        Map<String, Object> valueMap = Map.of(":publisherId", publisherId, ":owner", owner);
+
+        QuerySpec querySpec = new QuerySpec()
+                .withKeyConditionExpression("#publisherId = :publisherId and begins_with(#owner, :owner)")
+                .withNameMap(nameMap)
+                .withValueMap(valueMap);
+
+        ItemCollection<QueryOutcome> items = byPublisherIndex.query(querySpec);
+
+        List<PublicationSummary> publications = new ArrayList<>();
+
+        items.forEach(item -> {
+            try {
+                publications.add(toPublicationSummary(item));
+            } catch (JsonProcessingException e) {
+                Logger.logError(e);
+            }
+        });
+
+        return publications;
+    }
+
+    private PublicationSummary toPublicationSummary(Item item) throws JsonProcessingException {
+        return objectMapper.readValue(item.toJSON(), PublicationSummary.class);
     }
 }

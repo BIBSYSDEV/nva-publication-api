@@ -7,6 +7,7 @@ import no.unit.nva.GatewayResponse;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.PublicationSummary;
 import no.unit.nva.service.PublicationService;
+import no.unit.nva.service.impl.DynamoDBPublicationService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
@@ -35,6 +36,8 @@ import static java.util.Collections.singletonMap;
 import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.PublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.service.impl.DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV;
+import static no.unit.nva.service.impl.DynamoDBPublicationService.TABLE_NAME_ENV;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -84,6 +87,8 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     public void testDefaultConstructor() {
         environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
+        environmentVariables.set(TABLE_NAME_ENV, "nva_resources");
+        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, "ByPublisher");
         PublicationsByOwnerHandler publicationsByOwnerHandler = new PublicationsByOwnerHandler();
         assertNotNull(publicationsByOwnerHandler);
     }
