@@ -184,6 +184,9 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: nva_resources_jan_tester
           BY_PUBLISHER_INDEX_NAME: ByPublisher
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: nva_resources_jan_tester
       Events:
         GetEvent:
           Type: Api
