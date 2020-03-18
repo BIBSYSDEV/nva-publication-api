@@ -90,7 +90,7 @@ public class DynamoDBPublicationService implements PublicationService {
         String publisherOwner = String.join("#", publisherId.toString(), owner);
 
         Map<String, String> nameMap = Map.of(
-                "#publisherId", "publisher.id",
+                "#publisherId", "publisherId",
                 "#publisherOwnerDate", "publisherOwnerDate");
         Map<String, Object> valueMap = Map.of(
                 ":publisherId", publisherId.toString(),
