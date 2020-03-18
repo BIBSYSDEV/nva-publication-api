@@ -42,8 +42,8 @@ public class PublicationSummary {
     }
 
     @JsonProperty("entityDescription")
-    public void setMainTitle(Map<String,String> entityDescription) {
-        this.mainTitle = entityDescription.get(MAIN_TITLE);
+    public void setMainTitle(Map<String,Object> entityDescription) {
+        this.mainTitle = (String)entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {
