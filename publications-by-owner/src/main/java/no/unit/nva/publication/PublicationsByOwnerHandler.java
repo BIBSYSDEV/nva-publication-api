@@ -34,9 +34,13 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
             "Missing claim in requestContext: ";
+    public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
 
     private final PublicationService publicationService;
 
+    /**
+     * Default constructor for MainHandler.
+     */
     public PublicationsByOwnerHandler() {
         this(createObjectMapper(), DynamoDBPublicationService.create(PublicationHandler.createObjectMapper(),
                 new Environment()),
@@ -74,7 +78,7 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
                 orgNumber));
 
         try {
-            URI publisherId = OrgNumberMapper.toCristinId(orgNumber);
+            URI publisherId = toPublisherId(orgNumber);
             List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
                     owner, publisherId, null);
             objectMapper.writeValue(output, new GatewayResponse<>(
@@ -89,8 +93,16 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
         }
     }
 
-        private String getClaimValueFromRequestContext(JsonNode event, String claimName) {
-            return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
-                    .orElseThrow(() -> new IllegalArgumentException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
+    private URI toPublisherId(String orgNumber) {
+        if (orgNumber.startsWith(ORG_NUMBER_COUNTRY_PREFIX_NORWAY)) {
+            // Remove this if and when datamodel has support for OrgNumber country prefix
+            return OrgNumberMapper.toCristinId(orgNumber.substring(ORG_NUMBER_COUNTRY_PREFIX_NORWAY.length()));
         }
+        return OrgNumberMapper.toCristinId(orgNumber);
+    }
+
+    private String getClaimValueFromRequestContext(JsonNode event, String claimName) {
+        return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
+                .orElseThrow(() -> new IllegalArgumentException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
+    }
 }

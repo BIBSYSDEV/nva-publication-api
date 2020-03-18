@@ -53,7 +53,7 @@ import static org.mockito.Mockito.when;
 public class PublicationsByOwnerHandlerTest {
 
     public static final String OWNER = "junit";
-    public static final String VALID_ORG_NUMBER = "919477822";
+    public static final String VALID_ORG_NUMBER = "NO919477822";
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
     @Mock
