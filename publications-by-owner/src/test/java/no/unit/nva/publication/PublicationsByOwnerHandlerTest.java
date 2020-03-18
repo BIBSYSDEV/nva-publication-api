@@ -23,6 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,6 +53,7 @@ import static org.mockito.Mockito.when;
 public class PublicationsByOwnerHandlerTest {
 
     public static final String OWNER = "junit";
+    public static final String VALID_ORG_NUMBER = "919477822";
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
     @Mock
@@ -94,7 +96,7 @@ public class PublicationsByOwnerHandlerTest {
 
     @Test
     public void testOkResponse() throws IOException, InterruptedException {
-        when(publicationService.getPublicationsByOwner(anyString(), anyString(), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
                 .thenReturn(createPublicationSummaries());
 
         publicationsByOwnerHandler.handleRequest(
@@ -117,7 +119,7 @@ public class PublicationsByOwnerHandlerTest {
 
     @Test
     public void testBadGateWayResponse() throws IOException, InterruptedException {
-        when(publicationService.getPublicationsByOwner(anyString(), anyString(), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
                 .thenThrow(IOException.class);
 
         publicationsByOwnerHandler.handleRequest(
@@ -129,7 +131,7 @@ public class PublicationsByOwnerHandlerTest {
 
     @Test
     public void testInternalServerErrorResponse() throws IOException, InterruptedException {
-        when(publicationService.getPublicationsByOwner(anyString(), anyString(), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
                 .thenThrow(NullPointerException.class);
 
         publicationsByOwnerHandler.handleRequest(
@@ -144,7 +146,7 @@ public class PublicationsByOwnerHandlerTest {
         event.put("requestContext",
                 singletonMap("authorizer",
                         singletonMap("claims",
-                                Map.of("custom:feideId", OWNER, "custom:orgNumber", "123"))));
+                                Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))));
         event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
                 ContentType.APPLICATION_JSON.getMimeType()));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));

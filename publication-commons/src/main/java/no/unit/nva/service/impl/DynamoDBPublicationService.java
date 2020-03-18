@@ -17,6 +17,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationSummary;
 import no.unit.nva.service.PublicationService;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -76,21 +77,28 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByPublisher(String publisherId, String authorization) {
+    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization) {
         throw new RuntimeException(NOT_IMPLEMENTED);
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByOwner(String owner, String publisherId, String authorization) {
+    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization) {
         Objects.requireNonNull(owner);
         Objects.requireNonNull(publisherId);
         Objects.isNull(authorization);
 
-        Map<String, String> nameMap = Map.of("#publisherId", "publisher.id", "#owner", "owner");
-        Map<String, Object> valueMap = Map.of(":publisherId", publisherId, ":owner", owner);
+        String publisherOwner = String.join("#", publisherId.toString(), owner);
+
+        Map<String, String> nameMap = Map.of(
+                "#publisherId", "publisher.id",
+                "#publisherOwnerDate", "publisherOwnerDate");
+        Map<String, Object> valueMap = Map.of(
+                ":publisherId", publisherId.toString(),
+                ":publisherOwner", publisherOwner);
 
         QuerySpec querySpec = new QuerySpec()
-                .withKeyConditionExpression("#publisherId = :publisherId and begins_with(#owner, :owner)")
+                .withKeyConditionExpression(
+                        "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwnerDate)")
                 .withNameMap(nameMap)
                 .withValueMap(valueMap);
 

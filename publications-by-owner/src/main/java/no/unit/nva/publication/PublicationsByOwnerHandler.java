@@ -7,12 +7,14 @@ import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.PublicationSummary;
+import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.service.PublicationService;
 import no.unit.nva.service.impl.DynamoDBPublicationService;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,11 +58,11 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         String owner;
-        String publisherId;
+        String orgNumber;
         try {
             JsonNode event = objectMapper.readTree(input);
             owner = getClaimValueFromRequestContext(event, CUSTOM_FEIDE_ID);
-            publisherId = getClaimValueFromRequestContext(event, CUSTOM_ORG_NUMBER);
+            orgNumber = getClaimValueFromRequestContext(event, CUSTOM_ORG_NUMBER);
         } catch (Exception e) {
             logError(e);
             writeErrorResponse(output, BAD_REQUEST, e);
@@ -69,9 +71,10 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
 
         log(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
                 owner,
-                publisherId));
+                orgNumber));
 
         try {
+            URI publisherId = OrgNumberMapper.toCristinId(orgNumber);
             List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
                     owner, publisherId, null);
             objectMapper.writeValue(output, new GatewayResponse<>(
@@ -86,8 +89,8 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
         }
     }
 
-    private String getClaimValueFromRequestContext(JsonNode event, String claimName) {
-        return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
-                .orElseThrow(() -> new IllegalArgumentException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
-    }
+        private String getClaimValueFromRequestContext(JsonNode event, String claimName) {
+            return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
+                    .orElseThrow(() -> new IllegalArgumentException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
+        }
 }
