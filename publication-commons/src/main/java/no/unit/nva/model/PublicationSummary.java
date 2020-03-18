@@ -21,6 +21,9 @@ public class PublicationSummary {
         setStatus(builder.status);
     }
 
+    public PublicationSummary() {
+    }
+
     public UUID getIdentifier() {
         return identifier;
     }
