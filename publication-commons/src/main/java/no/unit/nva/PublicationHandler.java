@@ -2,11 +2,18 @@ package no.unit.nva;
 
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.codec.binary.StringUtils;
 import org.zalando.problem.Problem;
 import org.zalando.problem.ProblemModule;
 import org.zalando.problem.Status;
@@ -80,6 +87,23 @@ public abstract class PublicationHandler implements RequestStreamHandler {
         return headers;
     }
 
+    private static SimpleModule emptyStringAsNullModule() {
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(String.class, new StdDeserializer<>(String.class) {
+
+            @Override
+            public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+                String result = StringDeserializer.instance.deserialize(p, ctxt);
+                if (result == null || result.isEmpty()) {
+                    return null;
+                }
+                return result;
+            }
+        });
+
+        return module;
+    }
+
     /**
      * Create ObjectMapper.
      *
@@ -89,6 +113,7 @@ public abstract class PublicationHandler implements RequestStreamHandler {
         return new ObjectMapper()
                 .registerModule(new ProblemModule())
                 .registerModule(new JavaTimeModule())
+                .registerModule(emptyStringAsNullModule())
                 .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT)
                 .enable(SerializationFeature.INDENT_OUTPUT)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
