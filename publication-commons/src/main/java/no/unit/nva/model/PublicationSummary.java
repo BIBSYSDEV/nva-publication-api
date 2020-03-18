@@ -1,9 +1,14 @@
 package no.unit.nva.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public class PublicationSummary {
+
+    public static final String MAIN_TITLE = "mainTitle";
 
     private UUID identifier;
     private String mainTitle;
@@ -14,7 +19,7 @@ public class PublicationSummary {
 
     private PublicationSummary(Builder builder) {
         setIdentifier(builder.identifier);
-        setMainTitle(builder.mainTitle);
+        setMainTitle(Map.of(MAIN_TITLE, builder.mainTitle));
         setOwner(builder.owner);
         setModifiedDate(builder.modifiedDate);
         setCreatedDate(builder.createdDate);
@@ -36,8 +41,9 @@ public class PublicationSummary {
         return mainTitle;
     }
 
-    public void setMainTitle(String mainTitle) {
-        this.mainTitle = mainTitle;
+    @JsonProperty("entityDescription")
+    public void setMainTitle(Map<String,String> entityDescription) {
+        this.mainTitle = entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {
