@@ -32,6 +32,8 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String NOT_IMPLEMENTED = "Not implemented";
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
+    public static final String ENTITY_DESCRIPTION = "entityDescription";
+    public static final String MAIN_TITLE = "mainTitle";
 
     private final Index byPublisherIndex;
     private final ObjectMapper objectMapper;
@@ -118,6 +120,11 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     private PublicationSummary toPublicationSummary(Item item) throws JsonProcessingException {
-        return objectMapper.readValue(item.toJSON(), PublicationSummary.class);
+        PublicationSummary publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
+        // Doing it this way to avoid making PublicationSummary POJO too complicated
+        if (item.isPresent(ENTITY_DESCRIPTION)) {
+            publicationSummary.setMainTitle((String)item.getMap(ENTITY_DESCRIPTION).get(MAIN_TITLE));
+        }
+        return publicationSummary;
     }
 }
