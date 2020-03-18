@@ -17,7 +17,7 @@ public class PublicationHandlerTest {
         PublicationDate publicationDate = objectMapper.readValue(json, PublicationDate.class);
 
         assertNull(publicationDate.getMonth());
-        assertNull(publicationDate.getYear());
+        assertNull(publicationDate.getDay());
     }
 
 }
