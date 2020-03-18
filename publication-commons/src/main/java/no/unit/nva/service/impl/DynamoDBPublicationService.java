@@ -98,7 +98,7 @@ public class DynamoDBPublicationService implements PublicationService {
 
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression(
-                        "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwnerDate)")
+                        "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwner)")
                 .withNameMap(nameMap)
                 .withValueMap(valueMap);
 
