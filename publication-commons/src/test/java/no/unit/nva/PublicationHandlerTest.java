@@ -1,13 +1,15 @@
 package no.unit.nva;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.PublicationDate;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.Assertions;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.zalando.problem.Status;
@@ -23,6 +25,7 @@ import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.PublicationHandler.APPLICATION_JSON;
 import static no.unit.nva.PublicationHandler.CONTENT_TYPE;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PublicationHandlerTest {
@@ -72,6 +75,16 @@ public class PublicationHandlerTest {
 
     }
 
+    @Test
+    public void mappingEmptyStringAsNull() throws JsonProcessingException {
+        String json =  "{ \"type\" : \"PublicationDate\", \"year\" : \"2019\", \"month\" : \"\", \"day\" : \"\"}";
+        ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
+        PublicationDate publicationDate = objectMapper.readValue(json, PublicationDate.class);
+
+        assertNull(publicationDate.getMonth());
+        assertNull(publicationDate.getDay());
+    }
+
     public static class TestPublicationHandler extends PublicationHandler {
 
         public TestPublicationHandler(ObjectMapper objectMapper, Environment environment) {
@@ -83,4 +96,5 @@ public class PublicationHandlerTest {
 
         }
     }
+
 }
