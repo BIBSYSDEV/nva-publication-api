@@ -68,5 +68,29 @@ subprojects {
             html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
         }
     }
+
+    check.dependsOn jacocoTestCoverageVerification
+    jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
+
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                limit {
+                    counter = 'METHOD'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.90
+                }
+            }
+
+            rule {
+                limit {
+                    counter = 'CLASS'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.90
+                }
+            }
+        }
+    }
+
 }
 

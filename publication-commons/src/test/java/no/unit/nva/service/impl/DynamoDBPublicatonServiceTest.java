@@ -1,0 +1,155 @@
+package no.unit.nva.service.impl;
+
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.Environment;
+import no.unit.nva.PublicationHandler;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.PublicationSummary;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.IOException;
+import java.net.URI;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static no.unit.nva.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
+import static no.unit.nva.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
+import static no.unit.nva.service.impl.RestPublicationService.NOT_IMPLEMENTED;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
+public class DynamoDBPublicatonServiceTest {
+
+    public static final String OWNER = "owner@example.org";
+    public static final URI PUBLISHER_ID = URI.create("http://example.org/123");
+    public static final String TABLE_NAME_ENV = "TABLE_NAME";
+    public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
+    public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
+
+    @Rule
+    public PublicationsDynamoDBLocal publicationsDynamoDBLocal =  new PublicationsDynamoDBLocal();
+
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
+
+    private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
+    private DynamoDBPublicationService publicationService;
+
+    /**
+     * Set up environment.
+     */
+    @Before
+    public void setUp() {
+        publicationService = new DynamoDBPublicationService(
+                objectMapper,
+                publicationsDynamoDBLocal.getByPublisherIndex()
+        );
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        environmentVariables.set(TABLE_NAME_ENV, NVA_RESOURCES_TABLE_NAME);
+        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, BY_PUBLISHER_INDEX_NAME);
+        publicationService = DynamoDBPublicationService.create(objectMapper, new Environment());
+        assertNotNull(publicationService);
+    }
+
+    @Test
+    public void missingTableEnv() {
+        environmentVariables.set(TABLE_NAME_ENV, NVA_RESOURCES_TABLE_NAME);
+        assertThrows(IllegalStateException.class, () -> {
+            DynamoDBPublicationService.create(objectMapper, new Environment());
+        });
+    }
+
+    @Test
+    public void missingIndexEnv() {
+        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, BY_PUBLISHER_INDEX_NAME);
+        assertThrows(IllegalStateException.class, () -> {
+            DynamoDBPublicationService.create(objectMapper, new Environment());
+        });
+    }
+
+    @Test
+    public void emptyTableReturnsNoPublications() throws IOException, InterruptedException {
+        List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
+                OWNER,
+                PUBLISHER_ID,
+                null);
+
+        assertEquals(0, publications.size());
+    }
+
+    @Test
+    public void nonEmptyTableReturnsPublications() throws IOException, InterruptedException {
+        Publication publication = getPublication();
+        insertPublication(publication);
+
+        List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
+                OWNER,
+                PUBLISHER_ID,
+                null);
+
+        assertEquals(1, publications.size());
+        assertEquals(publication.getEntityDescription().getMainTitle(), publications.get(0).getMainTitle());
+        assertEquals(publication.getOwner(), publications.get(0).getOwner());
+
+    }
+
+    @Test
+    public void invalidItemJson() {
+        Item item = mock(Item.class);
+        when(item.toJSON()).thenReturn(INVALID_JSON);
+        Optional<PublicationSummary> publicationSummary = publicationService.toPublicationSummary(item);
+        Assertions.assertTrue(publicationSummary.isEmpty());
+    }
+
+    @Test
+    public void notImplementedMethodsThrowsRunTimeException() {
+        assertThrows(RuntimeException.class, () ->  {
+            publicationService.getPublication(null, null);
+        }, NOT_IMPLEMENTED);
+        assertThrows(RuntimeException.class, () ->  {
+            publicationService.updatePublication(null, null);
+        }, NOT_IMPLEMENTED);
+        assertThrows(RuntimeException.class, () ->  {
+            publicationService.getPublicationsByPublisher(null, null);
+        }, NOT_IMPLEMENTED);
+    }
+
+    private Publication getPublication() {
+        Instant now = Instant.now();
+        return new Publication.Builder()
+                .withIdentifier(UUID.randomUUID())
+                .withCreatedDate(now)
+                .withModifiedDate(now)
+                .withOwner(OWNER)
+                .withStatus(PublicationStatus.DRAFT)
+                .withPublisher(new Organization.Builder().withId(PUBLISHER_ID).build())
+                .withEntityDescription(new EntityDescription.Builder().withMainTitle("DynamoDB Local Testing").build())
+                .build();
+    }
+
+    private void insertPublication(Publication publication) throws IOException {
+        publicationsDynamoDBLocal.getTable().putItem(Item.fromJSON(objectMapper.writeValueAsString(publication)));
+    }
+
+
+}

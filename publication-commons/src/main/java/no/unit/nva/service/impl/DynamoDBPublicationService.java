@@ -34,6 +34,7 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String ENTITY_DESCRIPTION = "entityDescription";
     public static final String MAIN_TITLE = "mainTitle";
+    public static final String DYNAMODB_KEY_DELIMITER = "#";
 
     private final Index byPublisherIndex;
     private final ObjectMapper objectMapper;
@@ -56,13 +57,12 @@ public class DynamoDBPublicationService implements PublicationService {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
         DynamoDB dynamoDB = new DynamoDB(client);
 
-        String tableName = environment.get(TABLE_NAME_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
+        String tableName = environment.get(TABLE_NAME_ENV).orElseThrow(
+            () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
         Table table = dynamoDB.getTable(tableName);
 
-        String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV)
-                .orElseThrow(() ->
-                        new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
+        String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV).orElseThrow(
+            () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
         Index byPublisherIndex = table.getIndex(byPublisherIndexName);
 
         return new DynamoDBPublicationService(objectMapper, byPublisherIndex);
@@ -89,7 +89,7 @@ public class DynamoDBPublicationService implements PublicationService {
         Objects.requireNonNull(publisherId);
         Objects.isNull(authorization);
 
-        String publisherOwner = String.join("#", publisherId.toString(), owner);
+        String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
 
         Map<String, String> nameMap = Map.of(
                 "#publisherId", "publisherId",
@@ -107,24 +107,23 @@ public class DynamoDBPublicationService implements PublicationService {
         ItemCollection<QueryOutcome> items = byPublisherIndex.query(querySpec);
 
         List<PublicationSummary> publications = new ArrayList<>();
-
-        items.forEach(item -> {
-            try {
-                publications.add(toPublicationSummary(item));
-            } catch (JsonProcessingException e) {
-                Logger.logError(e);
-            }
-        });
+        items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
 
         return publications;
     }
 
-    private PublicationSummary toPublicationSummary(Item item) throws JsonProcessingException {
-        PublicationSummary publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
-        // Doing it this way to avoid making PublicationSummary POJO too complicated
-        if (item.isPresent(ENTITY_DESCRIPTION)) {
-            publicationSummary.setMainTitle((String)item.getMap(ENTITY_DESCRIPTION).get(MAIN_TITLE));
+    protected Optional<PublicationSummary> toPublicationSummary(Item item) {
+        try {
+            PublicationSummary publicationSummary = null;
+            publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
+            // Doing it this way to avoid making PublicationSummary POJO too complicated
+            if (item.isPresent(ENTITY_DESCRIPTION)) {
+                publicationSummary.setMainTitle((String)item.getMap(ENTITY_DESCRIPTION).get(MAIN_TITLE));
+            }
+            return Optional.of(publicationSummary);
+        } catch (JsonProcessingException e) {
+            Logger.logError(e);
+            return Optional.empty();
         }
-        return publicationSummary;
     }
 }

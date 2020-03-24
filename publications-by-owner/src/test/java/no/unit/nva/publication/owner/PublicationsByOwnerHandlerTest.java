@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,6 +6,7 @@ import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.PublicationSummary;
+import no.unit.nva.owner.PublicationsByOwnerHandler;
 import no.unit.nva.service.PublicationService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;

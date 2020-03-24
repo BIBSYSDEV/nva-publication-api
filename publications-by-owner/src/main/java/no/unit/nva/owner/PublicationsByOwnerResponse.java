@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.owner;
 
 import no.unit.nva.model.PublicationSummary;
 
@@ -6,7 +6,7 @@ import java.util.List;
 
 public class PublicationsByOwnerResponse {
 
-    private List<PublicationSummary> publications;
+    private final List<PublicationSummary> publications;
 
     public PublicationsByOwnerResponse(List<PublicationSummary> publications) {
         this.publications = publications;
@@ -14,9 +14,5 @@ public class PublicationsByOwnerResponse {
 
     public List<PublicationSummary> getPublications() {
         return publications;
-    }
-
-    public void setPublications(List<PublicationSummary> publications) {
-        this.publications = publications;
     }
 }

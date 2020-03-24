@@ -1,10 +1,14 @@
 package no.unit.nva.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.Environment;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
+import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -21,6 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
+import static no.unit.nva.service.impl.RestPublicationService.NOT_IMPLEMENTED;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -39,6 +44,10 @@ public class RestPublicationServiceTest {
 
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
+    @Rule
+    public final EnvironmentVariables environmentVariables
+            = new EnvironmentVariables();
+
     @Mock
     private HttpClient client;
 
@@ -46,7 +55,16 @@ public class RestPublicationServiceTest {
     private HttpResponse<String> response;
 
     @Test
-    public void testUpdatePublicationReturnsJsonObject() throws IOException, InterruptedException {
+    public void testDefaultConstructor() {
+        environmentVariables.set("API_SCHEME", API_SCHEME);
+        environmentVariables.set("API_HOST", API_HOST);
+        PublicationService publicationService = RestPublicationService.create(HttpClient.newHttpClient(),
+                new Environment());
+        Assert.assertNotNull(publicationService);
+    }
+
+    @Test
+    public void updatePublicationReturnsJsonObject() throws IOException, InterruptedException {
 
         Publication publication = getPublication();
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
@@ -61,7 +79,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    public void testUpdatePublicationReturnsNotFound() throws IOException, InterruptedException {
+    public void updatePublicationReturnsNotFound() throws IOException, InterruptedException {
 
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn("{\"message\": \"Forbidden\"}");
@@ -76,7 +94,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    public void testGetPublicationClientError() throws IOException, InterruptedException {
+    public void getPublicationClientError() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
@@ -88,7 +106,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    public void testUpdatePublicationClientError() throws IOException, InterruptedException {
+    public void updatePublicationClientError() throws IOException, InterruptedException {
         Publication publication = getPublication();
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
@@ -101,7 +119,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    public void testGetPublicationReturnsJsonObject() throws IOException, InterruptedException {
+    public void getPublicationReturnsJsonObject() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
 
@@ -114,6 +132,17 @@ public class RestPublicationServiceTest {
 
         assertTrue(publication.isPresent());
         assertNotNull(publication.get());
+    }
+
+    @Test
+    public void notImplementedMethodsThrowsRunTimeException() {
+        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        Assertions.assertThrows(RuntimeException.class, () ->  {
+            publicationService.getPublicationsByOwner(null, null, null);
+        }, NOT_IMPLEMENTED);
+        Assertions.assertThrows(RuntimeException.class, () ->  {
+            publicationService.getPublicationsByPublisher(null, null);
+        }, NOT_IMPLEMENTED);
     }
 
     private String getResponse(String path) throws IOException {

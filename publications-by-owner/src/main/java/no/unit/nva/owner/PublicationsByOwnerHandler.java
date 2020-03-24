@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.owner;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;

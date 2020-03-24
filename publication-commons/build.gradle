@@ -1,7 +1,11 @@
+repositories {
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
 def jacksonVersion = '2.10.2'
 
 dependencies {
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.1.0'
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.3.0'
     implementation group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
@@ -11,4 +15,19 @@ dependencies {
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: '1.11.714'
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: '1.11.714'
+    testCompile group: 'com.amazonaws', name: 'DynamoDBLocal', version: '1.12.0'
+}
+
+task copyNativeDeps(type: Copy) {
+    from (configurations.testCompile) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/libs'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/libs'
 }
