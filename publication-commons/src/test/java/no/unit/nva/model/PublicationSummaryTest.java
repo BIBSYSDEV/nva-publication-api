@@ -3,11 +3,12 @@ package no.unit.nva.model;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.PublicationHandler;
-import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PublicationSummaryTest {
 
@@ -19,7 +20,7 @@ public class PublicationSummaryTest {
         PublicationSummary processedPublicationSummary = objectMapper.readValue(
                 objectMapper.writeValueAsString(publicationSummary), PublicationSummary.class);
 
-        Assertions.assertEquals(publicationSummary.getMainTitle(), processedPublicationSummary.getMainTitle());
+        assertEquals(publicationSummary.getMainTitle(), processedPublicationSummary.getMainTitle());
     }
 
     private PublicationSummary getPublicationSummary() {

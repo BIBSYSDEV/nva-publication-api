@@ -9,13 +9,11 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.PublicationSummary;
-import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.Assertions;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,13 +25,12 @@ import java.util.UUID;
 import static no.unit.nva.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
 import static no.unit.nva.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static no.unit.nva.service.impl.RestPublicationService.NOT_IMPLEMENTED;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@EnableRuleMigrationSupport
 public class DynamoDBPublicatonServiceTest {
 
     public static final String OWNER = "owner@example.org";
@@ -45,18 +42,16 @@ public class DynamoDBPublicatonServiceTest {
     @Rule
     public PublicationsDynamoDBLocal publicationsDynamoDBLocal =  new PublicationsDynamoDBLocal();
 
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
-
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
     private DynamoDBPublicationService publicationService;
+    private Environment environment;
 
     /**
      * Set up environment.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
+        environment = mock(Environment.class);
         publicationService = new DynamoDBPublicationService(
                 objectMapper,
                 publicationsDynamoDBLocal.getByPublisherIndex()
@@ -65,25 +60,23 @@ public class DynamoDBPublicatonServiceTest {
 
     @Test
     public void testDefaultConstructor() {
-        environmentVariables.set(TABLE_NAME_ENV, NVA_RESOURCES_TABLE_NAME);
-        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, BY_PUBLISHER_INDEX_NAME);
-        publicationService = DynamoDBPublicationService.create(objectMapper, new Environment());
-        assertNotNull(publicationService);
+        assertThrows(IllegalStateException.class,
+            () -> DynamoDBPublicationService.create(objectMapper, new Environment()));
     }
 
     @Test
     public void missingTableEnv() {
-        environmentVariables.set(TABLE_NAME_ENV, NVA_RESOURCES_TABLE_NAME);
+        when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class, () -> {
-            DynamoDBPublicationService.create(objectMapper, new Environment());
+            DynamoDBPublicationService.create(objectMapper, environment);
         });
     }
 
     @Test
     public void missingIndexEnv() {
-        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, BY_PUBLISHER_INDEX_NAME);
+        when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         assertThrows(IllegalStateException.class, () -> {
-            DynamoDBPublicationService.create(objectMapper, new Environment());
+            DynamoDBPublicationService.create(objectMapper, environment);
         });
     }
 

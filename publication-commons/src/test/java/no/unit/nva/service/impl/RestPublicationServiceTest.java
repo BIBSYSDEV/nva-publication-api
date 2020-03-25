@@ -5,14 +5,8 @@ import no.unit.nva.Environment;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.jupiter.api.Assertions;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,11 +21,12 @@ import java.util.UUID;
 
 import static no.unit.nva.service.impl.RestPublicationService.NOT_IMPLEMENTED;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class RestPublicationServiceTest {
 
     public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
@@ -44,23 +39,20 @@ public class RestPublicationServiceTest {
 
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
-
-    @Mock
     private HttpClient client;
-
-    @Mock
     private HttpResponse<String> response;
+
+    @BeforeEach
+    public void setUp() {
+        client = mock(HttpClient.class);
+        response = mock(HttpResponse.class);
+    }
 
     @Test
     public void testDefaultConstructor() {
-        environmentVariables.set("API_SCHEME", API_SCHEME);
-        environmentVariables.set("API_HOST", API_HOST);
-        PublicationService publicationService = RestPublicationService.create(HttpClient.newHttpClient(),
-                new Environment());
-        Assert.assertNotNull(publicationService);
+        assertThrows(IllegalStateException.class, () -> RestPublicationService.create(
+                HttpClient.newHttpClient(),
+                new Environment()));
     }
 
     @Test
@@ -73,7 +65,7 @@ public class RestPublicationServiceTest {
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(NoSuchElementException.class, () -> publicationService.updatePublication(
+        assertThrows(NoSuchElementException.class, () -> publicationService.updatePublication(
                 publication,
                 SOME_API_KEY));
     }
@@ -88,7 +80,7 @@ public class RestPublicationServiceTest {
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
         Publication publication = getPublication();
-        Assertions.assertThrows(IOException.class, () -> publicationService.updatePublication(
+        assertThrows(IOException.class, () -> publicationService.updatePublication(
                 publication,
                 SOME_API_KEY));
     }
@@ -99,7 +91,7 @@ public class RestPublicationServiceTest {
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(IOException.class, () -> publicationService.getPublication(
+        assertThrows(IOException.class, () -> publicationService.getPublication(
                 UUID.randomUUID(),
                 SOME_API_KEY
         ));
@@ -112,7 +104,7 @@ public class RestPublicationServiceTest {
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Assertions.assertThrows(IOException.class, () -> publicationService.updatePublication(
+        assertThrows(IOException.class, () -> publicationService.updatePublication(
                 publication,
                 SOME_API_KEY
         ));
@@ -137,10 +129,10 @@ public class RestPublicationServiceTest {
     @Test
     public void notImplementedMethodsThrowsRunTimeException() {
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
-        Assertions.assertThrows(RuntimeException.class, () ->  {
+        assertThrows(RuntimeException.class, () ->  {
             publicationService.getPublicationsByOwner(null, null, null);
         }, NOT_IMPLEMENTED);
-        Assertions.assertThrows(RuntimeException.class, () ->  {
+        assertThrows(RuntimeException.class, () ->  {
             publicationService.getPublicationsByPublisher(null, null);
         }, NOT_IMPLEMENTED);
     }

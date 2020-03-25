@@ -5,13 +5,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.PublicationDate;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
 import org.junit.jupiter.api.Assertions;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.zalando.problem.Status;
 
 import java.io.ByteArrayOutputStream;
@@ -22,12 +19,14 @@ import java.util.Map;
 import java.util.Optional;
 
 import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static no.unit.nva.PublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.PublicationHandler.APPLICATION_JSON;
 import static no.unit.nva.PublicationHandler.CONTENT_TYPE;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class PublicationHandlerTest {
 
     public static final String MISSING_FILE_JSON = "missing_file.json";
@@ -35,17 +34,18 @@ public class PublicationHandlerTest {
 
     private OutputStream outputStream;
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
-
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
+    private Environment environment;
 
     private PublicationHandler publicationHandler;
 
-    @Before
+    /**
+     * Prepare test instances.
+     */
+    @BeforeEach
     public void setUp() {
-        environmentVariables.set(PublicationHandler.ALLOWED_ORIGIN_ENV, WILDCARD);
-        publicationHandler = new TestPublicationHandler(objectMapper, new Environment());
+        environment = Mockito.mock(Environment.class);
+        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of(WILDCARD));
+        publicationHandler = new TestPublicationHandler(objectMapper, environment);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -59,8 +59,8 @@ public class PublicationHandlerTest {
     @Test
     public void testHeaders() {
         Map<String, String> headers = publicationHandler.headers();
-        Assertions.assertEquals(headers.get(ACCESS_CONTROL_ALLOW_ORIGIN), WILDCARD);
-        Assertions.assertEquals(headers.get(CONTENT_TYPE), APPLICATION_JSON);
+        assertEquals(headers.get(ACCESS_CONTROL_ALLOW_ORIGIN), WILDCARD);
+        assertEquals(headers.get(CONTENT_TYPE), APPLICATION_JSON);
     }
 
     @Test

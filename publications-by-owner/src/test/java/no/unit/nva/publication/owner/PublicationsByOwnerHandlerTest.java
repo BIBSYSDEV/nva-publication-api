@@ -11,13 +11,8 @@ import no.unit.nva.service.PublicationService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,33 +32,26 @@ import static java.util.Collections.singletonMap;
 import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.PublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static no.unit.nva.service.impl.DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV;
-import static no.unit.nva.service.impl.DynamoDBPublicationService.TABLE_NAME_ENV;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
 public class PublicationsByOwnerHandlerTest {
 
     public static final String OWNER = "junit";
     public static final String VALID_ORG_NUMBER = "NO919477822";
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
-    @Mock
     private Environment environment;
-
-    @Mock
     private PublicationService publicationService;
-
-    @Mock
     private Context context;
 
     private OutputStream output;
@@ -72,9 +60,13 @@ public class PublicationsByOwnerHandlerTest {
     /**
      * Set up environment.
      */
-    @Before
+    @BeforeEach
     public void setUp() {
+        environment = mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
+
+        publicationService = mock(PublicationService.class);
+        context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
@@ -82,17 +74,9 @@ public class PublicationsByOwnerHandlerTest {
 
     }
 
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
-
     @Test
     public void testDefaultConstructor() {
-        environmentVariables.set(ALLOWED_ORIGIN_ENV, "*");
-        environmentVariables.set(TABLE_NAME_ENV, "nva_resources");
-        environmentVariables.set(BY_PUBLISHER_INDEX_NAME_ENV, "ByPublisher");
-        PublicationsByOwnerHandler publicationsByOwnerHandler = new PublicationsByOwnerHandler();
-        assertNotNull(publicationsByOwnerHandler);
+        assertThrows(IllegalStateException.class, () -> new PublicationsByOwnerHandler());
     }
 
     @Test

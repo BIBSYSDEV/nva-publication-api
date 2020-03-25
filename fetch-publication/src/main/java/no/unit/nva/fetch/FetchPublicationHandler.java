@@ -39,8 +39,14 @@ public class FetchPublicationHandler extends PublicationHandler {
 
     private final transient PublicationService publicationService;
 
+    /**
+     * Default constructor for MainHandler.
+     */
     public FetchPublicationHandler() {
-        this(createObjectMapper(), RestPublicationService.create(HttpClient.newHttpClient(), new Environment()),
+        this(createObjectMapper(),
+                RestPublicationService.create(
+                        HttpClient.newHttpClient(),
+                        new Environment()),
                 new Environment());
     }
 
