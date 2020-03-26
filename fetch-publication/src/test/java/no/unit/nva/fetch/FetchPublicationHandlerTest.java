@@ -70,7 +70,7 @@ public class FetchPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(() -> objectMapper, () -> publicationService, () -> environment);
+                new FetchPublicationHandler(objectMapper, publicationService, environment);
     }
 
     @Test

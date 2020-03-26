@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
+import no.unit.nva.JacocoGenerated;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
@@ -17,7 +18,6 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.Logger.logError;
@@ -41,12 +41,16 @@ public class ModifyPublicationHandler extends PublicationHandler {
 
     private final transient PublicationService publicationService;
 
+    /**
+     * Default constructor for MainHandler.
+     */
+    @JacocoGenerated
     public ModifyPublicationHandler() {
-        this(PublicationHandler::createObjectMapper,
-                () -> new RestPublicationService(
-                        HttpClient::newHttpClient,
-                        Environment::new),
-                Environment::new);
+        this(PublicationHandler.createObjectMapper(),
+                new RestPublicationService(
+                        HttpClient.newHttpClient(),
+                        new Environment()),
+                new Environment());
     }
 
     /**
@@ -56,10 +60,10 @@ public class ModifyPublicationHandler extends PublicationHandler {
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public ModifyPublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<PublicationService> publicationService,
-                                    Supplier<Environment> environment) {
+    public ModifyPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
+                                    Environment environment) {
         super(objectMapper, environment);
-        this.publicationService = publicationService.get();
+        this.publicationService = publicationService;
     }
 
     @Override

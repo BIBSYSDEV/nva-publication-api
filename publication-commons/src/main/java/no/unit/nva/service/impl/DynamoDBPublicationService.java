@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static no.unit.nva.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
 
@@ -51,19 +50,19 @@ public class DynamoDBPublicationService implements PublicationService {
      * Constructor for DynamoDBPublicationService.
      *
      */
-    public DynamoDBPublicationService(Supplier<ObjectMapper> objectMapper, Supplier<Environment> environment) {
+    public DynamoDBPublicationService(ObjectMapper objectMapper, Environment environment) {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
         DynamoDB dynamoDB = new DynamoDB(client);
 
-        String tableName = environment.get().get(TABLE_NAME_ENV).orElseThrow(
+        String tableName = environment.get(TABLE_NAME_ENV).orElseThrow(
             () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
         Table table = dynamoDB.getTable(tableName);
 
-        String byPublisherIndexName = environment.get().get(BY_PUBLISHER_INDEX_NAME_ENV).orElseThrow(
+        String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV).orElseThrow(
             () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
 
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
-        this.objectMapper = objectMapper.get();
+        this.objectMapper = objectMapper;
     }
 
     @Override

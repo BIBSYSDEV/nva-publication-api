@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.logError;
 
@@ -45,11 +44,11 @@ public abstract class PublicationHandler implements RequestStreamHandler {
      *  @param objectMapper  objectMapper
      * @param environment   environment
      */
-    public PublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<Environment> environment) {
-        this.objectMapper = objectMapper.get();
-        this.environment = environment.get();
+    public PublicationHandler(ObjectMapper objectMapper, Environment environment) {
+        this.objectMapper = objectMapper;
+        this.environment = environment;
 
-        this.allowedOrigin = environment.get().get(ALLOWED_ORIGIN_ENV)
+        this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + ALLOWED_ORIGIN_ENV));
     }
 
@@ -90,6 +89,7 @@ public abstract class PublicationHandler implements RequestStreamHandler {
         module.addDeserializer(String.class, new StdDeserializer<String>(String.class) {
 
             @Override
+            @JacocoGenerated
             public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
                 String result = StringDeserializer.instance.deserialize(p, ctxt);
                 if (result == null || result.isEmpty()) {

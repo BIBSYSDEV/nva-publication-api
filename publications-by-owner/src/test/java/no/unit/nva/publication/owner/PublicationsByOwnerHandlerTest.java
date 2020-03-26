@@ -70,7 +70,7 @@ public class PublicationsByOwnerHandlerTest {
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-                new PublicationsByOwnerHandler(() -> objectMapper, () -> publicationService, () -> environment);
+                new PublicationsByOwnerHandler(objectMapper, publicationService, environment);
 
     }
 

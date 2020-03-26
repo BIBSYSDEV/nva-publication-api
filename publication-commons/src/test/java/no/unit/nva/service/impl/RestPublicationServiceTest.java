@@ -46,6 +46,9 @@ public class RestPublicationServiceTest {
     private HttpResponse<String> response;
     private Environment environment;
 
+    /**
+     * Set up environment.
+     */
     @BeforeEach
     public void setUp() {
         client = mock(HttpClient.class);
@@ -55,26 +58,26 @@ public class RestPublicationServiceTest {
 
     @Test
     public void callingConstructorWhenMissingEnvThrowsException() {
-        assertThrows(IllegalStateException.class, () -> new RestPublicationService(
-                () -> client,
-                () -> environment));
+        assertThrows(IllegalStateException.class,
+            () -> new RestPublicationService(client, environment)
+        );
     }
 
     @Test
-    public void callingConstructorWithOnEnvMissingThrowsException() {
+    public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
-        assertThrows(IllegalStateException.class, () -> new RestPublicationService(
-                () -> client,
-                () -> environment));
+        assertThrows(IllegalStateException.class,
+            () -> new RestPublicationService(client, environment)
+        );
     }
 
     @Test
-    public void callingConstructorWithEnv() {
+    public void callingConstructorWithAllEnv() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
         when(environment.get(API_HOST_ENV)).thenReturn(Optional.of(API_HOST));
-        new RestPublicationService(() -> client, () -> environment);
+        new RestPublicationService(client, environment);
     }
 
     @Test

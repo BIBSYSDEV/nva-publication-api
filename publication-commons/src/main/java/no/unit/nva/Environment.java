@@ -12,6 +12,7 @@ public class Environment {
      * @param name  name of environment variable
      * @return  optional with value of environment variable
      */
+    @JacocoGenerated
     public Optional<String> get(String name) {
         String environmentVariable = System.getenv(name);
 

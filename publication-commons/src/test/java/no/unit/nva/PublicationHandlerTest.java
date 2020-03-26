@@ -17,7 +17,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.PublicationHandler.ALLOWED_ORIGIN_ENV;
@@ -47,8 +46,15 @@ public class PublicationHandlerTest {
     public void setUp() {
         environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of(WILDCARD));
-        publicationHandler = new TestPublicationHandler(() -> objectMapper, () -> environment);
+        publicationHandler = new TestPublicationHandler(objectMapper, environment);
         outputStream = new ByteArrayOutputStream();
+    }
+
+    @Test
+    public void callingConstructorWhenMissingEnvThrowsException() {
+        Assertions.assertThrows(IllegalStateException.class,
+            () -> new TestPublicationHandler(objectMapper, new Environment())
+        );
     }
 
     @Test
@@ -96,7 +102,7 @@ public class PublicationHandlerTest {
 
     public static class TestPublicationHandler extends PublicationHandler {
 
-        public TestPublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<Environment> environment) {
+        public TestPublicationHandler(ObjectMapper objectMapper, Environment environment) {
             super(objectMapper, environment);
         }
 

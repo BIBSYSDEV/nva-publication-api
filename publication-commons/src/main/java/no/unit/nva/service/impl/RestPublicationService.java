@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
@@ -61,12 +60,12 @@ public class RestPublicationService implements PublicationService {
      * @param client    client
      * @param environment   environment
      */
-    public RestPublicationService(Supplier<HttpClient> client, Supplier<Environment> environment) {
-        this.apiHost = environment.get().get(API_HOST_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
-        this.apiScheme = environment.get().get(API_SCHEME_ENV)
+    public RestPublicationService(HttpClient client, Environment environment) {
+        this.apiScheme = environment.get(API_SCHEME_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_SCHEME_ENV));
-        this.client = client.get();
+        this.apiHost = environment.get(API_HOST_ENV)
+                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
+        this.client = client;
     }
 
     @Override

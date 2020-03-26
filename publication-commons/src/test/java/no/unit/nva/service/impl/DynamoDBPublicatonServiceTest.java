@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.net.URI;
@@ -59,25 +60,43 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
-    public void testDefaultConstructor() {
+    public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(() -> objectMapper, Environment::new));
+            () -> new DynamoDBPublicationService(objectMapper, environment)
+        );
+    }
+
+    @Test
+    public void callingConstructorWithApiHostEnvMissingThrowsException() {
+        Environment environment = Mockito.mock(Environment.class);
+        when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
+        assertThrows(IllegalStateException.class,
+            () -> new DynamoDBPublicationService(objectMapper, environment)
+        );
+    }
+
+    @Test
+    public void callingConstructorWithAllEnv() {
+        Environment environment = Mockito.mock(Environment.class);
+        when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
+        when(environment.get(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
+                .thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
+        new DynamoDBPublicationService(objectMapper, environment);
     }
 
     @Test
     public void missingTableEnv() {
         when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
-        assertThrows(IllegalStateException.class, () -> {
-            new DynamoDBPublicationService(() -> objectMapper, () -> environment);
-        });
+        assertThrows(IllegalStateException.class,
+            () -> new DynamoDBPublicationService(objectMapper, new Environment()));
     }
 
     @Test
     public void missingIndexEnv() {
         when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
-        assertThrows(IllegalStateException.class, () -> {
-            new DynamoDBPublicationService(() -> objectMapper, () -> environment);
-        });
+        assertThrows(IllegalStateException.class,
+            () -> new DynamoDBPublicationService(objectMapper, new Environment())
+        );
     }
 
     @Test
