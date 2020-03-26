@@ -61,14 +61,14 @@ public class DynamoDBPublicatonServiceTest {
     @Test
     public void testDefaultConstructor() {
         assertThrows(IllegalStateException.class,
-            () -> DynamoDBPublicationService.create(objectMapper, new Environment()));
+            () -> new DynamoDBPublicationService(() -> objectMapper, Environment::new));
     }
 
     @Test
     public void missingTableEnv() {
         when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class, () -> {
-            DynamoDBPublicationService.create(objectMapper, environment);
+            new DynamoDBPublicationService(() -> objectMapper, () -> environment);
         });
     }
 
@@ -76,7 +76,7 @@ public class DynamoDBPublicatonServiceTest {
     public void missingIndexEnv() {
         when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         assertThrows(IllegalStateException.class, () -> {
-            DynamoDBPublicationService.create(objectMapper, environment);
+            new DynamoDBPublicationService(() -> objectMapper, () -> environment);
         });
     }
 

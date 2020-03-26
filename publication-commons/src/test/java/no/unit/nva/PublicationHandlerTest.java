@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static no.unit.nva.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.PublicationHandler.ALLOWED_ORIGIN_ENV;
@@ -30,6 +31,7 @@ import static org.mockito.Mockito.when;
 public class PublicationHandlerTest {
 
     public static final String MISSING_FILE_JSON = "missing_file.json";
+    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
     public static final String WILDCARD = "*";
 
     private OutputStream outputStream;
@@ -45,8 +47,15 @@ public class PublicationHandlerTest {
     public void setUp() {
         environment = Mockito.mock(Environment.class);
         when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of(WILDCARD));
-        publicationHandler = new TestPublicationHandler(objectMapper, environment);
+        publicationHandler = new TestPublicationHandler(() -> objectMapper, () -> environment);
         outputStream = new ByteArrayOutputStream();
+    }
+
+    @Test
+    public void testExistingPublicationContext() {
+        Optional<JsonNode> publicationContext = publicationHandler
+                .getPublicationContext(PUBLICATION_CONTEXT_JSON);
+        assertTrue(publicationContext.isPresent());
     }
 
     @Test
@@ -77,7 +86,7 @@ public class PublicationHandlerTest {
 
     @Test
     public void mappingEmptyStringAsNull() throws JsonProcessingException {
-        String json =  "{ \"type\" : \"PublicationDate\", \"year\" : \"2019\", \"month\" : \"\", \"day\" : \"\"}";
+        String json =  "{ \"type\" : \"PublicationDate\", \"year\" : \"2019\", \"month\" : \"\", \"day\" : null }";
         ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
         PublicationDate publicationDate = objectMapper.readValue(json, PublicationDate.class);
 
@@ -87,7 +96,7 @@ public class PublicationHandlerTest {
 
     public static class TestPublicationHandler extends PublicationHandler {
 
-        public TestPublicationHandler(ObjectMapper objectMapper, Environment environment) {
+        public TestPublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<Environment> environment) {
             super(objectMapper, environment);
         }
 

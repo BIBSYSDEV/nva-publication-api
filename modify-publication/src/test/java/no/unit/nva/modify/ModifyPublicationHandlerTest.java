@@ -74,7 +74,7 @@ public class ModifyPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, publicationService, environment);
+                new ModifyPublicationHandler(() -> objectMapper, () -> publicationService, () -> environment);
 
     }
 

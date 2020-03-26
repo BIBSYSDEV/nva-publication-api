@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.Logger.logError;
@@ -43,11 +44,11 @@ public class FetchPublicationHandler extends PublicationHandler {
      * Default constructor for MainHandler.
      */
     public FetchPublicationHandler() {
-        this(createObjectMapper(),
-                RestPublicationService.create(
-                        HttpClient.newHttpClient(),
-                        new Environment()),
-                new Environment());
+        this(PublicationHandler::createObjectMapper,
+            () -> new RestPublicationService(
+                    HttpClient::newHttpClient,
+                    Environment::new),
+                Environment::new);
     }
 
     /**
@@ -57,10 +58,10 @@ public class FetchPublicationHandler extends PublicationHandler {
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public FetchPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
-                                   Environment environment) {
+    public FetchPublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<PublicationService> publicationService,
+                                   Supplier<Environment> environment) {
         super(objectMapper, environment);
-        this.publicationService = publicationService;
+        this.publicationService = publicationService.get();
     }
 
     @Override

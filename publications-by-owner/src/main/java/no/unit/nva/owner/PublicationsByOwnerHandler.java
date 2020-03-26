@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.Logger.logError;
@@ -26,8 +27,6 @@ import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
 import static org.zalando.problem.Status.OK;
 
 public class PublicationsByOwnerHandler extends PublicationHandler {
-
-    public static final String BODY = "/body";
 
     public static final String REQUEST_CONTEXT_AUTHORIZER_CLAIMS = "/requestContext/authorizer/claims/";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
@@ -42,9 +41,11 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
      * Default constructor for MainHandler.
      */
     public PublicationsByOwnerHandler() {
-        this(createObjectMapper(), DynamoDBPublicationService.create(PublicationHandler.createObjectMapper(),
-                new Environment()),
-                new Environment());
+        this(PublicationHandler::createObjectMapper,
+                () -> new DynamoDBPublicationService(
+                        PublicationHandler::createObjectMapper,
+                        Environment::new),
+                Environment::new);
     }
 
     /**
@@ -53,10 +54,11 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
      * @param objectMapper objectMapper
      * @param environment  environment
      */
-    public PublicationsByOwnerHandler(ObjectMapper objectMapper, PublicationService publicationService,
-                                      Environment environment) {
+    public PublicationsByOwnerHandler(Supplier<ObjectMapper> objectMapper,
+                                      Supplier<PublicationService> publicationService,
+                                      Supplier<Environment> environment) {
         super(objectMapper, environment);
-        this.publicationService = publicationService;
+        this.publicationService = publicationService.get();
     }
 
     @Override

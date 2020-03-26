@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.net.http.HttpClient;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.log;
 import static no.unit.nva.Logger.logError;
@@ -41,8 +42,11 @@ public class ModifyPublicationHandler extends PublicationHandler {
     private final transient PublicationService publicationService;
 
     public ModifyPublicationHandler() {
-        this(createObjectMapper(), RestPublicationService.create(HttpClient.newHttpClient(), new Environment()),
-                new Environment());
+        this(PublicationHandler::createObjectMapper,
+                () -> new RestPublicationService(
+                        HttpClient::newHttpClient,
+                        Environment::new),
+                Environment::new);
     }
 
     /**
@@ -52,10 +56,10 @@ public class ModifyPublicationHandler extends PublicationHandler {
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public ModifyPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
-                                    Environment environment) {
+    public ModifyPublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<PublicationService> publicationService,
+                                    Supplier<Environment> environment) {
         super(objectMapper, environment);
-        this.publicationService = publicationService;
+        this.publicationService = publicationService.get();
     }
 
     @Override

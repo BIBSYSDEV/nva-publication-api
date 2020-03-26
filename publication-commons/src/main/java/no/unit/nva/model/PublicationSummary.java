@@ -1,9 +1,14 @@
 package no.unit.nva.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public class PublicationSummary {
+
+    public static final String MAIN_TITLE = "mainTitle";
 
     private UUID identifier;
     private String mainTitle;
@@ -38,6 +43,11 @@ public class PublicationSummary {
 
     public void setMainTitle(String mainTitle) {
         this.mainTitle = mainTitle;
+    }
+
+    @JsonProperty(value = "entityDescription", access = JsonProperty.Access.WRITE_ONLY)
+    private void unpackNested(Map<String,Object> entityDescription) {
+        this.mainTitle = (String)entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {

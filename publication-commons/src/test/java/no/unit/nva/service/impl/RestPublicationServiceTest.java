@@ -7,6 +7,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,10 +16,11 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
+import static no.unit.nva.service.impl.RestPublicationService.API_HOST_ENV;
+import static no.unit.nva.service.impl.RestPublicationService.API_SCHEME_ENV;
 import static no.unit.nva.service.impl.RestPublicationService.NOT_IMPLEMENTED;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -36,38 +38,65 @@ public class RestPublicationServiceTest {
     public static final String SOME_API_KEY = "some api key";
     public static final String API_HOST = "example.org";
     public static final String API_SCHEME = "http";
+    public static final String NO_ITEMS = "{ \"Items\": [] }";
 
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
 
     private HttpClient client;
     private HttpResponse<String> response;
+    private Environment environment;
 
     @BeforeEach
     public void setUp() {
         client = mock(HttpClient.class);
         response = mock(HttpResponse.class);
+        environment = mock(Environment.class);
     }
 
     @Test
-    public void testDefaultConstructor() {
-        assertThrows(IllegalStateException.class, () -> RestPublicationService.create(
-                HttpClient.newHttpClient(),
-                new Environment()));
+    public void callingConstructorWhenMissingEnvThrowsException() {
+        assertThrows(IllegalStateException.class, () -> new RestPublicationService(
+                () -> client,
+                () -> environment));
+    }
+
+    @Test
+    public void callingConstructorWithOnEnvMissingThrowsException() {
+        Environment environment = Mockito.mock(Environment.class);
+        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
+        assertThrows(IllegalStateException.class, () -> new RestPublicationService(
+                () -> client,
+                () -> environment));
+    }
+
+    @Test
+    public void callingConstructorWithEnv() {
+        Environment environment = Mockito.mock(Environment.class);
+        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
+        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of(API_HOST));
+        new RestPublicationService(() -> client, () -> environment);
     }
 
     @Test
     public void updatePublicationReturnsJsonObject() throws IOException, InterruptedException {
 
+        HttpResponse<String> putResponse = mock(HttpResponse.class);
+        when((putResponse.body())).thenReturn(getResponse(PUBLICATION_JSON));
+        when((putResponse.statusCode())).thenReturn(200);
+        HttpResponse<String> getResponse = mock(HttpResponse.class);
+        when((getResponse.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
+        when((getResponse.statusCode())).thenReturn(200);
         Publication publication = getPublication();
-        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
-        when((response.body())).thenReturn(objectMapper.writeValueAsString(publication));
-        when((response.statusCode())).thenReturn(200);
+
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(putResponse)
+                .thenReturn(getResponse);
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        assertThrows(NoSuchElementException.class, () -> publicationService.updatePublication(
+        publicationService.updatePublication(
                 publication,
-                SOME_API_KEY));
+                SOME_API_KEY);
     }
 
     @Test
@@ -124,6 +153,21 @@ public class RestPublicationServiceTest {
 
         assertTrue(publication.isPresent());
         assertNotNull(publication.get());
+    }
+
+    @Test
+    public void getPublicationNoItems() throws IOException, InterruptedException {
+        when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        when((response.body())).thenReturn(NO_ITEMS);
+
+        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+
+        Optional<Publication> publication = publicationService.getPublication(
+                UUID.randomUUID(),
+                SOME_API_KEY
+        );
+
+        assertTrue(publication.isEmpty());
     }
 
     @Test

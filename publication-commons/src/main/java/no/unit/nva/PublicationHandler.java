@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 import static no.unit.nva.Logger.logError;
 
@@ -41,15 +42,14 @@ public abstract class PublicationHandler implements RequestStreamHandler {
 
     /**
      * Constructor for abstract PublicationHandler.
-     *
-     * @param objectMapper  objectMapper
+     *  @param objectMapper  objectMapper
      * @param environment   environment
      */
-    public PublicationHandler(ObjectMapper objectMapper, Environment environment) {
-        this.objectMapper = objectMapper;
-        this.environment = environment;
+    public PublicationHandler(Supplier<ObjectMapper> objectMapper, Supplier<Environment> environment) {
+        this.objectMapper = objectMapper.get();
+        this.environment = environment.get();
 
-        this.allowedOrigin = environment.get(ALLOWED_ORIGIN_ENV)
+        this.allowedOrigin = environment.get().get(ALLOWED_ORIGIN_ENV)
                 .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + ALLOWED_ORIGIN_ENV));
     }
 
