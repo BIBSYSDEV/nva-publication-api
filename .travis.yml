@@ -9,9 +9,11 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 before_install:
-  - sudo apt-get install jq
-  - curl -LSs "$(curl -LSs https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets | map({name, browser_download_url} | select(.name | endswith(".jar"))) | .[0].browser_download_url')" -o codacy-coverage-reporter-assembly.jar
+  - sudo apt-get install -y jq
+  - LATEST_CODACY_VERSION="$(curl -Ls https://api.bintray.com/packages/codacy/Binaries/codacy-coverage-reporter/versions/_latest | jq -r .name)"
 script:
   - ./gradlew build jacocoTestReport
-after_success:
-  - java -jar codacy-coverage-reporter-assembly.jar report -l Java -r sbuild/reports/jacoco/test/jacocoTestReport.xml
+after_script:
+  - curl -Ls -o codacy-coverage-reporter "https://dl.bintray.com/codacy/Binaries/${LATEST_CODACY_VERSION}/codacy-coverage-reporter-linux"
+  - chmod +x codacy-coverage-reporter
+  - ./codacy-coverage-reporter report -l Java -r build/reports/jacoco/test/jacocoTestReport.xml
