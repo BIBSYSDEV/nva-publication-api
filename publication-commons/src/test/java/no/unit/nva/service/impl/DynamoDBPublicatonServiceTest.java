@@ -77,7 +77,8 @@ public class DynamoDBPublicatonServiceTest {
     public void missingTableEnv() {
         when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(client, objectMapper, environment));
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
+        );
     }
 
     @Test
