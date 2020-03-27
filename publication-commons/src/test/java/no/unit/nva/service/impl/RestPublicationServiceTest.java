@@ -108,8 +108,8 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    @DisplayName("update Publication Returns Not Found")
-    public void updatePublicationReturnsNotFound() throws IOException, InterruptedException {
+    @DisplayName("when updatePublication receives Forbidden it throws IOException")
+    public void updatePublicationThrowsIOExceptionOnNotFoun() throws IOException, InterruptedException {
 
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn("{\"message\": \"Forbidden\"}");
@@ -124,7 +124,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    @DisplayName("get Publication Client Error")
+    @DisplayName("when client get an error the error is propagated to the response")
     public void getPublicationClientError() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
@@ -137,7 +137,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    @DisplayName("update Publication Client Error")
+    @DisplayName("when client get an error the error is propagated to the response")
     public void updatePublicationClientError() throws IOException, InterruptedException {
         Publication publication = getPublication();
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
@@ -151,7 +151,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    @DisplayName("get Publication Returns Json Object")
+    @DisplayName("when client receives a non empty json object it sends it to the response body")
     public void getPublicationReturnsJsonObject() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
@@ -168,7 +168,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
-    @DisplayName("get Publication No Items")
+    @DisplayName("when publication has no items it returns an empty response")
     public void getPublicationNoItems() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(NO_ITEMS);

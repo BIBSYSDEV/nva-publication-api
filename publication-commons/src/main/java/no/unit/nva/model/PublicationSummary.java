@@ -1,9 +1,11 @@
 package no.unit.nva.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.JacocoGenerated;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class PublicationSummary {
@@ -81,6 +83,36 @@ public class PublicationSummary {
 
     public void setStatus(PublicationStatus status) {
         this.status = status;
+    }
+
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PublicationSummary that = (PublicationSummary) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+                && Objects.equals(getMainTitle(), that.getMainTitle())
+                && Objects.equals(getOwner(), that.getOwner())
+                && Objects.equals(getModifiedDate(), that.getModifiedDate())
+                && Objects.equals(getCreatedDate(), that.getCreatedDate())
+                && getStatus() == that.getStatus();
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(
+                getIdentifier(),
+                getMainTitle(),
+                getOwner(),
+                getModifiedDate(),
+                getCreatedDate(),
+                getStatus());
     }
 
     public static final class Builder {

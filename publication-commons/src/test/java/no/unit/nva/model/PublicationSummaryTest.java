@@ -22,7 +22,7 @@ public class PublicationSummaryTest {
         PublicationSummary processedPublicationSummary = objectMapper.readValue(
                 objectMapper.writeValueAsString(publicationSummary), PublicationSummary.class);
 
-        assertEquals(publicationSummary.getMainTitle(), processedPublicationSummary.getMainTitle());
+        assertEquals(publicationSummary, processedPublicationSummary);
     }
 
     private PublicationSummary publicationSummary() {
