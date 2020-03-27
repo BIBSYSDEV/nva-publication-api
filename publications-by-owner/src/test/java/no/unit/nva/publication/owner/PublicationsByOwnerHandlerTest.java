@@ -78,7 +78,7 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
     public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new PublicationsByOwnerHandler());
+        assertThrows(Exception.class, () -> new PublicationsByOwnerHandler());
     }
 
     @Test
