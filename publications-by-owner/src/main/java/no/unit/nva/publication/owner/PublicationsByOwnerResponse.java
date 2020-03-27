@@ -1,4 +1,4 @@
-package no.unit.nva.owner;
+package no.unit.nva.publication.owner;
 
 import no.unit.nva.model.PublicationSummary;
 

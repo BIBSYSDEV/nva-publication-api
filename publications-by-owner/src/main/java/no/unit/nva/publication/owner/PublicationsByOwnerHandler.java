@@ -1,4 +1,4 @@
-package no.unit.nva.owner;
+package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;

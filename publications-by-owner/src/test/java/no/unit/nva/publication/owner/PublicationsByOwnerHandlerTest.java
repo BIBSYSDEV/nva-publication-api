@@ -6,7 +6,6 @@ import no.unit.nva.Environment;
 import no.unit.nva.GatewayResponse;
 import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.PublicationSummary;
-import no.unit.nva.owner.PublicationsByOwnerHandler;
 import no.unit.nva.service.PublicationService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
