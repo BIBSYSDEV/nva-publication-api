@@ -69,12 +69,19 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
-    @DisplayName("calling Constructor With ApiHost Env Missing Throws Exception")
-    public void callingConstructorWithApiHostEnvMissingThrowsException() {
+    @DisplayName("calling Constructor With TableName Env Missing Throws Exception")
+    public void callingConstructorWithTableNameEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, environment)
+            () -> {
+                try {
+                    new DynamoDBPublicationService(objectMapper, environment);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e;
+                }
+            }
         );
     }
 
