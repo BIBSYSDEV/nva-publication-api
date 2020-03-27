@@ -1,6 +1,8 @@
 package no.unit.nva.service.impl;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
 import no.unit.nva.PublicationHandler;
@@ -47,12 +49,14 @@ public class DynamoDBPublicatonServiceTest {
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
     private DynamoDBPublicationService publicationService;
     private Environment environment;
+    private AmazonDynamoDB client;
 
     /**
      * Set up environment.
      */
     @BeforeEach
     public void setUp() {
+        client = DynamoDBEmbedded.create().amazonDynamoDB();
         environment = mock(Environment.class);
         publicationService = new DynamoDBPublicationService(
                 objectMapper,
@@ -64,24 +68,24 @@ public class DynamoDBPublicatonServiceTest {
     @DisplayName("calling Constructor When Missing Env Throws Exception")
     public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, environment)
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
     }
 
     @Test
-    @DisplayName("calling Constructor With TableName Env Missing Throws Exception")
-    public void callingConstructorWithTableNameEnvMissingThrowsException() {
-        Environment environment = Mockito.mock(Environment.class);
-        when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
+    @DisplayName("missing Table Env")
+    public void missingTableEnv() {
+        when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class,
-            () -> {
-                try {
-                    new DynamoDBPublicationService(objectMapper, environment);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    throw e;
-                }
-            }
+            () -> new DynamoDBPublicationService(client, objectMapper, environment));
+    }
+
+    @Test
+    @DisplayName("missing Index Env")
+    public void missingIndexEnv() {
+        when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
+        assertThrows(IllegalStateException.class,
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
     }
 
@@ -92,24 +96,7 @@ public class DynamoDBPublicatonServiceTest {
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
         when(environment.get(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
                 .thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
-        new DynamoDBPublicationService(objectMapper, environment);
-    }
-
-    @Test
-    @DisplayName("missing Table Env")
-    public void missingTableEnv() {
-        when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
-        assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, new Environment()));
-    }
-
-    @Test
-    @DisplayName("missing Index Env")
-    public void missingIndexEnv() {
-        when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
-        assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, new Environment())
-        );
+        new DynamoDBPublicationService(client, objectMapper, environment);
     }
 
     @Test

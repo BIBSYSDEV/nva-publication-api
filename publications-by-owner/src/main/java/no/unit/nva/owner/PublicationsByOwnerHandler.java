@@ -1,5 +1,6 @@
 package no.unit.nva.owner;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,6 +45,7 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     public PublicationsByOwnerHandler() {
         this(PublicationHandler.createObjectMapper(),
                 new DynamoDBPublicationService(
+                        AmazonDynamoDBClientBuilder.defaultClient(),
                         PublicationHandler.createObjectMapper(),
                         new Environment()),
                 new Environment());

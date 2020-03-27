@@ -1,7 +1,6 @@
 package no.unit.nva.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -50,16 +49,15 @@ public class DynamoDBPublicationService implements PublicationService {
      * Constructor for DynamoDBPublicationService.
      *
      */
-    public DynamoDBPublicationService(ObjectMapper objectMapper, Environment environment) {
-        AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
-        DynamoDB dynamoDB = new DynamoDB(client);
-
+    public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
         String tableName = environment.get(TABLE_NAME_ENV).orElseThrow(
             () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
-        Table table = dynamoDB.getTable(tableName);
 
         String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV).orElseThrow(
             () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
+
+        DynamoDB dynamoDB = new DynamoDB(client);
+        Table table = dynamoDB.getTable(tableName);
 
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
         this.objectMapper = objectMapper;
