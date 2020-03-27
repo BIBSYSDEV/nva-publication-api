@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.PublicationDate;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Status;
@@ -51,35 +52,40 @@ public class PublicationHandlerTest {
     }
 
     @Test
-    public void callingConstructorWhenMissingEnvThrowsException() {
+    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
+    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
         Assertions.assertThrows(IllegalStateException.class,
             () -> new TestPublicationHandler(objectMapper, new Environment())
         );
     }
 
     @Test
-    public void testExistingPublicationContext() {
+    @DisplayName("reading Existing Publication File Returns Data")
+    public void readingExistingPublicationFileReturnsData() {
         Optional<JsonNode> publicationContext = publicationHandler
                 .getPublicationContext(PUBLICATION_CONTEXT_JSON);
         assertTrue(publicationContext.isPresent());
     }
 
     @Test
-    public void testMissingPublicationContext() {
+    @DisplayName("reading Missing File Returns Empty Data")
+    public void readingMissingFileReturnsEmptyData() {
         Optional<JsonNode> publicationContext = publicationHandler
                 .getPublicationContext(MISSING_FILE_JSON);
         assertTrue(publicationContext.isEmpty());
     }
 
     @Test
-    public void testHeaders() {
+    @DisplayName("headers Has Expected Values")
+    public void headersHasExpectedValues() {
         Map<String, String> headers = publicationHandler.headers();
         assertEquals(headers.get(ACCESS_CONTROL_ALLOW_ORIGIN), WILDCARD);
         assertEquals(headers.get(CONTENT_TYPE), APPLICATION_JSON);
     }
 
     @Test
-    public void testWriteErrorResponse() throws IOException {
+    @DisplayName("writeError Writes GatewayResponse")
+    public void writeErrorWritesGatewayResponse() throws IOException {
         String message = "Test!";
         Exception exception = new Exception(message);
         publicationHandler.writeErrorResponse(outputStream, Status.INTERNAL_SERVER_ERROR, exception);
@@ -91,6 +97,7 @@ public class PublicationHandlerTest {
     }
 
     @Test
+    @DisplayName("mapping Empty String As Null")
     public void mappingEmptyStringAsNull() throws JsonProcessingException {
         String json =  "{ \"type\" : \"PublicationDate\", \"year\" : \"2019\", \"month\" : \"\", \"day\" : null }";
         ObjectMapper objectMapper = PublicationHandler.createObjectMapper();

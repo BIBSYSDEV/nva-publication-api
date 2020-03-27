@@ -6,6 +6,7 @@ import no.unit.nva.PublicationHandler;
 import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
@@ -57,6 +58,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructor When Missing Env Throws Exception")
     public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalStateException.class,
             () -> new RestPublicationService(client, environment)
@@ -64,6 +66,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructor With Api Host Env Missing Throws Exception")
     public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
@@ -73,6 +76,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructor With All Env")
     public void callingConstructorWithAllEnv() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
@@ -81,6 +85,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("update Publication Returns Json Object")
     public void updatePublicationReturnsJsonObject() throws IOException, InterruptedException {
 
         HttpResponse<String> putResponse = mock(HttpResponse.class);
@@ -103,6 +108,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("update Publication Returns Not Found")
     public void updatePublicationReturnsNotFound() throws IOException, InterruptedException {
 
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
@@ -118,6 +124,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("get Publication Client Error")
     public void getPublicationClientError() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
@@ -130,6 +137,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("update Publication Client Error")
     public void updatePublicationClientError() throws IOException, InterruptedException {
         Publication publication = getPublication();
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
@@ -143,6 +151,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("get Publication Returns Json Object")
     public void getPublicationReturnsJsonObject() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
@@ -159,6 +168,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("get Publication No Items")
     public void getPublicationNoItems() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(NO_ITEMS);
@@ -174,6 +184,7 @@ public class RestPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("notImplemented Methods Throws Run Time Exception")
     public void notImplementedMethodsThrowsRunTimeException() {
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
         assertThrows(RuntimeException.class, () ->  {

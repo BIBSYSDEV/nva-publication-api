@@ -12,6 +12,7 @@ import no.unit.nva.model.PublicationSummary;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
@@ -60,6 +61,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructor When Missing Env Throws Exception")
     public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalStateException.class,
             () -> new DynamoDBPublicationService(objectMapper, environment)
@@ -67,6 +69,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructo rWith ApiHost Env Missing Throws Exception")
     public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
@@ -76,6 +79,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("calling Constructor With All Env")
     public void callingConstructorWithAllEnv() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
@@ -85,6 +89,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("missing Table Env")
     public void missingTableEnv() {
         when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class,
@@ -92,6 +97,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("missing Index Env")
     public void missingIndexEnv() {
         when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         assertThrows(IllegalStateException.class,
@@ -100,6 +106,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws IOException, InterruptedException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
@@ -110,8 +117,9 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("nonEmpty Table Returns Publications")
     public void nonEmptyTableReturnsPublications() throws IOException, InterruptedException {
-        Publication publication = getPublication();
+        Publication publication = publication();
         insertPublication(publication);
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
@@ -126,6 +134,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("invalid Item Json")
     public void invalidItemJson() {
         Item item = mock(Item.class);
         when(item.toJSON()).thenReturn(INVALID_JSON);
@@ -134,6 +143,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
+    @DisplayName("notImplemented Methods Throws RunTimeException")
     public void notImplementedMethodsThrowsRunTimeException() {
         assertThrows(RuntimeException.class, () ->  {
             publicationService.getPublication(null, null);
@@ -146,7 +156,7 @@ public class DynamoDBPublicatonServiceTest {
         }, NOT_IMPLEMENTED);
     }
 
-    private Publication getPublication() {
+    private Publication publication() {
         Instant now = Instant.now();
         return new Publication.Builder()
                 .withIdentifier(UUID.randomUUID())

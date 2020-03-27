@@ -2,6 +2,7 @@ package no.unit.nva;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -16,7 +17,8 @@ public class GatewayResponseTest {
     public static final int STATUS_CODE = 200;
 
     @Test
-    public void test() throws JsonProcessingException {
+    @DisplayName("objectMapper Can Write And Read GatewayResponse")
+    public void objectMapperCanWriteAndReadGatewayResponse() throws JsonProcessingException {
         GatewayResponse<String> gatewayResponse =
                 new GatewayResponse<String>(TEST_MESSAGE, Map.of(HEADER, VALUE), STATUS_CODE);
 
