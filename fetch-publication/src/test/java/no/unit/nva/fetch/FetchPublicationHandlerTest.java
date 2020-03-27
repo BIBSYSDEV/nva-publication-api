@@ -8,6 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -74,13 +75,15 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public void testDefaultConstructor() {
+    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
+    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
         assertThrows(IllegalStateException.class, () -> new FetchPublicationHandler());
     }
 
     @Test
-    public void testOkResponse() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(getExampleFile(), Publication.class);
+    @DisplayName("handler Returns Ok Response On Valid Input")
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
+        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenReturn(Optional.of(publication));
 
@@ -93,7 +96,8 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public void testNotFoundResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns NotFound Response On Publication Missing")
+    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, InterruptedException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenReturn(Optional.empty());
 
@@ -106,7 +110,8 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public void testEmptyRequestBadRequestResponse() throws IOException {
+    @DisplayName("handler Returns BadRequest Response On Empty Input")
+    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         fetchPublicationHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -114,7 +119,8 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public void testMissingIdentifierBadRequestResponse() throws IOException {
+    @DisplayName("handler Returns BadRequest Response On Missing Path Param")
+    public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         Map<String, Object> event = Map.of(HEADERS, Map.of(AUTHORIZATION, SOME_API_KEY));
         InputStream inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
 
@@ -125,7 +131,9 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public  void testInternalServerErrorResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
+    public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+            throws IOException, InterruptedException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenThrow(new NullPointerException());
 
@@ -136,7 +144,9 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    public void testBadGatewayErrorResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns BadGateway Response On Communication Problems")
+    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
+            throws IOException, InterruptedException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenThrow(new IOException());
 
@@ -157,7 +167,7 @@ public class FetchPublicationHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private byte[] getExampleFile() throws IOException {
+    private byte[] publicationFile() throws IOException {
         return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
     }
 }

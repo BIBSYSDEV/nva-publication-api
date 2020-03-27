@@ -12,6 +12,7 @@ import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
@@ -75,14 +76,16 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    public void testDefaultConstructor() {
+    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
+    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
         assertThrows(IllegalStateException.class, () -> new PublicationsByOwnerHandler());
     }
 
     @Test
-    public void testOkResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns Ok Response On Valid Input")
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
         when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
-                .thenReturn(createPublicationSummaries());
+                .thenReturn(publicationSummaries());
 
         publicationsByOwnerHandler.handleRequest(
                 inputStream(), output, context);
@@ -94,7 +97,8 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    public void testBadRequestResponse() throws IOException {
+    @DisplayName("handler Returns BadRequest Response On Empty Input")
+    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         publicationsByOwnerHandler.handleRequest(
                 new ByteArrayInputStream(new byte[]{}), output, context);
 
@@ -103,7 +107,9 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    public void testBadGateWayResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns BadGateway Response On Communication Problems")
+    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
+            throws IOException, InterruptedException {
         when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
                 .thenThrow(IOException.class);
 
@@ -115,7 +121,9 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    public void testInternalServerErrorResponse() throws IOException, InterruptedException {
+    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
+    public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+            throws IOException, InterruptedException {
         when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
                 .thenThrow(NullPointerException.class);
 
@@ -137,7 +145,7 @@ public class PublicationsByOwnerHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private List<PublicationSummary> createPublicationSummaries() {
+    private List<PublicationSummary> publicationSummaries() {
         List<PublicationSummary> publicationSummaries = new ArrayList<>();
         publicationSummaries.add(new PublicationSummary.Builder()
                 .withIdentifier(UUID.randomUUID())

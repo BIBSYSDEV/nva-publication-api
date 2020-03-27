@@ -8,6 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.service.PublicationService;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 
@@ -79,13 +80,15 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testDefaultConstructor() {
+    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
+    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
         assertThrows(IllegalStateException.class, () -> new ModifyPublicationHandler());
     }
 
     @Test
-    public void testOkResponse() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(getExampleFile(), Publication.class);
+    @DisplayName("handler Returns Ok Response On Valid Input")
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
+        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.updatePublication(any(Publication.class), anyString()))
                 .thenReturn(publication);
 
@@ -99,7 +102,8 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testIdentifiersInPathParametersAndBodyAreNotTheSame() throws IOException {
+    @DisplayName("handler Returns BadRequest On Identifier Not The Same In Body And PathParam")
+    public void handlerReturnsBadRequestOnIdentifierNotTheSameInBodyAndPathParam() throws IOException {
         modifyPublicationHandler.handleRequest(inputStream(UUID.randomUUID().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -107,7 +111,8 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testBadRequestMissingPathParameters() throws IOException {
+    @DisplayName("handler Returns BadRequest Response On Missing Path Param")
+    public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         modifyPublicationHandler.handleRequest(inputStreamMissingPathParameters(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -115,7 +120,8 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testMissingAuthorizationHeaderBadRequestResponse() throws IOException {
+    @DisplayName("handler Returns BadRequest Response On Missing Headers")
+    public void handlerReturnsBadRequestResponseOnMissingHeaders() throws IOException {
         Map<String, Object> event = Map.of(HEADERS, Collections.emptyMap());
         InputStream inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
 
@@ -126,8 +132,10 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testBadGateWayResponse() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(getExampleFile(), Publication.class);
+    @DisplayName("handler Returns BadGateway Response On Communication Problems")
+    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
+            throws IOException, InterruptedException {
+        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.updatePublication(any(Publication.class), anyString()))
                 .thenThrow(IOException.class);
 
@@ -139,8 +147,10 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    public void testInternalServerErrorResponse() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(getExampleFile(), Publication.class);
+    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
+    public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+            throws IOException, InterruptedException {
+        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.updatePublication(any(Publication.class), anyString()))
                 .thenThrow(NullPointerException.class);
 
@@ -153,7 +163,7 @@ public class ModifyPublicationHandlerTest {
 
     private InputStream inputStream(String identifier) throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(getExampleFile());
+        String body = new String(publicationFile());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
         headers.put(AUTHORIZATION, SOME_API_KEY);
@@ -165,7 +175,7 @@ public class ModifyPublicationHandlerTest {
 
     private InputStream inputStreamMissingPathParameters() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(getExampleFile());
+        String body = new String(publicationFile());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
         headers.put(AUTHORIZATION, SOME_API_KEY);
@@ -174,7 +184,7 @@ public class ModifyPublicationHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private byte[] getExampleFile() throws IOException {
+    private byte[] publicationFile() throws IOException {
         return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
     }
 
