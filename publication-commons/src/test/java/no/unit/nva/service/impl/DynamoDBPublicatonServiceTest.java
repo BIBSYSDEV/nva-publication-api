@@ -69,7 +69,7 @@ public class DynamoDBPublicatonServiceTest {
     }
 
     @Test
-    @DisplayName("calling Constructo rWith ApiHost Env Missing Throws Exception")
+    @DisplayName("calling Constructor With ApiHost Env Missing Throws Exception")
     public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
