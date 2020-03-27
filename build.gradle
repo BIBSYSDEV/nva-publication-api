@@ -50,7 +50,9 @@ subprojects {
 
     test {
         useJUnitPlatform()
-        failFast = true
+        testLogging{
+            events  'standard_error'
+        }
         finalizedBy jacocoTestReport
     }
 

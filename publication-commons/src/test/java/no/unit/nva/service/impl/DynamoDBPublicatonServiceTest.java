@@ -4,11 +4,7 @@ import com.amazonaws.services.dynamodbv2.document.Item;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.Environment;
 import no.unit.nva.PublicationHandler;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.PublicationSummary;
+import no.unit.nva.model.*;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,7 +38,7 @@ public class DynamoDBPublicatonServiceTest {
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
 
     @Rule
-    public PublicationsDynamoDBLocal publicationsDynamoDBLocal =  new PublicationsDynamoDBLocal();
+    public PublicationsDynamoDBLocal publicationsDynamoDBLocal = new PublicationsDynamoDBLocal();
 
     private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
     private DynamoDBPublicationService publicationService;
@@ -64,7 +60,7 @@ public class DynamoDBPublicatonServiceTest {
     @DisplayName("calling Constructor When Missing Env Throws Exception")
     public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, environment)
+                () -> new DynamoDBPublicationService(objectMapper, environment)
         );
     }
 
@@ -73,9 +69,15 @@ public class DynamoDBPublicatonServiceTest {
     public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
-        assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, environment)
-        );
+        try {
+            new DynamoDBPublicationService(objectMapper, environment);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+
+
     }
 
     @Test
@@ -93,7 +95,7 @@ public class DynamoDBPublicatonServiceTest {
     public void missingTableEnv() {
         when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, new Environment()));
+                () -> new DynamoDBPublicationService(objectMapper, new Environment()));
     }
 
     @Test
@@ -101,7 +103,7 @@ public class DynamoDBPublicatonServiceTest {
     public void missingIndexEnv() {
         when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         assertThrows(IllegalStateException.class,
-            () -> new DynamoDBPublicationService(objectMapper, new Environment())
+                () -> new DynamoDBPublicationService(objectMapper, new Environment())
         );
     }
 
@@ -145,13 +147,13 @@ public class DynamoDBPublicatonServiceTest {
     @Test
     @DisplayName("notImplemented Methods Throws RunTimeException")
     public void notImplementedMethodsThrowsRunTimeException() {
-        assertThrows(RuntimeException.class, () ->  {
+        assertThrows(RuntimeException.class, () -> {
             publicationService.getPublication(null, null);
         }, NOT_IMPLEMENTED);
-        assertThrows(RuntimeException.class, () ->  {
+        assertThrows(RuntimeException.class, () -> {
             publicationService.updatePublication(null, null);
         }, NOT_IMPLEMENTED);
-        assertThrows(RuntimeException.class, () ->  {
+        assertThrows(RuntimeException.class, () -> {
             publicationService.getPublicationsByPublisher(null, null);
         }, NOT_IMPLEMENTED);
     }
