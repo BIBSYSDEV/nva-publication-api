@@ -1,35 +1,31 @@
 package no.unit.nva;
 
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.contrib.java.lang.system.EnvironmentVariables;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class EnvironmentTest {
 
     public static final String TEST_ENV = "TEST";
-    public static final String TEST_VAL = "test";
-    @Rule
-    public final EnvironmentVariables environmentVariables
-            = new EnvironmentVariables();
+    public static final String PATH_ENV = "PATH"; // known to always exist
 
     @Test
-    public void testEnv() {
-        environmentVariables.set(TEST_ENV, TEST_VAL);
+    @DisplayName("reading Existing Env Variable Returns Value")
+    public void readingExistingEnvVariableReturnsValue() {
         Environment environment = new Environment();
-        Optional<String> test = environment.get(TEST_ENV);
-        assertEquals(TEST_VAL, test.get());
+        Optional<String> path = environment.get(PATH_ENV);
+        assertTrue(path.isPresent());
     }
 
     @Test
-    public void testNoEnv() {
+    @DisplayName("reading Missing Env Variable Returns Empty Value")
+    public void readingMissingEnvVariableReturnsEmptyValue() {
         Environment environment = new Environment();
         Optional<String> test = environment.get(TEST_ENV);
-        assertFalse(test.isPresent());
+        assertTrue(test.isEmpty());
     }
 
 }

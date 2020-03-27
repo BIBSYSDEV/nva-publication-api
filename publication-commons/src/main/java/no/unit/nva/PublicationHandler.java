@@ -41,8 +41,7 @@ public abstract class PublicationHandler implements RequestStreamHandler {
 
     /**
      * Constructor for abstract PublicationHandler.
-     *
-     * @param objectMapper  objectMapper
+     *  @param objectMapper  objectMapper
      * @param environment   environment
      */
     public PublicationHandler(ObjectMapper objectMapper, Environment environment) {
@@ -90,6 +89,7 @@ public abstract class PublicationHandler implements RequestStreamHandler {
         module.addDeserializer(String.class, new StdDeserializer<String>(String.class) {
 
             @Override
+            @JacocoGenerated
             public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
                 String result = StringDeserializer.instance.deserialize(p, ctxt);
                 if (result == null || result.isEmpty()) {

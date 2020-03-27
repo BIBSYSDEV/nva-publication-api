@@ -1,0 +1,97 @@
+{
+  "Items": [
+    {
+      "type" : "Publication",
+      "createdDate" : "2020-03-04T12:50:13.829Z",
+      "status" : "Draft",
+      "handle" : "http://example.org/handle/123",
+      "modifiedDate" : "2020-03-04T12:50:13.829Z",
+      "owner" : "eier@example.org",
+      "identifier" : "d81dde78-62ec-400a-a330-c0a5ea1172f9",
+      "link" : "http://example.org/link",
+      "publisher" : {
+        "type" : "Organization",
+        "id" : "http://example.org/org/123",
+        "labels" : {
+          "no" : "Eksempelforlaget"
+        }
+      },
+      "entityDescription" : {
+        "type" : "EntityDescription",
+        "publicationType" : "JournalArticle",
+        "mainTitle" : "Hovedtittelen",
+        "alternativeTitles" : {
+          "en" : "English title"
+        },
+        "language" : "http://example.org/norsk",
+        "date" : {
+          "type" : "PublicationDate",
+          "year" : "2020",
+          "month" : "4",
+          "day" : "7"
+        },
+        "contributors" : [ {
+          "type" : "Contributor",
+          "identity" : {
+            "type" : "Identity",
+            "id" : "http://example.org/person/123",
+            "name" : "Navnesen, Navn",
+            "nameType" : "Personal",
+            "orcId" : "orc123",
+            "arpId" : "arp123"
+          },
+          "affiliation" : [ {
+            "type" : "Organization",
+            "labels" : {
+              "no" : "Affiliasjonen"
+            }
+          } ],
+          "role" : "Creator",
+          "sequence" : 0
+        } ]
+      },
+      "license" : {
+        "type" : "License",
+        "identifier" : "NTNU-CC-BY-4.0",
+        "labels" : {
+          "no" : "CC-BY 4.0"
+        },
+        "link" : "http://example.org/license/123"
+      },
+      "fileSet" : {
+        "type" : "FileSet",
+        "files" : [ {
+          "type" : "File",
+          "identifier" : "a5d1d2e1-601b-4581-8200-0c07dc8a60ef",
+          "name" : "new document(1)",
+          "mimeType" : "application/pdf",
+          "size" : 2,
+          "license" : {
+            "type" : "License",
+            "identifier" : "NTNU-CC-BY-4.0",
+            "labels" : {
+              "no" : "CC-BY 4.0"
+            },
+            "link" : "http://example.org/license/123"
+          }
+        } ]
+      }
+    }
+  ],
+  "Count": 1,
+  "ScannedCount": 1,
+  "ResponseMetadata": {
+    "RequestId": "ENH33I8EUG56QC7S4MHFUND8QJVV4KQNSO5AEMVJF66Q9ASUAAJG",
+    "HTTPStatusCode": 200,
+    "HTTPHeaders": {
+      "server": "Server",
+      "date": "Thu, 06 Feb 2020 12:40:48 GMT",
+      "content-type": "application/x-amz-json-1.0",
+      "content-length": "584",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "ENH33I8EUG56QC7S4MHFUND8QJVV4KQNSO5AEMVJF66Q9ASUAAJG",
+      "x-amz-crc32": "3091494882"
+    },
+    "RetryAttempts": 0
+  }
+}
