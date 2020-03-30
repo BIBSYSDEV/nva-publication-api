@@ -1,6 +1,6 @@
 package no.unit.nva.publication.owner;
 
-import no.unit.nva.model.PublicationSummary;
+import no.unit.publication.model.PublicationSummary;
 
 import java.util.List;
 
