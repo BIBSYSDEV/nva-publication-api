@@ -2,13 +2,9 @@
   "Items": [
     {
       "type" : "Publication",
-      "createdDate" : "2020-03-04T12:50:13.829Z",
+      "identifier" : "ad89f813-0093-43aa-b5cc-1261e139ffc1",
       "status" : "Draft",
-      "handle" : "http://example.org/handle/123",
-      "modifiedDate" : "2020-03-04T12:50:13.829Z",
       "owner" : "eier@example.org",
-      "identifier" : "d81dde78-62ec-400a-a330-c0a5ea1172f9",
-      "link" : "http://example.org/link",
       "publisher" : {
         "type" : "Organization",
         "id" : "http://example.org/org/123",
@@ -16,6 +12,10 @@
           "no" : "Eksempelforlaget"
         }
       },
+      "createdDate" : "2020-03-30T05:48:40.302Z",
+      "modifiedDate" : "2020-03-30T05:48:40.302Z",
+      "handle" : "http://example.org/handle/123",
+      "link" : "http://example.org/link",
       "entityDescription" : {
         "type" : "EntityDescription",
         "publicationType" : "JournalArticle",
@@ -40,15 +40,20 @@
             "orcId" : "orc123",
             "arpId" : "arp123"
           },
-          "affiliation" : [ {
+          "affiliations" : [ {
             "type" : "Organization",
+            "id" : "http://example.org/org/123",
             "labels" : {
-              "no" : "Affiliasjonen"
+              "no" : "Eksempelforlaget"
             }
           } ],
           "role" : "Creator",
           "sequence" : 0
-        } ]
+        } ],
+        "npiSubjectHeading" : "010",
+        "tags" : [ "dokumenter", "publikasjoner" ],
+        "description" : "En streng som beskriver innholdet i dokumentet på en annen måte enn abstrakt",
+        "abstract" : "En lang streng som beskriver innholdet i dokumentet metadataene omtaler."
       },
       "license" : {
         "type" : "License",
@@ -62,7 +67,7 @@
         "type" : "FileSet",
         "files" : [ {
           "type" : "File",
-          "identifier" : "a5d1d2e1-601b-4581-8200-0c07dc8a60ef",
+          "identifier" : "da35b154-e4d9-48ce-ac61-aafe2f306d0f",
           "name" : "new document(1)",
           "mimeType" : "application/pdf",
           "size" : 2,
@@ -75,7 +80,9 @@
             "link" : "http://example.org/license/123"
           }
         } ]
-      }
+      },
+      "publisherId" : "http://example.org/org/123",
+      "publisherOwnerDate" : "http://example.org/org/123#eier@example.org#2020-03-30T05:48:40.302Z"
     }
   ],
   "Count": 1,
