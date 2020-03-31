@@ -4,12 +4,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.publication.Environment;
-import no.unit.publication.PublicationHandler;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.publication.Environment;
+import no.unit.publication.PublicationHandler;
 import no.unit.publication.model.PublicationSummary;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static no.unit.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
+import static no.unit.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static no.unit.publication.service.impl.RestPublicationService.NOT_IMPLEMENTED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,7 +75,7 @@ public class DynamoDBPublicatonServiceTest {
     @Test
     @DisplayName("missing Table Env")
     public void missingTableEnv() {
-        when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME));
+        when(environment.get(TABLE_NAME_ENV)).thenReturn(Optional.of(NVA_RESOURCES_TABLE_NAME));
         assertThrows(IllegalStateException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -82,7 +84,7 @@ public class DynamoDBPublicatonServiceTest {
     @Test
     @DisplayName("missing Index Env")
     public void missingIndexEnv() {
-        when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME));
+        when(environment.get(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         assertThrows(IllegalStateException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -94,7 +96,7 @@ public class DynamoDBPublicatonServiceTest {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.get(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(Optional.of(TABLE_NAME_ENV));
         when(environment.get(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
-                .thenReturn(Optional.of(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME));
+                .thenReturn(Optional.of(BY_PUBLISHER_INDEX_NAME));
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 

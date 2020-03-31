@@ -1,11 +1,10 @@
 package no.unit.publication.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Publication;
 import no.unit.publication.Environment;
 import no.unit.publication.PublicationHandler;
-import no.unit.nva.model.Publication;
 import no.unit.publication.service.PublicationService;
-import no.unit.publication.service.impl.RestPublicationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

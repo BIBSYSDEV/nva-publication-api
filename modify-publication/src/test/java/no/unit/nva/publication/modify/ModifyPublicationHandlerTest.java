@@ -2,9 +2,9 @@ package no.unit.nva.publication.modify;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Publication;
 import no.unit.publication.Environment;
 import no.unit.publication.GatewayResponse;
-import no.unit.nva.model.Publication;
 import no.unit.publication.service.PublicationService;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,6 +1,5 @@
 package no.unit.publication;
 
-import no.unit.publication.Environment;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

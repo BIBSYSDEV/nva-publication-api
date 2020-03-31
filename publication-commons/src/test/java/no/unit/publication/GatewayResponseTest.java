@@ -2,8 +2,6 @@ package no.unit.publication;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.PublicationHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

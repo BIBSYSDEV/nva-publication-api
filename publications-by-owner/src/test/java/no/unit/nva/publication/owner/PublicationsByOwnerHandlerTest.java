@@ -29,9 +29,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static java.util.Collections.singletonMap;
+import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.publication.PublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.publication.PublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;

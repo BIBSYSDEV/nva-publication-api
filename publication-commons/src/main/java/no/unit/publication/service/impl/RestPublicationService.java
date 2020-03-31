@@ -3,12 +3,12 @@ package no.unit.publication.service.impl;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
-import no.unit.publication.Environment;
-import no.unit.publication.PublicationHandler;
 import no.unit.nva.model.Publication;
+import no.unit.publication.Environment;
+import no.unit.publication.Logger;
+import no.unit.publication.PublicationHandler;
 import no.unit.publication.model.PublicationSummary;
 import no.unit.publication.service.PublicationService;
-import no.unit.publication.Logger;
 
 import java.io.IOException;
 import java.net.URI;
@@ -19,6 +19,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static no.unit.publication.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
 
 public class RestPublicationService implements PublicationService {
 
@@ -60,9 +62,9 @@ public class RestPublicationService implements PublicationService {
      */
     public RestPublicationService(HttpClient client, Environment environment) {
         this.apiScheme = environment.get(API_SCHEME_ENV)
-                .orElseThrow(() -> new IllegalStateException(PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET + API_SCHEME_ENV));
+                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_SCHEME_ENV));
         this.apiHost = environment.get(API_HOST_ENV)
-                .orElseThrow(() -> new IllegalStateException(PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
+                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
         this.client = client;
     }
 

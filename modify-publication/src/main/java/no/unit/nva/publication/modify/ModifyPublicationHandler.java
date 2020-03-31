@@ -3,12 +3,12 @@ package no.unit.nva.publication.modify;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.util.ContextUtil;
 import no.unit.publication.Environment;
 import no.unit.publication.GatewayResponse;
 import no.unit.publication.JacocoGenerated;
 import no.unit.publication.PublicationHandler;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.util.ContextUtil;
 import no.unit.publication.service.PublicationService;
 import no.unit.publication.service.impl.RestPublicationService;
 
