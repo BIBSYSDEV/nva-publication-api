@@ -10,9 +10,9 @@ Metadata:
     Name: NvaPublicationApi
     Description: NVA publication API
     Author: Unit
-    SemanticVersion: 1.0.0
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
+    Labels: ['${CODEBUILD_RESOLVED_SOURCE_VERSION}', '${GIT_REPO}']
 
 Globals:
   Function:
@@ -33,6 +33,12 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+  PublicationsTableName:
+    Type: String
+    Description: Reference to table containing publications
+  PublicationsByOwnerIndexName:
+    Type: String
+    Description: Reference to index containing publications by owner
 
 Resources:
   NvaPublicationApi:
@@ -104,6 +110,26 @@ Resources:
                   description: OK
                   schema:
                     type: object
+          /by-owner:
+            get:
+              summary: Get Publications by Owner
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '200':
+                  description: OK
+                  schema:
+                    type: object
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
@@ -118,7 +144,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: fetch-publication
-      Handler: no.unit.nva.publication.FetchPublicationHandler::handleRequest
+      Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Environment:
@@ -137,7 +163,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: modify-publication
-      Handler: no.unit.nva.publication.ModifyPublicationHandler::handleRequest
+      Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Environment:
@@ -151,6 +177,28 @@ Resources:
           Properties:
             Path: /{identifier}
             Method: put
+            RestApiId: !Ref NvaPublicationApi
+  NvaPublicationsByOwnerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publications-by-owner
+      Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /by-owner
+            Method: get
             RestApiId: !Ref NvaPublicationApi
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
