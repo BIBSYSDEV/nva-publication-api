@@ -1,5 +1,7 @@
 package no.unit.publication.service.impl;
 
+import static no.unit.publication.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
@@ -10,21 +12,22 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Publication;
-import no.unit.publication.Environment;
-import no.unit.publication.Logger;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
-
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import static no.unit.publication.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.model.Publication;
+import no.unit.publication.Environment;
+import no.unit.publication.Logger;
+import no.unit.publication.model.PublicationSummary;
+import no.unit.publication.service.PublicationService;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -38,7 +41,6 @@ public class DynamoDBPublicationService implements PublicationService {
 
     /**
      * Constructor for DynamoDBPublicationService.
-     *
      */
     public DynamoDBPublicationService(ObjectMapper objectMapper, Index byPublisherIndex) {
         this.objectMapper = objectMapper;
@@ -47,7 +49,6 @@ public class DynamoDBPublicationService implements PublicationService {
 
     /**
      * Constructor for DynamoDBPublicationService.
-     *
      */
     public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
         String tableName = environment.get(TABLE_NAME_ENV).orElseThrow(
@@ -80,31 +81,61 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization) {
-        Objects.requireNonNull(owner);
-        Objects.requireNonNull(publisherId);
-        Objects.isNull(authorization);
+        allFieldsAreNonNull(owner, publisherId, authorization);
 
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
 
         Map<String, String> nameMap = Map.of(
-                "#publisherId", "publisherId",
-                "#publisherOwnerDate", "publisherOwnerDate");
+            "#publisherId", "publisherId",
+            "#publisherOwnerDate", "publisherOwnerDate");
         Map<String, Object> valueMap = Map.of(
-                ":publisherId", publisherId.toString(),
-                ":publisherOwner", publisherOwner);
+            ":publisherId", publisherId.toString(),
+            ":publisherOwner", publisherOwner);
 
         QuerySpec querySpec = new QuerySpec()
-                .withKeyConditionExpression(
-                        "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwner)")
-                .withNameMap(nameMap)
-                .withValueMap(valueMap);
+            .withKeyConditionExpression(
+                "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwner)")
+            .withNameMap(nameMap)
+            .withValueMap(valueMap);
 
         ItemCollection<QueryOutcome> items = byPublisherIndex.query(querySpec);
 
+        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
+        return filterOutOlderVersionsOfPublications(publications);
+    }
+
+    private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
         List<PublicationSummary> publications = new ArrayList<>();
         items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
-
         return publications;
+    }
+
+    protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
+        List<PublicationSummary> publications) {
+        return publications.stream()
+                           .collect(groupByIdentifer())
+                           .entrySet()
+                           .parallelStream()
+                           .flatMap(DynamoDBPublicationService::pickNewestVersion)
+                           .collect(Collectors.toList());
+    }
+
+    private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
+        return Collectors.groupingBy(PublicationSummary::getIdentifier);
+    }
+
+    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
+        List<PublicationSummary> publications = group.getValue();
+        Optional<PublicationSummary> mostRecent = publications.stream()
+                                                              .max(Comparator.comparing(
+                                                                  PublicationSummary::getModifiedDate));
+        return mostRecent.stream();
+    }
+
+    private void allFieldsAreNonNull(String owner, URI publisherId, String authorization) {
+        Objects.requireNonNull(owner);
+        Objects.requireNonNull(publisherId);
+        Objects.isNull(authorization);
     }
 
     protected Optional<PublicationSummary> toPublicationSummary(Item item) {
