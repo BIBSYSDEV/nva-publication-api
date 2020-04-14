@@ -14,18 +14,18 @@ import org.junit.jupiter.api.Test;
 
 class DynamoDBPublicationServiceTest {
 
-    private final static UUID ID1 = UUID.randomUUID();
-    private final static UUID ID2 = UUID.randomUUID();
+    private static final UUID ID1 = UUID.randomUUID();
+    private static final  UUID ID2 = UUID.randomUUID();
 
-    private final static Instant INSTANT1 = Instant.now();
-    private final static Instant INSTANT2 = INSTANT1.plusSeconds(100);
-    private final static Instant INSTANT3 = INSTANT2.plusSeconds(100);
-    private final static Instant INSTANT4 = INSTANT3.plusSeconds(100);
+    private static final Instant INSTANT1 = Instant.now();
+    private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
+    private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
+    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
 
     @Test
     @DisplayName("filterOutOlderVersionsOfPublications returns only the latest version of each publication")
     public void filterOutOlderVersionsOfPublicationsReturnsOnlyTheLatestVersionOfEachPublication() {
-        List<PublicationSummary> publications = publicationSummariesWithDuplicateUUIDs();
+        List<PublicationSummary> publications = publicationSummariesWithDuplicateUuuIds();
         ArrayList<PublicationSummary> expected = new ArrayList<>();
         expected.add(createPublication(ID1, INSTANT2));
         expected.add(createPublication(ID2, INSTANT4));
@@ -38,7 +38,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     @DisplayName("filterOutOlderVersionsOfPublications returns only the single version of a publication")
     public void filterOutOlderVersionsOfPublicationsReturnsTheSingleVersionOfAPublication() {
-        List<PublicationSummary> publications = publicationSummariesWithoutDuplicateUUIDs();
+        List<PublicationSummary> publications = publicationSummariesWithoutDuplicateUuIds();
         ArrayList<PublicationSummary> expected = new ArrayList<>();
         expected.add(createPublication(ID1, INSTANT1));
         expected.add(createPublication(ID2, INSTANT3));
@@ -48,7 +48,7 @@ class DynamoDBPublicationServiceTest {
         assertThat(expected, containsInAnyOrder(actual.toArray()));
     }
 
-    private List<PublicationSummary> publicationSummariesWithDuplicateUUIDs() {
+    private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
         List<PublicationSummary> publicationSummaries = new ArrayList<>();
 
         publicationSummaries.add(createPublication(ID1, INSTANT1));
@@ -59,7 +59,7 @@ class DynamoDBPublicationServiceTest {
         return publicationSummaries;
     }
 
-    private List<PublicationSummary> publicationSummariesWithoutDuplicateUUIDs() {
+    private List<PublicationSummary> publicationSummariesWithoutDuplicateUuIds() {
         List<PublicationSummary> publicationSummaries = new ArrayList<>();
         publicationSummaries.add(createPublication(ID1, INSTANT1));
         publicationSummaries.add(createPublication(ID2, INSTANT3));
