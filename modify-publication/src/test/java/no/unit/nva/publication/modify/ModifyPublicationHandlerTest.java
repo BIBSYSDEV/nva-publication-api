@@ -86,8 +86,8 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
+    @DisplayName("handler Returns Accepted Response On Valid Input")
+    public void handlerReturnsAcceptedResponseOnValidInput() throws IOException, InterruptedException {
         Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.updatePublication(any(Publication.class), anyString()))
                 .thenReturn(publication);
