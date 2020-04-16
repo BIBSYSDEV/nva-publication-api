@@ -30,10 +30,10 @@ import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CON
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.publication.service.impl.RestPublicationService.AUTHORIZATION;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,7 +96,7 @@ public class ModifyPublicationHandlerTest {
                 inputStream(publication.getIdentifier().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
