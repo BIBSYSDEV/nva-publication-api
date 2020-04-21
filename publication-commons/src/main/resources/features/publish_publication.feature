@@ -28,6 +28,17 @@ Feature: Publish a Publication
       | Curator |
       | Editor |
 
+  Scenario: The Owner publishes a Publication with a malformed identifier
+    Given the Owner wants to publish a Publication
+    When they set the Accept header to "application/json"
+    And they set the Authentication header to a Bearer token with their credentials
+    And they request PUT /publication/{malformed identifier}/publish
+    Then they receive a response with status code 400
+    And they see that the response Content-Type header is "application/problem+json"
+    And they see that the response body is a problem.json object
+    And they see the response body has a field "title" with the value "Bad Request"
+    And they see the response body has a field "status" with the value "400"
+
   Scenario: The Owner checks status on a published Publication
     Given the Owner has published the Publication
     But the Publication is still not indexed
