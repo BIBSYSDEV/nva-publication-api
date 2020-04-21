@@ -23,10 +23,10 @@ Feature: Publish a Publication
     And they see the response body has a field "message" with the value "Publication is being published. This may take a while."
 
     Examples:
-      | User |
-      | Owner |
+      | User    |
+      | Owner   |
       | Curator |
-      | Editor |
+      | Editor  |
 
   Scenario: The Owner publishes a Publication with a malformed identifier
     Given the Owner wants to publish a Publication
@@ -38,8 +38,9 @@ Feature: Publish a Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Bad Request"
     And they see the response body has a field "status" with the value "400"
+    And they see the response body has a field "detail" with the value "The request identifier is invalid: {malformed identifier}"
 
-  Scenario: The Owner checks status on a published Publication
+  Scenario: The Owner publishes an already published Publication
     Given the Owner has published the Publication
     But the Publication is still not indexed
     When they set the Accept header to "application/json"
@@ -50,7 +51,7 @@ Feature: Publish a Publication
     And they see that the response Location header is the URI to the Publication
     And they see the response body has a field "message" with the value "Publication is being published. This may take a while."
 
-  Scenario: The Owner checks status on a published and indexed Publication
+  Scenario: The Owner publishes an already published and indexed Publication
     Given the Owner has published the Publication
     And the Publication is indexed
     When they set the Accept header to "application/json"
@@ -60,6 +61,17 @@ Feature: Publish a Publication
     And they see that the response Content-type is "application/json"
     And they see that the response Location header is the URI to the Publication
     And they see the response body has a field "message" with the value "Publication is published."
+
+  Scenario: The Owner checks that the Publication is published
+    Given the Owner has published the Publication
+    And the Publication is indexed
+    When they set the Accept header to "application/json"
+    And they request GET /publication/{identifier}
+    Then they receive a response with status code 200
+    And they see that the response Content-type is "application/json"
+    And they see that the response body is a Publication JSON object
+    And they see that the response body has a field "status" with the value "PUBLISHED"
+    And they see that the response body has a field "indexedDate" with a value "{datetime}"
 
   Scenario: The Owner publishes an invalid Publication
     Given the Owner wants to publish an invalid Publication
