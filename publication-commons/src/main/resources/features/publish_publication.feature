@@ -78,9 +78,9 @@ Feature: Publish a Publication
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request PUT /publication/{identifier}/publish
-    Then they receive a response with status code 500
+    Then they receive a response with status code 422
     And they see that the response Content-Type header is "application/problem+json"
     And they see that the response body is a problem.json object
-    And they see the response body has a field "title" with the value "Internal Server Error"
-    And they see the response body has a field "status" with the value "500"
+    And they see the response body has a field "title" with the value "Unprocessable Entity"
+    And they see the response body has a field "status" with the value "422"
     And they see the response body has a field "detail" with the value "Publication is missing data required for publishing."
