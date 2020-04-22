@@ -5,10 +5,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.JacocoGenerated;
-import no.unit.publication.PublicationHandler;
 import no.unit.publication.model.PublicationSummary;
 import no.unit.publication.service.PublicationService;
 import no.unit.publication.service.impl.DynamoDBPublicationService;
@@ -41,7 +37,6 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     /**
      * Default constructor for MainHandler.
      */
-    @JacocoGenerated
     public PublicationsByOwnerHandler() {
         this(PublicationHandler.createObjectMapper(),
                 new DynamoDBPublicationService(

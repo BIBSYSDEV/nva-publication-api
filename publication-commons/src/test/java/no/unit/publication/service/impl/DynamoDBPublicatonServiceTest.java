@@ -8,8 +8,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.publication.Environment;
-import no.unit.publication.PublicationHandler;
 import no.unit.publication.model.PublicationSummary;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;

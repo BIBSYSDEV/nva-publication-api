@@ -5,10 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.JacocoGenerated;
-import no.unit.publication.PublicationHandler;
 import no.unit.publication.service.PublicationService;
 import no.unit.publication.service.impl.RestPublicationService;
 
@@ -44,7 +40,6 @@ public class ModifyPublicationHandler extends PublicationHandler {
     /**
      * Default constructor for MainHandler.
      */
-    @JacocoGenerated
     public ModifyPublicationHandler() {
         this(PublicationHandler.createObjectMapper(),
                 new RestPublicationService(

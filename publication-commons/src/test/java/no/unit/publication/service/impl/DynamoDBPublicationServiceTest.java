@@ -1,16 +1,17 @@
 package no.unit.publication.service.impl;
 
-import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
+import no.unit.publication.model.PublicationSummary;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import no.unit.publication.model.PublicationSummary;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 
 class DynamoDBPublicationServiceTest {
 

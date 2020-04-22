@@ -1,26 +1,28 @@
 package no.unit.publication.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
 import no.unit.nva.model.Publication;
-import no.unit.publication.Environment;
-import no.unit.publication.Logger;
-import no.unit.publication.PublicationHandler;
+import no.unit.publication.exception.ErrorResponseException;
+import no.unit.publication.exception.InputException;
+import no.unit.publication.exception.NoResponseException;
+import no.unit.publication.exception.NotFoundException;
+import no.unit.publication.exception.NotImplementedException;
 import no.unit.publication.model.PublicationSummary;
 import no.unit.publication.service.PublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
-
-import static no.unit.publication.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
 
 public class RestPublicationService implements PublicationService {
 
@@ -32,10 +34,9 @@ public class RestPublicationService implements PublicationService {
     public static final String API_HOST_ENV = "API_HOST";
     public static final String API_SCHEME_ENV = "API_SCHEME";
     public static final String ITEMS_0 = "/Items/0";
-    private static final int OK = 200;
     public static final String ERROR_COMMUNICATING_WITH_REMOTE_SERVICE = "Error communicating with remote service: ";
     public static final String ERROR_RESPONSE_FROM_REMOTE_SERVICE = "Error response from remote service: ";
-    public static final String NOT_IMPLEMENTED = "Not implemented";
+    public static final String ERROR_MAPPING_PUBLICATION_TO_JSON = "Error mapping Publication to JSON";
     private final HttpClient client;
     private final String apiScheme;
     private final String apiHost;
@@ -61,16 +62,14 @@ public class RestPublicationService implements PublicationService {
      * @param environment   environment
      */
     public RestPublicationService(HttpClient client, Environment environment) {
-        this.apiScheme = environment.get(API_SCHEME_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_SCHEME_ENV));
-        this.apiHost = environment.get(API_HOST_ENV)
-                .orElseThrow(() -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + API_HOST_ENV));
+        this.apiScheme = environment.readEnv(API_SCHEME_ENV);
+        this.apiHost = environment.readEnv(API_HOST_ENV);
         this.client = client;
     }
 
     @Override
-    public Optional<Publication> getPublication(UUID identifier, String authorization)
-            throws IOException, InterruptedException {
+    public Publication getPublication(UUID identifier, String authorization)
+            throws ApiGatewayException {
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
@@ -90,64 +89,67 @@ public class RestPublicationService implements PublicationService {
             JsonNode jsonNode = objectMapper.readTree(httpResponse.body());
             JsonNode item0 = jsonNode.at(ITEMS_0);
             if (item0.isMissingNode()) {
-                return Optional.empty();
+                throw new NotFoundException("Publication not found for identifier: " + identifier);
             }
 
-            return Optional.of(objectMapper.readValue(objectMapper.writeValueAsString(item0), Publication.class));
-        } catch (IOException e) {
-            Logger.log(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString());
-            throw e;
+            return objectMapper.readValue(objectMapper.writeValueAsString(item0), Publication.class);
+        } catch (Exception e) {
+            throw new NoResponseException(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString(), e);
         }
     }
 
     @Override
     public Publication updatePublication(Publication publication, String authorization)
-            throws IOException, InterruptedException {
+            throws ApiGatewayException {
         UUID identifier = publication.getIdentifier();
-
         Logger.log("Sending request to modify resource " + identifier.toString());
-
         publication.setModifiedDate(Instant.now());
 
-        Logger.log("Request body " + objectMapper.writeValueAsString(publication));
+        String body;
+        try {
+            body = objectMapper.writeValueAsString(publication);
+        } catch (JsonProcessingException e) {
+            throw new InputException(ERROR_MAPPING_PUBLICATION_TO_JSON, e);
+        }
 
+        Logger.log("Request body " + body);
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
                 .withPath(PATH + identifier.toString())
                 .toUri();
-
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(uri)
                 .header(AUTHORIZATION, authorization)
                 .header(ACCEPT, APPLICATION_JSON)
                 .header(CONTENT_TYPE, APPLICATION_JSON)
-                .PUT(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(publication)))
+                .PUT(HttpRequest.BodyPublishers.ofString(body))
                 .build();
 
         try {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
             Logger.log("Received response for modify resource request on " + identifier.toString());
-            if (httpResponse.statusCode() == OK) {
+            if (httpResponse.statusCode() == HttpStatus.SC_OK) {
                 // resource API returns DynamoDB response and updated Publication
-                return getPublication(identifier, authorization).get();
+                return getPublication(identifier, authorization);
             } else {
                 Logger.log(ERROR_RESPONSE_FROM_REMOTE_SERVICE + uri.toString());
-                throw new IOException(httpResponse.body());
+                throw new ErrorResponseException(httpResponse.body());
             }
-        } catch (IOException e) {
-            Logger.log(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString());
-            throw e;
+        } catch (Exception e) {
+            throw new NoResponseException(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString(), e);
         }
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
+            throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
+            throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 }

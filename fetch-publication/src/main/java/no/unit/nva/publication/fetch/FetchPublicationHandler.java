@@ -5,105 +5,93 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.JacocoGenerated;
-import no.unit.publication.PublicationHandler;
+import no.unit.publication.JsonLdContextUtil;
+import no.unit.publication.ObjectMapperConfig;
+import no.unit.publication.exception.InputException;
 import no.unit.publication.service.PublicationService;
 import no.unit.publication.service.impl.RestPublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.ApiGatewayHandler;
+import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpHeaders;
+import org.apache.http.HttpStatus;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.http.HttpClient;
-import java.util.Optional;
 import java.util.UUID;
 
-import static no.unit.publication.Logger.log;
-import static no.unit.publication.Logger.logError;
-import static org.zalando.problem.Status.BAD_GATEWAY;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.NOT_FOUND;
-import static org.zalando.problem.Status.OK;
+public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
-public class FetchPublicationHandler extends PublicationHandler {
-
-    public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
-    public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
-
+    public static final String IDENTIFIER = "identifier";
     public static final String MISSING_AUTHORIZATION_IN_HEADERS = "Missing Authorization in Headers";
-    public static final String MISSING_IDENTIFIER_IN_PATH_PARAMETERS = "Missing identifier in path parameters";
-    public static final String PUBLICATION_NOT_FOUND = "Publication not found.";
-
+    public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
-    private final transient PublicationService publicationService;
+    private final PublicationService publicationService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Default constructor for MainHandler.
      */
-    @JacocoGenerated
     public FetchPublicationHandler() {
-        this(PublicationHandler.createObjectMapper(),
-            new RestPublicationService(
+        this(new RestPublicationService(
                     HttpClient.newHttpClient(),
                     new Environment()),
+                ObjectMapperConfig.objectMapper,
                 new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper objectMapper
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public FetchPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
+    public FetchPublicationHandler(PublicationService publicationService,
+                                   ObjectMapper objectMapper,
                                    Environment environment) {
-        super(objectMapper, environment);
+        super(Void.class, environment);
+        this.objectMapper = objectMapper;
         this.publicationService = publicationService;
     }
 
     @Override
-    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        String authorization;
-        UUID identifier;
+    protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        UUID identifier = getIdentifier(requestInfo);
+        logger.log("Request for identifier: " + identifier.toString());
+        Publication publication = publicationService.getPublication(identifier, getAuthorization(requestInfo));
+
+        JsonNode publicationJson = objectMapper.valueToTree(publication);
+        addContext(publicationJson);
+        return publicationJson;
+    }
+
+    private void addContext(JsonNode publicationJson) {
+        new JsonLdContextUtil(objectMapper, logger)
+                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(Void input, JsonNode output) {
+        return HttpStatus.SC_OK;
+    }
+
+    protected String getAuthorization(RequestInfo requestInfo) throws ApiGatewayException {
         try {
-            JsonNode event = objectMapper.readTree(input);
-            authorization = Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
-                    .orElseThrow(() -> new IllegalArgumentException(MISSING_AUTHORIZATION_IN_HEADERS));
-            identifier = UUID.fromString(Optional.ofNullable(event.at(PATH_PARAMETERS_IDENTIFIER).textValue())
-                    .orElseThrow(() -> new IllegalArgumentException(MISSING_IDENTIFIER_IN_PATH_PARAMETERS)));
+            return requestInfo.getHeaders().get(HttpHeaders.AUTHORIZATION);
         } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, BAD_REQUEST, e);
-            return;
+            throw new InputException(MISSING_AUTHORIZATION_IN_HEADERS, e);
         }
+    }
 
-        log("Request for identifier: " + identifier.toString());
-
+    protected UUID getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
+        String identifier = null;
         try {
-            Optional<Publication> publication = publicationService.getPublication(identifier, authorization);
-
-            if (publication.isPresent()) {
-                JsonNode publicationJson = objectMapper.valueToTree(publication.get());
-
-                getPublicationContext(PUBLICATION_CONTEXT_JSON).ifPresent(publicationContext -> {
-                    ContextUtil.injectContext(publicationJson, publicationContext);
-                });
-
-                objectMapper.writeValue(output, new GatewayResponse<>(
-                        objectMapper.writeValueAsString(publicationJson), headers(), OK.getStatusCode()));
-            } else {
-                writeErrorResponse(output, NOT_FOUND, PUBLICATION_NOT_FOUND);
-            }
-        } catch (IOException e) {
-            logError(e);
-            writeErrorResponse(output, BAD_GATEWAY, e);
+            identifier = requestInfo.getPathParameters().get(IDENTIFIER);
+            return UUID.fromString(identifier);
         } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
+            throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
         }
     }
 }

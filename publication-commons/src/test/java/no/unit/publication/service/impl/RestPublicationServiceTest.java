@@ -2,9 +2,11 @@ package no.unit.publication.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.publication.Environment;
-import no.unit.publication.PublicationHandler;
+import no.unit.publication.exception.NotFoundException;
 import no.unit.publication.service.PublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.utils.Environment;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,8 +43,6 @@ public class RestPublicationServiceTest {
     public static final String API_SCHEME = "http";
     public static final String NO_ITEMS = "{ \"Items\": [] }";
 
-    private ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
-
     private HttpClient client;
     private HttpResponse<String> response;
     private Environment environment;
@@ -69,7 +69,7 @@ public class RestPublicationServiceTest {
     @DisplayName("calling Constructor With Api Host Env Missing Throws Exception")
     public void callingConstructorWithApiHostEnvMissingThrowsException() {
         Environment environment = Mockito.mock(Environment.class);
-        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
+        when(environment.readEnv(API_SCHEME_ENV)).thenReturn(API_SCHEME);
         assertThrows(IllegalStateException.class,
             () -> new RestPublicationService(client, environment)
         );
@@ -79,14 +79,14 @@ public class RestPublicationServiceTest {
     @DisplayName("calling Constructor With All Env")
     public void callingConstructorWithAllEnv() {
         Environment environment = Mockito.mock(Environment.class);
-        when(environment.get(API_SCHEME_ENV)).thenReturn(Optional.of(API_SCHEME));
-        when(environment.get(API_HOST_ENV)).thenReturn(Optional.of(API_HOST));
+        when(environment.readEnv(API_SCHEME_ENV)).thenReturn(API_SCHEME);
+        when(environment.readEnv(API_HOST_ENV)).thenReturn(API_HOST);
         new RestPublicationService(client, environment);
     }
 
     @Test
     @DisplayName("update Publication Returns Json Object")
-    public void updatePublicationReturnsJsonObject() throws IOException, InterruptedException {
+    public void updatePublicationReturnsJsonObject() throws IOException, InterruptedException, ApiGatewayException {
 
         HttpResponse<String> putResponse = mock(HttpResponse.class);
         when((putResponse.body())).thenReturn(getResponse(PUBLICATION_JSON));
@@ -152,33 +152,33 @@ public class RestPublicationServiceTest {
 
     @Test
     @DisplayName("when client receives a non empty json object it sends it to the response body")
-    public void getPublicationReturnsJsonObject() throws IOException, InterruptedException {
+    public void getPublicationReturnsJsonObject() throws IOException, InterruptedException, ApiGatewayException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Optional<Publication> publication = publicationService.getPublication(
+        Publication publication = publicationService.getPublication(
                 UUID.randomUUID(),
                 SOME_API_KEY
         );
 
-        assertTrue(publication.isPresent());
-        assertNotNull(publication.get());
+        assertNotNull(publication);
     }
 
     @Test
     @DisplayName("when publication has no items it returns an empty response")
-    public void getPublicationNoItems() throws IOException, InterruptedException {
+    public void getPublicationNoItems() throws IOException, InterruptedException, ApiGatewayException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(NO_ITEMS);
 
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
-        Optional<Publication> publication = publicationService.getPublication(
+        Assertions.assertThrows(NotFoundException.class, () -> publicationService.getPublication(
                 UUID.randomUUID(),
                 SOME_API_KEY
-        );
+        ));
+
 
         assertTrue(publication.isEmpty());
     }

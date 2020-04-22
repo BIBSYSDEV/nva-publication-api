@@ -2,7 +2,6 @@ package no.unit.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.publication.JacocoGenerated;
 
 import java.time.Instant;
 import java.util.Map;
@@ -87,7 +86,6 @@ public class PublicationSummary {
     }
 
     @Override
-    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -105,7 +103,6 @@ public class PublicationSummary {
     }
 
     @Override
-    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(
                 getIdentifier(),
