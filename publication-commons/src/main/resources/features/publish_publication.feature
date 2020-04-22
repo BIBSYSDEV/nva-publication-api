@@ -73,14 +73,22 @@ Feature: Publish a Publication
     And they see that the response body has a field "status" with the value "PUBLISHED"
     And they see that the response body has a field "indexedDate" with a value "{datetime}"
 
-  Scenario: The Owner publishes an invalid Publication
-    Given the Owner wants to publish an invalid Publication
+  Scenario Outline: The Owner publishes an invalid Publication
+    Given the Owner wants to publish a Publication
+    But the Publication is missing <Field>
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request PUT /publication/{identifier}/publish
-    Then they receive a response with status code 422
+    Then they receive a response with status code 409
     And they see that the response Content-Type header is "application/problem+json"
     And they see that the response body is a problem.json object
-    And they see the response body has a field "title" with the value "Unprocessable Entity"
-    And they see the response body has a field "status" with the value "422"
-    And they see the response body has a field "detail" with the value "Publication is missing data required for publishing."
+    And they see the response body has a field "title" with the value "Conflict"
+    And they see the response body has a field "status" with the value "409"
+    And they see the response body has a field "detail" with the value "The Publication cannot be published because the following fields are not populated: <Field>."
+
+    Examples:
+      | Field |
+      | Title |
+      | Owner |
+      | File  |
+      | Link  |
