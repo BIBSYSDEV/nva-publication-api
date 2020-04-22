@@ -21,10 +21,10 @@ import java.util.UUID;
 
 import static no.unit.publication.Logger.log;
 import static no.unit.publication.Logger.logError;
+import static org.zalando.problem.Status.ACCEPTED;
 import static org.zalando.problem.Status.BAD_GATEWAY;
 import static org.zalando.problem.Status.BAD_REQUEST;
 import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.OK;
 
 public class ModifyPublicationHandler extends PublicationHandler {
 
@@ -100,7 +100,7 @@ public class ModifyPublicationHandler extends PublicationHandler {
                 ContextUtil.injectContext(publicationResponseJson, publicationContext);
             });
             objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(publicationResponseJson), headers(), OK.getStatusCode()));
+                    objectMapper.writeValueAsString(publicationResponseJson), headers(), ACCEPTED.getStatusCode()));
         } catch (IOException e) {
             logError(e);
             writeErrorResponse(output, BAD_GATEWAY, e);
