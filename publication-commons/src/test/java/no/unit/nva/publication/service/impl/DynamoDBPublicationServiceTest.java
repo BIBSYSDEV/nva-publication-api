@@ -154,10 +154,10 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("notImplemented Methods Throws RunTimeException")
     public void notImplementedMethodsThrowsRunTimeException() {
         assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublication(null, null);
+            publicationService.getPublication(null,null);
         });
         assertThrows(NotImplementedException.class, () ->  {
-            publicationService.updatePublication(null, null);
+            publicationService.updatePublication(null, null, null);
         });
         assertThrows(NotImplementedException.class, () ->  {
             publicationService.getPublicationsByPublisher(null, null);

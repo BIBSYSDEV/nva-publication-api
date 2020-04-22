@@ -13,7 +13,7 @@ public interface PublicationService {
     Publication getPublication(UUID identifier, String authorization)
             throws ApiGatewayException;
 
-    Publication updatePublication(Publication publication, String authorization)
+    Publication updatePublication(UUID identifier, Publication publication, String authorization)
             throws ApiGatewayException;
 
     List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)

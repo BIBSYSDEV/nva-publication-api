@@ -38,6 +38,9 @@ public class RestPublicationService implements PublicationService {
     public static final String ERROR_COMMUNICATING_WITH_REMOTE_SERVICE = "Error communicating with remote service: ";
     public static final String ERROR_RESPONSE_FROM_REMOTE_SERVICE = "Error response from remote service: ";
     public static final String ERROR_MAPPING_PUBLICATION_TO_JSON = "Error mapping Publication to JSON";
+    public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
+            + "is not equal to identifier in customer object '%s'";
+
     private final HttpClient client;
     private final String apiScheme;
     private final String apiHost;
@@ -100,9 +103,9 @@ public class RestPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication updatePublication(Publication publication, String authorization)
+    public Publication updatePublication(UUID identifier, Publication publication, String authorization)
             throws ApiGatewayException {
-        UUID identifier = publication.getIdentifier();
+        validateIdentifier(identifier, publication);
         System.out.println("Sending request to modify resource " + identifier.toString());
         publication.setModifiedDate(Instant.now());
 
@@ -139,6 +142,13 @@ public class RestPublicationService implements PublicationService {
             }
         } catch (Exception e) {
             throw new NoResponseException(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString(), e);
+        }
+    }
+
+    private void validateIdentifier(UUID identifier, Publication publication) throws InputException {
+        if (!identifier.equals(publication.getIdentifier())) {
+            String errorMessage= String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier());
+            throw new InputException(errorMessage, null);
         }
     }
 

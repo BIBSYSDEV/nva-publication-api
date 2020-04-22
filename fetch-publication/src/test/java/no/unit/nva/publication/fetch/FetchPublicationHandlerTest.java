@@ -3,7 +3,15 @@ package no.unit.nva.publication.fetch;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.ObjectMapperConfig;
+import no.unit.nva.publication.exception.ErrorResponseException;
+import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.TestContext;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +25,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,7 +54,7 @@ public class FetchPublicationHandlerTest {
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
-    private ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
+    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
     private PublicationService publicationService;
@@ -62,14 +69,14 @@ public class FetchPublicationHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = mock(Context.class);
+        context = new TestContext();
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(objectMapper, publicationService, environment);
+                new FetchPublicationHandler(publicationService, objectMapper, environment);
     }
 
     @Test
@@ -80,10 +87,10 @@ public class FetchPublicationHandlerTest {
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
         when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenReturn(Optional.of(publication));
+                .thenReturn(publication);
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -95,9 +102,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
-    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, InterruptedException {
+    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenReturn(Optional.empty());
+                .thenThrow(new NotFoundException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -110,7 +117,8 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        fetchPublicationHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
+        InputStream input = HandlerUtils.requestObjectToApiGatewayRequestInputSteam(null, null);
+        fetchPublicationHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -131,7 +139,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-            throws IOException, InterruptedException {
+            throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenThrow(new NullPointerException());
 
@@ -144,9 +152,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-            throws IOException, InterruptedException {
+            throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenThrow(new IOException());
+                .thenThrow(new ErrorResponseException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -154,7 +162,7 @@ public class FetchPublicationHandlerTest {
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
 
-
+    @Deprecated
     private InputStream inputStream() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
         Map<String,String> headers = new ConcurrentHashMap<>();

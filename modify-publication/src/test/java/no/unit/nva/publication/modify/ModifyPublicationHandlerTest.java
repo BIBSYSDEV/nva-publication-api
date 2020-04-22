@@ -2,8 +2,16 @@ package no.unit.nva.publication.modify;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.ObjectMapperConfig;
+import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.TestContext;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,11 +23,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Collections;
+import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -46,11 +52,10 @@ public class ModifyPublicationHandlerTest {
     public static final String SOME_API_KEY = "some api key";
     public static final String HEADERS = "headers";
     public static final String BODY = "body";
-    public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
     public static final String IDENTIFIER = "identifier";
     public static final String PATH_PARAMETERS = "pathParameters";
 
-    private ObjectMapper objectMapper = ModifyPublicationHandler.createObjectMapper();
+    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
 
@@ -66,10 +71,10 @@ public class ModifyPublicationHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = mock(Context.class);
+        context = new TestContext();
 
         output = new ByteArrayOutputStream();
         modifyPublicationHandler =
@@ -85,9 +90,9 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
-        when(publicationService.updatePublication(any(Publication.class), anyString()))
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
+        Publication publication = createPublication();
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
                 .thenReturn(publication);
 
         modifyPublicationHandler.handleRequest(
@@ -97,15 +102,6 @@ public class ModifyPublicationHandlerTest {
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
-    }
-
-    @Test
-    @DisplayName("handler Returns BadRequest On Identifier Not The Same In Body And PathParam")
-    public void handlerReturnsBadRequestOnIdentifierNotTheSameInBodyAndPathParam() throws IOException {
-        modifyPublicationHandler.handleRequest(inputStream(UUID.randomUUID().toString()), output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -120,8 +116,7 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Headers")
     public void handlerReturnsBadRequestResponseOnMissingHeaders() throws IOException {
-        Map<String, Object> event = Map.of(HEADERS, Collections.emptyMap());
-        InputStream inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+        InputStream inputStream = HandlerUtils.requestObjectToApiGatewayRequestInputSteam(null, null);
 
         modifyPublicationHandler.handleRequest(inputStream, output, context);
 
@@ -132,10 +127,10 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-            throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
-        when(publicationService.updatePublication(any(Publication.class), anyString()))
-                .thenThrow(IOException.class);
+            throws IOException, ApiGatewayException {
+        Publication publication = createPublication();
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
+                .thenThrow(ErrorResponseException.class);
 
         modifyPublicationHandler.handleRequest(
                 inputStream(publication.getIdentifier().toString()), output, context);
@@ -147,9 +142,9 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-            throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
-        when(publicationService.updatePublication(any(Publication.class), anyString()))
+            throws IOException, ApiGatewayException {
+        Publication publication = createPublication();
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
                 .thenThrow(NullPointerException.class);
 
         modifyPublicationHandler.handleRequest(
@@ -159,9 +154,10 @@ public class ModifyPublicationHandlerTest {
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
     }
 
+    @Deprecated
     private InputStream inputStream(String identifier) throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(publicationFile());
+        String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
         headers.put(AUTHORIZATION, SOME_API_KEY);
@@ -171,9 +167,10 @@ public class ModifyPublicationHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
+    @Deprecated
     private InputStream inputStreamMissingPathParameters() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
-        String body = new String(publicationFile());
+        String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
         headers.put(AUTHORIZATION, SOME_API_KEY);
@@ -182,8 +179,16 @@ public class ModifyPublicationHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private byte[] publicationFile() throws IOException {
-        return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
+    private Publication createPublication() {
+        return new Publication.Builder()
+                .withIdentifier(UUID.randomUUID())
+                .withModifiedDate(Instant.now())
+                .withOwner("owner")
+                .withPublisher(new Organization.Builder()
+                        .withId(URI.create("http://example.org/publisher/1"))
+                        .build()
+                )
+                .build();
     }
 
 }

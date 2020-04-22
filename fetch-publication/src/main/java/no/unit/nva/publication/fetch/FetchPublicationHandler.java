@@ -7,24 +7,19 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.ObjectMapperConfig;
-import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.RestPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 
 import java.net.http.HttpClient;
-import java.util.UUID;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
-    public static final String IDENTIFIER = "identifier";
-    public static final String MISSING_AUTHORIZATION_IN_HEADERS = "Missing Authorization in Headers";
-    public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
     private final PublicationService publicationService;
@@ -57,9 +52,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
     @Override
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        UUID identifier = getIdentifier(requestInfo);
-        logger.log("Request for identifier: " + identifier.toString());
-        Publication publication = publicationService.getPublication(identifier, getAuthorization(requestInfo));
+        Publication publication = publicationService.getPublication(
+                RequestUtil.getIdentifier(requestInfo),
+                RequestUtil.getAuthorization(requestInfo));
 
         JsonNode publicationJson = objectMapper.valueToTree(publication);
         addContext(publicationJson);
@@ -77,21 +72,5 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
         return HttpStatus.SC_OK;
     }
 
-    protected String getAuthorization(RequestInfo requestInfo) throws ApiGatewayException {
-        try {
-            return requestInfo.getHeaders().get(HttpHeaders.AUTHORIZATION);
-        } catch (Exception e) {
-            throw new InputException(MISSING_AUTHORIZATION_IN_HEADERS, e);
-        }
-    }
 
-    protected UUID getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
-        String identifier = null;
-        try {
-            identifier = requestInfo.getPathParameters().get(IDENTIFIER);
-            return UUID.fromString(identifier);
-        } catch (Exception e) {
-            throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
-        }
-    }
 }

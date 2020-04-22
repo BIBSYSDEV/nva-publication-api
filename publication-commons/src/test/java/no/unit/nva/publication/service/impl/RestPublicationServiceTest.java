@@ -81,6 +81,7 @@ public class RestPublicationServiceTest {
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
         publicationService.updatePublication(
+                publication.getIdentifier(),
                 publication,
                 SOME_API_KEY);
     }
@@ -97,6 +98,7 @@ public class RestPublicationServiceTest {
 
         Publication publication = getPublication();
         assertThrows(NoResponseException.class, () -> publicationService.updatePublication(
+                publication.getIdentifier(),
                 publication,
                 SOME_API_KEY));
     }
@@ -123,6 +125,7 @@ public class RestPublicationServiceTest {
         PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
 
         assertThrows(NoResponseException.class, () -> publicationService.updatePublication(
+                publication.getIdentifier(),
                 publication,
                 SOME_API_KEY
         ));

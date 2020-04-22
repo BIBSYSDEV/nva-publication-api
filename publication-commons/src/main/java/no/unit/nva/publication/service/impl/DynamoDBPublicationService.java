@@ -67,7 +67,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication updatePublication(Publication publication, String authorization) throws ApiGatewayException {
+    public Publication updatePublication(UUID identifier, Publication publication, String authorization) throws ApiGatewayException {
         throw new NotImplementedException();
     }
 
