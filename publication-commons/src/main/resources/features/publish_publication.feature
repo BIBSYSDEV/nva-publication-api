@@ -75,7 +75,7 @@ Feature: Publish a Publication
 
   Scenario Outline: The Owner publishes an invalid Publication
     Given the Owner wants to publish a Publication
-    But the Publication is missing <Field>
+    But the Publication is missing <Fields>
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request PUT /publication/{identifier}/publish
@@ -84,11 +84,10 @@ Feature: Publish a Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Conflict"
     And they see the response body has a field "status" with the value "409"
-    And they see the response body has a field "detail" with the value "The Publication cannot be published because the following fields are not populated: <Field>."
+    And they see the response body has a field "detail" with the value "The Publication cannot be published because the following fields are not populated: <Error>."
 
     Examples:
-      | Field |
-      | Title |
-      | Owner |
-      | File  |
-      | Link  |
+      | Fields         | Error        |
+      | Title          | Title        |
+      | Owner          | Owner        |
+      | File and Link  | File or Link |
