@@ -1,4 +1,4 @@
-package no.unit.publication.exception;
+package no.unit.nva.publication.exception;
 
 import nva.commons.exceptions.ApiGatewayException;
 import org.apache.http.HttpStatus;

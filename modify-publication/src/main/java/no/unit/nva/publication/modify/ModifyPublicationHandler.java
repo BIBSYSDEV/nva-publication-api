@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.publication.service.PublicationService;
-import no.unit.publication.service.impl.RestPublicationService;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.RestPublicationService;
 
 import java.io.IOException;
 import java.io.InputStream;

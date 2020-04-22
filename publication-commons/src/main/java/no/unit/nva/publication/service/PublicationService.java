@@ -1,12 +1,11 @@
-package no.unit.publication.service;
+package no.unit.nva.publication.service;
 
 import no.unit.nva.model.Publication;
-import no.unit.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublicationSummary;
 import nva.commons.exceptions.ApiGatewayException;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 public interface PublicationService {

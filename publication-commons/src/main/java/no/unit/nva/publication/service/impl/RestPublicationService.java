@@ -1,17 +1,18 @@
-package no.unit.publication.service.impl;
+package no.unit.nva.publication.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
 import no.unit.nva.model.Publication;
-import no.unit.publication.exception.ErrorResponseException;
-import no.unit.publication.exception.InputException;
-import no.unit.publication.exception.NoResponseException;
-import no.unit.publication.exception.NotFoundException;
-import no.unit.publication.exception.NotImplementedException;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
+import no.unit.nva.publication.ObjectMapperConfig;
+import no.unit.nva.publication.exception.ErrorResponseException;
+import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.NoResponseException;
+import no.unit.nva.publication.exception.NotFoundException;
+import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import org.apache.http.HttpStatus;
@@ -40,7 +41,7 @@ public class RestPublicationService implements PublicationService {
     private final HttpClient client;
     private final String apiScheme;
     private final String apiHost;
-    private final ObjectMapper objectMapper = PublicationHandler.createObjectMapper();
+    private final ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     /**
      * Constructor for RestPublicationService.
@@ -102,7 +103,7 @@ public class RestPublicationService implements PublicationService {
     public Publication updatePublication(Publication publication, String authorization)
             throws ApiGatewayException {
         UUID identifier = publication.getIdentifier();
-        Logger.log("Sending request to modify resource " + identifier.toString());
+        System.out.println("Sending request to modify resource " + identifier.toString());
         publication.setModifiedDate(Instant.now());
 
         String body;
@@ -112,7 +113,7 @@ public class RestPublicationService implements PublicationService {
             throw new InputException(ERROR_MAPPING_PUBLICATION_TO_JSON, e);
         }
 
-        Logger.log("Request body " + body);
+        System.out.println("Request body " + body);
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
@@ -128,12 +129,12 @@ public class RestPublicationService implements PublicationService {
 
         try {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            Logger.log("Received response for modify resource request on " + identifier.toString());
+            System.out.println("Received response for modify resource request on " + identifier.toString());
             if (httpResponse.statusCode() == HttpStatus.SC_OK) {
                 // resource API returns DynamoDB response and updated Publication
                 return getPublication(identifier, authorization);
             } else {
-                Logger.log(ERROR_RESPONSE_FROM_REMOTE_SERVICE + uri.toString());
+                System.out.println(ERROR_RESPONSE_FROM_REMOTE_SERVICE + uri.toString());
                 throw new ErrorResponseException(httpResponse.body());
             }
         } catch (Exception e) {

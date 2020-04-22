@@ -1,4 +1,4 @@
-package no.unit.publication;
+package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.testutils.TestLogger;

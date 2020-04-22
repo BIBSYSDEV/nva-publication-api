@@ -2,8 +2,8 @@ package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
 import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;

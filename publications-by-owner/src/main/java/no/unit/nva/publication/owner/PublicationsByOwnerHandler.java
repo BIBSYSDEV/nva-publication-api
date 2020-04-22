@@ -5,9 +5,9 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
-import no.unit.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 
 import java.io.IOException;
 import java.io.InputStream;

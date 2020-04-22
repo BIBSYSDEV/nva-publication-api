@@ -1,4 +1,4 @@
-package no.unit.publication.service.impl;
+package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -11,10 +11,10 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.publication.exception.NoResponseException;
-import no.unit.publication.exception.NotImplementedException;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
+import no.unit.nva.publication.exception.NoResponseException;
+import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 
@@ -148,7 +148,7 @@ public class DynamoDBPublicationService implements PublicationService {
             publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
             return Optional.of(publicationSummary);
         } catch (JsonProcessingException e) {
-            Logger.logError(e);
+            System.out.println(e.getMessage());
             return Optional.empty();
         }
     }

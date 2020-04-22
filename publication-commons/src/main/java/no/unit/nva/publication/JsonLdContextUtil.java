@@ -1,4 +1,4 @@
-package no.unit.publication;
+package no.unit.nva.publication;
 
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.fasterxml.jackson.databind.JsonNode;
