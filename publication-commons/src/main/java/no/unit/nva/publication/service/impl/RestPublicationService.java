@@ -35,7 +35,7 @@ public class RestPublicationService implements PublicationService {
     public static final String API_SCHEME_ENV = "API_SCHEME";
     public static final String MOST_RECENT_PUBLICATION_VERSION = "/Items/0";
     public static final String ERROR_COMMUNICATING_WITH_REMOTE_SERVICE = "Error communicating with remote service: ";
-    public static final String ERROR_RESPONSE_FROM_REMOTE_SERVICE = "Error response from remote service: ";
+    public static final String ERROR_RESPONSE_FROM_REMOTE_SERVICE = "Error response from remote service: %s. %s.";
     public static final String ERROR_MAPPING_PUBLICATION_TO_JSON = "Error mapping Publication to JSON";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
             + "is not equal to identifier in customer object '%s'";
@@ -106,7 +106,6 @@ public class RestPublicationService implements PublicationService {
     public Publication updatePublication(UUID identifier, Publication publication, String authorization)
             throws ApiGatewayException {
         validateIdentifier(identifier, publication);
-        System.out.println("Sending request to modify resource " + identifier.toString());
         publication.setModifiedDate(Instant.now());
 
         String body;
@@ -116,7 +115,6 @@ public class RestPublicationService implements PublicationService {
             throw new InputException(ERROR_MAPPING_PUBLICATION_TO_JSON, e);
         }
 
-        System.out.println("Request body " + body);
         URI uri = UrlBuilder.empty()
                 .withScheme(apiScheme)
                 .withHost(apiHost)
@@ -132,13 +130,13 @@ public class RestPublicationService implements PublicationService {
 
         try {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-            System.out.println("Received response for modify resource request on " + identifier.toString());
             if (httpResponse.statusCode() == HttpStatus.SC_OK) {
                 // resource API returns DynamoDB response and updated Publication
                 return getPublication(identifier, authorization);
             } else {
-                System.out.println(ERROR_RESPONSE_FROM_REMOTE_SERVICE + uri.toString());
-                throw new ErrorResponseException(httpResponse.body());
+                String errorMessage = String.format(
+                        ERROR_RESPONSE_FROM_REMOTE_SERVICE, uri.toString(), httpResponse.body());
+                throw new ErrorResponseException(errorMessage);
             }
         } catch (Exception e) {
             throw new NoResponseException(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString(), e);
