@@ -106,8 +106,8 @@ Resources:
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
-                '200':
-                  description: OK
+                '202':
+                  description: ACCEPTED
                   schema:
                     type: object
           /by-owner:
@@ -146,7 +146,7 @@ Resources:
       CodeUri: fetch-publication
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1400
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -165,7 +165,7 @@ Resources:
       CodeUri: modify-publication
       Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1400
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -184,7 +184,7 @@ Resources:
       CodeUri: publications-by-owner
       Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1400
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'

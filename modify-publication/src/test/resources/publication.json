@@ -45,6 +45,8 @@
           "no" : "Eksempelforlaget"
         }
       } ],
+      "correspondingAuthor":true,
+      "email":"this.is.a.test.email@unit.no",
       "role" : "Creator",
       "sequence" : 0
     } ],

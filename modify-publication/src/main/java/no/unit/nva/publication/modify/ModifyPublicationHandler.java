@@ -22,7 +22,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
-    private final transient PublicationService publicationService;
+    private final PublicationService publicationService;
     private final ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     /**
@@ -67,8 +67,9 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
                 .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
     }
 
+
     @Override
     protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
-        return HttpStatus.SC_OK;
+        return HttpStatus.SC_ACCEPTED;
     }
 }
