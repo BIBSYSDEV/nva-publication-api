@@ -31,6 +31,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     public FetchPublicationHandler() {
         this(new RestPublicationService(
                     HttpClient.newHttpClient(),
+                    ObjectMapperConfig.objectMapper,
                     new Environment()),
                 ObjectMapperConfig.objectMapper,
                 new Environment());

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.mikael.urlbuilder.UrlBuilder;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NoResponseException;
@@ -41,19 +40,21 @@ public class RestPublicationService implements PublicationService {
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
             + "is not equal to identifier in customer object '%s'";
 
+    private final ObjectMapper objectMapper;
     private final HttpClient client;
     private final String apiScheme;
     private final String apiHost;
-    private final ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     /**
      * Constructor for RestPublicationService.
      *
+     * @param objectMapper objectMapper
+     * @param client    client
      * @param apiScheme apiScheme
      * @param apiHost   apiHost
-     * @param client    client
      */
-    public RestPublicationService(String apiScheme, String apiHost, HttpClient client) {
+    public RestPublicationService(HttpClient client, ObjectMapper objectMapper, String apiScheme, String apiHost) {
+        this.objectMapper = objectMapper;
         this.client = client;
         this.apiScheme = apiScheme;
         this.apiHost = apiHost;
@@ -63,12 +64,11 @@ public class RestPublicationService implements PublicationService {
      * Constructor for RestPublicationService.
      *
      * @param client    client
+     * @param objectMapper objectMapper
      * @param environment   environment
      */
-    public RestPublicationService(HttpClient client, Environment environment) {
-        this.apiScheme = environment.readEnv(API_SCHEME_ENV);
-        this.apiHost = environment.readEnv(API_HOST_ENV);
-        this.client = client;
+    public RestPublicationService(HttpClient client, ObjectMapper objectMapper, Environment environment) {
+        this(client, objectMapper, environment.readEnv(API_SCHEME_ENV), environment.readEnv(API_HOST_ENV));
     }
 
     @Override
@@ -147,7 +147,7 @@ public class RestPublicationService implements PublicationService {
 
     private void validateIdentifier(UUID identifier, Publication publication) throws InputException {
         if (!identifier.equals(publication.getIdentifier())) {
-            String errorMessage= String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier());
+            String errorMessage = String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier());
             throw new InputException(errorMessage, null);
         }
     }

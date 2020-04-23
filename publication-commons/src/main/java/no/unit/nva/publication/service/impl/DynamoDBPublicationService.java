@@ -67,7 +67,8 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication updatePublication(UUID identifier, Publication publication, String authorization) throws ApiGatewayException {
+    public Publication updatePublication(UUID identifier, Publication publication, String authorization)
+            throws ApiGatewayException {
         throw new NotImplementedException();
     }
 
@@ -79,7 +80,7 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
-            throws ApiGatewayException{
+            throws ApiGatewayException {
         allFieldsAreNonNull(owner, publisherId, authorization);
 
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);

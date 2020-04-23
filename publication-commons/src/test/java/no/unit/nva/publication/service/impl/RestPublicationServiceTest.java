@@ -1,8 +1,10 @@
 package no.unit.nva.publication.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.ObjectMapperConfig;
+import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NoResponseException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.service.PublicationService;
@@ -11,7 +13,6 @@ import nva.commons.utils.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
@@ -56,10 +57,10 @@ public class RestPublicationServiceTest {
     @Test
     @DisplayName("calling Constructor With All Env")
     public void callingConstructorWithAllEnv() {
-        Environment environment = Mockito.mock(Environment.class);
+        Environment environment = mock(Environment.class);
         when(environment.readEnv(RestPublicationService.API_SCHEME_ENV)).thenReturn(API_SCHEME);
         when(environment.readEnv(RestPublicationService.API_HOST_ENV)).thenReturn(API_HOST);
-        new RestPublicationService(client, environment);
+        new RestPublicationService(client, objectMapper, environment);
     }
 
     @Test
@@ -78,7 +79,7 @@ public class RestPublicationServiceTest {
                 .thenReturn(putResponse)
                 .thenReturn(getResponse);
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         publicationService.updatePublication(
                 publication.getIdentifier(),
@@ -94,7 +95,7 @@ public class RestPublicationServiceTest {
         when((response.body())).thenReturn("{\"message\": \"Forbidden\"}");
         when((response.statusCode())).thenReturn(403);
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         Publication publication = getPublication();
         assertThrows(NoResponseException.class, () -> publicationService.updatePublication(
@@ -108,10 +109,38 @@ public class RestPublicationServiceTest {
     public void getPublicationClientError() throws IOException, InterruptedException {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         assertThrows(NoResponseException.class, () -> publicationService.getPublication(
                 UUID.randomUUID(),
+                SOME_API_KEY
+        ));
+    }
+
+    @Test
+    public void updatePublicationWithDifferentIdentifiersThrowsException() throws IOException, InterruptedException {
+        Publication publication = getPublication();
+
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
+
+        assertThrows(InputException.class, () -> publicationService.updatePublication(
+                UUID.randomUUID(),
+                publication,
+                SOME_API_KEY
+        ));
+    }
+
+    @Test
+    public void updatePublicationWithInvalidJsonPublicationThrowsException() throws IOException {
+        Publication publication = getPublication();
+        ObjectMapper failingObjectMapper = mock(ObjectMapper.class);
+        when(failingObjectMapper.writeValueAsString(publication)).thenThrow(JsonProcessingException.class);
+        PublicationService publicationService = new RestPublicationService(
+                client, failingObjectMapper, API_SCHEME, API_HOST);
+
+        assertThrows(InputException.class, () -> publicationService.updatePublication(
+                publication.getIdentifier(),
+                publication,
                 SOME_API_KEY
         ));
     }
@@ -122,7 +151,7 @@ public class RestPublicationServiceTest {
         Publication publication = getPublication();
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenThrow(IOException.class);
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         assertThrows(NoResponseException.class, () -> publicationService.updatePublication(
                 publication.getIdentifier(),
@@ -137,7 +166,7 @@ public class RestPublicationServiceTest {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(getResponse(RESOURCE_RESPONSE));
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         Publication publication = publicationService.getPublication(
                 UUID.randomUUID(),
@@ -153,7 +182,7 @@ public class RestPublicationServiceTest {
         when(client.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(response);
         when((response.body())).thenReturn(NO_ITEMS);
 
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
 
         assertThrows(NoResponseException.class, () -> publicationService.getPublication(
                 UUID.randomUUID(),
@@ -164,7 +193,7 @@ public class RestPublicationServiceTest {
     @Test
     @DisplayName("notImplemented Methods Throws Run Time Exception")
     public void notImplementedMethodsThrowsRunTimeException() {
-        PublicationService publicationService = new RestPublicationService(API_SCHEME, API_HOST, client);
+        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
         assertThrows(NotImplementedException.class, () ->  {
             publicationService.getPublicationsByOwner(null, null, null);
         });

@@ -2,11 +2,9 @@ package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;

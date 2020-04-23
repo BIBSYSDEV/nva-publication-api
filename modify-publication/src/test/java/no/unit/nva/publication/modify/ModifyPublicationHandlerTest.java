@@ -55,7 +55,7 @@ public class ModifyPublicationHandlerTest {
     public static final String IDENTIFIER = "identifier";
     public static final String PATH_PARAMETERS = "pathParameters";
 
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
+    private ObjectMapper objectMapper = new ObjectMapperConfig().objectMapper;
 
     private Environment environment;
 
@@ -78,7 +78,7 @@ public class ModifyPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         modifyPublicationHandler =
-                new ModifyPublicationHandler(objectMapper, publicationService, environment);
+                new ModifyPublicationHandler(publicationService, environment);
 
     }
 

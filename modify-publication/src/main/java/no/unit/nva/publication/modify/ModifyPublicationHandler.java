@@ -29,9 +29,9 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
      * Default constructor for MainHandler.
      */
     public ModifyPublicationHandler() {
-        this(ObjectMapperConfig.objectMapper,
-                new RestPublicationService(
+        this(new RestPublicationService(
                         HttpClient.newHttpClient(),
+                    ObjectMapperConfig.objectMapper,
                         new Environment()),
                 new Environment());
     }
@@ -39,11 +39,10 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper objectMapper
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public ModifyPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
+    public ModifyPublicationHandler(PublicationService publicationService,
                                     Environment environment) {
         super(Publication.class, environment);
         this.publicationService = publicationService;

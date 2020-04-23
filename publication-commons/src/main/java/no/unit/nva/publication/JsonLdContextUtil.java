@@ -17,6 +17,11 @@ public class JsonLdContextUtil {
         this.logger = logger;
     }
 
+    /**
+     * Get PublicationContext as JsonNode.
+     * @param publicationContextPath    publicationContextPath
+     * @return  optional publicationContext
+     */
     public Optional<JsonNode> getPublicationContext(String publicationContextPath) {
         try (InputStream inputStream = Thread.currentThread().getContextClassLoader()
                 .getResourceAsStream(publicationContextPath)) {

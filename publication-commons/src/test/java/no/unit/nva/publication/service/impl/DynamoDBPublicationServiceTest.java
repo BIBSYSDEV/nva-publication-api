@@ -81,7 +81,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("calling Constructor When Missing Env Throws Exception")
     public void callingConstructorWhenMissingEnvThrowsException() {
         assertThrows(IllegalArgumentException.class,
-                () -> new DynamoDBPublicationService(client, objectMapper, environment)
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
     }
 
@@ -90,7 +90,7 @@ class DynamoDBPublicationServiceTest {
     public void missingTableEnv() {
         when(environment.readEnv(TABLE_NAME_ENV)).thenReturn(NVA_RESOURCES_TABLE_NAME);
         assertThrows(IllegalArgumentException.class,
-                () -> new DynamoDBPublicationService(client, objectMapper, environment)
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
     }
 
@@ -99,7 +99,7 @@ class DynamoDBPublicationServiceTest {
     public void missingIndexEnv() {
         when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(BY_PUBLISHER_INDEX_NAME);
         assertThrows(IllegalArgumentException.class,
-                () -> new DynamoDBPublicationService(client, objectMapper, environment)
+            () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
     }
 
