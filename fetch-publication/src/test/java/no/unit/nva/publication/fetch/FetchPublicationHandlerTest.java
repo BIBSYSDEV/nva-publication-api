@@ -2,6 +2,7 @@ package no.unit.nva.publication.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.ErrorResponseException;
@@ -22,8 +23,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -53,7 +54,6 @@ public class FetchPublicationHandlerTest {
     public static final String HEADERS = "headers";
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
-    public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
     private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
@@ -88,7 +88,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
-        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
+        Publication publication = createPublication();
         when(publicationService.getPublication(any(UUID.class), anyString()))
                 .thenReturn(publication);
 
@@ -173,7 +173,15 @@ public class FetchPublicationHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private byte[] publicationFile() throws IOException {
-        return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
+    private Publication createPublication() {
+        return new Publication.Builder()
+                .withIdentifier(UUID.randomUUID())
+                .withModifiedDate(Instant.now())
+                .withOwner("owner")
+                .withPublisher(new Organization.Builder()
+                        .withId(URI.create("http://example.org/publisher/1"))
+                        .build()
+                )
+                .build();
     }
 }

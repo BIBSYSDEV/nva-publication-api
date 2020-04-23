@@ -55,7 +55,7 @@ public class ModifyPublicationHandlerTest {
     public static final String IDENTIFIER = "identifier";
     public static final String PATH_PARAMETERS = "pathParameters";
 
-    private ObjectMapper objectMapper = new ObjectMapperConfig().objectMapper;
+    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
 
@@ -116,7 +116,8 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Headers")
     public void handlerReturnsBadRequestResponseOnMissingHeaders() throws IOException {
-        InputStream inputStream = requestObjectToApiGatewayRequestInputSteam(null, null);
+        Publication publication = createPublication();
+        InputStream inputStream = requestObjectToApiGatewayRequestInputSteam(publication, null);
 
         modifyPublicationHandler.handleRequest(inputStream, output, context);
 

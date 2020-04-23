@@ -31,7 +31,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     public ModifyPublicationHandler() {
         this(new RestPublicationService(
                         HttpClient.newHttpClient(),
-                    ObjectMapperConfig.objectMapper,
+                        ObjectMapperConfig.objectMapper,
                         new Environment()),
                 new Environment());
     }
@@ -56,17 +56,16 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
                 input,
                 RequestUtil.getAuthorization(requestInfo));
 
-        JsonNode publicationJson = objectMapper.valueToTree(publication);
-        addContext(publicationJson);
-        return publicationJson;
+        return toJsonNodeWithContext(publication);
     }
 
-    private void addContext(JsonNode publicationJson) {
+    private JsonNode toJsonNodeWithContext(Publication publication) {
+        JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper, logger)
                 .getPublicationContext(PUBLICATION_CONTEXT_JSON)
                 .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+        return publicationJson;
     }
-
 
     @Override
     protected Integer getSuccessStatusCode(Publication input, JsonNode output) {

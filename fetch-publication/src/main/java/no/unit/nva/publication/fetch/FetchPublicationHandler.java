@@ -57,15 +57,15 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
                 RequestUtil.getIdentifier(requestInfo),
                 RequestUtil.getAuthorization(requestInfo));
 
-        JsonNode publicationJson = objectMapper.valueToTree(publication);
-        addContext(publicationJson);
-        return publicationJson;
+        return toJsonNodeWithContext(publication);
     }
 
-    private void addContext(JsonNode publicationJson) {
+    private JsonNode toJsonNodeWithContext(Publication publication) {
+        JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper, logger)
                 .getPublicationContext(PUBLICATION_CONTEXT_JSON)
                 .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+        return publicationJson;
     }
 
     @Override
