@@ -1,10 +1,8 @@
 package no.unit.nva.publication.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.service.PublicationService;
@@ -33,6 +31,7 @@ import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.service.impl.RestPublicationService.AUTHORIZATION;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -54,7 +53,6 @@ public class FetchPublicationHandlerTest {
     public static final String HEADERS = "headers";
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
     private PublicationService publicationService;
@@ -117,7 +115,8 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream input = HandlerUtils.requestObjectToApiGatewayRequestInputSteam(null, null);
+        InputStream input = new HandlerUtils(objectMapper)
+                .requestObjectToApiGatewayRequestInputSteam(null, null);
         fetchPublicationHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);

@@ -2,7 +2,6 @@ package no.unit.nva.publication;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
@@ -12,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Map;
 import java.util.UUID;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -21,7 +21,6 @@ public class RequestUtilTest {
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
 
-    private ObjectMapper objectMapper = new ObjectMapperConfig().objectMapper;
 
     @Test
     public void canGetIdentifierFromRequest() throws ApiGatewayException {

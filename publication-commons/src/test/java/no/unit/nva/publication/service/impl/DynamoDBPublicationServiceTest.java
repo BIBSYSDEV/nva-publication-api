@@ -3,12 +3,10 @@ package no.unit.nva.publication.service.impl;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import nva.commons.exceptions.ApiGatewayException;
@@ -32,6 +30,7 @@ import java.util.UUID;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -59,7 +58,6 @@ class DynamoDBPublicationServiceTest {
     @Rule
     public PublicationsDynamoDBLocal publicationsDynamoDBLocal =  new PublicationsDynamoDBLocal();
 
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
     private DynamoDBPublicationService publicationService;
     private Environment environment;
     private AmazonDynamoDB client;

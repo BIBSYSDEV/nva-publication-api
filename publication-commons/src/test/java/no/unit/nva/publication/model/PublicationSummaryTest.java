@@ -1,20 +1,17 @@
 package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.ObjectMapperConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.util.UUID;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class PublicationSummaryTest {
-
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     @Test
     @DisplayName("objectMapper Can Write And Read PublicationSummary")

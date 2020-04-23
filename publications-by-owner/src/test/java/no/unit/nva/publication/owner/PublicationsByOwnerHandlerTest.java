@@ -1,8 +1,6 @@
 package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
@@ -35,6 +33,7 @@ import java.util.UUID;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -51,7 +50,6 @@ public class PublicationsByOwnerHandlerTest {
 
     public static final String OWNER = "junit";
     public static final String VALID_ORG_NUMBER = "NO919477822";
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
     private PublicationService publicationService;
@@ -100,7 +98,8 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream input = HandlerUtils.requestObjectToApiGatewayRequestInputSteam(null, null);
+        InputStream input = new HandlerUtils(objectMapper)
+                .requestObjectToApiGatewayRequestInputSteam(null, null);
         publicationsByOwnerHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);

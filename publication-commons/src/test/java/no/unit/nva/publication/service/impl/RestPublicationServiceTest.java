@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NoResponseException;
 import no.unit.nva.publication.exception.NotImplementedException;
@@ -23,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -42,7 +42,6 @@ public class RestPublicationServiceTest {
     private HttpClient client;
     private HttpResponse<String> response;
     private Environment environment;
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     /**
      * Set up environment.

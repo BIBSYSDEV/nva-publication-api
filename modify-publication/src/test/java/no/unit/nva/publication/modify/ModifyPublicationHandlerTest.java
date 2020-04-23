@@ -1,12 +1,11 @@
 package no.unit.nva.publication.modify;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerUtils;
 import no.unit.nva.testutils.TestContext;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.GatewayResponse;
@@ -32,7 +31,7 @@ import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.service.impl.RestPublicationService.AUTHORIZATION;
-import static no.unit.nva.testutils.HandlerUtils.requestObjectToApiGatewayRequestInputSteam;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -54,8 +53,6 @@ public class ModifyPublicationHandlerTest {
     public static final String BODY = "body";
     public static final String IDENTIFIER = "identifier";
     public static final String PATH_PARAMETERS = "pathParameters";
-
-    private ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     private Environment environment;
 
@@ -117,7 +114,8 @@ public class ModifyPublicationHandlerTest {
     @DisplayName("handler Returns BadRequest Response On Missing Headers")
     public void handlerReturnsBadRequestResponseOnMissingHeaders() throws IOException {
         Publication publication = createPublication();
-        InputStream inputStream = requestObjectToApiGatewayRequestInputSteam(publication, null);
+        InputStream inputStream = new HandlerUtils(objectMapper)
+                .requestObjectToApiGatewayRequestInputSteam(publication, null);
 
         modifyPublicationHandler.handleRequest(inputStream, output, context);
 

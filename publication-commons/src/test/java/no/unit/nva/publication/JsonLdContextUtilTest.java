@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.junit.Assert.assertTrue;
 
 public class JsonLdContextUtilTest {
@@ -19,7 +20,7 @@ public class JsonLdContextUtilTest {
 
     @BeforeEach
     public void setUp() {
-        contextUtil = new JsonLdContextUtil(ObjectMapperConfig.objectMapper, new TestLogger());
+        contextUtil = new JsonLdContextUtil(objectMapper, new TestLogger());
     }
 
     @Test

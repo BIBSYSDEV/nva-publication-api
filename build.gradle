@@ -32,7 +32,7 @@ subprojects {
     def awsSdkVersion = '1.11.714'
 
     dependencies {
-        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: 'v0.1.8'
+        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: 'v0.2.0'
         implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.5.1'
         implementation group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
         implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
@@ -44,7 +44,7 @@ subprojects {
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
         implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
 
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: 'v0.1.5'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: 'v0.1.6'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version

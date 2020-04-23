@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.RestPublicationService;
@@ -14,9 +13,11 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JsonUtils;
 import org.apache.http.HttpStatus;
 
 import java.net.http.HttpClient;
+
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -31,9 +32,9 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     public FetchPublicationHandler() {
         this(new RestPublicationService(
                     HttpClient.newHttpClient(),
-                    ObjectMapperConfig.objectMapper,
+                        JsonUtils.objectMapper,
                     new Environment()),
-                ObjectMapperConfig.objectMapper,
+                JsonUtils.objectMapper,
                 new Environment());
     }
 

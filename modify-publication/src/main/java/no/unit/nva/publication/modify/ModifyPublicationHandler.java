@@ -2,11 +2,9 @@ package no.unit.nva.publication.modify;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.RestPublicationService;
@@ -18,12 +16,13 @@ import org.apache.http.HttpStatus;
 
 import java.net.http.HttpClient;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
     private final PublicationService publicationService;
-    private final ObjectMapper objectMapper = ObjectMapperConfig.objectMapper;
 
     /**
      * Default constructor for MainHandler.
@@ -31,7 +30,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     public ModifyPublicationHandler() {
         this(new RestPublicationService(
                         HttpClient.newHttpClient(),
-                        ObjectMapperConfig.objectMapper,
+                        objectMapper,
                         new Environment()),
                 new Environment());
     }

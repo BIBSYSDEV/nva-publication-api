@@ -3,7 +3,6 @@ package no.unit.nva.publication.owner;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.nva.publication.ObjectMapperConfig;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
@@ -17,6 +16,8 @@ import org.apache.http.HttpStatus;
 import java.net.URI;
 import java.util.List;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,PublicationsByOwnerResponse> {
 
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
@@ -29,7 +30,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
     public PublicationsByOwnerHandler() {
         this(new DynamoDBPublicationService(
                         AmazonDynamoDBClientBuilder.defaultClient(),
-                        ObjectMapperConfig.objectMapper,
+                        objectMapper,
                         new Environment()),
                 new Environment());
     }
