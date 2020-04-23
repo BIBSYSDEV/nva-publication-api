@@ -33,7 +33,7 @@ public class RestPublicationService implements PublicationService {
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String API_HOST_ENV = "API_HOST";
     public static final String API_SCHEME_ENV = "API_SCHEME";
-    public static final String ITEMS_0 = "/Items/0";
+    public static final String MOST_RECENT_PUBLICATION_VERSION = "/Items/0";
     public static final String ERROR_COMMUNICATING_WITH_REMOTE_SERVICE = "Error communicating with remote service: ";
     public static final String ERROR_RESPONSE_FROM_REMOTE_SERVICE = "Error response from remote service: ";
     public static final String ERROR_MAPPING_PUBLICATION_TO_JSON = "Error mapping Publication to JSON";
@@ -91,12 +91,12 @@ public class RestPublicationService implements PublicationService {
             HttpResponse<String> httpResponse = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             JsonNode jsonNode = objectMapper.readTree(httpResponse.body());
-            JsonNode item0 = jsonNode.at(ITEMS_0);
-            if (item0.isMissingNode()) {
+            JsonNode publicationJsonNode = jsonNode.at(MOST_RECENT_PUBLICATION_VERSION);
+            if (publicationJsonNode.isMissingNode()) {
                 throw new NotFoundException("Publication not found for identifier: " + identifier);
             }
 
-            return objectMapper.readValue(objectMapper.writeValueAsString(item0), Publication.class);
+            return objectMapper.convertValue(publicationJsonNode, Publication.class);
         } catch (Exception e) {
             throw new NoResponseException(ERROR_COMMUNICATING_WITH_REMOTE_SERVICE + uri.toString(), e);
         }

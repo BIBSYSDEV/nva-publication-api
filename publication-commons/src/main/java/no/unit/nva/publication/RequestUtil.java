@@ -9,7 +9,7 @@ import org.apache.http.HttpHeaders;
 import java.util.Objects;
 import java.util.UUID;
 
-public class RequestUtil {
+public final class RequestUtil {
 
     public static final String IDENTIFIER = "identifier";
     public static final String MISSING_AUTHORIZATION_IN_HEADERS = "Missing Authorization in Headers";
@@ -19,6 +19,9 @@ public class RequestUtil {
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
             "Missing claim in requestContext: ";
+
+    private RequestUtil() {
+    }
 
     /**
      * Get Authorization header from request.
