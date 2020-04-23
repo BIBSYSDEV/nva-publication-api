@@ -70,6 +70,6 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
 
     @Override
     protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
-        return HttpStatus.SC_ACCEPTED;
+        return HttpStatus.SC_OK;
     }
 }

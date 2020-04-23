@@ -34,10 +34,10 @@ import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_OR
 import static no.unit.nva.publication.service.impl.RestPublicationService.AUTHORIZATION;
 import static no.unit.nva.testutils.HandlerUtils.requestObjectToApiGatewayRequestInputSteam;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,8 +89,8 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    @DisplayName("handler Returns Accepted Response On Valid Input")
-    public void handlerReturnsAcceptedResponseOnValidInput() throws IOException, ApiGatewayException {
+    @DisplayName("handler Returns OK Response On Valid Input")
+    public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
                 .thenReturn(publication);
@@ -99,7 +99,7 @@ public class ModifyPublicationHandlerTest {
                 inputStream(publication.getIdentifier().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-        assertEquals(SC_ACCEPTED, gatewayResponse.getStatusCode());
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
