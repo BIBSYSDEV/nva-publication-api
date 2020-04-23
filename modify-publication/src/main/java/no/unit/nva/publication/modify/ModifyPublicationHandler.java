@@ -2,53 +2,35 @@ package no.unit.nva.publication.modify;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.JacocoGenerated;
-import no.unit.publication.PublicationHandler;
-import no.unit.publication.service.PublicationService;
-import no.unit.publication.service.impl.RestPublicationService;
+import no.unit.nva.publication.JsonLdContextUtil;
+import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.RestPublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.ApiGatewayHandler;
+import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.http.HttpClient;
-import java.util.Optional;
-import java.util.UUID;
 
-import static no.unit.publication.Logger.log;
-import static no.unit.publication.Logger.logError;
-import static org.zalando.problem.Status.ACCEPTED;
-import static org.zalando.problem.Status.BAD_GATEWAY;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
+import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class ModifyPublicationHandler extends PublicationHandler {
-
-    public static final String BODY = "/body";
-    public static final String HEADERS_AUTHORIZATION = "/headers/Authorization";
-    public static final String PATH_PARAMETERS_IDENTIFIER = "/pathParameters/identifier";
-
-    public static final String MISSING_AUTHORIZATION_IN_HEADERS =
-            "Missing Authorization in Headers";
-    public static final String MISSING_IDENTIFIER_IN_PATH_PARAMETERS = "Missing identifier in path parameters";
-    public static final String NOT_SAME_IDENTIFIERS = "Identifier in path parameter and body is not the same";
+public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
-    private final transient PublicationService publicationService;
+    private final PublicationService publicationService;
 
     /**
      * Default constructor for MainHandler.
      */
-    @JacocoGenerated
     public ModifyPublicationHandler() {
-        this(PublicationHandler.createObjectMapper(),
-                new RestPublicationService(
+        this(new RestPublicationService(
                         HttpClient.newHttpClient(),
+                        objectMapper,
                         new Environment()),
                 new Environment());
     }
@@ -56,57 +38,36 @@ public class ModifyPublicationHandler extends PublicationHandler {
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper objectMapper
      * @param publicationService    publicationService
      * @param environment  environment
      */
-    public ModifyPublicationHandler(ObjectMapper objectMapper, PublicationService publicationService,
+    public ModifyPublicationHandler(PublicationService publicationService,
                                     Environment environment) {
-        super(objectMapper, environment);
+        super(Publication.class, environment);
         this.publicationService = publicationService;
     }
 
     @Override
-    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        String authorization;
-        UUID identifier;
-        Publication publication;
-        try {
-            JsonNode event = objectMapper.readTree(input);
-            authorization = Optional.ofNullable(event.at(HEADERS_AUTHORIZATION).textValue())
-                    .orElseThrow(() -> new IllegalArgumentException(MISSING_AUTHORIZATION_IN_HEADERS));
-            identifier = UUID.fromString(Optional.ofNullable(event.at(PATH_PARAMETERS_IDENTIFIER).textValue())
-                    .orElseThrow(() -> new IllegalArgumentException(MISSING_IDENTIFIER_IN_PATH_PARAMETERS)));
-            publication = objectMapper.readValue(event.at(BODY).textValue(), Publication.class);
-        } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, BAD_REQUEST, e);
-            return;
-        }
+    protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
+            throws ApiGatewayException {
+        Publication publication = publicationService.updatePublication(
+                RequestUtil.getIdentifier(requestInfo),
+                input,
+                RequestUtil.getAuthorization(requestInfo));
 
-        log("Identifier in path parameters " + identifier.toString());
-        log("Publication in request body " + objectMapper.writeValueAsString(publication));
+        return toJsonNodeWithContext(publication);
+    }
 
-        if (!publication.getIdentifier().equals(identifier)) {
-            writeErrorResponse(output, BAD_REQUEST, NOT_SAME_IDENTIFIERS);
-            return;
-        }
+    private JsonNode toJsonNodeWithContext(Publication publication) {
+        JsonNode publicationJson = objectMapper.valueToTree(publication);
+        new JsonLdContextUtil(objectMapper, logger)
+                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+        return publicationJson;
+    }
 
-        try {
-            Publication publicationResponse =
-                    publicationService.updatePublication(publication, authorization);
-            JsonNode publicationResponseJson = objectMapper.valueToTree(publicationResponse);
-            getPublicationContext(PUBLICATION_CONTEXT_JSON).ifPresent(publicationContext -> {
-                ContextUtil.injectContext(publicationResponseJson, publicationContext);
-            });
-            objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(publicationResponseJson), headers(), ACCEPTED.getStatusCode()));
-        } catch (IOException e) {
-            logError(e);
-            writeErrorResponse(output, BAD_GATEWAY, e);
-        } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
-        }
+    @Override
+    protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
+        return HttpStatus.SC_OK;
     }
 }

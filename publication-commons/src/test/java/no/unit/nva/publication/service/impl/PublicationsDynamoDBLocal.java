@@ -1,4 +1,4 @@
-package no.unit.publication.service.impl;
+package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;

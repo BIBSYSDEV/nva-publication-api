@@ -2,38 +2,24 @@ package no.unit.nva.publication.owner;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.JacocoGenerated;
-import no.unit.publication.PublicationHandler;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
-import no.unit.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.ApiGatewayHandler;
+import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
-import static no.unit.publication.Logger.log;
-import static no.unit.publication.Logger.logError;
-import static org.zalando.problem.Status.BAD_GATEWAY;
-import static org.zalando.problem.Status.BAD_REQUEST;
-import static org.zalando.problem.Status.INTERNAL_SERVER_ERROR;
-import static org.zalando.problem.Status.OK;
+import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class PublicationsByOwnerHandler extends PublicationHandler {
+public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,PublicationsByOwnerResponse> {
 
-    public static final String REQUEST_CONTEXT_AUTHORIZER_CLAIMS = "/requestContext/authorizer/claims/";
-    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
-    public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
-            "Missing claim in requestContext: ";
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
 
     private final PublicationService publicationService;
@@ -41,12 +27,10 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     /**
      * Default constructor for MainHandler.
      */
-    @JacocoGenerated
     public PublicationsByOwnerHandler() {
-        this(PublicationHandler.createObjectMapper(),
-                new DynamoDBPublicationService(
+        this(new DynamoDBPublicationService(
                         AmazonDynamoDBClientBuilder.defaultClient(),
-                        PublicationHandler.createObjectMapper(),
+                        objectMapper,
                         new Environment()),
                 new Environment());
     }
@@ -54,48 +38,38 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
     /**
      * Constructor for MainHandler.
      *
-     * @param objectMapper objectMapper
      * @param environment  environment
      */
-    public PublicationsByOwnerHandler(ObjectMapper objectMapper,
-                                      PublicationService publicationService,
+    public PublicationsByOwnerHandler(PublicationService publicationService,
                                       Environment environment) {
-        super(objectMapper, environment);
+        super(Void.class, environment);
         this.publicationService = publicationService;
     }
 
     @Override
-    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
-        String owner;
-        String orgNumber;
-        try {
-            JsonNode event = objectMapper.readTree(input);
-            owner = getClaimValueFromRequestContext(event, CUSTOM_FEIDE_ID);
-            orgNumber = getClaimValueFromRequestContext(event, CUSTOM_ORG_NUMBER);
-        } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, BAD_REQUEST, e);
-            return;
-        }
+    protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
+            throws ApiGatewayException {
 
-        log(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
+        String owner = RequestUtil.getOwner(requestInfo);
+        String orgNumber = RequestUtil.getOrgNumber(requestInfo);
+
+        logger.log(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
                 owner,
                 orgNumber));
 
-        try {
-            URI publisherId = toPublisherId(orgNumber);
-            List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
-                    owner, publisherId, null);
-            objectMapper.writeValue(output, new GatewayResponse<>(
-                    objectMapper.writeValueAsString(
-                            new PublicationsByOwnerResponse(publicationsByOwner)), headers(), OK.getStatusCode()));
-        } catch (IOException e) {
-            logError(e);
-            writeErrorResponse(output, BAD_GATEWAY, e);
-        } catch (Exception e) {
-            logError(e);
-            writeErrorResponse(output, INTERNAL_SERVER_ERROR, e);
-        }
+        List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
+                owner,
+                toPublisherId(orgNumber),
+                null
+        );
+
+        return new PublicationsByOwnerResponse(publicationsByOwner);
+    }
+
+
+    @Override
+    protected Integer getSuccessStatusCode(Void input, PublicationsByOwnerResponse output) {
+        return HttpStatus.SC_OK;
     }
 
     private URI toPublisherId(String orgNumber) {
@@ -104,10 +78,8 @@ public class PublicationsByOwnerHandler extends PublicationHandler {
             return OrgNumberMapper.toCristinId(orgNumber.substring(ORG_NUMBER_COUNTRY_PREFIX_NORWAY.length()));
         }
         return OrgNumberMapper.toCristinId(orgNumber);
+
     }
 
-    private String getClaimValueFromRequestContext(JsonNode event, String claimName) {
-        return Optional.ofNullable(event.at(REQUEST_CONTEXT_AUTHORIZER_CLAIMS + claimName).textValue())
-                .orElseThrow(() -> new IllegalArgumentException(MISSING_CLAIM_IN_REQUEST_CONTEXT + claimName));
-    }
+
 }

@@ -1,8 +1,8 @@
-package no.unit.publication.model;
+package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.publication.JacocoGenerated;
+import nva.commons.utils.JacocoGenerated;
 
 import java.time.Instant;
 import java.util.Map;

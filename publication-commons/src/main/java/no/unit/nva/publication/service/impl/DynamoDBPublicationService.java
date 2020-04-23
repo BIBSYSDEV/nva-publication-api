@@ -1,6 +1,4 @@
-package no.unit.publication.service.impl;
-
-import static no.unit.publication.PublicationHandler.ENVIRONMENT_VARIABLE_NOT_SET;
+package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -12,6 +10,14 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.NoResponseException;
+import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.utils.Environment;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -23,18 +29,13 @@ import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.model.Publication;
-import no.unit.publication.Environment;
-import no.unit.publication.Logger;
-import no.unit.publication.model.PublicationSummary;
-import no.unit.publication.service.PublicationService;
 
 public class DynamoDBPublicationService implements PublicationService {
 
-    public static final String NOT_IMPLEMENTED = "Not implemented";
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String DYNAMODB_KEY_DELIMITER = "#";
+    public static final String ERROR_READING_FROM_DYNAMO_DB = "Error reading from DynamoDB";
 
     private final Index byPublisherIndex;
     private final ObjectMapper objectMapper;
@@ -51,12 +52,8 @@ public class DynamoDBPublicationService implements PublicationService {
      * Constructor for DynamoDBPublicationService.
      */
     public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
-        String tableName = environment.get(TABLE_NAME_ENV).orElseThrow(
-            () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + TABLE_NAME_ENV));
-
-        String byPublisherIndexName = environment.get(BY_PUBLISHER_INDEX_NAME_ENV).orElseThrow(
-            () -> new IllegalStateException(ENVIRONMENT_VARIABLE_NOT_SET + BY_PUBLISHER_INDEX_NAME_ENV));
-
+        String tableName = environment.readEnv(TABLE_NAME_ENV);
+        String byPublisherIndexName = environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV);
         DynamoDB dynamoDB = new DynamoDB(client);
         Table table = dynamoDB.getTable(tableName);
 
@@ -65,22 +62,25 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Optional<Publication> getPublication(UUID identifier, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+    public Publication getPublication(UUID identifier, String authorization)  throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 
     @Override
-    public Publication updatePublication(Publication publication, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+    public Publication updatePublication(UUID identifier, Publication publication, String authorization)
+            throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization) {
-        throw new RuntimeException(NOT_IMPLEMENTED);
+    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
+            throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization) {
+    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
+            throws ApiGatewayException {
         allFieldsAreNonNull(owner, publisherId, authorization);
 
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
@@ -98,7 +98,12 @@ public class DynamoDBPublicationService implements PublicationService {
             .withNameMap(nameMap)
             .withValueMap(valueMap);
 
-        ItemCollection<QueryOutcome> items = byPublisherIndex.query(querySpec);
+        ItemCollection<QueryOutcome> items;
+        try {
+            items = byPublisherIndex.query(querySpec);
+        } catch (Exception e) {
+            throw new NoResponseException(ERROR_READING_FROM_DYNAMO_DB, e);
+        }
 
         List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
         return filterOutOlderVersionsOfPublications(publications);
@@ -144,7 +149,7 @@ public class DynamoDBPublicationService implements PublicationService {
             publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
             return Optional.of(publicationSummary);
         } catch (JsonProcessingException e) {
-            Logger.logError(e);
+            System.out.println(e.getMessage());
             return Optional.empty();
         }
     }
