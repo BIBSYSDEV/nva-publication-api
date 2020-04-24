@@ -65,11 +65,9 @@ public final class RequestUtil {
      * @throws ApiGatewayException  exception thrown if value is missing
      */
     public static String getOrgNumber(RequestInfo requestInfo) throws ApiGatewayException {
-        if (requestInfo.getRequestContext() != null) {
-            JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_ORG_NUMBER);
-            if (!jsonNode.isMissingNode()) {
-                return jsonNode.textValue();
-            }
+        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_ORG_NUMBER);
+        if (!jsonNode.isMissingNode()) {
+            return jsonNode.textValue();
         }
         throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_ORG_NUMBER, null);
     }
@@ -82,11 +80,9 @@ public final class RequestUtil {
      * @throws ApiGatewayException  exception thrown if value is missing
      */
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
-        if (requestInfo.getRequestContext() != null) {
-            JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_FEIDE_ID);
-            if (!jsonNode.isMissingNode()) {
-                return jsonNode.textValue();
-            }
+        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_FEIDE_ID);
+        if (!jsonNode.isMissingNode()) {
+            return jsonNode.textValue();
         }
         throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_FEIDE_ID, null);
     }

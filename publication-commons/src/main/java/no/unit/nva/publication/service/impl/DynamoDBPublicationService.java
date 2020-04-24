@@ -11,7 +11,9 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.NoResponseException;
+import no.unit.nva.publication.exception.DynamoDBException;
+import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
@@ -19,8 +21,10 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,19 +36,28 @@ import java.util.stream.Stream;
 
 public class DynamoDBPublicationService implements PublicationService {
 
+    public static final String IDENTIFIER = "identifier";
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String DYNAMODB_KEY_DELIMITER = "#";
-    public static final String ERROR_READING_FROM_DYNAMO_DB = "Error reading from DynamoDB";
+    public static final String ERROR_READING_FROM_TABLE = "Error reading from Table";
+    public static final String ERROR_WRITING_TO_TABLE = "Error writing to Table";
+    public static final String PUBLICATION_NOT_FOUND = "Publication not found: ";
+    public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
+    public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
+    public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
+            + "is not equal to identifier in customer object '%s'";
 
-    private final Index byPublisherIndex;
     private final ObjectMapper objectMapper;
+    private final Table table;
+    private final Index byPublisherIndex;
 
     /**
      * Constructor for DynamoDBPublicationService.
      */
-    public DynamoDBPublicationService(ObjectMapper objectMapper, Index byPublisherIndex) {
+    public DynamoDBPublicationService(ObjectMapper objectMapper, Table table, Index byPublisherIndex) {
         this.objectMapper = objectMapper;
+        this.table = table;
         this.byPublisherIndex = byPublisherIndex;
     }
 
@@ -55,21 +68,72 @@ public class DynamoDBPublicationService implements PublicationService {
         String tableName = environment.readEnv(TABLE_NAME_ENV);
         String byPublisherIndexName = environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV);
         DynamoDB dynamoDB = new DynamoDB(client);
-        Table table = dynamoDB.getTable(tableName);
-
-        this.byPublisherIndex = table.getIndex(byPublisherIndexName);
         this.objectMapper = objectMapper;
+        this.table = dynamoDB.getTable(tableName);
+        this.byPublisherIndex = table.getIndex(byPublisherIndexName);
     }
 
     @Override
     public Publication getPublication(UUID identifier, String authorization)  throws ApiGatewayException {
-        throw new NotImplementedException();
+        Item item = null;
+        try {
+            QuerySpec spec = new QuerySpec()
+                    .withHashKey(IDENTIFIER, identifier.toString())
+                    .withScanIndexForward(false)
+                    .withMaxResultSize(1);
+            ItemCollection<QueryOutcome> outcomeItemCollection = table.query(spec);
+            Iterator<Item> iterator = outcomeItemCollection.iterator();
+            if (iterator.hasNext()) {
+                item = outcomeItemCollection.iterator().next();
+            }
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
+        }
+        if (item == null) {
+            throw new NotFoundException(PUBLICATION_NOT_FOUND + identifier.toString());
+        }
+        return itemToPublication(item);
+    }
+
+    protected Publication itemToPublication(Item item) throws ApiGatewayException {
+        Publication publicationOutCome;
+        try {
+            publicationOutCome = objectMapper.readValue(item.toJSON(), Publication.class);
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
+        }
+        return publicationOutCome;
     }
 
     @Override
     public Publication updatePublication(UUID identifier, Publication publication, String authorization)
             throws ApiGatewayException {
-        throw new NotImplementedException();
+        validateIdentifier(identifier, publication);
+        try {
+            publication.setModifiedDate(Instant.now());
+            Item item = publicationToItem(publication);
+            table.putItem(item);
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
+        }
+        return getPublication(identifier, authorization);
+    }
+
+    protected Item publicationToItem(Publication publication) throws ApiGatewayException {
+        Item item;
+        try {
+            item = Item.fromJSON(objectMapper.writeValueAsString(publication));
+        } catch (JsonProcessingException e) {
+            throw new InputException(ERROR_MAPPING_PUBLICATION_TO_ITEM, e);
+        }
+        return item;
+    }
+
+    private void validateIdentifier(UUID identifier, Publication publication) throws ApiGatewayException {
+        if (!identifier.equals(publication.getIdentifier())) {
+            throw new InputException(
+                    String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
+        }
     }
 
     @Override
@@ -102,7 +166,7 @@ public class DynamoDBPublicationService implements PublicationService {
         try {
             items = byPublisherIndex.query(querySpec);
         } catch (Exception e) {
-            throw new NoResponseException(ERROR_READING_FROM_DYNAMO_DB, e);
+            throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
         List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
