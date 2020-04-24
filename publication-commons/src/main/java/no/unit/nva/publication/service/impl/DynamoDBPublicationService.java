@@ -110,13 +110,13 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     protected Publication itemToPublication(Item item) throws ApiGatewayException {
-        Publication publicationOutCome;
+        Publication publicationOutcome;
         try {
-            publicationOutCome = objectMapper.readValue(item.toJSON(), Publication.class);
+            publicationOutcome = objectMapper.readValue(item.toJSON(), Publication.class);
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
         }
-        return publicationOutCome;
+        return publicationOutcome;
     }
 
     @Override
