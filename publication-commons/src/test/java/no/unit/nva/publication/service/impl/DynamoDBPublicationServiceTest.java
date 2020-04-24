@@ -269,7 +269,7 @@ class DynamoDBPublicationServiceTest {
                 index
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
-                () -> failingService.createPublication(publication()));
+            () -> failingService.createPublication(publication()));
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 
