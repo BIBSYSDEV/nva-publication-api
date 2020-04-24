@@ -14,6 +14,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
 import java.net.URI;
@@ -69,6 +70,12 @@ public class RestPublicationService implements PublicationService {
      */
     public RestPublicationService(HttpClient client, ObjectMapper objectMapper, Environment environment) {
         this(client, objectMapper, environment.readEnv(API_SCHEME_ENV), environment.readEnv(API_HOST_ENV));
+    }
+
+    @JacocoGenerated
+    @Override
+    public Publication createPublication(Publication publication, String authorization) throws ApiGatewayException {
+        throw new NotImplementedException();
     }
 
     @Override
@@ -150,12 +157,14 @@ public class RestPublicationService implements PublicationService {
         }
     }
 
+    @JacocoGenerated
     @Override
     public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
             throws ApiGatewayException {
         throw new NotImplementedException();
     }
 
+    @JacocoGenerated
     @Override
     public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
             throws ApiGatewayException {

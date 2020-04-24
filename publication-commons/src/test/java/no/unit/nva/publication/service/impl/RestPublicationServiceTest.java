@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NoResponseException;
-import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -187,18 +186,6 @@ public class RestPublicationServiceTest {
                 UUID.randomUUID(),
                 SOME_API_KEY
         ));
-    }
-
-    @Test
-    @DisplayName("notImplemented Methods Throws Run Time Exception")
-    public void notImplementedMethodsThrowsRunTimeException() {
-        PublicationService publicationService = new RestPublicationService(client, objectMapper, API_SCHEME, API_HOST);
-        assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublicationsByOwner(null, null, null);
-        });
-        assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublicationsByPublisher(null, null);
-        });
     }
 
     private String getResponse(String path) throws IOException {

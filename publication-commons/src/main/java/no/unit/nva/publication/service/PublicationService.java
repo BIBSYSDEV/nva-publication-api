@@ -10,6 +10,8 @@ import java.util.UUID;
 
 public interface PublicationService {
 
+    Publication createPublication(Publication publication, String authorization) throws ApiGatewayException;
+
     Publication getPublication(UUID identifier, String authorization)
             throws ApiGatewayException;
 

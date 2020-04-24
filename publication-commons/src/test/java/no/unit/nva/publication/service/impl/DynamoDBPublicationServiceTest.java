@@ -137,7 +137,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     public void canGetPublication() throws Exception {
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication, null);
 
         Publication publicationFromDb = publicationService.getPublication(
                 publication.getIdentifier(), null);
@@ -157,7 +157,7 @@ class DynamoDBPublicationServiceTest {
     public void updateExistingCustomerWithNewOwner() throws Exception {
         String newOwner = "New Owner";
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication, null);
 
         publication.setOwner(newOwner);
         Publication updatedPublication = publicationService.updatePublication(
@@ -168,9 +168,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     public void updateExistingCustomerChangesModifiedDate() throws Exception {
         Publication publication = publication();
-        insertPublication(publication);
-        Publication createdPublication = publicationService.getPublication(
-                publication.getIdentifier(), null);
+        Publication createdPublication = publicationService.createPublication(publication, null);
 
         Publication updatedPublication = publicationService.updatePublication(
                 publication.getIdentifier(), publication, null);
@@ -180,7 +178,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     public void updateExistingCustomerPreservesCreatedDate() throws Exception {
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication, null);
 
         Publication updatedPublication = publicationService.updatePublication(
                 publication.getIdentifier(), publication, null);
@@ -190,7 +188,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     public void updateExistingCustomerWithDifferentIdentifiersThrowsException() throws Exception {
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication, null);
         UUID differentIdentifier = UUID.randomUUID();
 
         InputException exception = assertThrows(InputException.class,
@@ -215,7 +213,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("nonEmpty Table Returns Publications")
     public void nonEmptyTableReturnsPublications() throws IOException, ApiGatewayException {
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication, null);
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
@@ -261,6 +259,21 @@ class DynamoDBPublicationServiceTest {
 
         assertThat(actual, containsInAnyOrder(expected.toArray()));
         assertThat(expected, containsInAnyOrder(actual.toArray()));
+    }
+
+    @Test
+    public void createPublicationTableErrorThrowsException() {
+        Table failingTable = mock(Table.class);
+        Index index = mock(Index.class);
+        when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                objectMapper,
+                failingTable,
+                index
+        );
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+                () -> failingService.createPublication(publication(), null));
+        assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 
     @Test
@@ -374,9 +387,5 @@ class DynamoDBPublicationServiceTest {
                 .withPublisher(new Organization.Builder().withId(PUBLISHER_ID).build())
                 .withEntityDescription(new EntityDescription.Builder().withMainTitle("DynamoDB Local Testing").build())
                 .build();
-    }
-
-    private void insertPublication(Publication publication) throws IOException {
-        db.getTable().putItem(Item.fromJSON(objectMapper.writeValueAsString(publication)));
     }
 }

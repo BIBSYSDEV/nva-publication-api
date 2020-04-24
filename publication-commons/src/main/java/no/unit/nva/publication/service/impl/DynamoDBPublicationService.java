@@ -19,6 +19,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
@@ -71,6 +72,19 @@ public class DynamoDBPublicationService implements PublicationService {
         this.objectMapper = objectMapper;
         this.table = dynamoDB.getTable(tableName);
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
+    }
+
+    @Override
+    public Publication createPublication(Publication publication, String authorization) throws ApiGatewayException {
+        UUID identifier = UUID.randomUUID();
+        try {
+            publication.setIdentifier(identifier);
+            Item item = publicationToItem(publication);
+            table.putItem(item);
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
+        }
+        return getPublication(identifier, authorization);
     }
 
     @Override
@@ -136,6 +150,7 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
+    @JacocoGenerated
     @Override
     public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
             throws ApiGatewayException {
