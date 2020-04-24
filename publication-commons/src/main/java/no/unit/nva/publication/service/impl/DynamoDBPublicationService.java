@@ -75,7 +75,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication createPublication(Publication publication, String authorization) throws ApiGatewayException {
+    public Publication createPublication(Publication publication) throws ApiGatewayException {
         UUID identifier = UUID.randomUUID();
         try {
             publication.setIdentifier(identifier);
@@ -84,11 +84,11 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(identifier, authorization);
+        return getPublication(identifier);
     }
 
     @Override
-    public Publication getPublication(UUID identifier, String authorization)  throws ApiGatewayException {
+    public Publication getPublication(UUID identifier)  throws ApiGatewayException {
         Item item = null;
         try {
             QuerySpec spec = new QuerySpec()
@@ -120,7 +120,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication updatePublication(UUID identifier, Publication publication, String authorization)
+    public Publication updatePublication(UUID identifier, Publication publication)
             throws ApiGatewayException {
         validateIdentifier(identifier, publication);
         try {
@@ -130,7 +130,7 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(identifier, authorization);
+        return getPublication(identifier);
     }
 
     protected Item publicationToItem(Publication publication) throws ApiGatewayException {
@@ -152,15 +152,15 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @JacocoGenerated
     @Override
-    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
+    public List<PublicationSummary> getPublicationsByPublisher(URI publisherId)
             throws ApiGatewayException {
         throw new NotImplementedException();
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
+    public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
             throws ApiGatewayException {
-        allFieldsAreNonNull(owner, publisherId, authorization);
+        allFieldsAreNonNull(owner, publisherId);
 
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
 
@@ -216,10 +216,9 @@ public class DynamoDBPublicationService implements PublicationService {
         return mostRecent.stream();
     }
 
-    private void allFieldsAreNonNull(String owner, URI publisherId, String authorization) {
+    private void allFieldsAreNonNull(String owner, URI publisherId) {
         Objects.requireNonNull(owner);
         Objects.requireNonNull(publisherId);
-        Objects.isNull(authorization);
     }
 
     protected Optional<PublicationSummary> toPublicationSummary(Item item) {

@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -94,7 +93,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("notImplemented Methods Throws NotImplementedException")
     public void notImplementedMethodsThrowsNotImplementedException() {
         assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublicationsByPublisher(null, null);
+            publicationService.getPublicationsByPublisher(null);
         });
     }
 
@@ -137,10 +136,10 @@ class DynamoDBPublicationServiceTest {
     @Test
     public void canGetPublication() throws Exception {
         Publication publication = publication();
-        publicationService.createPublication(publication, null);
+        publicationService.createPublication(publication);
 
         Publication publicationFromDb = publicationService.getPublication(
-                publication.getIdentifier(), null);
+                publication.getIdentifier());
         assertEquals(publication, publicationFromDb);
     }
 
@@ -148,7 +147,7 @@ class DynamoDBPublicationServiceTest {
     public void getPublicationOnEmptyTableThrowsNotFoundException() {
         UUID nonExistingIdentifier = UUID.randomUUID();
         NotFoundException exception = assertThrows(NotFoundException.class, () -> publicationService.getPublication(
-                 nonExistingIdentifier, null));
+                 nonExistingIdentifier));
         assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
 
     }
@@ -157,42 +156,42 @@ class DynamoDBPublicationServiceTest {
     public void updateExistingCustomerWithNewOwner() throws Exception {
         String newOwner = "New Owner";
         Publication publication = publication();
-        publicationService.createPublication(publication, null);
+        publicationService.createPublication(publication);
 
         publication.setOwner(newOwner);
         Publication updatedPublication = publicationService.updatePublication(
-                publication.getIdentifier(), publication, null);
+                publication.getIdentifier(), publication);
         assertEquals(newOwner, updatedPublication.getOwner());
     }
 
     @Test
     public void updateExistingCustomerChangesModifiedDate() throws Exception {
         Publication publication = publication();
-        Publication createdPublication = publicationService.createPublication(publication, null);
+        Publication createdPublication = publicationService.createPublication(publication);
 
         Publication updatedPublication = publicationService.updatePublication(
-                publication.getIdentifier(), publication, null);
+                publication.getIdentifier(), publication);
         assertNotEquals(createdPublication.getModifiedDate(), updatedPublication.getModifiedDate());
     }
 
     @Test
     public void updateExistingCustomerPreservesCreatedDate() throws Exception {
         Publication publication = publication();
-        publicationService.createPublication(publication, null);
+        publicationService.createPublication(publication);
 
         Publication updatedPublication = publicationService.updatePublication(
-                publication.getIdentifier(), publication, null);
+                publication.getIdentifier(), publication);
         assertEquals(publication.getCreatedDate(), updatedPublication.getCreatedDate());
     }
 
     @Test
     public void updateExistingCustomerWithDifferentIdentifiersThrowsException() throws Exception {
         Publication publication = publication();
-        publicationService.createPublication(publication, null);
+        publicationService.createPublication(publication);
         UUID differentIdentifier = UUID.randomUUID();
 
         InputException exception = assertThrows(InputException.class,
-            () -> publicationService.updatePublication(differentIdentifier, publication, null));
+            () -> publicationService.updatePublication(differentIdentifier, publication));
         String expectedMessage = String.format(DynamoDBPublicationService.IDENTIFIERS_NOT_EQUAL,
                 differentIdentifier, publication.getIdentifier());
         assertEquals(expectedMessage, exception.getMessage());
@@ -203,22 +202,20 @@ class DynamoDBPublicationServiceTest {
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
-                PUBLISHER_ID,
-                null);
+                PUBLISHER_ID);
 
         assertEquals(0, publications.size());
     }
 
     @Test
     @DisplayName("nonEmpty Table Returns Publications")
-    public void nonEmptyTableReturnsPublications() throws IOException, ApiGatewayException {
+    public void nonEmptyTableReturnsPublications() throws ApiGatewayException {
         Publication publication = publication();
-        publicationService.createPublication(publication, null);
+        publicationService.createPublication(publication);
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
-                PUBLISHER_ID,
-                null);
+                PUBLISHER_ID);
 
         assertEquals(1, publications.size());
         assertEquals(publication.getEntityDescription().getMainTitle(), publications.get(0).getMainTitle());
@@ -272,7 +269,7 @@ class DynamoDBPublicationServiceTest {
                 index
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
-                () -> failingService.createPublication(publication(), null));
+                () -> failingService.createPublication(publication()));
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 
@@ -287,7 +284,7 @@ class DynamoDBPublicationServiceTest {
                 index
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
-            () -> failingService.getPublication(UUID.randomUUID(), null));
+            () -> failingService.getPublication(UUID.randomUUID()));
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
 
@@ -302,7 +299,7 @@ class DynamoDBPublicationServiceTest {
                 failingIdex
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
-            () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID, null));
+            () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID));
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
 
@@ -319,7 +316,7 @@ class DynamoDBPublicationServiceTest {
         Publication publication = publication();
         publication.setIdentifier(UUID.randomUUID());
         DynamoDBException exception = assertThrows(DynamoDBException.class,
-            () -> failingService.updatePublication(publication.getIdentifier(), publication, null));
+            () -> failingService.updatePublication(publication.getIdentifier(), publication));
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 

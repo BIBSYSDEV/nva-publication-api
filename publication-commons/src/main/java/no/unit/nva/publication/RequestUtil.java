@@ -4,9 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
-import org.apache.http.HttpHeaders;
 
-import java.util.Objects;
 import java.util.UUID;
 
 public final class RequestUtil {
@@ -21,23 +19,6 @@ public final class RequestUtil {
             "Missing claim in requestContext: ";
 
     private RequestUtil() {
-    }
-
-    /**
-     * Get Authorization header from request.
-     *
-     * @param requestInfo   requestInfo
-     * @return  value of Authorization header
-     * @throws ApiGatewayException  exception thrown if value is missing
-     */
-    public static String getAuthorization(RequestInfo requestInfo) throws ApiGatewayException {
-        try {
-            String authorization = requestInfo.getHeaders().get(HttpHeaders.AUTHORIZATION);
-            Objects.requireNonNull(authorization);
-            return authorization;
-        } catch (Exception e) {
-            throw new InputException(MISSING_AUTHORIZATION_IN_HEADERS, e);
-        }
     }
 
     /**
