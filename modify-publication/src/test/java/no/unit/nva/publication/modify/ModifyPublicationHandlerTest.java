@@ -78,12 +78,6 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new ModifyPublicationHandler());
-    }
-
-    @Test
     @DisplayName("handler Returns OK Response On Valid Input")
     public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();

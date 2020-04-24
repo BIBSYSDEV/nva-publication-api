@@ -13,6 +13,7 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
@@ -26,6 +27,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     /**
      * Default constructor for MainHandler.
      */
+    @JacocoGenerated
     public ModifyPublicationHandler() {
         this(new DynamoDBPublicationService(
                         AmazonDynamoDBClientBuilder.defaultClient(),

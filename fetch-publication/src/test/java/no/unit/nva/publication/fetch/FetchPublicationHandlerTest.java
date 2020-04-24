@@ -75,12 +75,6 @@ public class FetchPublicationHandlerTest {
     }
 
     @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new FetchPublicationHandler());
-    }
-
-    @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
