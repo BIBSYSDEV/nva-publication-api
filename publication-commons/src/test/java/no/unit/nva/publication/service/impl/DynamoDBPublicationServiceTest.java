@@ -134,13 +134,11 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
-    public void canGetPublication() throws Exception {
-        Publication publication = publication();
-        publicationService.createPublication(publication);
-
-        Publication publicationFromDb = publicationService.getPublication(
-                publication.getIdentifier());
-        assertEquals(publication, publicationFromDb);
+    public void getPublicationReturnsExistingPublicationWhenInputIsExistingIdentifier() throws Exception {
+        Publication storedPublication = publication();
+        publicationService.createPublication(storedPublication);
+        Publication retrievedPublication = publicationService.getPublication(storedPublication.getIdentifier());
+        assertEquals(retrievedPublication, storedPublication);
     }
 
     @Test
