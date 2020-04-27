@@ -15,6 +15,7 @@ import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.util.List;
+import org.slf4j.LoggerFactory;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
@@ -44,6 +45,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
                                       Environment environment) {
         super(Void.class, environment);
         this.publicationService = publicationService;
+        this.logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
     }
 
     @Override
@@ -53,7 +55,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
         String owner = RequestUtil.getOwner(requestInfo);
         String orgNumber = RequestUtil.getOrgNumber(requestInfo);
 
-        logger.log(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
+        logger.info(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
                 owner,
                 orgNumber));
 

@@ -8,6 +8,8 @@ import org.apache.http.HttpHeaders;
 
 import java.util.Objects;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
 
@@ -19,6 +21,9 @@ public final class RequestUtil {
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
             "Missing claim in requestContext: ";
+
+    private static final Logger logger= LoggerFactory.getLogger(RequestUtil.class);
+    public static final String AUTHORIZATION_SUCCESSFUL = "Authorization successful";
 
     private RequestUtil() {
     }
@@ -33,6 +38,7 @@ public final class RequestUtil {
     public static String getAuthorization(RequestInfo requestInfo) throws ApiGatewayException {
         try {
             String authorization = requestInfo.getHeaders().get(HttpHeaders.AUTHORIZATION);
+            logger.debug(AUTHORIZATION_SUCCESSFUL);
             Objects.requireNonNull(authorization);
             return authorization;
         } catch (Exception e) {
@@ -50,7 +56,9 @@ public final class RequestUtil {
     public static UUID getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
         String identifier = null;
         try {
+            logger.info("Trying to read Publication identifier...");
             identifier = requestInfo.getPathParameters().get(IDENTIFIER);
+            logger.info("Requesting publication metadata for ID:"+identifier);
             return UUID.fromString(identifier);
         } catch (Exception e) {
             throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
