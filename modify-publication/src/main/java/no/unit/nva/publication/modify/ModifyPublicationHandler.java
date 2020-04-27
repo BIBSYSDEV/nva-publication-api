@@ -1,5 +1,6 @@
 package no.unit.nva.publication.modify;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
@@ -7,14 +8,13 @@ import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.publication.service.impl.RestPublicationService;
+import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-
-import java.net.http.HttpClient;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
@@ -27,9 +27,10 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     /**
      * Default constructor for MainHandler.
      */
+    @JacocoGenerated
     public ModifyPublicationHandler() {
-        this(new RestPublicationService(
-                        HttpClient.newHttpClient(),
+        this(new DynamoDBPublicationService(
+                        AmazonDynamoDBClientBuilder.defaultClient(),
                         objectMapper,
                         new Environment()),
                 new Environment());
@@ -52,8 +53,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
             throws ApiGatewayException {
         Publication publication = publicationService.updatePublication(
                 RequestUtil.getIdentifier(requestInfo),
-                input,
-                RequestUtil.getAuthorization(requestInfo));
+                input);
 
         return toJsonNodeWithContext(publication);
     }

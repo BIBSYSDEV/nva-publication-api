@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.service.impl.RestPublicationService.AUTHORIZATION;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -42,13 +41,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FetchPublicationHandlerTest {
 
-    public static final String SOME_API_KEY = "some api key";
     public static final String PATH_PARAMETERS = "pathParameters";
     public static final String HEADERS = "headers";
     public static final String IDENTIFIER = "identifier";
@@ -74,20 +71,14 @@ public class FetchPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(publicationService, objectMapper, environment);
-    }
-
-    @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new FetchPublicationHandler());
+                new FetchPublicationHandler(publicationService, environment);
     }
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.getPublication(any(UUID.class), anyString()))
+        when(publicationService.getPublication(any(UUID.class)))
                 .thenReturn(publication);
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -101,7 +92,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
+        when(publicationService.getPublication(any(UUID.class)))
                 .thenThrow(new NotFoundException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -126,7 +117,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
-        Map<String, Object> event = Map.of(HEADERS, Map.of(AUTHORIZATION, SOME_API_KEY));
+        Map<String, Object> event = Map.of(HEADERS, Map.of());
         InputStream inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
 
         fetchPublicationHandler.handleRequest(inputStream, output, context);
@@ -139,7 +130,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
             throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
+        when(publicationService.getPublication(any(UUID.class)))
                 .thenThrow(new NullPointerException());
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -152,7 +143,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
             throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
+        when(publicationService.getPublication(any(UUID.class)))
                 .thenThrow(new ErrorResponseException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -165,7 +156,6 @@ public class FetchPublicationHandlerTest {
     private InputStream inputStream() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
         Map<String,String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, SOME_API_KEY);
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         event.put(PATH_PARAMETERS, singletonMap(IDENTIFIER, IDENTIFIER_VALUE));

@@ -10,16 +10,18 @@ import java.util.UUID;
 
 public interface PublicationService {
 
-    Publication getPublication(UUID identifier, String authorization)
+    Publication createPublication(Publication publication) throws ApiGatewayException;
+
+    Publication getPublication(UUID identifier)
             throws ApiGatewayException;
 
-    Publication updatePublication(UUID identifier, Publication publication, String authorization)
+    Publication updatePublication(UUID identifier, Publication publication)
             throws ApiGatewayException;
 
-    List<PublicationSummary> getPublicationsByPublisher(URI publisherId, String authorization)
+    List<PublicationSummary> getPublicationsByPublisher(URI publisherId)
             throws ApiGatewayException;
 
-    List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId, String authorization)
+    List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
             throws ApiGatewayException;
 
 }

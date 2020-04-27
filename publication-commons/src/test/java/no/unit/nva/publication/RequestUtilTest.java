@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
-import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -37,22 +36,6 @@ public class RequestUtilTest {
     public void getIdentifierOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(InputException.class, () -> RequestUtil.getIdentifier(requestInfo));
-    }
-
-    @Test
-    public void canGetAuthorizationFromRequest() throws ApiGatewayException {
-        RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setHeaders(Map.of(HttpHeaders.AUTHORIZATION, VALUE));
-
-        String authorization = RequestUtil.getAuthorization(requestInfo);
-
-        assertEquals(VALUE, authorization);
-    }
-
-    @Test
-    public void getAuthorizationOnInvalidRequestThrowsException() {
-        RequestInfo requestInfo = new RequestInfo();
-        assertThrows(InputException.class, () -> RequestUtil.getAuthorization(requestInfo));
     }
 
     @Test

@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.service.impl.RestPublicationService.AUTHORIZATION;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -41,7 +40,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -80,16 +78,10 @@ public class ModifyPublicationHandlerTest {
     }
 
     @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new ModifyPublicationHandler());
-    }
-
-    @Test
     @DisplayName("handler Returns OK Response On Valid Input")
     public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
                 .thenReturn(publication);
 
         modifyPublicationHandler.handleRequest(
@@ -128,7 +120,7 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
             throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
                 .thenThrow(ErrorResponseException.class);
 
         modifyPublicationHandler.handleRequest(
@@ -143,7 +135,7 @@ public class ModifyPublicationHandlerTest {
     public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
             throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class), anyString()))
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
                 .thenThrow(NullPointerException.class);
 
         modifyPublicationHandler.handleRequest(
@@ -159,7 +151,6 @@ public class ModifyPublicationHandlerTest {
         String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, SOME_API_KEY);
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         event.put(PATH_PARAMETERS, singletonMap(IDENTIFIER, identifier));
@@ -172,7 +163,6 @@ public class ModifyPublicationHandlerTest {
         String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
         Map<String,String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, SOME_API_KEY);
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));

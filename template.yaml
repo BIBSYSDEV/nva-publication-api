@@ -150,8 +150,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
@@ -169,8 +172,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
       Events:
         PutEvent:
           Type: Api
