@@ -1,12 +1,20 @@
 package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.DynamoDBException;
+import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import nva.commons.exceptions.ApiGatewayException;
@@ -19,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
 
-import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,13 +35,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_MAPPING_ITEM_TO_PUBLICATION;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_READING_FROM_TABLE;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_WRITING_TO_TABLE;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLICATION_NOT_FOUND;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -56,7 +69,7 @@ class DynamoDBPublicationServiceTest {
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
 
     @Rule
-    public PublicationsDynamoDBLocal publicationsDynamoDBLocal =  new PublicationsDynamoDBLocal();
+    public PublicationsDynamoDBLocal db =  new PublicationsDynamoDBLocal();
 
     private DynamoDBPublicationService publicationService;
     private Environment environment;
@@ -71,8 +84,17 @@ class DynamoDBPublicationServiceTest {
         environment = mock(Environment.class);
         publicationService = new DynamoDBPublicationService(
                 objectMapper,
-                publicationsDynamoDBLocal.getByPublisherIndex()
+                db.getTable(),
+                db.getByPublisherIndex()
         );
+    }
+
+    @Test
+    @DisplayName("notImplemented Methods Throws NotImplementedException")
+    public void notImplementedMethodsThrowsNotImplementedException() {
+        assertThrows(NotImplementedException.class, () ->  {
+            publicationService.getPublicationsByPublisher(null);
+        });
     }
 
     @Test
@@ -112,26 +134,86 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    public void getPublicationReturnsExistingPublicationWhenInputIsExistingIdentifier() throws Exception {
+        Publication storedPublication = publication();
+        publicationService.createPublication(storedPublication);
+        Publication retrievedPublication = publicationService.getPublication(storedPublication.getIdentifier());
+        assertEquals(retrievedPublication, storedPublication);
+    }
+
+    @Test
+    public void getPublicationOnEmptyTableThrowsNotFoundException() {
+        UUID nonExistingIdentifier = UUID.randomUUID();
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> publicationService.getPublication(
+                 nonExistingIdentifier));
+        assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
+
+    }
+
+    @Test
+    public void updateExistingCustomerWithNewOwner() throws Exception {
+        String newOwner = "New Owner";
+        Publication publication = publication();
+        publicationService.createPublication(publication);
+
+        publication.setOwner(newOwner);
+        Publication updatedPublication = publicationService.updatePublication(
+                publication.getIdentifier(), publication);
+        assertEquals(newOwner, updatedPublication.getOwner());
+    }
+
+    @Test
+    public void updateExistingCustomerChangesModifiedDate() throws Exception {
+        Publication publication = publication();
+        Publication createdPublication = publicationService.createPublication(publication);
+
+        Publication updatedPublication = publicationService.updatePublication(
+                publication.getIdentifier(), publication);
+        assertNotEquals(createdPublication.getModifiedDate(), updatedPublication.getModifiedDate());
+    }
+
+    @Test
+    public void updateExistingCustomerPreservesCreatedDate() throws Exception {
+        Publication publication = publication();
+        publicationService.createPublication(publication);
+
+        Publication updatedPublication = publicationService.updatePublication(
+                publication.getIdentifier(), publication);
+        assertEquals(publication.getCreatedDate(), updatedPublication.getCreatedDate());
+    }
+
+    @Test
+    public void updateExistingCustomerWithDifferentIdentifiersThrowsException() throws Exception {
+        Publication publication = publication();
+        publicationService.createPublication(publication);
+        UUID differentIdentifier = UUID.randomUUID();
+
+        InputException exception = assertThrows(InputException.class,
+            () -> publicationService.updatePublication(differentIdentifier, publication));
+        String expectedMessage = String.format(DynamoDBPublicationService.IDENTIFIERS_NOT_EQUAL,
+                differentIdentifier, publication.getIdentifier());
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
     @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
-                PUBLISHER_ID,
-                null);
+                PUBLISHER_ID);
 
         assertEquals(0, publications.size());
     }
 
     @Test
     @DisplayName("nonEmpty Table Returns Publications")
-    public void nonEmptyTableReturnsPublications() throws IOException, ApiGatewayException {
+    public void nonEmptyTableReturnsPublications() throws ApiGatewayException {
         Publication publication = publication();
-        insertPublication(publication);
+        publicationService.createPublication(publication);
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
                 OWNER,
-                PUBLISHER_ID,
-                null);
+                PUBLISHER_ID);
 
         assertEquals(1, publications.size());
         assertEquals(publication.getEntityDescription().getMainTitle(), publications.get(0).getMainTitle());
@@ -146,20 +228,6 @@ class DynamoDBPublicationServiceTest {
         when(item.toJSON()).thenReturn(INVALID_JSON);
         Optional<PublicationSummary> publicationSummary = publicationService.toPublicationSummary(item);
         Assertions.assertTrue(publicationSummary.isEmpty());
-    }
-
-    @Test
-    @DisplayName("notImplemented Methods Throws RunTimeException")
-    public void notImplementedMethodsThrowsRunTimeException() {
-        assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublication(null,null);
-        });
-        assertThrows(NotImplementedException.class, () ->  {
-            publicationService.updatePublication(null, null, null);
-        });
-        assertThrows(NotImplementedException.class, () ->  {
-            publicationService.getPublicationsByPublisher(null, null);
-        });
     }
 
     @Test
@@ -186,6 +254,92 @@ class DynamoDBPublicationServiceTest {
 
         assertThat(actual, containsInAnyOrder(expected.toArray()));
         assertThat(expected, containsInAnyOrder(actual.toArray()));
+    }
+
+    @Test
+    public void createPublicationTableErrorThrowsException() {
+        Table failingTable = mock(Table.class);
+        Index index = mock(Index.class);
+        when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                objectMapper,
+                failingTable,
+                index
+        );
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+            () -> failingService.createPublication(publication()));
+        assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
+    }
+
+    @Test
+    public void getPublicationTableErrorThrowsException() {
+        Table failingTable = mock(Table.class);
+        Index index = mock(Index.class);
+        when(failingTable.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                objectMapper,
+                failingTable,
+                index
+        );
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+            () -> failingService.getPublication(UUID.randomUUID()));
+        assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
+    }
+
+    @Test
+    public void getPublicationsByOwnerTableErrorThrowsException() {
+        Table table = mock(Table.class);
+        Index failingIdex = mock(Index.class);
+        when(failingIdex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                objectMapper,
+                table,
+                failingIdex
+        );
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+            () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID));
+        assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
+    }
+
+    @Test
+    public void updatePublicationTableErrorThrowsException() {
+        Table failingTable = mock(Table.class);
+        Index index = mock(Index.class);
+        when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                objectMapper,
+                failingTable,
+                index
+        );
+        Publication publication = publication();
+        publication.setIdentifier(UUID.randomUUID());
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+            () -> failingService.updatePublication(publication.getIdentifier(), publication));
+        assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
+    }
+
+    @Test
+    public void publicationToItemThrowsExceptionWhenInvalidJson() throws JsonProcessingException {
+        ObjectMapper failingObjectMapper = mock(ObjectMapper.class);
+        when(failingObjectMapper.writeValueAsString(any(Publication.class))).thenThrow(JsonProcessingException.class);
+        DynamoDBPublicationService failingService = new DynamoDBPublicationService(
+                failingObjectMapper,
+                db.getTable(),
+                db.getByPublisherIndex()
+        );
+        InputException exception = assertThrows(InputException.class,
+            () -> failingService.publicationToItem(publication()));
+        assertEquals(DynamoDBPublicationService.ERROR_MAPPING_PUBLICATION_TO_ITEM, exception.getMessage());
+    }
+
+    @Test
+    public void itemToPublicationThrowsExceptionWhenInvalidJson() {
+        Item item = mock(Item.class);
+        when(item.toJSON()).thenThrow(new IllegalStateException());
+        DynamoDBException exception = assertThrows(DynamoDBException.class,
+            () -> publicationService.itemToPublication(item));
+        assertEquals(ERROR_MAPPING_ITEM_TO_PUBLICATION, exception.getMessage());
+
     }
 
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
@@ -218,19 +372,15 @@ class DynamoDBPublicationServiceTest {
     }
 
     private Publication publication() {
-        Instant now = Instant.now();
+        Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
         return new Publication.Builder()
                 .withIdentifier(UUID.randomUUID())
-                .withCreatedDate(now)
-                .withModifiedDate(now)
+                .withCreatedDate(oneMinuteInThePast)
+                .withModifiedDate(oneMinuteInThePast)
                 .withOwner(OWNER)
                 .withStatus(PublicationStatus.DRAFT)
                 .withPublisher(new Organization.Builder().withId(PUBLISHER_ID).build())
                 .withEntityDescription(new EntityDescription.Builder().withMainTitle("DynamoDB Local Testing").build())
                 .build();
-    }
-
-    private void insertPublication(Publication publication) throws IOException {
-        publicationsDynamoDBLocal.getTable().putItem(Item.fromJSON(objectMapper.writeValueAsString(publication)));
     }
 }

@@ -83,7 +83,7 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
             .thenReturn(publicationSummaries());
 
         publicationsByOwnerHandler.handleRequest(
@@ -110,7 +110,7 @@ public class PublicationsByOwnerHandlerTest {
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
             throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
             .thenThrow(ErrorResponseException.class);
 
         publicationsByOwnerHandler.handleRequest(
@@ -124,7 +124,7 @@ public class PublicationsByOwnerHandlerTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
             throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class), any()))
+        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
             .thenThrow(NullPointerException.class);
 
         publicationsByOwnerHandler.handleRequest(

@@ -61,8 +61,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
 
         List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
                 owner,
-                toPublisherId(orgNumber),
-                null
+                toPublisherId(orgNumber)
         );
 
         return new PublicationsByOwnerResponse(publicationsByOwner);
