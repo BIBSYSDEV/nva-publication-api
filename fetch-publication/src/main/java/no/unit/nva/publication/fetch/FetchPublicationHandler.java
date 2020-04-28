@@ -17,13 +17,12 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
-    private static final Logger LOGGER = LoggerFactory.getLogger(FetchPublicationHandler.class);
+
     private final PublicationService publicationService;
 
     /**
@@ -46,7 +45,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
      */
     public FetchPublicationHandler(PublicationService publicationService,
                                    Environment environment) {
-        super(Void.class, environment,LOGGER);
+        super(Void.class, environment, LoggerFactory.getLogger(FetchPublicationHandler.class));
         this.publicationService = publicationService;
     }
 
