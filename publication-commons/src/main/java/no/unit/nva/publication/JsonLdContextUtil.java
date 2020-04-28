@@ -28,7 +28,7 @@ public class JsonLdContextUtil {
         try (InputStream inputStream = IoUtils.inputStreamFromResources(Path.of(publicationContextPath))) {
             return Optional.of(objectMapper.readTree(inputStream));
         } catch (Exception e) {
-            logger.info("Error reading Publication Context: " + e.getMessage());
+            logger.warn("Error reading Publication Context: " + e.getMessage(),e);
             return Optional.empty();
         }
     }
