@@ -11,15 +11,18 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublishPublicationStatus;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
+import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.time.Instant;
@@ -48,6 +51,8 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
             + "is not equal to identifier in customer object '%s'";
+    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
+    public static final String PUBLISH_COMPLETED = "Publication is published.";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -230,5 +235,21 @@ public class DynamoDBPublicationService implements PublicationService {
             System.out.println(e.getMessage());
             return Optional.empty();
         }
+    }
+
+    @Override
+    public PublishPublicationStatus publishPublication(UUID identifier) throws ApiGatewayException {
+        Publication publicationToPublish = getPublication(identifier);
+        if (validatePublicationPublished(publicationToPublish)) {
+            return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
+        } else {
+            publicationToPublish.setStatus(PublicationStatus.PUBLISHED);
+            updatePublication(identifier, publicationToPublish);
+            return new PublishPublicationStatus(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
+        }
+    }
+
+    private boolean validatePublicationPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
 }

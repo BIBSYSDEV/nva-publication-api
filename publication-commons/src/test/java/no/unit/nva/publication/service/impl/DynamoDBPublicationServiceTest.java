@@ -17,8 +17,10 @@ import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublishPublicationStatus;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
+import org.apache.http.HttpStatus;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,9 +41,13 @@ import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ER
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_READING_FROM_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_WRITING_TO_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLICATION_NOT_FOUND;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_COMPLETED;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpStatus.SC_ACCEPTED;
+import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -340,6 +346,29 @@ class DynamoDBPublicationServiceTest {
             () -> publicationService.itemToPublication(item));
         assertEquals(ERROR_MAPPING_ITEM_TO_PUBLICATION, exception.getMessage());
 
+    }
+
+    @Test
+    public void canPublishPublicationReturnsAccepted() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+
+        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+
+        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void publicationAlreadyPublishedReturnsNoContent() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+
+        // publish
+        publicationService.publishPublication(publicationToPublish.getIdentifier());
+        // trying to publish again
+        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+
+        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_COMPLETED, SC_NO_CONTENT);
+        assertEquals(expected, actual);
     }
 
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
