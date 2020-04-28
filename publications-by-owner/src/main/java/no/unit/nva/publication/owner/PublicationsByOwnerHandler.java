@@ -15,6 +15,7 @@ import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.util.List;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
@@ -22,6 +23,7 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,PublicationsByOwnerResponse> {
 
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
+    public static final Logger Logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
 
     private final PublicationService publicationService;
 
@@ -43,9 +45,8 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
      */
     public PublicationsByOwnerHandler(PublicationService publicationService,
                                       Environment environment) {
-        super(Void.class, environment);
+        super(Void.class, environment,Logger);
         this.publicationService = publicationService;
-        this.logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
     }
 
     @Override

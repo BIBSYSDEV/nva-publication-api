@@ -32,7 +32,7 @@ subprojects {
     def awsSdkVersion = '1.11.714'
 
     dependencies {
-        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '5d4dc55f4e1'
+        implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '5323ed6ea97'
         implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.5.1'
         implementation group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
         implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion

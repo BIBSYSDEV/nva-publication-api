@@ -47,9 +47,8 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
      */
     public ModifyPublicationHandler(PublicationService publicationService,
                                     Environment environment) {
-        super(Publication.class, environment);
+        super(Publication.class, environment,LOGGER);
         this.publicationService = publicationService;
-        this.logger = LOGGER;
     }
 
     @Override

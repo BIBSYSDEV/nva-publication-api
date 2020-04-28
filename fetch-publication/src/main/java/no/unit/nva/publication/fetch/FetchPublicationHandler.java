@@ -46,9 +46,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
      */
     public FetchPublicationHandler(PublicationService publicationService,
                                    Environment environment) {
-        super(Void.class, environment);
+        super(Void.class, environment,LOGGER);
         this.publicationService = publicationService;
-        this.logger = LOGGER;
     }
 
     @Override

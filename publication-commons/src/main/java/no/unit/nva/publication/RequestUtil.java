@@ -20,7 +20,6 @@ public final class RequestUtil {
         "Missing claim in requestContext: ";
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
-    public static final String AUTHORIZATION_SUCCESSFUL = "Authorization successful";
 
     private RequestUtil() {
     }
