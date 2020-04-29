@@ -210,7 +210,7 @@ Resources:
       CodeUri: fetch-publication
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -232,7 +232,7 @@ Resources:
       CodeUri: modify-publication
       Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -254,7 +254,7 @@ Resources:
       CodeUri: publications-by-owner
       Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -276,7 +276,7 @@ Resources:
       CodeUri: publish-publication
       Handler: no.unit.nva.publication.publish.PublishPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1400
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
