@@ -11,15 +11,19 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublishPublicationStatus;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
+import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.time.Instant;
@@ -28,12 +32,14 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -48,6 +54,8 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
             + "is not equal to identifier in customer object '%s'";
+    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
+    public static final String PUBLISH_COMPLETED = "Publication is published.";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -217,8 +225,8 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     private void allFieldsAreNonNull(String owner, URI publisherId) {
-        Objects.requireNonNull(owner);
-        Objects.requireNonNull(publisherId);
+        requireNonNull(owner);
+        requireNonNull(publisherId);
     }
 
     protected Optional<PublicationSummary> toPublicationSummary(Item item) {
@@ -229,6 +237,57 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (JsonProcessingException e) {
             System.out.println(e.getMessage());
             return Optional.empty();
+        }
+    }
+
+    @Override
+    public PublishPublicationStatus publishPublication(UUID identifier) throws ApiGatewayException {
+        Publication publicationToPublish = getPublication(identifier);
+        if (isPublished(publicationToPublish)) {
+            return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
+        } else {
+            validatePublication(publicationToPublish);
+            publicationToPublish.setStatus(PublicationStatus.PUBLISHED);
+            updatePublication(identifier, publicationToPublish);
+            return new PublishPublicationStatus(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
+        }
+    }
+
+    private void validatePublication(Publication publication) throws ApiGatewayException {
+        List<String> missingFields = PublishPublicationValidator.validate(publication);
+        if (!missingFields.isEmpty()) {
+            throw new InvalidPublicationException(missingFields);
+        }
+    }
+
+    private boolean isPublished(Publication publication) {
+        return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+
+    public static class PublishPublicationValidator {
+
+        public static final String LINK_OR_FILE = "link or file";
+        public static final String MAIN_TITLE = "main title";
+
+        private PublishPublicationValidator() {
+        }
+
+        /**
+         * Validate that Publication has required fields for publishing: main title, owner and link or file.
+         * Note: Would have validated owner if it was not already required by an index in the DynamoDB table.
+         *
+         * @param publication the publication to validate
+         * @return a list of missing fields
+         */
+        public static List<String> validate(Publication publication) {
+            List<String> missingFields = new ArrayList<>();
+            if (isNull(publication.getEntityDescription().getMainTitle())) {
+                missingFields.add(MAIN_TITLE);
+            }
+            if (isNull(publication.getLink()) && publication.getFileSet().getFiles().isEmpty()) {
+                missingFields.add(LINK_OR_FILE);
+            }
+            return missingFields;
         }
     }
 }

@@ -9,14 +9,20 @@ import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.File;
+import no.unit.nva.model.FileSet;
+import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.service.impl.DynamoDBPublicationService.PublishPublicationValidator;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import org.junit.Rule;
@@ -39,9 +45,14 @@ import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ER
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_READING_FROM_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_WRITING_TO_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLICATION_NOT_FOUND;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_COMPLETED;
+import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
 import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpStatus.SC_ACCEPTED;
+import static org.apache.http.HttpStatus.SC_CONFLICT;
+import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -342,6 +353,62 @@ class DynamoDBPublicationServiceTest {
 
     }
 
+    @Test
+    public void canPublishPublicationReturnsAccepted() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+
+        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+
+        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void publicationAlreadyPublishedReturnsNoContent() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+
+        // publish
+        publicationService.publishPublication(publicationToPublish.getIdentifier());
+        // trying to publish again
+        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+
+        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_COMPLETED, SC_NO_CONTENT);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void publishPublicationWithMissingMainTitleReturnsConflict() throws Exception {
+        Publication publication = publication();
+        publication.getEntityDescription().setMainTitle(null);
+        Publication publicationToPublish = publicationService.createPublication(publication);
+
+        InvalidPublicationException exception = assertThrows(InvalidPublicationException.class,
+            () -> publicationService.publishPublication(publicationToPublish.getIdentifier()));
+
+        String errorMessage = String.format(
+                InvalidPublicationException.ERROR_MESSAGE_TEMPLATE,
+                PublishPublicationValidator.MAIN_TITLE);
+        assertEquals(errorMessage, exception.getMessage());
+        assertEquals(SC_CONFLICT, exception.getStatusCode());
+    }
+
+    @Test
+    public void publishPublicationWithMissingLinkAndFileReturnsConflict() throws Exception {
+        Publication publication = publication();
+        publication.setLink(null);
+        publication.setFileSet(new FileSet.Builder().withFiles(List.of()).build());
+        Publication publicationToPublish = publicationService.createPublication(publication);
+
+        InvalidPublicationException exception = assertThrows(InvalidPublicationException.class,
+            () -> publicationService.publishPublication(publicationToPublish.getIdentifier()));
+
+        String errorMessage = String.format(
+                InvalidPublicationException.ERROR_MESSAGE_TEMPLATE,
+                PublishPublicationValidator.LINK_OR_FILE);
+        assertEquals(errorMessage, exception.getMessage());
+        assertEquals(SC_CONFLICT, exception.getStatusCode());
+    }
+
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
         List<PublicationSummary> publicationSummaries = new ArrayList<>();
 
@@ -379,8 +446,20 @@ class DynamoDBPublicationServiceTest {
                 .withModifiedDate(oneMinuteInThePast)
                 .withOwner(OWNER)
                 .withStatus(PublicationStatus.DRAFT)
-                .withPublisher(new Organization.Builder().withId(PUBLISHER_ID).build())
-                .withEntityDescription(new EntityDescription.Builder().withMainTitle("DynamoDB Local Testing").build())
+                .withPublisher(new Organization.Builder()
+                        .withId(PUBLISHER_ID)
+                        .build())
+                .withEntityDescription(new EntityDescription.Builder()
+                        .withMainTitle("DynamoDB Local Testing")
+                        .build())
+                .withFileSet(new FileSet.Builder()
+                        .withFiles(List.of(new File.Builder()
+                            .withIdentifier(UUID.randomUUID())
+                            .withLicense(new License.Builder()
+                                .withIdentifier("licenseId")
+                                .build())
+                            .build()))
+                        .build())
                 .build();
     }
 }
