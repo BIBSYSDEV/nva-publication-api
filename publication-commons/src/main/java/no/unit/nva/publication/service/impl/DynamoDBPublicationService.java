@@ -243,7 +243,7 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public PublishPublicationStatus publishPublication(UUID identifier) throws ApiGatewayException {
         Publication publicationToPublish = getPublication(identifier);
-        if (validatePublicationPublished(publicationToPublish)) {
+        if (isPublished(publicationToPublish)) {
             return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
         } else {
             validatePublication(publicationToPublish);
@@ -260,7 +260,7 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
-    private boolean validatePublicationPublished(Publication publication) {
+    private boolean isPublished(Publication publication) {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
 
