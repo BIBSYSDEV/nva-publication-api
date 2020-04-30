@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.LoggerFactory;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
