@@ -247,10 +247,15 @@ public class DynamoDBPublicationService implements PublicationService {
             return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
         } else {
             validatePublication(publicationToPublish);
-            publicationToPublish.setStatus(PublicationStatus.PUBLISHED);
+            setPublishedProperties(publicationToPublish);
             updatePublication(identifier, publicationToPublish);
             return new PublishPublicationStatus(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
         }
+    }
+
+    private void setPublishedProperties(Publication publicationToPublish) {
+        publicationToPublish.setStatus(PublicationStatus.PUBLISHED);
+        publicationToPublish.setPublishedDate(Instant.now());
     }
 
     private void validatePublication(Publication publication) throws ApiGatewayException {
