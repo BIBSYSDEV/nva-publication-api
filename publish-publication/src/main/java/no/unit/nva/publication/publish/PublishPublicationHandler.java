@@ -16,6 +16,7 @@ import org.apache.http.HttpHeaders;
 import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
+import org.slf4j.LoggerFactory;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
@@ -49,7 +50,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void,PublishPub
      * @param publicationService    publicationService
      */
     public PublishPublicationHandler(Environment environment, PublicationService publicationService) {
-        super(Void.class, environment);
+        super(Void.class,environment, LoggerFactory.getLogger(PublishPublicationHandler.class));
         this.publicationService = publicationService;
         this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
