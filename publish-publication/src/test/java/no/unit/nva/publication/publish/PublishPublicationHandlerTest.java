@@ -4,13 +4,11 @@ import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatus;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import no.unit.nva.testutils.HandlerUtils;
 import no.unit.nva.testutils.TestContext;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
-import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -2,12 +2,13 @@ package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.util.Optional;
 import nva.commons.utils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.util.Optional;
 
 public class JsonLdContextUtil {
 
