@@ -23,7 +23,7 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,PublicationsByOwnerResponse> {
 
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
-    public static final Logger Logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
+
 
     private final PublicationService publicationService;
 
@@ -45,7 +45,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void,Publicati
      */
     public PublicationsByOwnerHandler(PublicationService publicationService,
                                       Environment environment) {
-        super(Void.class, environment,Logger);
+        super(Void.class, environment,LoggerFactory.getLogger(PublicationsByOwnerHandler.class));
         this.publicationService = publicationService;
     }
 
