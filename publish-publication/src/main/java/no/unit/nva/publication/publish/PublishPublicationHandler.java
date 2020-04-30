@@ -12,6 +12,7 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpHeaders;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void,PublishPub
      * @param publicationService    publicationService
      */
     public PublishPublicationHandler(Environment environment, PublicationService publicationService) {
-        super(Void.class, environment);
+        super(Void.class, environment, LoggerFactory.getLogger(PublishPublicationHandler.class));
         this.publicationService = publicationService;
         this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
