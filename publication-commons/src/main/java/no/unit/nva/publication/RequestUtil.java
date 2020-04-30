@@ -1,11 +1,12 @@
 package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
-
-import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
 
@@ -16,7 +17,9 @@ public final class RequestUtil {
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
-            "Missing claim in requestContext: ";
+        "Missing claim in requestContext: ";
+
+    private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
 
     private RequestUtil() {
     }
@@ -24,14 +27,16 @@ public final class RequestUtil {
     /**
      * Get identifier from request path parameters.
      *
-     * @param requestInfo   requestInfo
-     * @return  the identifier
-     * @throws ApiGatewayException  exception thrown if value is missing
+     * @param requestInfo requestInfo
+     * @return the identifier
+     * @throws ApiGatewayException exception thrown if value is missing
      */
     public static UUID getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
         String identifier = null;
         try {
+            logger.info("Trying to read Publication identifier...");
             identifier = requestInfo.getPathParameters().get(IDENTIFIER);
+            logger.info("Requesting publication metadata for ID:" + identifier);
             return UUID.fromString(identifier);
         } catch (Exception e) {
             throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
@@ -41,9 +46,9 @@ public final class RequestUtil {
     /**
      * Get orgNumber from requestContext authorizer claims.
      *
-     * @param requestInfo   requestInfo.
-     * @return  the orgNumber
-     * @throws ApiGatewayException  exception thrown if value is missing
+     * @param requestInfo requestInfo.
+     * @return the orgNumber
+     * @throws ApiGatewayException exception thrown if value is missing
      */
     public static String getOrgNumber(RequestInfo requestInfo) throws ApiGatewayException {
         JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_ORG_NUMBER);
@@ -56,9 +61,9 @@ public final class RequestUtil {
     /**
      * Get owner from requestContext authorizer claims.
      *
-     * @param requestInfo   requestInfo.
-     * @return  the owner
-     * @throws ApiGatewayException  exception thrown if value is missing
+     * @param requestInfo requestInfo.
+     * @return the owner
+     * @throws ApiGatewayException exception thrown if value is missing
      */
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
         JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_FEIDE_ID);
@@ -67,5 +72,4 @@ public final class RequestUtil {
         }
         throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_FEIDE_ID, null);
     }
-
 }

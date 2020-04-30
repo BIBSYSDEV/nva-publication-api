@@ -1,5 +1,7 @@
 package no.unit.nva.publication.fetch;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,9 +17,7 @@ import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-
+import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -31,37 +31,36 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     @JacocoGenerated
     public FetchPublicationHandler() {
         this(new DynamoDBPublicationService(
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        objectMapper,
-                        new Environment()),
-                new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                objectMapper,
+                new Environment()),
+            new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
-     * @param publicationService    publicationService
-     * @param environment  environment
+     * @param publicationService publicationService
+     * @param environment        environment
      */
     public FetchPublicationHandler(PublicationService publicationService,
                                    Environment environment) {
-        super(Void.class, environment);
+        super(Void.class, environment, LoggerFactory.getLogger(FetchPublicationHandler.class));
         this.publicationService = publicationService;
     }
 
     @Override
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         Publication publication = publicationService.getPublication(
-                RequestUtil.getIdentifier(requestInfo));
-
+            RequestUtil.getIdentifier(requestInfo));
         return toJsonNodeWithContext(publication);
     }
 
     private JsonNode toJsonNodeWithContext(Publication publication) {
         JsonNode publicationJson = objectMapper.valueToTree(publication);
-        new JsonLdContextUtil(objectMapper, logger)
-                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+        new JsonLdContextUtil(objectMapper)
+            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
         return publicationJson;
     }
 
@@ -69,6 +68,4 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     protected Integer getSuccessStatusCode(Void input, JsonNode output) {
         return HttpStatus.SC_OK;
     }
-
-
 }

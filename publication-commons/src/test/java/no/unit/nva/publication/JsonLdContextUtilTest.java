@@ -1,15 +1,13 @@
 package no.unit.nva.publication;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.junit.Assert.assertTrue;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.testutils.TestLogger;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.junit.Assert.assertTrue;
 
 public class JsonLdContextUtilTest {
 
@@ -20,7 +18,7 @@ public class JsonLdContextUtilTest {
 
     @BeforeEach
     public void setUp() {
-        contextUtil = new JsonLdContextUtil(objectMapper, new TestLogger());
+        contextUtil = new JsonLdContextUtil(objectMapper);
     }
 
     @Test
