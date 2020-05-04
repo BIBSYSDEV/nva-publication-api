@@ -1,4 +1,4 @@
-package no.unit.nva.publication.create;
+package no.unit.nva.publication.testing;
 
 import nva.commons.utils.JacocoGenerated;
 

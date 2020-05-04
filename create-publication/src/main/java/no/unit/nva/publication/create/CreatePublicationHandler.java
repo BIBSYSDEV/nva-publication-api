@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
+import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -21,6 +22,7 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 public class CreatePublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
+    public static final String INPUT_ERROR = "Input is not a valid Publication";
 
     private final PublicationService publicationService;
 
@@ -51,8 +53,12 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
     @Override
     protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
             throws ApiGatewayException {
-        Publication publication = publicationService.createPublication(input);
-        return toJsonNodeWithContext(publication);
+        if (input instanceof Publication) {
+            Publication publication = publicationService.createPublication(input);
+            return toJsonNodeWithContext(publication);
+        } else {
+            throw new InputException(INPUT_ERROR, null);
+        }
     }
 
     protected JsonNode toJsonNodeWithContext(Publication publication) {

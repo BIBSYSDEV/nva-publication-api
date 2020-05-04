@@ -5,6 +5,8 @@ repositories {
 
 dependencies {
     implementation project(':publication-commons')
+
+    testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
