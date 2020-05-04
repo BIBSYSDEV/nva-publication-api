@@ -1,4 +1,4 @@
-package no.unit.nva.publication.modify;
+package no.unit.nva.publication.create;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
-import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -19,55 +19,58 @@ import org.slf4j.LoggerFactory;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
+public class CreatePublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
+    public static final String INPUT_ERROR = "Input is not a valid Publication";
 
     private final PublicationService publicationService;
 
     /**
-     * Default constructor for MainHandler.
+     * Default constructor for CreatePublicationHandler.
      */
     @JacocoGenerated
-    public ModifyPublicationHandler() {
+    public CreatePublicationHandler() {
         this(new DynamoDBPublicationService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
-            new Environment());
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        objectMapper,
+                        new Environment()),
+                new Environment());
     }
 
     /**
-     * Constructor for MainHandler.
+     * Constructor for CreatePublicationHandler.
      *
      * @param publicationService publicationService
      * @param environment        environment
      */
-    public ModifyPublicationHandler(PublicationService publicationService,
+    public CreatePublicationHandler(PublicationService publicationService,
                                     Environment environment) {
-        super(Publication.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
+        super(Publication.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
         this.publicationService = publicationService;
     }
 
     @Override
     protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
-        Publication publication = publicationService.updatePublication(
-            RequestUtil.getIdentifier(requestInfo),
-            input);
-        return toJsonNodeWithContext(publication);
+            throws ApiGatewayException {
+        if (input instanceof Publication) {
+            Publication publication = publicationService.createPublication(input);
+            return toJsonNodeWithContext(publication);
+        } else {
+            throw new InputException(INPUT_ERROR, null);
+        }
     }
 
-    private JsonNode toJsonNodeWithContext(Publication publication) {
+    protected JsonNode toJsonNodeWithContext(Publication publication) {
         JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper)
-            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
         return publicationJson;
     }
 
     @Override
     protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
-        return HttpStatus.SC_OK;
+        return HttpStatus.SC_CREATED;
     }
 }

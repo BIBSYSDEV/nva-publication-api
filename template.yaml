@@ -52,6 +52,40 @@ Resources:
           title: NVA Publication API
           version: '1.0'
         paths:
+          /:
+            post:
+              summary: Create Publication
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: []
+              parameters:
+                - in: body
+                  name: customer
+                  description: The Publication to create.
+                  schema:
+                    $ref: '#/definitions/Publication'
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '201':
+                  description: Created
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
           /{identifier}:
             get:
               summary: Fetch Publication by Identifier
@@ -204,6 +238,28 @@ Resources:
               type: cognito_user_pools
               providerARNs:
                 - !Ref CognitoAuthorizerArn
+  NvaCreatePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-publication
+      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:

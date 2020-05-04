@@ -1,7 +1,5 @@
 package no.unit.nva.publication.fetch;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,6 +16,8 @@ import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
+
+import static nva.commons.utils.JsonUtils.objectMapper;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 

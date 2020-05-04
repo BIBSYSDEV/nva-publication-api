@@ -1,0 +1,14 @@
+repositories {
+    // Repository for running Embedded DynamoDB locally.
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
+dependencies {
+    implementation project(':publication-commons')
+
+    testImplementation project(":publication-testing")
+    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
+}
