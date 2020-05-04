@@ -57,6 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -361,6 +362,22 @@ class DynamoDBPublicationServiceTest {
 
         PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void publishedPublicationHasPublishedDate() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+        publicationService.publishPublication(publicationToPublish.getIdentifier());
+        Publication publishedPublication = publicationService.getPublication(publicationToPublish.getIdentifier());
+        assertNotNull(publishedPublication.getPublishedDate());
+    }
+
+    @Test
+    public void publishedPublicationHasStatusPublished() throws Exception {
+        Publication publicationToPublish = publicationService.createPublication(publication());
+        publicationService.publishPublication(publicationToPublish.getIdentifier());
+        Publication publishedPublication = publicationService.getPublication(publicationToPublish.getIdentifier());
+        assertEquals(PublicationStatus.PUBLISHED, publishedPublication.getStatus());
     }
 
     @Test
