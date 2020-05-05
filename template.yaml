@@ -238,11 +238,23 @@ Resources:
               type: cognito_user_pools
               providerARNs:
                 - !Ref CognitoAuthorizerArn
+  NvaPublicationCommonsLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: publication-commons-layer
+      Description: Publication Commons
+      ContentUri: publication-commons/
+      CompatibleRuntimes:
+        - java11
+      LicenseInfo: 'MIT'
+      RetentionPolicy: Retain
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-publication
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -265,6 +277,8 @@ Resources:
     Properties:
       CodeUri: fetch-publication
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -287,6 +301,8 @@ Resources:
     Properties:
       CodeUri: modify-publication
       Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -309,6 +325,8 @@ Resources:
     Properties:
       CodeUri: publications-by-owner
       Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -331,6 +349,8 @@ Resources:
     Properties:
       CodeUri: publish-publication
       Handler: no.unit.nva.publication.publish.PublishPublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
