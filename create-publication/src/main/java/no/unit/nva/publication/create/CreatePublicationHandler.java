@@ -90,7 +90,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
     private URI toPublisherId(String orgNumber) {
 
         if (orgNumber.startsWith(ORG_NUMBER_COUNTRY_PREFIX_NORWAY)) {
-            // Remove this if and when datamodel has support for OrgNumber country prefix
+            //TODO: Remove this if and when datamodel has support for OrgNumber country prefix
             return OrgNumberMapper.toCristinId(orgNumber.substring(ORG_NUMBER_COUNTRY_PREFIX_NORWAY.length()));
         }
         return OrgNumberMapper.toCristinId(orgNumber);
