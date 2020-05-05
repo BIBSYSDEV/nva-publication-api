@@ -16,7 +16,7 @@
   "link" : "http://example.org/link",
   "entityDescription" : {
     "type" : "EntityDescription",
-    "publicationType" : "JournalArticle",
+    "publicationType" : "JournalContent",
     "mainTitle" : "Hovedtittelen",
     "alternativeTitles" : {
       "en" : "English title"
@@ -45,6 +45,8 @@
           "no" : "Eksempelforlaget"
         }
       } ],
+      "correspondingAuthor":true,
+      "email":"this.is.a.test.email@unit.no",
       "role" : "Creator",
       "sequence" : 0
     } ],

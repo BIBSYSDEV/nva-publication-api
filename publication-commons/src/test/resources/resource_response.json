@@ -18,7 +18,7 @@
       "link" : "http://example.org/link",
       "entityDescription" : {
         "type" : "EntityDescription",
-        "publicationType" : "JournalArticle",
+        "publicationType" : "JournalContent",
         "mainTitle" : "Hovedtittelen",
         "alternativeTitles" : {
           "en" : "English title"

@@ -15,10 +15,12 @@ phases:
       - sam package --template-file .aws-sam/build/template.yaml --s3-bucket $S3_BUCKET --output-template-file sampackaged_raw.yaml
   post_build:
     commands:
+      # Setting a timestamp for the build in labels
+      - BUILD_TIMESTAMP=$(date -Iseconds)
       # Getting latest version tag from git
       - APPLICATION_VERSION=$(curl -s  https://api.github.com/repos/BIBSYSDEV/$GIT_REPO/releases/latest | jq -r '.tag_name')
       # Updating metadata.labels in template
-      - envsubst '${CODEBUILD_RESOLVED_SOURCE_VERSION},${GIT_REPO}' < sampackaged_raw.yaml > sampackaged.yaml
+      - envsubst '${CODEBUILD_RESOLVED_SOURCE_VERSION},${GIT_REPO},${BUILD_TIMESTAMP}' < sampackaged_raw.yaml > sampackaged.yaml
       # publishing to SAR
       - sam publish  --semantic-version $APPLICATION_VERSION  --template sampackaged.yaml
 artifacts:

@@ -1,11 +1,16 @@
 package no.unit.nva.publication.fetch;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.publication.Environment;
-import no.unit.publication.GatewayResponse;
-import no.unit.publication.service.PublicationService;
+import no.unit.nva.publication.exception.ErrorResponseException;
+import no.unit.nva.publication.exception.NotFoundException;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.TestContext;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,17 +21,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.publication.service.impl.RestPublicationService.AUTHORIZATION;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -34,22 +38,17 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class FetchPublicationHandlerTest {
 
-    public static final String SOME_API_KEY = "some api key";
     public static final String PATH_PARAMETERS = "pathParameters";
     public static final String HEADERS = "headers";
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
-    public static final String PUBLICATION_JSON = "src/test/resources/publication.json";
-    private ObjectMapper objectMapper = FetchPublicationHandler.createObjectMapper();
 
     private Environment environment;
     private PublicationService publicationService;
@@ -64,28 +63,22 @@ public class FetchPublicationHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.get(ALLOWED_ORIGIN_ENV)).thenReturn(Optional.of("*"));
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = mock(Context.class);
+        context = new TestContext();
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(objectMapper, publicationService, environment);
-    }
-
-    @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(IllegalStateException.class, () -> new FetchPublicationHandler());
+                new FetchPublicationHandler(publicationService, environment);
     }
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, InterruptedException {
-        Publication publication = objectMapper.readValue(publicationFile(), Publication.class);
-        when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenReturn(Optional.of(publication));
+    public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
+        Publication publication = createPublication();
+        when(publicationService.getPublication(any(UUID.class)))
+                .thenReturn(publication);
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -97,9 +90,9 @@ public class FetchPublicationHandlerTest {
 
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
-    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, InterruptedException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenReturn(Optional.empty());
+    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
+        when(publicationService.getPublication(any(UUID.class)))
+                .thenThrow(new NotFoundException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -112,7 +105,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        fetchPublicationHandler.handleRequest(new ByteArrayInputStream(new byte[0]), output, context);
+        InputStream input = new HandlerUtils(objectMapper)
+                .requestObjectToApiGatewayRequestInputSteam(null, null);
+        fetchPublicationHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -121,7 +116,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
-        Map<String, Object> event = Map.of(HEADERS, Map.of(AUTHORIZATION, SOME_API_KEY));
+        Map<String, Object> event = Map.of(HEADERS, Map.of());
         InputStream inputStream = new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
 
         fetchPublicationHandler.handleRequest(inputStream, output, context);
@@ -133,8 +128,8 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-            throws IOException, InterruptedException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
+            throws IOException, ApiGatewayException {
+        when(publicationService.getPublication(any(UUID.class)))
                 .thenThrow(new NullPointerException());
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
@@ -146,9 +141,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-            throws IOException, InterruptedException {
-        when(publicationService.getPublication(any(UUID.class), anyString()))
-                .thenThrow(new IOException());
+            throws IOException, ApiGatewayException {
+        when(publicationService.getPublication(any(UUID.class)))
+                .thenThrow(new ErrorResponseException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -156,18 +151,25 @@ public class FetchPublicationHandlerTest {
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
     }
 
-
+    @Deprecated
     private InputStream inputStream() throws IOException {
         Map<String, Object> event = new ConcurrentHashMap<>();
         Map<String,String> headers = new ConcurrentHashMap<>();
-        headers.put(AUTHORIZATION, SOME_API_KEY);
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         event.put(PATH_PARAMETERS, singletonMap(IDENTIFIER, IDENTIFIER_VALUE));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private byte[] publicationFile() throws IOException {
-        return Files.readAllBytes(Paths.get(PUBLICATION_JSON));
+    private Publication createPublication() {
+        return new Publication.Builder()
+                .withIdentifier(UUID.randomUUID())
+                .withModifiedDate(Instant.now())
+                .withOwner("owner")
+                .withPublisher(new Organization.Builder()
+                        .withId(URI.create("http://example.org/publisher/1"))
+                        .build()
+                )
+                .build();
     }
 }

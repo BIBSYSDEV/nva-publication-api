@@ -12,7 +12,7 @@ Metadata:
     Author: Unit
     SpdxLicenseId: MIT
     LicenseUrl: LICENSE
-    Labels: ['${CODEBUILD_RESOLVED_SOURCE_VERSION}', '${GIT_REPO}']
+    Labels: ['${CODEBUILD_RESOLVED_SOURCE_VERSION}', '${GIT_REPO}', '@${BUILD_TIMESTAMP}']
 
 Globals:
   Function:
@@ -52,6 +52,40 @@ Resources:
           title: NVA Publication API
           version: '1.0'
         paths:
+          /:
+            post:
+              summary: Create Publication
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: []
+              parameters:
+                - in: body
+                  name: customer
+                  description: The Publication to create.
+                  schema:
+                    $ref: '#/definitions/Publication'
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '201':
+                  description: Created
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
           /{identifier}:
             get:
               summary: Fetch Publication by Identifier
@@ -78,7 +112,7 @@ Resources:
                 '200':
                   description: OK
                   schema:
-                    type: object
+                    $ref: '#/definitions/Publication'
             put:
               summary: Modify Publication for Identifier
               consumes:
@@ -98,7 +132,7 @@ Resources:
                   name: publication
                   description: The Publication to modify.
                   schema:
-                    type: object
+                    $ref: '#/definitions/Publication'
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaModifyPublicationFunction.Arn}/invocations
@@ -109,7 +143,7 @@ Resources:
                 '200':
                   description: OK
                   schema:
-                    type: object
+                    $ref: '#/definitions/Publication'
           /by-owner:
             get:
               summary: Get Publications by Owner
@@ -129,7 +163,71 @@ Resources:
                 '200':
                   description: OK
                   schema:
-                    type: object
+                    type: list
+                    items:
+                      $ref: '#/definitions/Publication'
+          /{identifier}/publish:
+            put:
+              summary: Publish Publication
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: path
+                  name: identifier
+                  type: string
+                  format: uuid
+                  required: true
+                  description: UUID identifier of the Publication to publish.
+              security:
+                - CognitoUserPool: []
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublishPublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '202':
+                  description: Publishing in progress
+                  schema:
+                    $ref: '#/definitions/PublishPublicationStatus'
+                '204':
+                  description: Publish completed
+                  schema:
+                    $ref: '#/definitions/PublishPublicationStatus'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '404':
+                  description: Not Found
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
+        definitions:
+          Publication:
+            type: object
+          PublicationPublishStatus:
+            type: object
+            properties:
+              message:
+                type: string
+              statusCode:
+                type: integer
+          Problem:
+            type: object
+            properties:
+              title:
+                type: string
+              status:
+                type: integer
+              detail:
+                type: string
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
@@ -140,18 +238,43 @@ Resources:
               type: cognito_user_pools
               providerARNs:
                 - !Ref CognitoAuthorizerArn
+  NvaCreatePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-publication
+      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: fetch-publication
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
@@ -165,12 +288,15 @@ Resources:
       CodeUri: modify-publication
       Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
       Events:
         PutEvent:
           Type: Api
@@ -184,7 +310,7 @@ Resources:
       CodeUri: publications-by-owner
       Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 1408
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -199,6 +325,30 @@ Resources:
           Properties:
             Path: /by-owner
             Method: get
+            RestApiId: !Ref NvaPublicationApi
+  NvaPublishPublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publish-publication
+      Handler: no.unit.nva.publication.publish.PublishPublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/publish
+            Method: put
             RestApiId: !Ref NvaPublicationApi
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
