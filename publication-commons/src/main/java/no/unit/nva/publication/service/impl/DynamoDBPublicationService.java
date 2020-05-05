@@ -84,16 +84,13 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public Publication createPublication(Publication publication) throws ApiGatewayException {
-
-        UUID identifier = UUID.randomUUID();
         try {
-            publication.setIdentifier(identifier);
             Item item = publicationToItem(publication);
             table.putItem(item);
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(identifier);
+        return getPublication(publication.getIdentifier());
     }
 
     @Override
