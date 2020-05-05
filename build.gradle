@@ -1,5 +1,4 @@
 plugins {
-    id 'java'
     id 'java-library'
     id 'jacoco'
     id 'checkstyle'
@@ -9,8 +8,6 @@ plugins {
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
-
-
 allprojects {
     repositories {
         jcenter()
@@ -19,8 +16,6 @@ allprojects {
 }
 
 subprojects {
-
-    apply plugin: 'java'
     apply plugin: 'java-library'
     apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
@@ -98,4 +93,3 @@ subprojects {
     }
 
 }
-
