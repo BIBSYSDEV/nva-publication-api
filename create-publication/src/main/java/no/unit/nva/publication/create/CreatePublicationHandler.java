@@ -66,7 +66,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
         Publication createdPublication;
         if (publication.isPresent()) {
             createdPublication = publicationService.createPublication(publication.get());
-            return toJsonNodeWithContext(createdPublication);
         } else {
             createdPublication = publicationService.createPublication(newPublication(requestInfo));
         }
