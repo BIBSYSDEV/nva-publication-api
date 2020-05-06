@@ -1,7 +1,8 @@
 package no.unit.nva.publication.owner;
 
-import java.util.List;
 import no.unit.nva.publication.model.PublicationSummary;
+
+import java.util.List;
 
 public class PublicationsByOwnerResponse {
 
