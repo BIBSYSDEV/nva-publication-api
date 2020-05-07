@@ -10,7 +10,7 @@ phases:
     commands:
       - sam build  --debug
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
-
+      - ls -lR
 artifacts:
   files:
     - packaged.yaml
