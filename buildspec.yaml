@@ -8,10 +8,10 @@ phases:
       - pip3 install aws-sam-cli
   build:
     commands:
-      - sam build  --debug
-      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
+      - sam build
+      - sam package --debug --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
     finally:
-      - ls -lR
+      - ls -LR | grep zip
 artifacts:
   files:
     - packaged.yaml
