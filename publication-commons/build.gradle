@@ -48,4 +48,10 @@ task copyLayerDeps(type: Copy) {
     into 'build/libs'
 }
 
-build.dependsOn copyLayerDeps
+task buildZip(type: Zip) {
+    from (configurations.api) {
+    }
+    into('lib')
+}
+
+build.dependsOn copyLayerDeps, buildZip
