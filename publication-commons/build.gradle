@@ -32,10 +32,20 @@ task copyNativeDeps(type: Copy) {
         include "*.so"
         include "*.dll"
     }
-    into 'build/libs'
+    into 'build/dynamodb-local'
 }
 
 test.dependsOn copyNativeDeps
 test.doFirst {
-    systemProperty "java.library.path", 'build/libs'
+    systemProperty "java.library.path", 'build/dynamodb-local'
 }
+
+configurations.api.canBeResolved = true
+
+task copyLayerDeps(type: Copy) {
+    from (configurations.api) {
+    }
+    into 'build/libs'
+}
+
+build.dependsOn copyLayerDeps
