@@ -8,8 +8,7 @@ phases:
       - pip3 install aws-sam-cli
   build:
     commands:
-      - gradle build
-      - sam build
+      - sam build  --info
       - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
 
 artifacts:
