@@ -8,10 +8,10 @@ phases:
       - pip3 install aws-sam-cli
   build:
     commands:
+      # Force build of publication-commons to produce zip for Lambda Layer
+      - ./gradlew :publication-commons:clean :publication-commons:build
       - sam build
       - sam package --debug --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
-    finally:
-      - ls -LR | grep zip
 artifacts:
   files:
     - packaged.yaml
