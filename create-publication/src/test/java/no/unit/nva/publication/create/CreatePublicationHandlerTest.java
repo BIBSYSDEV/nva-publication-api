@@ -1,8 +1,25 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
+import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
+import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
@@ -15,24 +32,6 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
-
-import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
-import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
-import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @EnableRuleMigrationSupport
 public class CreatePublicationHandlerTest {
@@ -71,19 +70,18 @@ public class CreatePublicationHandlerTest {
 
         Map<String, String> headers = getRequestHeaders();
         InputStream inputStream = new HandlerUtils(objectMapper).requestObjectToApiGatewayRequestInputSteam(
-                publication,
-                headers);
+            publication,
+            headers);
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<JsonNode> actual = objectMapper.readValue(
-                outputStream.toByteArray(),
-                GatewayResponse.class);
-
+            outputStream.toByteArray(),
+            GatewayResponse.class);
 
         GatewayResponse<JsonNode> expected = new GatewayResponse<>(
-                handler.toJsonNodeWithContext(publication),
-                getResponseHeaders(),
-                HttpStatus.SC_CREATED
+            handler.toJsonNodeWithContext(publication),
+            getResponseHeaders(),
+            HttpStatus.SC_CREATED
         );
 
         assertEquals(expected, actual);
@@ -98,8 +96,8 @@ public class CreatePublicationHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<Publication> actual = objectMapper.readValue(
-                outputStream.toByteArray(),
-                GatewayResponse.class);
+            outputStream.toByteArray(),
+            GatewayResponse.class);
 
         assertEquals(HttpStatus.SC_CREATED, actual.getStatusCode());
         assertNotNull(actual.getBodyObject(Publication.class));
@@ -107,29 +105,28 @@ public class CreatePublicationHandlerTest {
 
     private InputStream emptyCreatePublicationRequest() throws JsonProcessingException {
         Map requestContext = Map.of(
-                REQUEST_CONTEXT, Map.of(
-                        AUTHORIZER, Map.of(
-                                CLAIMS, Map.of(
-                                        RequestUtil.CUSTOM_FEIDE_ID, TEST_FEIDE_ID,
-                                        RequestUtil.CUSTOM_ORG_NUMBER, TEST_ORG_NUMBER
-                                )
-                        )
-                ),
-                HEADERS, getRequestHeaders()
+            REQUEST_CONTEXT, Map.of(
+                AUTHORIZER, Map.of(
+                    CLAIMS, Map.of(
+                        RequestUtil.CUSTOM_FEIDE_ID, TEST_FEIDE_ID,
+                        RequestUtil.CUSTOM_ORG_NUMBER, TEST_ORG_NUMBER
+                    )
+                )
+            ),
+            HEADERS, getRequestHeaders()
         );
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(requestContext));
     }
 
     private Publication createPublication() {
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withModifiedDate(Instant.now())
-                .withOwner("owner")
-                .withPublisher(new Organization.Builder()
-                        .withId(URI.create("http://example.org/publisher/1"))
-                        .build()
-                )
-                .build();
+            .withIdentifier(UUID.randomUUID())
+            .withModifiedDate(Instant.now())
+            .withOwner("owner")
+            .withPublisher(new Organization.Builder()
+                .withId(URI.create("http://example.org/publisher/1"))
+                .build()
+            )
+            .build();
     }
-
 }

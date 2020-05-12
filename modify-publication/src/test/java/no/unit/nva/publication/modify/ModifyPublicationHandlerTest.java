@@ -1,6 +1,31 @@
 package no.unit.nva.publication.modify;
 
+import static java.util.Collections.singletonMap;
+import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.ErrorResponseException;
@@ -15,29 +40,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.singletonMap;
-import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @EnableRuleMigrationSupport
 public class ModifyPublicationHandlerTest {
@@ -69,8 +71,7 @@ public class ModifyPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         modifyPublicationHandler =
-                new ModifyPublicationHandler(publicationService, environment);
-
+            new ModifyPublicationHandler(publicationService, environment);
     }
 
     @Test
@@ -78,10 +79,10 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-                .thenReturn(publication);
+            .thenReturn(publication);
 
         modifyPublicationHandler.handleRequest(
-                inputStream(publication.getIdentifier().toString()), output, context);
+            inputStream(publication.getIdentifier().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -103,7 +104,7 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsBadRequestResponseOnMissingHeaders() throws IOException {
         Publication publication = createPublication();
         InputStream inputStream = new HandlerUtils(objectMapper)
-                .requestObjectToApiGatewayRequestInputSteam(publication, null);
+            .requestObjectToApiGatewayRequestInputSteam(publication, null);
 
         modifyPublicationHandler.handleRequest(inputStream, output, context);
 
@@ -114,13 +115,13 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-            throws IOException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-                .thenThrow(ErrorResponseException.class);
+            .thenThrow(ErrorResponseException.class);
 
         modifyPublicationHandler.handleRequest(
-                inputStream(publication.getIdentifier().toString()), output, context);
+            inputStream(publication.getIdentifier().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
@@ -129,13 +130,13 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-            throws IOException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-                .thenThrow(NullPointerException.class);
+            .thenThrow(NullPointerException.class);
 
         modifyPublicationHandler.handleRequest(
-                inputStream(publication.getIdentifier().toString()), output, context);
+            inputStream(publication.getIdentifier().toString()), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
@@ -166,14 +167,13 @@ public class ModifyPublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withModifiedDate(Instant.now())
-                .withOwner("owner")
-                .withPublisher(new Organization.Builder()
-                        .withId(URI.create("http://example.org/publisher/1"))
-                        .build()
-                )
-                .build();
+            .withIdentifier(UUID.randomUUID())
+            .withModifiedDate(Instant.now())
+            .withOwner("owner")
+            .withPublisher(new Organization.Builder()
+                .withId(URI.create("http://example.org/publisher/1"))
+                .build()
+            )
+            .build();
     }
-
 }

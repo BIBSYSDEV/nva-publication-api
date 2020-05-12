@@ -1,5 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.amazonaws.services.dynamodbv2.model.BillingMode.PAY_PER_REQUEST;
+import static com.amazonaws.services.dynamodbv2.model.ScalarAttributeType.S;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
@@ -13,13 +16,9 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
-import org.junit.rules.ExternalResource;
-
 import java.util.Arrays;
 import java.util.List;
-
-import static com.amazonaws.services.dynamodbv2.model.BillingMode.PAY_PER_REQUEST;
-import static com.amazonaws.services.dynamodbv2.model.ScalarAttributeType.S;
+import org.junit.rules.ExternalResource;
 
 public class PublicationsDynamoDBLocal extends ExternalResource {
 
@@ -56,40 +55,40 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
 
     private CreateTableResult createPublicationsTable(AmazonDynamoDB ddb) {
         List<AttributeDefinition> attributeDefinitions = Arrays.asList(
-                new AttributeDefinition(IDENTIFIER, S),
-                new AttributeDefinition(MODIFIED_DATE, S),
-                new AttributeDefinition(PUBLISHER_ID, S),
-                new AttributeDefinition(PUBLISHER_OWNER_DATE, S)
+            new AttributeDefinition(IDENTIFIER, S),
+            new AttributeDefinition(MODIFIED_DATE, S),
+            new AttributeDefinition(PUBLISHER_ID, S),
+            new AttributeDefinition(PUBLISHER_OWNER_DATE, S)
         );
 
         List<KeySchemaElement> keySchema = Arrays.asList(
-                new KeySchemaElement(IDENTIFIER, KeyType.HASH),
-                new KeySchemaElement(MODIFIED_DATE, KeyType.RANGE)
+            new KeySchemaElement(IDENTIFIER, KeyType.HASH),
+            new KeySchemaElement(MODIFIED_DATE, KeyType.RANGE)
         );
 
         List<KeySchemaElement> byPublisherKeySchema = Arrays.asList(
-                new KeySchemaElement(PUBLISHER_ID, KeyType.HASH),
-                new KeySchemaElement(PUBLISHER_OWNER_DATE, KeyType.RANGE)
+            new KeySchemaElement(PUBLISHER_ID, KeyType.HASH),
+            new KeySchemaElement(PUBLISHER_OWNER_DATE, KeyType.RANGE)
         );
 
         Projection byPublisherProjection = new Projection()
-                .withProjectionType(ProjectionType.INCLUDE)
-                .withNonKeyAttributes(IDENTIFIER, CREATED_DATE, MODIFIED_DATE, ENTITY_DESCRIPTION, STATUS, OWNER);
+            .withProjectionType(ProjectionType.INCLUDE)
+            .withNonKeyAttributes(IDENTIFIER, CREATED_DATE, MODIFIED_DATE, ENTITY_DESCRIPTION, STATUS, OWNER);
 
         List<GlobalSecondaryIndex> globalSecondaryIndexes = Arrays.asList(
-                new GlobalSecondaryIndex()
-                        .withIndexName(BY_PUBLISHER_INDEX_NAME)
-                        .withKeySchema(byPublisherKeySchema)
-                        .withProjection(byPublisherProjection)
+            new GlobalSecondaryIndex()
+                .withIndexName(BY_PUBLISHER_INDEX_NAME)
+                .withKeySchema(byPublisherKeySchema)
+                .withProjection(byPublisherProjection)
         );
 
         CreateTableRequest createTableRequest =
-                new CreateTableRequest()
-                        .withTableName(NVA_RESOURCES_TABLE_NAME)
-                        .withAttributeDefinitions(attributeDefinitions)
-                        .withKeySchema(keySchema)
-                        .withGlobalSecondaryIndexes(globalSecondaryIndexes)
-                        .withBillingMode(PAY_PER_REQUEST);
+            new CreateTableRequest()
+                .withTableName(NVA_RESOURCES_TABLE_NAME)
+                .withAttributeDefinitions(attributeDefinitions)
+                .withKeySchema(keySchema)
+                .withGlobalSecondaryIndexes(globalSecondaryIndexes)
+                .withBillingMode(PAY_PER_REQUEST);
 
         return ddb.createTable(createTableRequest);
     }

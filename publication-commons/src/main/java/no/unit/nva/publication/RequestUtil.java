@@ -1,13 +1,12 @@
 package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 public final class RequestUtil {
 
@@ -18,7 +17,7 @@ public final class RequestUtil {
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
-            "Missing claim in requestContext: ";
+        "Missing claim in requestContext: ";
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
 

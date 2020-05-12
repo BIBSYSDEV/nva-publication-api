@@ -1,7 +1,12 @@
 package no.unit.nva.publication.publish;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.util.Map;
+import java.util.UUID;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatus;
 import no.unit.nva.publication.service.PublicationService;
@@ -13,12 +18,6 @@ import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpHeaders;
 import org.slf4j.LoggerFactory;
-
-import java.net.URI;
-import java.util.Map;
-import java.util.UUID;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatus> {
 
@@ -35,11 +34,11 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     @JacocoGenerated
     public PublishPublicationHandler() {
         this(
-                new Environment(),
-                new DynamoDBPublicationService(
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        objectMapper,
-                        new Environment())
+            new Environment(),
+            new DynamoDBPublicationService(
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                objectMapper,
+                new Environment())
         );
     }
 
@@ -58,7 +57,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
 
     @Override
     protected PublishPublicationStatus processInput(Void input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         UUID identifier = RequestUtil.getIdentifier(requestInfo);
         setAdditionalHeadersSupplier(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
         return publicationService.publishPublication(identifier);

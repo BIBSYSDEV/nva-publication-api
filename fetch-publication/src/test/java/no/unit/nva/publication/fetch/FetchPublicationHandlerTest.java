@@ -1,6 +1,32 @@
 package no.unit.nva.publication.fetch;
 
+import static java.util.Collections.singletonMap;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.ErrorResponseException;
@@ -15,29 +41,6 @@ import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.time.Instant;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.singletonMap;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class FetchPublicationHandlerTest {
 
@@ -66,7 +69,7 @@ public class FetchPublicationHandlerTest {
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
-                new FetchPublicationHandler(publicationService, environment);
+            new FetchPublicationHandler(publicationService, environment);
     }
 
     @Test
@@ -74,7 +77,7 @@ public class FetchPublicationHandlerTest {
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.getPublication(any(UUID.class)))
-                .thenReturn(publication);
+            .thenReturn(publication);
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -88,7 +91,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class)))
-                .thenThrow(new NotFoundException("Error"));
+            .thenThrow(new NotFoundException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -102,7 +105,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream input = new HandlerUtils(objectMapper)
-                .requestObjectToApiGatewayRequestInputSteam(null, null);
+            .requestObjectToApiGatewayRequestInputSteam(null, null);
         fetchPublicationHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -124,9 +127,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-            throws IOException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class)))
-                .thenThrow(new NullPointerException());
+            .thenThrow(new NullPointerException());
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -137,9 +140,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-            throws IOException, ApiGatewayException {
+        throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class)))
-                .thenThrow(new ErrorResponseException("Error"));
+            .thenThrow(new ErrorResponseException("Error"));
 
         fetchPublicationHandler.handleRequest(inputStream(), output, context);
 
@@ -159,13 +162,13 @@ public class FetchPublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withModifiedDate(Instant.now())
-                .withOwner("owner")
-                .withPublisher(new Organization.Builder()
-                        .withId(URI.create("http://example.org/publisher/1"))
-                        .build()
-                )
-                .build();
+            .withIdentifier(UUID.randomUUID())
+            .withModifiedDate(Instant.now())
+            .withOwner("owner")
+            .withPublisher(new Organization.Builder()
+                .withId(URI.create("http://example.org/publisher/1"))
+                .build()
+            )
+            .build();
     }
 }

@@ -1,5 +1,7 @@
 package no.unit.nva.publication.modify;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,8 +19,6 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
-
 public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
@@ -31,10 +31,10 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     @JacocoGenerated
     public ModifyPublicationHandler() {
         this(new DynamoDBPublicationService(
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        objectMapper,
-                        new Environment()),
-                new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                objectMapper,
+                new Environment()),
+            new Environment());
     }
 
     /**
@@ -51,18 +51,18 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
 
     @Override
     protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         Publication publication = publicationService.updatePublication(
-                RequestUtil.getIdentifier(requestInfo),
-                input);
+            RequestUtil.getIdentifier(requestInfo),
+            input);
         return toJsonNodeWithContext(publication);
     }
 
     private JsonNode toJsonNodeWithContext(Publication publication) {
         JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper)
-                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
         return publicationJson;
     }
 

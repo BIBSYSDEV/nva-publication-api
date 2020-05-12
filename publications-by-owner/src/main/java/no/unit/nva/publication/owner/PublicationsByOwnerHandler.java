@@ -1,7 +1,11 @@
 package no.unit.nva.publication.owner;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.util.List;
 import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -14,11 +18,6 @@ import nva.commons.utils.Environment;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.List;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
 
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
@@ -30,10 +29,10 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      */
     public PublicationsByOwnerHandler() {
         this(new DynamoDBPublicationService(
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        objectMapper,
-                        new Environment()),
-                new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                objectMapper,
+                new Environment()),
+            new Environment());
     }
 
     /**
@@ -49,18 +48,18 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
     @Override
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
 
         String owner = RequestUtil.getOwner(requestInfo);
         String orgNumber = RequestUtil.getOrgNumber(requestInfo);
 
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
-                owner,
-                orgNumber));
+            owner,
+            orgNumber));
 
         List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
-                owner,
-                toPublisherId(orgNumber)
+            owner,
+            toPublisherId(orgNumber)
         );
 
         return new PublicationsByOwnerResponse(publicationsByOwner);
