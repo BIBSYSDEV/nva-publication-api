@@ -82,7 +82,7 @@ public class PublishPublicationHandlerTest {
         assertEquals(expected, actual);
     }
 
-    private Map<String,String> getResponseHeaders(String location) {
+    private Map<String, String> getResponseHeaders(String location) {
         return Map.of(
                 CONTENT_TYPE, APPLICATION_JSON.getMimeType(),
                 ACCESS_CONTROL_ALLOW_ORIGIN, WILDCARD,
@@ -90,7 +90,7 @@ public class PublishPublicationHandlerTest {
         );
     }
 
-    private Map<String,String> getRequestHeaders() {
+    private Map<String, String> getRequestHeaders() {
         return Map.of(
                 CONTENT_TYPE, APPLICATION_JSON.getMimeType()
         );

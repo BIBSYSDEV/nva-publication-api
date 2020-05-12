@@ -31,10 +31,10 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
     @JacocoGenerated
     public ModifyPublicationHandler() {
         this(new DynamoDBPublicationService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
-            new Environment());
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        objectMapper,
+                        new Environment()),
+                new Environment());
     }
 
     /**
@@ -51,18 +51,18 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
 
     @Override
     protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
         Publication publication = publicationService.updatePublication(
-            RequestUtil.getIdentifier(requestInfo),
-            input);
+                RequestUtil.getIdentifier(requestInfo),
+                input);
         return toJsonNodeWithContext(publication);
     }
 
     private JsonNode toJsonNodeWithContext(Publication publication) {
         JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper)
-            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
         return publicationJson;
     }
 

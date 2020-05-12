@@ -98,12 +98,12 @@ public class RequestUtilTest {
     }
 
     private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
-        Map<String, Map<String, Map<String,String>>> map = Map.of(
-            AUTHORIZER, Map.of(
-                CLAIMS, Map.of(
-                        key, value
+        Map<String, Map<String, Map<String, String>>> map = Map.of(
+                AUTHORIZER, Map.of(
+                        CLAIMS, Map.of(
+                                key, value
+                        )
                 )
-            )
         );
         return objectMapper.readTree(objectMapper.writeValueAsString(map));
     }

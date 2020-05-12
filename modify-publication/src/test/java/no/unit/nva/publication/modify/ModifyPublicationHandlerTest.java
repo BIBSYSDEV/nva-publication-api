@@ -16,11 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
@@ -32,10 +28,7 @@ import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CON
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -131,7 +124,7 @@ public class ModifyPublicationHandlerTest {
 
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    public  void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
             throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
@@ -149,7 +142,7 @@ public class ModifyPublicationHandlerTest {
         Map<String, Object> event = new ConcurrentHashMap<>();
         String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
-        Map<String,String> headers = new ConcurrentHashMap<>();
+        Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         event.put(PATH_PARAMETERS, singletonMap(IDENTIFIER, identifier));
@@ -161,7 +154,7 @@ public class ModifyPublicationHandlerTest {
         Map<String, Object> event = new ConcurrentHashMap<>();
         String body = objectMapper.writeValueAsString(createPublication());
         event.put(BODY, body);
-        Map<String,String> headers = new ConcurrentHashMap<>();
+        Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         event.put(HEADERS, headers);
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));

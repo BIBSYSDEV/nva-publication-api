@@ -26,6 +26,6 @@ public interface PublicationService {
             throws ApiGatewayException;
 
     PublishPublicationStatus publishPublication(UUID identifier)
-        throws ApiGatewayException;
+            throws ApiGatewayException;
 
 }

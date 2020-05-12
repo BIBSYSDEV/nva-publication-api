@@ -38,8 +38,8 @@ subprojects {
     test {
         useJUnitPlatform()
         failFast = true
-        testLogging{
-            events  'skipped','passed','failed'
+        testLogging {
+            events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
     }

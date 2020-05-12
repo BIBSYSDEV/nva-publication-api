@@ -30,10 +30,10 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      */
     public PublicationsByOwnerHandler() {
         this(new DynamoDBPublicationService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
-            new Environment());
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        objectMapper,
+                        new Environment()),
+                new Environment());
     }
 
     /**
@@ -49,18 +49,18 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
     @Override
     protected PublicationsByOwnerResponse processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
 
         String owner = RequestUtil.getOwner(requestInfo);
         String orgNumber = RequestUtil.getOrgNumber(requestInfo);
 
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
-            owner,
-            orgNumber));
+                owner,
+                orgNumber));
 
         List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
-            owner,
-            toPublisherId(orgNumber)
+                owner,
+                toPublisherId(orgNumber)
         );
 
         return new PublicationsByOwnerResponse(publicationsByOwner);

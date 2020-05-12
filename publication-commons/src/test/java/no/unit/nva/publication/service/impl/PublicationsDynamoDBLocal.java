@@ -5,14 +5,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
-import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
-import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
-import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
-import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
-import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
-import com.amazonaws.services.dynamodbv2.model.KeyType;
-import com.amazonaws.services.dynamodbv2.model.Projection;
-import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.*;
 import org.junit.rules.ExternalResource;
 
 import java.util.Arrays;
@@ -78,18 +71,18 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
 
         List<GlobalSecondaryIndex> globalSecondaryIndexes = Arrays.asList(
                 new GlobalSecondaryIndex()
-                .withIndexName(BY_PUBLISHER_INDEX_NAME)
-                .withKeySchema(byPublisherKeySchema)
-                .withProjection(byPublisherProjection)
+                        .withIndexName(BY_PUBLISHER_INDEX_NAME)
+                        .withKeySchema(byPublisherKeySchema)
+                        .withProjection(byPublisherProjection)
         );
 
         CreateTableRequest createTableRequest =
                 new CreateTableRequest()
-                .withTableName(NVA_RESOURCES_TABLE_NAME)
-                .withAttributeDefinitions(attributeDefinitions)
-                .withKeySchema(keySchema)
-                .withGlobalSecondaryIndexes(globalSecondaryIndexes)
-                .withBillingMode(PAY_PER_REQUEST);
+                        .withTableName(NVA_RESOURCES_TABLE_NAME)
+                        .withAttributeDefinitions(attributeDefinitions)
+                        .withKeySchema(keySchema)
+                        .withGlobalSecondaryIndexes(globalSecondaryIndexes)
+                        .withBillingMode(PAY_PER_REQUEST);
 
         return ddb.createTable(createTableRequest);
     }

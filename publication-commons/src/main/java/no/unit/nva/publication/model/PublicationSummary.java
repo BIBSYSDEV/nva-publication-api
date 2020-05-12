@@ -50,8 +50,8 @@ public class PublicationSummary {
 
     @JsonProperty(value = "entityDescription", access = JsonProperty.Access.WRITE_ONLY)
     @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void unpackNested(Map<String,Object> entityDescription) {
-        this.mainTitle = (String)entityDescription.get(MAIN_TITLE);
+    private void unpackNested(Map<String, Object> entityDescription) {
+        this.mainTitle = (String) entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {

@@ -35,11 +35,11 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     @JacocoGenerated
     public PublishPublicationHandler() {
         this(
-            new Environment(),
-            new DynamoDBPublicationService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment())
+                new Environment(),
+                new DynamoDBPublicationService(
+                        AmazonDynamoDBClientBuilder.defaultClient(),
+                        objectMapper,
+                        new Environment())
         );
     }
 
@@ -58,7 +58,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
 
     @Override
     protected PublishPublicationStatus processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+            throws ApiGatewayException {
         UUID identifier = RequestUtil.getIdentifier(requestInfo);
         setAdditionalHeadersSupplier(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
         return publicationService.publishPublication(identifier);

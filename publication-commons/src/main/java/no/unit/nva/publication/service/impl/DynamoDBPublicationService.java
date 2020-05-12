@@ -1,22 +1,13 @@
 package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Index;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.DynamoDBException;
-import no.unit.nva.publication.exception.InputException;
-import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.NotFoundException;
-import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.exception.*;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatus;
 import no.unit.nva.publication.service.PublicationService;
@@ -27,13 +18,7 @@ import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -94,7 +79,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication getPublication(UUID identifier)  throws ApiGatewayException {
+    public Publication getPublication(UUID identifier) throws ApiGatewayException {
         Item item = null;
         try {
             QuerySpec spec = new QuerySpec()
@@ -171,17 +156,17 @@ public class DynamoDBPublicationService implements PublicationService {
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
 
         Map<String, String> nameMap = Map.of(
-            "#publisherId", "publisherId",
-            "#publisherOwnerDate", "publisherOwnerDate");
+                "#publisherId", "publisherId",
+                "#publisherOwnerDate", "publisherOwnerDate");
         Map<String, Object> valueMap = Map.of(
-            ":publisherId", publisherId.toString(),
-            ":publisherOwner", publisherOwner);
+                ":publisherId", publisherId.toString(),
+                ":publisherOwner", publisherOwner);
 
         QuerySpec querySpec = new QuerySpec()
-            .withKeyConditionExpression(
-                "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwner)")
-            .withNameMap(nameMap)
-            .withValueMap(valueMap);
+                .withKeyConditionExpression(
+                        "#publisherId = :publisherId and begins_with(#publisherOwnerDate, :publisherOwner)")
+                .withNameMap(nameMap)
+                .withValueMap(valueMap);
 
         ItemCollection<QueryOutcome> items;
         try {
@@ -201,13 +186,13 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
-        List<PublicationSummary> publications) {
+            List<PublicationSummary> publications) {
         return publications.stream()
-                           .collect(groupByIdentifer())
-                           .entrySet()
-                           .parallelStream()
-                           .flatMap(DynamoDBPublicationService::pickNewestVersion)
-                           .collect(Collectors.toList());
+                .collect(groupByIdentifer())
+                .entrySet()
+                .parallelStream()
+                .flatMap(DynamoDBPublicationService::pickNewestVersion)
+                .collect(Collectors.toList());
     }
 
     private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
@@ -217,8 +202,8 @@ public class DynamoDBPublicationService implements PublicationService {
     private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
         List<PublicationSummary> publications = group.getValue();
         Optional<PublicationSummary> mostRecent = publications.stream()
-                                                              .max(Comparator.comparing(
-                                                                  PublicationSummary::getModifiedDate));
+                .max(Comparator.comparing(
+                        PublicationSummary::getModifiedDate));
         return mostRecent.stream();
     }
 

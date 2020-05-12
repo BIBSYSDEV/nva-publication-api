@@ -18,7 +18,7 @@ public final class RequestUtil {
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
     public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
-        "Missing claim in requestContext: ";
+            "Missing claim in requestContext: ";
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
 
