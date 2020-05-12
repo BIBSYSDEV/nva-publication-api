@@ -21,7 +21,8 @@ subprojects {
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
 
-    sourceCompatibility = JavaVersion.VERSION_11  // source-code version and must be <= targetCompatibility
+    sourceCompatibility = JavaVersion.VERSION_11
+    // source-code version and must be <= targetCompatibility
     targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
 
     def junit5Version = '5.6.0'
@@ -38,8 +39,8 @@ subprojects {
     test {
         useJUnitPlatform()
         failFast = true
-        testLogging{
-            events  'skipped','passed','failed'
+        testLogging {
+            events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
     }

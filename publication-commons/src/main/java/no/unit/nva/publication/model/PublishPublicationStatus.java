@@ -1,8 +1,7 @@
 package no.unit.nva.publication.model;
 
-import nva.commons.utils.JacocoGenerated;
-
 import java.util.Objects;
+import nva.commons.utils.JacocoGenerated;
 
 public class PublishPublicationStatus {
 
@@ -33,7 +32,7 @@ public class PublishPublicationStatus {
         }
         PublishPublicationStatus that = (PublishPublicationStatus) o;
         return Objects.equals(getMessage(), that.getMessage())
-                && Objects.equals(getStatusCode(), that.getStatusCode());
+            && Objects.equals(getStatusCode(), that.getStatusCode());
     }
 
     @JacocoGenerated

@@ -27,7 +27,7 @@ dependencies {
 configurations.testImplementation.canBeResolved = true
 
 task copyNativeDeps(type: Copy) {
-    from (configurations.testImplementation) {
+    from(configurations.testImplementation) {
         include "*.dylib"
         include "*.so"
         include "*.dll"
@@ -45,13 +45,13 @@ test.doFirst {
 configurations.api.canBeResolved = true
 
 task copyDepsForLayer(type: Copy) {
-    from (configurations.api) {
+    from(configurations.api) {
     }
     into 'build/libs'
 }
 
 task buildZipForLayer(type: Zip) {
-    from ('build/libs') {
+    from('build/libs') {
     }
     into('java/lib')
 }

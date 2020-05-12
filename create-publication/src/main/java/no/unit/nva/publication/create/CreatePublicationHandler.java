@@ -1,8 +1,14 @@
 package no.unit.nva.publication.create;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -20,13 +26,6 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.time.Instant;
-import java.util.Optional;
-import java.util.UUID;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-
 public class CreatePublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
@@ -41,10 +40,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new DynamoDBPublicationService(
-                        AmazonDynamoDBClientBuilder.defaultClient(),
-                        objectMapper,
-                        new Environment()),
-                new Environment());
+                AmazonDynamoDBClientBuilder.defaultClient(),
+                objectMapper,
+                new Environment()),
+            new Environment());
     }
 
     /**
@@ -61,7 +60,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
 
     @Override
     protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         Optional<Publication> publication = Optional.ofNullable(input);
         Publication createdPublication;
         if (publication.isPresent()) {
@@ -75,16 +74,16 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
     protected Publication newPublication(RequestInfo requestInfo) throws ApiGatewayException {
         Instant now = Instant.now();
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withCreatedDate(now)
-                .withModifiedDate(now)
-                .withOwner(RequestUtil.getOwner(requestInfo))
-                .withPublisher(new Organization.Builder()
-                        .withId(toPublisherId(RequestUtil.getOrgNumber(requestInfo)))
-                        .build()
-                )
-                .withStatus(PublicationStatus.DRAFT)
-                .build();
+            .withIdentifier(UUID.randomUUID())
+            .withCreatedDate(now)
+            .withModifiedDate(now)
+            .withOwner(RequestUtil.getOwner(requestInfo))
+            .withPublisher(new Organization.Builder()
+                .withId(toPublisherId(RequestUtil.getOrgNumber(requestInfo)))
+                .build()
+            )
+            .withStatus(PublicationStatus.DRAFT)
+            .build();
     }
 
     private URI toPublisherId(String orgNumber) {
@@ -99,8 +98,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
     protected JsonNode toJsonNodeWithContext(Publication publication) {
         JsonNode publicationJson = objectMapper.valueToTree(publication);
         new JsonLdContextUtil(objectMapper)
-                .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-                .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
+            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
+            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
         return publicationJson;
     }
 

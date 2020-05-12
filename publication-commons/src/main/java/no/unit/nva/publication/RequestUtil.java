@@ -1,13 +1,12 @@
 package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
 
 public final class RequestUtil {
 
