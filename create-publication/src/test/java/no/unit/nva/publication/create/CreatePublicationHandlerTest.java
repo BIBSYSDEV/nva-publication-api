@@ -12,22 +12,25 @@ import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.testutils.HandlerUtils;
 import no.unit.nva.testutils.TestContext;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,7 @@ public class CreatePublicationHandlerTest {
     public static final String TEST_ORG_NUMBER = "919477822";
     public static final String REQUEST_CONTEXT = "requestContext";
     public static final String HEADERS = "headers";
+    public static final String BODY = "body";
 
     private PublicationService publicationServiceMock;
     private Environment environmentMock;
@@ -66,25 +70,32 @@ public class CreatePublicationHandlerTest {
     @Test
     public void requestToHandlerReturnsCustomerCreated() throws Exception {
         Publication publication = createPublication();
-        when(publicationServiceMock.createPublication(publication)).thenReturn(publication);
+        when(publicationServiceMock.createPublication(any(Publication.class))).thenReturn(publication);
 
-        Map<String, String> headers = getRequestHeaders();
-        InputStream inputStream = new HandlerUtils(objectMapper).requestObjectToApiGatewayRequestInputSteam(
-            publication,
-            headers);
+        CreatePublicationRequest request = new CreatePublicationRequest();
+        request.setEntityDescription(publication.getEntityDescription());
+        request.setProject(publication.getProject());
+        InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<JsonNode> actual = objectMapper.readValue(
+        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(
             outputStream.toByteArray(),
             GatewayResponse.class);
 
-        GatewayResponse<JsonNode> expected = new GatewayResponse<>(
-            handler.toJsonNodeWithContext(publication),
-            getResponseHeaders(),
+        GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
+            PublicationMapper.toResponse(publication, PublicationResponse.class),
+            getResponseHeadersWithLocation(publication.getIdentifier()),
             HttpStatus.SC_CREATED
         );
 
         assertEquals(expected, actual);
+    }
+
+    private Map<String,String> getResponseHeadersWithLocation(UUID identifier) {
+        Map<String,String> map = new HashMap<>();
+        map.putAll(getResponseHeaders());
+        map.put(HttpHeaders.LOCATION, "publication/" + identifier.toString());
+        return map;
     }
 
     @Test
@@ -95,27 +106,40 @@ public class CreatePublicationHandlerTest {
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Publication> actual = objectMapper.readValue(
+        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(
             outputStream.toByteArray(),
             GatewayResponse.class);
 
         assertEquals(HttpStatus.SC_CREATED, actual.getStatusCode());
-        assertNotNull(actual.getBodyObject(Publication.class));
+        assertNotNull(actual.getBodyObject(PublicationResponse.class));
+    }
+
+    private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
+        Map map = Map.of(
+            REQUEST_CONTEXT, createRequestContext(),
+            HEADERS, getRequestHeaders(),
+            BODY, request
+        );
+        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(map));
     }
 
     private InputStream emptyCreatePublicationRequest() throws JsonProcessingException {
-        Map requestContext = Map.of(
-            REQUEST_CONTEXT, Map.of(
-                AUTHORIZER, Map.of(
-                    CLAIMS, Map.of(
-                        RequestUtil.CUSTOM_FEIDE_ID, TEST_FEIDE_ID,
-                        RequestUtil.CUSTOM_ORG_NUMBER, TEST_ORG_NUMBER
-                    )
-                )
-            ),
+        Map map = Map.of(
+            REQUEST_CONTEXT, createRequestContext(),
             HEADERS, getRequestHeaders()
         );
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(requestContext));
+        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(map));
+    }
+
+    private Map<String, Map<String, Map<String, String>>> createRequestContext() {
+        return Map.of(
+            AUTHORIZER, Map.of(
+                CLAIMS, Map.of(
+                    RequestUtil.CUSTOM_FEIDE_ID, TEST_FEIDE_ID,
+                    RequestUtil.CUSTOM_ORG_NUMBER, TEST_ORG_NUMBER
+                )
+            )
+        );
     }
 
     private Publication createPublication() {

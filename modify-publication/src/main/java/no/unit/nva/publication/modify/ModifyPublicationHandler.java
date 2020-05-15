@@ -4,10 +4,11 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
+import java.util.UUID;
+import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.api.UpdatePublicationRequest;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.util.ContextUtil;
-import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
@@ -19,9 +20,7 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
-
-    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
+public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
     private final PublicationService publicationService;
 
@@ -45,29 +44,29 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<Publication, Jso
      */
     public ModifyPublicationHandler(PublicationService publicationService,
                                     Environment environment) {
-        super(Publication.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
+        super(UpdatePublicationRequest.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
         this.publicationService = publicationService;
     }
 
     @Override
-    protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
+    protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        Publication publication = publicationService.updatePublication(
-            RequestUtil.getIdentifier(requestInfo),
-            input);
-        return toJsonNodeWithContext(publication);
-    }
 
-    private JsonNode toJsonNodeWithContext(Publication publication) {
-        JsonNode publicationJson = objectMapper.valueToTree(publication);
-        new JsonLdContextUtil(objectMapper)
-            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
-        return publicationJson;
+        UUID identifier = RequestUtil.getIdentifier(requestInfo);
+        Publication existingPublication = publicationService.getPublication(identifier);
+
+        Publication publication = PublicationMapper.toExistingPublication(
+            input,
+            existingPublication
+        );
+
+        Publication updatedPublication = publicationService.updatePublication(identifier, publication);
+
+        return PublicationMapper.toResponse(updatedPublication, PublicationResponse.class);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_OK;
     }
 }
