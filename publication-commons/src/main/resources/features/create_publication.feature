@@ -1,7 +1,7 @@
 Feature: Create a new Publication
 
   Scenario: An Anonymous User attempts to create a new Publication
-    Given an Anonymous User attempts to create a new Publication
+    Given a User with role Anonymous
     When they set the Accept header to "application/json"
     And they request POST /publication/
     Then they receive a response with status code 401
@@ -12,8 +12,7 @@ Feature: Create a new Publication
     And they see the response body has a field "detail" with a description of the problem
 
   Scenario: a User creates a new Publication
-    Given a User attempts to create a new Publication
-    And they have the role Creator
+    Given a User with role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request POST /publication/
@@ -24,8 +23,7 @@ Feature: Create a new Publication
     And they see that the response body has a property identifier
 
   Scenario: A User creates a new Publication with metadata
-    Given a User attempts to create a new Publication with metadata
-    And they have the role Creator
+    Given a User with role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they set the request body to CreatePublicationRequest
@@ -39,8 +37,7 @@ Feature: Create a new Publication
     And they see that the response body has a property identifier
 
   Scenario: A User creates a new Publication with file
-    Given a User attempts to create a new Publication with file
-    And they have the role Creator
+    Given a User with role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they set the request body to CreatePublicationRequest

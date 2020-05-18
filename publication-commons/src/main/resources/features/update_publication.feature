@@ -1,7 +1,7 @@
 Feature: Update an existing Publication
 
   Scenario: An Anonymous User attempts to update a Publication
-    Given an Anonymous User attempts to update a Publication
+    Given a User with role Anonymous
     When they set the Accept header to "application/json"
     And they set the request body to UpdatePublicationRequest
     And they request PUT /publication/{identifier}
@@ -13,7 +13,8 @@ Feature: Update an existing Publication
     And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User attempts to update a Publication with invalid metadata
-    Given a User attempts to update a Publication with invalid metadata
+    Given a User with role Creator
+    And they are the Owner
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request PUT /publication/{identifier}
@@ -25,7 +26,8 @@ Feature: Update an existing Publication
     And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User attempts to update a missing Publication
-    Given an User attempts to update a missing Publication
+    Given a User with role Creator
+    And they are the Owner
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request PUT /publication/{identifier}
@@ -37,7 +39,7 @@ Feature: Update an existing Publication
     And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User updates a Publication
-    Given an User attempts to update a Publication
+    Given a User with role Creator
     And they are the Owner
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
