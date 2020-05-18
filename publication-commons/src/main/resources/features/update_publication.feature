@@ -38,6 +38,7 @@ Feature: Update an existing Publication
 
   Scenario: A User updates a Publication
     Given an User attempts to update a Publication
+    And they are the Owner
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they set the request body to UpdatePublicationRequest

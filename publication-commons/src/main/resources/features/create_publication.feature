@@ -13,6 +13,7 @@ Feature: Create a new Publication
 
   Scenario: a User creates a new Publication
     Given a User attempts to create a new Publication
+    And they have the role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they request POST /publication/
@@ -24,6 +25,7 @@ Feature: Create a new Publication
 
   Scenario: A User creates a new Publication with metadata
     Given a User attempts to create a new Publication with metadata
+    And they have the role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they set the request body to CreatePublicationRequest
@@ -38,6 +40,7 @@ Feature: Create a new Publication
 
   Scenario: A User creates a new Publication with file
     Given a User attempts to create a new Publication with file
+    And they have the role Creator
     When they set the Accept header to "application/json"
     And they set the Authentication header to a Bearer token with their credentials
     And they set the request body to CreatePublicationRequest
