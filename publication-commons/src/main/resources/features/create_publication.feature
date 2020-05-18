@@ -9,7 +9,7 @@ Feature: Create a new Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Unauthorized"
     And they see the response body has a field "status" with the value "401"
-    And they see the response body has a field "detail with a description of the problem
+    And they see the response body has a field "detail" with a description of the problem
 
   Scenario: a User creates a new Publication
     Given a User attempts to create a new Publication

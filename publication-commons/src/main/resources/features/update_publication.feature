@@ -10,7 +10,7 @@ Feature: Update an existing Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Unauthorized"
     And they see the response body has a field "status" with the value "401"
-    And they see the response body has a field "detail with a description of the problem
+    And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User attempts to update a Publication with invalid metadata
     Given a User attempts to update a Publication with invalid metadata
@@ -22,7 +22,7 @@ Feature: Update an existing Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Bad Request"
     And they see the response body has a field "status" with the value "400"
-    And they see the response body has a field "detail with a description of the problem
+    And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User attempts to update a missing Publication
     Given an User attempts to update a missing Publication
@@ -34,7 +34,7 @@ Feature: Update an existing Publication
     And they see that the response body is a problem.json object
     And they see the response body has a field "title" with the value "Not found"
     And they see the response body has a field "status" with the value "404"
-    And they see the response body has a field "detail with a description of the problem
+    And they see the response body has a field "detail" with a description of the problem
 
   Scenario: A User updates a Publication
     Given an User attempts to update a Publication
