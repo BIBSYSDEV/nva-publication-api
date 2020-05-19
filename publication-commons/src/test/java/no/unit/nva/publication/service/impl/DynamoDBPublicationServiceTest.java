@@ -354,9 +354,11 @@ class DynamoDBPublicationServiceTest {
     public void canPublishPublicationReturnsAccepted() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publication());
 
-        PublishPublicationStatusResponse actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+        PublishPublicationStatusResponse actual = publicationService
+            .publishPublication(publicationToPublish.getIdentifier());
 
-        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(
+            PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         assertEquals(expected, actual);
     }
 
@@ -383,9 +385,11 @@ class DynamoDBPublicationServiceTest {
         // publish
         publicationService.publishPublication(publicationToPublish.getIdentifier());
         // trying to publish again
-        PublishPublicationStatusResponse actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+        PublishPublicationStatusResponse actual = publicationService
+            .publishPublication(publicationToPublish.getIdentifier());
 
-        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(PUBLISH_COMPLETED, SC_NO_CONTENT);
+        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(
+            PUBLISH_COMPLETED, SC_NO_CONTENT);
         assertEquals(expected, actual);
     }
 

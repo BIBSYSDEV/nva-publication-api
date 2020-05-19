@@ -57,7 +57,8 @@ public class PublishPublicationHandlerTest {
     @Test
     public void canPublishPublication() throws Exception {
         UUID identifier = UUID.randomUUID();
-        PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
+            PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         when(publicationService.publishPublication(identifier)).thenReturn(status);
 
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
