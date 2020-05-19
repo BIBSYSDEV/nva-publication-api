@@ -28,9 +28,14 @@ import org.slf4j.LoggerFactory;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
+    public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
+    public static final String API_SCHEME = "API_SCHEME";
+    public static final String API_HOST = "API_HOST";
     public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
 
     private final PublicationService publicationService;
+    private final String apiScheme;
+    private final String apiHost;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -54,6 +59,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                     Environment environment) {
         super(CreatePublicationRequest.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
         this.publicationService = publicationService;
+        this.apiScheme = environment.readEnv(API_SCHEME);
+        this.apiHost = environment.readEnv(API_HOST);
+
     }
 
     @Override
@@ -75,8 +83,14 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     private void setLocationHeader(UUID identifier) {
-        setAdditionalHeadersSupplier(
-            () -> Map.of(HttpHeaders.LOCATION, "publication/" + identifier.toString()));
+        setAdditionalHeadersSupplier(() -> Map.of(
+            HttpHeaders.LOCATION,
+            getLocation(identifier).toString())
+        );
+    }
+
+    protected URI getLocation(UUID identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
     }
 
     private Organization createPublisher(String orgNumber) {

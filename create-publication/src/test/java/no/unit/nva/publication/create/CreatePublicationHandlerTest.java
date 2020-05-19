@@ -1,5 +1,7 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
+import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
 import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
 import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -39,6 +41,8 @@ import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 @EnableRuleMigrationSupport
 public class CreatePublicationHandlerTest {
 
+    public static final String HTTPS = "https";
+    public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
@@ -62,6 +66,8 @@ public class CreatePublicationHandlerTest {
         publicationServiceMock = mock(PublicationService.class);
         environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+        when(environmentMock.readEnv(API_SCHEME)).thenReturn(HTTPS);
+        when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
         handler = new CreatePublicationHandler(publicationServiceMock, environmentMock);
         outputStream = new ByteArrayOutputStream();
         context = new TestContext();
@@ -94,7 +100,7 @@ public class CreatePublicationHandlerTest {
     private Map<String,String> getResponseHeadersWithLocation(UUID identifier) {
         Map<String,String> map = new HashMap<>();
         map.putAll(getResponseHeaders());
-        map.put(HttpHeaders.LOCATION, "publication/" + identifier.toString());
+        map.put(HttpHeaders.LOCATION, handler.getLocation(identifier).toString());
         return map;
     }
 
