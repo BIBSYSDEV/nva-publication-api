@@ -3,12 +3,12 @@ package no.unit.nva.publication.model;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-public class PublishPublicationStatus {
+public class PublishPublicationStatusResponse {
 
     private final String message;
     private final Integer statusCode;
 
-    public PublishPublicationStatus(String message, Integer statusCode) {
+    public PublishPublicationStatusResponse(String message, Integer statusCode) {
         this.message = message;
         this.statusCode = statusCode;
     }
@@ -30,7 +30,7 @@ public class PublishPublicationStatus {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PublishPublicationStatus that = (PublishPublicationStatus) o;
+        PublishPublicationStatusResponse that = (PublishPublicationStatusResponse) o;
         return Objects.equals(getMessage(), that.getMessage())
             && Objects.equals(getStatusCode(), that.getStatusCode());
     }

@@ -50,7 +50,7 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService.PublishPublicationValidator;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -354,9 +354,9 @@ class DynamoDBPublicationServiceTest {
     public void canPublishPublicationReturnsAccepted() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publication());
 
-        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+        PublishPublicationStatusResponse actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
 
-        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         assertEquals(expected, actual);
     }
 
@@ -383,9 +383,9 @@ class DynamoDBPublicationServiceTest {
         // publish
         publicationService.publishPublication(publicationToPublish.getIdentifier());
         // trying to publish again
-        PublishPublicationStatus actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
+        PublishPublicationStatusResponse actual = publicationService.publishPublication(publicationToPublish.getIdentifier());
 
-        PublishPublicationStatus expected = new PublishPublicationStatus(PUBLISH_COMPLETED, SC_NO_CONTENT);
+        PublishPublicationStatusResponse expected = new PublishPublicationStatusResponse(PUBLISH_COMPLETED, SC_NO_CONTENT);
         assertEquals(expected, actual);
     }
 
