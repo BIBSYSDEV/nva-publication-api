@@ -24,22 +24,18 @@ Feature:
     And the DELETE method takes as parameter a non empty publication ID
 
 
-  Scenario: User reads a published publication that he/she is NOT owner of
+  Scenario Outline: A logged-in user reads a published publication
     Given that "PubId" is an existing publication ID
     And that the publication with ID "PubId" has been published
     And the owner of the publication is "theOwner"
     When a call to the READ method requests the publication with Id "PubId"
-    And the call to the READ method makes the request on behalf of the user "notTheOwner"
+    And the call to the READ method makes the request on behalf of the user <callerUser>
     Then the READ method returns the publication with ID "PubId"
 
-  Scenario: User reads a published publication that he/she is owner of
-    Given that "PubId" is an existing publication ID
-    And that the publication with ID "PubId" has been published
-    And the owner of the publication is "theOwner"
-    When a call to the READ method requests the publication with Id "PubId"
-    And the call to the READ method makes the request on behalf of "theOwner"
-    Then the READ method returns the publication with ID "PubId"
-
+    Examples:
+    |callerUser   |
+    |theOwner     |
+    |notTheOwner  |
 
   Scenario: An anonymous user reads a published publication
     Given that "PubId" is an existing publication ID
@@ -62,5 +58,7 @@ Feature:
       | action | callerUser  |
       | UPDATE | theOwner    |
       | UPDATE | notTheOwner |
+      | UPDATE | Anonymous   |
       | DELETE | theOwner    |
       | DELETE | notTheOwner |
+      | DELETE | Anonymous   |
