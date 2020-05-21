@@ -11,7 +11,6 @@ Feature:
 
   2. We assume that when a user is logged in, he/she has read access to all material that is published.
 
-
   Background:
     Given that DynamoDBPublicationService exists
     And the DynamoDBPublicationService has a READ method
@@ -51,19 +50,17 @@ Feature:
     Then the READ method returns the publication with ID "PubId"
 
 
-  Scenario: User is forbidden to update a published publication that he/she is owner of
+  Scenario Outline: User is forbidden to update/delete a published publication
     Given that "PubId" is an existing publication ID
     And that the publication with ID "PubId" has been published
     And the owner of the publication is "theOwner"
-    When a call to the UPDATE method requests to update the publication with Id "PubId"
-    And the call to the UPDATE method makes the request on behalf of "theOwner"
-    Then the UPDATE method returns a response indicating that this operation is now allowed
+    When a call to the <action> method requests to update the publication with Id "PubId"
+    And the call to the <action> method makes the request on behalf of <callerUser>
+    Then the <action> method returns a response indicating that this operation is now allowed
 
-
-  Scenario: User is forbidden to update a published publication that he/she is not owner of
-    Given that "PubId" is an existing publication ID
-    And that the publication with ID "PubId" has been published
-    And the owner of the publication is "theOwner"
-    When a call to the UPDATE method requests to update the publication with Id "PubId"
-    And the call to the UPDATE method makes the request on behalf of the user "notTheOwner"
-    Then the UPDATE method returns a response indicating that this operation is now allowed
+    Examples:
+      | action | callerUser  |
+      | UPDATE | theOwner    |
+      | UPDATE | notTheOwner |
+      | DELETE | theOwner    |
+      | DELETE | notTheOwner |
