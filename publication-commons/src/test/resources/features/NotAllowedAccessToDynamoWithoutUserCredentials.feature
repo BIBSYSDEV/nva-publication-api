@@ -2,6 +2,7 @@ Feature:
   DynamoDBPublicationService does not allow reading, inserting or modifying an entry without
   the caller of the service specifying the username who is performing the action.
 
+  Rule: User performing CRUD is always explicitly specified.
 
   Background:
     Given that PublicationService exists
