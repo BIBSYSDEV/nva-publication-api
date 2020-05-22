@@ -17,7 +17,9 @@ Feature: Anonymous access rights
     And the DELETE method takes as parameter a non empty username
     And the DELETE method takes as parameter a non empty publication ID
     And the DynamoDBPublicationService has a CREATE method
+    And the CREATE method takes as parameter a non empty username
     And the CREATE method takes as parameter a non empty publication object
+
 
 
    Scenario: Anonymous user tries to read published material
