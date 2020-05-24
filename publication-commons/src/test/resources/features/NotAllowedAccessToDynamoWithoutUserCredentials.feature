@@ -36,7 +36,7 @@ Feature:
   Scenario: PublicationService requires username for creating a publication
     Given that PublicationService provides a CREATE method for reading a set of publications
     And that CREATE method is being called by a module or an application
-    When the CREATE  call does not include a username as a parameter
+    When the CREATE call does not include a username as a parameter
     Then the module or the application cannot call the CREATE method
 
   Scenario: PublicationService requires non empty username for creating a publication
