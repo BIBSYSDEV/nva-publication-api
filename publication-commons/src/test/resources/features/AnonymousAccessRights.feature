@@ -27,7 +27,7 @@ Feature: Anonymous access rights
     When READ is called for the Anonymous user and the publication "PubId"
     Then READ returns the publication "PubId"
 
-  Scenario: Anonymous user tries to read published material
+  Scenario: Anonymous user tries to create published material
     Given a publication P
     When CREATE is called for the Anonymous user and the publication object P
     Then CREATE returns a response that this action is not allowed
