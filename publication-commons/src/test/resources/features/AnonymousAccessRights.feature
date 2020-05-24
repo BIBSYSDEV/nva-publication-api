@@ -1,9 +1,5 @@
 Feature: Anonymous access rights
 
-  Notes:
-  1. In the following, when are referring to a publication that is published,
-     we mean that is has status PUBLISHED.
-
   Background:
     Given that there is a database "PUBLICATIONS" with publications
     And that DynamoDBPublicationService exists
@@ -21,9 +17,15 @@ Feature: Anonymous access rights
     And the CREATE method takes as parameter a non empty publication object
 
 
-  Scenario: Anonymous user tries to read published material
+  Scenario: Anonymous user reads published material
     Given a publication with ID "PubId"
-    And the publication "PubId" is published
+    And the publication "PubId" has status PUBLISHED
+    When READ is called for the Anonymous user and the publication "PubId"
+    Then READ returns the publication "PubId"
+
+  Scenario: Anonymous user tries to read unpublished material
+    Given a publication with ID "PubId"
+    And the publication "PubId" does not have status PUBLISHED
     When READ is called for the Anonymous user and the publication "PubId"
     Then READ returns the publication "PubId"
 
@@ -31,7 +33,6 @@ Feature: Anonymous access rights
     Given a publication P
     When CREATE is called for the Anonymous user and the publication object P
     Then CREATE returns a response that this action is not allowed
-
 
   Scenario Outline: Anonymous user tries to update/delete material
     Given a publication with ID "PubId"
@@ -43,18 +44,19 @@ Feature: Anonymous access rights
       | UPDATE          |
       | DELETE          |
 
-
   Scenario: Anonymous users can see published material when they list publications
     Given that DynamoDBPublicationService has a LIST method
     And that LIST takes as parameter a non empty username
-    And that PUBLICATIONS has a publication with ID "PubId" that is published
+    And that PUBLICATIONS has a publication with ID "PubId"
+    And the publication "PubId" has status PUBLISHED
     When LIST is called for the Anonymous user
     Then the "PubId" publication is in the result-set
 
   Scenario: Anonymous users can NOT see unpublished material when they list publications
     Given that DynamoDBPublicationService has a LIST method
     And that LIST takes as parameter a non empty username
-    And that PUBLICATIONS has a publication with ID "PubId" that is NOT published
+    And that PUBLICATIONS has a publication with ID "PubId"
+    And the publication "PubId" does not have status PUBLISHED
     When LIST is called for the Anonymous user
     Then the "PubId" publication is NOT in the result-set
 

@@ -18,7 +18,6 @@ Feature:
     And the parameter is null or empty
     Then the READ method returns an error message that empty values are not allowed
 
-
   Scenario: PublicationService requires username for listing a set of publications
     Given that PublicationService provides a LIST method for reading a set of publications
     And that LIST method is being called by a module or an application
