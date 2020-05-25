@@ -19,23 +19,28 @@ Feature: Anonymous access rights
   Scenario: Anonymous user reads published material
     Given a publication with ID "PubId"
     And the publication "PubId" has status PUBLISHED
-    When READ is called for the Anonymous user and the publication "PubId"
+    When READ is called on behalf of the Anonymous user for the publication "PubId"
     Then READ returns the publication "PubId"
 
   Scenario: Anonymous user tries to read unpublished material
     Given a publication with ID "PubId"
     And the publication "PubId" does not have status PUBLISHED
-    When READ is called for the Anonymous user and the publication "PubId"
-    Then READ returns the publication "PubId"
+    When READ is called on behalf of the Anonymous user for the publication "PubId"
+    Then READ returns a response that the item with ID "PubID" was not found.
+
+  Scenario: Anonymous user tries to read non existing
+    Given a non-existing publication ID "nonExistingID"
+    When READ is called on behalf of the Anonymous user for the publication "nonExistingID"
+    Then READ returns a response that the item with ID "nonExistingID" was not found.
 
   Scenario: Anonymous user tries to create published material
-    Given a publication P
-    When CREATE is called for the Anonymous user and the publication object P
+    Given a publication PublicationA
+    When CREATE is called on behalf of the Anonymous user for the publication object PublicationA
     Then CREATE returns a response that this action is not allowed
 
   Scenario Outline: Anonymous user tries to update/delete material
     Given a publication with ID "PubId"
-    When <non-read-action> is called for the Anonymous user and the publication "PubId"
+    When <non-read-action> is called on behalf of the Anonymous user for the publication "PubId"
     Then <non-read-action> returns a response that this action is not allowed
 
     Examples:
