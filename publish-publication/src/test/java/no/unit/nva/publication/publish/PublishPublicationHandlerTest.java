@@ -19,7 +19,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
 import no.unit.nva.testutils.TestContext;
@@ -57,7 +57,8 @@ public class PublishPublicationHandlerTest {
     @Test
     public void canPublishPublication() throws Exception {
         UUID identifier = UUID.randomUUID();
-        PublishPublicationStatus status = new PublishPublicationStatus(PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
+            PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         when(publicationService.publishPublication(identifier)).thenReturn(status);
 
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
@@ -68,11 +69,11 @@ public class PublishPublicationHandlerTest {
             Map.of());
         handler.handleRequest(input, output, context);
 
-        GatewayResponse<PublishPublicationStatus> actual = objectMapper.readValue(
+        GatewayResponse<PublishPublicationStatusResponse> actual = objectMapper.readValue(
             output.toByteArray(),
             GatewayResponse.class);
 
-        GatewayResponse<PublishPublicationStatus> expected = new GatewayResponse<>(
+        GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
             objectMapper.writeValueAsString(status),
             getResponseHeaders(handler.getLocation(identifier).toString()),
             SC_ACCEPTED
