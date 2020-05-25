@@ -47,7 +47,7 @@ public class CreatePublicationHandlerTest {
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String TEST_FEIDE_ID = "junit";
-    public static final String TEST_ORG_NUMBER = "919477822";
+    public static final String TEST_ORG_NUMBER = "NO919477822";
     public static final String REQUEST_CONTEXT = "requestContext";
     public static final String HEADERS = "headers";
     public static final String BODY = "body";

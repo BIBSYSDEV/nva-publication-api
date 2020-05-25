@@ -31,7 +31,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "API_SCHEME";
     public static final String API_HOST = "API_HOST";
-    public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
 
     private final PublicationService publicationService;
     private final String apiScheme;
@@ -95,17 +94,8 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private Organization createPublisher(String orgNumber) {
         return new Builder()
-            .withId(toPublisherId(orgNumber))
+            .withId(OrgNumberMapper.toCristinId(orgNumber))
             .build();
-    }
-
-    private URI toPublisherId(String orgNumber) {
-
-        if (orgNumber.startsWith(ORG_NUMBER_COUNTRY_PREFIX_NORWAY)) {
-            //TODO: Remove this if and when datamodel has support for OrgNumber country prefix
-            return OrgNumberMapper.toCristinId(orgNumber.substring(ORG_NUMBER_COUNTRY_PREFIX_NORWAY.length()));
-        }
-        return OrgNumberMapper.toCristinId(orgNumber);
     }
 
     @Override
