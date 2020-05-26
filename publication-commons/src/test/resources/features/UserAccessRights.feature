@@ -24,7 +24,6 @@ Feature: User access rights
     And the user's role is USER
     And the user "theUser" does not have any other role
 
-
   Scenario: USER users read published material
     Given a publication with ID "PubId"
     And the publication "PubId" has status PUBLISHED
@@ -43,14 +42,34 @@ Feature: User access rights
     When CREATE is called on behalf of the user "theUser"
     Then CREATE returns an error message that this action is not allowed for the user "theUser"
 
-  Scenario: USER users cannot read unpublished publication that is not shared with them
+
+  Scenario: USER users cannot read unpublished publications
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
     And the owner of the publication "pubID" is the user "theCreator"
-    And "theCreator" has not given read access the publication "pubID" to "theUser"
     When READ is called on behalf of the user "theUser" for the publication "pubID"
     Then READ returns an error response that the publication "pubID" was not found
 
+
+  Scenario Outline: Not allowed actions for USER users
+    Given the DynamoDBPublicationService has an <action> method
+    Given a publication with id "pubID"
+    And the publication "pubID" is <status>
+    And the owner of the publication "pubID" is the user "theCreator"
+    When <action> is called on behalf of the user "theUser" for the publication "pubID"
+    Then <action> returns that this action is not allowed for the user "theUser"
+    Examples:
+      | status        | action  |
+      | NOT published | DELETE  |
+      | NOT published | PUBLISH |
+      | NOT published | CHOWN   |
+      | NOT published | UPDATE  |
+      | PUBLISHED     | DELETE  |
+      | PUBLISHED     | PUBLISH |
+      | PUBLISHED     | CHOWN   |
+      | PUBLISHED     | UPDATE  |
+
+  @notmvp
   Scenario: USER users read unpublished publication that is shared with them
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
@@ -59,6 +78,17 @@ Feature: User access rights
     When READ is called on behalf of the user "theUser" for the publication "pubID"
     Then READ returns the publication "pubID"
 
+  @notmvp
+  Scenario: USER users cannot read unpublished publication that is not shared with them
+    Given a publication with id "pubID"
+    And the publication "pubID" is NOT published
+    And the owner of the publication "pubID" is the user "theCreator"
+    And "theCreator" has not given read access the publication "pubID" to "theUser"
+    When READ is called on behalf of the user "theUser" for the publication "pubID"
+    Then READ returns an error response that the publication "pubID" was not found
+
+
+  @notmvp
   Scenario: USER users cannot update unpublished publications if they have not been given write access
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
@@ -67,6 +97,7 @@ Feature: User access rights
     When UPDATE is called on behalf of the user "theUser" for the publication "pubID"
     Then UPDATE returns that this action is not allowed for the user "theUser"
 
+  @notmvp
   Scenario: USER users can update unpublished publications if they have been given write access
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
@@ -75,44 +106,5 @@ Feature: User access rights
     When UPDATE is called on behalf of the user "theUser" for the publication "pubID"
     Then UPDATE updates the publication "pubID" stored in "PUBLICATIONS"
     And UPDATE returns the previously stored version of the publication "pubID"
-
-  Scenario: USER users cannot update published publications
-    Given a publication with id "pubID"
-    And the publication "pubID" is published
-    And the owner of the publication "pubID" is the user "theCreator"
-    And "theCreator" has given write access to the publication "pubId" to "theUser"
-    When UPDATE is called on behalf of the user "theUser" for the publication "pubID"
-    Then UPDATE returns that this action is not allowed for the user "theUser"
-
-
-  Scenario Outline: Not allowed actions for USER users
-    Given the DynamoDBPublicationService has an <action> method
-    Given a publication with id "pubID"
-    And the publication "pubID" is <status>
-    And the owner of the publication "pubID" is the user "theCreator"
-    And "theCreator" has given <accessType> access to the publication "pubId" to "theUser"
-    When <action> is called on behalf of the user "theUser" for the publication "pubID"
-    Then <action> returns that this action is not allowed for the user "theUser"
-    Examples:
-      | status        | accessType | action  |
-      | NOT published | no         | DELETE  |
-      | NOT published | no         | PUBLISH |
-      | NOT published | no         | CHOWN   |
-      | NOT published | read       | DELETE  |
-      | NOT published | read       | PUBLISH |
-      | NOT published | read       | CHOWN   |
-      | NOT published | write      | DELETE  |
-      | NOT published | write      | PUBLISH |
-      | NOT published | write      | CHOWN   |
-      | published     | no         | DELETE  |
-      | published     | no         | PUBLISH |
-      | published     | no         | CHOWN   |
-      | published     | read       | DELETE  |
-      | published     | read       | PUBLISH |
-      | published     | read       | CHOWN   |
-      | published     | write      | DELETE  |
-      | published     | write      | PUBLISH |
-      | published     | write      | CHOWN   |
-
 
 
