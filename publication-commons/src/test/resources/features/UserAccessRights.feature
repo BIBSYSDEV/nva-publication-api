@@ -25,25 +25,25 @@ Feature: User access rights
     And the user "theUser" does not have any other role
 
 
-  Scenario: Users read published material
+  Scenario: USER users read published material
     Given a publication with ID "PubId"
     And the publication "PubId" has status PUBLISHED
-    When READ is called on behalf of the Anonymous user for the publication "PubId"
+    When READ is called on behalf of the user "theUser" for the publication "PubId"
     Then READ returns the publication "PubId"
 
-  Scenario: Users can see published material when they list publications
+  Scenario: USER users can see published material when they list publications
     Given that DynamoDBPublicationService has a LIST method
     And that LIST requires a user with non empty username
     And that LIST requires a publication owner's username
     When LIST is called on behalf of the "theUser" for the user "theCreator"
     Then LIST returns all published publications whose owner is the user "theCreator"
 
-  Scenario: Users cannot create a publication
+  Scenario: USER users cannot create a publication
     Given a new publication entry "newPublication"
     When CREATE is called on behalf of the user "theUser"
     Then CREATE returns an error message that this action is not allowed for the user "theUser"
 
-  Scenario: User cannot read unpublished publication that is not shared with them
+  Scenario: USER users cannot read unpublished publication that is not shared with them
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
     And the owner of the publication "pubID" is the user "theCreator"
@@ -51,7 +51,7 @@ Feature: User access rights
     When READ is called on behalf of the user "theUser" for the publication "pubID"
     Then READ returns an error response that the publication "pubID" was not found
 
-  Scenario: User reads unpublished publication that is shared with them
+  Scenario: USER users read unpublished publication that is shared with them
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
     And the owner of the publication "pubID" is the user "theCreator"
@@ -59,7 +59,7 @@ Feature: User access rights
     When READ is called on behalf of the user "theUser" for the publication "pubID"
     Then READ returns the publication "pubID"
 
-  Scenario: Users cannot update unpublished publications if they have not been given write access
+  Scenario: USER users cannot update unpublished publications if they have not been given write access
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
     And the owner of the publication "pubID" is the user "theCreator"
@@ -67,7 +67,7 @@ Feature: User access rights
     When UPDATE is called on behalf of the user "theUser" for the publication "pubID"
     Then UPDATE returns that this action is not allowed for the user "theUser"
 
-  Scenario: Users can update unpublished publications if they have been given write access
+  Scenario: USER users can update unpublished publications if they have been given write access
     Given a publication with id "pubID"
     And the publication "pubID" is NOT published
     And the owner of the publication "pubID" is the user "theCreator"
@@ -76,7 +76,7 @@ Feature: User access rights
     Then UPDATE updates the publication "pubID" stored in "PUBLICATIONS"
     And UPDATE returns the previously stored version of the publication "pubID"
 
-  Scenario: Users cannot update published publications
+  Scenario: USER users cannot update published publications
     Given a publication with id "pubID"
     And the publication "pubID" is published
     And the owner of the publication "pubID" is the user "theCreator"
@@ -85,7 +85,7 @@ Feature: User access rights
     Then UPDATE returns that this action is not allowed for the user "theUser"
 
 
-  Scenario Outline: Not allowed actions for Users
+  Scenario Outline: Not allowed actions for USER users
     Given the DynamoDBPublicationService has an <action> method
     Given a publication with id "pubID"
     And the publication "pubID" is <status>
