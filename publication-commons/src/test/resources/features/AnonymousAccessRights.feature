@@ -40,7 +40,7 @@ Feature: Anonymous access rights
 
   Scenario Outline: Anonymous user tries to update/delete material
     Given a publication with ID "PubId"
-    And  the publication "PubID" has status <status>
+    And the publication "PubID" has status <status>
     When <non-read-action> is called on behalf of the Anonymous user for the publication "PubId"
     Then <non-read-action> returns a response that this action is not allowed
     Examples:

@@ -94,25 +94,25 @@ Feature: User access rights
     When <action> is called on behalf of the user "theUser" for the publication "pubID"
     Then <action> returns that this action is not allowed for the user "theUser"
     Examples:
-      | status        | accessType | action  |
-      | DRAFT | no         | DELETE  |
-      | DRAFT | no         | PUBLISH |
-      | DRAFT | no         | CHOWN   |
-      | DRAFT | read       | DELETE  |
-      | DRAFT | read       | PUBLISH |
-      | DRAFT | read       | CHOWN   |
-      | DRAFT | write      | DELETE  |
-      | DRAFT | write      | PUBLISH |
-      | DRAFT | write      | CHOWN   |
-      | published     | no         | DELETE  |
-      | published     | no         | PUBLISH |
-      | published     | no         | CHOWN   |
-      | published     | read       | DELETE  |
-      | published     | read       | PUBLISH |
-      | published     | read       | CHOWN   |
-      | published     | write      | DELETE  |
-      | published     | write      | PUBLISH |
-      | published     | write      | CHOWN   |
+      | status    | accessType | action  |
+      | DRAFT     | no         | DELETE  |
+      | DRAFT     | no         | PUBLISH |
+      | DRAFT     | no         | CHOWN   |
+      | DRAFT     | read       | DELETE  |
+      | DRAFT     | read       | PUBLISH |
+      | DRAFT     | read       | CHOWN   |
+      | DRAFT     | write      | DELETE  |
+      | DRAFT     | write      | PUBLISH |
+      | DRAFT     | write      | CHOWN   |
+      | published | no         | DELETE  |
+      | published | no         | PUBLISH |
+      | published | no         | CHOWN   |
+      | published | read       | DELETE  |
+      | published | read       | PUBLISH |
+      | published | read       | CHOWN   |
+      | published | write      | DELETE  |
+      | published | write      | PUBLISH |
+      | published | write      | CHOWN   |
 
 
 
