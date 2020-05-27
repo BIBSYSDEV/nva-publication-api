@@ -70,6 +70,25 @@ Feature: User access rights
       | PUBLISHED | CHOWN           |
       | PUBLISHED | UPDATE          |
 
+  Scenario: users with role USER can see published material when they list publications
+    Given that DynamoDBPublicationService has a LIST method
+    And that LIST requires a user with non empty username
+    And that LIST requires a publication owner's username
+    And a user with username "theCreator" that owns some publications
+    When LIST is called to list the publication of the user "theCreator" on behalf of the authenticated user
+    Then LIST returns all published publications whose owner is the user "theCreator"
+
+  Scenario: users with role USER can NOT see unpublished material when they list publications
+    Given that DynamoDBPublicationService has a LIST method
+    And that LIST requires a user with non empty username
+    And that LIST requires a publication owner's username
+    And an existing publication does not have status PUBLISHED.
+    And the owner of that publication is the user with username "theCreator"
+    When LIST is called to list the publications of the user "theCreator" on behalf of the authenticated user
+    Then the publication is NOT in the result-set
+
+
+
   @notmvp
   Scenario: users with role USER read unpublished publication that is shared with them
     Given a publication
