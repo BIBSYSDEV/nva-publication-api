@@ -84,6 +84,8 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public Publication createPublication(Publication publication) throws ApiGatewayException {
         try {
+            //TODO: set identifier in PublicationMapper.newPublication(...)
+            publication.setIdentifier(UUID.randomUUID());
             Item item = publicationToItem(publication);
             table.putItem(item);
         } catch (Exception e) {
