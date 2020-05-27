@@ -52,6 +52,7 @@ Feature: Anonymous access rights
     Given that DynamoDBPublicationService has a LIST method
     And that LIST requires a user with non empty username
     And that LIST requires a publication owner's username
+    And a user with username "theCreator" that owns some publications
     When LIST is called to list the publication of the user "theCreator" on behalf of the Anonymous user
     Then LIST returns all published publications whose owner is the user "theCreator"
 
