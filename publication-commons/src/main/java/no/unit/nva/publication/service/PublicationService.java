@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import nva.commons.exceptions.ApiGatewayException;
 
 public interface PublicationService {
@@ -24,6 +24,6 @@ public interface PublicationService {
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
 
-    PublishPublicationStatus publishPublication(UUID identifier)
+    PublishPublicationStatusResponse publishPublication(UUID identifier)
         throws ApiGatewayException;
 }

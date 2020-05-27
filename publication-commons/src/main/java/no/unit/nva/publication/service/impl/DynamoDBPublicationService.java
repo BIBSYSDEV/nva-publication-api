@@ -33,7 +33,7 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -84,6 +84,8 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public Publication createPublication(Publication publication) throws ApiGatewayException {
         try {
+            //TODO: set identifier in PublicationMapper.newPublication(...)
+            publication.setIdentifier(UUID.randomUUID());
             Item item = publicationToItem(publication);
             table.putItem(item);
         } catch (Exception e) {
@@ -238,15 +240,15 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public PublishPublicationStatus publishPublication(UUID identifier) throws ApiGatewayException {
+    public PublishPublicationStatusResponse publishPublication(UUID identifier) throws ApiGatewayException {
         Publication publicationToPublish = getPublication(identifier);
         if (isPublished(publicationToPublish)) {
-            return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
+            return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
         } else {
             validatePublication(publicationToPublish);
             setPublishedProperties(publicationToPublish);
             updatePublication(identifier, publicationToPublish);
-            return new PublishPublicationStatus(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
+            return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
         }
     }
 

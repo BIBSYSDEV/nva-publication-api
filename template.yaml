@@ -262,6 +262,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
