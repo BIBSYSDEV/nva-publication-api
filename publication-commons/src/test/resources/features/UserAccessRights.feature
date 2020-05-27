@@ -1,7 +1,7 @@
 Feature: User access rights
 
   User access rights as specified in Confluence:
-   (https://unit.atlassian.net/wiki/spaces/NVAP/pages/443121665/Publication+access+rights+by+role)
+  (https://unit.atlassian.net/wiki/spaces/NVAP/pages/443121665/Publication+access+rights+by+role)
 
   Background:
     Given that there is a database with publications
@@ -21,8 +21,8 @@ Feature: User access rights
     And the DynamoDBPublicationService has a PUBLISH method
     And the PUBLISH method requires a user with non empty username
     And the PUBLISH method requires a non empty publication ID
-    
-    And there is a authenticated user
+
+    And there is an authenticated user
     And the authenticated user is affiliated with an institution
     And the user's role is USER
     And the user does not have any other role
@@ -104,7 +104,7 @@ Feature: User access rights
     Given a publication
     And the publication's status is DRAFT
     And the owner of the publication is not the authenticated use
-    And the owner fo the publication has given write access to the authenticated user for this publcation
+    And the owner of the publication has given write access to the authenticated user for this publication
     When UPDATE is called to update the publication on behalf of the authenticated user
     Then UPDATE updates the version of the publication stored in the database
     And UPDATE returns the previously stored version of the publication
