@@ -4,17 +4,16 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
-import java.time.Instant;
-import java.util.Optional;
+import java.util.Map;
 import java.util.UUID;
+import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.CreatePublicationRequest;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.model.util.OrgNumberMapper;
-import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
@@ -23,16 +22,19 @@ import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-public class CreatePublicationHandler extends ApiGatewayHandler<Publication, JsonNode> {
+public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
-    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
-    public static final String INPUT_ERROR = "Input is not a valid Publication";
-    public static final String ORG_NUMBER_COUNTRY_PREFIX_NORWAY = "NO";
+    public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
+    public static final String API_SCHEME = "API_SCHEME";
+    public static final String API_HOST = "API_HOST";
 
     private final PublicationService publicationService;
+    private final String apiScheme;
+    private final String apiHost;
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -54,57 +56,50 @@ public class CreatePublicationHandler extends ApiGatewayHandler<Publication, Jso
      */
     public CreatePublicationHandler(PublicationService publicationService,
                                     Environment environment) {
-        super(Publication.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
+        super(CreatePublicationRequest.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
         this.publicationService = publicationService;
+        this.apiScheme = environment.readEnv(API_SCHEME);
+        this.apiHost = environment.readEnv(API_HOST);
+
     }
 
     @Override
-    protected JsonNode processInput(Publication input, RequestInfo requestInfo, Context context)
+    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        Optional<Publication> publication = Optional.ofNullable(input);
-        Publication createdPublication;
-        if (publication.isPresent()) {
-            createdPublication = publicationService.createPublication(publication.get());
-        } else {
-            createdPublication = publicationService.createPublication(newPublication(requestInfo));
-        }
-        return toJsonNodeWithContext(createdPublication);
+
+        Publication newPublication = PublicationMapper.toNewPublication(
+            input,
+            RequestUtil.getOwner(requestInfo),
+            null, //TODO: set handle
+            null, //TODO: set link
+            createPublisher(RequestUtil.getOrgNumber(requestInfo)));
+
+        Publication createdPublication = publicationService.createPublication(newPublication);
+
+        setLocationHeader(createdPublication.getIdentifier());
+
+        return PublicationMapper.toResponse(createdPublication, PublicationResponse.class);
     }
 
-    protected Publication newPublication(RequestInfo requestInfo) throws ApiGatewayException {
-        Instant now = Instant.now();
-        return new Publication.Builder()
-            .withIdentifier(UUID.randomUUID())
-            .withCreatedDate(now)
-            .withModifiedDate(now)
-            .withOwner(RequestUtil.getOwner(requestInfo))
-            .withPublisher(new Organization.Builder()
-                .withId(toPublisherId(RequestUtil.getOrgNumber(requestInfo)))
-                .build()
-            )
-            .withStatus(PublicationStatus.DRAFT)
+    private void setLocationHeader(UUID identifier) {
+        setAdditionalHeadersSupplier(() -> Map.of(
+            HttpHeaders.LOCATION,
+            getLocation(identifier).toString())
+        );
+    }
+
+    protected URI getLocation(UUID identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
+    }
+
+    private Organization createPublisher(String orgNumber) {
+        return new Builder()
+            .withId(OrgNumberMapper.toCristinId(orgNumber))
             .build();
     }
 
-    private URI toPublisherId(String orgNumber) {
-
-        if (orgNumber.startsWith(ORG_NUMBER_COUNTRY_PREFIX_NORWAY)) {
-            //TODO: Remove this if and when datamodel has support for OrgNumber country prefix
-            return OrgNumberMapper.toCristinId(orgNumber.substring(ORG_NUMBER_COUNTRY_PREFIX_NORWAY.length()));
-        }
-        return OrgNumberMapper.toCristinId(orgNumber);
-    }
-
-    protected JsonNode toJsonNodeWithContext(Publication publication) {
-        JsonNode publicationJson = objectMapper.valueToTree(publication);
-        new JsonLdContextUtil(objectMapper)
-            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
-        return publicationJson;
-    }
-
     @Override
-    protected Integer getSuccessStatusCode(Publication input, JsonNode output) {
+    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
         return HttpStatus.SC_CREATED;
     }
 }

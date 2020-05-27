@@ -44,7 +44,6 @@ import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 @EnableRuleMigrationSupport
 public class ModifyPublicationHandlerTest {
 
-    public static final String SOME_API_KEY = "some api key";
     public static final String HEADERS = "headers";
     public static final String BODY = "body";
     public static final String IDENTIFIER = "identifier";
@@ -78,6 +77,8 @@ public class ModifyPublicationHandlerTest {
     @DisplayName("handler Returns OK Response On Valid Input")
     public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
+        when(publicationService.getPublication(any(UUID.class)))
+            .thenReturn(publication);
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
             .thenReturn(publication);
 
@@ -117,6 +118,8 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
+        when(publicationService.getPublication(any(UUID.class)))
+            .thenReturn(publication);
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
             .thenThrow(ErrorResponseException.class);
 
@@ -132,6 +135,8 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
+        when(publicationService.getPublication(any(UUID.class)))
+            .thenReturn(publication);
         when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
             .thenThrow(NullPointerException.class);
 

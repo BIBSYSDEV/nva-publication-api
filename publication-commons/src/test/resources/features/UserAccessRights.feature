@@ -56,19 +56,38 @@ Feature: User access rights
     Given the DynamoDBPublicationService has an <action> method
     And a publication
     And the publication's status is <status>
-    And the owner of the publication "pubID" is not the authenticated user
-    When <action> is called to act on the publication on behalf of the authenticated user
-    Then <action> returns that this action is not allowed for the authenticated user
+    And the owner of the publication is not the authenticated user
+    When <non-read-action> is called to act on the publication on behalf of the authenticated user
+    Then <non-read-action> returns that this action is not allowed for the authenticated user
     Examples:
-      | status    | action  |
-      | DRAFT     | DELETE  |
-      | DRAFT     | PUBLISH |
-      | DRAFT     | CHOWN   |
-      | DRAFT     | UPDATE  |
-      | PUBLISHED | DELETE  |
-      | PUBLISHED | PUBLISH |
-      | PUBLISHED | CHOWN   |
-      | PUBLISHED | UPDATE  |
+      | status    | non-read-action |
+      | DRAFT     | DELETE          |
+      | DRAFT     | PUBLISH         |
+      | DRAFT     | CHOWN           |
+      | DRAFT     | UPDATE          |
+      | PUBLISHED | DELETE          |
+      | PUBLISHED | PUBLISH         |
+      | PUBLISHED | CHOWN           |
+      | PUBLISHED | UPDATE          |
+
+  Scenario: users with role USER can see published material when they list publications
+    Given that DynamoDBPublicationService has a LIST method
+    And that LIST requires a user with non empty username
+    And that LIST requires a publication owner's username
+    And a user with username "theCreator" that owns some publications
+    When LIST is called to list the publication of the user "theCreator" on behalf of the authenticated user
+    Then LIST returns all published publications whose owner is the user "theCreator"
+
+  Scenario: users with role USER can NOT see unpublished material when they list publications
+    Given that DynamoDBPublicationService has a LIST method
+    And that LIST requires a user with non empty username
+    And that LIST requires a publication owner's username
+    And an existing publication does not have status PUBLISHED.
+    And the owner of that publication is the user with username "theCreator"
+    When LIST is called to list the publications of the user "theCreator" on behalf of the authenticated user
+    Then the publication is NOT in the result-set
+
+
 
   @notmvp
   Scenario: users with role USER read unpublished publication that is shared with them
