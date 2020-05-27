@@ -39,7 +39,6 @@ Feature: Anonymous access rights
     Then CREATE returns a response that this action is not allowed
 
   Scenario Outline: Anonymous user tries to update/delete material
-    Given a publication with ID "PubId"
     When <non-read-action> is called on behalf of the Anonymous user for the publication "PubId"
     Then <non-read-action> returns a response that this action is not allowed
 
@@ -47,6 +46,7 @@ Feature: Anonymous access rights
       | non-read-action |
       | UPDATE          |
       | DELETE          |
+      | PUBLISH         |
 
   Scenario: Anonymous users can see published material when they list publications
     Given that DynamoDBPublicationService has a LIST method
@@ -63,4 +63,4 @@ Feature: Anonymous access rights
     And the owner of "PubID" is the user with username "theCreator"
     When LIST is called on behalf of the Anonymous user for the user "theCreator"
     Then the "PubId" publication is NOT in the result-set
- 
+
