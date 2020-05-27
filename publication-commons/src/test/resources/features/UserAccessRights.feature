@@ -56,19 +56,19 @@ Feature: User access rights
     Given the DynamoDBPublicationService has an <action> method
     And a publication
     And the publication's status is <status>
-    And the owner of the publication "pubID" is not the authenticated user
-    When <action> is called to act on the publication on behalf of the authenticated user
-    Then <action> returns that this action is not allowed for the authenticated user
+    And the owner of the publication is not the authenticated user
+    When <non-read-action> is called to act on the publication on behalf of the authenticated user
+    Then <non-read-action> returns that this action is not allowed for the authenticated user
     Examples:
-      | status    | action  |
-      | DRAFT     | DELETE  |
-      | DRAFT     | PUBLISH |
-      | DRAFT     | CHOWN   |
-      | DRAFT     | UPDATE  |
-      | PUBLISHED | DELETE  |
-      | PUBLISHED | PUBLISH |
-      | PUBLISHED | CHOWN   |
-      | PUBLISHED | UPDATE  |
+      | status    | non-read-action |
+      | DRAFT     | DELETE          |
+      | DRAFT     | PUBLISH         |
+      | DRAFT     | CHOWN           |
+      | DRAFT     | UPDATE          |
+      | PUBLISHED | DELETE          |
+      | PUBLISHED | PUBLISH         |
+      | PUBLISHED | CHOWN           |
+      | PUBLISHED | UPDATE          |
 
   @notmvp
   Scenario: users with role USER read unpublished publication that is shared with them

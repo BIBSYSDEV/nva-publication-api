@@ -17,54 +17,49 @@ Feature: Anonymous access rights
     And the CREATE method requires a non empty publication object
 
   Scenario: Anonymous user reads published material
-    Given a publication with ID "PubId"
-    And the publication "PubId" has status PUBLISHED
-    When READ is called on behalf of the Anonymous user for the publication "PubId"
-    Then READ returns the publication "PubId"
+    Given an existing publication
+    And the publication has status PUBLISHED
+    When READ is called to read the publication on behalf of the Anonymous user
+    Then READ returns the saved publication
 
-  Scenario: Anonymous user reads published material
-    Given a publication with ID "PubId"
-    And the publication "PubId" has status PUBLISHED
-    When READ is called for the Anonymous user and the publication "PubId"
-    Then READ returns the publication "PubId"
+  Scenario: Anonymous user cannot read unpublished material
+    Given an existing publication
+    And the publication has status DRAFT
+    When READ is called to read the publication on behalf of the Anonymous user
+    Then READ returns an error response that the publication was not found
 
-  Scenario: Anonymous user tries to read unpublished material
-    Given a publication P
-    When CREATE is called for the Anonymous user and the publication object P
-    Then CREATE returns a response that this action is not allowed
-
-  Scenario: Anonymous user tries to create published material
-    Given a publication PublicationA
-    When CREATE is called on behalf of the Anonymous user for the publication object PublicationA
+  Scenario: Anonymous user tries to create publication
+    When CREATE is called to create a new publication on behalf of the Anonymous user
     Then CREATE returns a response that this action is not allowed
 
   Scenario Outline: Anonymous user tries to update/delete material
-    Given a publication with ID "PubId"
-    And the publication "PubID" has status <status>
-    When <non-read-action> is called on behalf of the Anonymous user for the publication "PubId"
-    Then <non-read-action> returns a response that this action is not allowed
+    Given an existing publication
+    And the publication has status <status>
+    When <non-read-action> is called to act on the publication on behalf of the Anonymous user
+    Then <non-read-action> returns a response that the action is not allowed for the Anonymous user
     Examples:
       | status    | non-read-action |
       | PUBLISHED | UPDATE          |
       | PUBLISHED | DELETE          |
       | PUBLISHED | PUBLISH         |
+      | PUBLISHED | CHOWN           |
       | DRAFT     | UPDATE          |
       | DRAFT     | DELETE          |
       | DRAFT     | PUBLISH         |
+      | DRAFT     | CHOWN           |
 
   Scenario: Anonymous users can see published material when they list publications
     Given that DynamoDBPublicationService has a LIST method
     And that LIST requires a user with non empty username
     And that LIST requires a publication owner's username
-    When LIST is called on behalf of the Anonymous user for the user "theCreator"
+    When LIST is called to list the publication of the user "theCreator" on behalf of the Anonymous user
     Then LIST returns all published publications whose owner is the user "theCreator"
 
   Scenario: Anonymous users can NOT see unpublished material when they list publications
     Given that DynamoDBPublicationService has a LIST method
     And that LIST requires a user with non empty username
     And that LIST requires a publication owner's username
-    And publication "PubID" does not have status PUBLISHED.
-    And the owner of "PubID" is the user with username "theCreator"
-    When LIST is called on behalf of the Anonymous user for the user "theCreator"
-    Then the "PubId" publication is NOT in the result-set
-
+    And an existing publication does not have status PUBLISHED.
+    And the owner of that publication is the user with username "theCreator"
+    When LIST is called to list the publications of the user "theCreator" on behalf of the Anonymous user
+    Then the publication is NOT in the result-set
