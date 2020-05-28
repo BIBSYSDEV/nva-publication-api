@@ -2,6 +2,7 @@ package no.unit.nva.publication.service;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -23,6 +24,9 @@ public interface PublicationService {
 
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
+
+    List<PublicationSummary> getPublicationsByModifiedDate(String lastKey, int pageSize)
+            throws ApiGatewayException;
 
     PublishPublicationStatusResponse publishPublication(UUID identifier)
         throws ApiGatewayException;

@@ -6,4 +6,5 @@ include 'modify-publication'
 include 'publications-by-owner'
 include 'publish-publication'
 include 'create-publication'
+include 'publications-by-date'
 

@@ -4,13 +4,9 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Index;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemCollection;
-import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
-import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -39,6 +35,7 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.apache.logging.log4j.util.Strings;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -195,11 +192,26 @@ public class DynamoDBPublicationService implements PublicationService {
         return filterOutOlderVersionsOfPublications(publications);
     }
 
+    @Override
+    public List<PublicationSummary> getPublicationsByModifiedDate(String lastKey, int pageSize) throws ApiGatewayException {
+        ScanSpec scanSpec = new ScanSpec()
+                .withMaxPageSize(pageSize);
+        if (Strings.isNotBlank(lastKey)) {
+            scanSpec.withExclusiveStartKey(lastKey);
+        }
+
+        ItemCollection<ScanOutcome> items = table.scan(scanSpec);
+        List<PublicationSummary> publications = new ArrayList<>();
+        items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
+        return publications;
+    }
+
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
         List<PublicationSummary> publications = new ArrayList<>();
         items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
         return publications;
     }
+
 
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
         List<PublicationSummary> publications) {
