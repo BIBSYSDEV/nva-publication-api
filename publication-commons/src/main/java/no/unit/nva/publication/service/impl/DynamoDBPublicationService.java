@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.*;
+import no.unit.nva.publication.model.ListPublicationsResponse;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
@@ -189,7 +190,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public List<PublicationSummary> listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
+    public ListPublicationsResponse listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
 //        Map<String, String> nameMap = Map.of(
 //                "#publisherId", "publisherId",
 //                "#publisherOwnerDate", "publisherOwnerDate");
@@ -206,15 +207,16 @@ public class DynamoDBPublicationService implements PublicationService {
                 ;
 
         ItemCollection<QueryOutcome> items;
+        Map<String, AttributeValue> lastEvaluatedKey;
         try {
             items = byPublishedDateIndex.query(querySpec);
-            Map<String, AttributeValue> lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
+            lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
         List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
-        return publications;
+        return new ListPublicationsResponse(lastEvaluatedKey, publications);
     }
 
 

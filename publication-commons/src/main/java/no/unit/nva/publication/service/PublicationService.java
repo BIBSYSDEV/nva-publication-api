@@ -2,6 +2,7 @@ package no.unit.nva.publication.service;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.ListPublicationsResponse;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import nva.commons.exceptions.ApiGatewayException;
@@ -27,7 +28,7 @@ public interface PublicationService {
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
 
-    List<PublicationSummary> listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize)
+    ListPublicationsResponse listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize)
             throws ApiGatewayException;
 
     PublishPublicationStatusResponse publishPublication(UUID identifier)

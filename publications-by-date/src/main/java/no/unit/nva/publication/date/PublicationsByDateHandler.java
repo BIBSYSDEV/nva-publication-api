@@ -4,6 +4,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.model.ListPublicationsResponse;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
@@ -20,7 +21,7 @@ import java.util.Optional;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class PublicationsByDateHandler extends ApiGatewayHandler<Void, PublicationsByDateResponse> {
+public class PublicationsByDateHandler extends ApiGatewayHandler<Void, ListPublicationsResponse> {
 
     private final PublicationService publicationService;
 
@@ -47,7 +48,7 @@ public class PublicationsByDateHandler extends ApiGatewayHandler<Void, Publicati
     }
 
     @Override
-    protected PublicationsByDateResponse processInput(Void input, RequestInfo requestInfo, Context context)
+    protected ListPublicationsResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
         Map<String, AttributeValue> lastEvaluatedKey = RequestUtil.getLastKey(requestInfo);
@@ -57,13 +58,13 @@ public class PublicationsByDateHandler extends ApiGatewayHandler<Void, Publicati
             lastEvaluatedKey,
             pageSize));
 
-        List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(lastEvaluatedKey, pageSize);
+        ListPublicationsResponse publicationsResponse = publicationService.listPublishedPublicationsByDate(lastEvaluatedKey, pageSize);
 
-        return new PublicationsByDateResponse(publications);
+        return publicationsResponse;
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, PublicationsByDateResponse output) {
+    protected Integer getSuccessStatusCode(Void input, ListPublicationsResponse output) {
         return HttpStatus.SC_OK;
     }
 }
