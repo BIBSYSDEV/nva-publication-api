@@ -1,13 +1,15 @@
 package no.unit.nva.publication.service;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import nva.commons.exceptions.ApiGatewayException;
+
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public interface PublicationService {
 
@@ -25,7 +27,7 @@ public interface PublicationService {
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
 
-    List<PublicationSummary> getPublicationsByModifiedDate(String lastKey, int pageSize)
+    List<PublicationSummary> getPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize)
             throws ApiGatewayException;
 
     PublishPublicationStatusResponse publishPublication(UUID identifier)

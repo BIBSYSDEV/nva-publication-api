@@ -1,33 +1,15 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.DynamoDBException;
-import no.unit.nva.publication.exception.InputException;
-import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.NotFoundException;
-import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.exception.*;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
@@ -35,7 +17,16 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.apache.logging.log4j.util.Strings;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -193,18 +184,20 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public List<PublicationSummary> getPublicationsByModifiedDate(String lastKey, int pageSize) throws ApiGatewayException {
-        ScanSpec scanSpec = new ScanSpec()
-                .withMaxPageSize(pageSize);
-        if (Strings.isNotBlank(lastKey)) {
-            scanSpec.withExclusiveStartKey(lastKey);
-        }
+    public List<PublicationSummary> getPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
+        String scanFilterExpression = "";
+        ScanRequest scanRequest  = new ScanRequest()
+                .withLimit(pageSize)
+                .withFilterExpression(scanFilterExpression)
+                .withExclusiveStartKey(lastKey);
 
-        ItemCollection<ScanOutcome> items = table.scan(scanSpec);
+
+        ItemCollection<ScanOutcome> items = table.scan(scanRequest);
         List<PublicationSummary> publications = new ArrayList<>();
         items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
         return publications;
     }
+
 
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
         List<PublicationSummary> publications = new ArrayList<>();
