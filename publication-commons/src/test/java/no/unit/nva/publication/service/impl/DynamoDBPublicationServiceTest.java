@@ -96,7 +96,8 @@ class DynamoDBPublicationServiceTest {
         publicationService = new DynamoDBPublicationService(
             objectMapper,
             db.getTable(),
-            db.getByPublisherIndex()
+            db.getByPublisherIndex(),
+            db.getByPublishedDateIndex()
         );
     }
 
@@ -273,8 +274,8 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
-            index
-        );
+            index,
+            index);
         DynamoDBException exception = assertThrows(DynamoDBException.class,
             () -> failingService.createPublication(publication()));
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
@@ -288,6 +289,7 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
+            index,
             index
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
@@ -303,6 +305,7 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             table,
+            failingIdex,
             failingIdex
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
@@ -318,7 +321,8 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
-            index
+                index,
+                index
         );
         Publication publication = publication();
         publication.setIdentifier(UUID.randomUUID());
@@ -334,7 +338,8 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             failingObjectMapper,
             db.getTable(),
-            db.getByPublisherIndex()
+            db.getByPublisherIndex(),
+            db.getByPublishedDateIndex()
         );
         InputException exception = assertThrows(InputException.class,
             () -> failingService.publicationToItem(publication()));

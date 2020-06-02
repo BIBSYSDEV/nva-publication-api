@@ -33,6 +33,7 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
 
     public static final String NVA_RESOURCES_TABLE_NAME = "nva_resources";
     public static final String BY_PUBLISHER_INDEX_NAME = "ByPublisher";
+    public static final String BY_PUBLISHED_DATE_INDEX_NAME = "ByPublishedDate";
 
     private AmazonDynamoDB ddb;
     private DynamoDB client;
@@ -99,5 +100,9 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
         if (ddb != null) {
             ddb.shutdown();
         }
+    }
+
+    public Index getByPublishedDateIndex() {
+        return getTable().getIndex(BY_PUBLISHED_DATE_INDEX_NAME);
     }
 }

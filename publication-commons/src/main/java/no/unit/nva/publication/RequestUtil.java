@@ -1,7 +1,9 @@
 package no.unit.nva.publication;
 
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
@@ -110,17 +112,18 @@ public final class RequestUtil {
      * @param requestInfo requestInfo
      * @return the lastkey if given
      */
-    public static Optional<String> getLastKey(RequestInfo requestInfo) throws ApiGatewayException {
-        Optional<String> result;
+    public static Map<String, AttributeValue> getLastKey(RequestInfo requestInfo) throws ApiGatewayException {
+        String result;
         logger.debug("Trying to read lastKey...");
-        String lastKey = requestInfo.getPathParameters().get(LAST_KEY);
-        if (!Strings.isEmpty(lastKey)) {
-            logger.debug("got lastKey:" + lastKey);
-            result = Optional.of(lastKey);
-        } else {
-            result = Optional.empty();
-        }
-        return result;
+        String lastKeyEncoded = requestInfo.getPathParameters().get(LAST_KEY);
+        Map<String, AttributeValue>  lastKey = null;
+//        if (!Strings.isEmpty(lastKey)) {
+//            logger.debug("got lastKey:" + lastKey);
+//            result = Optional.of(lastKey);
+//        } else {
+//            result = Optional.empty();
+//        }
+        return lastKey;
     }
 
 }

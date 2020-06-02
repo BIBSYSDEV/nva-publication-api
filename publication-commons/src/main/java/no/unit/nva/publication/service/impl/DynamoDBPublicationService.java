@@ -43,18 +43,21 @@ public class DynamoDBPublicationService implements PublicationService {
         + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
+    private static final String BY_PUBLISHED_DATE_INDEX_NAME_ENV = "BY_PUBLISHED_DATE_INDEX_NAME";
 
     private final ObjectMapper objectMapper;
     private final Table table;
     private final Index byPublisherIndex;
+    private final Index byPublishedDateIndex;
 
     /**
      * Constructor for DynamoDBPublicationService.
      */
-    public DynamoDBPublicationService(ObjectMapper objectMapper, Table table, Index byPublisherIndex) {
+    public DynamoDBPublicationService(ObjectMapper objectMapper, Table table, Index byPublisherIndex, Index byPublishedDateIndex) {
         this.objectMapper = objectMapper;
         this.table = table;
         this.byPublisherIndex = byPublisherIndex;
+        this.byPublishedDateIndex = byPublishedDateIndex;
     }
 
     /**
@@ -63,10 +66,12 @@ public class DynamoDBPublicationService implements PublicationService {
     public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
         String tableName = environment.readEnv(TABLE_NAME_ENV);
         String byPublisherIndexName = environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV);
+        String byPublishedDateIndex = environment.readEnv(BY_PUBLISHED_DATE_INDEX_NAME_ENV);
         DynamoDB dynamoDB = new DynamoDB(client);
         this.objectMapper = objectMapper;
         this.table = dynamoDB.getTable(tableName);
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
+        this.byPublishedDateIndex = table.getIndex(byPublishedDateIndex);
     }
 
     @Override
@@ -184,17 +189,31 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public List<PublicationSummary> getPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
-        String scanFilterExpression = "";
-        ScanRequest scanRequest  = new ScanRequest()
-                .withLimit(pageSize)
-                .withFilterExpression(scanFilterExpression)
-                .withExclusiveStartKey(lastKey);
+    public List<PublicationSummary> listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
+//        Map<String, String> nameMap = Map.of(
+//                "#publisherId", "publisherId",
+//                "#publisherOwnerDate", "publisherOwnerDate");
+//        Map<String, Object> valueMap = Map.of(
+//                ":publisherId", publisherId.toString(),
+//                ":publisherOwner", publisherOwner);
 
+        KeyAttribute exclusiveStartKey = null;
+        QuerySpec querySpec = new QuerySpec()
+                .withKeyConditionExpression(
+                        "status = 'Published'")
+                .withMaxPageSize(pageSize)
+                .withExclusiveStartKey(exclusiveStartKey)
+                ;
 
-        ItemCollection<ScanOutcome> items = table.scan(scanRequest);
-        List<PublicationSummary> publications = new ArrayList<>();
-        items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
+        ItemCollection<QueryOutcome> items;
+        try {
+            items = byPublishedDateIndex.query(querySpec);
+            Map<String, AttributeValue> lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
+        }
+
+        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
         return publications;
     }
 

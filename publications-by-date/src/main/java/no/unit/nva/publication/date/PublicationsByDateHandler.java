@@ -1,6 +1,7 @@
 package no.unit.nva.publication.date;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -14,6 +15,7 @@ import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
@@ -48,14 +50,14 @@ public class PublicationsByDateHandler extends ApiGatewayHandler<Void, Publicati
     protected PublicationsByDateResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        Optional<String> lastEvaluatedKey = RequestUtil.getLastKey(requestInfo);
+        Map<String, AttributeValue> lastEvaluatedKey = RequestUtil.getLastKey(requestInfo);
         int pageSize = RequestUtil.getPageSize(requestInfo);
 
         logger.info(String.format("Requested latest modified publications starting from lastEvaluatedKey=%s and pagesize=%s",
             lastEvaluatedKey,
             pageSize));
 
-        List<PublicationSummary> publications = publicationService.getPublicationsByModifiedDate(lastEvaluatedKey, pageSize);
+        List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(lastEvaluatedKey, pageSize);
 
         return new PublicationsByDateResponse(publications);
     }

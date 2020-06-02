@@ -27,7 +27,7 @@ public interface PublicationService {
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
 
-    List<PublicationSummary> getPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize)
+    List<PublicationSummary> listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize)
             throws ApiGatewayException;
 
     PublishPublicationStatusResponse publishPublication(UUID identifier)
