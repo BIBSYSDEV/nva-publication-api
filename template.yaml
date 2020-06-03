@@ -401,7 +401,7 @@ Resources:
   NvaListPublicationsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publications-by-date
+      CodeUri: list-publications
       Handler: no.unit.nva.publication.query.ListPublishedPublicationsHandler::handleRequest
       Layers:
         - !Ref NvaPublicationCommonsLayer
