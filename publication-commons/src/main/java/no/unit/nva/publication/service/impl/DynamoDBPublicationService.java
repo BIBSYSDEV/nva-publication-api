@@ -17,10 +17,18 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -202,9 +210,11 @@ public class DynamoDBPublicationService implements PublicationService {
         ItemCollection<QueryOutcome> items;
         Map<String, AttributeValue> lastEvaluatedKey;
         try {
+
             items = byPublishedDateIndex.query(querySpec);
             lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
         } catch (Exception e) {
+            LoggerFactory.getLogger(DynamoDBPublicationService.class).debug(e.getMessage(), e);   // TODO remove
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
