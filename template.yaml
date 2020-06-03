@@ -57,7 +57,7 @@ Resources:
         paths:
           /:
             get:
-              summary: List published publications by date
+              summary: List published publications ordered by date desc
               consumes:
                 - application/json
               produces:
@@ -65,7 +65,7 @@ Resources:
               parameters:
                 - in: query
                   name: pagesize
-                  type: integer
+                  type: string
                   required: false
                   description: Maximum number of wanted publications in response.
               x-amazon-apigateway-integration:
