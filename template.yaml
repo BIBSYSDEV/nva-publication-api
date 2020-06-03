@@ -425,6 +425,8 @@ Resources:
           Properties:
             Path: /
             Method: get
+            RequestParameters:
+              - method.request.querystring.pagesize
             RestApiId: !Ref NvaPublicationApi
 
   NvaPublicationBasePathMapping:
