@@ -27,7 +27,7 @@ public final class RequestUtil {
         "Missing claim in requestContext: ";
     public static final String LAST_KEY = "lastkey";
     public static final String PAGESIZE = "pagesize";
-    public static final int DEFAULT_PAGESIZE = 10;
+    public static final int DEFAULT_PAGESIZE = 5;
 
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
@@ -95,7 +95,7 @@ public final class RequestUtil {
         String pagesizeString = null;
         try {
             logger.debug("Trying to read pagesize...");
-            pagesizeString = requestInfo.getPathParameters().get(IDENTIFIER);
+            pagesizeString = requestInfo.getQueryParameters().get(PAGESIZE);
             if (!Strings.isEmpty(pagesizeString)) {
                 logger.debug("got pagesize:" + pagesizeString);
                 return Integer.getInteger(pagesizeString);
