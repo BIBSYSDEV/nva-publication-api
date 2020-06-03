@@ -195,7 +195,7 @@ public class DynamoDBPublicationService implements PublicationService {
         Map<String, Object> valueMap = Map.of(
                 ":status", "Published");
 
-        KeyAttribute exclusiveStartKey = null;
+//        KeyAttribute exclusiveStartKey = null;
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression(
                         "status = :status")
