@@ -70,7 +70,7 @@ Resources:
                   description: Maximum number of wanted publications in response.
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListPublicationsFunction.Arn}/invocations
                 responses: {}
                 httpMethod: POST
                 type: AWS_PROXY
@@ -397,12 +397,12 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
-// ---------------------------------------------------------
+#  ---------------------------------------------------------
   NvaListPublicationsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publications-by-date
-      Handler: no.unit.nva.publication.date.PublicationsByDateHandler::handleRequest
+      Handler: no.unit.nva.publication.query.ListPublishedPublicationsHandler::handleRequest
       Layers:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
