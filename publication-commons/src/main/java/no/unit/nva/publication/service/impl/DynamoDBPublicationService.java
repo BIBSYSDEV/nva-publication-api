@@ -201,7 +201,8 @@ public class DynamoDBPublicationService implements PublicationService {
                         "status = :status")
                 .withValueMap(valueMap)
                 .withMaxPageSize(pageSize)
-                .withExclusiveStartKey(exclusiveStartKey);
+//                .withExclusiveStartKey(exclusiveStartKey)
+                ;
 
         ItemCollection<QueryOutcome> items;
         Map<String, AttributeValue> lastEvaluatedKey;
