@@ -44,7 +44,7 @@ public class DynamoDBPublicationService implements PublicationService {
         + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
-    private static final String BY_PUBLISHED_DATE_INDEX_NAME_ENV = "BY_PUBLISHED_DATE_INDEX_NAME";
+    private static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -67,12 +67,12 @@ public class DynamoDBPublicationService implements PublicationService {
     public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
         String tableName = environment.readEnv(TABLE_NAME_ENV);
         String byPublisherIndexName = environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV);
-        String byPublishedDateIndex = environment.readEnv(BY_PUBLISHED_DATE_INDEX_NAME_ENV);
+        String byPublishedPublicationsIndex = environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         DynamoDB dynamoDB = new DynamoDB(client);
         this.objectMapper = objectMapper;
         this.table = dynamoDB.getTable(tableName);
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
-        this.byPublishedDateIndex = table.getIndex(byPublishedDateIndex);
+        this.byPublishedDateIndex = table.getIndex(byPublishedPublicationsIndex);
     }
 
     @Override

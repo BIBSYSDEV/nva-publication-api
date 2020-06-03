@@ -1,11 +1,10 @@
-package no.unit.nva.publication.date;
+package no.unit.nva.publication.query;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.ListPublicationsResponse;
-import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -15,20 +14,18 @@ import nva.commons.utils.Environment;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class PublicationsByDateHandler extends ApiGatewayHandler<Void, ListPublicationsResponse> {
+public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, ListPublicationsResponse> {
 
     private final PublicationService publicationService;
 
     /**
      * Default constructor for MainHandler.
      */
-    public PublicationsByDateHandler() {
+    public ListPublishedPublicationsHandler() {
         this(new DynamoDBPublicationService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
                 objectMapper,
@@ -41,9 +38,9 @@ public class PublicationsByDateHandler extends ApiGatewayHandler<Void, ListPubli
      *
      * @param environment environment
      */
-    public PublicationsByDateHandler(PublicationService publicationService,
-                                      Environment environment) {
-        super(Void.class, environment, LoggerFactory.getLogger(PublicationsByDateHandler.class));
+    public ListPublishedPublicationsHandler(PublicationService publicationService,
+                                            Environment environment) {
+        super(Void.class, environment, LoggerFactory.getLogger(ListPublishedPublicationsHandler.class));
         this.publicationService = publicationService;
     }
 

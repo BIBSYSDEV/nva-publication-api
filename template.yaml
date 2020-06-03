@@ -39,6 +39,9 @@ Parameters:
   PublicationsByOwnerIndexName:
     Type: String
     Description: Reference to index containing publications by owner
+  PublishedPublicationsIndexName:
+    Type: String
+    Description: Reference to index containing published publications
 
 Resources:
   NvaPublicationApi:
@@ -53,6 +56,30 @@ Resources:
           version: '1.0'
         paths:
           /:
+            get:
+              summary: List published publications by date
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: query
+                  name: pagesize
+                  type: integer
+                  required: false
+                  description: Maximum number of wanted publications in response.
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '200':
+                  description: OK
+                  schema:
+                    $ref: '#/definitions/Publication'
+
             post:
               summary: Create Publication
               consumes:
@@ -370,6 +397,32 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
+// ---------------------------------------------------------
+  NvaListPublicationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publications-by-date
+      Handler: no.unit.nva.publication.date.PublicationsByDateHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
