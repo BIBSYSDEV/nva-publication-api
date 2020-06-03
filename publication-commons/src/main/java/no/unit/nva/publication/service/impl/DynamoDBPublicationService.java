@@ -4,7 +4,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
@@ -44,7 +43,7 @@ public class DynamoDBPublicationService implements PublicationService {
         + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
-    private static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
+    public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -191,12 +190,6 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public ListPublicationsResponse listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
-//        Map<String, String> nameMap = Map.of(
-//                "#publisherId", "publisherId",
-//                "#publisherOwnerDate", "publisherOwnerDate");
-//        Map<String, Object> valueMap = Map.of(
-//                ":publisherId", publisherId.toString(),
-//                ":publisherOwner", publisherOwner);
 
         KeyAttribute exclusiveStartKey = null;
         QuerySpec querySpec = new QuerySpec()

@@ -10,6 +10,13 @@ public class ListPublicationsResponse {
     private final Map<String, AttributeValue> lastEvaluatedKey;
     private final List<PublicationSummary> publications;
 
+    public Map<String, AttributeValue> getLastEvaluatedKey() {
+        return lastEvaluatedKey;
+    }
+
+    public List<PublicationSummary> getPublications() {
+        return publications;
+    }
 
     public ListPublicationsResponse(Map<String, AttributeValue> lastEvaluatedKey, List<PublicationSummary> publications) {
         this.lastEvaluatedKey = lastEvaluatedKey;

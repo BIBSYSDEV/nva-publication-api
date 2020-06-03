@@ -78,6 +78,9 @@ class DynamoDBPublicationServiceTest {
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
+    private static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
+
+
 
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
@@ -142,6 +145,8 @@ class DynamoDBPublicationServiceTest {
         when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(TABLE_NAME_ENV);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
             .thenReturn(BY_PUBLISHER_INDEX_NAME);
+        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
+                .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 

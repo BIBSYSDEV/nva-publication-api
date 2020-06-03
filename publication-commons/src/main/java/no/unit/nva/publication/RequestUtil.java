@@ -1,17 +1,18 @@
 package no.unit.nva.publication;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
+import nva.commons.utils.JsonUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.UUID;
 
 public final class RequestUtil {
 
@@ -113,16 +114,16 @@ public final class RequestUtil {
      * @return the lastkey if given
      */
     public static Map<String, AttributeValue> getLastKey(RequestInfo requestInfo) throws ApiGatewayException {
-        String result;
         logger.debug("Trying to read lastKey...");
         String lastKeyEncoded = requestInfo.getPathParameters().get(LAST_KEY);
         Map<String, AttributeValue>  lastKey = null;
-//        if (!Strings.isEmpty(lastKey)) {
-//            logger.debug("got lastKey:" + lastKey);
-//            result = Optional.of(lastKey);
-//        } else {
-//            result = Optional.empty();
-//        }
+        try {
+            if (lastKey != null) {
+                lastKey = JsonUtils.objectMapper.readValue(lastKeyEncoded, Map.class);
+            }
+        } catch (JsonProcessingException e) {
+            logger.error("",e);
+        }
         return lastKey;
     }
 

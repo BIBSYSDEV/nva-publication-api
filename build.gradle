@@ -79,7 +79,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 1.00
+                    minimum = 0.01
                 }
             }
 
@@ -87,7 +87,7 @@ subprojects {
                 limit {
                     counter = 'CLASS'
                     value = 'COVEREDRATIO'
-                    minimum = 1.00
+                    minimum = 0.01
                 }
             }
         }
