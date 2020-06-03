@@ -192,13 +192,16 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public ListPublicationsResponse listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
 
+        Map<String, Object> valueMap = Map.of(
+                ":status", "Published");
+
         KeyAttribute exclusiveStartKey = null;
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression(
-                        "status = 'Published'")
+                        "status = :status")
+                .withValueMap(valueMap)
                 .withMaxPageSize(pageSize)
-                .withExclusiveStartKey(exclusiveStartKey)
-                ;
+                .withExclusiveStartKey(exclusiveStartKey);
 
         ItemCollection<QueryOutcome> items;
         Map<String, AttributeValue> lastEvaluatedKey;
