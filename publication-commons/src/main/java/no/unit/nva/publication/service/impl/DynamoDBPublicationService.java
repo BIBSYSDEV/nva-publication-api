@@ -217,6 +217,7 @@ public class DynamoDBPublicationService implements PublicationService {
             try {
                 lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
             } catch (Exception e) {
+
                 getLogger(DynamoDBPublicationService.class).debug(e.getMessage(), e);   // TODO remove
                 lastEvaluatedKey = Collections.EMPTY_MAP;
             }
