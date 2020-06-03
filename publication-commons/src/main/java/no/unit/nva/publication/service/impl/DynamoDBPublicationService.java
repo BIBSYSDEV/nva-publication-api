@@ -214,7 +214,7 @@ public class DynamoDBPublicationService implements PublicationService {
         try {
 
             items = byPublishedDateIndex.query(querySpec);
-            getLogger(DynamoDBPublicationService.class).debug("Items="+items);   // TODO remove
+            getLogger(DynamoDBPublicationService.class).debug("Items="+ objectMapper.writeValueAsString(items));   // TODO remove
             try {
                 lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
             } catch (Exception e) {
