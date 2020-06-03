@@ -97,14 +97,14 @@ public final class RequestUtil {
             logger.debug("Trying to read pagesize...");
             pagesizeString = requestInfo.getQueryParameters().get(PAGESIZE);
             if (!Strings.isEmpty(pagesizeString)) {
-                logger.debug("got pagesize='" + pagesizeString+"'");
+                logger.info("got pagesize='" + pagesizeString+"'");
                 return Integer.getInteger(pagesizeString.trim());
             } else {
                 return DEFAULT_PAGESIZE;
             }
         } catch (Exception e) {
 //            throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
-            logger.debug(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
+            logger.info(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
             return  DEFAULT_PAGESIZE;
         }
     }

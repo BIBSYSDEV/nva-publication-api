@@ -51,7 +51,7 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Li
         Map<String, AttributeValue> lastEvaluatedKey = RequestUtil.getLastKey(requestInfo);
         int pageSize = RequestUtil.getPageSize(requestInfo);
 
-        logger.debug(String.format("Requested latest modified publications starting from lastEvaluatedKey=%s and pagesize=%s",
+        logger.info(String.format("Requested latest modified publications starting from lastEvaluatedKey=%s and pagesize=%s",
             lastEvaluatedKey,
             pageSize));
 
