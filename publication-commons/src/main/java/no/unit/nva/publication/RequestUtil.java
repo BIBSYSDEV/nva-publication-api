@@ -98,7 +98,7 @@ public final class RequestUtil {
             pagesizeString = requestInfo.getQueryParameters().get(PAGESIZE);
             if (!Strings.isEmpty(pagesizeString)) {
                 logger.info("got pagesize='" + pagesizeString+"'");
-                return Integer.getInteger(pagesizeString.trim());
+                return Integer.parseInt(pagesizeString);
             } else {
                 return DEFAULT_PAGESIZE;
             }
