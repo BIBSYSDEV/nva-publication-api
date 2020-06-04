@@ -205,6 +205,7 @@ public class DynamoDBPublicationService implements PublicationService {
                 .withNameMap(nameMap)
                 .withValueMap(valueMap)
                 .withMaxPageSize(pageSize)
+                .withScanIndexForward(false)
 //                .withMaxResultSize(pageSize)
 //                .withExclusiveStartKey(exclusiveStartKey)
                 ;
