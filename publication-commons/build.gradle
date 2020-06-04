@@ -6,8 +6,8 @@ def jacksonVersion = '2.10.2'
 def awsSdkVersion = '1.11.714'
 
 dependencies {
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: 'v0.3.0'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.5.2'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: 'v0.3.4'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: 'v0.8.1'
     api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
@@ -27,7 +27,7 @@ dependencies {
 configurations.testImplementation.canBeResolved = true
 
 task copyNativeDeps(type: Copy) {
-    from (configurations.testImplementation) {
+    from(configurations.testImplementation) {
         include "*.dylib"
         include "*.so"
         include "*.dll"
@@ -45,13 +45,13 @@ test.doFirst {
 configurations.api.canBeResolved = true
 
 task copyDepsForLayer(type: Copy) {
-    from (configurations.api) {
+    from(configurations.api) {
     }
     into 'build/libs'
 }
 
 task buildZipForLayer(type: Zip) {
-    from ('build/libs') {
+    from('build/libs') {
     }
     into('java/lib')
 }

@@ -44,5 +44,4 @@ public class ExceptionsTest {
         ApiGatewayException exception = new NotImplementedException();
         Assertions.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, exception.getStatusCode());
     }
-
 }

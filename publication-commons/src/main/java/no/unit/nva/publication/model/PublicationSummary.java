@@ -1,13 +1,12 @@
 package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import no.unit.nva.model.PublicationStatus;
-import nva.commons.utils.JacocoGenerated;
-
 import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import no.unit.nva.model.PublicationStatus;
+import nva.commons.utils.JacocoGenerated;
 
 public class PublicationSummary {
 
@@ -50,8 +49,8 @@ public class PublicationSummary {
 
     @JsonProperty(value = "entityDescription", access = JsonProperty.Access.WRITE_ONLY)
     @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void unpackNested(Map<String,Object> entityDescription) {
-        this.mainTitle = (String)entityDescription.get(MAIN_TITLE);
+    private void unpackNested(Map<String, Object> entityDescription) {
+        this.mainTitle = (String) entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {
@@ -97,26 +96,27 @@ public class PublicationSummary {
         }
         PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-                && Objects.equals(getMainTitle(), that.getMainTitle())
-                && Objects.equals(getOwner(), that.getOwner())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && Objects.equals(getCreatedDate(), that.getCreatedDate())
-                && getStatus() == that.getStatus();
+            && Objects.equals(getMainTitle(), that.getMainTitle())
+            && Objects.equals(getOwner(), that.getOwner())
+            && Objects.equals(getModifiedDate(), that.getModifiedDate())
+            && Objects.equals(getCreatedDate(), that.getCreatedDate())
+            && getStatus() == that.getStatus();
     }
 
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(
-                getIdentifier(),
-                getMainTitle(),
-                getOwner(),
-                getModifiedDate(),
-                getCreatedDate(),
-                getStatus());
+            getIdentifier(),
+            getMainTitle(),
+            getOwner(),
+            getModifiedDate(),
+            getCreatedDate(),
+            getStatus());
     }
 
     public static final class Builder {
+
         private UUID identifier;
         private String mainTitle;
         private String owner;

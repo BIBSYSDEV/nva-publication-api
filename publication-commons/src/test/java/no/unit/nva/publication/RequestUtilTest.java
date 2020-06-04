@@ -1,25 +1,23 @@
 package no.unit.nva.publication;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Map;
+import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
 import org.junit.jupiter.api.Test;
-
-import java.util.Map;
-import java.util.UUID;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class RequestUtilTest {
 
     public static final String VALUE = "value";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
-
 
     @Test
     public void canGetIdentifierFromRequest() throws ApiGatewayException {
@@ -54,7 +52,6 @@ public class RequestUtilTest {
         requestInfo.setRequestContext(getRequestContextWithMissingNode());
 
         assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
-
     }
 
     @Test
@@ -62,7 +59,6 @@ public class RequestUtilTest {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
     }
-
 
     @Test
     public void canGetOwnerFromRequest() throws Exception {
@@ -90,22 +86,21 @@ public class RequestUtilTest {
 
     private JsonNode getRequestContextWithMissingNode() throws JsonProcessingException {
         Map<String, Map<String, JsonNode>> map = Map.of(
-                AUTHORIZER, Map.of(
-                        CLAIMS, objectMapper.createObjectNode().nullNode()
-                )
-        );
-        return objectMapper.readTree(objectMapper.writeValueAsString(map));
-    }
-
-    private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
-        Map<String, Map<String, Map<String,String>>> map = Map.of(
             AUTHORIZER, Map.of(
-                CLAIMS, Map.of(
-                        key, value
-                )
+                CLAIMS, objectMapper.createObjectNode().nullNode()
             )
         );
         return objectMapper.readTree(objectMapper.writeValueAsString(map));
     }
 
+    private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
+        Map<String, Map<String, Map<String, String>>> map = Map.of(
+            AUTHORIZER, Map.of(
+                CLAIMS, Map.of(
+                    key, value
+                )
+            )
+        );
+        return objectMapper.readTree(objectMapper.writeValueAsString(map));
+    }
 }

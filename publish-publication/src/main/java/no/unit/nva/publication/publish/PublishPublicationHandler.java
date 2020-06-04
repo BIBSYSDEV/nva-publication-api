@@ -1,9 +1,14 @@
 package no.unit.nva.publication.publish;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.util.Map;
+import java.util.UUID;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.PublishPublicationStatus;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -14,13 +19,7 @@ import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpHeaders;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.Map;
-import java.util.UUID;
-
-import static nva.commons.utils.JsonUtils.objectMapper;
-
-public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatus> {
+public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatusResponse> {
 
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "API_SCHEME";
@@ -57,7 +56,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     }
 
     @Override
-    protected PublishPublicationStatus processInput(Void input, RequestInfo requestInfo, Context context)
+    protected PublishPublicationStatusResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         UUID identifier = RequestUtil.getIdentifier(requestInfo);
         setAdditionalHeadersSupplier(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
@@ -69,7 +68,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, PublishPublicationStatus output) {
+    protected Integer getSuccessStatusCode(Void input, PublishPublicationStatusResponse output) {
         return output.getStatusCode();
     }
 }

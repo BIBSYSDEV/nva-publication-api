@@ -87,7 +87,7 @@ Feature: Publish a Publication
     And they see the response body has a field "detail" with the value "The Publication cannot be published because the following fields are not populated: <Error>."
 
     Examples:
-      | Fields         | Error        |
-      | Title          | Title        |
-      | Owner          | Owner        |
-      | File and Link  | File or Link |
+      | Fields        | Error        |
+      | Title         | Title        |
+      | Owner         | Owner        |
+      | File and Link | File or Link |

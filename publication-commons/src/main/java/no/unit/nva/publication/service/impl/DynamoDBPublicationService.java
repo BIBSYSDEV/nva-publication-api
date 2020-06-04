@@ -1,5 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
@@ -10,21 +13,6 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.DynamoDBException;
-import no.unit.nva.publication.exception.InputException;
-import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.NotFoundException;
-import no.unit.nva.publication.exception.NotImplementedException;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.model.PublishPublicationStatus;
-import no.unit.nva.publication.service.PublicationService;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
-import org.apache.http.HttpStatus;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,9 +25,20 @@ import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.DynamoDBException;
+import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.NotFoundException;
+import no.unit.nva.publication.exception.NotImplementedException;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.service.PublicationService;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
+import org.apache.http.HttpStatus;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -53,7 +52,7 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
-            + "is not equal to identifier in customer object '%s'";
+        + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
 
@@ -85,6 +84,8 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public Publication createPublication(Publication publication) throws ApiGatewayException {
         try {
+            //TODO: set identifier in PublicationMapper.newPublication(...)
+            publication.setIdentifier(UUID.randomUUID());
             Item item = publicationToItem(publication);
             table.putItem(item);
         } catch (Exception e) {
@@ -94,13 +95,13 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication getPublication(UUID identifier)  throws ApiGatewayException {
+    public Publication getPublication(UUID identifier) throws ApiGatewayException {
         Item item = null;
         try {
             QuerySpec spec = new QuerySpec()
-                    .withHashKey(IDENTIFIER, identifier.toString())
-                    .withScanIndexForward(false)
-                    .withMaxResultSize(1);
+                .withHashKey(IDENTIFIER, identifier.toString())
+                .withScanIndexForward(false)
+                .withMaxResultSize(1);
             ItemCollection<QueryOutcome> outcomeItemCollection = table.query(spec);
             Iterator<Item> iterator = outcomeItemCollection.iterator();
             if (iterator.hasNext()) {
@@ -127,7 +128,7 @@ public class DynamoDBPublicationService implements PublicationService {
 
     @Override
     public Publication updatePublication(UUID identifier, Publication publication)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         validateIdentifier(identifier, publication);
         try {
             publication.setModifiedDate(Instant.now());
@@ -152,20 +153,20 @@ public class DynamoDBPublicationService implements PublicationService {
     private void validateIdentifier(UUID identifier, Publication publication) throws ApiGatewayException {
         if (!identifier.equals(publication.getIdentifier())) {
             throw new InputException(
-                    String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
+                String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
         }
     }
 
     @JacocoGenerated
     @Override
     public List<PublicationSummary> getPublicationsByPublisher(URI publisherId)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         throw new NotImplementedException();
     }
 
     @Override
     public List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         allFieldsAreNonNull(owner, publisherId);
 
         String publisherOwner = String.join(DYNAMODB_KEY_DELIMITER, publisherId.toString(), owner);
@@ -203,11 +204,11 @@ public class DynamoDBPublicationService implements PublicationService {
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
         List<PublicationSummary> publications) {
         return publications.stream()
-                           .collect(groupByIdentifer())
-                           .entrySet()
-                           .parallelStream()
-                           .flatMap(DynamoDBPublicationService::pickNewestVersion)
-                           .collect(Collectors.toList());
+            .collect(groupByIdentifer())
+            .entrySet()
+            .parallelStream()
+            .flatMap(DynamoDBPublicationService::pickNewestVersion)
+            .collect(Collectors.toList());
     }
 
     private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
@@ -217,8 +218,8 @@ public class DynamoDBPublicationService implements PublicationService {
     private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
         List<PublicationSummary> publications = group.getValue();
         Optional<PublicationSummary> mostRecent = publications.stream()
-                                                              .max(Comparator.comparing(
-                                                                  PublicationSummary::getModifiedDate));
+            .max(Comparator.comparing(
+                PublicationSummary::getModifiedDate));
         return mostRecent.stream();
     }
 
@@ -239,15 +240,15 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public PublishPublicationStatus publishPublication(UUID identifier) throws ApiGatewayException {
+    public PublishPublicationStatusResponse publishPublication(UUID identifier) throws ApiGatewayException {
         Publication publicationToPublish = getPublication(identifier);
         if (isPublished(publicationToPublish)) {
-            return new PublishPublicationStatus(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
+            return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
         } else {
             validatePublication(publicationToPublish);
             setPublishedProperties(publicationToPublish);
             updatePublication(identifier, publicationToPublish);
-            return new PublishPublicationStatus(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
+            return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
         }
     }
 
@@ -276,8 +277,8 @@ public class DynamoDBPublicationService implements PublicationService {
         }
 
         /**
-         * Validate that Publication has required fields for publishing: main title, owner and link or file.
-         * Note: Would have validated owner if it was not already required by an index in the DynamoDB table.
+         * Validate that Publication has required fields for publishing: main title, owner and link or file. Note: Would
+         * have validated owner if it was not already required by an index in the DynamoDB table.
          *
          * @param publication the publication to validate
          * @return a list of missing fields
