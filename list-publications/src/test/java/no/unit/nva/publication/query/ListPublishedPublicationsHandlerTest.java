@@ -2,8 +2,6 @@ package no.unit.nva.publication.query;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.publication.exception.ErrorResponseException;
-import no.unit.nva.publication.model.ListPublicationsResponse;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.TestContext;
@@ -35,7 +33,6 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -81,8 +78,8 @@ public class ListPublishedPublicationsHandlerTest {
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
-        when(publicationService.listPublishedPublicationsByDate(anyMap(), anyInt()))
-            .thenReturn(listPublicationsResponse());
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
+            .thenReturn(publicationSummaries());
 
         listPublishedPublicationsHandler.handleRequest(
             inputStream(), output, context);
@@ -168,11 +165,10 @@ public class ListPublishedPublicationsHandlerTest {
     }
 
 
-    private ListPublicationsResponse listPublicationsResponse() {
+    private PublishedPublicationsResponse publishedPublicationsResponse() {
 
-        Map<String, AttributeValue> lastEvaluatedKey = null;
-        ListPublicationsResponse listPublicationsResponse = new ListPublicationsResponse(lastEvaluatedKey, publicationSummaries());
+        PublishedPublicationsResponse publishedPublicationsResponse = new PublishedPublicationsResponse(publicationSummaries());
 
-        return listPublicationsResponse;
+        return publishedPublicationsResponse;
     }
 }

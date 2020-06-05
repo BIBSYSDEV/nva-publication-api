@@ -1,10 +1,9 @@
 package no.unit.nva.publication.query;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.model.ListPublicationsResponse;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -14,11 +13,11 @@ import nva.commons.utils.Environment;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.List;
 
 import static nva.commons.utils.JsonUtils.objectMapper;
 
-public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, ListPublicationsResponse> {
+public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, PublishedPublicationsResponse> {
 
     private final PublicationService publicationService;
 
@@ -45,23 +44,19 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Li
     }
 
     @Override
-    protected ListPublicationsResponse processInput(Void input, RequestInfo requestInfo, Context context)
+    protected PublishedPublicationsResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        Map<String, AttributeValue> lastEvaluatedKey = RequestUtil.getLastKey(requestInfo);
         int pageSize = RequestUtil.getPageSize(requestInfo);
 
-        logger.info(String.format("Requested latest modified publications starting from lastEvaluatedKey=%s and pagesize=%s",
-            lastEvaluatedKey,
-            pageSize));
+        logger.debug(String.format("Requested latest modified publications pagesize=%s", pageSize));
 
-        ListPublicationsResponse publicationsResponse = publicationService.listPublishedPublicationsByDate(lastEvaluatedKey, pageSize);
+        List<PublicationSummary> publicationsResponse = publicationService.listPublishedPublicationsByDate(pageSize);
 
-        return publicationsResponse;
-    }
+        return new PublishedPublicationsResponse(publicationsResponse);    }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, ListPublicationsResponse output) {
+    protected Integer getSuccessStatusCode(Void input, PublishedPublicationsResponse output) {
         return HttpStatus.SC_OK;
     }
 }

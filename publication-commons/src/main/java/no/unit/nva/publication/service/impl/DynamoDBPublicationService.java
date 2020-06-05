@@ -3,13 +3,11 @@ package no.unit.nva.publication.service.impl;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.*;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.*;
-import no.unit.nva.publication.model.ListPublicationsResponse;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
@@ -190,7 +188,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public ListPublicationsResponse listPublishedPublicationsByDate(Map<String, AttributeValue> lastKey, int pageSize) throws ApiGatewayException {
+    public  List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
 
         Map<String, String> nameMap = Map.of( "#status", "status");
 
@@ -198,39 +196,25 @@ public class DynamoDBPublicationService implements PublicationService {
         Map<String, Object> valueMap = Map.of(
                 ":status", "Published");
 
-//        KeyAttribute exclusiveStartKey = null;
         QuerySpec querySpec = new QuerySpec()
-                .withKeyConditionExpression(
-                        "#status = :status")
+                .withKeyConditionExpression("#status = :status")
                 .withNameMap(nameMap)
                 .withValueMap(valueMap)
                 .withMaxPageSize(pageSize)
                 .withScanIndexForward(false)
-//                .withMaxResultSize(pageSize)
-//                .withExclusiveStartKey(exclusiveStartKey)
-                ;
+                .withMaxResultSize(pageSize);
 
         ItemCollection<QueryOutcome> items;
-        Map<String, AttributeValue> lastEvaluatedKey;
         try {
-
             items = byPublishedDateIndex.query(querySpec);
             getLogger(DynamoDBPublicationService.class).debug("Items="+ objectMapper.writeValueAsString(items));   // TODO remove
             getLogger(DynamoDBPublicationService.class).debug("Items.getLastLowLevelResult="+ objectMapper.writeValueAsString(items.getLastLowLevelResult()));   // TODO remove
-            try {
-                lastEvaluatedKey = items.getLastLowLevelResult().getQueryResult().getLastEvaluatedKey();
-            } catch (Exception e) {
-
-                getLogger(DynamoDBPublicationService.class).debug(e.getMessage(), e);   // TODO remove
-                lastEvaluatedKey = Collections.EMPTY_MAP;
-            }
         } catch (Exception e) {
-            getLogger(DynamoDBPublicationService.class).debug(e.getMessage(), e);   // TODO remove
+            getLogger(DynamoDBPublicationService.class).info(e.getMessage(), e);
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
-        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
-        return new ListPublicationsResponse(lastEvaluatedKey, publications);
+        return parseJsonToPublicationSummaries(items);
     }
 
 

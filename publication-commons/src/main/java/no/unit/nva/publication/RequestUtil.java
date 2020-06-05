@@ -1,17 +1,13 @@
 package no.unit.nva.publication;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.JsonUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 import java.util.UUID;
 
 public final class RequestUtil {
@@ -104,29 +100,8 @@ public final class RequestUtil {
             }
         } catch (Exception e) {
 //            throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
-            logger.info(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
+            logger.debug(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
             return  DEFAULT_PAGESIZE;
         }
     }
-
-    /**
-     * Get lastKey from request query parameters.
-     *
-     * @param requestInfo requestInfo
-     * @return the lastkey if given
-     */
-    public static Map<String, AttributeValue> getLastKey(RequestInfo requestInfo) throws ApiGatewayException {
-        logger.debug("Trying to read lastKey...");
-        String lastKeyEncoded = requestInfo.getPathParameters().get(LAST_KEY);
-        Map<String, AttributeValue>  lastKey = null;
-        try {
-            if (lastKey != null) {
-                lastKey = JsonUtils.objectMapper.readValue(lastKeyEncoded, Map.class);
-            }
-        } catch (JsonProcessingException e) {
-            logger.error("",e);
-        }
-        return lastKey;
-    }
-
 }
