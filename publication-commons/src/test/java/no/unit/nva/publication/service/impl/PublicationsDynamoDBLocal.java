@@ -30,6 +30,7 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
     public static final String ENTITY_DESCRIPTION = "entityDescription";
     public static final String STATUS = "status";
     public static final String OWNER = "owner";
+    public static final String PUBLISHED_DATE = "publishedDate";
 
     public static final String NVA_RESOURCES_TABLE_NAME = "nva_resources";
     public static final String BY_PUBLISHER_INDEX_NAME = "ByPublisher";
@@ -59,7 +60,9 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
             new AttributeDefinition(IDENTIFIER, S),
             new AttributeDefinition(MODIFIED_DATE, S),
             new AttributeDefinition(PUBLISHER_ID, S),
-            new AttributeDefinition(PUBLISHER_OWNER_DATE, S)
+            new AttributeDefinition(PUBLISHER_OWNER_DATE, S),
+            new AttributeDefinition(STATUS, S),
+            new AttributeDefinition(PUBLISHED_DATE, S)
         );
 
         List<KeySchemaElement> keySchema = Arrays.asList(
@@ -72,15 +75,26 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
             new KeySchemaElement(PUBLISHER_OWNER_DATE, KeyType.RANGE)
         );
 
+        List<KeySchemaElement> byPublishedDateKeySchema = Arrays.asList(
+                new KeySchemaElement(STATUS, KeyType.HASH),
+                new KeySchemaElement(PUBLISHED_DATE, KeyType.RANGE)
+        );
+
+
         Projection byPublisherProjection = new Projection()
             .withProjectionType(ProjectionType.INCLUDE)
             .withNonKeyAttributes(IDENTIFIER, CREATED_DATE, MODIFIED_DATE, ENTITY_DESCRIPTION, STATUS, OWNER);
 
         List<GlobalSecondaryIndex> globalSecondaryIndexes = Arrays.asList(
-            new GlobalSecondaryIndex()
-                .withIndexName(BY_PUBLISHER_INDEX_NAME)
-                .withKeySchema(byPublisherKeySchema)
-                .withProjection(byPublisherProjection)
+                new GlobalSecondaryIndex()
+                        .withIndexName(BY_PUBLISHER_INDEX_NAME)
+                        .withKeySchema(byPublisherKeySchema)
+                        .withProjection(byPublisherProjection),
+                new GlobalSecondaryIndex()
+                        .withIndexName(BY_PUBLISHED_DATE_INDEX_NAME)
+                        .withKeySchema(byPublishedDateKeySchema)
+                        .withProjection(byPublisherProjection)
+
         );
 
         CreateTableRequest createTableRequest =

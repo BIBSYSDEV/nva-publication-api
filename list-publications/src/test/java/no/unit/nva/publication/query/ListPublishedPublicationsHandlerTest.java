@@ -2,8 +2,10 @@ package no.unit.nva.publication.query;
 
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
+import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerUtils;
 import no.unit.nva.testutils.TestContext;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
@@ -40,6 +42,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
+import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_NOT_FOUND;
+import static org.apache.http.HttpStatus.SC_OK;
 
 public class ListPublishedPublicationsHandlerTest {
 
@@ -90,44 +97,33 @@ public class ListPublishedPublicationsHandlerTest {
         Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
-//    @Test
-//    @DisplayName("handler Returns BadRequest Response On Empty Input")
-//    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-//        InputStream input = new HandlerUtils(objectMapper)
-//            .requestObjectToApiGatewayRequestInputSteam(null, null);
-//        listPublishedPublicationsHandler.handleRequest(input, output, context);
-//
-//        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-//        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-//    }
+    @Test
+    @DisplayName("handler Returns BadGateway Response On Communication Problems")
+    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
+        throws IOException, ApiGatewayException {
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
+            .thenThrow(ErrorResponseException.class);
 
-//    @Test
-//    @DisplayName("handler Returns BadGateway Response On Communication Problems")
-//    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-//        throws IOException, ApiGatewayException {
-//        when(publicationService.listPublishedPublicationsByDate(anyMap(), anyInt()))
-//            .thenThrow(ErrorResponseException.class);
-//
-//        listPublishedPublicationsHandler.handleRequest(
-//            inputStream(), output, context);
-//
-//        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-//        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-//    }
+        listPublishedPublicationsHandler.handleRequest(
+            inputStream(), output, context);
 
-//    @Test
-//    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-//    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-//        throws IOException, ApiGatewayException {
-//        when(publicationService.listPublishedPublicationsByDate(anyMap(), anyInt()))
-//            .thenThrow(NullPointerException.class);
-//
-//        listPublishedPublicationsHandler.handleRequest(
-//            inputStream(), output, context);
-//
-//        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-//        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-//    }
+        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
+    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+        throws IOException, ApiGatewayException {
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
+            .thenThrow(NullPointerException.class);
+
+        listPublishedPublicationsHandler.handleRequest(
+            inputStream(), output, context);
+
+        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+    }
 
     @Deprecated
     private InputStream inputStream() throws IOException {
@@ -167,7 +163,8 @@ public class ListPublishedPublicationsHandlerTest {
 
     private PublishedPublicationsResponse publishedPublicationsResponse() {
 
-        PublishedPublicationsResponse publishedPublicationsResponse = new PublishedPublicationsResponse(publicationSummaries());
+        PublishedPublicationsResponse publishedPublicationsResponse =
+                new PublishedPublicationsResponse(publicationSummaries());
 
         return publishedPublicationsResponse;
     }

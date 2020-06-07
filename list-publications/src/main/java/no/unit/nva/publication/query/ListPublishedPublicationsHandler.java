@@ -10,6 +10,7 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import nva.commons.utils.Environment;
+import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,7 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
     /**
      * Default constructor for MainHandler.
      */
+    @JacocoGenerated
     public ListPublishedPublicationsHandler() {
         this(new DynamoDBPublicationService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
@@ -53,7 +55,8 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
 
         List<PublicationSummary> publicationsResponse = publicationService.listPublishedPublicationsByDate(pageSize);
 
-        return new PublishedPublicationsResponse(publicationsResponse);    }
+        return new PublishedPublicationsResponse(publicationsResponse);
+    }
 
     @Override
     protected Integer getSuccessStatusCode(Void input, PublishedPublicationsResponse output) {

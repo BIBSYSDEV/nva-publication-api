@@ -1,13 +1,22 @@
 package no.unit.nva.publication.service.impl;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Index;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.QueryOutcome;
+import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.*;
+import no.unit.nva.publication.exception.DynamoDBException;
+import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.NotFoundException;
+import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
@@ -18,7 +27,13 @@ import org.apache.http.HttpStatus;
 
 import java.net.URI;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,7 +67,8 @@ public class DynamoDBPublicationService implements PublicationService {
     /**
      * Constructor for DynamoDBPublicationService.
      */
-    public DynamoDBPublicationService(ObjectMapper objectMapper, Table table, Index byPublisherIndex, Index byPublishedDateIndex) {
+    public DynamoDBPublicationService(ObjectMapper objectMapper,
+                                      Table table, Index byPublisherIndex, Index byPublishedDateIndex) {
         this.objectMapper = objectMapper;
         this.table = table;
         this.byPublisherIndex = byPublisherIndex;
@@ -65,11 +81,11 @@ public class DynamoDBPublicationService implements PublicationService {
     public DynamoDBPublicationService(AmazonDynamoDB client, ObjectMapper objectMapper, Environment environment) {
         String tableName = environment.readEnv(TABLE_NAME_ENV);
         String byPublisherIndexName = environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV);
-        String byPublishedPublicationsIndex = environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         DynamoDB dynamoDB = new DynamoDB(client);
         this.objectMapper = objectMapper;
         this.table = dynamoDB.getTable(tableName);
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
+        String byPublishedPublicationsIndex = environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         this.byPublishedDateIndex = table.getIndex(byPublishedPublicationsIndex);
     }
 
@@ -190,11 +206,10 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public  List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
 
-        Map<String, String> nameMap = Map.of( "#status", "status");
+        Map<String, String> nameMap = Map.of("#status", "status");
 
 
-        Map<String, Object> valueMap = Map.of(
-                ":status", "Published");
+        Map<String, Object> valueMap = Map.of(":status", "Published");
 
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression("#status = :status")
@@ -207,8 +222,6 @@ public class DynamoDBPublicationService implements PublicationService {
         ItemCollection<QueryOutcome> items;
         try {
             items = byPublishedDateIndex.query(querySpec);
-            getLogger(DynamoDBPublicationService.class).debug("Items="+ objectMapper.writeValueAsString(items));   // TODO remove
-            getLogger(DynamoDBPublicationService.class).debug("Items.getLastLowLevelResult="+ objectMapper.writeValueAsString(items.getLastLowLevelResult()));   // TODO remove
         } catch (Exception e) {
             getLogger(DynamoDBPublicationService.class).info(e.getMessage(), e);
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
@@ -216,7 +229,6 @@ public class DynamoDBPublicationService implements PublicationService {
 
         return parseJsonToPublicationSummaries(items);
     }
-
 
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
         List<PublicationSummary> publications = new ArrayList<>();

@@ -44,6 +44,7 @@ import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
@@ -133,6 +134,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("missing Index Env")
     public void missingIndexEnv() {
         when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(BY_PUBLISHER_INDEX_NAME);
+        when(environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME)).thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         assertThrows(IllegalArgumentException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -434,6 +436,14 @@ class DynamoDBPublicationServiceTest {
             PublishPublicationValidator.LINK_OR_FILE);
         assertEquals(errorMessage, exception.getMessage());
         assertEquals(SC_CONFLICT, exception.getStatusCode());
+    }
+
+    @Test
+    @DisplayName("empty Table Returns No Published Publications")
+    public void emptyTableReturnsNoPublishedPublications() throws ApiGatewayException {
+        List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(
+                RequestUtil.DEFAULT_PAGESIZE);
+        assertEquals(0, publications.size());
     }
 
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {

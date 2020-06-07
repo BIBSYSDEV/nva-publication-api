@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
+import static java.lang.Integer.parseInt;
+
 public final class RequestUtil {
 
     public static final String IDENTIFIER = "identifier";
@@ -93,15 +95,19 @@ public final class RequestUtil {
             logger.debug("Trying to read pagesize...");
             pagesizeString = requestInfo.getQueryParameters().get(PAGESIZE);
             if (!Strings.isEmpty(pagesizeString)) {
-                logger.debug("got pagesize='" + pagesizeString+"'");
-                return Integer.parseInt(pagesizeString);
+                logger.debug("got pagesize='" + pagesizeString + "'");
+                int pageSize = parseInt(pagesizeString);
+                if (pageSize > 0) {
+                    return  pageSize;
+                } else {
+                    throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
+                }
             } else {
-                logger.debug(USING_DEFAULT_VALUE +DEFAULT_PAGESIZE);
+                logger.debug(USING_DEFAULT_VALUE  + DEFAULT_PAGESIZE);
                 return DEFAULT_PAGESIZE;
             }
         } catch (Exception e) {
-            logger.debug(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString + USING_DEFAULT_VALUE +DEFAULT_PAGESIZE, e);
-            return  DEFAULT_PAGESIZE;
+            throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
         }
     }
 }
