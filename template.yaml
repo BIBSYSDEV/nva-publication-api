@@ -398,8 +398,7 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
-#  ---------------------------------------------------------
-  NvaListPublicationsFunction:
+Prettified code  NvaListPublicationsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: list-publications
