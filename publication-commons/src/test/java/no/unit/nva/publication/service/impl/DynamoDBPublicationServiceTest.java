@@ -134,7 +134,8 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("missing Index Env")
     public void missingIndexEnv() {
         when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(BY_PUBLISHER_INDEX_NAME);
-        when(environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME)).thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
+        when(environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
+                .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         assertThrows(IllegalArgumentException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
