@@ -36,12 +36,19 @@ Parameters:
   PublicationsTableName:
     Type: String
     Description: Reference to table containing publications
+    Default: nva_publications
   PublicationsByOwnerIndexName:
     Type: String
     Description: Reference to index containing publications by owner
+    Default: ByPublisher
+  PublicationsDoiRequestsByStatusIndexName:
+    Type: String
+    Description: Reference to index containing publications by owner
+    Default: doiRequestsByStatus
   PublishedPublicationsIndexName:
     Type: String
     Description: Reference to index containing published publications
+    Default: ByPublishedDate
 
 Resources:
   NvaPublicationApi:
@@ -285,13 +292,13 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         GetEvent:
           Type: Api
@@ -311,11 +318,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         GetEvent:
           Type: Api
@@ -335,11 +342,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         PutEvent:
           Type: Api
@@ -359,11 +366,11 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         GetEvent:
           Type: Api
@@ -383,14 +390,14 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         GetEvent:
           Type: Api
@@ -398,7 +405,7 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
-Prettified code  NvaListPublicationsFunction:
+  NvaListPublicationsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: list-publications
@@ -410,14 +417,14 @@ Prettified code  NvaListPublicationsFunction:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaPublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBReadPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref NvaPublicationsTable
       Events:
         GetEvent:
           Type: Api
@@ -435,3 +442,79 @@ Prettified code  NvaListPublicationsFunction:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
+  NvaPublicationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref PublicationsTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: identifier
+          AttributeType: S
+        - AttributeName: modifiedDate
+          AttributeType: S
+        - AttributeName: publisherId
+          AttributeType: S
+        - AttributeName: publisherOwnerDate
+          AttributeType: S
+        - AttributeName: doiRequestStatusDate
+          AttributeType: S
+        - AttributeName: publishedDate
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: identifier
+          KeyType: HASH
+        - AttributeName: modifiedDate
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref PublicationsByOwnerIndexName
+          KeySchema:
+            - AttributeName: publisherId
+              KeyType: HASH
+            - AttributeName: publisherOwnerDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - status
+            ProjectionType: INCLUDE
+        - IndexName: !Ref PublicationsDoiRequestsByStatusIndexName
+          KeySchema:
+            - AttributeName: publisherId
+              KeyType: HASH
+            - AttributeName: doiRequestStatusDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - publishedDate
+              - identifier
+              - status
+              - doiRequest
+            ProjectionType: INCLUDE
+        - IndexName: !Ref PublishedPublicationsIndexName
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - doiRequest
+            ProjectionType: INCLUDE
+
+Outputs:
+  NvaPublicationsTableOutput:
+    Description: NVA publications table name.
+    Value: !Ref NvaPublicationsTable
