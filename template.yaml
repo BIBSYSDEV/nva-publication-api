@@ -48,7 +48,7 @@ Parameters:
   PublishedPublicationsIndexName:
     Type: String
     Description: Reference to index containing published publications
-    Default: ByPublishedDate
+    Default: ByStatePublishedDate
 
 Resources:
   NvaPublicationApi:
