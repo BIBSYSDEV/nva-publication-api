@@ -474,6 +474,7 @@ class DynamoDBPublicationServiceTest {
     private DynamoDBPublicationService generateFailingService(Table table, Index index) {
         return generateFailingService(objectMapper, table, index);
     }
+
     private DynamoDBPublicationService generateFailingService(ObjectMapper mapper, Table table, Index index) {
         return new DynamoDBPublicationService(
                 mapper,
