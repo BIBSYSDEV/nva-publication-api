@@ -62,7 +62,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
         Publication updatedPublication = publicationService.updatePublication(identifier, publication);
 
-        return PublicationMapper.toResponse(updatedPublication, PublicationResponse.class);
+        return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
     }
 
     @Override

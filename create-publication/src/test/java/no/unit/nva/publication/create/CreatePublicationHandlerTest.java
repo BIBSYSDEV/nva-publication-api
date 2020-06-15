@@ -89,7 +89,7 @@ public class CreatePublicationHandlerTest {
             GatewayResponse.class);
 
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
-            PublicationMapper.toResponse(publication, PublicationResponse.class),
+            PublicationMapper.convertValue(publication, PublicationResponse.class),
             getResponseHeadersWithLocation(publication.getIdentifier()),
             HttpStatus.SC_CREATED
         );
