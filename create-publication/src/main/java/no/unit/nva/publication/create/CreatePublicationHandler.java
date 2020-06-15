@@ -78,7 +78,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         setLocationHeader(createdPublication.getIdentifier());
 
-        return PublicationMapper.toResponse(createdPublication, PublicationResponse.class);
+        return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
     }
 
     private void setLocationHeader(UUID identifier) {

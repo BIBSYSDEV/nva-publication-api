@@ -28,7 +28,7 @@ subprojects {
     def junit5Version = '5.6.0'
 
     dependencies {
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: 'v0.1.6'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: '0.1.6'
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
