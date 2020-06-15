@@ -41,9 +41,16 @@ Parameters:
     Description: Reference to index containing publications by owner
 
 Resources:
+
+  ApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+
   NvaPublicationApi:
     Type: AWS::Serverless::Api
     Properties:
+      AccessLogSetting:
+        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "input.body": "$input.body", "input.params": "$input.params", "status": "$context.status",  "error.message": "$context.error.message" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
