@@ -50,7 +50,7 @@ Resources:
     Properties:
       AccessLogSetting:
         DestinationArn: !GetAtt NvaPublicationApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "resourcePath": "$context.resourcePath", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch",   "httpMethod": "$context.httpMethod", "status": "$context.status", "path": "$context.path", "input.body": "$input.body", "input.params": "$input.params()" }'
+        Format: '{ "apiId": "$context.apiId", "resourcePath": "$context.resourcePath", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch",   "httpMethod": "$context.httpMethod", "status": "$context.status", "error.message": "$context.error.message", "path": "$context.path", "input.body": "$input.body", "input.params": "$input.params" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
