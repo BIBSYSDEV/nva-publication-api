@@ -51,7 +51,7 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
 
         int pageSize = RequestUtil.getPageSize(requestInfo);
 
-        logger.debug(String.format("Requested latest modified publications pagesize=%s", pageSize));
+        logger.debug(String.format("Requested latest modified publications pagesize=%d", pageSize));
 
         List<PublicationSummary> publicationsResponse = publicationService.listPublishedPublicationsByDate(pageSize);
 
