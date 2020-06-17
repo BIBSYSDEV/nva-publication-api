@@ -1,11 +1,10 @@
 package no.unit.nva.publication.query;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestContext;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
@@ -18,14 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,18 +32,12 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_OK;
+import static org.apache.http.HttpStatus.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
-import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
-import static org.apache.http.HttpStatus.SC_NOT_FOUND;
-import static org.apache.http.HttpStatus.SC_OK;
 
 public class ListPublishedPublicationsHandlerTest {
 
@@ -127,14 +118,14 @@ public class ListPublishedPublicationsHandlerTest {
 
     @Deprecated
     private InputStream inputStream() throws IOException {
-        Map<String, Object> event = new HashMap<>();
-        event.put("requestContext",
-            singletonMap("authorizer",
-                singletonMap("claims",
-                    Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))));
-        event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
-            ContentType.APPLICATION_JSON.getMimeType()));
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+
+        InputStream request = new HandlerRequestBuilder<Void>(objectMapper)
+                .withRequestContext(  singletonMap("authorizer",
+                        singletonMap("claims",
+                                Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))))
+                .withHeaders(singletonMap(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+                .build();
+            return  request;
     }
 
     private List<PublicationSummary> publicationSummaries() {
