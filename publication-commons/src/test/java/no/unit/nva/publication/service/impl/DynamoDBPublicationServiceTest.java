@@ -483,12 +483,10 @@ class DynamoDBPublicationServiceTest {
         return generateFailingService(objectMapper, table, index, otherIndex);
     }
 
-    private DynamoDBPublicationService generateFailingService(ObjectMapper mapper, Table table, Index index, Index otherIndex) {
-        return new DynamoDBPublicationService(
-                mapper,
-                table,
-                index,
-                otherIndex
-        );
+    private DynamoDBPublicationService generateFailingService(ObjectMapper mapper,
+                                                              Table table,
+                                                              Index index,
+                                                              Index otherIndex) {
+        return new DynamoDBPublicationService(mapper, table, index, otherIndex);
     }
 }
