@@ -278,12 +278,13 @@ class DynamoDBPublicationServiceTest {
     public void createPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         Index index = mock(Index.class);
+        Index anotherIndex = mock(Index.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
             index,
-            index);
+            anotherIndex);
         DynamoDBException exception = assertThrows(DynamoDBException.class,
             () -> failingService.createPublication(publication()));
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
@@ -293,12 +294,13 @@ class DynamoDBPublicationServiceTest {
     public void getPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         Index index = mock(Index.class);
+        Index anotherIndex = mock(Index.class);
         when(failingTable.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
             index,
-            index
+            anotherIndex
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
             () -> failingService.getPublication(UUID.randomUUID()));
@@ -309,12 +311,13 @@ class DynamoDBPublicationServiceTest {
     public void getPublicationsByOwnerTableErrorThrowsException() {
         Table table = mock(Table.class);
         Index failingIdex = mock(Index.class);
+        Index anotherIndex = mock(Index.class);
         when(failingIdex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             table,
             failingIdex,
-            failingIdex
+            anotherIndex
         );
         DynamoDBException exception = assertThrows(DynamoDBException.class,
             () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID));
@@ -325,12 +328,13 @@ class DynamoDBPublicationServiceTest {
     public void updatePublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         Index index = mock(Index.class);
+        Index anotherIndex = mock(Index.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService = new DynamoDBPublicationService(
             objectMapper,
             failingTable,
                 index,
-                index
+                anotherIndex
         );
         Publication publication = publication();
         publication.setIdentifier(UUID.randomUUID());
