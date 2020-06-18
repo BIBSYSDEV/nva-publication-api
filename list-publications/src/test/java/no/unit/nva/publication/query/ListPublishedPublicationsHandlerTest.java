@@ -32,7 +32,9 @@ import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.*;
+import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
+import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
+import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -116,16 +118,14 @@ public class ListPublishedPublicationsHandlerTest {
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
     }
 
-    @Deprecated
     private InputStream inputStream() throws IOException {
 
         InputStream request = new HandlerRequestBuilder<Void>(objectMapper)
-                .withRequestContext(  singletonMap("authorizer",
-                        singletonMap("claims",
-                                Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))))
-                .withHeaders(singletonMap(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
-                .build();
-            return  request;
+            .withRequestContext(singletonMap("authorizer",
+                singletonMap("claims", Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))))
+            .withHeaders(singletonMap(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+            .build();
+        return request;
     }
 
     private List<PublicationSummary> publicationSummaries() {
