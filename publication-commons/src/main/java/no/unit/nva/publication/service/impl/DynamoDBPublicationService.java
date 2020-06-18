@@ -99,7 +99,7 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(publication.getIdentifier());
+        return publication;
     }
 
     @Override
@@ -145,7 +145,7 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(identifier);
+        return publication;
     }
 
     protected Item publicationToItem(Publication publication) throws ApiGatewayException {
