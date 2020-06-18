@@ -82,6 +82,7 @@ class DynamoDBPublicationServiceTest {
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
+    public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
 
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
@@ -100,7 +101,8 @@ class DynamoDBPublicationServiceTest {
         publicationService = new DynamoDBPublicationService(
             objectMapper,
             db.getTable(),
-            db.getByPublisherIndex()
+            db.getByPublisherIndex(),
+            db.getByPublishedDateIndex()
         );
     }
 
@@ -144,6 +146,8 @@ class DynamoDBPublicationServiceTest {
         when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(TABLE_NAME_ENV);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
             .thenReturn(BY_PUBLISHER_INDEX_NAME);
+        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
+                .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 
@@ -272,7 +276,8 @@ class DynamoDBPublicationServiceTest {
     public void createPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
-        DynamoDBPublicationService failingService = generateFailingService(failingTable, mock(Index.class));
+        DynamoDBPublicationService failingService =
+                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Executable executable = () -> failingService.createPublication(publicationWithIdentifier());
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
@@ -282,7 +287,8 @@ class DynamoDBPublicationServiceTest {
     public void getPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         when(failingTable.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
-        DynamoDBPublicationService failingService = generateFailingService(failingTable, mock(Index.class));
+        DynamoDBPublicationService failingService =
+                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Executable executable = () -> failingService.getPublication(UUID.randomUUID());
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
@@ -292,7 +298,8 @@ class DynamoDBPublicationServiceTest {
     public void getPublicationsByOwnerTableErrorThrowsException() {
         Index failingIndex = mock(Index.class);
         when(failingIndex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
-        DynamoDBPublicationService failingService = generateFailingService(mock(Table.class), failingIndex);
+        DynamoDBPublicationService failingService =
+                generateFailingService(mock(Table.class), failingIndex, mock(Index.class));
         Executable executable = () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID);
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
@@ -302,7 +309,8 @@ class DynamoDBPublicationServiceTest {
     public void updatePublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
-        DynamoDBPublicationService failingService = generateFailingService(failingTable, mock(Index.class));
+        DynamoDBPublicationService failingService =
+                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Publication publication = publicationWithIdentifier();
         publication.setIdentifier(UUID.randomUUID());
         Executable executable = () -> failingService.updatePublication(publication.getIdentifier(), publication);
@@ -315,7 +323,7 @@ class DynamoDBPublicationServiceTest {
         ObjectMapper failingObjectMapper = mock(ObjectMapper.class);
         when(failingObjectMapper.writeValueAsString(any(Publication.class))).thenThrow(JsonProcessingException.class);
         DynamoDBPublicationService failingService = generateFailingService(failingObjectMapper,
-                db.getTable(), db.getByPublisherIndex());
+                db.getTable(), db.getByPublisherIndex(), db.getByPublishedDateIndex());
         Executable executable = () -> failingService.publicationToItem(publicationWithIdentifier());
         InputException exception = assertThrows(InputException.class, executable);
         assertEquals(DynamoDBPublicationService.ERROR_MAPPING_PUBLICATION_TO_ITEM, exception.getMessage());
@@ -471,15 +479,16 @@ class DynamoDBPublicationServiceTest {
             .build();
     }
 
-    private DynamoDBPublicationService generateFailingService(Table table, Index index) {
-        return generateFailingService(objectMapper, table, index);
+    private DynamoDBPublicationService generateFailingService(Table table, Index index, Index otherIndex) {
+        return generateFailingService(objectMapper, table, index, otherIndex);
     }
 
-    private DynamoDBPublicationService generateFailingService(ObjectMapper mapper, Table table, Index index) {
+    private DynamoDBPublicationService generateFailingService(ObjectMapper mapper, Table table, Index index, Index otherIndex) {
         return new DynamoDBPublicationService(
                 mapper,
                 table,
-                index
+                index,
+                otherIndex
         );
     }
 }
