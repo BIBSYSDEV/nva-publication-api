@@ -223,6 +223,13 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    @DisplayName("empty Table Returns No Published Publications")
+    public void emptyTableReturnsNoPublishedPublications() throws ApiGatewayException {
+        List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(0);
+        assertEquals(0, publications.size());
+    }
+
+    @Test
     @DisplayName("nonEmpty Table Returns Publications")
     public void nonEmptyTableReturnsPublications() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
@@ -317,6 +324,18 @@ class DynamoDBPublicationServiceTest {
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
+
+    @Test
+    public void listPublishedPublicationsTableErrorThrowsException() {
+        Index failingIndex = mock(Index.class);
+        when(failingIndex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
+        DynamoDBPublicationService failingService =
+                generateFailingService(mock(Table.class), mock(Index.class), failingIndex);
+        Executable executable = () -> failingService.listPublishedPublicationsByDate(0);
+        DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
+        assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
+    }
+
 
     @Test
     public void publicationToItemThrowsExceptionWhenInvalidJson() throws JsonProcessingException {
