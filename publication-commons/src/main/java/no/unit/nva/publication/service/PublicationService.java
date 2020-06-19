@@ -1,12 +1,13 @@
 package no.unit.nva.publication.service;
 
-import java.net.URI;
-import java.util.List;
-import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import nva.commons.exceptions.ApiGatewayException;
+
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 
 public interface PublicationService {
 
@@ -23,6 +24,9 @@ public interface PublicationService {
 
     List<PublicationSummary> getPublicationsByOwner(String owner, URI publisherId)
         throws ApiGatewayException;
+
+    List<PublicationSummary> listPublishedPublicationsByDate(int pageSize)
+            throws ApiGatewayException;
 
     PublishPublicationStatusResponse publishPublication(UUID identifier)
         throws ApiGatewayException;
