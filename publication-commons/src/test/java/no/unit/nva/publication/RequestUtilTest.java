@@ -84,6 +84,47 @@ public class RequestUtilTest {
         assertThrows(InputException.class, () -> RequestUtil.getOwner(requestInfo));
     }
 
+    @Test
+    public void getPageSizeRequestInvalidRangeThrowsException() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-1");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertThrows(InputException.class, () -> RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestInvalidValueThrowsException() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-abc");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertThrows(InputException.class, () -> RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestEmptyValueReturnsDefault() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertEquals(RequestUtil.DEFAULT_PAGESIZE, RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestOKValue() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"3");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertEquals(3, RequestUtil.getPageSize(requestInfo));
+    }
+
+
     private JsonNode getRequestContextWithMissingNode() throws JsonProcessingException {
         Map<String, Map<String, JsonNode>> map = Map.of(
             AUTHORIZER, Map.of(

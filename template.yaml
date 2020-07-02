@@ -36,9 +36,19 @@ Parameters:
   PublicationsTableName:
     Type: String
     Description: Reference to table containing publications
+    Default: nva_publications
   PublicationsByOwnerIndexName:
     Type: String
     Description: Reference to index containing publications by owner
+    Default: ByPublisher
+  PublicationsDoiRequestsByStatusIndexName:
+    Type: String
+    Description: Reference to index containing publications by owner
+    Default: doiRequestsByStatus
+  PublishedPublicationsIndexName:
+    Type: String
+    Description: Reference to index containing published publications
+    Default: ByStatePublishedDate
 
 Resources:
 
@@ -50,7 +60,7 @@ Resources:
     Properties:
       AccessLogSetting:
         DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "input.body": "$input.body", "input.params": "$input.params", "status": "$context.status",  "error.message": "$context.error.message" }'
+        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
       StageName: Prod
       EndpointConfiguration: REGIONAL
       DefinitionBody:
@@ -60,6 +70,30 @@ Resources:
           version: '1.0'
         paths:
           /:
+            get:
+              summary: List published publications ordered by date desc
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              parameters:
+                - in: query
+                  name: pagesize
+                  type: string
+                  required: false
+                  description: Maximum number of wanted publications in response.
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListPublicationsFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '200':
+                  description: OK
+                  schema:
+                    $ref: '#/definitions/Publication'
+
             post:
               summary: Create Publication
               consumes:
@@ -267,6 +301,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -293,6 +328,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -317,6 +353,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -341,6 +378,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -365,6 +403,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -377,6 +416,36 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
+  NvaListPublicationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: list-publications
+      Handler: no.unit.nva.publication.query.ListPublishedPublicationsHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /
+            Method: get
+            RequestParameters:
+              - method.request.querystring.pagesize
+            RestApiId: !Ref NvaPublicationApi
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
@@ -384,3 +453,4 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
