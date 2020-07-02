@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
@@ -37,27 +38,27 @@ public class RequestUtilTest {
     }
 
     @Test
-    public void canGetOrgNumberFromRequest() throws Exception {
+    public void canGetCustomerIdFromRequest() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_ORG_NUMBER, VALUE));
+        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_CUSTOMER_ID, VALUE));
 
-        String orgNumber = RequestUtil.getOrgNumber(requestInfo);
+        URI customerId = RequestUtil.getCustomerId(requestInfo);
 
-        assertEquals(VALUE, orgNumber);
+        assertEquals(URI.create(VALUE), customerId);
     }
 
     @Test
-    public void getOrgNumberOnMissingNodeRequestThrowsException() throws Exception {
+    public void getCustomerIdOnMissingNodeRequestThrowsException() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextWithMissingNode());
 
-        assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
+        assertThrows(InputException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
 
     @Test
-    public void getOrgNumberOnInvalidRequestThrowsException() {
+    public void getCustomerIdOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
-        assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
+        assertThrows(InputException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
 
     @Test

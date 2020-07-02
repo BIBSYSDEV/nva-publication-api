@@ -142,7 +142,7 @@ public class CreatePublicationHandlerTest {
             AUTHORIZER, Map.of(
                 CLAIMS, Map.of(
                     RequestUtil.CUSTOM_FEIDE_ID, TEST_FEIDE_ID,
-                    RequestUtil.CUSTOM_ORG_NUMBER, TEST_ORG_NUMBER
+                    RequestUtil.CUSTOM_CUSTOMER_ID, TEST_ORG_NUMBER
                 )
             )
         );
