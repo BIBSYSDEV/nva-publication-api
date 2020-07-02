@@ -22,7 +22,6 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
-import no.unit.nva.testutils.TestContext;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
@@ -51,7 +50,7 @@ public class PublishPublicationHandlerTest {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         publicationService = mock(PublicationService.class);
         output = new ByteArrayOutputStream();
-        context = new TestContext();
+        context = mock(Context.class);
     }
 
     @Test
