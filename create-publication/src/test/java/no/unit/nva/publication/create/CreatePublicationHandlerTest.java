@@ -1,7 +1,7 @@
 package no.unit.nva.publication.create;
 
-import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
+import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
 import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
 import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -29,7 +29,6 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.testutils.TestContext;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
 import org.apache.http.HttpHeaders;
@@ -70,7 +69,7 @@ public class CreatePublicationHandlerTest {
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
         handler = new CreatePublicationHandler(publicationServiceMock, environmentMock);
         outputStream = new ByteArrayOutputStream();
-        context = new TestContext();
+        context = mock(Context.class);
     }
 
     @Test

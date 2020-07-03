@@ -33,7 +33,6 @@ import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
-import no.unit.nva.testutils.TestContext;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
@@ -65,7 +64,7 @@ public class FetchPublicationHandlerTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = new TestContext();
+        context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
         fetchPublicationHandler =
