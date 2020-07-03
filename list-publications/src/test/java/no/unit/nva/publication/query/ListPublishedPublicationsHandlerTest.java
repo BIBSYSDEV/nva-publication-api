@@ -1,32 +1,5 @@
 package no.unit.nva.publication.query;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import no.unit.nva.publication.exception.ErrorResponseException;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.testutils.HandlerRequestBuilder;
-import no.unit.nva.testutils.TestContext;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.GatewayResponse;
-import nva.commons.utils.Environment;
-import org.apache.http.HttpHeaders;
-import org.apache.http.entity.ContentType;
-import org.junit.Assert;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
@@ -40,6 +13,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import no.unit.nva.publication.exception.ErrorResponseException;
+import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.handlers.ApiGatewayHandler;
+import nva.commons.handlers.GatewayResponse;
+import nva.commons.utils.Environment;
+import org.apache.http.HttpHeaders;
+import org.apache.http.entity.ContentType;
+import org.junit.Assert;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 public class ListPublishedPublicationsHandlerTest {
 
@@ -62,7 +60,7 @@ public class ListPublishedPublicationsHandlerTest {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = new TestContext();
+        context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
         listPublishedPublicationsHandler =
