@@ -130,9 +130,8 @@ public class ModifyPublicationHandlerTest {
             context
         );
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        String problemDetail = gatewayResponse.getBodyObject(Problem.class).getDetail();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
-        assertThat(problemDetail, is(equalTo(expectedDetail)));
+        assertThat(getProblemDetail(gatewayResponse), is(equalTo(expectedDetail)));
     }
 
     @Test
@@ -141,16 +140,14 @@ public class ModifyPublicationHandlerTest {
         modifyPublicationHandler.handleRequest(generateInputStreamMissingPathParameters(), output, context);
 
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        String problemDetail = gatewayResponse.getBodyObject(Problem.class).getDetail();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-        assertThat(problemDetail, containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
+        assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
     }
 
     @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
-
         Publication publication = createPublication();
         when(publicationService.getPublication(any(UUID.class)))
             .thenReturn(publication);
@@ -161,9 +158,8 @@ public class ModifyPublicationHandlerTest {
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
 
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        Problem problem = gatewayResponse.getBodyObject(Problem.class);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(problem.getDetail(), containsString(DEFAULT_ERROR_MESSAGE));
+        assertThat(getProblemDetail(gatewayResponse), containsString(DEFAULT_ERROR_MESSAGE));
     }
 
 
@@ -179,9 +175,8 @@ public class ModifyPublicationHandlerTest {
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
 
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        Problem problem = gatewayResponse.getBodyObject(Problem.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(problem.getDetail(), containsString(DEFAULT_ERROR_MESSAGE));
+        assertThat(getProblemDetail(gatewayResponse), containsString(DEFAULT_ERROR_MESSAGE));
     }
 
     private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(UUID identifier) throws
@@ -242,5 +237,9 @@ public class ModifyPublicationHandlerTest {
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {
         return objectMapper.readValue(output.toString(),
                 PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
+    }
+
+    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
+        return gatewayResponse.getBodyObject(Problem.class).getDetail();
     }
 }
