@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
@@ -38,6 +37,7 @@ import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,11 +51,13 @@ public class FetchPublicationHandlerTest {
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
             .constructParametricType(GatewayResponse.class, PublicationResponse.class);
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
+    public static final String OWNER = "owner";
+    public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
 
     private PublicationService publicationService;
     private Context context;
 
-    private OutputStream output;
+    private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
 
     /**
@@ -82,8 +84,7 @@ public class FetchPublicationHandlerTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
 
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -96,11 +97,10 @@ public class FetchPublicationHandlerTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
 
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
-        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
-        assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test
@@ -113,8 +113,7 @@ public class FetchPublicationHandlerTest {
                 .build();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
 
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getBody(), containsString(IDENTIFIER_NULL_ERROR));
     }
@@ -122,12 +121,9 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
-        InputStream inputStream = new HandlerRequestBuilder<InputStream>(objectMapper)
-                .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
-                .build();
+        InputStream inputStream = generateHandlerRequestWithMissingPathParameter();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getBody(), containsString(IDENTIFIER_NULL_ERROR));
     }
@@ -141,8 +137,7 @@ public class FetchPublicationHandlerTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
 
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
     }
 
@@ -155,9 +150,13 @@ public class FetchPublicationHandlerTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
 
-        GatewayResponse<PublicationResponse> gatewayResponse = objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+    }
+
+    private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
+        return objectMapper.readValue(output.toString(),
+                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
 
     private InputStream generateHandlerRequest() throws JsonProcessingException {
@@ -169,13 +168,19 @@ public class FetchPublicationHandlerTest {
                 .build();
     }
 
+    private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
+        return new HandlerRequestBuilder<InputStream>(objectMapper)
+                .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+                .build();
+    }
+
     private Publication createPublication() {
         return new Publication.Builder()
             .withIdentifier(UUID.randomUUID())
             .withModifiedDate(Instant.now())
-            .withOwner("owner")
+            .withOwner(OWNER)
             .withPublisher(new Organization.Builder()
-                .withId(URI.create("http://example.org/publisher/1"))
+                .withId(ANY_URI)
                 .build()
             )
             .build();
