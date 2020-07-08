@@ -15,7 +15,6 @@ import static java.lang.Integer.parseInt;
 public final class RequestUtil {
 
     public static final String IDENTIFIER = "identifier";
-    public static final String MISSING_AUTHORIZATION_IN_HEADERS = "Missing Authorization in Headers";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     public static final String PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER = "pageSize is not a valid positive integer: ";
     public static final String AUTHORIZER_CLAIMS = "/authorizer/claims/";
