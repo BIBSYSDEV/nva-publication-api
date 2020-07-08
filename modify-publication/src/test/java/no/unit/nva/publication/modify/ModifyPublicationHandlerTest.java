@@ -48,8 +48,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -105,11 +105,14 @@ public class ModifyPublicationHandlerTest {
                 modifiedPublication.getIdentifier());
         modifyPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
-        PublicationResponse responseBody = gatewayResponse.getBodyObject(PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
-        assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
-        assertThat(responseBody.getStatus(), is(equalTo(expectedStatus)));
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(getGatewayResponseBodyStatus(gatewayResponse), is(equalTo(expectedStatus)));
+    }
+
+    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws JsonProcessingException {
+        return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();
     }
 
     @Test
@@ -180,7 +183,8 @@ public class ModifyPublicationHandlerTest {
         assertThat(problem.getDetail(), containsString(DEFAULT_ERROR_MESSAGE));
     }
 
-    private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(UUID identifier) throws IOException {
+    private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(UUID identifier) throws
+            IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
             .withBody(createPublication(identifier))
             .withHeaders(generateHeaders())
