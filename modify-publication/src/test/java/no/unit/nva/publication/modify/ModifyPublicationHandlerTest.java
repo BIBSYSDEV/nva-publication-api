@@ -111,7 +111,8 @@ public class ModifyPublicationHandlerTest {
         assertThat(getGatewayResponseBodyStatus(gatewayResponse), is(equalTo(expectedStatus)));
     }
 
-    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws JsonProcessingException {
+    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws
+            JsonProcessingException {
         return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();
     }
 
