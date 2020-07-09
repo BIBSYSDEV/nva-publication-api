@@ -14,17 +14,19 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
+import nva.commons.utils.log.LogUtils;
+import nva.commons.utils.log.TestAppender;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
+import org.mockito.stubbing.Answer;
 import org.zalando.problem.Problem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
@@ -67,11 +69,12 @@ public class ModifyPublicationHandlerTest {
     public static final String OWNER = "owner";
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
+    public static final String SOME_MESSAGE = "SomeMessage";
 
     private PublicationService publicationService;
     private Context context;
 
-    private OutputStream output;
+    private ByteArrayOutputStream output;
     private ModifyPublicationHandler modifyPublicationHandler;
 
     /**
