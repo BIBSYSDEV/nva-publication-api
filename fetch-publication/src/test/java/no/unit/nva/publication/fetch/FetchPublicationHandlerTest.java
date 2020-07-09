@@ -97,10 +97,12 @@ public class FetchPublicationHandlerTest {
             .thenThrow(new NotFoundException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
-        String actualDetail = getProblemDetail(gatewayResponse);
+
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertThat(actualDetail,containsString(ANY_ERROR));
     }
 
