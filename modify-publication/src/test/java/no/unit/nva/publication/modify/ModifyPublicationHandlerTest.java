@@ -99,11 +99,7 @@ public class ModifyPublicationHandlerTest {
         PublicationStatus expectedStatus = PUBLISHED;
         Publication publication = createPublication();
         Publication modifiedPublication = cloneAndUpdateStatus(publication, expectedStatus);
-        when(publicationService.getPublication(any(UUID.class)))
-            .thenReturn(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-            .thenReturn(modifiedPublication);
-
+        serviceSucceedsAndReturnsModifiedPublication(publication, modifiedPublication);
         InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
                 modifiedPublication.getIdentifier());
         modifyPublicationHandler.handleRequest(inputStream, output, context);
@@ -114,19 +110,11 @@ public class ModifyPublicationHandlerTest {
         assertThat(getGatewayResponseBodyStatus(gatewayResponse), is(equalTo(expectedStatus)));
     }
 
-    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws
-            JsonProcessingException {
-        return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();
-    }
-
     @Test
     @DisplayName("Handler returns NotFound response when resource does not exist")
     void handlerReturnsNotFoundResponseWhenResourceDoesNotExist() throws IOException, ApiGatewayException {
         UUID identifier = UUID.randomUUID();
-        String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
-        when(publicationService.getPublication(any(UUID.class)))
-            .thenThrow(new NotFoundException(expectedDetail));
-
+        String expectedDetail = serviceFailsOnGetRequestWithNotFoundError(identifier);
         modifyPublicationHandler.handleRequest(
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier),
             output,
@@ -152,10 +140,7 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.getPublication(any(UUID.class)))
-            .thenReturn(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-            .thenThrow(ErrorResponseException.class);
+        serviceSucceedsOnGetRequestAndFailsOnUpdate(publication);
 
         modifyPublicationHandler.handleRequest(
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
@@ -165,14 +150,12 @@ public class ModifyPublicationHandlerTest {
         assertThat(getProblemDetail(gatewayResponse), containsString(DEFAULT_ERROR_MESSAGE));
     }
 
-
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
-            .thenThrow(RuntimeException.class);
+        serviceFailsOnModifyRequestWithRuntimeError(publication);
 
         modifyPublicationHandler.handleRequest(
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
@@ -180,6 +163,61 @@ public class ModifyPublicationHandlerTest {
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(DEFAULT_ERROR_MESSAGE));
+    }
+
+    @Test
+    @DisplayName("handler logs error details on unexpected exception")
+    public void handlerLogsErrorDetailsOnUnexpectedException()
+            throws IOException, ApiGatewayException {
+        TestAppender appender = createAppenderForLogMonitoring();
+        Publication publication = createPublication();
+        publicationServiceThrowsException(publication);
+        modifyPublicationHandler.handleRequest(generateInputStreamWithValidBodyAndHeadersAndPathParameters(
+                        publication.getIdentifier()), output, context);
+        GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
+        assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
+    }
+
+    private TestAppender createAppenderForLogMonitoring() {
+        return LogUtils.getTestingAppender(ModifyPublicationHandler.class);
+    }
+
+    private void publicationServiceThrowsException(Publication publication) throws ApiGatewayException {
+        serviceSucceedsOnGetRequest(publication);
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+            .then((Answer<Publication>) invocation -> {
+                throw new RuntimeException(ModifyPublicationHandlerTest.SOME_MESSAGE);
+            });
+    }
+
+    private void serviceFailsOnModifyRequestWithRuntimeError(Publication publication) throws ApiGatewayException {
+        serviceSucceedsOnGetRequest(publication);
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+            .thenThrow(RuntimeException.class);
+    }
+
+    private String serviceFailsOnGetRequestWithNotFoundError(UUID identifier) throws ApiGatewayException {
+        String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
+        when(publicationService.getPublication(any(UUID.class))).thenThrow(new NotFoundException(expectedDetail));
+        return expectedDetail;
+    }
+
+    private void serviceSucceedsOnGetRequest(Publication publication) throws ApiGatewayException {
+        when(publicationService.getPublication(any(UUID.class))).thenReturn(publication);
+    }
+
+    private void serviceSucceedsAndReturnsModifiedPublication(Publication publication, Publication modifiedPublication)
+            throws ApiGatewayException {
+        serviceSucceedsOnGetRequest(publication);
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+                .thenReturn(modifiedPublication);
+    }
+
+    private void serviceSucceedsOnGetRequestAndFailsOnUpdate(Publication publication) throws ApiGatewayException {
+        serviceSucceedsOnGetRequest(publication);
+        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+                .thenThrow(ErrorResponseException.class);
     }
 
     private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(UUID identifier) throws
@@ -244,5 +282,10 @@ public class ModifyPublicationHandlerTest {
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
+    }
+
+    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws
+            JsonProcessingException {
+        return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();
     }
 }
