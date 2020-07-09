@@ -304,7 +304,7 @@ Resources:
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -330,7 +330,7 @@ Resources:
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -356,7 +356,7 @@ Resources:
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -382,7 +382,7 @@ Resources:
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -410,7 +410,7 @@ Resources:
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -438,7 +438,7 @@ Resources:
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          AWS_REGION: ${AWS::REGION}
+          AWS_REGION: !Ref "AWS::REGION"
       Policies:
         - DynamoDBReadPolicy:
             TableName: !Ref PublicationsTableName
