@@ -17,6 +17,7 @@ import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,6 +29,7 @@ import java.util.UUID;
 
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.handlers.ApiGatewayHandler.DEFAULT_ERROR_MESSAGE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -49,10 +51,11 @@ public class FetchPublicationHandlerTest {
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
-            .constructParametricType(GatewayResponse.class, PublicationResponse.class);
+        .constructParametricType(GatewayResponse.class, PublicationResponse.class);
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
     public static final String OWNER = "owner";
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
+    public static final String ANY_ERROR = "Error";
 
     private PublicationService publicationService;
     private Context context;
@@ -72,8 +75,7 @@ public class FetchPublicationHandlerTest {
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
-        fetchPublicationHandler =
-            new FetchPublicationHandler(publicationService, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
     }
 
     @Test
@@ -81,9 +83,7 @@ public class FetchPublicationHandlerTest {
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
         when(publicationService.getPublication(any(UUID.class))).thenReturn(publication);
-
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
-
         GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
@@ -93,29 +93,30 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class))).thenThrow(new NotFoundException("Error"));
-
+        when(publicationService.getPublication(any(UUID.class)))
+            .thenThrow(new NotFoundException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
-
-        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(actualDetail,containsString(ANY_ERROR));
     }
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream inputStream = new HandlerRequestBuilder<InputStream>(objectMapper)
-                .withBody(null)
-                .withHeaders(null)
-                .withPathParameters(null)
-                .build();
+            .withBody(null)
+            .withHeaders(null)
+            .withPathParameters(null)
+            .build();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
-
-        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-        assertThat(gatewayResponse.getBody(), containsString(IDENTIFIER_NULL_ERROR));
+        assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
     }
 
     @Test
@@ -123,22 +124,22 @@ public class FetchPublicationHandlerTest {
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         InputStream inputStream = generateHandlerRequestWithMissingPathParameter();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
-        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-        assertThat(gatewayResponse.getBody(), containsString(IDENTIFIER_NULL_ERROR));
+        assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
     }
 
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class)))
-            .thenThrow(new NullPointerException());
-
+        when(publicationService.getPublication(any(UUID.class))).thenThrow(new NullPointerException());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
-
-        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
+        assertThat(actualDetail, containsString(DEFAULT_ERROR_MESSAGE));
     }
 
     @Test
@@ -146,32 +147,41 @@ public class FetchPublicationHandlerTest {
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
         when(publicationService.getPublication(any(UUID.class)))
-            .thenThrow(new ErrorResponseException("Error"));
-
+            .thenThrow(new ErrorResponseException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
-
-        GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
+        String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
+        assertThat(actualDetail, containsString(ANY_ERROR));
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
-        return objectMapper.readValue(output.toString(),
-                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        return objectMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
 
     private InputStream generateHandlerRequest() throws JsonProcessingException {
         Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         Map<String, String> pathParameters = Map.of(IDENTIFIER, IDENTIFIER_VALUE);
         return new HandlerRequestBuilder<InputStream>(objectMapper)
-                .withHeaders(headers)
-                .withPathParameters(pathParameters)
-                .build();
+            .withHeaders(headers)
+            .withPathParameters(pathParameters)
+            .build();
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
         return new HandlerRequestBuilder<InputStream>(objectMapper)
-                .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
-                .build();
+            .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+            .build();
+    }
+
+    private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
+        return gatewayResponse.getBodyObject(Problem.class).getDetail();
+    }
+
+    private GatewayResponse<Problem> parseFailureResponse() throws JsonProcessingException {
+        JavaType responseWithProblemType = objectMapper.getTypeFactory()
+            .constructParametricType(GatewayResponse.class, Problem.class);
+        return objectMapper.readValue(output.toString(), responseWithProblemType);
     }
 
     private Publication createPublication() {
