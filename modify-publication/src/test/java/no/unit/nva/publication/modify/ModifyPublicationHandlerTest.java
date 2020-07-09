@@ -164,7 +164,7 @@ public class ModifyPublicationHandlerTest {
     @DisplayName("handler logs error details on unexpected exception")
     public void handlerLogsErrorDetailsOnUnexpectedException()
             throws IOException, ApiGatewayException {
-        TestAppender appender = createAppenderForLogMonitoring();
+        final TestAppender appender = createAppenderForLogMonitoring();
         publicationServiceThrowsException();
         modifyPublicationHandler.handleRequest(generateInputStreamWithValidBodyAndHeadersAndPathParameters(
                         publication.getIdentifier()), output, context);
