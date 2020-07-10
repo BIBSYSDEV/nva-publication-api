@@ -1,5 +1,6 @@
 package no.unit.nva.publication.query;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.RequestUtil;
@@ -20,6 +21,7 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 
 public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, PublishedPublicationsResponse> {
 
+    public static final String AWS_REGION = "AWS_REGION";
     private final PublicationService publicationService;
 
     /**
@@ -27,10 +29,7 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
      */
     @JacocoGenerated
     public ListPublishedPublicationsHandler() {
-        this(new DynamoDBPublicationService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
+        this(getPublicationService(),
             new Environment());
     }
 
@@ -61,5 +60,13 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
     @Override
     protected Integer getSuccessStatusCode(Void input, PublishedPublicationsResponse output) {
         return HttpStatus.SC_OK;
+    }
+
+    private static DynamoDBPublicationService getPublicationService() {
+        Environment environment = new Environment();
+        AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
+                .withRegion(environment.readEnv(AWS_REGION))
+                .build();
+        return new DynamoDBPublicationService(amazonDynamoDB, objectMapper, environment);
     }
 }
