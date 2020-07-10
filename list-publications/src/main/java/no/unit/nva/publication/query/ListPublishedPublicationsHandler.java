@@ -67,9 +67,6 @@ public class ListPublishedPublicationsHandler extends ApiGatewayHandler<Void, Pu
         AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(environment.readEnv(AWS_REGION))
                 .build();
-        return new DynamoDBPublicationService(
-                amazonDynamoDB,
-                objectMapper,
-                environment);
+        return new DynamoDBPublicationService(amazonDynamoDB, objectMapper, environment);
     }
 }
