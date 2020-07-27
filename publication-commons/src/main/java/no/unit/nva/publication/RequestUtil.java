@@ -1,6 +1,7 @@
 package no.unit.nva.publication;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import no.unit.nva.publication.exception.InputException;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.RequestInfo;
@@ -19,7 +20,7 @@ public final class RequestUtil {
     public static final String PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER = "pageSize is not a valid positive integer: ";
     public static final String AUTHORIZER_CLAIMS = "/authorizer/claims/";
     public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_ORG_NUMBER = "custom:orgNumber";
+    public static final String CUSTOM_CUSTOMER_ID = "custom:customerId";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
         "Missing claim in requestContext: ";
     public static final String PAGESIZE = "pagesize";
@@ -52,18 +53,18 @@ public final class RequestUtil {
     }
 
     /**
-     * Get orgNumber from requestContext authorizer claims.
+     * Get customerId from requestContext authorizer claims.
      *
      * @param requestInfo requestInfo.
-     * @return the orgNumber
+     * @return the customerId
      * @throws ApiGatewayException exception thrown if value is missing
      */
-    public static String getOrgNumber(RequestInfo requestInfo) throws ApiGatewayException {
-        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_ORG_NUMBER);
+    public static URI getCustomerId(RequestInfo requestInfo) throws ApiGatewayException {
+        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_CUSTOMER_ID);
         if (!jsonNode.isMissingNode()) {
-            return jsonNode.textValue();
+            return URI.create(jsonNode.textValue());
         }
-        throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_ORG_NUMBER, null);
+        throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID, null);
     }
 
     /**
