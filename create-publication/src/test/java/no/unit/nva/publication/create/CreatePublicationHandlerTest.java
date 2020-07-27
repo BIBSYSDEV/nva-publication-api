@@ -22,6 +22,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.fasterxml.jackson.databind.JavaType;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
@@ -52,10 +54,11 @@ public class CreatePublicationHandlerTest {
     public static final String BODY = "body";
 
     private PublicationService publicationServiceMock;
-    private Environment environmentMock;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
+            .constructParametricType(GatewayResponse.class, PublicationResponse.class);
 
     /**
      * Setting up test environment.
@@ -63,7 +66,7 @@ public class CreatePublicationHandlerTest {
     @BeforeEach
     public void setUp() {
         publicationServiceMock = mock(PublicationService.class);
-        environmentMock = mock(Environment.class);
+        Environment environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_SCHEME)).thenReturn(HTTPS);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
@@ -83,9 +86,8 @@ public class CreatePublicationHandlerTest {
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(
-            outputStream.toByteArray(),
-            GatewayResponse.class);
+        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
+                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
 
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
             PublicationMapper.convertValue(publication, PublicationResponse.class),
@@ -97,8 +99,7 @@ public class CreatePublicationHandlerTest {
     }
 
     private Map<String,String> getResponseHeadersWithLocation(UUID identifier) {
-        Map<String,String> map = new HashMap<>();
-        map.putAll(getResponseHeaders());
+        Map<String, String> map = new HashMap<>(getResponseHeaders());
         map.put(HttpHeaders.LOCATION, handler.getLocation(identifier).toString());
         return map;
     }
@@ -110,17 +111,15 @@ public class CreatePublicationHandlerTest {
 
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
-
-        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(
-            outputStream.toByteArray(),
-            GatewayResponse.class);
+        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
+                PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
 
         assertEquals(HttpStatus.SC_CREATED, actual.getStatusCode());
         assertNotNull(actual.getBodyObject(PublicationResponse.class));
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
-        Map map = Map.of(
+        Map<String, Object> map = Map.of(
             REQUEST_CONTEXT, createRequestContext(),
             HEADERS, getRequestHeaders(),
             BODY, request
@@ -129,7 +128,7 @@ public class CreatePublicationHandlerTest {
     }
 
     private InputStream emptyCreatePublicationRequest() throws JsonProcessingException {
-        Map map = Map.of(
+        Map<String, Object> map = Map.of(
             REQUEST_CONTEXT, createRequestContext(),
             HEADERS, getRequestHeaders()
         );
