@@ -71,7 +71,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             RequestUtil.getOwner(requestInfo),
             null, //TODO: set handle
             null, //TODO: set link
-            createPublisher(RequestUtil.getCustomerId(requestInfo)));
+            createPublisherFromCustomerId(RequestUtil.getCustomerId(requestInfo)));
 
         Publication createdPublication = publicationService.createPublication(newPublication);
 
@@ -90,10 +90,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected URI getLocation(UUID identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
     }
-
-    private Organization createPublisher(URI publisherId) {
+    
+    private Organization createPublisherFromCustomerId(URI customerId) {
         return new Builder()
-            .withId(publisherId)
+            .withId(customerId)
             .build();
     }
 
