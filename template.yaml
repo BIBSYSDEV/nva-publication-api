@@ -87,7 +87,7 @@ Resources:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListPublicationsFunction.Arn}/invocations
                 responses: {}
                 httpMethod: POST
-                type: AWS_PROXY
+                type: AWS_  PROXY
               responses:
                 '200':
                   description: OK
