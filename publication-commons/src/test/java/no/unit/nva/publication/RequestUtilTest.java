@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
@@ -37,27 +38,27 @@ public class RequestUtilTest {
     }
 
     @Test
-    public void canGetOrgNumberFromRequest() throws Exception {
+    public void canGetCustomerIdFromRequest() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_ORG_NUMBER, VALUE));
+        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_CUSTOMER_ID, VALUE));
 
-        String orgNumber = RequestUtil.getOrgNumber(requestInfo);
+        URI customerId = RequestUtil.getCustomerId(requestInfo);
 
-        assertEquals(VALUE, orgNumber);
+        assertEquals(URI.create(VALUE), customerId);
     }
 
     @Test
-    public void getOrgNumberOnMissingNodeRequestThrowsException() throws Exception {
+    public void getCustomerIdOnMissingNodeRequestThrowsException() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextWithMissingNode());
 
-        assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
+        assertThrows(InputException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
 
     @Test
-    public void getOrgNumberOnInvalidRequestThrowsException() {
+    public void getCustomerIdOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
-        assertThrows(InputException.class, () -> RequestUtil.getOrgNumber(requestInfo));
+        assertThrows(InputException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
 
     @Test
@@ -83,6 +84,47 @@ public class RequestUtilTest {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(InputException.class, () -> RequestUtil.getOwner(requestInfo));
     }
+
+    @Test
+    public void getPageSizeRequestInvalidRangeThrowsException() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-1");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertThrows(InputException.class, () -> RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestInvalidValueThrowsException() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-abc");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertThrows(InputException.class, () -> RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestEmptyValueReturnsDefault() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertEquals(RequestUtil.DEFAULT_PAGESIZE, RequestUtil.getPageSize(requestInfo));
+    }
+
+    @Test
+    public void getPageSizeRequestOKValue() throws Exception {
+        RequestInfo requestInfo = new RequestInfo();
+
+        Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"3");
+        requestInfo.setQueryParameters(queryParameters);
+
+        assertEquals(3, RequestUtil.getPageSize(requestInfo));
+    }
+
 
     private JsonNode getRequestContextWithMissingNode() throws JsonProcessingException {
         Map<String, Map<String, JsonNode>> map = Map.of(

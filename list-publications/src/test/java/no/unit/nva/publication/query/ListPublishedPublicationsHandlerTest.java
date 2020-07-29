@@ -1,4 +1,4 @@
-package no.unit.nva.publication.owner;
+package no.unit.nva.publication.query;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -6,34 +6,28 @@ import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
-import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.amazonaws.services.lambda.runtime.Context;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.GatewayResponse;
@@ -45,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class PublicationsByOwnerHandlerTest {
+public class ListPublishedPublicationsHandlerTest {
 
     public static final String OWNER = "junit";
     public static final String VALID_ORG_NUMBER = "NO919477822";
@@ -55,7 +49,7 @@ public class PublicationsByOwnerHandlerTest {
     private Context context;
 
     private OutputStream output;
-    private PublicationsByOwnerHandler publicationsByOwnerHandler;
+    private ListPublishedPublicationsHandler listPublishedPublicationsHandler;
 
     /**
      * Set up environment.
@@ -69,23 +63,23 @@ public class PublicationsByOwnerHandlerTest {
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
-        publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(publicationService, environment);
+        listPublishedPublicationsHandler =
+            new ListPublishedPublicationsHandler(publicationService, environment);
     }
 
     @Test
     @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
     public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(Exception.class, () -> new PublicationsByOwnerHandler());
+        assertThrows(Exception.class, () -> new ListPublishedPublicationsHandler());
     }
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
             .thenReturn(publicationSummaries());
 
-        publicationsByOwnerHandler.handleRequest(
+        listPublishedPublicationsHandler.handleRequest(
             inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -95,24 +89,13 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    @DisplayName("handler Returns BadRequest Response On Empty Input")
-    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream input = new HandlerUtils(objectMapper)
-            .requestObjectToApiGatewayRequestInputSteam(null, null);
-        publicationsByOwnerHandler.handleRequest(input, output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
-    }
-
-    @Test
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
             .thenThrow(ErrorResponseException.class);
 
-        publicationsByOwnerHandler.handleRequest(
+        listPublishedPublicationsHandler.handleRequest(
             inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -123,26 +106,24 @@ public class PublicationsByOwnerHandlerTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
+        when(publicationService.listPublishedPublicationsByDate(anyInt()))
             .thenThrow(NullPointerException.class);
 
-        publicationsByOwnerHandler.handleRequest(
+        listPublishedPublicationsHandler.handleRequest(
             inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
     }
 
-    @Deprecated
     private InputStream inputStream() throws IOException {
-        Map<String, Object> event = new HashMap<>();
-        event.put("requestContext",
-            singletonMap("authorizer",
-                singletonMap("claims",
-                    Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID, VALID_ORG_NUMBER))));
-        event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
-            ContentType.APPLICATION_JSON.getMimeType()));
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+
+        InputStream request = new HandlerRequestBuilder<Void>(objectMapper)
+            .withRequestContext(singletonMap("authorizer",
+                singletonMap("claims", Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))))
+            .withHeaders(singletonMap(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
+            .build();
+        return request;
     }
 
     private List<PublicationSummary> publicationSummaries() {
@@ -166,5 +147,14 @@ public class PublicationsByOwnerHandlerTest {
             .build()
         );
         return publicationSummaries;
+    }
+
+
+    private PublishedPublicationsResponse publishedPublicationsResponse() {
+
+        PublishedPublicationsResponse publishedPublicationsResponse =
+                new PublishedPublicationsResponse(publicationSummaries());
+
+        return publishedPublicationsResponse;
     }
 }

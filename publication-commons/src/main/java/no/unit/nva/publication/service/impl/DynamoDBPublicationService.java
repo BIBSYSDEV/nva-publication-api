@@ -1,8 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
@@ -13,18 +10,6 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.DynamoDBException;
@@ -39,6 +24,23 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
+
+import java.net.URI;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+import static org.slf4j.LoggerFactory.getLogger;
 
 public class DynamoDBPublicationService implements PublicationService {
 
@@ -55,18 +57,22 @@ public class DynamoDBPublicationService implements PublicationService {
         + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
+    public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
 
     private final ObjectMapper objectMapper;
     private final Table table;
     private final Index byPublisherIndex;
+    private final Index byPublishedDateIndex;
 
     /**
      * Constructor for DynamoDBPublicationService.
      */
-    public DynamoDBPublicationService(ObjectMapper objectMapper, Table table, Index byPublisherIndex) {
+    public DynamoDBPublicationService(ObjectMapper objectMapper,
+                                      Table table, Index byPublisherIndex, Index byPublishedDateIndex) {
         this.objectMapper = objectMapper;
         this.table = table;
         this.byPublisherIndex = byPublisherIndex;
+        this.byPublishedDateIndex = byPublishedDateIndex;
     }
 
     /**
@@ -79,6 +85,8 @@ public class DynamoDBPublicationService implements PublicationService {
         this.objectMapper = objectMapper;
         this.table = dynamoDB.getTable(tableName);
         this.byPublisherIndex = table.getIndex(byPublisherIndexName);
+        String byPublishedPublicationsIndex = environment.readEnv(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
+        this.byPublishedDateIndex = table.getIndex(byPublishedPublicationsIndex);
     }
 
     @Override
@@ -91,7 +99,7 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(publication.getIdentifier());
+        return publication;
     }
 
     @Override
@@ -137,7 +145,7 @@ public class DynamoDBPublicationService implements PublicationService {
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
-        return getPublication(identifier);
+        return publication;
     }
 
     protected Item publicationToItem(Publication publication) throws ApiGatewayException {
@@ -195,11 +203,39 @@ public class DynamoDBPublicationService implements PublicationService {
         return filterOutOlderVersionsOfPublications(publications);
     }
 
+    @Override
+    public  List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
+
+        Map<String, String> nameMap = Map.of("#status", "status");
+
+
+        Map<String, Object> valueMap = Map.of(":status", "Published");
+
+        QuerySpec querySpec = new QuerySpec()
+                .withKeyConditionExpression("#status = :status")
+                .withNameMap(nameMap)
+                .withValueMap(valueMap)
+                .withMaxPageSize(pageSize)
+                .withScanIndexForward(false)
+                .withMaxResultSize(pageSize);
+
+        ItemCollection<QueryOutcome> items;
+        try {
+            items = byPublishedDateIndex.query(querySpec);
+        } catch (Exception e) {
+            getLogger(DynamoDBPublicationService.class).info(e.getMessage(), e);
+            throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
+        }
+
+        return parseJsonToPublicationSummaries(items);
+    }
+
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
         List<PublicationSummary> publications = new ArrayList<>();
         items.forEach(item -> toPublicationSummary(item).ifPresent(publications::add));
         return publications;
     }
+
 
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
         List<PublicationSummary> publications) {

@@ -1,10 +1,7 @@
 package no.unit.nva.publication.modify;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.util.UUID;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.UpdatePublicationRequest;
@@ -19,6 +16,10 @@ import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
+
+import java.util.UUID;
+
+import static nva.commons.utils.JsonUtils.objectMapper;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
@@ -62,7 +63,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
         Publication updatedPublication = publicationService.updatePublication(identifier, publication);
 
-        return PublicationMapper.toResponse(updatedPublication, PublicationResponse.class);
+        return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
     }
 
     @Override

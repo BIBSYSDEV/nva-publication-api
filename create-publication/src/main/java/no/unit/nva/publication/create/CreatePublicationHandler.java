@@ -13,7 +13,6 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
@@ -72,13 +71,13 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             RequestUtil.getOwner(requestInfo),
             null, //TODO: set handle
             null, //TODO: set link
-            createPublisher(RequestUtil.getOrgNumber(requestInfo)));
+            createPublisherFromCustomerId(RequestUtil.getCustomerId(requestInfo)));
 
         Publication createdPublication = publicationService.createPublication(newPublication);
 
         setLocationHeader(createdPublication.getIdentifier());
 
-        return PublicationMapper.toResponse(createdPublication, PublicationResponse.class);
+        return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
     }
 
     private void setLocationHeader(UUID identifier) {
@@ -91,10 +90,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected URI getLocation(UUID identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
     }
-
-    private Organization createPublisher(String orgNumber) {
+    
+    private Organization createPublisherFromCustomerId(URI customerId) {
         return new Builder()
-            .withId(OrgNumberMapper.toCristinId(orgNumber))
+            .withId(customerId)
             .build();
     }
 
