@@ -209,7 +209,7 @@ public class DynamoDBPublicationService implements PublicationService {
         Map<String, String> nameMap = Map.of("#status", "status");
 
 
-        Map<String, Object> valueMap = Map.of(":status", "Published");
+        Map<String, Object> valueMap = Map.of(":status", PublicationStatus.PUBLISHED.getValue());
 
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression("#status = :status")
