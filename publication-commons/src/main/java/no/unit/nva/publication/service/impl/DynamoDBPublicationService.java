@@ -227,7 +227,8 @@ public class DynamoDBPublicationService implements PublicationService {
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
-        return parseJsonToPublicationSummaries(items);
+        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
+        return filterOutOlderVersionsOfPublications(publications);
     }
 
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
