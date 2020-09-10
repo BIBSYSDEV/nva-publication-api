@@ -4,8 +4,8 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.util.List;
-import no.unit.nva.model.util.OrgNumberMapper;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
@@ -48,15 +48,15 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         throws ApiGatewayException {
 
         String owner = RequestUtil.getOwner(requestInfo);
-        String orgNumber = RequestUtil.getOrgNumber(requestInfo);
+        URI customerId = RequestUtil.getCustomerId(requestInfo);
 
-        logger.info(String.format("Requested publications for owner with feideId=%s and publisher with orgNumber=%s",
+        logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
             owner,
-            orgNumber));
+            customerId));
 
         List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
             owner,
-            OrgNumberMapper.toCristinId(orgNumber)
+            customerId
         );
 
         return new PublicationsByOwnerResponse(publicationsByOwner);

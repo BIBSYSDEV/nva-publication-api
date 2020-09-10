@@ -6,8 +6,8 @@ def jacksonVersion = '2.10.2'
 def awsSdkVersion = '1.11.714'
 
 dependencies {
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.4'
-    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.9.0'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.3.8'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.3'
     api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion

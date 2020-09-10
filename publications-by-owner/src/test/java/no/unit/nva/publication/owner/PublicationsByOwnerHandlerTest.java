@@ -29,11 +29,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.ErrorResponseException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
-import no.unit.nva.testutils.TestContext;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.GatewayResponse;
@@ -66,7 +66,7 @@ public class PublicationsByOwnerHandlerTest {
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = mock(PublicationService.class);
-        context = new TestContext();
+        context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
@@ -139,7 +139,7 @@ public class PublicationsByOwnerHandlerTest {
         event.put("requestContext",
             singletonMap("authorizer",
                 singletonMap("claims",
-                    Map.of("custom:feideId", OWNER, "custom:orgNumber", VALID_ORG_NUMBER))));
+                    Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID, VALID_ORG_NUMBER))));
         event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
             ContentType.APPLICATION_JSON.getMimeType()));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
