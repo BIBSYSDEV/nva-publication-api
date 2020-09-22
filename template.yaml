@@ -507,20 +507,35 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-#        - IndexName: ByStatusPublishedDate
-#          KeySchema:
-#            - AttributeName: status
-#              KeyType: HASH
-#            - AttributeName: publishedDate
-#              KeyType: RANGE
-#          Projection:
-#            NonKeyAttributes:
-#              - entityDescription
-#              - createdDate
-#              - modifiedDate
-#              - identifier
-#              - doiRequest
-#            ProjectionType: INCLUDE
+        - IndexName: ByStatusPublishedDate
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - doiRequest
+            ProjectionType: INCLUDE
+        - IndexName: ByDoubleStatusPublishedDate
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - doiRequest
+            ProjectionType: INCLUDE
+
       StreamSpecification:
         StreamViewType: NEW_IMAGE
 
