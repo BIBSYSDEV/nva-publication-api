@@ -33,22 +33,22 @@ Parameters:
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
-#  PublicationsTableName:
-#    Type: String
-#    Description: Reference to table containing publications
-#    Default: nva_publications
-#  PublicationsByOwnerIndexName:
-#    Type: String
-#    Description: Reference to index containing publications by owner
-#    Default: ByPublisher
-#  PublicationsDoiRequestsByStatusIndexName:
-#    Type: String
-#    Description: Reference to index containing publications by owner
-#    Default: doiRequestsByStatus
-#  PublishedPublicationsIndexName:
-#    Type: String
-#    Description: Reference to index containing published publications
-#    Default: ByStatePublishedDate
+  PublicationsTableName:
+    Type: String
+    Description: Reference to table containing publications
+    Default: nva_publications
+  PublicationsByOwnerIndexName:
+    Type: String
+    Description: Reference to index containing publications by owner
+    Default: ByPublisher
+  PublicationsDoiRequestsByStatusIndexName:
+    Type: String
+    Description: Reference to index containing publications by owner
+    Default: doiRequestsByStatus
+  PublishedPublicationsIndexName:
+    Type: String
+    Description: Reference to index containing published publications
+    Default: ByStatePublishedDate
 
 Resources:
 
@@ -301,7 +301,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsTable
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -327,8 +327,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: ByPublisher
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTable
@@ -352,8 +352,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: ByPublisher
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTable
@@ -377,8 +377,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: ByPublisher
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTable
@@ -402,8 +402,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: ByPublisher
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -429,8 +429,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: ByPublisher
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: ByStatePublishedDate
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -462,7 +462,7 @@ Resources:
   PublicationsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-#      TableName: !Ref ResourcesTableName
+      TableName: !Ref PublicationsTableName
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: identifier
@@ -485,7 +485,7 @@ Resources:
         - AttributeName: modifiedDate
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: ByPublisher
+        - IndexName: !Ref PublicationsByOwnerIndexName
           KeySchema:
             - AttributeName: publisherId
               KeyType: HASH
@@ -499,7 +499,7 @@ Resources:
               - identifier
               - status
             ProjectionType: INCLUDE
-        - IndexName: doiRequestsByStatus
+        - IndexName: !Ref PublicationsDoiRequestsByStatusIndexName
           KeySchema:
             - AttributeName: publisherId
               KeyType: HASH
@@ -529,6 +529,6 @@ Outputs:
   NvaResourcesTableStreamArn:
     Description: NVA resources table stream ARN.
     Value: !GetAtt PublicationsTable.StreamArn
-#    Export:
-#      Name: NvaResourcesTableStreamArn
+    Export:
+      Name: NvaResourcesTableStreamArn
 
