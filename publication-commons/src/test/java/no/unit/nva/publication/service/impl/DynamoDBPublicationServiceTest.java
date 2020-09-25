@@ -230,6 +230,43 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    public void getPublicationsByOwnerReturnsOnlyMostRecentVersionOfPublication() throws ApiGatewayException {
+        Publication publication1 = publicationWithIdentifier();
+        publication1 = publicationService.createPublication(publication1);
+        publicationService.updatePublication(publication1.getIdentifier(), publication1);
+
+        Publication publication2 = publicationWithIdentifier();
+        publication2 = publicationService.createPublication(publication2);
+        publicationService.updatePublication(publication2.getIdentifier(), publication2);
+
+        List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
+            OWNER,
+            PUBLISHER_ID);
+        assertEquals(2, publications.size());
+    }
+
+    @Test
+    public void listPublishedPublicationsByDateReturnsOnlyMostRecentVersionOfPublication() throws ApiGatewayException {
+        Publication publication1 = insertPublishedPublication();
+        publicationService.updatePublication(publication1.getIdentifier(), publication1);
+
+        Publication publication2 = insertPublishedPublication();
+        publicationService.updatePublication(publication2.getIdentifier(), publication2);
+
+
+        List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(10);
+        assertEquals(2, publications.size());
+    }
+
+    private Publication insertPublishedPublication() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        publication.setPublishedDate(Instant.now());
+        publication = publicationService.createPublication(publication);
+        return publication;
+    }
+
+    @Test
     @DisplayName("nonEmpty Table Returns Publications")
     public void nonEmptyTableReturnsPublications() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
@@ -251,19 +288,6 @@ class DynamoDBPublicationServiceTest {
         when(item.toJSON()).thenReturn(INVALID_JSON);
         Optional<PublicationSummary> publicationSummary = publicationService.toPublicationSummary(item);
         Assertions.assertTrue(publicationSummary.isEmpty());
-    }
-
-    @Test
-    @DisplayName("filterOutOlderVersionsOfPublications returns only the latest version of each publication")
-    public void filterOutOlderVersionsOfPublicationsReturnsOnlyTheLatestVersionOfEachPublication() {
-        List<PublicationSummary> publications = publicationSummariesWithDuplicateUuuIds();
-        ArrayList<PublicationSummary> expected = new ArrayList<>();
-        expected.add(createPublication(ID1, INSTANT2));
-        expected.add(createPublication(ID2, INSTANT4));
-        List<PublicationSummary> actual = DynamoDBPublicationService.filterOutOlderVersionsOfPublications(publications);
-
-        assertThat(actual, containsInAnyOrder(expected.toArray()));
-        assertThat(expected, containsInAnyOrder(actual.toArray()));
     }
 
     @Test

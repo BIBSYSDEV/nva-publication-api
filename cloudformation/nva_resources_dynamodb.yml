@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Persisting NVA resources.
+
+Parameters:
+  ResourcesTableName:
+    Description: Name to use for table persisting NVA resources.
+    Type: String
+    Default: nva_resources
+  ResourcesByOwnerIndexName:
+    Type: String
+    Description: Reference to index containing resources by owner
+    Default: ByPublisher
+  ResourcesDoiRequestsByStatusIndexName:
+    Type: String
+    Description: Reference to index containing resources by owner
+    Default: doiRequestsByStatus
+  PublishedResourcesIndexName:
+    Type: String
+    Description: Reference to index containing published resources
+    Default: ByStatePublishedDate
+
+Resources:
+  NvaResourcesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ResourcesTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: identifier
+          AttributeType: S
+        - AttributeName: modifiedDate
+          AttributeType: S
+        - AttributeName: publisherId
+          AttributeType: S
+        - AttributeName: publisherOwnerDate
+          AttributeType: S
+        - AttributeName: doiRequestStatusDate
+          AttributeType: S
+        - AttributeName: publishedDate
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: identifier
+          KeyType: HASH
+        - AttributeName: modifiedDate
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref ResourcesByOwnerIndexName
+          KeySchema:
+            - AttributeName: publisherId
+              KeyType: HASH
+            - AttributeName: publisherOwnerDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - status
+            ProjectionType: INCLUDE
+        - IndexName: !Ref ResourcesDoiRequestsByStatusIndexName
+          KeySchema:
+            - AttributeName: publisherId
+              KeyType: HASH
+            - AttributeName: doiRequestStatusDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: !Ref PublishedResourcesIndexName
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            NonKeyAttributes:
+              - entityDescription
+              - createdDate
+              - modifiedDate
+              - identifier
+              - doiRequest
+            ProjectionType: INCLUDE
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+
+Outputs:
+  NvaResourcesTableName:
+    Description: NVA resources table name.
+    Value: !Ref NvaResourcesTable
+    Export:
+      Name: NvaResourcesTableName
+
+  NvaResourcesTableArn:
+    Description: NVA resources table ARN.
+    Value: !GetAtt NvaResourcesTable.Arn
+    Export:
+      Name: NvaResourcesTableArn
+
+  NvaResourcesTableStreamArn:
+    Description: NVA resources table stream ARN.
+    Value: !GetAtt NvaResourcesTable.StreamArn
+    Export:
+      Name: NvaResourcesTableStreamArn

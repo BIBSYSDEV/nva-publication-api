@@ -209,7 +209,7 @@ public class DynamoDBPublicationService implements PublicationService {
         Map<String, String> nameMap = Map.of("#status", "status");
 
 
-        Map<String, Object> valueMap = Map.of(":status", "Published");
+        Map<String, Object> valueMap = Map.of(":status", PublicationStatus.PUBLISHED.getValue());
 
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression("#status = :status")
@@ -227,7 +227,8 @@ public class DynamoDBPublicationService implements PublicationService {
             throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
         }
 
-        return parseJsonToPublicationSummaries(items);
+        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
+        return filterOutOlderVersionsOfPublications(publications);
     }
 
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
