@@ -526,9 +526,9 @@ Resources:
 
 Outputs:
 
-  NvaResourcesTableStreamArn:
-    Description: NVA resources table stream ARN.
+  NvaPublicationsTableStreamArn:
+    Description: NVA publications table stream ARN.
     Value: !GetAtt PublicationsTable.StreamArn
     Export:
-      Name: NvaResourcesTableStreamArn
+      Name: NvaPublicationsTableStreamArn
 
