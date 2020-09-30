@@ -300,7 +300,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTable
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsTable
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
