@@ -509,7 +509,7 @@ Resources:
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: ByStatusPublishedDate
+        - IndexName: !Ref PublishedPublicationsIndexName
           KeySchema:
             - AttributeName: status
               KeyType: HASH
