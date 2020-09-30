@@ -29,7 +29,7 @@ import java.util.UUID;
 
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.handlers.ApiGatewayHandler.DEFAULT_ERROR_MESSAGE;
+import static nva.commons.handlers.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
@@ -141,7 +141,8 @@ public class FetchPublicationHandlerTest {
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
         String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(DEFAULT_ERROR_MESSAGE));
+        assertThat(actualDetail, containsString(
+            MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
 
     @Test
