@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-import static java.util.Objects.nonNull;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_RANGE;
 
@@ -56,7 +55,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        validateRequest(requestInfo);
+        validateNotPartialContentRequest(requestInfo);
 
         UUID identifier = RequestUtil.getIdentifier(requestInfo);
         Publication existingPublication = publicationService.getPublication(identifier);
@@ -71,8 +70,8 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
     }
 
-    private void validateRequest(RequestInfo requestInfo) throws PartialContentException {
-        if (nonNull(requestInfo.getHeader(CONTENT_RANGE))) {
+    private void validateNotPartialContentRequest(RequestInfo requestInfo) throws PartialContentException {
+        if (requestInfo.getHeaders().containsKey(CONTENT_RANGE)) {
             throw new PartialContentException();
         }
     }

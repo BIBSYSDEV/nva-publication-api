@@ -237,7 +237,8 @@ public class ModifyPublicationHandlerTest {
             .build();
     }
 
-    private InputStream generateInputStreamWithValidBodyAndPathParametersInvalidHeader() throws JsonProcessingException {
+    private InputStream generateInputStreamWithValidBodyAndPathParametersInvalidHeader() throws
+            JsonProcessingException {
         UUID identifier = UUID.randomUUID();
         return new HandlerRequestBuilder<Publication>(objectMapper)
                 .withBody(createPublication(identifier))
