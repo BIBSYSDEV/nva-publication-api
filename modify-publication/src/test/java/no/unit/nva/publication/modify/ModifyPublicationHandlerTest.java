@@ -5,9 +5,11 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.modify.exception.PartialContentException.PARTIAL_CONTENT_MESSAGE;
 import static nva.commons.handlers.ApiGatewayHandler.DEFAULT_ERROR_MESSAGE;
 import static nva.commons.handlers.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.utils.JsonUtils.objectMapper;
+import static org.apache.http.HttpHeaders.CONTENT_RANGE;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -70,6 +72,7 @@ public class ModifyPublicationHandlerTest {
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
+    public static final String NOT_IMPORTANT = "not-important";
 
     private PublicationService publicationService;
     private Context context;
@@ -174,6 +177,16 @@ public class ModifyPublicationHandlerTest {
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
 
+    @Test
+    @DisplayName("Handler returns BAD REQUEST when input has Content-Range header")
+    void handlerReturnsBadRequestWhenInputHasContentRangeHeader() throws IOException {
+        var inputStream = generateInputStreamWithValidBodyAndPathParametersInvalidHeader();
+        modifyPublicationHandler.handleRequest(inputStream, output, context);
+        GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
+        assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
+        assertThat(getProblemDetail(gatewayResponse), containsString(PARTIAL_CONTENT_MESSAGE));
+    }
+
     private TestAppender createAppenderForLogMonitoring() {
         return LogUtils.getTestingAppender(ModifyPublicationHandler.class);
     }
@@ -224,6 +237,15 @@ public class ModifyPublicationHandlerTest {
             .build();
     }
 
+    private InputStream generateInputStreamWithValidBodyAndPathParametersInvalidHeader() throws JsonProcessingException {
+        UUID identifier = UUID.randomUUID();
+        return new HandlerRequestBuilder<Publication>(objectMapper)
+                .withBody(createPublication(identifier))
+                .withHeaders(generateIllegalHeaders())
+                .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
+                .build();
+    }
+
     private InputStream generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
             .withBody(createPublication())
@@ -234,6 +256,13 @@ public class ModifyPublicationHandlerTest {
     private Map<String, String> generateHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        return headers;
+    }
+
+    private Map<String, String> generateIllegalHeaders() {
+        Map<String, String> headers = new ConcurrentHashMap<>();
+        headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        headers.put(CONTENT_RANGE, NOT_IMPORTANT);
         return headers;
     }
 
