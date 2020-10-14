@@ -4,6 +4,7 @@ repositories {
 
 def jacksonVersion = '2.10.2'
 def awsSdkVersion = '1.11.714'
+def nvaCommonsVersion = '0.5.1'
 
 dependencies {
     api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.5.2'
@@ -17,7 +18,10 @@ dependencies {
     api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
     api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: nvaCommonsVersion
 
+    testCompile 'com.github.javafaker:javafaker:1.0.2'
+    testCompile 'org.junit.jupiter:junit-jupiter-params:' + project.junit5Version
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
