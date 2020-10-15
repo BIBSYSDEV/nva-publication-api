@@ -27,11 +27,13 @@ subprojects {
 
     project.ext{
         junit5Version = '5.6.0'
+        nvaCommonsVersion = '0.5.2'
+        nvaTestUtilsVersion = '0.1.13'
     }
 
 
     dependencies {
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: '0.1.13'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version

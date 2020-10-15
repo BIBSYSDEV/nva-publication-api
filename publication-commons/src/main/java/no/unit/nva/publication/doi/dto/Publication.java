@@ -9,28 +9,39 @@ import nva.commons.utils.JacocoGenerated;
 public class Publication {
 
     private final URI id;
-    private final String institutionOwner;
+    private final URI institutionOwner;
 
     private final URI doi;
     private final PublicationType type;
-    private final String title;
+    private final String mainTitle;
     private final List<Contributor> contributor;
     private final PublicationDate publicationDate;
 
+    /**
+     * doi.Publication DTO to be used to as payload format.
+     *
+     * @param id               Ex: https://api.dev.nva.aws.unit.no/publication/<identifier>
+     * @param institutionOwner Ex: https://api.dev.nva.aws.unit.no/customer/<identifier>
+     * @param doi              Ex: http://doi.org/11541.2/124530
+     * @param type             Ex: JOURNAL_LEADER
+     * @param mainTitle        Tittel
+     * @param contributors     list of contributors
+     * @param publicationDate
+     */
     @JsonCreator
     @JacocoGenerated
     public Publication(@JsonProperty("id") URI id,
-                       @JsonProperty("institution_owner") String institutionOwner,
+                       @JsonProperty("institution_owner") URI institutionOwner,
                        @JsonProperty("doi") URI doi,
                        @JsonProperty("type") PublicationType type,
-                       @JsonProperty("title") String title,
+                       @JsonProperty("mainTitle") String mainTitle,
                        @JsonProperty("contributors") List<Contributor> contributors,
                        @JsonProperty("publication_date") PublicationDate publicationDate) {
         this.id = id;
         this.institutionOwner = institutionOwner;
         this.doi = doi;
         this.type = type;
-        this.title = title;
+        this.mainTitle = mainTitle;
         this.contributor = contributors;
         this.publicationDate = publicationDate;
     }
@@ -40,7 +51,7 @@ public class Publication {
         this.institutionOwner = builder.institutionOwner;
         this.doi = builder.doi;
         this.type = builder.type;
-        this.title = builder.title;
+        this.mainTitle = builder.title;
         this.contributor = builder.contributor;
         this.publicationDate = builder.publicationDate;
     }
@@ -49,7 +60,7 @@ public class Publication {
         return id;
     }
 
-    public String getInstitutionOwner() {
+    public URI getInstitutionOwner() {
         return institutionOwner;
     }
 
@@ -61,8 +72,8 @@ public class Publication {
         return type;
     }
 
-    public String getTitle() {
-        return title;
+    public String getMainTitle() {
+        return mainTitle;
     }
 
     public List<Contributor> getContributor() {
@@ -76,7 +87,7 @@ public class Publication {
     public static final class PublicationBuilder {
 
         private URI id;
-        private String institutionOwner;
+        private URI institutionOwner;
         private URI doi;
         private PublicationType type;
         private String title;
@@ -86,7 +97,7 @@ public class Publication {
         private PublicationBuilder() {
         }
 
-        public static PublicationBuilder aPublication() {
+        public static PublicationBuilder newBuilder() {
             return new PublicationBuilder();
         }
 
@@ -95,7 +106,7 @@ public class Publication {
             return this;
         }
 
-        public PublicationBuilder withInstitutionOwner(String institutionOwner) {
+        public PublicationBuilder withInstitutionOwner(URI institutionOwner) {
             this.institutionOwner = institutionOwner;
             return this;
         }

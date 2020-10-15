@@ -21,10 +21,10 @@ class PublicationTest {
 
     @Test
     public void testBuilder() {
-        var publication = PublicationBuilder.aPublication()
+        var publication = PublicationBuilder.newBuilder()
             .withId(URI.create(EXAMPLE_ID))
             .withDoi(URI.create(EXAMPLE_DOI_ID))
-            .withInstitutionOwner(EXAMPLE_INSTITUTION_OWNER)
+            .withInstitutionOwner(URI.create(EXAMPLE_INSTITUTION_OWNER))
             .withPublicationDate(new PublicationDate("1999", "07", "09"))
             .withType(PublicationType.BOOK_ANTHOLOGY)
             .withTitle(EXAMPLE_TITLE)
@@ -36,10 +36,10 @@ class PublicationTest {
 
         assertThat(publication.getId(), is(equalTo(URI.create(EXAMPLE_ID))));
         assertThat(publication.getDoi(), is(equalTo(URI.create(EXAMPLE_DOI_ID))));
-        assertThat(publication.getInstitutionOwner(), is(equalTo(EXAMPLE_INSTITUTION_OWNER)));
+        assertThat(publication.getInstitutionOwner(), is(equalTo(URI.create(EXAMPLE_INSTITUTION_OWNER))));
         assertThat(publication.getPublicationDate(), is(equalTo(
             new PublicationDate("1999", "07", "09"))));
-        assertThat(publication.getTitle(), is(equalTo(EXAMPLE_TITLE)));
+        assertThat(publication.getMainTitle(), is(equalTo(EXAMPLE_TITLE)));
         assertThat(publication.getType(), is(equalTo(PublicationType.BOOK_ANTHOLOGY)));
         assertThat(publication.getContributor(),
             hasItem(new Contributor(EXAMPLE_CONTRIBUTOR_ID, EXAMPLE_CONTRIBUTOR_NAME)));
