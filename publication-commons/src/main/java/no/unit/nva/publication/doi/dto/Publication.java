@@ -24,9 +24,9 @@ public class Publication {
      * @param institutionOwner Ex: https://api.dev.nva.aws.unit.no/customer/<identifier>
      * @param doi              Ex: http://doi.org/11541.2/124530
      * @param type             Ex: JOURNAL_LEADER
-     * @param mainTitle        Tittel
+     * @param mainTitle        main title
      * @param contributors     list of contributors
-     * @param publicationDate
+     * @param publicationDate  date of publication
      */
     @JsonCreator
     @JacocoGenerated
