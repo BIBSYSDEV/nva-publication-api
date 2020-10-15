@@ -2,17 +2,18 @@ package no.unit.nva.publication.doi.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
 public class Contributor {
 
-    private final String id;
+    private final URI id;
     private final String name;
 
     @JacocoGenerated
     @JsonCreator
-    public Contributor(@JsonProperty("id") String id,
+    public Contributor(@JsonProperty("id") URI id,
                        @JsonProperty("name") String name) {
         this.id = id;
         this.name = name;
@@ -24,7 +25,7 @@ public class Contributor {
     }
 
     @JacocoGenerated
-    public String getId() {
+    public URI getId() {
         return id;
     }
 
@@ -35,13 +36,13 @@ public class Contributor {
 
     public static final class Builder {
 
-        private String id;
+        private URI id;
         private String name;
 
         public Builder() {
         }
 
-        public Builder withId(String id) {
+        public Builder withId(URI id) {
             this.id = id;
             return this;
         }
