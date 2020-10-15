@@ -5,12 +5,10 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublicationDate {
 
     public static final String YEAR_JSON_POINTER = "/publication_date/year";
@@ -37,13 +35,13 @@ public class PublicationDate {
     }
 
     /**
-     * Constructor for PublicationDate from a DynamoDb generated StreamRecord.
-     * @param streamRecord JsonNode representation of a DynamoDb StreamRecord.
+     * Constructor for PublicationDate
+     * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
-    public PublicationDate(JsonNode streamRecord) {
-        this.year = extractYear(streamRecord);
-        this.month = extractMonth(streamRecord);
-        this.day = extractDay(streamRecord);
+    public PublicationDate(JsonNode doiPublicationDto) {
+        this.year = extractYear(doiPublicationDto);
+        this.month = extractMonth(doiPublicationDto);
+        this.day = extractDay(doiPublicationDto);
     }
 
     public String getYear() {
