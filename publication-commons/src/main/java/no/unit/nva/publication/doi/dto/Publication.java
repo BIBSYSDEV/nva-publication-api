@@ -20,8 +20,8 @@ public class Publication {
     /**
      * doi.Publication DTO to be used to as payload format.
      *
-     * @param id               Ex: https://api.dev.nva.aws.unit.no/publication/<identifier>
-     * @param institutionOwner Ex: https://api.dev.nva.aws.unit.no/customer/<identifier>
+     * @param id               Ex: https://api.dev.nva.aws.unit.no/publication/identifier
+     * @param institutionOwner Ex: https://api.dev.nva.aws.unit.no/customer/identifier
      * @param doi              Ex: http://doi.org/11541.2/124530
      * @param type             Ex: JOURNAL_LEADER
      * @param mainTitle        main title

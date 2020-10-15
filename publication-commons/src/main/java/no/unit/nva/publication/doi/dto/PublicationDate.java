@@ -35,7 +35,7 @@ public class PublicationDate {
     }
 
     /**
-     * Constructor for PublicationDate
+     * Constructor for PublicationDate.
      * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
     public PublicationDate(JsonNode doiPublicationDto) {
