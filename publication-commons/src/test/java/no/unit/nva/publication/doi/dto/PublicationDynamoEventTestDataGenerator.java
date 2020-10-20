@@ -20,10 +20,20 @@ public class PublicationDynamoEventTestDataGenerator {
         this.faker = new Faker();
     }
 
+    /**
+     * Creates a stream record filled by faker
+     * @return PublicationDynamoEventTestDataGenerator with one additional stream record added to list of records.
+     */
     public PublicationDynamoEventTestDataGenerator createRandomStreamRecord() {
         return createRandomStreamRecord(null);
     }
 
+    /**
+     * Creates a stream record by the provided builder, if none is provided it will use the faker to construct a
+     * stream record with the builder.
+     * @param  streamRecordBuilder Optional builder if you want to customize/specify test data.
+     * @return PublicationDynamoEventTestDataGenerator with one additional stream record added to list of records.
+     */
     public PublicationDynamoEventTestDataGenerator createRandomStreamRecord(
         PublicationStreamRecordTestDataGenerator.Builder streamRecordBuilder) {
         var builderToUse = Optional.ofNullable(streamRecordBuilder)
@@ -45,6 +55,9 @@ public class PublicationDynamoEventTestDataGenerator {
         return objectMapper.convertValue(root, DynamodbEvent.class);
     }
 
+    /**
+     * Clear the added stream records.
+     */
     public void clearRecords() {
         this.records.clear();
     }

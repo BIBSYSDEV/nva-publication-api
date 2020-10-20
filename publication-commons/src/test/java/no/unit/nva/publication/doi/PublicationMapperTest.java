@@ -41,7 +41,8 @@ class PublicationMapperTest {
     private static final String EXAMPLE_IDENTIFIER = "654321";
     private static final URI EXAMPLE_ID = URI.create(EXAMPLE_PREFIX + EXAMPLE_IDENTIFIER);
     private static final PublicationType EXAMPLE_PUBLICATION_TYPE = PublicationType.JOURNAL_ARTICLE;
-    private static final String EXAMPLE_PUBLICATION_MAIN_TITLE = "Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions";
+    private static final String EXAMPLE_PUBLICATION_MAIN_TITLE = "Conformality loss and quantum criticality in "
+        + "topological Higgs electrodynamics in 2+1 dimensions";
     private static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     private static final URI EXAMPLE_INSTITUTION_OWNER = URI.create(
         "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");

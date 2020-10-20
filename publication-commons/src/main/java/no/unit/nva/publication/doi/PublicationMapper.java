@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi;
 
 import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
@@ -76,17 +75,6 @@ public class PublicationMapper {
         return parseDynamodbStreamRecord(publicationIdPrefix, record.at(root));
     }
 
-    public Publication fromDynamodbEventStreamRecordWrappedInEventBridge(String eventBridgeAsJsonString)
-        throws JsonProcessingException {
-        var record = objectMapper.readTree(eventBridgeAsJsonString);
-        if (record.has("detail-type") && record.has("source")) {
-            return parseDynamodbStreamRecord("https://example.net/publication/todo",
-                record.get("detail"));
-        }
-        throw new IllegalArgumentException(
-            "Does not look like a EventBridge event that contains a DynamodbStreamRecord!");
-    }
-
     private Publication parseDynamodbStreamRecord(String publicationIdPrefix, JsonNode record) {
         var typeAttribute = textFromNode(record, TYPE_POINTER);
         if (typeAttribute == null || !typeAttribute.equals(PUBLICATION_TYPE)) {
@@ -125,11 +113,12 @@ public class PublicationMapper {
     }
 
     private static Contributor extractContributor(JsonNode jsonNode) {
-        var arpId = optionalTextFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER);
         var name = optionalTextFromNode(jsonNode, CONTRIBUTOR_NAME_JSON_POINTER);
         if (name.isEmpty()) {
             return null;
         }
+        var arpId = optionalTextFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER);
+
         Contributor.Builder builder = new Contributor.Builder();
         builder.withName(name.get());
         arpId.ifPresent(id -> builder.withId(URI.create(id)));
@@ -142,8 +131,7 @@ public class PublicationMapper {
     }
 
     private static Optional<String> optionalTextFromNode(JsonNode jsonNode, JsonPointer jsonPointer) {
-        JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulatedJsonPointer(json) ? Optional.of(json.asText()) : Optional.empty();
+        return Optional.ofNullable(textFromNode(jsonNode, jsonPointer));
     }
 
     private static boolean isPopulatedJsonPointer(JsonNode json) {

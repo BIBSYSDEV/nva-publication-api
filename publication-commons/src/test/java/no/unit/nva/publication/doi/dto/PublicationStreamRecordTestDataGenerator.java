@@ -236,6 +236,11 @@ public class PublicationStreamRecordTestDataGenerator {
 
         }
 
+        /**
+         * Create a valid publication populated by the provided faker.
+         * @param faker data provider to generate fake data.
+         * @return Builder populated from faker.
+         */
         public static Builder createValidPublication(Faker faker) {
             var localDate = Instant.ofEpochMilli(faker.date().birthday().getTime())
                 .atZone(ZoneId.systemDefault())
