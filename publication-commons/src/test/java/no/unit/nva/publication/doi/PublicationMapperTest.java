@@ -13,9 +13,6 @@ import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -29,12 +26,10 @@ import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 class PublicationMapperTest {
-
-    public static final String DYNAMODB_TYPE_PUBLICATION = "Publication";
     public static final String EXAMPLE_PREFIX = "http://example.net/nva/publication/";
-    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record of type Publication";
-    public static final String UKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UknownType";
+    public static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
 
+    private static final Faker FAKER = new Faker();
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private static final Faker faker = new Faker();
     private static final PublicationDate EXAMPLE_PUBLICATION_DATE = new PublicationDate("1999", null, null);
@@ -53,29 +48,14 @@ class PublicationMapperTest {
     }
 
     private PublicationStreamRecordTestDataGenerator generateDynamoDbWithoutContributorNames() throws IOException {
-        return generateDynamoDbPublicationEvent(getContributors(true));
+        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
+            .withContributors(getContributors(true))
+            .build();
     }
 
-    private PublicationStreamRecordTestDataGenerator generateDynamoDbPublicationEvent() throws IOException {
-        return generateDynamoDbPublicationEvent(getContributors());
-    }
-
-    private PublicationStreamRecordTestDataGenerator generateDynamoDbPublicationEvent(List<Contributor> contributors)
-        throws IOException {
-        var localDate = getRandomLocalDate();
-        return new PublicationStreamRecordTestDataGenerator.Builder()
-            .withId(UUID.randomUUID())
-            .withInstanceType(faker.options().nextElement(PublicationType.values()).toString())
-            .withDate(new PublicationDate(
-                String.valueOf(localDate.getYear()),
-                String.valueOf(localDate.getMonth().getValue()),
-                String.valueOf(localDate.getDayOfMonth())))
-            .withDynamoDbType(DYNAMODB_TYPE_PUBLICATION)
-            .withMainTitle(faker.book().title())
-            .withEventId(UUID.randomUUID().toString())
-            .withEventName(faker.options().nextElement(List.of("MODIFY")))
-            .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
-            .withContributors(contributors)
+    private PublicationStreamRecordTestDataGenerator generateDynamoDbPublicationEvent() {
+        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
+            .withContributors(getContributors())
             .build();
     }
 
@@ -86,21 +66,19 @@ class PublicationMapperTest {
     private List<Contributor> getContributors(boolean withoutName) {
         List<Contributor> contributors = new ArrayList<>();
         for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-            var idOptions = new ArrayList<URI>();
-            idOptions.add(URI.create("https://example.net/foo/" + UUID.randomUUID().toString()));
-            idOptions.add(null);
             Builder builder = new Builder();
-            builder.withId(faker.options().nextElement(idOptions));
+            builder.withId(faker.options().nextElement(getIdOptions()));
             builder.withName(withoutName ? null : faker.superhero().name());
             contributors.add(builder.build());
         }
         return contributors;
     }
 
-    private LocalDate getRandomLocalDate() {
-        return Instant.ofEpochMilli(faker.date().birthday().getTime())
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate();
+    private ArrayList<URI> getIdOptions() {
+        ArrayList<URI> idOptions = new ArrayList<>();
+        idOptions.add(URI.create("https://example.net/foo/" + UUID.randomUUID().toString()));
+        idOptions.add(null);
+        return idOptions;
     }
 
     @Test
@@ -119,21 +97,21 @@ class PublicationMapperTest {
     }
 
     @Test
-    void unknownDynamodbStreamRecordType_ThrowsIllegalArgumentException() throws IOException {
+    void fromDynamodbStreamRecordThrowsIllegalArgumentExceptionWhenUnknownDynamodbTableType() throws IOException {
         var rootNode = objectMapper.createObjectNode();
         rootNode.putObject("detail")
             .putObject("dynamodb")
             .putObject("newImage")
             .putObject("type")
-            .put("s", UKNOWN_DYNAMODB_STREAMRECORD_TYPE);
+            .put("s", UNKNOWN_DYNAMODB_STREAMRECORD_TYPE);
         var actualException = assertThrows(IllegalArgumentException.class, () ->
             new PublicationMapper().fromDynamodbStreamRecord(EXAMPLE_PREFIX,
                 objectMapper.writeValueAsString(rootNode)));
-        assertThat(actualException.getMessage(), containsString(ERROR_MUST_BE_PUBLICATION_TYPE));
+        assertThat(actualException.getMessage(), containsString(PublicationMapper.ERROR_MUST_BE_PUBLICATION_TYPE));
     }
 
     @Test
-    void fromDynamodbStreamRecord_whenContributorWithoutNameThenIsSkipped() throws IOException {
+    void fromDynamodbStreamRecordWhenContributorWithoutNameThenIsSkipped() throws IOException {
         var dynamodbStreamRecord = generateDynamoDbWithoutContributorNames()
             .asDynamoDbStreamRecord();
         var publication = new PublicationMapper().fromDynamodbStreamRecord(EXAMPLE_PREFIX,

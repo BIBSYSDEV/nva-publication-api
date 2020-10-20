@@ -22,6 +22,7 @@ public class PublicationMapper {
 
     public static final String DEFAULT_ROOT = "/dynamodb";
     public static final String PUBLICATION_TYPE = "Publication";
+    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record of type Publication";
     protected static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     private final String root;
@@ -78,7 +79,7 @@ public class PublicationMapper {
     private Publication parseDynamodbStreamRecord(String publicationIdPrefix, JsonNode record) {
         var typeAttribute = textFromNode(record, TYPE_POINTER);
         if (typeAttribute == null || !typeAttribute.equals(PUBLICATION_TYPE)) {
-            throw new IllegalArgumentException("Must be a dynamodb stream record of type Publication");
+            throw new IllegalArgumentException(ERROR_MUST_BE_PUBLICATION_TYPE);
         }
         var publicationBuilder = Builder.newBuilder();
         publicationBuilder

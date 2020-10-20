@@ -21,7 +21,7 @@ public class PublicationDynamoEventTestDataGenerator {
     }
 
     /**
-     * Creates a stream record filled by faker
+     * Creates a stream record filled by faker.
      * @return PublicationDynamoEventTestDataGenerator with one additional stream record added to list of records.
      */
     public PublicationDynamoEventTestDataGenerator createRandomStreamRecord() {
