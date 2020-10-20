@@ -12,6 +12,12 @@ public class Identity {
     private final String arpId;
     private final String orcId;
 
+    /**
+     * Construct a Identity based on Dynamodb DAO.
+     * @param arpId arpId part of identity for a contributors
+     * @param orcId orcId part of identity for a contributor
+     * @param name name of identity for a contributor
+     */
     @JacocoGenerated
     @JsonCreator
     public Identity(@JsonProperty("arpId") String arpId,
@@ -22,7 +28,7 @@ public class Identity {
         this.orcId = orcId;
     }
 
-    private Identity(Builder builder) {
+    protected Identity(Builder builder) {
         orcId = builder.orcId;
         arpId = builder.arpId;
         name = builder.name;
@@ -73,6 +79,7 @@ public class Identity {
         }
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -87,6 +94,7 @@ public class Identity {
             && Objects.equals(orcId, identity.orcId);
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(name, arpId, orcId);
