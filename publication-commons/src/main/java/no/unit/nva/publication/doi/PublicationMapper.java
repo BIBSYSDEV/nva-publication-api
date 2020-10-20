@@ -118,11 +118,10 @@ public class PublicationMapper {
         if (name.isEmpty()) {
             return null;
         }
-        var arpId = optionalTextFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER);
-
         Contributor.Builder builder = new Contributor.Builder();
         builder.withName(name.get());
-        arpId.ifPresent(id -> builder.withId(URI.create(id)));
+        optionalTextFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER)
+            .ifPresent(id -> builder.withId(URI.create(id)));
         return builder.build();
     }
 
