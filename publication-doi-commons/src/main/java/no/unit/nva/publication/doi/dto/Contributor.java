@@ -16,7 +16,7 @@ public class Contributor {
     /**
      * Constructs a Contributor for doi.publisher DTO
      * @param id URI for our contributor. Null atm.
-     * @param arpId arpId of contributor
+     * @param arpId Authority register id for a person for this contributor entry.
      * @param name name of contributor
      */
     @JacocoGenerated
