@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.JacocoGenerated;
 
 public class Contributor {
@@ -28,6 +29,17 @@ public class Contributor {
         this.name = name;
     }
 
+    /**
+     * Constructs a Contributor for doi.publisher DTO.
+     *
+     * @param identity Identity DAO from Dynamodb representing a identity contributor.
+     */
+    public Contributor(Identity identity) {
+        this.id = null;
+        this.arpId = identity.getArpId();
+        this.name = identity.getName();
+    }
+
     private Contributor(Builder builder) {
         id = builder.id;
         arpId = builder.arpId;
@@ -37,6 +49,11 @@ public class Contributor {
     @JacocoGenerated
     public URI getId() {
         return id;
+    }
+
+    @JacocoGenerated
+    public String getArpId() {
+        return arpId;
     }
 
     @JacocoGenerated
