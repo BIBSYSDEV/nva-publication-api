@@ -34,6 +34,7 @@ public class Contributor {
      *
      * @param identity Identity DAO from Dynamodb representing a identity contributor.
      */
+    @SuppressWarnings("PMD.NullAssignment")
     public Contributor(Identity identity) {
         this.id = null;
         this.arpId = identity.getArpId();
