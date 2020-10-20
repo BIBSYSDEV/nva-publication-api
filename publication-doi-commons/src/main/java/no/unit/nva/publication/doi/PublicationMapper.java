@@ -11,10 +11,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
+import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import nva.commons.utils.JsonUtils;
 
@@ -69,7 +69,7 @@ public class PublicationMapper {
      * @throws IOException on IO exception
      */
     public Publication fromDynamodbStreamRecord(String publicationIdPrefix,
-                                                       String json)
+                                                String json)
         throws IOException {
         var record = JsonUtils.objectMapper.readTree(json);
 
