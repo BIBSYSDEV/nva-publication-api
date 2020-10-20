@@ -46,12 +46,12 @@ public class Publication {
         this.publicationDate = publicationDate;
     }
 
-    protected Publication(PublicationBuilder builder) {
+    protected Publication(Builder builder) {
         this.id = builder.id;
         this.institutionOwner = builder.institutionOwner;
         this.doi = builder.doi;
         this.type = builder.type;
-        this.mainTitle = builder.title;
+        this.mainTitle = builder.mainTitle;
         this.contributor = builder.contributor;
         this.publicationDate = builder.publicationDate;
     }
@@ -84,54 +84,54 @@ public class Publication {
         return publicationDate;
     }
 
-    public static final class PublicationBuilder {
+    public static final class Builder {
 
         private URI id;
         private URI institutionOwner;
         private URI doi;
         private PublicationType type;
-        private String title;
+        private String mainTitle;
         private List<Contributor> contributor;
         private PublicationDate publicationDate;
 
-        private PublicationBuilder() {
+        private Builder() {
         }
 
-        public static PublicationBuilder newBuilder() {
-            return new PublicationBuilder();
+        public static Builder newBuilder() {
+            return new Builder();
         }
 
-        public PublicationBuilder withId(URI id) {
+        public Builder withId(URI id) {
             this.id = id;
             return this;
         }
 
-        public PublicationBuilder withInstitutionOwner(URI institutionOwner) {
+        public Builder withInstitutionOwner(URI institutionOwner) {
             this.institutionOwner = institutionOwner;
             return this;
         }
 
-        public PublicationBuilder withDoi(URI doi) {
+        public Builder withDoi(URI doi) {
             this.doi = doi;
             return this;
         }
 
-        public PublicationBuilder withType(PublicationType type) {
+        public Builder withType(PublicationType type) {
             this.type = type;
             return this;
         }
 
-        public PublicationBuilder withTitle(String title) {
-            this.title = title;
+        public Builder withMainTitle(String mainTitle) {
+            this.mainTitle = mainTitle;
             return this;
         }
 
-        public PublicationBuilder withContributor(List<Contributor> contributor) {
+        public Builder withContributor(List<Contributor> contributor) {
             this.contributor = contributor;
             return this;
         }
 
-        public PublicationBuilder withPublicationDate(PublicationDate publicationDate) {
+        public Builder withPublicationDate(PublicationDate publicationDate) {
             this.publicationDate = publicationDate;
             return this;
         }

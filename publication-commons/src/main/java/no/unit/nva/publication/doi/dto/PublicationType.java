@@ -17,14 +17,28 @@ public enum PublicationType {
     REPORT_WORKING_PAPER("ReportWorkingPaper"),
     CHAPTER_ARTICLE("ChapterArticle");
 
-    private final String type;
+    private final String name;
 
-    PublicationType(String type) {
-        this.type = type;
+    PublicationType(String name) {
+        this.name = name;
     }
 
     @Override
     public String toString() {
-        return type;
+        return name;
+    }
+
+    /**
+     * Find PublicationType given json representation of enum.
+     * @param name Json representation of PublicationType
+     * @return PublicationType enum for given type or throws illegal argument exception.
+     */
+    public static PublicationType findByName(String name) {
+        for (PublicationType type : values()) {
+            if (type.name.equals(name)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("No enum constant for: " + name);
     }
 }

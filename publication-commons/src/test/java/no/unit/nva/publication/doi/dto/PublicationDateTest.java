@@ -26,24 +26,24 @@ class PublicationDateTest {
     }
 
     private ObjectNode getPublicationWithDate() {
-        var publicationWithDate = objectMapper.createObjectNode();
-        publicationWithDate.putObject("publication_date")
-            .put("year", "1999")
-            .put("month", "07")
-            .put("day", "09");
-        return publicationWithDate;
+        var date = objectMapper.createObjectNode();
+        var dateMap = date.putObject("date").putObject("m");
+        dateMap.putObject("year").put("s", "1999");
+        dateMap.putObject("month").put("s", "07");
+        dateMap.putObject("day").put("s", "09");
+        return date;
     }
 
     private ObjectNode getPublicationRandomMissingYearMonthOrDay() {
-        var publicationWithDate = objectMapper.createObjectNode();
-        publicationWithDate.putObject("publication_date")
-            .put("year", "1999")
-            .put("month", "07")
-            .put("day", "09");
+        var date = objectMapper.createObjectNode();
+        var dateMap = date.putObject("date").putObject("m");
+        dateMap.putObject("year").put("s", "1999");
+        dateMap.putObject("month").put("s", "07");
+        dateMap.putObject("day").put("s", "09");
         var fieldToRemove = faker.options().nextElement(List.of("year", "month", "day"));
-        assert ((ObjectNode) publicationWithDate.get("publication_date")).remove(fieldToRemove)
+        assert ((ObjectNode) date.get("date").get("m")).remove(fieldToRemove)
             != null : "Should find field " + fieldToRemove + " to remove.";
-        return publicationWithDate;
+        return date;
     }
 
     @Test
@@ -56,10 +56,13 @@ class PublicationDateTest {
 
         actual = new PublicationDate(getPublicationWithMissingYearMonthAndDay());
         assertThat(actual.isPopulated(), is(false));
+
+        actual = new PublicationDate(null);
+        assertThat(actual.isPopulated(), is(false));
     }
 
     private JsonNode getPublicationWithMissingYearMonthAndDay() {
         var objectNode = objectMapper.createObjectNode();
-        return objectNode.putObject("publication_date");
+        return objectNode.putObject("date");
     }
 }

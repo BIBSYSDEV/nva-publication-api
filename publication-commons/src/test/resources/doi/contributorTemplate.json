@@ -1,0 +1,110 @@
+{
+  "s": null,
+  "n": null,
+  "b": null,
+  "m": {
+    "sequence": {
+      "s": null,
+      "n": "1",
+      "b": null,
+      "m": null,
+      "l": null,
+      "null": null,
+      "bool": null,
+      "ss": null,
+      "ns": null,
+      "bs": null
+    },
+    "identity": {
+      "s": null,
+      "n": null,
+      "b": null,
+      "m": {
+        "name": {
+          "s": "Nogueira, Flavio S.",
+          "n": null,
+          "b": null,
+          "m": null,
+          "l": null,
+          "null": null,
+          "bool": null,
+          "ss": null,
+          "ns": null,
+          "bs": null
+        },
+        "arpId": {
+          "s": null,
+          "n": null,
+          "b": null,
+          "m": null,
+          "l": null,
+          "null": null,
+          "bool": null,
+          "ss": null,
+          "ns": null,
+          "bs": null
+        },
+        "id": {
+          "s": null,
+          "n": null,
+          "b": null,
+          "m": null,
+          "l": null,
+          "null": null,
+          "bool": null,
+          "ss": null,
+          "ns": null,
+          "bs": null
+        },
+        "type": {
+          "s": "Identity",
+          "n": null,
+          "b": null,
+          "m": null,
+          "l": null,
+          "null": null,
+          "bool": null,
+          "ss": null,
+          "ns": null,
+          "bs": null
+        }
+      },
+      "l": null,
+      "null": null,
+      "bool": null,
+      "ss": null,
+      "ns": null,
+      "bs": null
+    },
+    "correspondingAuthor": {
+      "s": null,
+      "n": null,
+      "b": null,
+      "m": null,
+      "l": null,
+      "null": null,
+      "bool": false,
+      "ss": null,
+      "ns": null,
+      "bs": null
+    },
+    "type": {
+      "s": "Contributor",
+      "n": null,
+      "b": null,
+      "m": null,
+      "l": null,
+      "null": null,
+      "bool": null,
+      "ss": null,
+      "ns": null,
+      "bs": null
+    }
+  },
+  "l": null,
+  "null": null,
+  "bool": null,
+  "ss": null,
+  "ns": null,
+  "bs": null
+}

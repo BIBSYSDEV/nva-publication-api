@@ -11,9 +11,10 @@ import nva.commons.utils.JacocoGenerated;
 
 public class PublicationDate {
 
-    public static final String YEAR_JSON_POINTER = "/publication_date/year";
-    public static final String MONTH_JSON_POINTER = "/publication_date/month";
-    public static final String DAY_JSON_POINTER = "/publication_date/day";
+
+    public static final String YEAR_JSON_POINTER = "/date/m/year/s";
+    public static final String MONTH_JSON_POINTER = "/date/m/month/s";
+    public static final String DAY_JSON_POINTER = "/date/m/day/s";
 
     private final String year;
     private final String month;
@@ -62,7 +63,7 @@ public class PublicationDate {
     }
 
     private String extractDay(JsonNode record) {
-        return textFromNode(record, DAY_JSON_POINTER);
+        return nonNull(record) ? textFromNode(record, DAY_JSON_POINTER) : null;
     }
 
     private boolean isNotNullOrEmpty(String string) {
@@ -70,11 +71,11 @@ public class PublicationDate {
     }
 
     private String extractMonth(JsonNode record) {
-        return textFromNode(record, MONTH_JSON_POINTER);
+        return nonNull(record) ? textFromNode(record, MONTH_JSON_POINTER) : null;
     }
 
     private String extractYear(JsonNode record) {
-        return textFromNode(record, YEAR_JSON_POINTER);
+        return nonNull(record) ? textFromNode(record, YEAR_JSON_POINTER) : null;
     }
 
     private String textFromNode(JsonNode jsonNode, String jsonPointer) {
