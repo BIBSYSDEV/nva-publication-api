@@ -114,15 +114,33 @@ public class PublicationMapper {
     }
 
     private static Contributor extractContributor(JsonNode jsonNode) {
-        var name = optionalTextFromNode(jsonNode, CONTRIBUTOR_NAME_JSON_POINTER);
-        if (name.isEmpty()) {
-            return null;
-        }
-        Contributor.Builder builder = new Contributor.Builder();
-        builder.withName(name.get());
-        optionalTextFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER)
-            .ifPresent(id -> builder.withId(URI.create(id)));
+        return  extractContributorName(jsonNode)
+            .map(name -> createContributor(name, jsonNode))
+            .orElse(null);
+    }
+
+    private static Optional<String> extractContributorName(JsonNode jsonNode) {
+        return optionalTextFromNode(jsonNode, CONTRIBUTOR_NAME_JSON_POINTER);
+    }
+
+    private static Contributor createContributor(String name, JsonNode jsonNode) {
+        Contributor.Builder builder = extractArpId(jsonNode)
+            .map(id -> contributorBuilderWithNameAndArpId(name, id))
+            .orElse(contributorBuilderWithName(name));
         return builder.build();
+
+    }
+
+    private static Optional<String> extractArpId(JsonNode jsonNode) {
+        return Optional.ofNullable(textFromNode(jsonNode, CONTRIBUTOR_ARP_ID_JSON_POINTER));
+    }
+
+    private static Contributor.Builder contributorBuilderWithNameAndArpId(String name, String arpId) {
+        return contributorBuilderWithName(name).withArpId(arpId);
+    }
+
+    private static Contributor.Builder contributorBuilderWithName(String name) {
+        return new Contributor.Builder().withName(name);
     }
 
     private static String textFromNode(JsonNode jsonNode, JsonPointer jsonPointer) {

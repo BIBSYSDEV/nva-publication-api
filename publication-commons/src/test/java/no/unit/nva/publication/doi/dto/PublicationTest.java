@@ -18,6 +18,7 @@ class PublicationTest {
     private static final String EXAMPLE_TITLE = "The Matrix";
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
+    private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
 
     @Test
     public void testBuilder() {
@@ -30,6 +31,7 @@ class PublicationTest {
             .withMainTitle(EXAMPLE_TITLE)
             .withContributor(List.of(new Contributor.Builder()
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
+                .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
                 .withName(EXAMPLE_CONTRIBUTOR_NAME)
                 .build()))
             .build();
@@ -42,6 +44,7 @@ class PublicationTest {
         assertThat(publication.getMainTitle(), is(equalTo(EXAMPLE_TITLE)));
         assertThat(publication.getType(), is(equalTo(PublicationType.BOOK_ANTHOLOGY)));
         assertThat(publication.getContributor(),
-            hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_NAME)));
+            hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
+                EXAMPLE_CONTRIBUTOR_NAME)));
     }
 }

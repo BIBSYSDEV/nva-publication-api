@@ -17,10 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import no.unit.nva.publication.doi.dto.Contributor;
-import no.unit.nva.publication.doi.dto.Contributor.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
+import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -42,32 +42,24 @@ class PublicationMapperTest {
     private static final URI EXAMPLE_INSTITUTION_OWNER = URI.create(
         "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Nogueira, Flavio S.";
+    private static final String EXAMPLE_CONTRIBUTOR_ARPID = "451001";
 
     private String getExampleResource(String resource) {
         return IoUtils.stringFromResources(Path.of(resource));
     }
 
-    private PublicationStreamRecordTestDataGenerator generateDynamoDbWithoutContributorNames() throws IOException {
+    private PublicationStreamRecordTestDataGenerator generateDynamoDbWithoutContributorIdentityNames() {
         return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
-            .withContributors(getContributors(true))
+            .withContributorIdentities(getContributorIdentities(true))
             .build();
     }
 
-    private PublicationStreamRecordTestDataGenerator generateDynamoDbPublicationEvent() {
-        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
-            .withContributors(getContributors())
-            .build();
-    }
-
-    private List<Contributor> getContributors() {
-        return getContributors(false);
-    }
-
-    private List<Contributor> getContributors(boolean withoutName) {
-        List<Contributor> contributors = new ArrayList<>();
+    private List<Identity> getContributorIdentities(boolean withoutName) {
+        List<Identity> contributors = new ArrayList<>();
         for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-            Builder builder = new Builder();
-            builder.withId(faker.options().nextElement(getIdOptions()));
+            Identity.Builder builder = new Identity.Builder();
+            builder.withArpId(faker.number().digits(10));
+            builder.withOrcId(faker.number().digits(10));
             builder.withName(withoutName ? null : faker.superhero().name());
             contributors.add(builder.build());
         }
@@ -93,7 +85,8 @@ class PublicationMapperTest {
         assertThat(publication.getDoi(), is(equalTo(EXAMPLE_DOI)));
         assertThat(publication.getInstitutionOwner(), is(equalTo(EXAMPLE_INSTITUTION_OWNER)));
         assertThat(publication.getContributor(), hasSize(1));
-        assertThat(publication.getContributor(), hasItem(new Contributor(null, EXAMPLE_CONTRIBUTOR_NAME)));
+        assertThat(publication.getContributor(),
+            hasItem(new Contributor(null, EXAMPLE_CONTRIBUTOR_ARPID, EXAMPLE_CONTRIBUTOR_NAME)));
     }
 
     @Test
@@ -112,7 +105,7 @@ class PublicationMapperTest {
 
     @Test
     void fromDynamodbStreamRecordWhenContributorWithoutNameThenIsSkipped() throws IOException {
-        var dynamodbStreamRecord = generateDynamoDbWithoutContributorNames()
+        var dynamodbStreamRecord = generateDynamoDbWithoutContributorIdentityNames()
             .asDynamoDbStreamRecord();
         var publication = new PublicationMapper().fromDynamodbStreamRecord(EXAMPLE_PREFIX,
             objectMapper.writeValueAsString(dynamodbStreamRecord));

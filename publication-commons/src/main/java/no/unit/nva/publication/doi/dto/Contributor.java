@@ -9,18 +9,28 @@ import nva.commons.utils.JacocoGenerated;
 public class Contributor {
 
     private final URI id;
+    private final String arpId;
     private final String name;
 
+    /**
+     * Constructs a Contributor for doi.publisher DTO
+     * @param id URI for our contributor. Null atm.
+     * @param arpId arpId of contributor
+     * @param name name of contributor
+     */
     @JacocoGenerated
     @JsonCreator
     public Contributor(@JsonProperty("id") URI id,
+                       @JsonProperty("arpId") String arpId,
                        @JsonProperty("name") String name) {
         this.id = id;
+        this.arpId = arpId;
         this.name = name;
     }
 
     private Contributor(Builder builder) {
         id = builder.id;
+        arpId = builder.arpId;
         name = builder.name;
     }
 
@@ -38,12 +48,18 @@ public class Contributor {
 
         private URI id;
         private String name;
+        private String arpId;
 
         public Builder() {
         }
 
         public Builder withId(URI id) {
             this.id = id;
+            return this;
+        }
+
+        public Builder withArpId(String arpId) {
+            this.arpId = arpId;
             return this;
         }
 
@@ -63,17 +79,18 @@ public class Contributor {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Contributor)) {
+        if (o == null || getClass() != o.getClass()) {
             return false;
         }
         Contributor that = (Contributor) o;
-        return Objects.equals(getId(), that.getId())
-            && Objects.equals(getName(), that.getName());
+        return Objects.equals(id, that.id)
+            && Objects.equals(arpId, that.arpId)
+            && Objects.equals(name, that.name);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getName());
+        return Objects.hash(id, arpId, name);
     }
 }

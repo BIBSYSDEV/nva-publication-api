@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.publication.doi.PublicationMapper;
+import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 
@@ -32,7 +33,8 @@ public class PublicationStreamRecordTestDataGenerator {
     public static final String EVENT_JSON_STRING_NAME = "s";
     public static final String EVENT_ID = "eventID";
     public static final String CONTRIBUTOR_NAME_POINTER = "/m/identity/m/name";
-    public static final String CONTRIBUTOR_ID_POINTER = "/m/identity/m/id";
+    public static final String CONTRIBUTOR_ARPID_POINTER = "/m/identity/m/arpId";
+    public static final String CONTRIBUTOR_ORCID_POINTER = "/m/identity/m/orcId";
     public static final String CONTRIBUTOR_POINTER = "/dynamodb/newImage/entityDescription/m/contributors";
     public static final String EVENT_JSON_LIST_NAME = "l";
 
@@ -60,7 +62,7 @@ public class PublicationStreamRecordTestDataGenerator {
     private final UUID id;
     private final String instanceType;
     private final String mainTitle;
-    private final List<Contributor> contributors;
+    private final List<Identity> contributors;
     private final PublicationDate date;
     private final String status;
     private final String dynamoDbType;
@@ -145,7 +147,7 @@ public class PublicationStreamRecordTestDataGenerator {
         updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
     }
 
-    private void updateEntityDescriptionContributors(List<Contributor> contributors, ObjectNode event) {
+    private void updateEntityDescriptionContributors(List<Identity> contributors, ObjectNode event) {
         ArrayNode contributorsArrayNode = mapper.createArrayNode();
         if (nonNull(contributors)) {
             contributors.forEach(contributor -> updateContributor(contributorsArrayNode, contributor));
@@ -155,14 +157,22 @@ public class PublicationStreamRecordTestDataGenerator {
         }
     }
 
-    private void updateContributor(ArrayNode contributors, Contributor contributor) {
+    private void updateContributor(ArrayNode contributors, Identity contributor) {
         ObjectNode activeTemplate = contributorTemplate.deepCopy();
+
         updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_POINTER,
             EVENT_JSON_STRING_NAME, contributor.getName());
-        var id = Optional.ofNullable(contributor.getId());
-        id.ifPresent(uri -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ID_POINTER,
-            EVENT_JSON_STRING_NAME, uri.toString()));
+        extractStringValue(contributor.getArpId()).ifPresent(
+            arpId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARPID_POINTER,
+                EVENT_JSON_STRING_NAME, contributor.getArpId()));
+        extractStringValue(contributor.getOrcId())
+            .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ORCID_POINTER,
+                EVENT_JSON_STRING_NAME, contributor.getOrcId()));
         contributors.add(activeTemplate);
+    }
+
+    private Optional<String> extractStringValue(String value) {
+        return Optional.ofNullable(value);
     }
 
     private void updateEntityDescriptionMainTitle(String mainTitle, ObjectNode event) {
@@ -228,7 +238,7 @@ public class PublicationStreamRecordTestDataGenerator {
         private String instancetype;
         private String dynamoDbType;
         private String mainTitle;
-        private List<Contributor> contributors;
+        private List<Identity> contributors;
         private PublicationDate date;
         private String status;
 
@@ -257,18 +267,19 @@ public class PublicationStreamRecordTestDataGenerator {
                 .withEventId(UUID.randomUUID().toString())
                 .withEventName(faker.options().nextElement(List.of("MODIFY")))
                 .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
-                .withContributors(getContributors(faker, false));
+                .withContributorIdentities(getIdentities(faker, false));
         }
 
-        private static List<Contributor> getContributors(Faker faker, boolean withoutName) {
-            var contributors = new ArrayList<Contributor>();
+        private static List<Identity> getIdentities(Faker faker, boolean withoutName) {
+            var identities = new ArrayList<Identity>();
             for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-                var builder = new Contributor.Builder();
-                builder.withId(faker.options().nextElement(getIdOptions()));
+                var builder = new Identity.Builder();
+                builder.withArpId(faker.number().digits(10));
+                builder.withOrcId(faker.number().digits(10));
                 builder.withName(withoutName ? null : faker.superhero().name());
-                contributors.add(builder.build());
+                identities.add(builder.build());
             }
-            return contributors;
+            return identities;
         }
 
         private static ArrayList<URI> getIdOptions() {
@@ -308,7 +319,7 @@ public class PublicationStreamRecordTestDataGenerator {
             return this;
         }
 
-        public Builder withContributors(List<Contributor> contributors) {
+        public Builder withContributorIdentities(List<Identity> contributors) {
             this.contributors = contributors;
             return this;
         }
