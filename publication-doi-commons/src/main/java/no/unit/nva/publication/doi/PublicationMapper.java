@@ -11,10 +11,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
-import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import nva.commons.utils.JsonUtils;
 
@@ -24,8 +24,6 @@ public class PublicationMapper {
     public static final String PUBLICATION_TYPE = "Publication";
     public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record of type Publication";
     protected static final ObjectMapper objectMapper = JsonUtils.objectMapper;
-
-    private final String root;
 
     private static final JsonPointer CONTRIBUTOR_ARP_ID_JSON_POINTER = JsonPointer.compile("/m/identity/m/arpId/s");
     private static final JsonPointer CONTRIBUTOR_NAME_JSON_POINTER = JsonPointer.compile("/m/identity/m/name/s");
@@ -46,13 +44,16 @@ public class PublicationMapper {
     private static final JsonPointer TYPE_POINTER = JsonPointer.compile("/newImage/type/s");
     private static final JsonPointer INSTITUTION_OWNER_POINTER = JsonPointer.compile("/newImage/publisherId/s");
 
+    private final String root;
+
     public PublicationMapper() {
         this(DEFAULT_ROOT);
     }
 
     /**
-     * Construct a PublicationMapper where json pointer for data lookups is prefixed with ROOT.
-     * (because a Publication DTO payload can be wrapped under other json structures)
+     * Construct a PublicationMapper where json pointer for data lookups is prefixed with ROOT. (because a Publication
+     * DTO payload can be wrapped under other json structures)
+     *
      * @param root root for Publication Dynamodb Event or Stream Record.
      */
     public PublicationMapper(String root) {
