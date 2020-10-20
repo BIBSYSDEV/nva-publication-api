@@ -1,0 +1,19 @@
+def log4jVersion = "2.13.2"
+
+dependencies {
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.5.3'
+
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0'
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.14.16'
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: '2.14.16'
+    implementation group: 'software.amazon.awssdk', name: 'sqs', version: '2.14.16'
+
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-log4j2', version: '1.1.1'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4jVersion
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: log4jVersion
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j18-impl', version: log4jVersion
+    implementation(group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4') {
+        because 'Because we use the library directly to define loggers in our code'
+    }
+}

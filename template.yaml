@@ -49,6 +49,19 @@ Parameters:
     Type: String
     Description: Reference to index containing published publications
     Default: ByStatePublishedDate
+  DynamoDBStreamArn:
+    Type: String
+    Description: Amazon DynamoDB Stream ARN.
+  EventBusName:
+    Type: String
+    Default: "default"
+    Description: AWS EventBridge Event Bus Name.
+  EventBridgeMaxAttempt:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 5
+    Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
 
 Resources:
 
@@ -446,6 +459,40 @@ Resources:
               - method.request.querystring.pagesize
             RestApiId: !Ref NvaPublicationApi
 
+  FanoutLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-emitter
+      Handler: no.unit.nva.doi.lambda.FanoutHandler::handleRequest
+      MemorySize: 768
+      Timeout: 360
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          DLQ_URL: !Ref FanoutDLQ
+          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
+          EVENT_BUS_NAME: !Ref EventBusName
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt FanoutDLQ.QueueName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: '*'
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !Ref DynamoDBStreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+  FanoutDLQ:
+    Type: "AWS::SQS::Queue"
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
@@ -454,3 +501,10 @@ Resources:
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
 
+Outputs:
+  FanoutLambdaName:
+    Description: "Fanout Lambda Function Name"
+    Value: !Ref FanoutLambda
+  FanoutUrl:
+    Description: "FanoutUrl SQS DLQ URL"
+    Value: !Ref FanoutDLQ
