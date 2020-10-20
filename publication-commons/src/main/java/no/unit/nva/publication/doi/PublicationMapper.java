@@ -30,22 +30,21 @@ public class PublicationMapper {
     private static final JsonPointer CONTRIBUTOR_ARP_ID_JSON_POINTER = JsonPointer.compile("/m/identity/m/arpId/s");
     private static final JsonPointer CONTRIBUTOR_NAME_JSON_POINTER = JsonPointer.compile("/m/identity/m/name/s");
 
-    private final JsonPointer CONTRIBUTORS_LIST_POINTER = JsonPointer.compile(
-         "/newImage/entityDescription/m/contributors/l");
+    private static final JsonPointer CONTRIBUTORS_LIST_POINTER = JsonPointer.compile(
+        "/newImage/entityDescription/m/contributors/l");
 
-    private final JsonPointer PUBLICATION_IDENTIFIER_POINTER
-        = JsonPointer.compile( "/newImage/identifier/s");
-    private final JsonPointer PUBLICATION_TYPE_POINTER = JsonPointer.compile(
-         "/newImage/entityDescription/m/reference/m/publicationInstance/m/type/s");
-    private final JsonPointer PUBLICATION_ENTITY_DESCRIPTION_POINTER = JsonPointer.compile(
+    private static final JsonPointer PUBLICATION_IDENTIFIER_POINTER
+        = JsonPointer.compile("/newImage/identifier/s");
+    private static final JsonPointer PUBLICATION_TYPE_POINTER = JsonPointer.compile(
+        "/newImage/entityDescription/m/reference/m/publicationInstance/m/type/s");
+    private static final JsonPointer PUBLICATION_ENTITY_DESCRIPTION_POINTER = JsonPointer.compile(
         "/newImage/entityDescription/m");
-    private final JsonPointer DOI_POINTER = JsonPointer.compile(
+    private static final JsonPointer DOI_POINTER = JsonPointer.compile(
         "/newImage/entityDescription/m/reference/m/doi/s");
-    private final JsonPointer MAIN_TITLE_POINTER = JsonPointer.compile(
+    private static final JsonPointer MAIN_TITLE_POINTER = JsonPointer.compile(
         "/newImage/entityDescription/m/mainTitle/s");
-    private final JsonPointer TYPE_POINTER = JsonPointer.compile("/newImage/type/s");
-    private final JsonPointer INSTITUTION_OWNER_POINTER = JsonPointer.compile("/newImage/publisherId/s");
-
+    private static final JsonPointer TYPE_POINTER = JsonPointer.compile("/newImage/type/s");
+    private static final JsonPointer INSTITUTION_OWNER_POINTER = JsonPointer.compile("/newImage/publisherId/s");
 
     public PublicationMapper() {
         this(DEFAULT_ROOT);
