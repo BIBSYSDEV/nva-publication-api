@@ -1,9 +1,12 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.textFromNode;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
 public class Identity {
@@ -11,22 +14,6 @@ public class Identity {
     private final String name;
     private final String arpId;
     private final String orcId;
-
-    /**
-     * Construct a Identity based on Dynamodb DAO.
-     * @param arpId arpId part of identity for a contributors
-     * @param orcId orcId part of identity for a contributor
-     * @param name name of identity for a contributor
-     */
-    @JacocoGenerated
-    @JsonCreator
-    public Identity(@JsonProperty("arpId") String arpId,
-                    @JsonProperty("orcId") String orcId,
-                    @JsonProperty("name") String name) {
-        this.name = name;
-        this.arpId = arpId;
-        this.orcId = orcId;
-    }
 
     protected Identity(Builder builder) {
         orcId = builder.orcId;
@@ -55,8 +42,21 @@ public class Identity {
         private String arpId;
         private String name;
 
-
         public Builder() {
+        }
+
+        /**
+         * Extracts and populates orcId, arpId and name from a identity.
+         *
+         * @param identity json node pointing at a entry under
+         * {@link DynamodbStreamRecordJsonPointers#CONTRIBUTORS_LIST_POINTER}.
+         * @return Builder
+         */
+        public Builder withJsonNode(JsonNode identity) {
+            orcId = textFromNode(identity, CONTRIBUTOR_ORC_ID_JSON_POINTER);
+            arpId = textFromNode(identity, CONTRIBUTOR_ARP_ID_JSON_POINTER);
+            name = textFromNode(identity, CONTRIBUTOR_NAME_JSON_POINTER);
+            return this;
         }
 
         public Builder withOrcId(String orcId) {

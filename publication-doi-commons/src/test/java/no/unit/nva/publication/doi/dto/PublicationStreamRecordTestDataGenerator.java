@@ -1,6 +1,22 @@
 package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DOI_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_LIST;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_STRING;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.IMAGE_IDENTIFIER_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.MAIN_TITLE_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLICATION_STATUS_JSON_POINTER;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLISHER_ID;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_POINTER;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -9,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -20,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import no.unit.nva.publication.doi.PublicationMapper;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
@@ -30,42 +47,34 @@ public class PublicationStreamRecordTestDataGenerator {
     public static final String STREAM_RECORD_TEMPLATE_JSON = "doi/streamRecordTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "doi/contributorTemplate.json";
 
-    public static final String EVENT_JSON_STRING_NAME = "s";
-    public static final String EVENT_ID = "eventID";
-    public static final String CONTRIBUTOR_NAME_POINTER = "/m/identity/m/name";
-    public static final String CONTRIBUTOR_ARPID_POINTER = "/m/identity/m/arpId";
-    public static final String CONTRIBUTOR_ORCID_POINTER = "/m/identity/m/orcId";
-    public static final String CONTRIBUTOR_POINTER = "/dynamodb/newImage/entityDescription/m/contributors";
-    public static final String EVENT_JSON_LIST_NAME = "l";
-
-    public static final String ENTITY_DESCRIPTION_MAIN_TITLE_POINTER =
+    /*public static final String ENTITY_DESCRIPTION_MAIN_TITLE_POINTER =
         "/dynamodb/newImage/entityDescription/m/mainTitle";
     public static final String PUBLICATION_INSTANCE_TYPE_POINTER =
         "/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type";
-    public static final JsonPointer DYNAMODB_TYPE_POINTER = JsonPointer.compile("/dynamodb/newImage/type");
+    public static final JsonPointer DYNAMODB_TYPE_POINTER = JsonPointer.compile("/dynamodb/newImage/type");*/
     public static final String FIRST_RECORD_POINTER = "";
-    public static final String EVENT_NAME = "eventName";
 
-    public static final String IMAGE_IDENTIFIER_JSON_POINTER = "/dynamodb/newImage/identifier";
-    public static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER =
-        "/dynamodb/newImage/entityDescription/m/date/m";
+    public static final ObjectMapper objectMapper = JsonUtils.objectMapper;
+    public static final String EXAMPLE_NAMESPACE = "http://example.net/nva/";
+    public static final String EVENT_ID = "eventID";
+    public static final String EVENT_NAME = "eventName";
     public static final String EVENT_YEAR_NAME = "year";
     public static final String EVENT_MONTH_NAME = "month";
     public static final String EVENT_DAY_NAME = "day";
-    public static final String PUBLICATION_STATUS_JSON_POINTER = "/dynamodb/newImage/status";
-    public static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate;
     private final String eventId;
     private final String eventName;
-    private final UUID id;
+    private final String identifier;
     private final String instanceType;
     private final String mainTitle;
     private final List<Identity> contributors;
     private final PublicationDate date;
     private final String status;
     private final String dynamoDbType;
+    private final String doi;
+    private final String publisherId;
 
     {
         try {
@@ -79,11 +88,13 @@ public class PublicationStreamRecordTestDataGenerator {
     private PublicationStreamRecordTestDataGenerator(Builder builder) {
         eventId = builder.eventId;
         eventName = builder.eventName;
-        id = builder.id;
+        identifier = builder.identifier;
+        doi = builder.doi;
         instanceType = builder.instancetype;
         dynamoDbType = builder.dynamoDbType;
         mainTitle = builder.mainTitle;
         contributors = builder.contributors;
+        publisherId = builder.publisherId;
         date = builder.date;
         status = builder.status;
     }
@@ -96,16 +107,22 @@ public class PublicationStreamRecordTestDataGenerator {
      */
     public DynamodbStreamRecord asDynamoDbStreamRecord() {
         ObjectNode event = getEventTemplate();
-        updateEventImageIdentifier(id.toString(), event);
+        updateEventImageIdentifier(identifier, event);
         updateEventId(eventId, event);
         updateEventName(eventName, event);
         updateReferenceType(instanceType, event);
         updateEntityDescriptionMainTitle(mainTitle, event);
         updateEntityDescriptionContributors(contributors, event);
+        updateEntityDescriptionReferenceDoi(doi, event);
+        updatePublisherId(publisherId, event);
         updateDate(date, event);
         updatePublicationStatus(status, event);
         updateDynamodbType(dynamoDbType, event);
         return toDynamodbStreamRecord(event);
+    }
+
+    public JsonNode asDynamoDbStreamRecordJsonNode() {
+        return mapper.convertValue(asDynamoDbStreamRecord(), JsonNode.class);
     }
 
     /**
@@ -113,13 +130,10 @@ public class PublicationStreamRecordTestDataGenerator {
      *
      * @return IndexDocument representation of object.
      */
-    public Publication asPublicationDto() {
-        try {
-            return new PublicationMapper().fromDynamodbStreamRecord("http://example.net/foo",
-                objectMapper.writeValueAsString(asDynamoDbStreamRecord()));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    public DynamodbStreamRecordDao asDynamodbStreamRecordDao() {
+        return new DynamodbStreamRecordDao.Builder()
+            .withDynamodbStreamRecord(asDynamoDbStreamRecordJsonNode())
+            .build();
     }
 
     private ObjectNode getEventTemplate() {
@@ -140,11 +154,11 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, EVENT_JSON_STRING_NAME, status);
+        updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, DYNAMODB_TYPE_STRING, status);
     }
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_JSON_POINTER, EVENT_JSON_STRING_NAME, id);
+        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_POINTER, DYNAMODB_TYPE_STRING, id);
     }
 
     private void updateEntityDescriptionContributors(List<Identity> contributors, ObjectNode event) {
@@ -153,21 +167,21 @@ public class PublicationStreamRecordTestDataGenerator {
             contributors.forEach(contributor -> updateContributor(contributorsArrayNode, contributor));
             updateEventAtPointerWithNameAndArrayValue(event,
                 contributorsArrayNode);
-            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(EVENT_JSON_LIST_NAME, contributorsArrayNode);
+            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(DYNAMODB_TYPE_LIST, contributorsArrayNode);
         }
     }
 
     private void updateContributor(ArrayNode contributors, Identity contributor) {
         ObjectNode activeTemplate = contributorTemplate.deepCopy();
 
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_POINTER,
-            EVENT_JSON_STRING_NAME, contributor.getName());
+        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_JSON_POINTER,
+            DYNAMODB_TYPE_STRING, contributor.getName());
         extractStringValue(contributor.getArpId()).ifPresent(
-            arpId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARPID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getArpId()));
+            arpId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARP_ID_JSON_POINTER,
+                DYNAMODB_TYPE_STRING, contributor.getArpId()));
         extractStringValue(contributor.getOrcId())
-            .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ORCID_POINTER,
-                EVENT_JSON_STRING_NAME, contributor.getOrcId()));
+            .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ORC_ID_JSON_POINTER,
+                DYNAMODB_TYPE_STRING, contributor.getOrcId()));
         contributors.add(activeTemplate);
     }
 
@@ -176,17 +190,24 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private void updateEntityDescriptionMainTitle(String mainTitle, ObjectNode event) {
-        ((ObjectNode) event.at(ENTITY_DESCRIPTION_MAIN_TITLE_POINTER))
-            .put(EVENT_JSON_STRING_NAME, mainTitle);
+        updateEventAtPointerWithNameAndValue(event, MAIN_TITLE_POINTER, DYNAMODB_TYPE_STRING, mainTitle);
+    }
+
+    private void updateEntityDescriptionReferenceDoi(String doi, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, DOI_POINTER, DYNAMODB_TYPE_STRING, doi);
+    }
+
+    private void updatePublisherId(String publisherId, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID, DYNAMODB_TYPE_STRING, publisherId);
     }
 
     private void updateReferenceType(String type, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_INSTANCE_TYPE_POINTER,
-            EVENT_JSON_STRING_NAME, type);
+        updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE,
+            DYNAMODB_TYPE_STRING, type);
     }
 
     private void updateDynamodbType(String dynamoDbType, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, DYNAMODB_TYPE_POINTER, EVENT_JSON_STRING_NAME, dynamoDbType);
+        updateEventAtPointerWithNameAndValue(event, TYPE_POINTER, DYNAMODB_TYPE_STRING, dynamoDbType);
     }
 
     private void updateEventId(String eventName, ObjectNode event) {
@@ -199,12 +220,12 @@ public class PublicationStreamRecordTestDataGenerator {
 
     private void updateDate(PublicationDate date, JsonNode event) {
         if (nonNull(date) && date.isPopulated()) {
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                EVENT_YEAR_NAME, date.getYear());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                EVENT_MONTH_NAME, date.getMonth());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_JSON_POINTER,
-                EVENT_DAY_NAME, date.getDay());
+            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR,
+                DYNAMODB_TYPE_STRING, date.getYear());
+            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH,
+                DYNAMODB_TYPE_STRING, date.getMonth());
+            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY,
+                DYNAMODB_TYPE_STRING, date.getDay());
         }
     }
 
@@ -218,29 +239,30 @@ public class PublicationStreamRecordTestDataGenerator {
 
     private void updateEventAtPointerWithNameAndValue(JsonNode event, JsonPointer pointer, String name, Object value) {
         if (value instanceof String) {
-            ((ObjectNode) event.at(pointer)).put(name, (String) value);
+            ((ObjectNode) event.at(pointer.head())).put(name, (String) value);
         } else {
-            ((ObjectNode) event.at(pointer)).put(name, (Integer) value);
+            ((ObjectNode) event.at(pointer.head())).put(name, (Integer) value);
         }
     }
 
     private void updateEventAtPointerWithNameAndArrayValue(ObjectNode event,
                                                            ArrayNode value) {
-        ((ObjectNode) event.at(PublicationStreamRecordTestDataGenerator.CONTRIBUTOR_POINTER))
-            .set(PublicationStreamRecordTestDataGenerator.EVENT_JSON_LIST_NAME, value);
+        ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(DYNAMODB_TYPE_LIST, value);
     }
 
     public static final class Builder {
 
         private String eventId;
         private String eventName;
-        private UUID id;
+        private String identifier;
         private String instancetype;
         private String dynamoDbType;
         private String mainTitle;
         private List<Identity> contributors;
         private PublicationDate date;
         private String status;
+        private String doi;
+        private String publisherId;
 
         public Builder() {
 
@@ -248,6 +270,7 @@ public class PublicationStreamRecordTestDataGenerator {
 
         /**
          * Create a valid publication populated by the provided faker.
+         *
          * @param faker data provider to generate fake data.
          * @return Builder populated from faker.
          */
@@ -256,7 +279,7 @@ public class PublicationStreamRecordTestDataGenerator {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
             return new Builder()
-                .withId(UUID.randomUUID())
+                .withIdentifier(UUID.randomUUID().toString())
                 .withInstanceType(faker.options().nextElement(PublicationType.values()).toString())
                 .withDate(new PublicationDate(
                     String.valueOf(localDate.getYear()),
@@ -264,10 +287,67 @@ public class PublicationStreamRecordTestDataGenerator {
                     String.valueOf(localDate.getDayOfMonth())))
                 .withDynamoDbType("Publication")
                 .withMainTitle(faker.book().title())
+                .withDoi("http://example.net/doi/prefix/suffix/" + UUID.randomUUID().toString())
+                .withPublisherId("http://example.net/nva/institution/" + UUID.randomUUID().toString())
                 .withEventId(UUID.randomUUID().toString())
                 .withEventName(faker.options().nextElement(List.of("MODIFY")))
                 .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
                 .withContributorIdentities(getIdentities(faker, false));
+        }
+
+        @VisibleForTesting
+        public String getEventId() {
+            return eventId;
+        }
+
+        @VisibleForTesting
+        public String getEventName() {
+            return eventName;
+        }
+
+        @VisibleForTesting
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        @VisibleForTesting
+        public String getInstancetype() {
+            return instancetype;
+        }
+
+        @VisibleForTesting
+        public String getDynamoDbType() {
+            return dynamoDbType;
+        }
+
+        @VisibleForTesting
+        public String getMainTitle() {
+            return mainTitle;
+        }
+
+        @VisibleForTesting
+        public List<Identity> getContributors() {
+            return contributors;
+        }
+
+        @VisibleForTesting
+        public PublicationDate getDate() {
+            return date;
+        }
+
+        @VisibleForTesting
+        public String getStatus() {
+            return status;
+        }
+
+        @VisibleForTesting
+        public String getDoi() {
+            return doi;
+        }
+
+        @VisibleForTesting
+        public String getPublisherId() {
+            return publisherId;
         }
 
         private static List<Identity> getIdentities(Faker faker, boolean withoutName) {
@@ -299,8 +379,8 @@ public class PublicationStreamRecordTestDataGenerator {
             return this;
         }
 
-        public Builder withId(UUID id) {
-            this.id = id;
+        public Builder withIdentifier(String identifier) {
+            this.identifier = identifier;
             return this;
         }
 
@@ -319,6 +399,11 @@ public class PublicationStreamRecordTestDataGenerator {
             return this;
         }
 
+        public Builder withDoi(String doi) {
+            this.doi = doi;
+            return this;
+        }
+
         public Builder withContributorIdentities(List<Identity> contributors) {
             this.contributors = contributors;
             return this;
@@ -331,6 +416,11 @@ public class PublicationStreamRecordTestDataGenerator {
 
         public Builder withStatus(String draft) {
             this.status = draft;
+            return this;
+        }
+
+        public Builder withPublisherId(String publisherId) {
+            this.publisherId = publisherId;
             return this;
         }
 

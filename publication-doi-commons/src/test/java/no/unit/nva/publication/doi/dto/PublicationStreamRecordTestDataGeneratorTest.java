@@ -26,16 +26,16 @@ class PublicationStreamRecordTestDataGeneratorTest {
     public static final String STATUS = "status";
     public static final String IDENTIFIER = "identifier";
     public static final String DASH = "-";
-    private static Builder validPublication;
+    private static Builder validStreamRecordBuilder;
 
     @BeforeEach
     void setUp() {
-        validPublication = Builder.createValidPublication(new Faker());
+        validStreamRecordBuilder = Builder.createValidPublication(new Faker());
     }
 
     @Test
     void asDynamoDbStreamRecord() {
-        var streamRecord = validPublication.build().asDynamoDbStreamRecord();
+        var streamRecord = validStreamRecordBuilder.build().asDynamoDbStreamRecord();
         assertThat(streamRecord.getEventID(), notNullValue());
         assertThat(streamRecord.getEventSourceARN(), notNullValue());
         assertThat(streamRecord.getEventID(), notNullValue());
@@ -67,13 +67,13 @@ class PublicationStreamRecordTestDataGeneratorTest {
     }
 
     @Test
-    void asPublicationDto() {
-        var publication = validPublication.build().asPublicationDto();
-        assertThat(publication.getId(), notNullValue());
-        assertThat(publication.getDoi(), notNullValue());
-        assertThat(publication.getInstitutionOwner(), notNullValue());
-        assertThat(publication.getMainTitle(), notNullValue());
-        assertThat(publication.getPublicationDate(), notNullValue());
-        assertThat(publication.getContributor(), hasSize(greaterThan(0)));
+    void asDynamodbStreamRecordDao() {
+        var dao = validStreamRecordBuilder.build().asDynamodbStreamRecordDao();
+        assertThat(dao.getIdentifier(), notNullValue());
+        assertThat(dao.getDoi(), notNullValue());
+        assertThat(dao.getPublisherId(), notNullValue());
+        assertThat(dao.getMainTitle(), notNullValue());
+        assertThat(dao.getPublicationReleaseDate(), notNullValue());
+        assertThat(dao.getContributorIdentities(), hasSize(greaterThan(0)));
     }
 }

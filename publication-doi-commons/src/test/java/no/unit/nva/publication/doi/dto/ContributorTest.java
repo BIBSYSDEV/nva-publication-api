@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 
 class ContributorTest {
 
-
     @Test
     void testDaoConstructor() {
         var faker = new Faker();
@@ -28,5 +27,4 @@ class ContributorTest {
         assertThat(contributor.getArpId(), is(equalTo(arpId)));
         assertThat(contributor.getName(), is(equalTo(name)));
     }
-
 }

@@ -1,17 +1,16 @@
 package no.unit.nva.publication.doi.dto;
 
+import static nva.commons.utils.JsonUtils.objectMapper;
+
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Optional;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
-import nva.commons.utils.JsonUtils;
 
 public class PublicationDynamoEventTestDataGenerator {
 
-    public static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     protected final ArrayList<PublicationStreamRecordTestDataGenerator> records;
     private final Faker faker;
 
@@ -37,7 +36,7 @@ public class PublicationDynamoEventTestDataGenerator {
     public PublicationDynamoEventTestDataGenerator createRandomStreamRecord(
         PublicationStreamRecordTestDataGenerator.Builder streamRecordBuilder) {
         var builderToUse = Optional.ofNullable(streamRecordBuilder)
-            .orElse(randomStreamRecord());
+            .orElse(createTestdataGeneratorBuilderWithValidRecord());
         this.records.add(builderToUse.build());
         return this;
     }
@@ -62,7 +61,7 @@ public class PublicationDynamoEventTestDataGenerator {
         this.records.clear();
     }
 
-    private Builder randomStreamRecord() {
+    private Builder createTestdataGeneratorBuilderWithValidRecord() {
         return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(faker);
     }
 }
