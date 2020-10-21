@@ -2,9 +2,6 @@ repositories {
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
 
-def jacksonVersion = '2.10.2'
-def awsSdkVersion = '1.11.714'
-
 dependencies {
     api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.nvaCommonsVersion
     api(group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0') {
