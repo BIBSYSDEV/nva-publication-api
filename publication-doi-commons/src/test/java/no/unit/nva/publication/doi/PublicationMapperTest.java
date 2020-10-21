@@ -1,7 +1,7 @@
 package no.unit.nva.publication.doi;
 
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao.ERROR_MUST_BE_PUBLICATION_TYPE;
-import static nva.commons.utils.JsonUtils.*;
+import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -21,7 +21,6 @@ import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
-import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -31,36 +30,6 @@ class PublicationMapperTest {
     private static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
 
     private static final Faker FAKER = new Faker();
-
-    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames() {
-        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
-            .withContributorIdentities(createContributorIdentities(true))
-            .build();
-    }
-
-    private List<Identity> createContributorIdentities(boolean withoutName) {
-        List<Identity> contributors = new ArrayList<>();
-        for (int i = 0; i < FAKER.random().nextInt(1, 10); i++) {
-            Identity.Builder builder = new Identity.Builder();
-            builder.withArpId(FAKER.number().digits(10));
-            builder.withOrcId(FAKER.number().digits(10));
-            builder.withName(withoutName ? null : FAKER.superhero().name());
-            contributors.add(builder.build());
-        }
-        return contributors;
-    }
-
-    private DynamodbStreamRecordDao.Builder createDaoBuilder(JsonNode rootNode) {
-        return new DynamodbStreamRecordDao.Builder().withDynamodbStreamRecord(rootNode);
-    }
-
-    private Executable createPublicationMapperWithBadDao(ObjectNode rootNode) {
-        return () ->
-        {
-            var dao = createDaoBuilder(rootNode).build();
-            new PublicationMapper(EXAMPLE_NAMESPACE).fromDynamodbStreamRecordDao(dao);
-        };
-    }
 
     @Test
     void fromDynamodbStreamRecordDaoThenReturnFullyMappedPublicationDto() {
@@ -101,5 +70,35 @@ class PublicationMapperTest {
             dao);
 
         assertThat(publication.getContributor(), hasSize(0));
+    }
+
+    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames() {
+        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
+            .withContributorIdentities(createContributorIdentities(true))
+            .build();
+    }
+
+    private List<Identity> createContributorIdentities(boolean withoutName) {
+        List<Identity> contributors = new ArrayList<>();
+        for (int i = 0; i < FAKER.random().nextInt(1, 10); i++) {
+            Identity.Builder builder = new Identity.Builder();
+            builder.withArpId(FAKER.number().digits(10));
+            builder.withOrcId(FAKER.number().digits(10));
+            builder.withName(withoutName ? null : FAKER.superhero().name());
+            contributors.add(builder.build());
+        }
+        return contributors;
+    }
+
+    private DynamodbStreamRecordDao.Builder createDaoBuilder(JsonNode rootNode) {
+        return new DynamodbStreamRecordDao.Builder().withDynamodbStreamRecord(rootNode);
+    }
+
+    private Executable createPublicationMapperWithBadDao(ObjectNode rootNode) {
+        return () ->
+        {
+            var dao = createDaoBuilder(rootNode).build();
+            new PublicationMapper(EXAMPLE_NAMESPACE).fromDynamodbStreamRecordDao(dao);
+        };
     }
 }
