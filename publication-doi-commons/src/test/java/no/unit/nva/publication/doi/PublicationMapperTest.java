@@ -95,8 +95,7 @@ class PublicationMapperTest {
     }
 
     private Executable createPublicationMapperWithBadDao(ObjectNode rootNode) {
-        return () ->
-        {
+        return () -> {
             var dao = createDaoBuilder(rootNode).build();
             new PublicationMapper(EXAMPLE_NAMESPACE).fromDynamodbStreamRecordDao(dao);
         };
