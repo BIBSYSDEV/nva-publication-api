@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
@@ -28,23 +27,6 @@ class DynamodbStreamRecordDaoTest {
     public static final String EXPECTED_PUBLICATION_TYPE = "Publication";
     private Faker faker;
     private Random random;
-
-    private ObjectNode createPublicationReleaseDateJsonNode() {
-        var date = objectMapper.createObjectNode();
-        var dateMap = date.putObject("date").putObject("m");
-        dateMap.putObject("year").put("s", "1999");
-        dateMap.putObject("month").put("s", "07");
-        dateMap.putObject("day").put("s", "09");
-        return date;
-    }
-
-    private List<Identity> createContributorIdentities() {
-        Identity.Builder builder = new Identity.Builder();
-        builder.withArpId(faker.number().digits(10));
-        builder.withOrcId(faker.number().digits(10));
-        builder.withName(faker.superhero().name());
-        return Collections.singletonList(builder.build());
-    }
 
     @BeforeEach
     void setUp() {
@@ -146,6 +128,14 @@ class DynamodbStreamRecordDaoTest {
         assertThat(dao, doesNotHaveNullOrEmptyFields());
     }
 
+    private ObjectNode createPublicationReleaseDateJsonNode() {
+        var date = objectMapper.createObjectNode();
+        var dateMap = date.putObject("date").putObject("m");
+        dateMap.putObject("year").put("s", "1999");
+        dateMap.putObject("month").put("s", "07");
+        dateMap.putObject("day").put("s", "09");
+        return date;
+    }
 
     private Builder getBuilder() {
         return new DynamodbStreamRecordDao.Builder();
@@ -162,5 +152,13 @@ class DynamodbStreamRecordDaoTest {
 
     private String extractString(JsonNode actualDateMap, String field) {
         return actualDateMap.get(field).get("s").textValue();
+    }
+
+    private List<Identity> createContributorIdentities() {
+        Identity.Builder builder = new Identity.Builder();
+        builder.withArpId(faker.number().digits(10));
+        builder.withOrcId(faker.number().digits(10));
+        builder.withName(faker.superhero().name());
+        return Collections.singletonList(builder.build());
     }
 }

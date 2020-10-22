@@ -6,10 +6,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import no.unit.nva.publication.doi.JsonPointerUtils;
 import org.junit.jupiter.api.Test;
 
 class JsonPointerUtilsTest {

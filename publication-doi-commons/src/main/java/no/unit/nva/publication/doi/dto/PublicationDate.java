@@ -2,7 +2,6 @@ package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,9 +22,10 @@ public class PublicationDate {
 
     /**
      * Constructor for basic deserialization of PublicationDate.
-     * @param year String representing year.
+     *
+     * @param year  String representing year.
      * @param month String representing month.
-     * @param day String representing day.
+     * @param day   String representing day.
      */
     @JsonCreator
     public PublicationDate(@JsonProperty("year") String year,
@@ -38,6 +38,7 @@ public class PublicationDate {
 
     /**
      * Constructor for PublicationDate.
+     *
      * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
     public PublicationDate(JsonNode doiPublicationDto) {
@@ -72,8 +73,8 @@ public class PublicationDate {
         }
         PublicationDate date = (PublicationDate) o;
         return Objects.equals(getYear(), date.getYear())
-                && Objects.equals(getMonth(), date.getMonth())
-                && Objects.equals(getDay(), date.getDay());
+            && Objects.equals(getMonth(), date.getMonth())
+            && Objects.equals(getDay(), date.getDay());
     }
 
     @JacocoGenerated

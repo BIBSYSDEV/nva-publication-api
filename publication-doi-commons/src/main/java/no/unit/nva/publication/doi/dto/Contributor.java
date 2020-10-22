@@ -14,9 +14,10 @@ public class Contributor {
 
     /**
      * Constructs a Contributor for doi.publisher DTO
-     * @param id URI for our contributor. Null atm.
+     *
+     * @param id    URI for our contributor. Null atm.
      * @param arpId Authority register id for a person for this contributor entry.
-     * @param name name of contributor
+     * @param name  name of contributor
      */
     @JacocoGenerated
     @JsonCreator
@@ -47,6 +48,27 @@ public class Contributor {
         return name;
     }
 
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Contributor that = (Contributor) o;
+        return Objects.equals(id, that.id)
+            && Objects.equals(arpId, that.arpId)
+            && Objects.equals(name, that.name);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, arpId, name);
+    }
+
     public static final class Builder {
 
         private URI id;
@@ -74,26 +96,5 @@ public class Contributor {
         public Contributor build() {
             return new Contributor(this);
         }
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Contributor that = (Contributor) o;
-        return Objects.equals(id, that.id)
-            && Objects.equals(arpId, that.arpId)
-            && Objects.equals(name, that.name);
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(id, arpId, name);
     }
 }

@@ -5,7 +5,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
-
 import java.net.URI;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.Publication.Builder;

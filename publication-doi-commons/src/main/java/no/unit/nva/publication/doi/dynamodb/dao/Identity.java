@@ -1,10 +1,9 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
-import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
@@ -34,6 +33,27 @@ public class Identity {
     @JacocoGenerated
     public String getName() {
         return name;
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Identity identity = (Identity) o;
+        return Objects.equals(name, identity.name)
+            && Objects.equals(arpId, identity.arpId)
+            && Objects.equals(orcId, identity.orcId);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, arpId, orcId);
     }
 
     public static final class Builder {
@@ -77,26 +97,5 @@ public class Identity {
         public Identity build() {
             return new Identity(this);
         }
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        Identity identity = (Identity) o;
-        return Objects.equals(name, identity.name)
-            && Objects.equals(arpId, identity.arpId)
-            && Objects.equals(orcId, identity.orcId);
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, arpId, orcId);
     }
 }

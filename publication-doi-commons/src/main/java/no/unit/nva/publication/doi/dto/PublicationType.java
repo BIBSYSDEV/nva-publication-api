@@ -23,13 +23,9 @@ public enum PublicationType {
         this.name = name;
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
     /**
      * Find PublicationType given json representation of enum.
+     *
      * @param name Json representation of PublicationType
      * @return PublicationType enum for given type or throws illegal argument exception.
      */
@@ -40,5 +36,10 @@ public enum PublicationType {
             }
         }
         throw new IllegalArgumentException("No enum constant for: " + name);
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

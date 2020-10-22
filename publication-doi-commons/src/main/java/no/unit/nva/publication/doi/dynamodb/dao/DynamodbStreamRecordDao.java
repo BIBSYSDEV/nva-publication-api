@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTORS_LIST_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DOI_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE;
@@ -8,8 +9,6 @@ import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonP
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLICATION_ENTITY_DESCRIPTION_MAP_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLISHER_ID;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_POINTER;
-import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Objects;
@@ -89,21 +88,6 @@ public class DynamodbStreamRecordDao {
 
         }
 
-        private static Stream<JsonNode> toStream(JsonNode node) {
-            return StreamSupport.stream(node.spliterator(), false);
-        }
-
-        private static Identity createContributorIdentity(JsonNode jsonNode) {
-            return new Identity.Builder().withJsonNode(jsonNode).build();
-        }
-
-        private static List<Identity> extractContributors(JsonNode record) {
-            return toStream(record.at(CONTRIBUTORS_LIST_POINTER))
-                .map(Builder::createContributorIdentity)
-                .filter(e -> Objects.nonNull(e.getName()))
-                .collect(Collectors.toList());
-        }
-
         /**
          * Builder for constructing a {@link DynamodbStreamRecordDao}.
          *
@@ -169,6 +153,21 @@ public class DynamodbStreamRecordDao {
 
         public DynamodbStreamRecordDao build() {
             return new DynamodbStreamRecordDao(this);
+        }
+
+        private static Stream<JsonNode> toStream(JsonNode node) {
+            return StreamSupport.stream(node.spliterator(), false);
+        }
+
+        private static Identity createContributorIdentity(JsonNode jsonNode) {
+            return new Identity.Builder().withJsonNode(jsonNode).build();
+        }
+
+        private static List<Identity> extractContributors(JsonNode record) {
+            return toStream(record.at(CONTRIBUTORS_LIST_POINTER))
+                .map(Builder::createContributorIdentity)
+                .filter(e -> Objects.nonNull(e.getName()))
+                .collect(Collectors.toList());
         }
     }
 }
