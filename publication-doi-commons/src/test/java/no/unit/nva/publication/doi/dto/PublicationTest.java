@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi.dto;
 
+import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -46,5 +47,6 @@ class PublicationTest {
         assertThat(publication.getContributor(),
             hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
                 EXAMPLE_CONTRIBUTOR_NAME)));
+        assertThat(publication, doesNotHaveNullOrEmptyFields());
     }
 }

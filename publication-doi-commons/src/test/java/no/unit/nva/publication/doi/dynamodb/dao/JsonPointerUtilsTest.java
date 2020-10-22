@@ -1,6 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.textFromNode;
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -9,9 +9,10 @@ import static org.hamcrest.Matchers.nullValue;
 
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import no.unit.nva.publication.doi.JsonPointerUtils;
 import org.junit.jupiter.api.Test;
 
-class DynamodbStreamRecordJsonPointersTest {
+class JsonPointerUtilsTest {
 
     private static final String EXAMPLE_FIELD_WITH_VALUE = "fieldWithValue";
     private static final String EXAMPLE_FIELD_WITH_NO_VALUE = "fieldWithoutValue";

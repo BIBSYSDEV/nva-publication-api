@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi;
 
+import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao.ERROR_MUST_BE_PUBLICATION_TYPE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,6 +47,8 @@ class PublicationMapperTest {
         assertThat(dto.getContributor(), hasSize(daoBuilder.getContributors().size()));
         assertThat(dto.getMainTitle(), is(equalTo(daoBuilder.getMainTitle())));
         assertThat(dto.getId(), is(equalTo(URI.create(mapper.namespacePublication + daoBuilder.getIdentifier()))));
+
+        assertThat(dto, doesNotHaveNullOrEmptyFields());
     }
 
     @Test

@@ -10,6 +10,10 @@ public final class ContributorMapper {
     private ContributorMapper() {
     }
 
+    public static Contributor fromIdentityDao(Identity contributorIdentityDao) {
+        return createContributor(contributorIdentityDao);
+    }
+
     /**
      * Construct Contributor DTOs from Identity DAOs.
      *
@@ -25,6 +29,6 @@ public final class ContributorMapper {
     }
 
     private static Contributor createContributor(Identity identity) {
-        return new Contributor(identity);
+        return new Contributor.Builder().withArpId(identity.getArpId()).withName(identity.getName()).build();
     }
 }

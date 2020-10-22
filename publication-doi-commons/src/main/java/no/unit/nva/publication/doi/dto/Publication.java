@@ -47,13 +47,8 @@ public class Publication {
     }
 
     protected Publication(Builder builder) {
-        this.id = builder.id;
-        this.institutionOwner = builder.institutionOwner;
-        this.doi = builder.doi;
-        this.type = builder.type;
-        this.mainTitle = builder.mainTitle;
-        this.contributor = builder.contributor;
-        this.publicationDate = builder.publicationDate;
+        this(builder.id, builder.institutionOwner, builder.doi, builder.type, builder.mainTitle, builder.contributor,
+            builder.publicationDate);
     }
 
     public URI getId() {

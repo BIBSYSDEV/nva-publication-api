@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
+import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -28,23 +29,6 @@ class DynamodbStreamRecordDaoTest {
     private Faker faker;
     private Random random;
 
-    private Builder getBuilder() {
-        return new DynamodbStreamRecordDao.Builder();
-    }
-
-    private Locale pickRandomLocale() {
-        var locales = Arrays.asList(Locale.ENGLISH, Locale.CHINA, Locale.FRANCE, Locale.GERMAN, Locale.KOREA);
-        return locales.get(random.nextInt(locales.size()));
-    }
-
-    private String getRandomValidPublicationInstanceType() {
-        return faker.options().nextElement(PublicationType.values()).toString();
-    }
-
-    private String extractString(JsonNode actualDateMap, String field) {
-        return actualDateMap.get(field).get("s").textValue();
-    }
-
     private ObjectNode createPublicationReleaseDateJsonNode() {
         var date = objectMapper.createObjectNode();
         var dateMap = date.putObject("date").putObject("m");
@@ -66,30 +50,6 @@ class DynamodbStreamRecordDaoTest {
     void setUp() {
         random = new Random();
         faker = new Faker(pickRandomLocale());
-    }
-
-    @Test
-    void builderWithDynamodbStreamRecordJsonNodeReturnsFullyPopulatedDao() {
-        PublicationStreamRecordTestDataGenerator.Builder validPublication =
-            PublicationStreamRecordTestDataGenerator.Builder
-                .createValidPublication(faker);
-
-        var dao = getBuilder()
-            .withDynamodbStreamRecord(validPublication.build().asDynamoDbStreamRecordJsonNode())
-            .build();
-
-        assertThat(dao.getIdentifier(), is(equalTo(validPublication.getIdentifier())));
-        assertThat(dao.getDynamodbStreamRecordType(), is(equalTo(DynamodbStreamRecordDao.PUBLICATION_TYPE)));
-        assertThat(dao.getPublicationInstanceType(), is(equalTo(validPublication.getInstancetype())));
-        assertThat(dao.getMainTitle(), is(equalTo(validPublication.getMainTitle())));
-        assertThat(dao.getDoi(), is(equalTo(validPublication.getDoi())));
-        assertThat(dao.getPublisherId(), is(equalTo(validPublication.getPublisherId())));
-        assertThat(dao.getContributorIdentities(), is(equalTo(validPublication.getContributors())));
-
-        JsonNode getDaoDateMap = dao.getPublicationReleaseDate().get("date").get("m");
-        assertThat(getDaoDateMap.get("year").get("s").textValue(), is(equalTo(validPublication.getDate().getYear())));
-        assertThat(getDaoDateMap.get("month").get("s").textValue(), is(equalTo(validPublication.getDate().getMonth())));
-        assertThat(getDaoDateMap.get("day").get("s").textValue(), is(equalTo(validPublication.getDate().getDay())));
     }
 
     @Test
@@ -159,5 +119,48 @@ class DynamodbStreamRecordDaoTest {
         assertThat(actual.get(0).getName(), is(equalTo(firstIdentity.getName())));
         assertThat(actual.get(0).getArpId(), is(equalTo(firstIdentity.getArpId())));
         assertThat(actual.get(0).getOrcId(), is(equalTo(firstIdentity.getOrcId())));
+    }
+
+    @Test
+    void builderWithDynamodbStreamRecordJsonNodeReturnsFullyPopulatedDao() {
+        PublicationStreamRecordTestDataGenerator.Builder validPublication =
+            PublicationStreamRecordTestDataGenerator.Builder
+                .createValidPublication(faker);
+
+        var dao = getBuilder()
+            .withDynamodbStreamRecord(validPublication.build().asDynamoDbStreamRecordJsonNode())
+            .build();
+
+        assertThat(dao.getIdentifier(), is(equalTo(validPublication.getIdentifier())));
+        assertThat(dao.getDynamodbStreamRecordType(), is(equalTo(DynamodbStreamRecordDao.PUBLICATION_TYPE)));
+        assertThat(dao.getPublicationInstanceType(), is(equalTo(validPublication.getInstancetype())));
+        assertThat(dao.getMainTitle(), is(equalTo(validPublication.getMainTitle())));
+        assertThat(dao.getDoi(), is(equalTo(validPublication.getDoi())));
+        assertThat(dao.getPublisherId(), is(equalTo(validPublication.getPublisherId())));
+        assertThat(dao.getContributorIdentities(), is(equalTo(validPublication.getContributors())));
+
+        JsonNode getDaoDateMap = dao.getPublicationReleaseDate().get("date").get("m");
+        assertThat(getDaoDateMap.get("year").get("s").textValue(), is(equalTo(validPublication.getDate().getYear())));
+        assertThat(getDaoDateMap.get("month").get("s").textValue(), is(equalTo(validPublication.getDate().getMonth())));
+        assertThat(getDaoDateMap.get("day").get("s").textValue(), is(equalTo(validPublication.getDate().getDay())));
+        assertThat(dao, doesNotHaveNullOrEmptyFields());
+    }
+
+
+    private Builder getBuilder() {
+        return new DynamodbStreamRecordDao.Builder();
+    }
+
+    private Locale pickRandomLocale() {
+        var locales = Arrays.asList(Locale.ENGLISH, Locale.CHINA, Locale.FRANCE, Locale.GERMAN, Locale.KOREA);
+        return locales.get(random.nextInt(locales.size()));
+    }
+
+    private String getRandomValidPublicationInstanceType() {
+        return faker.options().nextElement(PublicationType.values()).toString();
+    }
+
+    private String extractString(JsonNode actualDateMap, String field) {
+        return actualDateMap.get(field).get("s").textValue();
     }
 }

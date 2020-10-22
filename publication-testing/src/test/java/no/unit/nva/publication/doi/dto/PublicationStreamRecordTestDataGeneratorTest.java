@@ -49,13 +49,14 @@ class PublicationStreamRecordTestDataGeneratorTest {
         var entityDescription = dynamodb.getNewImage()
             .get(ENTITY_DESCRIPTION)
             .getM();
-        assertThat(entityDescription
+        var entityReferencePublicationInstanceType = entityDescription
             .get(ENTITYDESCRIPTION_REFERENCE)
             .getM()
             .get(ENTITYDESCRIPTION_REFERENCE_PUBLICATION_INSTANCE)
             .getM()
             .get(TYPE)
-            .getS(), notNullValue());
+            .getS();
+        assertThat(entityReferencePublicationInstanceType, notNullValue());
         assertThat(entityDescription.get(MAIN_TITLE).getS(), notNullValue());
         assertThat(entityDescription.get(CONTRIBUTORS).getL(),
             hasSize(greaterThan(0)));

@@ -3,7 +3,7 @@ package no.unit.nva.publication.doi.dynamodb.dao;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.textFromNode;
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;

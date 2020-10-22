@@ -8,7 +8,7 @@ import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonP
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLICATION_ENTITY_DESCRIPTION_MAP_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLISHER_ID;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.textFromNode;
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;

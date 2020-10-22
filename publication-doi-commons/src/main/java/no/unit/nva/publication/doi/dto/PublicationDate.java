@@ -1,20 +1,21 @@
 package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
 public class PublicationDate {
 
-
-    public static final String YEAR_JSON_POINTER = "/date/m/year/s";
-    public static final String MONTH_JSON_POINTER = "/date/m/month/s";
-    public static final String DAY_JSON_POINTER = "/date/m/day/s";
+    public static final JsonPointer YEAR_JSON_POINTER = JsonPointer.compile("/date/m/year/s");
+    public static final JsonPointer MONTH_JSON_POINTER = JsonPointer.compile("/date/m/month/s");
+    public static final JsonPointer DAY_JSON_POINTER = JsonPointer.compile("/date/m/day/s");
 
     private final String year;
     private final String month;
@@ -40,9 +41,7 @@ public class PublicationDate {
      * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
     public PublicationDate(JsonNode doiPublicationDto) {
-        this.year = extractYear(doiPublicationDto);
-        this.month = extractMonth(doiPublicationDto);
-        this.day = extractDay(doiPublicationDto);
+        this(extractYear(doiPublicationDto), extractMonth(doiPublicationDto), extractDay(doiPublicationDto));
     }
 
     public String getYear() {
@@ -59,32 +58,7 @@ public class PublicationDate {
 
     @JsonIgnore
     public boolean isPopulated() {
-        return isNotNullOrEmpty(year) || isNotNullOrEmpty(month) || isNotNullOrEmpty(day);
-    }
-
-    private String extractDay(JsonNode record) {
-        return nonNull(record) ? textFromNode(record, DAY_JSON_POINTER) : null;
-    }
-
-    private boolean isNotNullOrEmpty(String string) {
-        return nonNull(string) && !string.isEmpty();
-    }
-
-    private String extractMonth(JsonNode record) {
-        return nonNull(record) ? textFromNode(record, MONTH_JSON_POINTER) : null;
-    }
-
-    private String extractYear(JsonNode record) {
-        return nonNull(record) ? textFromNode(record, YEAR_JSON_POINTER) : null;
-    }
-
-    private String textFromNode(JsonNode jsonNode, String jsonPointer) {
-        JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulatedJsonPointer(json) ? json.asText() : null;
-    }
-
-    private boolean isPopulatedJsonPointer(JsonNode json) {
-        return !json.isNull() && !json.asText().isBlank();
+        return isNotNullOrBlank(year) || isNotNullOrBlank(month) || isNotNullOrBlank(day);
     }
 
     @JacocoGenerated
@@ -106,6 +80,22 @@ public class PublicationDate {
     @Override
     public int hashCode() {
         return Objects.hash(getYear(), getMonth(), getDay());
+    }
+
+    private static String extractDay(JsonNode record) {
+        return nonNull(record) ? textFromNode(record, DAY_JSON_POINTER) : null;
+    }
+
+    private static String extractMonth(JsonNode record) {
+        return nonNull(record) ? textFromNode(record, MONTH_JSON_POINTER) : null;
+    }
+
+    private static String extractYear(JsonNode record) {
+        return nonNull(record) ? textFromNode(record, YEAR_JSON_POINTER) : null;
+    }
+
+    private boolean isNotNullOrBlank(String string) {
+        return nonNull(string) && !string.isBlank();
     }
 }
 

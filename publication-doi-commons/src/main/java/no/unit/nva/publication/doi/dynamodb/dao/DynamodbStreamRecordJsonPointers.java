@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
 import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.databind.JsonNode;
 
 public final class DynamodbStreamRecordJsonPointers {
 
@@ -46,14 +45,5 @@ public final class DynamodbStreamRecordJsonPointers {
     public static final String DYNAMODB_TYPE_LIST = "l";
 
     private DynamodbStreamRecordJsonPointers() {
-    }
-
-    public static String textFromNode(JsonNode jsonNode, JsonPointer jsonPointer) {
-        JsonNode json = jsonNode.at(jsonPointer);
-        return isPopulatedJsonPointer(json) ? json.asText() : null;
-    }
-
-    private static boolean isPopulatedJsonPointer(JsonNode json) {
-        return !json.isNull() && !json.asText().isBlank();
     }
 }
