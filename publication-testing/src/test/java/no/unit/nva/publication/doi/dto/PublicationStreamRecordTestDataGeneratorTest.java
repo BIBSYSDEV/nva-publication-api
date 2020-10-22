@@ -42,7 +42,7 @@ class PublicationStreamRecordTestDataGeneratorTest {
         assertThat(streamRecord.getAwsRegion(), notNullValue());
         assertThat(streamRecord.getEventName(), notNullValue());
         assertThat(streamRecord.getEventVersion(), notNullValue());
-        //assertThat(streamRecord.getUserIdentity(), notNullValue());
+        // TODO later when we need UserIdentity: assertThat(streamRecord.getUserIdentity(), notNullValue());
 
         var dynamodb = streamRecord.getDynamodb();
         assertThat(dynamodb.getNewImage().get(IDENTIFIER).getS(), containsString(DASH));

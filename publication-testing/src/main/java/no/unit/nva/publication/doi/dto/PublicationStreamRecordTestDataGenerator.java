@@ -25,11 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
-import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -40,6 +38,7 @@ import java.util.UUID;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
+import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
 public class PublicationStreamRecordTestDataGenerator {
@@ -47,20 +46,10 @@ public class PublicationStreamRecordTestDataGenerator {
     public static final String STREAM_RECORD_TEMPLATE_JSON = "doi/streamRecordTemplate.json";
     public static final String CONTRIBUTOR_TEMPLATE_JSON = "doi/contributorTemplate.json";
 
-    /*public static final String ENTITY_DESCRIPTION_MAIN_TITLE_POINTER =
-        "/dynamodb/newImage/entityDescription/m/mainTitle";
-    public static final String PUBLICATION_INSTANCE_TYPE_POINTER =
-        "/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type";
-    public static final JsonPointer DYNAMODB_TYPE_POINTER = JsonPointer.compile("/dynamodb/newImage/type");*/
     public static final String FIRST_RECORD_POINTER = "";
 
-    public static final ObjectMapper objectMapper = JsonUtils.objectMapper;
-    public static final String EXAMPLE_NAMESPACE = "http://example.net/nva/";
     public static final String EVENT_ID = "eventID";
     public static final String EVENT_NAME = "eventName";
-    public static final String EVENT_YEAR_NAME = "year";
-    public static final String EVENT_MONTH_NAME = "month";
-    public static final String EVENT_DAY_NAME = "day";
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate;
@@ -76,16 +65,13 @@ public class PublicationStreamRecordTestDataGenerator {
     private final String doi;
     private final String publisherId;
 
-    {
+    private PublicationStreamRecordTestDataGenerator(Builder builder) {
         try {
             contributorTemplate = mapper.readTree(IoUtils.inputStreamFromResources(
                 Paths.get(CONTRIBUTOR_TEMPLATE_JSON)));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    private PublicationStreamRecordTestDataGenerator(Builder builder) {
         eventId = builder.eventId;
         eventName = builder.eventName;
         identifier = builder.identifier;
@@ -141,8 +127,7 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private DynamodbStreamRecord loadEventFromResourceFile() {
-        InputStream is = IoUtils.inputStreamFromResources(Paths.get(STREAM_RECORD_TEMPLATE_JSON));
-        try {
+        try (InputStream is = IoUtils.inputStreamFromResources(Paths.get(STREAM_RECORD_TEMPLATE_JSON))) {
             return mapper.readValue(is, DynamodbStreamRecord.class);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -167,7 +152,8 @@ public class PublicationStreamRecordTestDataGenerator {
             contributors.forEach(contributor -> updateContributor(contributorsArrayNode, contributor));
             updateEventAtPointerWithNameAndArrayValue(event,
                 contributorsArrayNode);
-            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(DYNAMODB_TYPE_LIST, contributorsArrayNode);
+            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(
+                DYNAMODB_TYPE_LIST, contributorsArrayNode);
         }
     }
 
@@ -229,14 +215,6 @@ public class PublicationStreamRecordTestDataGenerator {
         }
     }
 
-    private void updateEventAtPointerWithNameAndValue(JsonNode event, String pointer, String name, Object value) {
-        if (value instanceof String) {
-            ((ObjectNode) event.at(pointer)).put(name, (String) value);
-        } else {
-            ((ObjectNode) event.at(pointer)).put(name, (Integer) value);
-        }
-    }
-
     private void updateEventAtPointerWithNameAndValue(JsonNode event, JsonPointer pointer, String name, Object value) {
         if (value instanceof String) {
             ((ObjectNode) event.at(pointer.head())).put(name, (String) value);
@@ -247,7 +225,8 @@ public class PublicationStreamRecordTestDataGenerator {
 
     private void updateEventAtPointerWithNameAndArrayValue(ObjectNode event,
                                                            ArrayNode value) {
-        ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(DYNAMODB_TYPE_LIST, value);
+        ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(
+            DYNAMODB_TYPE_LIST, value);
     }
 
     public static final class Builder {
@@ -292,81 +271,80 @@ public class PublicationStreamRecordTestDataGenerator {
                 .withEventId(UUID.randomUUID().toString())
                 .withEventName(faker.options().nextElement(List.of("MODIFY")))
                 .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
-                .withContributorIdentities(getIdentities(faker, false));
+                .withContributorIdentities(getIdentities(faker));
         }
 
-        @VisibleForTesting
-        public String getEventId() {
-            return eventId;
-        }
+        // Getters public due to VisibleForTesting. (dont want to pull in Guava just because of this)
 
-        @VisibleForTesting
-        public String getEventName() {
-            return eventName;
-        }
-
-        @VisibleForTesting
-        public String getIdentifier() {
-            return identifier;
-        }
-
-        @VisibleForTesting
-        public String getInstancetype() {
-            return instancetype;
-        }
-
-        @VisibleForTesting
-        public String getDynamoDbType() {
-            return dynamoDbType;
-        }
-
-        @VisibleForTesting
-        public String getMainTitle() {
-            return mainTitle;
-        }
-
-        @VisibleForTesting
-        public List<Identity> getContributors() {
-            return contributors;
-        }
-
-        @VisibleForTesting
-        public PublicationDate getDate() {
-            return date;
-        }
-
-        @VisibleForTesting
-        public String getStatus() {
-            return status;
-        }
-
-        @VisibleForTesting
-        public String getDoi() {
-            return doi;
-        }
-
-        @VisibleForTesting
-        public String getPublisherId() {
-            return publisherId;
-        }
-
-        private static List<Identity> getIdentities(Faker faker, boolean withoutName) {
+        private static List<Identity> getIdentities(Faker faker) {
             var identities = new ArrayList<Identity>();
             for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-                var builder = new Identity.Builder();
-                builder.withArpId(faker.number().digits(10));
-                builder.withOrcId(faker.number().digits(10));
-                builder.withName(withoutName ? null : faker.superhero().name());
-                identities.add(builder.build());
+                identities.add(createRandomIdentity(faker));
             }
             return identities;
         }
 
-        private static ArrayList<URI> getIdOptions() {
-            var idOptions = new ArrayList<URI>();
-            idOptions.add(URI.create("https://example.net/contributor/" + UUID.randomUUID().toString()));
-            idOptions.add(null);
-            return idOptions;
+        private static Identity createRandomIdentity(Faker faker) {
+            var builder = new Identity.Builder();
+            builder.withArpId(faker.number().digits(10));
+            builder.withOrcId(faker.number().digits(10));
+            builder.withName(faker.superhero().name());
+            return builder.build();
+        }
+
+        @JacocoGenerated
+        public String getEventId() {
+            return eventId;
+        }
+
+        @JacocoGenerated
+        public String getEventName() {
+            return eventName;
+        }
+
+        @JacocoGenerated
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        @JacocoGenerated
+        public String getInstancetype() {
+            return instancetype;
+        }
+
+        @JacocoGenerated
+        public String getDynamoDbType() {
+            return dynamoDbType;
+        }
+
+        @JacocoGenerated
+        public String getMainTitle() {
+            return mainTitle;
+        }
+
+        @JacocoGenerated
+        public List<Identity> getContributors() {
+            return contributors;
+        }
+
+        @JacocoGenerated
+        public PublicationDate getDate() {
+            return date;
+        }
+
+        @JacocoGenerated
+        public String getStatus() {
+            return status;
+        }
+
+        @JacocoGenerated
+        public String getDoi() {
+            return doi;
+        }
+
+        @JacocoGenerated
+        public String getPublisherId() {
+            return publisherId;
         }
 
         public Builder withEventId(String eventId) {

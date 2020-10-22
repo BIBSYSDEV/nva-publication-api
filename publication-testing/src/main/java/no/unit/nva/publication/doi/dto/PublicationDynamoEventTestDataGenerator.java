@@ -6,12 +6,13 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
 
 public class PublicationDynamoEventTestDataGenerator {
 
-    protected final ArrayList<PublicationStreamRecordTestDataGenerator> records;
+    protected final List<PublicationStreamRecordTestDataGenerator> records;
     private final Faker faker;
 
     public PublicationDynamoEventTestDataGenerator() {
