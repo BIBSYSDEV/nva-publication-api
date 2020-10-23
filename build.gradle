@@ -13,6 +13,15 @@ allprojects {
         jcenter()
         maven { url "https://jitpack.io" }
     }
+
+    project.ext {
+        awsSdkVersion = '1.11.875'
+        awsSdk2Version = '2.14.16'
+        nvaCommonsVersion = '0.5.4'
+        nvaTestUtilsVersion = "0.1.15"
+        junit5Version = '5.6.0'
+        jacksonVersion = '2.10.2'
+    }
 }
 
 subprojects {
@@ -28,12 +37,12 @@ subprojects {
     def junit5Version = '5.6.0'
 
     dependencies {
-        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: '0.1.13'
+        testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-migrationsupport', version: junit5Version
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-migrationsupport', version: project.ext.junit5Version
+        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
     }
 
     test {

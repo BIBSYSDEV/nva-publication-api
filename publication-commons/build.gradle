@@ -2,21 +2,18 @@ repositories {
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
 
-def jacksonVersion = '2.10.2'
-def awsSdkVersion = '1.11.714'
-
 dependencies {
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.5.2'
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
     api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.10.6'
     api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
     api group: 'org.zalando', name: 'problem', version: '0.23.0'
     api group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
     api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
-    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: awsSdkVersion
-    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: awsSdkVersion
+    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
+    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
