@@ -2,7 +2,6 @@ package no.unit.nva.publication.doi;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -44,6 +43,13 @@ public class PublicationMapper {
         return URI.create(namespace + identifier);
     }
 
+    /**
+     * Map a DynamodbStreamRecord with oldImage and/or newImage to PublicationMapping. Publication is a wrapper object
+     * containing mapped old and/or new Publication.
+     *
+     * @param streamRecord  DynamodbStreamRecord
+     * @return PublicationMapping
+     */
     public PublicationMapping fromDynamodbStreamRecord(DynamodbStreamRecord streamRecord) {
         var publicationMappingBuilder = PublicationMapping.Builder.newBuilder();
         var dynamodb = streamRecord.getDynamodb();
@@ -51,14 +57,12 @@ public class PublicationMapper {
         if (dynamodb != null) {
             var streamViewType = dynamodb.getStreamViewType();
 
-            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
-                || streamViewType.equals(StreamViewType.OLD_IMAGE.getValue())) {
+            if (streamViewType.contains("OLD")) {
                 Publication oldPublication = fromDynamodbStreamRecordImage(dynamodb.getOldImage());
                 publicationMappingBuilder.withOldPublication(oldPublication);
             }
 
-            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
-                || streamViewType.equals(StreamViewType.NEW_IMAGE.getValue())) {
+            if (streamViewType.contains("NEW")) {
                 var newPublication = fromDynamodbStreamRecordImage(dynamodb.getNewImage());
                 publicationMappingBuilder.withNewPublication(newPublication);
             }

@@ -18,6 +18,9 @@ public class PublicationDynamoEventTestDataGenerator {
     private final Faker faker;
     private final DynamodbStreamRecordJsonPointers jsonPointers;
 
+    /**
+     * Default constructor for PublicationDynamoEventTestDataGenerator.
+     */
     public PublicationDynamoEventTestDataGenerator() {
         this.records = new ArrayList<>();
         this.faker = new Faker();

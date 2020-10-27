@@ -30,7 +30,8 @@ class PublicationStreamRecordTestDataGeneratorTest {
     public static final String DASH = "-";
     private static Builder validStreamRecordBuilder;
 
-    private  static final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers("/dynamodb/newImage");
+    private  static final DynamodbStreamRecordJsonPointers jsonPointers =
+        new DynamodbStreamRecordJsonPointers("/dynamodb/newImage");
 
     @BeforeEach
     void setUp() {

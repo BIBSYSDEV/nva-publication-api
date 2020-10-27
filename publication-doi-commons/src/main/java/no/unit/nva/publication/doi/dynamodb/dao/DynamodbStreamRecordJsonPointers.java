@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 
 public class DynamodbStreamRecordJsonPointers {
 
+    public static final String DYNAMODB_OLD_IMAGE_BASE = "/dynamodb/oldImage";
     public static final String DYNAMODB_NEW_IMAGE_BASE = "/dynamodb/newImage";
 
     private static final String IDENTIFIER = "/identifier/s";
@@ -15,7 +16,8 @@ public class DynamodbStreamRecordJsonPointers {
      */
     private static final String PUBLISHER_ID = "/publisherId/s";
 
-    private static final String ENTITY_DESCRIPTION_REFERENCE_TYPE = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    private static final String ENTITY_DESCRIPTION_REFERENCE_TYPE =
+        "/entityDescription/m/reference/m/publicationInstance/m/type/s";
     private static final String ENTITY_DESCRIPTION_MAP = "/entityDescription/m";
     private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR = "/entityDescription/m/date/m/year/s";
     private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH = "/entityDescription/m/date/m/month/s";
@@ -107,8 +109,4 @@ public class DynamodbStreamRecordJsonPointers {
     public JsonPointer getContributorNameJsonPointer() {
         return JsonPointer.compile(IDENTITY_NAME);
     }
-
-
-
-
 }

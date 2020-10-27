@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_JSON_POINTER;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
@@ -13,7 +12,8 @@ import java.util.stream.StreamSupport;
 public class DynamodbStreamRecordImageDao {
 
     public static final String PUBLICATION_TYPE = "Publication";
-    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record image of type Publication";
+    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record image of type "
+        + "Publication";
 
     private final String identifier;
     private final String publicationInstanceType;
@@ -98,7 +98,9 @@ public class DynamodbStreamRecordImageDao {
             }
             dynamodbStreamRecordImageType = typeAttribute;
             identifier = textFromNode(rootNode, jsonPointers.getImageIdentifierJsonPointer());
-            publicationInstanceType = textFromNode(rootNode, jsonPointers.getEntityDescriptionReferenceTypeJsonPointer());
+            publicationInstanceType = textFromNode(
+                rootNode,
+                jsonPointers.getEntityDescriptionReferenceTypeJsonPointer());
             publicationReleaseDate = rootNode.at(jsonPointers.getEntityDescriptionMapJsonPointer());
             mainTitle = textFromNode(rootNode, jsonPointers.getMainTitleJsonPointer());
             publisherId = textFromNode(rootNode, jsonPointers.getPublisherIdJsonPointer());

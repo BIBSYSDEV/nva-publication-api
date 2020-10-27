@@ -1,6 +1,7 @@
 package no.unit.nva.publication.doi.dto;
 
 import java.util.Optional;
+import nva.commons.utils.JacocoGenerated;
 
 public class PublicationMapping {
 
@@ -16,14 +17,11 @@ public class PublicationMapping {
         this(builder.oldPublication, builder.newPublication);
     }
 
-    public PublicationMapping(Publication oldPublication) {
-        this.oldPublication = oldPublication;
-    }
-
     public Optional<Publication> getOldPublication() {
         return Optional.ofNullable(oldPublication);
     }
 
+    @JacocoGenerated
     public void setOldPublication(Publication oldPublication) {
         this.oldPublication = oldPublication;
     }
@@ -32,6 +30,7 @@ public class PublicationMapping {
         return Optional.ofNullable(newPublication);
     }
 
+    @JacocoGenerated
     public void setNewPublication(Publication newPublication) {
         this.newPublication = newPublication;
     }
