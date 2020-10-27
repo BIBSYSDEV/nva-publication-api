@@ -1,0 +1,518 @@
+{
+  "records": [
+    {
+      "eventID": "56e841a6b5d7d07a2fda05691836a41b",
+      "eventName": "MODIFY",
+      "eventVersion": "1.1",
+      "eventSource": "aws:dynamodb",
+      "awsRegion": "eu-west-1",
+      "dynamodb": {
+        "approximateCreationDateTime": 1597397546000,
+        "keys": {
+          "identifier": {
+            "s": "123345"
+          },
+          "modifiedDate": {
+            "s": "2020-08-12T10:30:10.019991Z"
+          }
+        },
+        "newImage": {
+          "owner": {
+            "s": "sg@unit.no",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "identifier": {
+            "s": "654321",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "entityDescription": {
+            "s": null,
+            "n": null,
+            "b": null,
+            "m": {
+              "date": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": {
+                  "type": {
+                    "s": "PublicationDate",
+                    "n": null,
+                    "b": null,
+                    "m": null,
+                    "l": null,
+                    "null": null,
+                    "bool": null,
+                    "ss": null,
+                    "ns": null,
+                    "bs": null
+                  }
+                },
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "reference": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": {
+                  "publicationInstance": {
+                    "s": null,
+                    "n": null,
+                    "b": null,
+                    "m": {
+                      "volume": {
+                        "s": "100",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "pages": {
+                        "s": null,
+                        "n": null,
+                        "b": null,
+                        "m": {
+                          "type": {
+                            "s": "Range",
+                            "n": null,
+                            "b": null,
+                            "m": null,
+                            "l": null,
+                            "null": null,
+                            "bool": null,
+                            "ss": null,
+                            "ns": null,
+                            "bs": null
+                          }
+                        },
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "issue": {
+                        "s": "8",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "peerReviewed": {
+                        "s": null,
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": false,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "type": {
+                        "s": "JournalArticle",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      }
+                    },
+                    "l": null,
+                    "null": null,
+                    "bool": null,
+                    "ss": null,
+                    "ns": null,
+                    "bs": null
+                  },
+                  "type": {
+                    "s": "Reference",
+                    "n": null,
+                    "b": null,
+                    "m": null,
+                    "l": null,
+                    "null": null,
+                    "bool": null,
+                    "ss": null,
+                    "ns": null,
+                    "bs": null
+                  },
+                  "publicationContext": {
+                    "s": null,
+                    "n": null,
+                    "b": null,
+                    "m": {
+                      "openAccess": {
+                        "s": null,
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": false,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "peerReviewed": {
+                        "s": null,
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": false,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "onlineIssn": {
+                        "s": "2470-0029",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "title": {
+                        "s": "Physical Review D",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      },
+                      "type": {
+                        "s": "Journal",
+                        "n": null,
+                        "b": null,
+                        "m": null,
+                        "l": null,
+                        "null": null,
+                        "bool": null,
+                        "ss": null,
+                        "ns": null,
+                        "bs": null
+                      }
+                    },
+                    "l": null,
+                    "null": null,
+                    "bool": null,
+                    "ss": null,
+                    "ns": null,
+                    "bs": null
+                  },
+                  "doi": {
+                    "s": "https://doi.org/10.1103/physrevd.100.085005",
+                    "n": null,
+                    "b": null,
+                    "m": null,
+                    "l": null,
+                    "null": null,
+                    "bool": null,
+                    "ss": null,
+                    "ns": null,
+                    "bs": null
+                  }
+                },
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "metadataSource": {
+                "s": "https://www.crossref.org/",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "mainTitle": {
+                "s": "Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "language": {
+                "s": "http://lexvo.org/id/iso639-3/eng",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "contributors": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "type": {
+                "s": "EntityDescription",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "alternativeTitles": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": {},
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "tags": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": [],
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              }
+            },
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "publisherId": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "createdDate": {
+            "s": "2020-08-14T10:28:52.565586Z",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "publisherOwnerDate": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#kiva@unit.no#2020-08-12T10:30:10.019991Z",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "modifiedDate": {
+            "s": "2020-08-14T10:30:10.019991Z",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "publisher": {
+            "s": null,
+            "n": null,
+            "b": null,
+            "m": {
+              "id": {
+                "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "type": {
+                "s": "Organization",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              }
+            },
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "type": {
+            "s": "Publication",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "fileSet": {
+            "s": null,
+            "n": null,
+            "b": null,
+            "m": {
+              "files": {
+                "s": null,
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": [],
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "type": {
+                "s": "FileSet",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              }
+            },
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          },
+          "status": {
+            "s": "Topppublisering",
+            "n": null,
+            "b": null,
+            "m": null,
+            "l": null,
+            "null": null,
+            "bool": null,
+            "ss": null,
+            "ns": null,
+            "bs": null
+          }
+        },
+        "oldImage": null,
+        "sequenceNumber": "605204800000000056657663004",
+        "sizeBytes": 1435,
+        "streamViewType": "KEYS_ONLY"
+      },
+      "userIdentity": null,
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-13T08:41:25.491"
+    }
+  ]
+}

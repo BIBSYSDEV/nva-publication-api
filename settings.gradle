@@ -8,4 +8,4 @@ include 'publications-by-owner'
 include 'publish-publication'
 include 'create-publication'
 include 'list-publications'
-
+include 'publication-event-emitter'
