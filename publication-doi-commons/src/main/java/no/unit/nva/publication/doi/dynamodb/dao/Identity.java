@@ -1,9 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
@@ -62,20 +59,23 @@ public class Identity {
         private String arpId;
         private String name;
 
-        public Builder() {
+        private final DynamodbStreamRecordJsonPointers jsonPointers;
+
+        public Builder(DynamodbStreamRecordJsonPointers jsonPointers) {
+            this.jsonPointers = jsonPointers;
         }
 
         /**
          * Extracts and populates orcId, arpId and name from a identity.
          *
          * @param identity json node pointing at a entry under
-         * {@link DynamodbStreamRecordJsonPointers#CONTRIBUTORS_LIST_POINTER}.
+         * {@link DynamodbStreamRecordJsonPointers#getContributorsListJsonPointer()}.
          * @return Builder
          */
         public Builder withJsonNode(JsonNode identity) {
-            orcId = textFromNode(identity, CONTRIBUTOR_ORC_ID_JSON_POINTER);
-            arpId = textFromNode(identity, CONTRIBUTOR_ARP_ID_JSON_POINTER);
-            name = textFromNode(identity, CONTRIBUTOR_NAME_JSON_POINTER);
+            orcId = textFromNode(identity, jsonPointers.getContributorOrcidJsonPointer());
+            arpId = textFromNode(identity, jsonPointers.getContributorArpIdJsonPointer());
+            name = textFromNode(identity, jsonPointers.getContributorNameJsonPointer());
             return this;
         }
 

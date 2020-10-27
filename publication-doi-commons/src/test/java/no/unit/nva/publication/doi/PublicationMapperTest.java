@@ -1,7 +1,8 @@
 package no.unit.nva.publication.doi;
 
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao.ERROR_MUST_BE_PUBLICATION_TYPE;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.ERROR_MUST_BE_PUBLICATION_TYPE;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -9,6 +10,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
@@ -16,10 +19,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import no.unit.nva.publication.doi.dto.PublicationMapping;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
 import no.unit.nva.publication.doi.dto.PublicationType;
-import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -30,10 +36,23 @@ class PublicationMapperTest {
     private static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
 
     private static final Faker FAKER = new Faker();
+    private static final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
+        DYNAMODB_NEW_IMAGE_BASE);
+
+    @Test
+    void fromDynamoStreamRecord() {
+        Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers);
+        var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
+        PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
+        var publicationMapping = mapper.fromDynamodbStreamRecord(dynamodbStreamRecord);
+
+        assertTrue(publicationMapping.getOldPublication().isEmpty());
+        assertTrue(publicationMapping.getNewPublication().isPresent());
+    }
 
     @Test
     void fromDynamodbStreamRecordDaoThenReturnFullyMappedPublicationDto() {
-        Builder daoBuilder = Builder.createValidPublication(FAKER);
+        Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers);
         var dao = daoBuilder.build().asDynamodbStreamRecordDao();
 
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
@@ -75,7 +94,7 @@ class PublicationMapperTest {
     }
 
     private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames() {
-        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER)
+        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER, jsonPointers)
             .withContributorIdentities(createContributorIdentities(true))
             .build();
     }
@@ -83,7 +102,7 @@ class PublicationMapperTest {
     private List<Identity> createContributorIdentities(boolean withoutName) {
         List<Identity> contributors = new ArrayList<>();
         for (int i = 0; i < FAKER.random().nextInt(1, 10); i++) {
-            Identity.Builder builder = new Identity.Builder();
+            Identity.Builder builder = new Identity.Builder(jsonPointers);
             builder.withArpId(FAKER.number().digits(10));
             builder.withOrcId(FAKER.number().digits(10));
             builder.withName(withoutName ? null : FAKER.superhero().name());
@@ -92,8 +111,8 @@ class PublicationMapperTest {
         return contributors;
     }
 
-    private DynamodbStreamRecordDao.Builder createDaoBuilder(JsonNode rootNode) {
-        return new DynamodbStreamRecordDao.Builder().withDynamodbStreamRecord(rootNode);
+    private DynamodbStreamRecordImageDao.Builder createDaoBuilder(JsonNode rootNode) {
+        return new DynamodbStreamRecordImageDao.Builder(jsonPointers).withDynamodbStreamRecordImage(rootNode);
     }
 
     private Executable createPublicationMapperWithBadDao(ObjectNode rootNode) {

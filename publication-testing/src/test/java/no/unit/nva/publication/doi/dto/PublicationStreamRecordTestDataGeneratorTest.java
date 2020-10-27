@@ -6,8 +6,10 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 
+import com.fasterxml.jackson.core.JsonPointer;
 import com.github.javafaker.Faker;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,9 +30,11 @@ class PublicationStreamRecordTestDataGeneratorTest {
     public static final String DASH = "-";
     private static Builder validStreamRecordBuilder;
 
+    private  static final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers("/dynamodb/newImage");
+
     @BeforeEach
     void setUp() {
-        validStreamRecordBuilder = Builder.createValidPublication(new Faker());
+        validStreamRecordBuilder = Builder.createValidPublication(new Faker(), jsonPointers);
     }
 
     @Test

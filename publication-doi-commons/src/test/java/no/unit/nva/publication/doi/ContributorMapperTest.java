@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi;
 
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -8,6 +9,7 @@ import com.github.javafaker.Faker;
 import java.util.Collections;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.Contributor;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity.Builder;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +18,12 @@ import org.junit.jupiter.api.Test;
 class ContributorMapperTest {
 
     private Faker faker;
+    private DynamodbStreamRecordJsonPointers jsonPointers;
 
     @BeforeEach
     void configure() {
         faker = new Faker();
+        jsonPointers = new DynamodbStreamRecordJsonPointers(DYNAMODB_NEW_IMAGE_BASE);
     }
 
     @Test
@@ -44,7 +48,7 @@ class ContributorMapperTest {
     }
 
     private Identity.Builder getIdentityBuilderDao() {
-        Builder builder = new Builder();
+        Builder builder = new Builder(jsonPointers);
         builder.withArpId(faker.number().digits(10));
         builder.withOrcId(faker.number().digits(10));
         builder.withName(faker.superhero().name());

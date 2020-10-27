@@ -2,48 +2,113 @@ package no.unit.nva.publication.doi.dynamodb.dao;
 
 import com.fasterxml.jackson.core.JsonPointer;
 
-public final class DynamodbStreamRecordJsonPointers {
+public class DynamodbStreamRecordJsonPointers {
 
-    public static final JsonPointer IMAGE_IDENTIFIER_POINTER
-        = JsonPointer.compile("/dynamodb/newImage/identifier/s");
+    public static final String DYNAMODB_NEW_IMAGE_BASE = "/dynamodb/newImage";
 
-    public static final JsonPointer PUBLICATION_STATUS_JSON_POINTER = JsonPointer.compile(
-        "/dynamodb/newImage/status/s");
+    private static final String IDENTIFIER = "/identifier/s";
+
+    private static final String STATUS = "/status/s";
 
     /**
      * Publisher ID aka INSTITUTION_OWNER_ID.
      */
-    public static final JsonPointer PUBLISHER_ID = JsonPointer.compile(
-        "/dynamodb/newImage/publisherId/s");
+    private static final String PUBLISHER_ID = "/publisherId/s";
 
-    public static final JsonPointer ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/reference/m/publicationInstance/m/type/s");
-    public static final JsonPointer PUBLICATION_ENTITY_DESCRIPTION_MAP_POINTER = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m");
-    public static final JsonPointer ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/date/m/year/s");
-    public static final JsonPointer ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/date/m/month/s");
-    public static final JsonPointer ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/date/m/day/s");
+    private static final String ENTITY_DESCRIPTION_REFERENCE_TYPE = "/entityDescription/m/reference/m/publicationInstance/m/type/s";
+    private static final String ENTITY_DESCRIPTION_MAP = "/entityDescription/m";
+    private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR = "/entityDescription/m/date/m/year/s";
+    private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH = "/entityDescription/m/date/m/month/s";
+    private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY = "/entityDescription/m/date/m/day/s";
 
-    public static final JsonPointer MAIN_TITLE_POINTER = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/mainTitle/s");
-    public static final JsonPointer TYPE_POINTER = JsonPointer.compile("/dynamodb/newImage/type/s");
+    private static final String ENTITY_DESCRIPTION_MAIN_TITLE = "/entityDescription/m/mainTitle/s";
+    private static final String TYPE_POINTER = "/type/s";
 
-    public static final JsonPointer DOI_POINTER = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/reference/m/doi/s");
 
-    public static final String CONTRIBUTOR_POINTER = "/dynamodb/newImage/entityDescription/m/contributors";
-    public static final JsonPointer CONTRIBUTORS_LIST_POINTER = JsonPointer.compile(
-        "/dynamodb/newImage/entityDescription/m/contributors/l");
-    public static final JsonPointer CONTRIBUTOR_ARP_ID_JSON_POINTER = JsonPointer.compile("/m/identity/m/arpId/s");
-    public static final JsonPointer CONTRIBUTOR_ORC_ID_JSON_POINTER = JsonPointer.compile("/m/identity/m/orcId/s");
-    public static final JsonPointer CONTRIBUTOR_NAME_JSON_POINTER = JsonPointer.compile("/m/identity/m/name/s");
+    private static final String ENTITY_DESCRIPTION_REFERENCE_DOI = "/entityDescription/m/reference/m/doi/s";
+
+    private static final String ENTITY_DESCRIPTION_CONTRIBUTORS = "/entityDescription/m/contributors";
+    private static final String ENTITY_DESCRIPTION_CONTRIBUTORS_LIST = "/entityDescription/m/contributors/l";
+    private static final String IDENTITY_ARP_ID = "/m/identity/m/arpId/s";
+    private static final String IDENTITY_ORC_ID = "/m/identity/m/orcId/s";
+    private static final String IDENTITY_NAME = "/m/identity/m/name/s";
+
+    public static final JsonPointer TYPE_JSON_POINTER = JsonPointer.compile("/type/s");
 
     public static final String DYNAMODB_TYPE_STRING = "s";
     public static final String DYNAMODB_TYPE_LIST = "l";
 
-    private DynamodbStreamRecordJsonPointers() {
+    private final String base;
+
+    public DynamodbStreamRecordJsonPointers(String base) {
+        this.base = base;
     }
+
+    public JsonPointer getImageIdentifierJsonPointer() {
+        return JsonPointer.compile(base + IDENTIFIER);
+    }
+
+    public  JsonPointer getPublicationStatusJsonPointer() {
+        return JsonPointer.compile(base + STATUS);
+    }
+
+    public JsonPointer getPublisherIdJsonPointer() {
+        return JsonPointer.compile(base + PUBLISHER_ID);
+    }
+
+    public JsonPointer getEntityDescriptionReferenceTypeJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_TYPE);
+    }
+
+    public JsonPointer getEntityDescriptionMapJsonPointer() {
+        return  JsonPointer.compile(base + ENTITY_DESCRIPTION_MAP);
+    }
+
+    public JsonPointer getEntityDescriptionPublicationDateYearJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR);
+    }
+
+    public JsonPointer getEntityDescriptionPublicationDateMonthJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH);
+    }
+
+    public JsonPointer getEntityDescriptionPublicationDateYDayJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY);
+    }
+
+    public JsonPointer getMainTitleJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_MAIN_TITLE);
+    }
+
+    public JsonPointer getTypeJsonPointer() {
+        return JsonPointer.compile(base + TYPE_POINTER);
+    }
+
+    public JsonPointer getDoiJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_DOI);
+    }
+
+    public JsonPointer getContributorsJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS);
+    }
+
+    public JsonPointer getContributorsListJsonPointer() {
+        return JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS_LIST);
+    }
+
+    public JsonPointer getContributorArpIdJsonPointer() {
+        return JsonPointer.compile(IDENTITY_ARP_ID);
+    }
+
+    public JsonPointer getContributorOrcidJsonPointer() {
+        return JsonPointer.compile(IDENTITY_ORC_ID);
+    }
+
+    public JsonPointer getContributorNameJsonPointer() {
+        return JsonPointer.compile(IDENTITY_NAME);
+    }
+
+
+
+
 }

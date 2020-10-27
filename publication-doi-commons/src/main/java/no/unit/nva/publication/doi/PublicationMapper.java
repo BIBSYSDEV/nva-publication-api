@@ -1,19 +1,30 @@
 package no.unit.nva.publication.doi;
 
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.Locale;
+import java.util.Map;
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
+import no.unit.nva.publication.doi.dto.PublicationMapping;
 import no.unit.nva.publication.doi.dto.PublicationType;
-import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import nva.commons.utils.JsonUtils;
 
 public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
     private static final String NAMESPACE_PUBLICATION = "publication";
+    public static final String EMPTY_JSON_POINTER_BASE = "";
 
     protected String namespacePublication;
+    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     /**
      * Construct a mapper to map between DAOs to DTOs.
@@ -33,13 +44,50 @@ public class PublicationMapper {
         return URI.create(namespace + identifier);
     }
 
+    public PublicationMapping fromDynamodbStreamRecord(DynamodbStreamRecord streamRecord) {
+        var publicationMappingBuilder = PublicationMapping.Builder.newBuilder();
+        var dynamodb = streamRecord.getDynamodb();
+
+        if (dynamodb != null) {
+            var streamViewType = dynamodb.getStreamViewType();
+
+            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
+                || streamViewType.equals(StreamViewType.OLD_IMAGE.getValue())) {
+                Publication oldPublication = fromDynamodbStreamRecordImage(dynamodb.getOldImage());
+                publicationMappingBuilder.withOldPublication(oldPublication);
+            }
+
+            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
+                || streamViewType.equals(StreamViewType.NEW_IMAGE.getValue())) {
+                var newPublication = fromDynamodbStreamRecordImage(dynamodb.getNewImage());
+                publicationMappingBuilder.withNewPublication(newPublication);
+            }
+        }
+
+        return publicationMappingBuilder.build();
+    }
+
+    private Publication fromDynamodbStreamRecordImage(Map<String,AttributeValue> image) {
+        var jsonNode = objectMapper.convertValue(image, JsonNode.class);
+        return fromDynamodbStreamRecordImage(jsonNode);
+    }
+
+    private Publication fromDynamodbStreamRecordImage(JsonNode jsonNode) {
+        var jsonPointers = new DynamodbStreamRecordJsonPointers(EMPTY_JSON_POINTER_BASE);
+        var dynamodbStreamRecordImageDao =
+            new DynamodbStreamRecordImageDao.Builder(jsonPointers)
+                .withDynamodbStreamRecordImage(jsonNode)
+                .build();
+        return fromDynamodbStreamRecordDao(dynamodbStreamRecordImageDao);
+    }
+
     /**
-     * Map to doi.{@link Publication} from {@link DynamodbStreamRecordDao}.
+     * Map to doi.{@link Publication} from {@link DynamodbStreamRecordImageDao}.
      *
-     * @param dao {@link DynamodbStreamRecordDao}
+     * @param dao {@link DynamodbStreamRecordImageDao}
      * @return Publication doi.Publication
      */
-    public Publication fromDynamodbStreamRecordDao(DynamodbStreamRecordDao dao) {
+    public Publication fromDynamodbStreamRecordDao(DynamodbStreamRecordImageDao dao) {
         return Builder.newBuilder()
             .withId(transformIdentifierToId(namespacePublication, dao.getIdentifier()))
             .withInstitutionOwner(URI.create(dao.getPublisherId()))
