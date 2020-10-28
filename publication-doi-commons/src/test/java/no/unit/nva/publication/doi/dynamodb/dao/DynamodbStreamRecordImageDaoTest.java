@@ -18,20 +18,23 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
-import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao.Builder;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.Builder;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DynamodbStreamRecordDaoTest {
+class DynamodbStreamRecordImageDaoTest {
 
     public static final String EXPECTED_PUBLICATION_TYPE = "Publication";
     private Faker faker;
     private Random random;
+    private DynamodbStreamRecordJsonPointers jsonPointers;
 
     @BeforeEach
     void setUp() {
         random = new Random();
         faker = new Faker(pickRandomLocale());
+        jsonPointers  = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW);
     }
 
     @Test
@@ -58,7 +61,7 @@ class DynamodbStreamRecordDaoTest {
     @Test
     void getDynamodbStreamRecordType() {
         assertThat(getBuilder()
-                .withDynamodbStreamRecordType(DynamodbStreamRecordDao.PUBLICATION_TYPE)
+                .withDynamodbStreamRecordImageType(DynamodbStreamRecordImageDao.PUBLICATION_TYPE)
                 .build()
                 .getDynamodbStreamRecordType(),
             is(equalTo(EXPECTED_PUBLICATION_TYPE)));
@@ -107,14 +110,14 @@ class DynamodbStreamRecordDaoTest {
     void builderWithDynamodbStreamRecordJsonNodeReturnsFullyPopulatedDao() {
         PublicationStreamRecordTestDataGenerator.Builder validPublication =
             PublicationStreamRecordTestDataGenerator.Builder
-                .createValidPublication(faker);
+                .createValidPublication(faker, jsonPointers);
 
         var dao = getBuilder()
-            .withDynamodbStreamRecord(validPublication.build().asDynamoDbStreamRecordJsonNode())
+            .withDynamodbStreamRecordImage(validPublication.build().asDynamoDbStreamRecordJsonNode())
             .build();
 
         assertThat(dao.getIdentifier(), is(equalTo(validPublication.getIdentifier())));
-        assertThat(dao.getDynamodbStreamRecordType(), is(equalTo(DynamodbStreamRecordDao.PUBLICATION_TYPE)));
+        assertThat(dao.getDynamodbStreamRecordType(), is(equalTo(DynamodbStreamRecordImageDao.PUBLICATION_TYPE)));
         assertThat(dao.getPublicationInstanceType(), is(equalTo(validPublication.getInstancetype())));
         assertThat(dao.getMainTitle(), is(equalTo(validPublication.getMainTitle())));
         assertThat(dao.getDoi(), is(equalTo(validPublication.getDoi())));
@@ -138,7 +141,7 @@ class DynamodbStreamRecordDaoTest {
     }
 
     private Builder getBuilder() {
-        return new DynamodbStreamRecordDao.Builder();
+        return new DynamodbStreamRecordImageDao.Builder(jsonPointers);
     }
 
     private Locale pickRandomLocale() {
@@ -155,7 +158,7 @@ class DynamodbStreamRecordDaoTest {
     }
 
     private List<Identity> createContributorIdentities() {
-        Identity.Builder builder = new Identity.Builder();
+        Identity.Builder builder = new Identity.Builder(jsonPointers);
         builder.withArpId(faker.number().digits(10));
         builder.withOrcId(faker.number().digits(10));
         builder.withName(faker.superhero().name());

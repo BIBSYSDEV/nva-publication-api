@@ -1,24 +1,11 @@
 package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ARP_ID_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_NAME_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_ORC_ID_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTOR_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DOI_POINTER;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_LIST;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_STRING;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.IMAGE_IDENTIFIER_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.MAIN_TITLE_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLICATION_STATUS_JSON_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLISHER_ID;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_POINTER;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,7 +22,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
@@ -50,6 +39,11 @@ public class PublicationStreamRecordTestDataGenerator {
 
     public static final String EVENT_ID = "eventID";
     public static final String EVENT_NAME = "eventName";
+    public static final String STREAM_VIEW_TYPE = "streamViewType";
+    public static final String DYNAMODB = "/dynamodb";
+
+    private final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
+        DynamodbImageType.NEW);
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate;
@@ -64,6 +58,7 @@ public class PublicationStreamRecordTestDataGenerator {
     private final String dynamoDbType;
     private final String doi;
     private final String publisherId;
+    private final String streamViewType;
 
     private PublicationStreamRecordTestDataGenerator(Builder builder) {
         try {
@@ -83,6 +78,7 @@ public class PublicationStreamRecordTestDataGenerator {
         publisherId = builder.publisherId;
         date = builder.date;
         status = builder.status;
+        streamViewType = builder.streamViewType;
     }
 
     /**
@@ -104,6 +100,7 @@ public class PublicationStreamRecordTestDataGenerator {
         updateDate(date, event);
         updatePublicationStatus(status, event);
         updateDynamodbType(dynamoDbType, event);
+        updateStreamViewType(streamViewType, event);
         return toDynamodbStreamRecord(event);
     }
 
@@ -116,9 +113,9 @@ public class PublicationStreamRecordTestDataGenerator {
      *
      * @return IndexDocument representation of object.
      */
-    public DynamodbStreamRecordDao asDynamodbStreamRecordDao() {
-        return new DynamodbStreamRecordDao.Builder()
-            .withDynamodbStreamRecord(asDynamoDbStreamRecordJsonNode())
+    public DynamodbStreamRecordImageDao asDynamodbStreamRecordDao() {
+        return new DynamodbStreamRecordImageDao.Builder(jsonPointers)
+            .withDynamodbStreamRecordImage(asDynamoDbStreamRecordJsonNode())
             .build();
     }
 
@@ -139,11 +136,13 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLICATION_STATUS_JSON_POINTER, DYNAMODB_TYPE_STRING, status);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getStatusJsonPointer(),
+            DYNAMODB_TYPE_STRING, status);
     }
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, IMAGE_IDENTIFIER_POINTER, DYNAMODB_TYPE_STRING, id);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getIdentifierJsonPointer(),
+            DYNAMODB_TYPE_STRING, id);
     }
 
     private void updateEntityDescriptionContributors(List<Identity> contributors, ObjectNode event) {
@@ -152,7 +151,7 @@ public class PublicationStreamRecordTestDataGenerator {
             contributors.forEach(contributor -> updateContributor(contributorsArrayNode, contributor));
             updateEventAtPointerWithNameAndArrayValue(event,
                 contributorsArrayNode);
-            ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(
+            ((ObjectNode) event.at(jsonPointers.getContributorsJsonPointer())).set(
                 DYNAMODB_TYPE_LIST, contributorsArrayNode);
         }
     }
@@ -160,13 +159,17 @@ public class PublicationStreamRecordTestDataGenerator {
     private void updateContributor(ArrayNode contributors, Identity contributor) {
         ObjectNode activeTemplate = contributorTemplate.deepCopy();
 
-        updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_NAME_JSON_POINTER,
+        updateEventAtPointerWithNameAndValue(activeTemplate, jsonPointers.getIdentityNameJsonPointer(),
             DYNAMODB_TYPE_STRING, contributor.getName());
         extractStringValue(contributor.getArpId()).ifPresent(
-            arpId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ARP_ID_JSON_POINTER,
+            arpId -> updateEventAtPointerWithNameAndValue(
+                activeTemplate,
+                jsonPointers.getIdentityArpIdJsonPointer(),
                 DYNAMODB_TYPE_STRING, contributor.getArpId()));
         extractStringValue(contributor.getOrcId())
-            .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(activeTemplate, CONTRIBUTOR_ORC_ID_JSON_POINTER,
+            .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(
+                activeTemplate,
+                jsonPointers.getIdentityOrcIdJsonPointer(),
                 DYNAMODB_TYPE_STRING, contributor.getOrcId()));
         contributors.add(activeTemplate);
     }
@@ -176,24 +179,27 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private void updateEntityDescriptionMainTitle(String mainTitle, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, MAIN_TITLE_POINTER, DYNAMODB_TYPE_STRING, mainTitle);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getMainTitleJsonPointer(),
+            DYNAMODB_TYPE_STRING, mainTitle);
     }
 
     private void updateEntityDescriptionReferenceDoi(String doi, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, DOI_POINTER, DYNAMODB_TYPE_STRING, doi);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getDoiJsonPointer(), DYNAMODB_TYPE_STRING, doi);
     }
 
     private void updatePublisherId(String publisherId, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, PUBLISHER_ID, DYNAMODB_TYPE_STRING, publisherId);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getPublisherIdJsonPointer(),
+            DYNAMODB_TYPE_STRING, publisherId);
     }
 
     private void updateReferenceType(String type, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE,
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getEntityDescriptionReferenceTypeJsonPointer(),
             DYNAMODB_TYPE_STRING, type);
     }
 
     private void updateDynamodbType(String dynamoDbType, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, TYPE_POINTER, DYNAMODB_TYPE_STRING, dynamoDbType);
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getTypeJsonPointer(),
+            DYNAMODB_TYPE_STRING, dynamoDbType);
     }
 
     private void updateEventId(String eventName, ObjectNode event) {
@@ -204,13 +210,23 @@ public class PublicationStreamRecordTestDataGenerator {
         ((ObjectNode) event.at(FIRST_RECORD_POINTER)).put(EVENT_NAME, eventName);
     }
 
+    private void updateStreamViewType(String streamViewType, ObjectNode event) {
+        ((ObjectNode) event.at(DYNAMODB)).put(STREAM_VIEW_TYPE, streamViewType);
+    }
+
     private void updateDate(PublicationDate date, JsonNode event) {
         if (nonNull(date) && date.isPopulated()) {
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR,
+            updateEventAtPointerWithNameAndValue(
+                event,
+                jsonPointers.getEntityDescriptionDateYearJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getYear());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH,
+            updateEventAtPointerWithNameAndValue(
+                event,
+                jsonPointers.getEntityDescriptionDateMonthJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getMonth());
-            updateEventAtPointerWithNameAndValue(event, ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY,
+            updateEventAtPointerWithNameAndValue(
+                event,
+                jsonPointers.getEntityDescriptionDateDayJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getDay());
         }
     }
@@ -225,7 +241,7 @@ public class PublicationStreamRecordTestDataGenerator {
 
     private void updateEventAtPointerWithNameAndArrayValue(ObjectNode event,
                                                            ArrayNode value) {
-        ((ObjectNode) event.at(CONTRIBUTOR_POINTER)).set(
+        ((ObjectNode) event.at(jsonPointers.getContributorsJsonPointer())).set(
             DYNAMODB_TYPE_LIST, value);
     }
 
@@ -242,9 +258,9 @@ public class PublicationStreamRecordTestDataGenerator {
         private String status;
         private String doi;
         private String publisherId;
+        private String streamViewType;
 
         public Builder() {
-
         }
 
         /**
@@ -253,7 +269,10 @@ public class PublicationStreamRecordTestDataGenerator {
          * @param faker data provider to generate fake data.
          * @return Builder populated from faker.
          */
-        public static Builder createValidPublication(Faker faker) {
+        public static Builder createValidPublication(
+            Faker faker,
+            DynamodbStreamRecordJsonPointers jsonPointers,
+            String streamViewType) {
             var localDate = Instant.ofEpochMilli(faker.date().birthday().getTime())
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
@@ -271,21 +290,29 @@ public class PublicationStreamRecordTestDataGenerator {
                 .withEventId(UUID.randomUUID().toString())
                 .withEventName(faker.options().nextElement(List.of("MODIFY")))
                 .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
-                .withContributorIdentities(getIdentities(faker));
+                .withContributorIdentities(getIdentities(faker, jsonPointers))
+                .withStreamViewType(streamViewType);
         }
+
+        public static Builder createValidPublication(Faker faker, DynamodbStreamRecordJsonPointers jsonPointers) {
+            return createValidPublication(faker, jsonPointers, StreamViewType.NEW_IMAGE.getValue());
+        }
+
 
         // Getters public due to VisibleForTesting. (dont want to pull in Guava just because of this)
 
-        private static List<Identity> getIdentities(Faker faker) {
+        private static List<Identity> getIdentities(Faker faker,
+                                                    DynamodbStreamRecordJsonPointers jsonPointers) {
             var identities = new ArrayList<Identity>();
             for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-                identities.add(createRandomIdentity(faker));
+                identities.add(createRandomIdentity(faker, jsonPointers));
             }
             return identities;
         }
 
-        private static Identity createRandomIdentity(Faker faker) {
-            var builder = new Identity.Builder();
+        private static Identity createRandomIdentity(Faker faker,
+                                                     DynamodbStreamRecordJsonPointers jsonPointers) {
+            var builder = new Identity.Builder(jsonPointers);
             builder.withArpId(faker.number().digits(10));
             builder.withOrcId(faker.number().digits(10));
             builder.withName(faker.superhero().name());
@@ -347,6 +374,11 @@ public class PublicationStreamRecordTestDataGenerator {
             return publisherId;
         }
 
+        @JacocoGenerated
+        public String getStreamViewType() {
+            return streamViewType;
+        }
+
         public Builder withEventId(String eventId) {
             this.eventId = eventId;
             return this;
@@ -399,6 +431,11 @@ public class PublicationStreamRecordTestDataGenerator {
 
         public Builder withPublisherId(String publisherId) {
             this.publisherId = publisherId;
+            return this;
+        }
+
+        public Builder withStreamViewType(String streamViewType) {
+            this.streamViewType = streamViewType;
             return this;
         }
 

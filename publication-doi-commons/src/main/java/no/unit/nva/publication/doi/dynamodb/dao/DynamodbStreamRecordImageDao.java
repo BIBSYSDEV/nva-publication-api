@@ -1,14 +1,7 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.CONTRIBUTORS_LIST_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DOI_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.IMAGE_IDENTIFIER_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.MAIN_TITLE_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLICATION_ENTITY_DESCRIPTION_MAP_POINTER;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.PUBLISHER_ID;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.TYPE_POINTER;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Objects;
@@ -16,10 +9,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class DynamodbStreamRecordDao {
+public class DynamodbStreamRecordImageDao {
 
     public static final String PUBLICATION_TYPE = "Publication";
-    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record of type Publication";
+    public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record image of type "
+        + "Publication";
 
     private final String identifier;
     private final String publicationInstanceType;
@@ -30,11 +24,11 @@ public class DynamodbStreamRecordDao {
     private final String doi;
     private final List<Identity> contributorIdentities;
 
-    protected DynamodbStreamRecordDao(Builder builder) {
+    protected DynamodbStreamRecordImageDao(Builder builder) {
         this.identifier = builder.identifier;
         this.publicationInstanceType = builder.publicationInstanceType;
         this.mainTitle = builder.mainTitle;
-        this.dynamodbStreamRecordType = builder.dynamodbStreamRecordType;
+        this.dynamodbStreamRecordType = builder.dynamodbStreamRecordImageType;
         this.publicationReleaseDate = builder.publicationReleaseDate;
         this.publisherId = builder.publisherId;
         this.doi = builder.doi;
@@ -78,36 +72,40 @@ public class DynamodbStreamRecordDao {
         private String identifier;
         private String publicationInstanceType;
         private String mainTitle;
-        private String dynamodbStreamRecordType;
+        private String dynamodbStreamRecordImageType;
         private JsonNode publicationReleaseDate;
         private String publisherId;
         private String doi;
         private List<Identity> contributorIdentities;
 
-        public Builder() {
+        private final DynamodbStreamRecordJsonPointers jsonPointers;
 
+        public Builder(DynamodbStreamRecordJsonPointers jsonPointers) {
+            this.jsonPointers = jsonPointers;
         }
 
         /**
-         * Builder for constructing a {@link DynamodbStreamRecordDao}.
+         * Builder for constructing a {@link DynamodbStreamRecordImageDao}.
          *
-         * @param rootNode json node representing the root of
+         * @param rootNode json node representing the dynamodb.oldImage or dynamodb.newImage of
          * {@link com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord}.
-         * @return Builder populated fields from provided rootNode
+         * @return Builder populated fields from provided jsonNode
          */
-        public Builder withDynamodbStreamRecord(JsonNode rootNode) {
-            var typeAttribute = textFromNode(rootNode, TYPE_POINTER);
+        public Builder withDynamodbStreamRecordImage(JsonNode rootNode) {
+            var typeAttribute = textFromNode(rootNode, jsonPointers.getTypeJsonPointer());
             if (!PUBLICATION_TYPE.equals(typeAttribute)) {
                 throw new IllegalArgumentException(ERROR_MUST_BE_PUBLICATION_TYPE);
             }
-            dynamodbStreamRecordType = typeAttribute;
-            identifier = textFromNode(rootNode, IMAGE_IDENTIFIER_POINTER);
-            publicationInstanceType = textFromNode(rootNode, ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_INSTANCE_TYPE);
-            publicationReleaseDate = rootNode.at(PUBLICATION_ENTITY_DESCRIPTION_MAP_POINTER);
-            mainTitle = textFromNode(rootNode, MAIN_TITLE_POINTER);
-            publisherId = textFromNode(rootNode, PUBLISHER_ID);
+            dynamodbStreamRecordImageType = typeAttribute;
+            identifier = textFromNode(rootNode, jsonPointers.getIdentifierJsonPointer());
+            publicationInstanceType = textFromNode(
+                rootNode,
+                jsonPointers.getEntityDescriptionReferenceTypeJsonPointer());
+            publicationReleaseDate = rootNode.at(jsonPointers.getEntityDescriptionMapJsonPointer());
+            mainTitle = textFromNode(rootNode, jsonPointers.getMainTitleJsonPointer());
+            publisherId = textFromNode(rootNode, jsonPointers.getPublisherIdJsonPointer());
             contributorIdentities = extractContributors(rootNode);
-            doi = textFromNode(rootNode, DOI_POINTER);
+            doi = textFromNode(rootNode, jsonPointers.getDoiJsonPointer());
             return this;
         }
 
@@ -131,8 +129,8 @@ public class DynamodbStreamRecordDao {
             return this;
         }
 
-        public Builder withDynamodbStreamRecordType(String dynamodbStreamRecordType) {
-            this.dynamodbStreamRecordType = dynamodbStreamRecordType;
+        public Builder withDynamodbStreamRecordImageType(String dynamodbStreamRecordType) {
+            this.dynamodbStreamRecordImageType = dynamodbStreamRecordType;
             return this;
         }
 
@@ -151,21 +149,21 @@ public class DynamodbStreamRecordDao {
             return this;
         }
 
-        public DynamodbStreamRecordDao build() {
-            return new DynamodbStreamRecordDao(this);
+        public DynamodbStreamRecordImageDao build() {
+            return new DynamodbStreamRecordImageDao(this);
         }
 
         private static Stream<JsonNode> toStream(JsonNode node) {
             return StreamSupport.stream(node.spliterator(), false);
         }
 
-        private static Identity createContributorIdentity(JsonNode jsonNode) {
-            return new Identity.Builder().withJsonNode(jsonNode).build();
+        private Identity createContributorIdentity(JsonNode jsonNode) {
+            return new Identity.Builder(jsonPointers).withJsonNode(jsonNode).build();
         }
 
-        private static List<Identity> extractContributors(JsonNode record) {
-            return toStream(record.at(CONTRIBUTORS_LIST_POINTER))
-                .map(Builder::createContributorIdentity)
+        private List<Identity> extractContributors(JsonNode record) {
+            return toStream(record.at(jsonPointers.getContributorsListJsonPointer()))
+                .map(this::createContributorIdentity)
                 .filter(e -> Objects.nonNull(e.getName()))
                 .collect(Collectors.toList());
         }

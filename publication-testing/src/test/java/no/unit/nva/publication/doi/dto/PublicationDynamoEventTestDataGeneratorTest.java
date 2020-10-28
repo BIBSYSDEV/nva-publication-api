@@ -24,7 +24,8 @@ class PublicationDynamoEventTestDataGeneratorTest {
 
     @Test
     void clearRecords() {
-        var testGenerator = new PublicationDynamoEventTestDataGenerator().createRandomStreamRecord();
+        var testGenerator = new PublicationDynamoEventTestDataGenerator()
+            .createRandomStreamRecord();
 
         assertThat(testGenerator.records, hasSize(1));
         testGenerator.clearRecords();

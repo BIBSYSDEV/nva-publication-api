@@ -9,15 +9,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 
 public class PublicationDynamoEventTestDataGenerator {
 
     protected final List<PublicationStreamRecordTestDataGenerator> records;
     private final Faker faker;
+    private final DynamodbStreamRecordJsonPointers jsonPointers;
 
+    /**
+     * Default constructor for PublicationDynamoEventTestDataGenerator.
+     */
     public PublicationDynamoEventTestDataGenerator() {
         this.records = new ArrayList<>();
         this.faker = new Faker();
+        this.jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW);
     }
 
     /**
@@ -63,6 +70,6 @@ public class PublicationDynamoEventTestDataGenerator {
     }
 
     private Builder createTestdataGeneratorBuilderWithValidRecord() {
-        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(faker);
+        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(faker, jsonPointers);
     }
 }
