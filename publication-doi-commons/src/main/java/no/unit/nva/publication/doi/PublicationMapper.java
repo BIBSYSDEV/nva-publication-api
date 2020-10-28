@@ -6,6 +6,7 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewTy
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import no.unit.nva.publication.doi.dto.Publication;
@@ -60,20 +61,28 @@ public class PublicationMapper {
 
             // do nothing for StreamViewType.KEYS_ONLY
 
-            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
-                || streamViewType.equals(StreamViewType.OLD_IMAGE.getValue())) {
+            if (acceptStreamViewTypes(streamViewType,
+                StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.OLD_IMAGE)) {
                 Publication oldPublication = fromDynamodbStreamRecordImage(dynamodb.getOldImage());
                 publicationMappingBuilder.withOldPublication(oldPublication);
             }
 
-            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
-                || streamViewType.equals(StreamViewType.NEW_IMAGE.getValue())) {
+            if (acceptStreamViewTypes(streamViewType,
+                StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.NEW_IMAGE)) {
                 var newPublication = fromDynamodbStreamRecordImage(dynamodb.getNewImage());
                 publicationMappingBuilder.withNewPublication(newPublication);
             }
         }
 
         return publicationMappingBuilder.build();
+    }
+
+    private boolean acceptStreamViewTypes(String streamViewType, StreamViewType... streamViewTypes) {
+        return Arrays.stream(streamViewTypes)
+            .map(StreamViewType::getValue)
+            .filter(s -> s.equals(streamViewType))
+            .findFirst()
+            .isPresent();
     }
 
     private Publication fromDynamodbStreamRecordImage(Map<String,AttributeValue> image) {
