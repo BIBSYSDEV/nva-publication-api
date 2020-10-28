@@ -1,6 +1,8 @@
 def log4jVersion = "2.13.2"
 
 dependencies {
+    implementation project(":publication-doi-commons")
+
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
 
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'

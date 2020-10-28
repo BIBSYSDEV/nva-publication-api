@@ -9,7 +9,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import no.unit.nva.publication.doi.PublicationMapper;
+import no.unit.nva.publication.doi.dto.Publication;
+import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +59,8 @@ public class EventBridgePublisher implements EventPublisher {
     }
 
     @Override
-    public void publish(final DynamodbEvent event) {
-        List<PutEventsRequestEntry> requestEntries = createPutEventsRequestEntries(event);
+    public void publish(List<String> events) {
+        List<PutEventsRequestEntry> requestEntries = createPutEventsRequestEntries(events);
         List<PutEventsRequestEntry> failedEntries = putEventsToEventBus(
             requestEntries);
         publishFailedEventsToDlq(failedEntries);
@@ -77,31 +81,29 @@ public class EventBridgePublisher implements EventPublisher {
         return failedEntries;
     }
 
-    private List<PutEventsRequestEntry> createPutEventsRequestEntries(DynamodbEvent event) {
-        List<PutEventsRequestEntry> requestEntries = event.getRecords()
+    private List<PutEventsRequestEntry> createPutEventsRequestEntries(List<String> events) {
+        List<PutEventsRequestEntry> requestEntries = events
             .stream()
             .map(this::createPutEventRequestEntry)
             .collect(Collectors.toList());
         return requestEntries;
     }
 
-    private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord record) {
+    private PutEventsRequestEntry createPutEventRequestEntry(String event) {
         Instant time = Instant.now(clock);
         return PutEventsRequestEntry.builder()
-            .eventBusName(eventBusName)
-            .time(time)
-            .source(EVENT_SOURCE)
-            .detailType(EVENT_DETAIL_TYPE)
-            .detail(toString(record))
-            .resources(record.getEventSourceARN())
-            .build();
+                .eventBusName(eventBusName)
+                .time(time)
+                .source(EVENT_SOURCE)
+                .detailType(EVENT_DETAIL_TYPE)
+                .detail(event)
+                .build();
     }
 
     private void publishFailedEvent(PutEventsRequestEntry entry) {
         DynamodbEvent.DynamodbStreamRecord record = parseDynamodbStreamRecord(entry);
-        DynamodbEvent failedEvent = new DynamodbEvent();
-        failedEvent.setRecords(Collections.singletonList(record));
-        failedEventPublisher.publish(failedEvent);
+        String recordString = toString(record);
+        failedEventPublisher.publish(Collections.singletonList(recordString));
     }
 
     @JacocoGenerated

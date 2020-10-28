@@ -3,18 +3,29 @@ package no.unit.nva.doi.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.doi.publisher.EventBridgePublisher;
 import no.unit.nva.doi.publisher.EventBridgeRetryClient;
 import no.unit.nva.doi.publisher.EventPublisher;
 import no.unit.nva.doi.publisher.SqsEventPublisher;
+import no.unit.nva.publication.doi.PublicationMapper;
+import no.unit.nva.publication.doi.dto.Publication;
+import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.JsonUtils;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
@@ -25,9 +36,15 @@ public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
     public static final String AWS_REGION = "AWS_REGION";
     private final EventPublisher eventPublisher;
 
+    private final PublicationMapper publicationMapper;
+
     @JacocoGenerated
     public FanoutHandler() {
-        this(defaultEventBridgePublisher());
+        this(defaultEventBridgePublisher(), defaultPublicationMapper());
+    }
+
+    private static PublicationMapper defaultPublicationMapper() {
+        return new PublicationMapper("http://example.ns");
     }
 
     @JacocoGenerated
@@ -71,15 +88,61 @@ public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
             .build();
     }
 
-    public FanoutHandler(EventPublisher eventPublisher) {
+    public FanoutHandler(EventPublisher eventPublisher, PublicationMapper publicationMapper) {
         this.eventPublisher = eventPublisher;
+        this.publicationMapper = publicationMapper;
     }
 
     @Override
     public Void handleRequest(DynamodbEvent event, Context context) {
 
-        eventPublisher.publish(event);
+        eventPublisher.publish(fromDynamodbEvent(event));
 
         return null;
+    }
+
+
+    private List<String> fromDynamodbEvent(DynamodbEvent event) {
+        return event.getRecords()
+            .stream()
+            .map(this::fromDynamodbStreamRecord)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(this::toString)
+            .collect(Collectors.toList());
+    }
+
+    private String toString(Publication publication) {
+        try {
+            return JsonUtils.objectMapper.writeValueAsString(publication);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    private Optional<Publication> fromDynamodbStreamRecord(DynamodbStreamRecord record) {
+        PublicationMapping publicationMapping = publicationMapper.fromDynamodbStreamRecord(record);
+
+        if (isEffectiveChange(publicationMapping)) {
+            Publication publication = publicationMapping.getNewPublication().get();
+            return Optional.of(publication);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private boolean isEffectiveChange(PublicationMapping publicationMapping) {
+        Optional<Publication> newPublication = publicationMapping.getNewPublication();
+        Optional<Publication> oldPublication = publicationMapping.getOldPublication();
+
+        boolean isEffectiveChange = false;
+        if (newPublication.isPresent()) {
+            if (oldPublication.isPresent()) {
+                isEffectiveChange = !newPublication.get().equals(oldPublication.get());
+            } else {
+                isEffectiveChange = true;
+            }
+        }
+        return isEffectiveChange;
     }
 }
