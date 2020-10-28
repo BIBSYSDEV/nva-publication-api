@@ -97,7 +97,7 @@ public class DynamodbStreamRecordImageDao {
                 throw new IllegalArgumentException(ERROR_MUST_BE_PUBLICATION_TYPE);
             }
             dynamodbStreamRecordImageType = typeAttribute;
-            identifier = textFromNode(rootNode, jsonPointers.getImageIdentifierJsonPointer());
+            identifier = textFromNode(rootNode, jsonPointers.getIdentifierJsonPointer());
             publicationInstanceType = textFromNode(
                 rootNode,
                 jsonPointers.getEntityDescriptionReferenceTypeJsonPointer());

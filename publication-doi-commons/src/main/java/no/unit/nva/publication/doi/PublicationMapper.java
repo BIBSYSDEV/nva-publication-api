@@ -2,6 +2,7 @@ package no.unit.nva.publication.doi;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
@@ -14,13 +15,13 @@ import no.unit.nva.publication.doi.dto.PublicationMapping;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import nva.commons.utils.JsonUtils;
 
 public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
     private static final String NAMESPACE_PUBLICATION = "publication";
-    public static final String EMPTY_JSON_POINTER_BASE = "";
 
     protected String namespacePublication;
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
@@ -57,12 +58,16 @@ public class PublicationMapper {
         if (dynamodb != null) {
             var streamViewType = dynamodb.getStreamViewType();
 
-            if (streamViewType.contains("OLD")) {
+            // do nothing for StreamViewType.KEYS_ONLY
+
+            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
+                || streamViewType.equals(StreamViewType.OLD_IMAGE.getValue())) {
                 Publication oldPublication = fromDynamodbStreamRecordImage(dynamodb.getOldImage());
                 publicationMappingBuilder.withOldPublication(oldPublication);
             }
 
-            if (streamViewType.contains("NEW")) {
+            if (streamViewType.equals(StreamViewType.NEW_AND_OLD_IMAGES.getValue())
+                || streamViewType.equals(StreamViewType.NEW_IMAGE.getValue())) {
                 var newPublication = fromDynamodbStreamRecordImage(dynamodb.getNewImage());
                 publicationMappingBuilder.withNewPublication(newPublication);
             }
@@ -77,7 +82,7 @@ public class PublicationMapper {
     }
 
     private Publication fromDynamodbStreamRecordImage(JsonNode jsonNode) {
-        var jsonPointers = new DynamodbStreamRecordJsonPointers(EMPTY_JSON_POINTER_BASE);
+        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
         var dynamodbStreamRecordImageDao =
             new DynamodbStreamRecordImageDao.Builder(jsonPointers)
                 .withDynamodbStreamRecordImage(jsonNode)

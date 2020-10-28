@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_LIST;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_STRING;
 
@@ -25,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
@@ -43,7 +43,7 @@ public class PublicationStreamRecordTestDataGenerator {
     public static final String DYNAMODB = "/dynamodb";
 
     private final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-        DYNAMODB_NEW_IMAGE_BASE);
+        DynamodbImageType.NEW);
 
     private final ObjectMapper mapper = JsonUtils.objectMapper;
     private final JsonNode contributorTemplate;
@@ -136,12 +136,12 @@ public class PublicationStreamRecordTestDataGenerator {
     }
 
     private void updatePublicationStatus(String status, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, jsonPointers.getPublicationStatusJsonPointer(),
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getStatusJsonPointer(),
             DYNAMODB_TYPE_STRING, status);
     }
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, jsonPointers.getImageIdentifierJsonPointer(),
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getIdentifierJsonPointer(),
             DYNAMODB_TYPE_STRING, id);
     }
 
@@ -159,17 +159,17 @@ public class PublicationStreamRecordTestDataGenerator {
     private void updateContributor(ArrayNode contributors, Identity contributor) {
         ObjectNode activeTemplate = contributorTemplate.deepCopy();
 
-        updateEventAtPointerWithNameAndValue(activeTemplate, jsonPointers.getContributorNameJsonPointer(),
+        updateEventAtPointerWithNameAndValue(activeTemplate, jsonPointers.getIdentityNameJsonPointer(),
             DYNAMODB_TYPE_STRING, contributor.getName());
         extractStringValue(contributor.getArpId()).ifPresent(
             arpId -> updateEventAtPointerWithNameAndValue(
                 activeTemplate,
-                jsonPointers.getContributorArpIdJsonPointer(),
+                jsonPointers.getIdentityArpIdJsonPointer(),
                 DYNAMODB_TYPE_STRING, contributor.getArpId()));
         extractStringValue(contributor.getOrcId())
             .ifPresent(orcId -> updateEventAtPointerWithNameAndValue(
                 activeTemplate,
-                jsonPointers.getContributorOrcidJsonPointer(),
+                jsonPointers.getIdentityOrcIdJsonPointer(),
                 DYNAMODB_TYPE_STRING, contributor.getOrcId()));
         contributors.add(activeTemplate);
     }
@@ -218,15 +218,15 @@ public class PublicationStreamRecordTestDataGenerator {
         if (nonNull(date) && date.isPopulated()) {
             updateEventAtPointerWithNameAndValue(
                 event,
-                jsonPointers.getEntityDescriptionPublicationDateYearJsonPointer(),
+                jsonPointers.getEntityDescriptionDateYearJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getYear());
             updateEventAtPointerWithNameAndValue(
                 event,
-                jsonPointers.getEntityDescriptionPublicationDateMonthJsonPointer(),
+                jsonPointers.getEntityDescriptionDateMonthJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getMonth());
             updateEventAtPointerWithNameAndValue(
                 event,
-                jsonPointers.getEntityDescriptionPublicationDateYDayJsonPointer(),
+                jsonPointers.getEntityDescriptionDateDayJsonPointer(),
                 DYNAMODB_TYPE_STRING, date.getDay());
         }
     }

@@ -2,8 +2,6 @@ package no.unit.nva.publication.doi;
 
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.ERROR_MUST_BE_PUBLICATION_TYPE;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_OLD_IMAGE_BASE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -21,13 +19,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import no.unit.nva.publication.doi.dto.PublicationMapping;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -39,12 +36,12 @@ class PublicationMapperTest {
 
     private static final Faker FAKER = new Faker();
     private static final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-        DYNAMODB_NEW_IMAGE_BASE);
+        DynamodbImageType.NEW);
 
     @Test
     void fromDynamoStreamRecordNewImage() {
         DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-            DYNAMODB_NEW_IMAGE_BASE);
+            DynamodbImageType.NEW);
         Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers, StreamViewType.NEW_IMAGE.toString());
         var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
@@ -57,7 +54,7 @@ class PublicationMapperTest {
     @Test
     void fromDynamoStreamRecordOldImage() {
         DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-            DYNAMODB_OLD_IMAGE_BASE);
+            DynamodbImageType.OLD);
         Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers, StreamViewType.OLD_IMAGE.toString());
         var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);

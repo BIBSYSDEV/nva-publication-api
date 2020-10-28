@@ -1,6 +1,5 @@
 package no.unit.nva.publication.doi.dto;
 
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -11,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator.Builder;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 
 public class PublicationDynamoEventTestDataGenerator {
 
@@ -24,7 +24,7 @@ public class PublicationDynamoEventTestDataGenerator {
     public PublicationDynamoEventTestDataGenerator() {
         this.records = new ArrayList<>();
         this.faker = new Faker();
-        this.jsonPointers = new DynamodbStreamRecordJsonPointers(DYNAMODB_NEW_IMAGE_BASE);
+        this.jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW);
     }
 
     /**

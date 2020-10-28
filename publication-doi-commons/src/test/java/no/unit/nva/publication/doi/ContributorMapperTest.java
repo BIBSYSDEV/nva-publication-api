@@ -1,6 +1,5 @@
 package no.unit.nva.publication.doi;
 
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
@@ -10,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity.Builder;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +23,7 @@ class ContributorMapperTest {
     @BeforeEach
     void configure() {
         faker = new Faker();
-        jsonPointers = new DynamodbStreamRecordJsonPointers(DYNAMODB_NEW_IMAGE_BASE);
+        jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW);
     }
 
     @Test

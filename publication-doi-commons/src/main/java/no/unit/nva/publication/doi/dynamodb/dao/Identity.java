@@ -73,9 +73,9 @@ public class Identity {
          * @return Builder
          */
         public Builder withJsonNode(JsonNode identity) {
-            orcId = textFromNode(identity, jsonPointers.getContributorOrcidJsonPointer());
-            arpId = textFromNode(identity, jsonPointers.getContributorArpIdJsonPointer());
-            name = textFromNode(identity, jsonPointers.getContributorNameJsonPointer());
+            orcId = textFromNode(identity, jsonPointers.getIdentityOrcIdJsonPointer());
+            arpId = textFromNode(identity, jsonPointers.getIdentityArpIdJsonPointer());
+            name = textFromNode(identity, jsonPointers.getIdentityNameJsonPointer());
             return this;
         }
 

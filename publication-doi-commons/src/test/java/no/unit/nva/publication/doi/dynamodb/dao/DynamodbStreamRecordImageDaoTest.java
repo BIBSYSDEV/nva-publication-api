@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
-import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_NEW_IMAGE_BASE;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -20,6 +19,7 @@ import java.util.UUID;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.Builder;
+import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +34,7 @@ class DynamodbStreamRecordImageDaoTest {
     void setUp() {
         random = new Random();
         faker = new Faker(pickRandomLocale());
-        jsonPointers  = new DynamodbStreamRecordJsonPointers(DYNAMODB_NEW_IMAGE_BASE);
+        jsonPointers  = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW);
     }
 
     @Test

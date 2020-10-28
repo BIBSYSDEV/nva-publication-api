@@ -2,10 +2,24 @@ package no.unit.nva.publication.doi.dynamodb.dao;
 
 import com.fasterxml.jackson.core.JsonPointer;
 
+@SuppressWarnings("PMD.TooManyFields")
 public class DynamodbStreamRecordJsonPointers {
 
-    public static final String DYNAMODB_OLD_IMAGE_BASE = "/dynamodb/oldImage";
-    public static final String DYNAMODB_NEW_IMAGE_BASE = "/dynamodb/newImage";
+    public enum DynamodbImageType {
+        NONE(""),
+        OLD("/dynamodb/oldImage"),
+        NEW("/dynamodb/newImage");
+
+        private final String value;
+
+        DynamodbImageType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
 
     private static final String IDENTIFIER = "/identifier/s";
 
@@ -35,78 +49,115 @@ public class DynamodbStreamRecordJsonPointers {
     private static final String IDENTITY_ORC_ID = "/m/identity/m/orcId/s";
     private static final String IDENTITY_NAME = "/m/identity/m/name/s";
 
-    public static final JsonPointer TYPE_JSON_POINTER = JsonPointer.compile("/type/s");
-
     public static final String DYNAMODB_TYPE_STRING = "s";
     public static final String DYNAMODB_TYPE_LIST = "l";
 
-    private final String base;
+    private final JsonPointer identifierJsonPointer;
+    private final JsonPointer statusJoinPointer;
+    private final JsonPointer publisherIdJsonPointer;
+    private final JsonPointer entityDescriptionReferenceTypeJsonPointer;
+    private final JsonPointer entityDescriptionMapJsonPointer;
+    private final JsonPointer entityDescriptionDateYearJsonPointer;
+    private final JsonPointer entityDescriptionDateMonthJsonPointer;
+    private final JsonPointer entityDescritpionDateDayJsonPointer;
+    private final JsonPointer entityDescriptionMainTitle;
+    private final JsonPointer typeJsonPointer;
+    private final JsonPointer doiJsonPointer;
+    private final JsonPointer contributorsJsonPointer;
+    private final JsonPointer contributorsListJsonPointer;
+    private final JsonPointer identityArpIdJsonPointer;
+    private final JsonPointer identityOrcIdJsonPointer;
+    private final JsonPointer identityNameJsonPointer;
 
-    public DynamodbStreamRecordJsonPointers(String base) {
-        this.base = base;
+    /**
+     * Construct for DynamodbStreamRecordJsonPointers DynamodbImageType to determine JsonPointer base.
+     *
+     * @param imageType imageType
+     */
+    public DynamodbStreamRecordJsonPointers(DynamodbImageType imageType) {
+        String base = imageType.getValue();
+        this.identifierJsonPointer = JsonPointer.compile(base + IDENTIFIER);
+        this.statusJoinPointer = JsonPointer.compile(base + STATUS);
+        this.publisherIdJsonPointer = JsonPointer.compile(base + PUBLISHER_ID);
+        this.entityDescriptionReferenceTypeJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_TYPE);
+        this.entityDescriptionMapJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_MAP);
+        this.entityDescriptionDateYearJsonPointer = JsonPointer.compile(base
+            + ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR);
+        this.entityDescriptionDateMonthJsonPointer = JsonPointer.compile(base
+            + ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH);
+        this.entityDescritpionDateDayJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY);
+        this.entityDescriptionMainTitle = JsonPointer.compile(base + ENTITY_DESCRIPTION_MAIN_TITLE);
+        this.typeJsonPointer = JsonPointer.compile(base + TYPE_POINTER);
+        this.doiJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_DOI);
+        this.contributorsJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS);
+        this.contributorsListJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS_LIST);
+
+        this.identityArpIdJsonPointer = JsonPointer.compile(IDENTITY_ARP_ID);
+        this.identityOrcIdJsonPointer = JsonPointer.compile(IDENTITY_ORC_ID);
+        this.identityNameJsonPointer = JsonPointer.compile(IDENTITY_NAME);
     }
 
-    public JsonPointer getImageIdentifierJsonPointer() {
-        return JsonPointer.compile(base + IDENTIFIER);
+    public JsonPointer getIdentifierJsonPointer() {
+        return identifierJsonPointer;
     }
 
-    public  JsonPointer getPublicationStatusJsonPointer() {
-        return JsonPointer.compile(base + STATUS);
+    public  JsonPointer getStatusJsonPointer() {
+        return statusJoinPointer;
     }
 
     public JsonPointer getPublisherIdJsonPointer() {
-        return JsonPointer.compile(base + PUBLISHER_ID);
+        return publisherIdJsonPointer;
     }
 
     public JsonPointer getEntityDescriptionReferenceTypeJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_TYPE);
+        return entityDescriptionReferenceTypeJsonPointer;
     }
 
     public JsonPointer getEntityDescriptionMapJsonPointer() {
-        return  JsonPointer.compile(base + ENTITY_DESCRIPTION_MAP);
+        return entityDescriptionMapJsonPointer;
     }
 
-    public JsonPointer getEntityDescriptionPublicationDateYearJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR);
+    public JsonPointer getEntityDescriptionDateYearJsonPointer() {
+        return entityDescriptionDateYearJsonPointer;
     }
 
-    public JsonPointer getEntityDescriptionPublicationDateMonthJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH);
+    public JsonPointer getEntityDescriptionDateMonthJsonPointer() {
+        return entityDescriptionDateMonthJsonPointer;
     }
 
-    public JsonPointer getEntityDescriptionPublicationDateYDayJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY);
+    public JsonPointer getEntityDescriptionDateDayJsonPointer() {
+        return entityDescritpionDateDayJsonPointer;
     }
 
     public JsonPointer getMainTitleJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_MAIN_TITLE);
+        return entityDescriptionMainTitle;
     }
 
     public JsonPointer getTypeJsonPointer() {
-        return JsonPointer.compile(base + TYPE_POINTER);
+        return typeJsonPointer;
     }
 
     public JsonPointer getDoiJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_DOI);
+        return doiJsonPointer;
     }
 
     public JsonPointer getContributorsJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS);
+        return contributorsJsonPointer;
     }
 
     public JsonPointer getContributorsListJsonPointer() {
-        return JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS_LIST);
+        return contributorsListJsonPointer;
     }
 
-    public JsonPointer getContributorArpIdJsonPointer() {
-        return JsonPointer.compile(IDENTITY_ARP_ID);
+    public JsonPointer getIdentityArpIdJsonPointer() {
+        return identityArpIdJsonPointer;
     }
 
-    public JsonPointer getContributorOrcidJsonPointer() {
-        return JsonPointer.compile(IDENTITY_ORC_ID);
+    public JsonPointer getIdentityOrcIdJsonPointer() {
+        return identityOrcIdJsonPointer;
     }
 
-    public JsonPointer getContributorNameJsonPointer() {
-        return JsonPointer.compile(IDENTITY_NAME);
+    public JsonPointer getIdentityNameJsonPointer() {
+        return identityNameJsonPointer;
     }
 }
