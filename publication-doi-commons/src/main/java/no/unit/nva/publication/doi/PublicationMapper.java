@@ -112,7 +112,7 @@ public class PublicationMapper {
             .withId(transformIdentifierToId(namespacePublication, dao.getIdentifier()))
             .withInstitutionOwner(URI.create(dao.getPublisherId()))
             .withMainTitle(dao.getMainTitle())
-            .withType(PublicationType.findByName(dao.getPublicationInstanceType()))
+            .withType(Optional.ofNullable(dao.getPublicationInstanceType()).map(PublicationType::findByName).orElse(null))
             .withPublicationDate(new PublicationDate(dao.getPublicationReleaseDate()))
             .withDoi(Optional.ofNullable(dao.getDoi()).map(URI::create).orElse(null))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
