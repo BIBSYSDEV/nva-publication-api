@@ -9,6 +9,8 @@ import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationCollection;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.Optional;
  */
 @JacocoGenerated
 public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDbEventConducer.class);
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
@@ -50,7 +53,7 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
                 dtos.add(publicationMapping.getNewPublication().get());
             }
         }
-
+        logger.info("From {} records we made {} Publication DTOs", records.size(), dtos.size());
         return new PublicationCollection(dtos);
     }
 
