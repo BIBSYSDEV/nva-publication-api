@@ -516,6 +516,8 @@ Resources:
       - FailQueue
     Type: AWS::Serverless::Function
     Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-dtopublicationdoi-producer
       Handler: no.unit.nva.doi.event.producer.DynamoDbEventConducer::handleRequest
       Runtime: java11
@@ -542,6 +544,8 @@ Resources:
   DynamodbEventEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-emitter
       # DynamodbStream -> Publish DynamodbStreamEvent to EventBridge ->  DynamodbEventConducer (reads DynamodbStreamEvent from Event Bridge) and creates PublicationDTOs and publishes again on Event Bridge.
       Handler: no.unit.nva.doi.lambda.DynamodbEventEventBridgeHandler::handleRequest
