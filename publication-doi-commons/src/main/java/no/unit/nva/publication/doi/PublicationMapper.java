@@ -9,6 +9,8 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
@@ -112,7 +114,7 @@ public class PublicationMapper {
             .withMainTitle(dao.getMainTitle())
             .withType(PublicationType.findByName(dao.getPublicationInstanceType()))
             .withPublicationDate(new PublicationDate(dao.getPublicationReleaseDate()))
-            .withDoi(URI.create(dao.getDoi()))
+            .withDoi(Optional.ofNullable(dao.getDoi()).map(URI::create).orElse(null))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
             .build();
     }
