@@ -531,8 +531,8 @@ Resources:
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
-            Type: SQS
-            Destination: !GetAtt FailQueue.Arn
+            Type: EventBridge
+            Destination: !Sub arn:aws:events:eu-west-1:${AWS::Acount}}:event-bus/default
           OnFailure:
             Type: SQS
             Destination: !GetAtt FailQueue.Arn
