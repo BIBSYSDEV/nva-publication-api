@@ -19,11 +19,11 @@ import java.util.Optional;
  * This class should read events that gets invoked as a LambdaDestination based on published DynamodbEvent from Jan's code.
  */
 @JacocoGenerated
-public class DynamodDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
+public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
-    public DynamodDbEventConducer() {
+    public DynamoDbEventConducer() {
         super(DynamodbEvent.class);
         this.publicationMapper = defaultPublicationMapper();
     }
