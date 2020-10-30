@@ -31,7 +31,7 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
 
 
     private static PublicationMapper defaultPublicationMapper() {
-        return new PublicationMapper("http://example.net/namespace");
+        return new PublicationMapper("http://example.net/namespace/");
     }
 
     @Override
