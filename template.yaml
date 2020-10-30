@@ -500,11 +500,6 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: "*"
 
-  #EventBus:
-  #  Type: AWS::Events::EventBus
-  #  Properties:
-  #    Name: !Ref EventBusName
-  #TODO: How to handle not creation event bus if you try to create "default"
   FailQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -525,13 +520,13 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName  #!GetAtt EventBus.Name
+          EVENT_BUS: !Ref EventBusName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName  # !GetAtt EventBus.Name
+            EventBusName: !Ref EventBusName
             Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
       EventInvokeConfig:
         DestinationConfig:
