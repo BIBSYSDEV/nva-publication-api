@@ -510,7 +510,7 @@ Resources:
     Properties:
       MaximumMessageSize: 262144
       QueueName: !Ref FailureQueueName
-  DynamodDbEventConducer:
+  DynamoDbEventConducer:
     DependsOn:
     # - EventBus  ( FIX THIS )
       - FailQueue
