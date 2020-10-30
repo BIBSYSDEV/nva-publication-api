@@ -22,6 +22,7 @@ import java.util.Optional;
 public class DynamodDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
     private final PublicationMapper publicationMapper;
 
+    @JacocoGenerated
     public DynamodDbEventConducer() {
         super(DynamodbEvent.class);
         this.publicationMapper = defaultPublicationMapper();
