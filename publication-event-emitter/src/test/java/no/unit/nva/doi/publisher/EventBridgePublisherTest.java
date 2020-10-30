@@ -24,7 +24,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry.B
 
 public class EventBridgePublisherTest {
 
-    public static final String EXPECTED_DETAIL_TEMPLATE = "{\"eventSourceARN\":\"%s\"}";
+    public static final String EXPECTED_DETAIL_TEMPLATE = "{\"records\":[{\"eventSourceARN\":\"%s\"}]}";
     public static final String FAILED_EVENT_NAME = "Failed";
     public static final String SUCCESS_EVENT_NAME = "Success";
     public static final String RECORD_STRING_TEMPLATE = "{\"eventName\":\"%s\",\"eventSourceARN\":\"%s\"}";
@@ -32,6 +32,7 @@ public class EventBridgePublisherTest {
     private static final Instant NOW = Instant.now();
     private static final String EVENT_SOURCE_ARN = UUID.randomUUID().toString();
     public static final Builder PUT_EVENT_REQUEST_BUILDER = putEventRequestBuilder();
+    private static final String RECORD_EVENT_TEMPLATE = "{\"records\":[%s]}";
 
     @Mock
     private EventBridgeRetryClient eventBridge;
@@ -88,15 +89,19 @@ public class EventBridgePublisherTest {
     }
 
     private PutEventsRequest createFailingPutEventsRequest() {
-        String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME, EVENT_SOURCE_ARN);
+        String failedRecordString = createFailedEvent();
         return PutEventsRequest.builder()
             .entries(PUT_EVENT_REQUEST_BUILDER.detail(failedRecordString).build())
             .build();
     }
 
+    private String createFailedEvent() {
+        return String.format(RECORD_EVENT_TEMPLATE,
+                String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME, EVENT_SOURCE_ARN));
+    }
+
     private List<PutEventsRequestEntry> createFailedEntries() {
-        String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME,
-            EventBridgePublisherTest.EVENT_SOURCE_ARN);
+        String failedRecordString = createFailedEvent();
         return Collections.singletonList(
             PUT_EVENT_REQUEST_BUILDER
                 .detail(failedRecordString)

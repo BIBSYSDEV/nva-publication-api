@@ -56,6 +56,9 @@ Parameters:
     Type: String
     Default: "default"
     Description: AWS EventBridge Event Bus Name.
+  FailureQueueName:
+    Type: String
+    Default: delete-me-fail-queue
   EventBridgeMaxAttempt:
     Type: Number
     Default: 1
@@ -459,11 +462,51 @@ Resources:
               - method.request.querystring.pagesize
             RestApiId: !Ref NvaPublicationApi
 
-  FanoutLambda:
+  #EventBus:
+  #  Type: AWS::Events::EventBus
+  #  Properties:
+  #    Name: !Ref EventBusName
+  #TODO: How to handle not creation event bus if you try to create "default"
+  FailQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MaximumMessageSize: 262144
+      QueueName: !Ref FailureQueueName
+  DynamodDbEventConducer:
+    DependsOn:
+    # - EventBus  ( FIX THIS )
+      - FailQueue
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-dtopublicationdoi-producer
+      Handler: no.unit.nva.doi.event.producer.DynamoDbEventConducer::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBusName  #!GetAtt EventBus.Name
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName  # !GetAtt EventBus.Name
+            Pattern: { "detail-type": [ { "anything-but": "IGNORE" } ] }
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: SQS
+            Destination: !GetAtt FailQueue.Arn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt FailQueue.Arn
+  DynamodbEventEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-emitter
-      Handler: no.unit.nva.doi.lambda.FanoutHandler::handleRequest
+      # DynamodbStream -> Publish DynamodbStreamEvent to EventBridge ->  DynamodbEventConducer (reads DynamodbStreamEvent from Event Bridge) and creates PublicationDTOs and publishes again on Event Bridge.
+      Handler: no.unit.nva.doi.lambda.DynamodbEventEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11
