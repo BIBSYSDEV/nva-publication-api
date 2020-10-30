@@ -585,7 +585,7 @@ Resources:
 Outputs:
   FanoutLambdaName:
     Description: "Fanout Lambda Function Name"
-    Value: !Ref FanoutLambda
+    Value: !Ref DynamodbEventEventBridgeHandler
   FanoutUrl:
     Description: "FanoutUrl SQS DLQ URL"
     Value: !Ref FanoutDLQ
