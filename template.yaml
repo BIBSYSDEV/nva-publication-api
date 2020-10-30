@@ -532,7 +532,7 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !Ref EventBusName  # !GetAtt EventBus.Name
-            Pattern: { "detail-type": [ { "anything-but": "IGNORE" } ] }
+            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
