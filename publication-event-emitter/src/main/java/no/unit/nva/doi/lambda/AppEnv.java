@@ -3,14 +3,15 @@ package no.unit.nva.doi.lambda;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 
-public final class Env {
+public final class AppEnv {
 
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String DLQ_URL = "DLQ_URL";
     public static final String MAX_ATTEMPT = "MAX_ATTEMPT";
+    protected static final Environment ENVIRONMENT = new Environment();
 
     @JacocoGenerated
-    private Env() {
+    private AppEnv() {
 
     }
 
@@ -31,6 +32,6 @@ public final class Env {
 
     @JacocoGenerated
     private static String getEnvValue(final String name) {
-        return new Environment().readEnv(name);
+        return ENVIRONMENT.readEnv(name);
     }
 }
