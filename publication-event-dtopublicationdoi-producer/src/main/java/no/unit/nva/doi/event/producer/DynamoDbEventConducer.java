@@ -18,11 +18,12 @@ import java.util.Optional;
 
 
 /**
- * This class should read events that gets invoked as a LambdaDestination based on published DynamodbEvent from Jan's code.
+ * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type `doi.publication`.
  */
 @JacocoGenerated
 public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbEventConducer.class);
+    public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
@@ -54,7 +55,7 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
             }
         }
         logger.info("From {} records we made {} Publication DTOs", records.size(), dtos.size());
-        return new PublicationCollection(dtos);
+        return new PublicationCollection(TYPE_DTO_DOI_PUBLICATION, dtos);
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {
