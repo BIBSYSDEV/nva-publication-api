@@ -21,6 +21,8 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import nva.commons.utils.JsonUtils;
 
+import static java.util.function.Predicate.not;
+
 public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
@@ -122,14 +124,14 @@ public class PublicationMapper {
 
     private URI extractDoiUrl(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getDoi())
-                .filter(String::isBlank)
+                .filter(not(String::isBlank))
                 .map(URI::create)
                 .orElse(null);
     }
 
     private PublicationType extractPublicationInstanceType(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getPublicationInstanceType())
-                .filter(String::isBlank)
+                .filter(not(String::isBlank))
                 .map(PublicationType::findByName)
                 .orElse(null);
     }
