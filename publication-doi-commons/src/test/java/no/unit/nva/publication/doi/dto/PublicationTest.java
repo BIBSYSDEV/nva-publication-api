@@ -22,7 +22,7 @@ class PublicationTest {
 
     @Test
     public void testBuilder() {
-        var builder = Builder.newBuilder()
+        final var builder = Builder.newBuilder()
             .withId(URI.create(EXAMPLE_ID))
             .withDoi(URI.create(EXAMPLE_DOI_ID))
             .withInstitutionOwner(URI.create(EXAMPLE_INSTITUTION_OWNER))
@@ -34,8 +34,8 @@ class PublicationTest {
                 .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
                 .withName(EXAMPLE_CONTRIBUTOR_NAME)
                 .build()));
-        var publication = builder.build();
-        var identicalPublication = builder.build();
+        final var publication = builder.build();
+        final var identicalPublication = builder.build();
 
         assertThat(publication.getId(), is(equalTo(URI.create(EXAMPLE_ID))));
         assertThat(publication.getDoi(), is(equalTo(URI.create(EXAMPLE_DOI_ID))));

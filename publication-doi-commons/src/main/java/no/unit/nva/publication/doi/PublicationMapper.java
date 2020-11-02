@@ -2,6 +2,7 @@ package no.unit.nva.publication.doi;
 
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -81,7 +82,7 @@ public class PublicationMapper {
     }
 
     private void maybeSetNewPublication(PublicationMapping.Builder publicationMappingBuilder,
-                                        com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord dynamodb) {
+                                        StreamRecord dynamodb) {
         var newImage = dynamodb.getNewImage();
         if (newImage != null) {
             var newPublication = fromDynamodbStreamRecordImage(newImage);
@@ -90,7 +91,7 @@ public class PublicationMapper {
     }
 
     private void maybeSetOldPublication(PublicationMapping.Builder publicationMappingBuilder,
-                                        com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord dynamodb) {
+                                        StreamRecord dynamodb) {
         var oldImage = dynamodb.getOldImage();
         if (oldImage != null) {
             Publication oldPublication = fromDynamodbStreamRecordImage(oldImage);
