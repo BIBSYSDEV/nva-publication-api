@@ -8,11 +8,10 @@ public final class AppEnv {
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String DLQ_URL = "DLQ_URL";
     public static final String MAX_ATTEMPT = "MAX_ATTEMPT";
-    protected static final Environment ENVIRONMENT = new Environment();
+    /** default */ static final Environment ENVIRONMENT = new Environment();
 
     @JacocoGenerated
     private AppEnv() {
-
     }
 
     @JacocoGenerated

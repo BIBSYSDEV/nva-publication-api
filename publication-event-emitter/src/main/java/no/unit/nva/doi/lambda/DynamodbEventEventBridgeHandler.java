@@ -3,9 +3,7 @@ package no.unit.nva.doi.lambda;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-
 import java.time.Duration;
-
 import no.unit.nva.doi.publisher.EventBridgePublisher;
 import no.unit.nva.doi.publisher.EventBridgeRetryClient;
 import no.unit.nva.doi.publisher.EventPublisher;
@@ -22,7 +20,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 /**
  * Listens on DynamodbEvents from DynamoDB Stream trigger and forwards the DynamoDbStreamRecords to EventBridge.
  *
- * Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
+ * <p>Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
  * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
 public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
@@ -33,6 +31,13 @@ public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbE
     @JacocoGenerated
     public DynamodbEventEventBridgeHandler() {
         this(defaultEventBridgePublisher());
+    }
+
+    /**
+     * Constructor for CreatePublicationHandler.
+     */
+    protected DynamodbEventEventBridgeHandler(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @JacocoGenerated
@@ -74,10 +79,6 @@ public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbE
                 .build())
             .httpClientBuilder(UrlConnectionHttpClient.builder())
             .build();
-    }
-
-    public DynamodbEventEventBridgeHandler(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
     }
 
     @Override

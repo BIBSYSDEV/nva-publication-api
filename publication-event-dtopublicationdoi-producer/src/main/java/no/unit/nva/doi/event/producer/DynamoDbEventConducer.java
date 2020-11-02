@@ -16,26 +16,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-
 /**
- * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type `doi.publication`.
+ * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
+ * `doi.publication`.
  */
-@JacocoGenerated
 public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
+
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbEventConducer.class);
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     private final PublicationMapper publicationMapper;
 
-    @JacocoGenerated
     public DynamoDbEventConducer() {
-        super(DynamodbEvent.class);
-        this.publicationMapper = defaultPublicationMapper();
+        this(AppEnv.getNamespace());
     }
 
-
-
-    private static PublicationMapper defaultPublicationMapper() {
-        return new PublicationMapper(AppEnv.getNamespace());
+    @JacocoGenerated
+    public DynamoDbEventConducer(String namespace) {
+        super(DynamodbEvent.class);
+        this.publicationMapper = new PublicationMapper(namespace);
     }
 
     @Override
@@ -44,7 +42,6 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
                                                  Context context) {
         return fromDynamodbStreamRecords(input.getRecords());
     }
-
 
     private PublicationCollection fromDynamodbStreamRecords(List<DynamodbEvent.DynamodbStreamRecord> records) {
         List<Publication> dtos = new ArrayList<>();
@@ -72,6 +69,4 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
         }
         return isEffectiveChange;
     }
-
-
 }
