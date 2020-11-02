@@ -36,7 +36,7 @@ public class PublicationMapper {
      * @param namespace Namespace to use for constructing ids from identifiers that are owned by Publication.
      */
     public PublicationMapper(String namespace) {
-        if (namespace == null || !namespace.endsWith("/")) {
+        if (namespace == null || !namespace.endsWith(FORWARD_SLASH)) {
             throw new IllegalArgumentException(ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH);
         }
 
