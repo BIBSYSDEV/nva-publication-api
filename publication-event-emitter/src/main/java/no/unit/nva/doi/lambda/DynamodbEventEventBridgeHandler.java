@@ -40,13 +40,13 @@ public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbE
         return new EventBridgePublisher(
             defaultEventBridgeRetryClient(),
             defaultFailedEventPublisher(),
-            Env.getEventBusName()
+            AppEnv.getEventBusName()
         );
     }
 
     @JacocoGenerated
     private static EventPublisher defaultFailedEventPublisher() {
-        return new SqsEventPublisher(defaultSqsClient(), Env.getDlqUrl());
+        return new SqsEventPublisher(defaultSqsClient(), AppEnv.getDlqUrl());
     }
 
     @JacocoGenerated
@@ -60,7 +60,7 @@ public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbE
 
     @JacocoGenerated
     private static EventBridgeRetryClient defaultEventBridgeRetryClient() {
-        return new EventBridgeRetryClient(defaultEventBridgeClient(), Env.getMaxAttempt());
+        return new EventBridgeRetryClient(defaultEventBridgeClient(), AppEnv.getMaxAttempt());
     }
 
     @JacocoGenerated
