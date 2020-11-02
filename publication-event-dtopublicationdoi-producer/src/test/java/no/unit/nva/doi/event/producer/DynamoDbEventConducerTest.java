@@ -10,7 +10,6 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Path;
 import no.unit.nva.events.handlers.EventParser;
 import nva.commons.utils.IoUtils;
@@ -28,7 +27,7 @@ class DynamoDbEventConducerTest {
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
-    private AppEnv environmentMock;
+    private AppConfig environmentMock;
     private static final String DYNAMODB_STREAM_EVENT = "dynamodbevent.json";
     private static ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbEventConducer handler;

@@ -28,7 +28,7 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
 
     @JacocoGenerated
     public DynamoDbEventConducer() {
-        this(AppEnv.getNamespace());
+        this(AppConfig.getNamespace());
     }
 
     public DynamoDbEventConducer(String namespace) {
