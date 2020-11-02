@@ -23,7 +23,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  * Listens on DynamodbEvents from DynamoDB Stream trigger and forwards the DynamoDbStreamRecords to EventBridge.
  *
  * Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
- * issues with DynamodDB, this is why we this handler to publish it to EventBridge.
+ * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
 public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
 
