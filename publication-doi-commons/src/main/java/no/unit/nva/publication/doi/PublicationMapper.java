@@ -25,6 +25,7 @@ public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
     private static final String NAMESPACE_PUBLICATION = "publication";
+    public static final String FORWARD_SLASH = "/";
 
     protected String namespacePublication;
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
@@ -40,7 +41,7 @@ public class PublicationMapper {
         }
 
         var ns = namespace.toLowerCase(Locale.US);
-        this.namespacePublication = ns + NAMESPACE_PUBLICATION;
+        this.namespacePublication = ns + NAMESPACE_PUBLICATION + FORWARD_SLASH;
     }
 
     private static URI transformIdentifierToId(String namespace, String identifier) {
