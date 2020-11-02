@@ -113,10 +113,24 @@ public class PublicationMapper {
             .withId(transformIdentifierToId(namespacePublication, dao.getIdentifier()))
             .withInstitutionOwner(URI.create(dao.getPublisherId()))
             .withMainTitle(dao.getMainTitle())
-            .withType(Optional.ofNullable(dao.getPublicationInstanceType()).filter(String::isBlank).map(PublicationType::findByName).orElse(null))
+            .withType(extractPublicationInstanceType(dao))
             .withPublicationDate(new PublicationDate(dao.getPublicationReleaseDate()))
-            .withDoi(Optional.ofNullable(dao.getDoi()).filter(String::isBlank).map(URI::create).orElse(null))
+            .withDoi(extractDoiUrl(dao))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
             .build();
+    }
+
+    private URI extractDoiUrl(DynamodbStreamRecordImageDao dao) {
+        return Optional.ofNullable(dao.getDoi())
+                .filter(String::isBlank)
+                .map(URI::create)
+                .orElse(null);
+    }
+
+    private PublicationType extractPublicationInstanceType(DynamodbStreamRecordImageDao dao) {
+        return Optional.ofNullable(dao.getPublicationInstanceType())
+                .filter(String::isBlank)
+                .map(PublicationType::findByName)
+                .orElse(null);
     }
 }
