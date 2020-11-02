@@ -9,8 +9,8 @@ public final class AppConfig {
 
     @JacocoGenerated
     private static final Environment ENVIRONMENT = new Environment();
-    private static final String CUSTOM_DOMAIN = "CustomDomain";
-    private static final String CUSTOM_DOMAIN_BASE_PATH = "CustomDomainBasePath";
+    private static final String DOMAIN_NAME = "DOMAIN_NAME";
+    private static final String BASE_PATH = "BASE_PATH";
 
     @JacocoGenerated
     private AppConfig() {
@@ -24,7 +24,7 @@ public final class AppConfig {
     private static URI extractNamespaceUriFromEnvironment() {
         // Example values: "CustomDomain": "api.dev.nva.aws.unit.no", "CustomDomainBasePath
         return URI.create(String.format("https://%s/%s/",
-            ENVIRONMENT.readEnv(CUSTOM_DOMAIN),
-            ENVIRONMENT.readEnv(CUSTOM_DOMAIN_BASE_PATH)));
+            ENVIRONMENT.readEnv(DOMAIN_NAME),
+            ENVIRONMENT.readEnv(BASE_PATH)));
     }
 }
