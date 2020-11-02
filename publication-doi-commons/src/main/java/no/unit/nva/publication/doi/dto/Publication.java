@@ -81,6 +81,7 @@ public class Publication {
         return publicationDate;
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -99,6 +100,7 @@ public class Publication {
                 && Objects.equals(publicationDate, that.publicationDate);
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(id, institutionOwner, doi, type, mainTitle, contributor, publicationDate);

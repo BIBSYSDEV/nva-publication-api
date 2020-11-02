@@ -4,11 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
+import nva.commons.utils.JacocoGenerated;
 
 public class PublicationCollection {
     private final String type;
     private final List<Publication> items;
 
+    @JacocoGenerated
     @JsonCreator
     public PublicationCollection(
             @JsonProperty("type") String type,

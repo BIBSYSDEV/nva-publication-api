@@ -26,11 +26,11 @@ public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, Publicati
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     private final PublicationMapper publicationMapper;
 
+    @JacocoGenerated
     public DynamoDbEventConducer() {
         this(AppEnv.getNamespace());
     }
 
-    @JacocoGenerated
     public DynamoDbEventConducer(String namespace) {
         super(DynamodbEvent.class);
         this.publicationMapper = new PublicationMapper(namespace);

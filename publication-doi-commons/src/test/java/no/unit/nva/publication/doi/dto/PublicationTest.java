@@ -22,7 +22,7 @@ class PublicationTest {
 
     @Test
     public void testBuilder() {
-        var publication = Builder.newBuilder()
+        var builder = Builder.newBuilder()
             .withId(URI.create(EXAMPLE_ID))
             .withDoi(URI.create(EXAMPLE_DOI_ID))
             .withInstitutionOwner(URI.create(EXAMPLE_INSTITUTION_OWNER))
@@ -33,8 +33,9 @@ class PublicationTest {
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
                 .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
                 .withName(EXAMPLE_CONTRIBUTOR_NAME)
-                .build()))
-            .build();
+                .build()));
+        var publication = builder.build();
+        var identicalPublication = builder.build();
 
         assertThat(publication.getId(), is(equalTo(URI.create(EXAMPLE_ID))));
         assertThat(publication.getDoi(), is(equalTo(URI.create(EXAMPLE_DOI_ID))));
@@ -47,5 +48,7 @@ class PublicationTest {
             hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
                 EXAMPLE_CONTRIBUTOR_NAME)));
         assertThat(publication, doesNotHaveNullOrEmptyFields());
+
+        assertThat(publication, is(equalTo(identicalPublication)));
     }
 }

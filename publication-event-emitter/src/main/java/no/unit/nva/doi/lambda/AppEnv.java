@@ -3,12 +3,13 @@ package no.unit.nva.doi.lambda;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 
+@JacocoGenerated
 public final class AppEnv {
 
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String DLQ_URL = "DLQ_URL";
     public static final String MAX_ATTEMPT = "MAX_ATTEMPT";
-    /** default */ static final Environment ENVIRONMENT = new Environment();
+    private static final Environment ENVIRONMENT = new Environment();
 
     @JacocoGenerated
     private AppEnv() {

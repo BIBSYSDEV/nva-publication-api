@@ -54,7 +54,7 @@ public class PublicationMapper {
      * Map a DynamodbStreamRecord with oldImage and/or newImage to PublicationMapping. Publication is a wrapper object
      * containing mapped old and/or new Publication.
      *
-     * @param streamRecord  DynamodbStreamRecord
+     * @param streamRecord DynamodbStreamRecord
      * @return PublicationMapping
      */
     public PublicationMapping fromDynamodbStreamRecord(DynamodbStreamRecord streamRecord) {
@@ -68,18 +68,34 @@ public class PublicationMapper {
 
             if (acceptStreamViewTypes(streamViewType,
                 StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.OLD_IMAGE)) {
-                Publication oldPublication = fromDynamodbStreamRecordImage(dynamodb.getOldImage());
-                publicationMappingBuilder.withOldPublication(oldPublication);
+                maybeSetOldPublication(publicationMappingBuilder, dynamodb);
             }
 
             if (acceptStreamViewTypes(streamViewType,
                 StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.NEW_IMAGE)) {
-                var newPublication = fromDynamodbStreamRecordImage(dynamodb.getNewImage());
-                publicationMappingBuilder.withNewPublication(newPublication);
+                maybeSetNewPublication(publicationMappingBuilder, dynamodb);
             }
         }
 
         return publicationMappingBuilder.build();
+    }
+
+    private void maybeSetNewPublication(PublicationMapping.Builder publicationMappingBuilder,
+                                        com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord dynamodb) {
+        var newImage = dynamodb.getNewImage();
+        if (newImage != null) {
+            var newPublication = fromDynamodbStreamRecordImage(newImage);
+            publicationMappingBuilder.withNewPublication(newPublication);
+        }
+    }
+
+    private void maybeSetOldPublication(PublicationMapping.Builder publicationMappingBuilder,
+                                        com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord dynamodb) {
+        var oldImage = dynamodb.getOldImage();
+        if (oldImage != null) {
+            Publication oldPublication = fromDynamodbStreamRecordImage(oldImage);
+            publicationMappingBuilder.withOldPublication(oldPublication);
+        }
     }
 
     private boolean acceptStreamViewTypes(String streamViewType, StreamViewType... streamViewTypes) {
@@ -90,7 +106,7 @@ public class PublicationMapper {
             .isPresent();
     }
 
-    private Publication fromDynamodbStreamRecordImage(Map<String,AttributeValue> image) {
+    private Publication fromDynamodbStreamRecordImage(Map<String, AttributeValue> image) {
         var jsonNode = objectMapper.convertValue(image, JsonNode.class);
         return fromDynamodbStreamRecordImage(jsonNode);
     }
@@ -124,15 +140,15 @@ public class PublicationMapper {
 
     private URI extractDoiUrl(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getDoi())
-                .filter(not(String::isBlank))
-                .map(URI::create)
-                .orElse(null);
+            .filter(not(String::isBlank))
+            .map(URI::create)
+            .orElse(null);
     }
 
     private PublicationType extractPublicationInstanceType(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getPublicationInstanceType())
-                .filter(not(String::isBlank))
-                .map(PublicationType::findByName)
-                .orElse(null);
+            .filter(not(String::isBlank))
+            .map(PublicationType::findByName)
+            .orElse(null);
     }
 }
