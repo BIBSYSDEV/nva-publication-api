@@ -24,6 +24,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
+    private static final String DYNAMODB_STREAM_EVENT_NEW_ONLY = "dynamodbevent_new_only.json";
     private static ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
@@ -35,6 +36,18 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     public void setUp() {
         handler = new DynamoDbFanoutPublicationDtoProducer(EXAMPLE_NAMESPACE);
         context = mock(Context.class);
+    }
+
+    @Test
+    void processInputCreatingDtosWhenOnlyNewImageIsPresentInDao() throws JsonProcessingException {
+        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_NEW_ONLY));
+        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
+        var eventBridgeEvent = new EventParser<DynamodbEvent>(
+            eventFile).parse(DynamodbEvent.class);
+        var actual = handler.processInput(event, eventBridgeEvent, context);
+
+        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
+        assertThat(actual.getItems(), hasSize(1));
     }
 
     @Test
