@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DynamoDbFanoutPublicationDtoProducerTest {
+
     public static final String EXAMPLE_NAMESPACE = "https://example.net/unittest/namespace/";
     public static final String DOI_PUBLICATION_TYPE = "doi.publication";
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT =
@@ -25,7 +26,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
     private static final String DYNAMODB_STREAM_EVENT_NEW_ONLY = "dynamodbevent_new_only.json";
-    private static ObjectMapper objectMapper = JsonUtils.objectMapper;
+    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
 

@@ -2,14 +2,11 @@ package no.unit.nva.doi.event.producer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.PublicationMapper;
-import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationCollection;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
