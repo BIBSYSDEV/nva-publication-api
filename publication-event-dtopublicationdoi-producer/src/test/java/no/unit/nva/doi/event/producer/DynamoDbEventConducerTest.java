@@ -43,18 +43,6 @@ class DynamoDbEventConducerTest {
     }
 
     @Test
-    void processInput() throws IOException {
-        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT));
-        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent>(
-            eventFile).parse(DynamodbEvent.class);
-        var actual = handler.processInput(event, eventBridgeEvent, context);
-
-        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
-        assertThat(actual.getItems(), hasSize(1));
-    }
-
-    @Test
     void noNewImageWhileProcessingInputThenInEffectiveChangeIsNotIncluded() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_ONLY));
         DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
