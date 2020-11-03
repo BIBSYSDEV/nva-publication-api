@@ -3,6 +3,10 @@ package no.unit.nva.publication.doi.dto;
 import java.util.Optional;
 import nva.commons.utils.JacocoGenerated;
 
+/**
+ * {@link PublicationMapping} is a holder object for holding `oldPublication` and `newPublication` (DTO) because a
+ * DynamodbEvent (DAO) holds a optional reference to `oldImage` and `newImage` from a database change in DynamoDb.
+ */
 public class PublicationMapping {
 
     private Publication oldPublication;
