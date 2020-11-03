@@ -21,21 +21,9 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
 
     @Test
-    public void testBuilder() {
-        final var builder = Builder.newBuilder()
-            .withId(URI.create(EXAMPLE_ID))
-            .withDoi(URI.create(EXAMPLE_DOI_ID))
-            .withInstitutionOwner(URI.create(EXAMPLE_INSTITUTION_OWNER))
-            .withPublicationDate(new PublicationDate("1999", "07", "09"))
-            .withType(PublicationType.BOOK_ANTHOLOGY)
-            .withMainTitle(EXAMPLE_TITLE)
-            .withContributor(List.of(new Contributor.Builder()
-                .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
-                .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
-                .withName(EXAMPLE_CONTRIBUTOR_NAME)
-                .build()));
+    void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
+        final var builder = createBuilderWithAllFieldsSet();
         final var publication = builder.build();
-        final var identicalPublication = builder.build();
 
         assertThat(publication.getId(), is(equalTo(URI.create(EXAMPLE_ID))));
         assertThat(publication.getDoi(), is(equalTo(URI.create(EXAMPLE_DOI_ID))));
@@ -48,7 +36,28 @@ class PublicationTest {
             hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
                 EXAMPLE_CONTRIBUTOR_NAME)));
         assertThat(publication, doesNotHaveNullOrEmptyFields());
+    }
 
+    @Test
+    void comparingTwoFullyPopulatedPublicationsInstancesIsEqual() {
+        final var builder = createBuilderWithAllFieldsSet();
+        final var publication = builder.build();
+        final var identicalPublication = builder.build();
         assertThat(publication, is(equalTo(identicalPublication)));
+    }
+
+    private Builder createBuilderWithAllFieldsSet() {
+        return Builder.newBuilder()
+            .withId(URI.create(EXAMPLE_ID))
+            .withDoi(URI.create(EXAMPLE_DOI_ID))
+            .withInstitutionOwner(URI.create(EXAMPLE_INSTITUTION_OWNER))
+            .withPublicationDate(new PublicationDate("1999", "07", "09"))
+            .withType(PublicationType.BOOK_ANTHOLOGY)
+            .withMainTitle(EXAMPLE_TITLE)
+            .withContributor(List.of(new Contributor.Builder()
+                .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
+                .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
+                .withName(EXAMPLE_CONTRIBUTOR_NAME)
+                .build()));
     }
 }
