@@ -22,7 +22,9 @@ public final class AppConfig {
     }
 
     private static URI extractNamespaceUriFromEnvironment() {
-        // Example values: "CustomDomain": "api.dev.nva.aws.unit.no", "CustomDomainBasePath
+        // Example values:
+        // "CustomDomain": "api.dev.nva.aws.unit.no"
+        // "CustomDomainBasePath": "publication"
         return URI.create(String.format("https://%s/%s/",
             ENVIRONMENT.readEnv(DOMAIN_NAME),
             ENVIRONMENT.readEnv(BASE_PATH)));
