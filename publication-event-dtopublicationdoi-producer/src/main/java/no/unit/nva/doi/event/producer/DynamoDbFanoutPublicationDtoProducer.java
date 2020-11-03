@@ -5,6 +5,7 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.PublicationMapper;
@@ -43,13 +44,12 @@ public class DynamoDbFanoutPublicationDtoProducer extends EventHandler<DynamodbE
     }
 
     private PublicationCollection fromDynamodbStreamRecords(List<DynamodbEvent.DynamodbStreamRecord> records) {
-        List<Publication> dtos = new ArrayList<>();
-        for (DynamodbEvent.DynamodbStreamRecord record : records) {
-            var publicationMapping = publicationMapper.fromDynamodbStreamRecord(record);
-            if (isEffectiveChange(publicationMapping) && publicationMapping.getNewPublication().isPresent()) {
-                dtos.add(publicationMapping.getNewPublication().get());
-            }
-        }
+        var dtos = records.stream()
+            .parallel()
+            .map(publicationMapper::fromDynamodbStreamRecord)
+            .filter(this::isEffectiveChange)
+            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow())
+            .collect(Collectors.toList());
         logger.info("From {} records we made {} Publication DTOs", records.size(), dtos.size());
         return new PublicationCollection(TYPE_DTO_DOI_PUBLICATION, dtos);
     }
