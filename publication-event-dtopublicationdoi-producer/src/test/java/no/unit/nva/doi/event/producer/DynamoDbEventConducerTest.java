@@ -9,7 +9,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
 import java.nio.file.Path;
 import no.unit.nva.events.handlers.EventParser;
 import nva.commons.utils.IoUtils;
@@ -18,8 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class DynamoDbEventConducerTest {
-
-    private static final String WILDCARD = "*";
     public static final String EXAMPLE_NAMESPACE = "https://example.net/unittest/namespace/";
     public static final String DOI_PUBLICATION_TYPE = "doi.publication";
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT =
@@ -27,8 +24,6 @@ class DynamoDbEventConducerTest {
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
-    private AppConfig environmentMock;
-    private static final String DYNAMODB_STREAM_EVENT = "dynamodbevent.json";
     private static ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbEventConducer handler;
     private Context context;
