@@ -38,7 +38,7 @@ class DynamoDbEventConducerTest {
     }
 
     @Test
-    void noNewImageWhileProcessingInputThenInEffectiveChangeIsNotIncluded() throws JsonProcessingException {
+    void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_ONLY));
         DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
         var eventBridgeEvent = new EventParser<DynamodbEvent>(
@@ -50,7 +50,7 @@ class DynamoDbEventConducerTest {
     }
 
     @Test
-    void differentOldAndNewImageWhileProcessingInputThenEffectiveChangeIsIncluded() throws JsonProcessingException {
+    void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT));
         DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
         var eventBridgeEvent = new EventParser<DynamodbEvent>(
@@ -62,7 +62,7 @@ class DynamoDbEventConducerTest {
     }
 
     @Test
-    void equalOldAndNewImageWhileProcessingInputThenInEffectiveChangeIsNotIncluded() throws JsonProcessingException {
+    void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL));
         DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
         var eventBridgeEvent = new EventParser<DynamodbEvent>(
