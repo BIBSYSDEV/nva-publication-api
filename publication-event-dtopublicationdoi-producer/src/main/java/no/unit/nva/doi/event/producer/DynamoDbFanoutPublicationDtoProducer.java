@@ -55,17 +55,12 @@ public class DynamoDbFanoutPublicationDtoProducer extends EventHandler<DynamodbE
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {
-        Optional<Publication> newPublication = publicationMapping.getNewPublication();
-        Optional<Publication> oldPublication = publicationMapping.getOldPublication();
+        var newPublication = publicationMapping.getNewPublication().orElse(null);
+        var oldPublication = publicationMapping.getOldPublication().orElse(null);
 
-        boolean isEffectiveChange = false;
-        if (newPublication.isPresent()) {
-            if (oldPublication.isPresent()) {
-                isEffectiveChange = !newPublication.get().equals(oldPublication.get());
-            } else {
-                isEffectiveChange = true;
-            }
+        if (newPublication != null) {
+            return !newPublication.equals(oldPublication);
         }
-        return isEffectiveChange;
+        return false;
     }
 }
