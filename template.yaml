@@ -507,7 +507,6 @@ Resources:
       QueueName: !Ref FailureQueueName
   DynamoDbEventConducer:
     DependsOn:
-    # - EventBus  ( FIX THIS )
       - FailQueue
     Type: AWS::Serverless::Function
     Properties:
@@ -544,7 +543,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-emitter
-      # DynamodbStream -> Publish DynamodbStreamEvent to EventBridge ->  DynamodbEventConducer (reads DynamodbStreamEvent from Event Bridge) and creates PublicationDTOs and publishes again on Event Bridge.
+      # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.doi.lambda.DynamodbEventEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
