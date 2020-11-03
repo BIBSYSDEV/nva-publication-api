@@ -16,7 +16,7 @@ import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class DynamoDbEventConducerTest {
+class DynamoDbFanoutPublicationDtoProducerTest {
     public static final String EXAMPLE_NAMESPACE = "https://example.net/unittest/namespace/";
     public static final String DOI_PUBLICATION_TYPE = "doi.publication";
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT =
@@ -25,7 +25,7 @@ class DynamoDbEventConducerTest {
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
     private static ObjectMapper objectMapper = JsonUtils.objectMapper;
-    private DynamoDbEventConducer handler;
+    private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
 
     /**
@@ -33,7 +33,7 @@ class DynamoDbEventConducerTest {
      */
     @BeforeEach
     public void setUp() {
-        handler = new DynamoDbEventConducer(EXAMPLE_NAMESPACE);
+        handler = new DynamoDbFanoutPublicationDtoProducer(EXAMPLE_NAMESPACE);
         context = mock(Context.class);
     }
 

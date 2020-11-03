@@ -505,7 +505,7 @@ Resources:
     Properties:
       MaximumMessageSize: 262144
       QueueName: !Ref FailureQueueName
-  DynamoDbEventConducer:
+  DynamoDbFanoutPublicationDtoProducer:
     DependsOn:
       - FailQueue
     Type: AWS::Serverless::Function
@@ -513,7 +513,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-dtopublicationdoi-producer
-      Handler: no.unit.nva.doi.event.producer.DynamoDbEventConducer::handleRequest
+      Handler: no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn

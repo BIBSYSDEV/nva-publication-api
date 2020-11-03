@@ -2,6 +2,9 @@ package no.unit.nva.doi.event.producer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.PublicationMapper;
@@ -12,26 +15,22 @@ import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 /**
  * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
  * `doi.publication`.
  */
-public class DynamoDbEventConducer extends EventHandler<DynamodbEvent, PublicationCollection> {
+public class DynamoDbFanoutPublicationDtoProducer extends EventHandler<DynamodbEvent, PublicationCollection> {
 
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDbEventConducer.class);
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
-    public DynamoDbEventConducer() {
+    public DynamoDbFanoutPublicationDtoProducer() {
         this(AppConfig.getNamespace());
     }
 
-    public DynamoDbEventConducer(String namespace) {
+    public DynamoDbFanoutPublicationDtoProducer(String namespace) {
         super(DynamodbEvent.class);
         this.publicationMapper = new PublicationMapper(namespace);
     }
