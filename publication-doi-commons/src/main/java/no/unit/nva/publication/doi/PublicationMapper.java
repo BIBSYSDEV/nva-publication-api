@@ -24,6 +24,12 @@ import nva.commons.utils.JsonUtils;
 
 import static java.util.function.Predicate.not;
 
+/**
+ * {@link PublicationMapper} reads DAOs under {@link no.unit.nva.publication.doi.dynamodb.dao} related to streaming
+ * DynamodbEvent's thats been published on Event bridge.
+ * <p>It maps these DAOs into {@link PublicationMapping} which optionally can contain either a `oldImage` or
+ * `newImage` of a {@link Publication}.
+ */
 public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
