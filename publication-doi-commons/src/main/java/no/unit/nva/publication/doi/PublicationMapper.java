@@ -49,8 +49,7 @@ public class PublicationMapper {
             throw new IllegalArgumentException(ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH);
         }
 
-        var ns = namespace.toLowerCase(Locale.US);
-        this.namespacePublication = ns + NAMESPACE_PUBLICATION + FORWARD_SLASH;
+        this.namespacePublication = namespace.toLowerCase(Locale.US) + NAMESPACE_PUBLICATION + FORWARD_SLASH;
     }
 
     private static URI transformIdentifierToId(String namespace, String identifier) {
