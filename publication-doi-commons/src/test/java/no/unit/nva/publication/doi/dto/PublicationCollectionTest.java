@@ -17,13 +17,13 @@ class PublicationCollectionTest {
     private static final String EXAMPLE_NAMESPACE = "http://example.net/namespace/";
 
     @Test
-    void getType() {
+    void testCreatePublicationCollectionWithExampleTypeThenGetTypeReturnsExampleType() {
         assertThat(new PublicationCollection(EXAMPLE_TYPE, Collections.emptyList()).getType(),
             is(equalTo(EXAMPLE_TYPE)));
     }
 
     @Test
-    void getItems() {
+    void createPublicationCollectionWithOneItemThenSizeOfGetItemsIsOne() {
         assertThat(new PublicationCollection(EXAMPLE_TYPE, createPublicationCollection()).getItems(), hasSize(1));
     }
 
