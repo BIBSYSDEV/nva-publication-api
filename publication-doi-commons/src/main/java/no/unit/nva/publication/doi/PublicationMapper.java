@@ -27,6 +27,7 @@ import static java.util.function.Predicate.not;
 /**
  * {@link PublicationMapper} reads DAOs under {@link no.unit.nva.publication.doi.dynamodb.dao} related to streaming
  * DynamodbEvent's thats been published on Event bridge.
+ *
  * <p>It maps these DAOs into {@link PublicationMapping} which optionally can contain either a `oldImage` or
  * `newImage` of a {@link Publication}.
  */
