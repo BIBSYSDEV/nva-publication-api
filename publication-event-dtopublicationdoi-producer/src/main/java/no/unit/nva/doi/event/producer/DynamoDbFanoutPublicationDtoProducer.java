@@ -6,6 +6,7 @@ import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.PublicationMapper;
+import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
@@ -22,6 +23,8 @@ public class DynamoDbFanoutPublicationDtoProducer
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     public static final PublicationHolder NO_OUTPUT_NO_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
+    public static final String CREATED = "Created";
+    public static final String SKIPPED_CREATING = "Skipped creating";
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
@@ -42,15 +45,22 @@ public class DynamoDbFanoutPublicationDtoProducer
     }
 
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
-        var dto = Optional.ofNullable(record)
-            .map(publicationMapper::fromDynamodbStreamRecord)
-            .filter(this::isEffectiveChange)
-            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
-
-        logger.info("{} Publication DTO from DynamodbStreamRecord", dto.isPresent() ? "Created" : "Skipped creating");
+        var dto = mapToPublicationDto(record);
+        logMappingResults(dto);
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
             .orElse(NO_OUTPUT_NO_EVENT);
+    }
+
+    private void logMappingResults(Optional<Publication> dto) {
+        logger.info("{} Publication DTO from DynamodbStreamRecord", dto.isPresent() ? CREATED : SKIPPED_CREATING);
+    }
+
+    private Optional<Publication> mapToPublicationDto(DynamodbEvent.DynamodbStreamRecord record) {
+        return Optional.ofNullable(record)
+            .map(publicationMapper::fromDynamodbStreamRecord)
+            .filter(this::isEffectiveChange)
+            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {
