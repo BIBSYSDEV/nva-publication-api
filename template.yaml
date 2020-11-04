@@ -551,12 +551,12 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
-          DLQ_URL: !Ref FanoutDLQ
+          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !Ref EventBusName
       Policies:
         - SQSSendMessagePolicy:
-            QueueName: !GetAtt FanoutDLQ.QueueName
+            QueueName: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.QueueName
         - Version: '2012-10-17'
           Statement:
             - Effect: Allow
@@ -571,7 +571,7 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
-  FanoutDLQ:
+  DynamodbEventFanoutStreamRecordsDLQ:
     Type: "AWS::SQS::Queue"
 
   NvaPublicationBasePathMapping:
@@ -581,11 +581,3 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
-
-Outputs:
-  FanoutLambdaName:
-    Description: "Fanout Lambda Function Name"
-    Value: !Ref DynamodbEventFanoutStreamRecordsEventBridgeHandler
-  FanoutUrl:
-    Description: "FanoutUrl SQS DLQ URL"
-    Value: !Ref FanoutDLQ
