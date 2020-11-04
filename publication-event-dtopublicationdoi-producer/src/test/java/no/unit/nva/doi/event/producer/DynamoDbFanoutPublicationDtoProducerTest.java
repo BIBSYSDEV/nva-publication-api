@@ -2,8 +2,9 @@ package no.unit.nva.doi.event.producer;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -42,48 +43,46 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     @Test
     void processInputCreatingDtosWhenOnlyNewImageIsPresentInDao() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_NEW_ONLY));
-        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent>(
-            eventFile).parse(DynamodbEvent.class);
+        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
+        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
+            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
         var actual = handler.processInput(event, eventBridgeEvent, context);
 
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
-        assertThat(actual.getItems(), hasSize(1));
+        assertThat(actual.getItem(), notNullValue());
     }
 
     @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_ONLY));
-        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent>(
-            eventFile).parse(DynamodbEvent.class);
+        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
+        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
+            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
         var actual = handler.processInput(event, eventBridgeEvent, context);
 
-        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
-        assertThat(actual.getItems(), hasSize(0));
+        assertThat(actual, nullValue());
     }
 
     @Test
     void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT));
-        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent>(
-            eventFile).parse(DynamodbEvent.class);
+        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
+        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
+            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
         var actual = handler.processInput(event, eventBridgeEvent, context);
 
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
-        assertThat(actual.getItems(), hasSize(1));
+        assertThat(actual.getItem(), notNullValue());
     }
 
     @Test
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
         var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL));
-        DynamodbEvent event = objectMapper.readValue(eventFile, DynamodbEvent.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent>(
-            eventFile).parse(DynamodbEvent.class);
+        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
+        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
+            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
         var actual = handler.processInput(event, eventBridgeEvent, context);
 
-        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
-        assertThat(actual.getItems(), hasSize(0));
+        assertThat(actual, nullValue());
     }
 }

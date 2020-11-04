@@ -2,12 +2,11 @@ package no.unit.nva.doi.event.producer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.PublicationMapper;
-import no.unit.nva.publication.doi.dto.PublicationCollection;
+import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
@@ -17,9 +16,11 @@ import org.slf4j.LoggerFactory;
  * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
  * `doi.publication`.
  */
-public class DynamoDbFanoutPublicationDtoProducer extends EventHandler<DynamodbEvent, PublicationCollection> {
+public class DynamoDbFanoutPublicationDtoProducer
+    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, PublicationHolder> {
 
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
+    public static final PublicationHolder NO_OUTPUT_NO_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     private final PublicationMapper publicationMapper;
 
@@ -34,21 +35,22 @@ public class DynamoDbFanoutPublicationDtoProducer extends EventHandler<DynamodbE
     }
 
     @Override
-    protected PublicationCollection processInput(DynamodbEvent input,
-                                                 AwsEventBridgeEvent<DynamodbEvent> event,
-                                                 Context context) {
-        return fromDynamodbStreamRecords(input.getRecords());
+    protected PublicationHolder processInput(DynamodbEvent.DynamodbStreamRecord input,
+                                             AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
+                                             Context context) {
+        return fromDynamodbStreamRecords(input);
     }
 
-    private PublicationCollection fromDynamodbStreamRecords(List<DynamodbEvent.DynamodbStreamRecord> records) {
-        var dtos = records.stream()
-            .parallel()
+    private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
+        var dto = Optional.ofNullable(record)
             .map(publicationMapper::fromDynamodbStreamRecord)
             .filter(this::isEffectiveChange)
-            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow())
-            .collect(Collectors.toList());
-        logger.info("From {} records we made {} Publication DTOs", records.size(), dtos.size());
-        return new PublicationCollection(TYPE_DTO_DOI_PUBLICATION, dtos);
+            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
+
+        logger.info("{} Publication DTO from DynamodbStreamRecord", dto.isPresent() ? "Created" : "Skipped creating");
+        return dto
+            .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
+            .orElse(NO_OUTPUT_NO_EVENT);
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {

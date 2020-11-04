@@ -3,35 +3,33 @@ package no.unit.nva.publication.doi.dto;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.hasSize;
-import java.util.Collections;
-import java.util.List;
+import static org.hamcrest.Matchers.notNullValue;
 import no.unit.nva.publication.doi.PublicationMapper;
 import org.junit.jupiter.api.Test;
 
-class PublicationCollectionTest {
+class PublicationHolderTest {
 
-    private static final String EXAMPLE_TYPE = "exampleType";
     public static final PublicationDynamoEventTestDataGenerator PUBLICATION_GENERATOR =
         new PublicationDynamoEventTestDataGenerator();
+    private static final String EXAMPLE_TYPE = "exampleType";
     private static final String EXAMPLE_NAMESPACE = "http://example.net/namespace/";
 
     @Test
-    void testCreatePublicationCollectionWithExampleTypeThenGetTypeReturnsExampleType() {
-        assertThat(new PublicationCollection(EXAMPLE_TYPE, Collections.emptyList()).getType(),
+    void testCreatePublicationHolderWithExampleTypeThenGetTypeReturnsExampleType() {
+        assertThat(new PublicationHolder(EXAMPLE_TYPE, null).getType(),
             is(equalTo(EXAMPLE_TYPE)));
     }
 
     @Test
-    void createPublicationCollectionWithOneItemThenSizeOfGetItemsIsOne() {
-        assertThat(new PublicationCollection(EXAMPLE_TYPE, createPublicationCollection()).getItems(), hasSize(1));
+    void createPublicationHolderWithItemThenHasItem() {
+        assertThat(new PublicationHolder(EXAMPLE_TYPE, createPublication()).getItem(), notNullValue());
     }
 
-    private List<Publication> createPublicationCollection() {
+    private Publication createPublication() {
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
-        return List.of(mapper.fromDynamodbStreamRecord(
+        return mapper.fromDynamodbStreamRecord(
             PUBLICATION_GENERATOR.createRandomStreamRecord().asDynamoDbEvent().getRecords().get(0))
             .getNewPublication()
-            .get());
+            .get();
     }
 }

@@ -2,17 +2,15 @@ package no.unit.nva.publication.doi.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.utils.JacocoGenerated;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import nva.commons.utils.JacocoGenerated;
 
 public class Publication {
 
     private final URI id;
     private final URI institutionOwner;
-
     private final URI doi;
     private final PublicationType type;
     private final String mainTitle;
@@ -50,7 +48,7 @@ public class Publication {
 
     protected Publication(Builder builder) {
         this(builder.id, builder.institutionOwner, builder.doi, builder.type, builder.mainTitle, builder.contributor,
-                builder.publicationDate);
+            builder.publicationDate);
     }
 
     public URI getId() {
@@ -92,12 +90,12 @@ public class Publication {
         }
         Publication that = (Publication) o;
         return Objects.equals(id, that.id)
-                && Objects.equals(institutionOwner, that.institutionOwner)
-                && Objects.equals(doi, that.doi)
-                && type == that.type
-                && Objects.equals(mainTitle, that.mainTitle)
-                && Objects.equals(contributor, that.contributor)
-                && Objects.equals(publicationDate, that.publicationDate);
+            && Objects.equals(institutionOwner, that.institutionOwner)
+            && Objects.equals(doi, that.doi)
+            && type == that.type
+            && Objects.equals(mainTitle, that.mainTitle)
+            && Objects.equals(contributor, that.contributor)
+            && Objects.equals(publicationDate, that.publicationDate);
     }
 
     @JacocoGenerated
