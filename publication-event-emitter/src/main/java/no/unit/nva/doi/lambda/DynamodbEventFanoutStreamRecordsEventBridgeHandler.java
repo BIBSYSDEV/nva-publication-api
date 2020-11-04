@@ -23,20 +23,20 @@ import software.amazon.awssdk.services.sqs.SqsClient;
  * <p>Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
  * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
-public class DynamodbEventEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
+public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
 
     public static final String AWS_REGION = "AWS_REGION";
     private final EventPublisher eventPublisher;
 
     @JacocoGenerated
-    public DynamodbEventEventBridgeHandler() {
+    public DynamodbEventFanoutStreamRecordsEventBridgeHandler() {
         this(defaultEventBridgePublisher());
     }
 
     /**
      * Constructor for CreatePublicationHandler.
      */
-    protected DynamodbEventEventBridgeHandler(EventPublisher eventPublisher) {
+    protected DynamodbEventFanoutStreamRecordsEventBridgeHandler(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
 

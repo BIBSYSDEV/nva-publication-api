@@ -537,14 +537,14 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt FailQueue.Arn
-  DynamodbEventEventBridgeHandler:
+  DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-emitter
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
-      Handler: no.unit.nva.doi.lambda.DynamodbEventEventBridgeHandler::handleRequest
+      Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11
@@ -585,7 +585,7 @@ Resources:
 Outputs:
   FanoutLambdaName:
     Description: "Fanout Lambda Function Name"
-    Value: !Ref DynamodbEventEventBridgeHandler
+    Value: !Ref DynamodbEventFanoutStreamRecordsEventBridgeHandler
   FanoutUrl:
     Description: "FanoutUrl SQS DLQ URL"
     Value: !Ref FanoutDLQ
