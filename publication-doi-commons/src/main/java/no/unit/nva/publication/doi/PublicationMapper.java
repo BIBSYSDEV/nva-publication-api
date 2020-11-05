@@ -1,8 +1,8 @@
 package no.unit.nva.publication.doi;
 
+import static java.util.function.Predicate.not;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
-import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +11,6 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
@@ -21,8 +20,6 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import nva.commons.utils.JsonUtils;
-
-import static java.util.function.Predicate.not;
 
 /**
  * {@link PublicationMapper} reads DAOs under {@link no.unit.nva.publication.doi.dynamodb.dao} related to streaming
@@ -34,11 +31,10 @@ import static java.util.function.Predicate.not;
 public class PublicationMapper {
 
     public static final String ERROR_NAMESPACE_MUST_CONTAIN_SUFFIX_SLASH = "Namespace must end with /";
-    private static final String NAMESPACE_PUBLICATION = "publication";
     public static final String FORWARD_SLASH = "/";
-
-    protected String namespacePublication;
+    private static final String NAMESPACE_PUBLICATION = "publication";
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
+    protected String namespacePublication;
 
     /**
      * Construct a mapper to map between DAOs to DTOs.
@@ -51,10 +47,6 @@ public class PublicationMapper {
         }
 
         this.namespacePublication = namespace.toLowerCase(Locale.US) + NAMESPACE_PUBLICATION + FORWARD_SLASH;
-    }
-
-    private static URI transformIdentifierToId(String namespace, String identifier) {
-        return URI.create(namespace + identifier);
     }
 
     /**
@@ -75,56 +67,17 @@ public class PublicationMapper {
 
             if (acceptStreamViewTypes(streamViewType,
                 StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.OLD_IMAGE)) {
-                maybeSetOldPublication(publicationMappingBuilder, dynamodb);
+                fromDynamodbStreamRecordImage(dynamodb.getOldImage())
+                    .ifPresent(publicationMappingBuilder::withOldPublication);
             }
 
             if (acceptStreamViewTypes(streamViewType,
                 StreamViewType.NEW_AND_OLD_IMAGES, StreamViewType.NEW_IMAGE)) {
-                maybeSetNewPublication(publicationMappingBuilder, dynamodb);
+                fromDynamodbStreamRecordImage(dynamodb.getNewImage())
+                    .ifPresent(publicationMappingBuilder::withNewPublication);
             }
         }
-
         return publicationMappingBuilder.build();
-    }
-
-    private void maybeSetNewPublication(PublicationMapping.Builder publicationMappingBuilder,
-                                        StreamRecord dynamodb) {
-        var newImage = dynamodb.getNewImage();
-        if (newImage != null) {
-            var newPublication = fromDynamodbStreamRecordImage(newImage);
-            publicationMappingBuilder.withNewPublication(newPublication);
-        }
-    }
-
-    private void maybeSetOldPublication(PublicationMapping.Builder publicationMappingBuilder,
-                                        StreamRecord dynamodb) {
-        var oldImage = dynamodb.getOldImage();
-        if (oldImage != null) {
-            Publication oldPublication = fromDynamodbStreamRecordImage(oldImage);
-            publicationMappingBuilder.withOldPublication(oldPublication);
-        }
-    }
-
-    private boolean acceptStreamViewTypes(String streamViewType, StreamViewType... streamViewTypes) {
-        return Arrays.stream(streamViewTypes)
-            .map(StreamViewType::getValue)
-            .filter(s -> s.equals(streamViewType))
-            .findFirst()
-            .isPresent();
-    }
-
-    private Publication fromDynamodbStreamRecordImage(Map<String, AttributeValue> image) {
-        var jsonNode = objectMapper.convertValue(image, JsonNode.class);
-        return fromDynamodbStreamRecordImage(jsonNode);
-    }
-
-    private Publication fromDynamodbStreamRecordImage(JsonNode jsonNode) {
-        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
-        var dynamodbStreamRecordImageDao =
-            new DynamodbStreamRecordImageDao.Builder(jsonPointers)
-                .withDynamodbStreamRecordImage(jsonNode)
-                .build();
-        return fromDynamodbStreamRecordDao(dynamodbStreamRecordImageDao);
     }
 
     /**
@@ -143,6 +96,35 @@ public class PublicationMapper {
             .withDoi(extractDoiUrl(dao))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
             .build();
+    }
+
+    private static URI transformIdentifierToId(String namespace, String identifier) {
+        return URI.create(namespace + identifier);
+    }
+
+    private boolean acceptStreamViewTypes(String streamViewType, StreamViewType... streamViewTypes) {
+        return Arrays.stream(streamViewTypes)
+            .map(StreamViewType::getValue)
+            .filter(s -> s.equals(streamViewType))
+            .findFirst()
+            .isPresent();
+    }
+
+    private Optional<Publication> fromDynamodbStreamRecordImage(Map<String, AttributeValue> image) {
+        if (image == null || image.isEmpty()) {
+            return Optional.empty();
+        }
+        var jsonNode = objectMapper.convertValue(image, JsonNode.class);
+        return Optional.of(fromDynamodbStreamRecordImage(jsonNode));
+    }
+
+    private Publication fromDynamodbStreamRecordImage(JsonNode jsonNode) {
+        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
+        var dynamodbStreamRecordImageDao =
+            new DynamodbStreamRecordImageDao.Builder(jsonPointers)
+                .withDynamodbStreamRecordImage(jsonNode)
+                .build();
+        return fromDynamodbStreamRecordDao(dynamodbStreamRecordImageDao);
     }
 
     private URI extractDoiUrl(DynamodbStreamRecordImageDao dao) {
