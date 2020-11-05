@@ -7,12 +7,10 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
-import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
@@ -57,21 +55,19 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
-        var eventFile = IoUtils.stringFromResources((DYNAMODB_STREAM_EVENT_OLD_ONLY));
-        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
-            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
-        var actual = handler.processInput(event, eventBridgeEvent, context);
-
+        var eventInputStream = IoUtils.inputStreamFromResources((DYNAMODB_STREAM_EVENT_OLD_ONLY));
+        var outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
         assertThat(actual, nullValue());
     }
 
     @Test
     void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
-        var inputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT);
-
-        handler.handleRequest(inputStream, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT);
+        var outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
         assertThat(actual.getItem(), notNullValue());
@@ -79,9 +75,11 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
-        var inputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
-        handler.handleRequest(inputStream, outputStream, context);
-        var actual = outputToPublicationHolder(outputStream);
+        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
+        var outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
+
         assertThat(actual, nullValue());
     }
 
