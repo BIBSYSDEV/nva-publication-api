@@ -12,9 +12,9 @@ public class PublicationHolder {
     @JsonCreator
     public PublicationHolder(
             @JsonProperty("type") String type,
-            @JsonProperty("item") Publication publicationList) {
+            @JsonProperty("item") Publication publication) {
         this.type = type;
-        this.item = publicationList;
+        this.item = publication;
     }
 
     public String getType() {
