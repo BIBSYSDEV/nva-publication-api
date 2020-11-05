@@ -45,7 +45,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     @Test
     void processInputCreatingDtosWhenOnlyNewImageIsPresentInDao() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_NEW_ONLY);
-        var outputStream = new ByteArrayOutputStream();
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
@@ -56,7 +55,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources((DYNAMODB_STREAM_EVENT_OLD_ONLY));
-        var outputStream = new ByteArrayOutputStream();
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
         assertThat(actual, nullValue());
@@ -65,7 +63,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     @Test
     void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT);
-        var outputStream = new ByteArrayOutputStream();
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
@@ -76,7 +73,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     @Test
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
-        var outputStream = new ByteArrayOutputStream();
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
