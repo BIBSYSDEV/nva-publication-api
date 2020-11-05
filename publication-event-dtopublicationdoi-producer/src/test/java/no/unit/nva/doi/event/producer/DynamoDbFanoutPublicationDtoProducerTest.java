@@ -23,15 +23,16 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     public static final String EXAMPLE_NAMESPACE = "https://example.net/unittest/namespace/";
     public static final String DOI_PUBLICATION_TYPE = "doi.publication";
-    private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT =
-        "dynamodbevent_old_and_new_present_different.json";
-    private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
-        "dynamodbevent_old_and_new_present_equal.json";
-    private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
+    private static final Path DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT =
+        Path.of("dynamodbevent_old_and_new_present_different.json");
+    private static final Path DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
+        Path.of("dynamodbevent_old_and_new_present_equal.json");
+    private static final Path DYNAMODB_STREAM_EVENT_OLD_ONLY = Path.of("dynamodbevent_old_only.json");
     private static final Path DYNAMODB_STREAM_EVENT_NEW_ONLY = Path.of("dynamodbevent_new_only.json");
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
+    private ByteArrayOutputStream outputStream;
 
     /**
      * Setting up test environment.
@@ -40,6 +41,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     public void setUp() {
         handler = new DynamoDbFanoutPublicationDtoProducer(EXAMPLE_NAMESPACE);
         context = mock(Context.class);
+        outputStream = new ByteArrayOutputStream();
     }
 
     @Test
@@ -55,7 +57,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
-        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_ONLY));
+        var eventFile = IoUtils.stringFromResources((DYNAMODB_STREAM_EVENT_OLD_ONLY));
         var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
         var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
             eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
@@ -66,11 +68,10 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputCreatesDtosWhenOldAndNewImageAreDifferent() throws JsonProcessingException {
-        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFRENT));
-        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
-            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
-        var actual = handler.processInput(event, eventBridgeEvent, context);
+        var inputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT);
+
+        handler.handleRequest(inputStream, outputStream, context);
+        var actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
         assertThat(actual.getItem(), notNullValue());
@@ -78,12 +79,9 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
-        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL));
-        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
-            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
-        var actual = handler.processInput(event, eventBridgeEvent, context);
-
+        var inputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
+        handler.handleRequest(inputStream, outputStream, context);
+        var actual = outputToPublicationHolder(outputStream);
         assertThat(actual, nullValue());
     }
 
