@@ -33,7 +33,7 @@ public class DynamoDbFanoutPublicationDtoProducer
     }
 
     public DynamoDbFanoutPublicationDtoProducer(String namespace) {
-        super(DynamodbEvent.class);
+        super(DynamodbEvent.DynamodbStreamRecord.class);
         this.publicationMapper = new PublicationMapper(namespace);
     }
 

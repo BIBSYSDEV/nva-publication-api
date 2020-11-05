@@ -10,8 +10,10 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import no.unit.nva.events.handlers.EventParser;
+import no.unit.nva.publication.doi.dto.PublicationHolder;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +28,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     private static final String DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
         "dynamodbevent_old_and_new_present_equal.json";
     private static final String DYNAMODB_STREAM_EVENT_OLD_ONLY = "dynamodbevent_old_only.json";
-    private static final String DYNAMODB_STREAM_EVENT_NEW_ONLY = "dynamodbevent_new_only.json";
+    private static final Path DYNAMODB_STREAM_EVENT_NEW_ONLY = Path.of("dynamodbevent_new_only.json");
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
@@ -42,11 +44,10 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void processInputCreatingDtosWhenOnlyNewImageIsPresentInDao() throws JsonProcessingException {
-        var eventFile = IoUtils.stringFromResources(Path.of(DYNAMODB_STREAM_EVENT_NEW_ONLY));
-        var event = objectMapper.readValue(eventFile, DynamodbEvent.DynamodbStreamRecord.class);
-        var eventBridgeEvent = new EventParser<DynamodbEvent.DynamodbStreamRecord>(
-            eventFile).parse(DynamodbEvent.DynamodbStreamRecord.class);
-        var actual = handler.processInput(event, eventBridgeEvent, context);
+        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_NEW_ONLY);
+        var outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
         assertThat(actual.getItem(), notNullValue());
@@ -84,5 +85,12 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         var actual = handler.processInput(event, eventBridgeEvent, context);
 
         assertThat(actual, nullValue());
+    }
+
+    private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
+        throws JsonProcessingException {
+        String outputString = outputStream.toString();
+        PublicationHolder actual = objectMapper.readValue(outputString, PublicationHolder.class);
+        return actual;
     }
 }
