@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
 public class Publication {
 
     private final URI id;
     private final URI institutionOwner;
-
     private final URI doi;
     private final PublicationType type;
     private final String mainTitle;
@@ -77,6 +77,31 @@ public class Publication {
 
     public PublicationDate getPublicationDate() {
         return publicationDate;
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Publication that = (Publication) o;
+        return Objects.equals(id, that.id)
+            && Objects.equals(institutionOwner, that.institutionOwner)
+            && Objects.equals(doi, that.doi)
+            && type == that.type
+            && Objects.equals(mainTitle, that.mainTitle)
+            && Objects.equals(contributor, that.contributor)
+            && Objects.equals(publicationDate, that.publicationDate);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, institutionOwner, doi, type, mainTitle, contributor, publicationDate);
     }
 
     public static final class Builder {

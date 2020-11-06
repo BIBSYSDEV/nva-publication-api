@@ -19,15 +19,25 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 
 /**
  * Listens on DynamodbEvents from DynamoDB Stream trigger and forwards the DynamoDbStreamRecords to EventBridge.
+ *
+ * <p>Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
+ * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
-public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
+public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
 
     public static final String AWS_REGION = "AWS_REGION";
     private final EventPublisher eventPublisher;
 
     @JacocoGenerated
-    public FanoutHandler() {
+    public DynamodbEventFanoutStreamRecordsEventBridgeHandler() {
         this(defaultEventBridgePublisher());
+    }
+
+    /**
+     * Constructor for CreatePublicationHandler.
+     */
+    protected DynamodbEventFanoutStreamRecordsEventBridgeHandler(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     @JacocoGenerated
@@ -35,13 +45,13 @@ public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
         return new EventBridgePublisher(
             defaultEventBridgeRetryClient(),
             defaultFailedEventPublisher(),
-            Env.getEventBusName()
+            AppEnv.getEventBusName()
         );
     }
 
     @JacocoGenerated
     private static EventPublisher defaultFailedEventPublisher() {
-        return new SqsEventPublisher(defaultSqsClient(), Env.getDlqUrl());
+        return new SqsEventPublisher(defaultSqsClient(), AppEnv.getDlqUrl());
     }
 
     @JacocoGenerated
@@ -55,7 +65,7 @@ public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
 
     @JacocoGenerated
     private static EventBridgeRetryClient defaultEventBridgeRetryClient() {
-        return new EventBridgeRetryClient(defaultEventBridgeClient(), Env.getMaxAttempt());
+        return new EventBridgeRetryClient(defaultEventBridgeClient(), AppEnv.getMaxAttempt());
     }
 
     @JacocoGenerated
@@ -71,15 +81,9 @@ public class FanoutHandler implements RequestHandler<DynamodbEvent, Void> {
             .build();
     }
 
-    public FanoutHandler(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
-
     @Override
     public Void handleRequest(DynamodbEvent event, Context context) {
-
         eventPublisher.publish(event);
-
         return null;
     }
 }

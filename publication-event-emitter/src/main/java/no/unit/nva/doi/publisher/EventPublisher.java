@@ -8,7 +8,7 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 public interface EventPublisher {
 
     /**
-     * Publish DynamoDB stream event.
+     * Publish DynamodbEvent on a bus.
      *
      * @param event DynamoDB stream event.
      */

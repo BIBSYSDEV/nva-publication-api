@@ -18,18 +18,15 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBridgePublisher implements EventPublisher {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
     public static final String EVENT_DETAIL_TYPE = "dynamodb-stream-event";
-
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
     private final EventBridgeRetryClient eventBridge;
     private final EventPublisher failedEventPublisher;
     private final String eventBusName;
     private final Clock clock;
-
-    private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
 
     @JacocoGenerated
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
@@ -41,10 +38,10 @@ public class EventBridgePublisher implements EventPublisher {
     /**
      * Constructor for EventBridgePublisher.
      *
-     * @param eventBridge   eventBridge
-     * @param failedEventPublisher  failedEventPublisher
-     * @param eventBusName  eventBusName
-     * @param clock clock
+     * @param eventBridge          eventBridge
+     * @param failedEventPublisher failedEventPublisher
+     * @param eventBusName         eventBusName
+     * @param clock                clock
      */
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
                                 EventPublisher failedEventPublisher, String eventBusName, Clock clock) {
