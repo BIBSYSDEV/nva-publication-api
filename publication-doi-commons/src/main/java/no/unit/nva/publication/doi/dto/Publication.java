@@ -3,6 +3,7 @@ package no.unit.nva.publication.doi.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
@@ -12,6 +13,8 @@ public class Publication {
     private final URI id;
     private final URI institutionOwner;
     private final URI doi;
+    private final DoiRequest doiRequest;
+    private final Instant modifiedDate;
     private final PublicationType type;
     private final String mainTitle;
     private final List<Contributor> contributor;
@@ -23,6 +26,8 @@ public class Publication {
      * @param id               Ex: https://api.dev.nva.aws.unit.no/publication/identifier
      * @param institutionOwner Ex: https://api.dev.nva.aws.unit.no/customer/identifier
      * @param doi              Ex: http://doi.org/11541.2/124530
+     * @param doiRequest       doi request for publication
+     * @param modifiedDate     modified date of publication
      * @param type             Ex: JOURNAL_LEADER
      * @param mainTitle        main title
      * @param contributors     list of contributors
@@ -33,6 +38,8 @@ public class Publication {
     public Publication(@JsonProperty("id") URI id,
                        @JsonProperty("institution_owner") URI institutionOwner,
                        @JsonProperty("doi") URI doi,
+                       @JsonProperty("doiRequest") DoiRequest doiRequest,
+                       @JsonProperty("modifiedDate") Instant modifiedDate,
                        @JsonProperty("type") PublicationType type,
                        @JsonProperty("mainTitle") String mainTitle,
                        @JsonProperty("contributors") List<Contributor> contributors,
@@ -40,6 +47,8 @@ public class Publication {
         this.id = id;
         this.institutionOwner = institutionOwner;
         this.doi = doi;
+        this.doiRequest = doiRequest;
+        this.modifiedDate = modifiedDate;
         this.type = type;
         this.mainTitle = mainTitle;
         this.contributor = contributors;
@@ -47,8 +56,8 @@ public class Publication {
     }
 
     protected Publication(Builder builder) {
-        this(builder.id, builder.institutionOwner, builder.doi, builder.type, builder.mainTitle, builder.contributor,
-            builder.publicationDate);
+        this(builder.id, builder.institutionOwner, builder.doi, builder.doiRequest, builder.modifiedDate, builder.type,
+            builder.mainTitle, builder.contributor, builder.publicationDate);
     }
 
     public URI getId() {
@@ -92,6 +101,8 @@ public class Publication {
         return Objects.equals(id, that.id)
             && Objects.equals(institutionOwner, that.institutionOwner)
             && Objects.equals(doi, that.doi)
+            && Objects.equals(doiRequest, that.doiRequest)
+            && Objects.equals(modifiedDate, that.modifiedDate)
             && type == that.type
             && Objects.equals(mainTitle, that.mainTitle)
             && Objects.equals(contributor, that.contributor)
@@ -101,7 +112,8 @@ public class Publication {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(id, institutionOwner, doi, type, mainTitle, contributor, publicationDate);
+        return Objects.hash(id, institutionOwner, doi, doiRequest, modifiedDate, type, mainTitle, contributor,
+            publicationDate);
     }
 
     public static final class Builder {
@@ -109,6 +121,8 @@ public class Publication {
         private URI id;
         private URI institutionOwner;
         private URI doi;
+        private DoiRequest doiRequest;
+        private Instant modifiedDate;
         private PublicationType type;
         private String mainTitle;
         private List<Contributor> contributor;
@@ -133,6 +147,16 @@ public class Publication {
 
         public Builder withDoi(URI doi) {
             this.doi = doi;
+            return this;
+        }
+
+        public Builder withDoiRequest(DoiRequest doiRequest) {
+            this.doiRequest = doiRequest;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
             return this;
         }
 

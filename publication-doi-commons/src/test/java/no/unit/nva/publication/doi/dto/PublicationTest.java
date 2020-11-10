@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import java.net.URI;
+import java.time.Instant;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
+    public static final String EXAMPLE_DOI_REQUEST_STATUS = "APPROVED";
 
     @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
@@ -47,6 +49,7 @@ class PublicationTest {
     }
 
     private Builder createBuilderWithAllFieldsSet() {
+        Instant now = Instant.now();
         return Builder.newBuilder()
             .withId(URI.create(EXAMPLE_ID))
             .withDoi(URI.create(EXAMPLE_DOI_ID))
@@ -54,6 +57,8 @@ class PublicationTest {
             .withPublicationDate(new PublicationDate("1999", "07", "09"))
             .withType(PublicationType.BOOK_ANTHOLOGY)
             .withMainTitle(EXAMPLE_TITLE)
+            .withDoiRequest(new DoiRequest(EXAMPLE_DOI_REQUEST_STATUS, now))
+            .withModifiedDate(now)
             .withContributor(List.of(new Contributor.Builder()
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
                 .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
