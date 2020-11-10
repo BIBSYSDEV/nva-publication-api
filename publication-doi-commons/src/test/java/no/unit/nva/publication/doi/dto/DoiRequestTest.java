@@ -17,7 +17,7 @@ public class DoiRequestTest {
     @Test
     public void canWriteToAndReadFromJson() throws JsonProcessingException {
         DoiRequest doiRequest = new Builder()
-            .withStatus("APPROVED")
+            .withStatus(DoiRequestStatus.APPROVED)
             .withModifiedDate(Instant.now())
             .build();
 

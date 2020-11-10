@@ -20,7 +20,7 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
-    public static final String EXAMPLE_DOI_REQUEST_STATUS = "APPROVED";
+    private static final DoiRequestStatus EXAMPLE_DOI_REQUEST_STATUS = DoiRequestStatus.APPROVED;
 
     @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {

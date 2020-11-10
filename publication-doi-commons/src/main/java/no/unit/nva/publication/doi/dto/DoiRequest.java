@@ -7,7 +7,7 @@ import nva.commons.utils.JacocoGenerated;
 
 public class DoiRequest {
 
-    private final String status;
+    private final DoiRequestStatus status;
     private final Instant modifiedDate;
 
     /**
@@ -17,13 +17,13 @@ public class DoiRequest {
      * @param modifiedDate  modified date of doi request
      */
     public DoiRequest(
-        @JsonProperty("status") String status,
+        @JsonProperty("status") DoiRequestStatus status,
         @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.status = status;
         this.modifiedDate = modifiedDate;
     }
 
-    public String getStatus() {
+    public DoiRequestStatus getStatus() {
         return status;
     }
 
@@ -53,13 +53,13 @@ public class DoiRequest {
 
     public static final class Builder {
 
-        private String status;
+        private DoiRequestStatus status;
         private Instant modifiedDate;
 
         public Builder() {
         }
 
-        public Builder withStatus(String status) {
+        public Builder withStatus(DoiRequestStatus status) {
             this.status = status;
             return this;
         }
