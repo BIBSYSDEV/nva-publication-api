@@ -10,6 +10,12 @@ public class DoiRequest {
     private final String status;
     private final Instant modifiedDate;
 
+    /**
+     * Constructor for basic deserialization of DoiRequest.
+     *
+     * @param status        doi request status
+     * @param modifiedDate  modified date of doi request
+     */
     public DoiRequest(
         @JsonProperty("status") String status,
         @JsonProperty("modifiedDate") Instant modifiedDate) {
