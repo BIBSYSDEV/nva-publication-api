@@ -17,6 +17,7 @@ public class Publication {
     private final Instant modifiedDate;
     private final PublicationType type;
     private final String mainTitle;
+    private final PublicationStatus status;
     private final List<Contributor> contributor;
     private final PublicationDate publicationDate;
 
@@ -30,11 +31,13 @@ public class Publication {
      * @param modifiedDate     modified date of publication
      * @param type             Ex: JOURNAL_LEADER
      * @param mainTitle        main title
+     * @param status           status for publication
      * @param contributors     list of contributors
      * @param publicationDate  date of publication
      */
     @JsonCreator
     @JacocoGenerated
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     public Publication(@JsonProperty("id") URI id,
                        @JsonProperty("institution_owner") URI institutionOwner,
                        @JsonProperty("doi") URI doi,
@@ -42,6 +45,7 @@ public class Publication {
                        @JsonProperty("modifiedDate") Instant modifiedDate,
                        @JsonProperty("type") PublicationType type,
                        @JsonProperty("mainTitle") String mainTitle,
+                       @JsonProperty("status") PublicationStatus status,
                        @JsonProperty("contributors") List<Contributor> contributors,
                        @JsonProperty("publication_date") PublicationDate publicationDate) {
         this.id = id;
@@ -51,13 +55,14 @@ public class Publication {
         this.modifiedDate = modifiedDate;
         this.type = type;
         this.mainTitle = mainTitle;
+        this.status = status;
         this.contributor = contributors;
         this.publicationDate = publicationDate;
     }
 
     protected Publication(Builder builder) {
         this(builder.id, builder.institutionOwner, builder.doi, builder.doiRequest, builder.modifiedDate, builder.type,
-            builder.mainTitle, builder.contributor, builder.publicationDate);
+            builder.mainTitle, builder.status, builder.contributor, builder.publicationDate);
     }
 
     public URI getId() {
@@ -80,12 +85,37 @@ public class Publication {
         return mainTitle;
     }
 
+    public DoiRequest getDoiRequest() {
+        return doiRequest;
+    }
+
+    public Instant getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public PublicationStatus getStatus() {
+        return status;
+    }
+
     public List<Contributor> getContributor() {
         return contributor;
     }
 
     public PublicationDate getPublicationDate() {
         return publicationDate;
+    }
+
+    /**
+     * Flag used during EventBridge pattern matching.
+     *
+     * @return  true if modifiedDate is same as doiRequest.modifiedDate
+     */
+    @JsonProperty("sameModifiedDateForDoiRequest")
+    public boolean isSameModifiedDateForDoiRequest() {
+        if (doiRequest == null) {
+            return false;
+        }
+        return modifiedDate.equals(doiRequest.getModifiedDate());
     }
 
     @JacocoGenerated
@@ -105,6 +135,7 @@ public class Publication {
             && Objects.equals(modifiedDate, that.modifiedDate)
             && type == that.type
             && Objects.equals(mainTitle, that.mainTitle)
+            && Objects.equals(status, that.status)
             && Objects.equals(contributor, that.contributor)
             && Objects.equals(publicationDate, that.publicationDate);
     }
@@ -112,7 +143,7 @@ public class Publication {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(id, institutionOwner, doi, doiRequest, modifiedDate, type, mainTitle, contributor,
+        return Objects.hash(id, institutionOwner, doi, doiRequest, modifiedDate, type, mainTitle, status, contributor,
             publicationDate);
     }
 
@@ -125,6 +156,7 @@ public class Publication {
         private Instant modifiedDate;
         private PublicationType type;
         private String mainTitle;
+        private PublicationStatus status;
         private List<Contributor> contributor;
         private PublicationDate publicationDate;
 
@@ -167,6 +199,11 @@ public class Publication {
 
         public Builder withMainTitle(String mainTitle) {
             this.mainTitle = mainTitle;
+            return this;
+        }
+
+        public Builder withStatus(PublicationStatus status) {
+            this.status = status;
             return this;
         }
 

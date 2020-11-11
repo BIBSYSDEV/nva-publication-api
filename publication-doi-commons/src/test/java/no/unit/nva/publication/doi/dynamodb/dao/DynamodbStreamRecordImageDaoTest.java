@@ -10,12 +10,16 @@ import static org.hamcrest.Matchers.is;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 import java.util.UUID;
+import no.unit.nva.publication.doi.dto.DoiRequest;
+import no.unit.nva.publication.doi.dto.DoiRequestStatus;
+import no.unit.nva.publication.doi.dto.DoiRequestTest;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.Builder;
@@ -88,6 +92,25 @@ class DynamodbStreamRecordImageDaoTest {
     void getDoi() {
         var doi = "https://doi.net/prefix/suffix/documentid";
         assertThat(getBuilder().withDoi(doi).build().getDoi(), is(equalTo(doi)));
+    }
+
+    @Test
+    void getModifiedDate() {
+        var modifiedDate = "2020-08-14T10:30:10.019991Z";
+        assertThat(getBuilder().withModifiedDate(modifiedDate).build().getModifiedDate(), is(equalTo(modifiedDate)));
+    }
+
+    @Test
+    void getStatus() {
+        var status = "Draft";
+        assertThat(getBuilder().withStatus(status).build().getStatus(), is(equalTo(status)));
+    }
+
+    @Test
+    void getDoiRequest() {
+        var doiRequest = new DoiRequest(DoiRequestStatus.REQUESTED, Instant.now());
+        var jsonNode = objectMapper.convertValue(doiRequest, JsonNode.class);
+        assertThat(getBuilder().withDoiRequest(jsonNode).build().getDoiRequest(), is(equalTo(jsonNode)));
     }
 
     @Test

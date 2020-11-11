@@ -22,6 +22,9 @@ public class DynamodbStreamRecordImageDao {
     private final JsonNode publicationReleaseDate;
     private final String publisherId;
     private final String doi;
+    private final JsonNode doiRequest;
+    private final String modifiedDate;
+    private final String status;
     private final List<Identity> contributorIdentities;
 
     protected DynamodbStreamRecordImageDao(Builder builder) {
@@ -32,6 +35,9 @@ public class DynamodbStreamRecordImageDao {
         this.publicationReleaseDate = builder.publicationReleaseDate;
         this.publisherId = builder.publisherId;
         this.doi = builder.doi;
+        this.doiRequest = builder.doiRequest;
+        this.modifiedDate = builder.modifiedDate;
+        this.status = builder.status;
         this.contributorIdentities = builder.contributorIdentities;
     }
 
@@ -63,6 +69,18 @@ public class DynamodbStreamRecordImageDao {
         return doi;
     }
 
+    public JsonNode getDoiRequest() {
+        return doiRequest;
+    }
+
+    public String getModifiedDate() {
+        return modifiedDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
     public List<Identity> getContributorIdentities() {
         return contributorIdentities;
     }
@@ -76,6 +94,9 @@ public class DynamodbStreamRecordImageDao {
         private JsonNode publicationReleaseDate;
         private String publisherId;
         private String doi;
+        private JsonNode doiRequest;
+        private String modifiedDate;
+        private String status;
         private List<Identity> contributorIdentities;
 
         private final DynamodbStreamRecordJsonPointers jsonPointers;
@@ -106,11 +127,29 @@ public class DynamodbStreamRecordImageDao {
             publisherId = textFromNode(rootNode, jsonPointers.getPublisherIdJsonPointer());
             contributorIdentities = extractContributors(rootNode);
             doi = textFromNode(rootNode, jsonPointers.getDoiJsonPointer());
+            doiRequest = rootNode.at(jsonPointers.getDoiRequestJsonPointer());
+            status = textFromNode(rootNode, jsonPointers.getStatusJsonPointer());
+            modifiedDate = textFromNode(rootNode, jsonPointers.getModifiedDateJsonPointer());
             return this;
         }
 
         public Builder withDoi(String doi) {
             this.doi = doi;
+            return this;
+        }
+
+        public Builder withDoiRequest(JsonNode doiRequest) {
+            this.doiRequest = doiRequest;
+            return this;
+        }
+
+        public Builder withStatus(String status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder withModifiedDate(String modifiedDate) {
+            this.modifiedDate = modifiedDate;
             return this;
         }
 

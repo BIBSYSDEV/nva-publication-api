@@ -20,7 +20,6 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
-    private static final DoiRequestStatus EXAMPLE_DOI_REQUEST_STATUS = DoiRequestStatus.APPROVED;
 
     @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
@@ -38,6 +37,7 @@ class PublicationTest {
             hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
                 EXAMPLE_CONTRIBUTOR_NAME)));
         assertThat(publication, doesNotHaveNullOrEmptyFields());
+        assertThat(publication.isSameModifiedDateForDoiRequest(), is(true));
     }
 
     @Test
@@ -46,6 +46,15 @@ class PublicationTest {
         final var publication = builder.build();
         final var identicalPublication = builder.build();
         assertThat(publication, is(equalTo(identicalPublication)));
+    }
+
+    @Test
+    void sameModifiedDateForDoiRequestIsFalseWhenDoiRequestIsNull() {
+        final var builder = createBuilderWithAllFieldsSet();
+        builder.withDoiRequest(null);
+        final var publication = builder.build();
+
+        assertThat(publication.isSameModifiedDateForDoiRequest(), is(false));
     }
 
     private Builder createBuilderWithAllFieldsSet() {
@@ -57,7 +66,8 @@ class PublicationTest {
             .withPublicationDate(new PublicationDate("1999", "07", "09"))
             .withType(PublicationType.BOOK_ANTHOLOGY)
             .withMainTitle(EXAMPLE_TITLE)
-            .withDoiRequest(new DoiRequest(EXAMPLE_DOI_REQUEST_STATUS, now))
+            .withStatus(PublicationStatus.DRAFT)
+            .withDoiRequest(new DoiRequest(DoiRequestStatus.APPROVED, now))
             .withModifiedDate(now)
             .withContributor(List.of(new Contributor.Builder()
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))

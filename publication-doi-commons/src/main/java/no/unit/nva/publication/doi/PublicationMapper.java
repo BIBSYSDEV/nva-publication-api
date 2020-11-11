@@ -7,14 +7,18 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewTy
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.publication.doi.dto.DoiRequest;
+import no.unit.nva.publication.doi.dto.DoiRequestStatus;
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.Publication.Builder;
 import no.unit.nva.publication.doi.dto.PublicationDate;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
+import no.unit.nva.publication.doi.dto.PublicationStatus;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
@@ -94,7 +98,25 @@ public class PublicationMapper {
             .withType(extractPublicationInstanceType(dao))
             .withPublicationDate(new PublicationDate(dao.getPublicationReleaseDate()))
             .withDoi(extractDoiUrl(dao))
+            .withDoiRequest(extractDoiRequest(dao))
+            .withModifiedDate(Instant.parse(dao.getModifiedDate()))
+            .withStatus(PublicationStatus.valueOf(dao.getStatus().toUpperCase(Locale.getDefault())))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
+            .build();
+    }
+
+    private DoiRequest extractDoiRequest(DynamodbStreamRecordImageDao dao) {
+        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
+        JsonNode doiRequest = dao.getDoiRequest();
+        return new DoiRequest.Builder()
+            .withStatus(DoiRequestStatus.valueOf(doiRequest.at(
+                jsonPointers.getDoiRequestStatusJsonPointer())
+                .textValue()
+                .toUpperCase(Locale.getDefault()))
+            )
+            .withModifiedDate(Instant.parse(doiRequest.at(
+                jsonPointers.getDoiRequestModifiedDateJsonPointer())
+                .textValue()))
             .build();
     }
 

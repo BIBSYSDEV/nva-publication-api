@@ -30,6 +30,7 @@ import nva.commons.utils.IoUtils;
 import nva.commons.utils.JacocoGenerated;
 import nva.commons.utils.JsonUtils;
 
+@SuppressWarnings("PMD.TooManyFields")
 public class PublicationStreamRecordTestDataGenerator {
 
     public static final String STREAM_RECORD_TEMPLATE_JSON = "doi/streamRecordTemplate.json";
@@ -54,7 +55,9 @@ public class PublicationStreamRecordTestDataGenerator {
     private final String mainTitle;
     private final List<Identity> contributors;
     private final PublicationDate date;
-    private final String status;
+    private final PublicationStatus status;
+    private final DoiRequest doiRequest;
+    private final Instant modifiedDate;
     private final String dynamoDbType;
     private final String doi;
     private final String publisherId;
@@ -78,6 +81,8 @@ public class PublicationStreamRecordTestDataGenerator {
         publisherId = builder.publisherId;
         date = builder.date;
         status = builder.status;
+        doiRequest = builder.doiRequest;
+        modifiedDate = builder.modifiedDate;
         streamViewType = builder.streamViewType;
     }
 
@@ -99,9 +104,25 @@ public class PublicationStreamRecordTestDataGenerator {
         updatePublisherId(publisherId, event);
         updateDate(date, event);
         updatePublicationStatus(status, event);
+        updateDoiRequest(doiRequest, event);
+        updateModifiedDate(modifiedDate, event);
         updateDynamodbType(dynamoDbType, event);
         updateStreamViewType(streamViewType, event);
         return toDynamodbStreamRecord(event);
+    }
+
+    private void updateDoiRequest(DoiRequest doiRequest, ObjectNode event) {
+        var jsonNode = event.at(jsonPointers.getDoiRequestJsonPointer());
+
+        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestModifiedDateJsonPointer(),
+            DYNAMODB_TYPE_STRING, doiRequest.getModifiedDate().toString());
+        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestStatusJsonPointer(),
+            DYNAMODB_TYPE_STRING, doiRequest.getStatus().name());
+    }
+
+    private void updateModifiedDate(Instant modifiedDate, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getModifiedDateJsonPointer(),
+            DYNAMODB_TYPE_STRING, modifiedDate.toString());
     }
 
     public JsonNode asDynamoDbStreamRecordJsonNode() {
@@ -135,9 +156,9 @@ public class PublicationStreamRecordTestDataGenerator {
         return mapper.convertValue(event, DynamodbStreamRecord.class);
     }
 
-    private void updatePublicationStatus(String status, ObjectNode event) {
+    private void updatePublicationStatus(PublicationStatus status, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, jsonPointers.getStatusJsonPointer(),
-            DYNAMODB_TYPE_STRING, status);
+            DYNAMODB_TYPE_STRING, status.getValue());
     }
 
     private void updateEventImageIdentifier(String id, ObjectNode event) {
@@ -255,7 +276,9 @@ public class PublicationStreamRecordTestDataGenerator {
         private String mainTitle;
         private List<Identity> contributors;
         private PublicationDate date;
-        private String status;
+        private DoiRequest doiRequest;
+        private Instant modifiedDate;
+        private PublicationStatus status;
         private String doi;
         private String publisherId;
         private String streamViewType;
@@ -276,6 +299,7 @@ public class PublicationStreamRecordTestDataGenerator {
             var localDate = Instant.ofEpochMilli(faker.date().birthday().getTime())
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
+            var now = Instant.now();
             return new Builder()
                 .withIdentifier(UUID.randomUUID().toString())
                 .withInstanceType(faker.options().nextElement(PublicationType.values()).toString())
@@ -285,11 +309,13 @@ public class PublicationStreamRecordTestDataGenerator {
                     String.valueOf(localDate.getDayOfMonth())))
                 .withDynamoDbType("Publication")
                 .withMainTitle(faker.book().title())
+                .withDoiRequest(new DoiRequest(faker.options().nextElement(DoiRequestStatus.values()), now))
+                .withModifiedDate(now)
                 .withDoi("http://example.net/doi/prefix/suffix/" + UUID.randomUUID().toString())
                 .withPublisherId("http://example.net/nva/institution/" + UUID.randomUUID().toString())
                 .withEventId(UUID.randomUUID().toString())
                 .withEventName(faker.options().nextElement(List.of("MODIFY")))
-                .withStatus(faker.options().nextElement(List.of("Published", "Draft")))
+                .withStatus(faker.options().nextElement(PublicationStatus.values()))
                 .withContributorIdentities(getIdentities(faker, jsonPointers))
                 .withStreamViewType(streamViewType);
         }
@@ -360,8 +386,18 @@ public class PublicationStreamRecordTestDataGenerator {
         }
 
         @JacocoGenerated
-        public String getStatus() {
+        public PublicationStatus getStatus() {
             return status;
+        }
+
+        @JacocoGenerated
+        public DoiRequest getDoiRequest() {
+            return doiRequest;
+        }
+
+        @JacocoGenerated
+        public Instant getModifiedDate() {
+            return modifiedDate;
         }
 
         @JacocoGenerated
@@ -424,8 +460,18 @@ public class PublicationStreamRecordTestDataGenerator {
             return this;
         }
 
-        public Builder withStatus(String draft) {
-            this.status = draft;
+        public Builder withStatus(PublicationStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder withDoiRequest(DoiRequest doiRequest) {
+            this.doiRequest = doiRequest;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
             return this;
         }
 
