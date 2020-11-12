@@ -95,19 +95,19 @@ class DynamodbStreamRecordImageDaoTest {
     }
 
     @Test
-    void getModifiedDate() {
+    void getModifiedDateReturnsModifiedDate() {
         var modifiedDate = "2020-08-14T10:30:10.019991Z";
         assertThat(getBuilder().withModifiedDate(modifiedDate).build().getModifiedDate(), is(equalTo(modifiedDate)));
     }
 
     @Test
-    void getStatus() {
+    void getStatusReturnsStatus() {
         var status = "Draft";
         assertThat(getBuilder().withStatus(status).build().getStatus(), is(equalTo(status)));
     }
 
     @Test
-    void getDoiRequest() {
+    void getDoiRequestReturnsDoiRequest() {
         var doiRequest = new DoiRequest(DoiRequestStatus.REQUESTED, Instant.now());
         var jsonNode = objectMapper.convertValue(doiRequest, JsonNode.class);
         assertThat(getBuilder().withDoiRequest(jsonNode).build().getDoiRequest(), is(equalTo(jsonNode)));

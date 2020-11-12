@@ -100,7 +100,7 @@ public class PublicationMapper {
             .withDoi(extractDoiUrl(dao))
             .withDoiRequest(extractDoiRequest(dao))
             .withModifiedDate(Instant.parse(dao.getModifiedDate()))
-            .withStatus(PublicationStatus.valueOf(dao.getStatus().toUpperCase(Locale.getDefault())))
+            .withStatus(PublicationStatus.lookup(dao.getStatus()))
             .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
             .build();
     }
@@ -108,16 +108,24 @@ public class PublicationMapper {
     private DoiRequest extractDoiRequest(DynamodbStreamRecordImageDao dao) {
         var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
         JsonNode doiRequest = dao.getDoiRequest();
+        var status = extractDoiRequestStatus(jsonPointers, doiRequest);
+        var modifiedDate = extractDoiRequestModifiedDate(jsonPointers, doiRequest);
+
         return new DoiRequest.Builder()
-            .withStatus(DoiRequestStatus.valueOf(doiRequest.at(
-                jsonPointers.getDoiRequestStatusJsonPointer())
-                .textValue()
-                .toUpperCase(Locale.getDefault()))
-            )
-            .withModifiedDate(Instant.parse(doiRequest.at(
-                jsonPointers.getDoiRequestModifiedDateJsonPointer())
-                .textValue()))
+            .withStatus(status)
+            .withModifiedDate(modifiedDate)
             .build();
+    }
+
+    private Instant extractDoiRequestModifiedDate(DynamodbStreamRecordJsonPointers jsonPointers, JsonNode doiRequest) {
+        var textValue = doiRequest.at(jsonPointers.getDoiRequestModifiedDateJsonPointer()).textValue();
+        return Instant.parse(textValue);
+    }
+
+    private DoiRequestStatus extractDoiRequestStatus(DynamodbStreamRecordJsonPointers jsonPointers,
+                                                     JsonNode doiRequest) {
+        var textValue = doiRequest.at(jsonPointers.getDoiRequestStatusJsonPointer()).textValue();
+        return DoiRequestStatus.lookup(textValue);
     }
 
     private static URI transformIdentifierToId(String namespace, String identifier) {

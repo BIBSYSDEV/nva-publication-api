@@ -5,6 +5,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -20,6 +22,7 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
+    private static final String INVALID_STATUS = "invalid_status";
 
     @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
@@ -37,7 +40,6 @@ class PublicationTest {
             hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
                 EXAMPLE_CONTRIBUTOR_NAME)));
         assertThat(publication, doesNotHaveNullOrEmptyFields());
-        assertThat(publication.isSameModifiedDateForDoiRequest(), is(true));
     }
 
     @Test
@@ -49,12 +51,25 @@ class PublicationTest {
     }
 
     @Test
+    void sameModifiedDateForDoiRequestIsTrue() {
+        final var builder = createBuilderWithAllFieldsSet();
+        final var publication = builder.build();
+
+        assertThat(publication.isSameModifiedDateForDoiRequest(), is(true));
+    }
+
+    @Test
     void sameModifiedDateForDoiRequestIsFalseWhenDoiRequestIsNull() {
         final var builder = createBuilderWithAllFieldsSet();
         builder.withDoiRequest(null);
         final var publication = builder.build();
 
         assertThat(publication.isSameModifiedDateForDoiRequest(), is(false));
+    }
+
+    @Test
+    public void lookupInvalidPublicationStatusThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> PublicationStatus.lookup(INVALID_STATUS));
     }
 
     private Builder createBuilderWithAllFieldsSet() {
