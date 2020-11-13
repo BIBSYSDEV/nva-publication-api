@@ -5,6 +5,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -20,7 +22,7 @@ class PublicationTest {
     private static final String EXAMPLE_CONTRIBUTOR_ID = "https://example.net/contributor/id/4000";
     private static final String EXAMPLE_CONTRIBUTOR_NAME = "Brinx";
     private static final String EXAMPLE_CONTRIBUTOR_ARPID = "989114";
-    private static final DoiRequestStatus EXAMPLE_DOI_REQUEST_STATUS = DoiRequestStatus.APPROVED;
+    private static final String INVALID_STATUS = "invalid_status";
 
     @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
@@ -48,6 +50,28 @@ class PublicationTest {
         assertThat(publication, is(equalTo(identicalPublication)));
     }
 
+    @Test
+    void sameModifiedDateForDoiRequestIsTrue() {
+        final var builder = createBuilderWithAllFieldsSet();
+        final var publication = builder.build();
+
+        assertThat(publication.isSameModifiedDateForDoiRequest(), is(true));
+    }
+
+    @Test
+    void sameModifiedDateForDoiRequestIsFalseWhenDoiRequestIsNull() {
+        final var builder = createBuilderWithAllFieldsSet();
+        builder.withDoiRequest(null);
+        final var publication = builder.build();
+
+        assertThat(publication.isSameModifiedDateForDoiRequest(), is(false));
+    }
+
+    @Test
+    public void lookupInvalidPublicationStatusThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> PublicationStatus.lookup(INVALID_STATUS));
+    }
+
     private Builder createBuilderWithAllFieldsSet() {
         Instant now = Instant.now();
         return Builder.newBuilder()
@@ -57,7 +81,8 @@ class PublicationTest {
             .withPublicationDate(new PublicationDate("1999", "07", "09"))
             .withType(PublicationType.BOOK_ANTHOLOGY)
             .withMainTitle(EXAMPLE_TITLE)
-            .withDoiRequest(new DoiRequest(EXAMPLE_DOI_REQUEST_STATUS, now))
+            .withStatus(PublicationStatus.DRAFT)
+            .withDoiRequest(new DoiRequest(DoiRequestStatus.APPROVED, now))
             .withModifiedDate(now)
             .withContributor(List.of(new Contributor.Builder()
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))

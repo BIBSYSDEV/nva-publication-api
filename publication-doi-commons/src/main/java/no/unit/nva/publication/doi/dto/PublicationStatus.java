@@ -6,17 +6,18 @@ import static java.util.stream.Collectors.joining;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum DoiRequestStatus {
+public enum PublicationStatus {
 
-    REQUESTED("REQUESTED"),
-    APPROVED("APPROVED"),
-    REJECTED("REJECTED");
+    NEW("NEW"),
+    DRAFT("DRAFT"),
+    DELETED("DELETED"),
+    PUBLISHED("PUBLISHED");
 
-    public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid DoiRequestStatus, expected one of: %s";
+    public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid PublicationStatus, expected one of: %s";
     public static final String DELIMITER = ", ";
     private final String value;
 
-    DoiRequestStatus(String value) {
+    PublicationStatus(String value) {
         this.value = value;
     }
 
@@ -31,12 +32,12 @@ public enum DoiRequestStatus {
      * @param value value
      * @return enum
      */
-    public static DoiRequestStatus lookup(String value) {
+    public static PublicationStatus lookup(String value) {
         return stream(values())
-            .filter(doiRequestStatus -> doiRequestStatus.getValue().equalsIgnoreCase(value))
+            .filter(publicationStatus -> publicationStatus.getValue().equalsIgnoreCase(value))
             .findAny()
             .orElseThrow(() -> new IllegalArgumentException(
-                format(ERROR_MESSAGE_TEMPLATE, value, stream(DoiRequestStatus.values())
-                    .map(DoiRequestStatus::toString).collect(joining(DELIMITER)))));
+                format(ERROR_MESSAGE_TEMPLATE, value, stream(PublicationStatus.values())
+                    .map(PublicationStatus::toString).collect(joining(DELIMITER)))));
     }
 }

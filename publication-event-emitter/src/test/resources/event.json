@@ -494,7 +494,7 @@
             "bs": null
           },
           "status": {
-            "s": "Topppublisering",
+            "s": "DRAFT",
             "n": null,
             "b": null,
             "m": null,
@@ -504,6 +504,49 @@
             "ss": null,
             "ns": null,
             "bs": null
+          },
+          "doiRequest": {
+            "s": null,
+            "n": null,
+            "b": null,
+            "m": {
+              "status": {
+                "s": "REQUESTED",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "type": {
+                "s": "DoiRequest",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              },
+              "modifiedDate": {
+                "s": "2020-08-14T10:30:10.019991Z",
+                "n": null,
+                "b": null,
+                "m": null,
+                "l": null,
+                "null": null,
+                "bool": null,
+                "ss": null,
+                "ns": null,
+                "bs": null
+              }
+            }
           }
         },
         "oldImage": null,

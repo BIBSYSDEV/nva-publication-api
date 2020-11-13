@@ -24,6 +24,11 @@ public class DynamodbStreamRecordJsonPointers {
     private static final String IDENTIFIER = "/identifier/s";
 
     private static final String STATUS = "/status/s";
+    private static final String MODIFIED_DATE = "/modifiedDate/s";
+
+    private static final String DOI_REQUEST = "/doiRequest/m";
+    private static final String DOI_REQUEST_STATUS = "/status/s";
+    private static final String DOI_REQUEST_MODIFIED_DATE = "/modifiedDate/s";
 
     /**
      * Publisher ID aka INSTITUTION_OWNER_ID.
@@ -54,6 +59,10 @@ public class DynamodbStreamRecordJsonPointers {
 
     private final JsonPointer identifierJsonPointer;
     private final JsonPointer statusJoinPointer;
+    private final JsonPointer doiRequestJsonPointer;
+    private final JsonPointer doiRequestStatusJsonPointer;
+    private final JsonPointer doiRequestModifiedDateJsonPointer;
+    private final JsonPointer modifiedDateJsonPointer;
     private final JsonPointer publisherIdJsonPointer;
     private final JsonPointer entityDescriptionReferenceTypeJsonPointer;
     private final JsonPointer entityDescriptionMapJsonPointer;
@@ -78,6 +87,10 @@ public class DynamodbStreamRecordJsonPointers {
         String base = imageType.getValue();
         this.identifierJsonPointer = JsonPointer.compile(base + IDENTIFIER);
         this.statusJoinPointer = JsonPointer.compile(base + STATUS);
+        this.doiRequestJsonPointer = JsonPointer.compile(base + DOI_REQUEST);
+        this.doiRequestStatusJsonPointer = JsonPointer.compile(DOI_REQUEST_STATUS);
+        this.doiRequestModifiedDateJsonPointer = JsonPointer.compile(DOI_REQUEST_MODIFIED_DATE);
+        this.modifiedDateJsonPointer = JsonPointer.compile(base + MODIFIED_DATE);
         this.publisherIdJsonPointer = JsonPointer.compile(base + PUBLISHER_ID);
         this.entityDescriptionReferenceTypeJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_TYPE);
         this.entityDescriptionMapJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_MAP);
@@ -103,6 +116,22 @@ public class DynamodbStreamRecordJsonPointers {
 
     public  JsonPointer getStatusJsonPointer() {
         return statusJoinPointer;
+    }
+
+    public JsonPointer getDoiRequestJsonPointer() {
+        return doiRequestJsonPointer;
+    }
+
+    public JsonPointer getDoiRequestStatusJsonPointer() {
+        return doiRequestStatusJsonPointer;
+    }
+
+    public JsonPointer getDoiRequestModifiedDateJsonPointer() {
+        return doiRequestModifiedDateJsonPointer;
+    }
+
+    public JsonPointer getModifiedDateJsonPointer() {
+        return modifiedDateJsonPointer;
     }
 
     public JsonPointer getPublisherIdJsonPointer() {
