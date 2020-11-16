@@ -11,22 +11,28 @@ import java.util.Objects;
  *
  * <p>Use the builder to create immutable instances: {@code ImmutableDoi.builder()}.
  */
-@SuppressWarnings({"all"})
+@SuppressWarnings("PMD.UnnecessaryModifier") // methods with final.
 public final class ImmutableDoi extends Doi {
 
+    public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY = "proxy";
+    public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX = "prefix";
+    public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX = "suffix";
+    public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER = "identifier";
     private static final String FORWARD_SLASH = "/";
     private final URI proxy;
     private final String prefix;
     private final String suffix;
 
+    @SuppressWarnings("PMD.CallSuperInConstructor")
     private ImmutableDoi(ImmutableDoi.Builder builder) {
         this.prefix = builder.prefix;
         this.suffix = builder.suffix;
         this.proxy = builder.proxyIsSet()
             ? builder.proxy
-            : Objects.requireNonNull(super.getProxy(), "proxy");
+            : Objects.requireNonNull(super.getProxy(), MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
     }
 
+    @SuppressWarnings("PMD.CallSuperInConstructor")
     private ImmutableDoi(URI proxy, String prefix, String suffix) {
         this.proxy = proxy;
         this.prefix = prefix;
@@ -105,7 +111,7 @@ public final class ImmutableDoi extends Doi {
      * @return A modified copy of the {@code this} object
      */
     public final ImmutableDoi withProxy(URI value) {
-        URI newValue = Objects.requireNonNull(value, "proxy");
+        URI newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
         if (this.proxy.equals(newValue)) {
             return this;
         }
@@ -121,7 +127,7 @@ public final class ImmutableDoi extends Doi {
      * @return A modified copy of the {@code this} object
      */
     public final ImmutableDoi withPrefix(String value) {
-        String newValue = Objects.requireNonNull(value, "prefix");
+        String newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX);
         if (this.prefix.equals(newValue)) {
             return this;
         }
@@ -136,7 +142,7 @@ public final class ImmutableDoi extends Doi {
      * @return A modified copy of the {@code this} object
      */
     public final ImmutableDoi withSuffix(String value) {
-        String newValue = Objects.requireNonNull(value, "suffix");
+        String newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX);
         if (this.suffix.equals(newValue)) {
             return this;
         }
@@ -177,6 +183,14 @@ public final class ImmutableDoi extends Doi {
         return getPrefix() + FORWARD_SLASH + getSuffix();
     }
 
+    private static void validateProxyUri(URI proxy) {
+        try {
+            proxy.toURL();
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
+        }
+    }
+
     private boolean equalTo(ImmutableDoi another) {
         return proxy.equals(another.proxy)
             && prefix.equals(another.prefix)
@@ -214,10 +228,11 @@ public final class ImmutableDoi extends Doi {
          * @param proxy The value for proxy
          * @return {@code this} builder for use in a chained invocation
          */
+
         public final Builder withProxy(URI proxy) {
             checkNotIsSet(proxyIsSet(), "proxy");
             validateProxyUri(proxy);
-            this.proxy = Objects.requireNonNull(proxy, "proxy");
+            this.proxy = Objects.requireNonNull(proxy, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
             optBits |= OPT_BIT_PROXY;
             return this;
         }
@@ -230,7 +245,7 @@ public final class ImmutableDoi extends Doi {
          */
         public final Builder withPrefix(String prefix) {
             checkNotIsSet(prefixIsSet(), "prefix");
-            this.prefix = Objects.requireNonNull(prefix, "prefix");
+            this.prefix = Objects.requireNonNull(prefix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX);
             initBits &= ~INIT_BIT_PREFIX;
             return this;
         }
@@ -243,7 +258,7 @@ public final class ImmutableDoi extends Doi {
          */
         public final Builder withSuffix(String suffix) {
             checkNotIsSet(suffixIsSet(), "suffix");
-            this.suffix = Objects.requireNonNull(suffix, "suffix");
+            this.suffix = Objects.requireNonNull(suffix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX);
             initBits &= ~INIT_BIT_SUFFIX;
             return this;
         }
@@ -255,7 +270,7 @@ public final class ImmutableDoi extends Doi {
          * @return {@code this} builder for use in a chained invocation
          */
         public final Builder withIdentifier(String identifier) {
-            Objects.requireNonNull(identifier, "identifier");
+            Objects.requireNonNull(identifier, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER);
             int indexOfDivider = identifier.indexOf(FORWARD_SLASH);
             if (indexOfDivider == -1) {
                 throw new IllegalArgumentException("Invalid DOI identifier");
@@ -309,14 +324,6 @@ public final class ImmutableDoi extends Doi {
                 attributes.add("suffix");
             }
             return "Cannot build Doi, some of required attributes are not set " + attributes;
-        }
-    }
-
-    private static void validateProxyUri(URI proxy) {
-        try {
-            proxy.toURL();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
         }
     }
 }
