@@ -71,8 +71,6 @@ public abstract class Doi {
                     + FORWARD_SLASH;
             return schemeWithAuthorityAndHost;
         } catch (MalformedURLException e) {
-            // This should not really ever happen because argument proxy has been validated in
-            // ImmutableDoi#validateProxyUri.
             throw new IllegalStateException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
         }
     }
