@@ -1,5 +1,7 @@
 package no.unit.nva.doi.models;
 
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -13,7 +15,7 @@ import java.util.Objects;
 public final class ImmutableDoi extends Doi {
 
     private static final String FORWARD_SLASH = "/";
-    private final String proxy;
+    private final URI proxy;
     private final String prefix;
     private final String suffix;
 
@@ -25,7 +27,7 @@ public final class ImmutableDoi extends Doi {
             : Objects.requireNonNull(super.getProxy(), "proxy");
     }
 
-    private ImmutableDoi(String proxy, String prefix, String suffix) {
+    private ImmutableDoi(URI proxy, String prefix, String suffix) {
         this.proxy = proxy;
         this.prefix = prefix;
         this.suffix = suffix;
@@ -71,7 +73,7 @@ public final class ImmutableDoi extends Doi {
      * @return The value of the {@code proxy} attribute
      */
     @Override
-    public String getProxy() {
+    public URI getProxy() {
         return proxy;
     }
 
@@ -102,11 +104,12 @@ public final class ImmutableDoi extends Doi {
      * @param value A new value for proxy
      * @return A modified copy of the {@code this} object
      */
-    public final ImmutableDoi withProxy(String value) {
-        String newValue = Objects.requireNonNull(value, "proxy");
+    public final ImmutableDoi withProxy(URI value) {
+        URI newValue = Objects.requireNonNull(value, "proxy");
         if (this.proxy.equals(newValue)) {
             return this;
         }
+        validateProxyUri(newValue);
         return new ImmutableDoi(newValue, this.prefix, this.suffix);
     }
 
@@ -195,7 +198,7 @@ public final class ImmutableDoi extends Doi {
         private long initBits = 0x3L;
         private long optBits;
 
-        private String proxy;
+        private URI proxy;
         private String prefix;
         private String suffix;
 
@@ -211,8 +214,9 @@ public final class ImmutableDoi extends Doi {
          * @param proxy The value for proxy
          * @return {@code this} builder for use in a chained invocation
          */
-        public final Builder withProxy(String proxy) {
+        public final Builder withProxy(URI proxy) {
             checkNotIsSet(proxyIsSet(), "proxy");
+            validateProxyUri(proxy);
             this.proxy = Objects.requireNonNull(proxy, "proxy");
             optBits |= OPT_BIT_PROXY;
             return this;
@@ -305,6 +309,14 @@ public final class ImmutableDoi extends Doi {
                 attributes.add("suffix");
             }
             return "Cannot build Doi, some of required attributes are not set " + attributes;
+        }
+    }
+
+    private static void validateProxyUri(URI proxy) {
+        try {
+            proxy.toURL();
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
         }
     }
 }
