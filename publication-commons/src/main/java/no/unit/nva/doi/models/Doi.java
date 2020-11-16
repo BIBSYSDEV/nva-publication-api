@@ -57,6 +57,7 @@ public abstract class Doi {
      * @see java.net.URL#toExternalForm
      */
     @JacocoGenerated
+    @SuppressWarnings("PMD.UseStringBufferForStringAppends") // since we copy JDK method!
     private String extractSchemeWithAuthorityAndHost() {
         try {
             var proxyUrl = getProxy().toURL();
