@@ -132,7 +132,7 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void toIdWithAnotherSubClassWithInvalidProxyURIThenThrowsIllegalStateException() {
+    void toIdWithAnotherSubClassWithInvalidProxyUriThenThrowsIllegalStateException() {
         var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
         var actualException = assertThrows(IllegalStateException.class, doi::toId);
         assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
