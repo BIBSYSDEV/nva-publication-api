@@ -2,7 +2,6 @@ package no.unit.nva.doi.models;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import nva.commons.utils.JacocoGenerated;
 
 /**
  * Doi class for working with Dois.
@@ -56,7 +55,6 @@ public abstract class Doi {
      * @return scheme with authority and host and forward slash at the end.
      * @see java.net.URL#toExternalForm
      */
-    @JacocoGenerated
     @SuppressWarnings("PMD.UseStringBufferForStringAppends") // since we copy JDK method!
     private String extractSchemeWithAuthorityAndHost() {
         try {
