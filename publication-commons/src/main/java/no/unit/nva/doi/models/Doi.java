@@ -3,6 +3,7 @@ package no.unit.nva.doi.models;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.List;
+import java.net.URISyntaxException;
 
 /**
  * Doi class for working with Dois.
@@ -49,35 +50,22 @@ public abstract class Doi {
      * @return DOI as URI with proxy, prefix and suffix.
      */
     public URI toUri() {
-        String schemeWithAuthorityAndHost = extractSchemeWithAuthorityAndHost();
-        return URI.create(schemeWithAuthorityAndHost + getPrefix() + PATH_SEPARATOR + getSuffix());
-    }
-
-    /**
-     * Extracts scheme, authority and host with last character being forward slash after host from {@code #getProxy}().
-     *
-     * <p>It converts URI to URL to have helper methods to extract scheme, authority and host. Copied from {@code
-     * java.net.URL#toExternalForm}
-     *
-     * @return scheme with authority and host and forward slash at the end.
-     * @see java.net.URL#toExternalForm
-     */
-    @SuppressWarnings("PMD.UseStringBufferForStringAppends") // since we copy JDK method!
-    private String extractSchemeWithAuthorityAndHost() {
         try {
-            var proxyUrl = getProxy().toURL();
-            String schemeWithAuthorityAndHost;
-            schemeWithAuthorityAndHost =
-                proxyUrl.getProtocol()
-                    + ':'
-                    + (
-                    (schemeWithAuthorityAndHost = proxyUrl.getAuthority()) != null
-                        && !schemeWithAuthorityAndHost.isEmpty()
-                        ? "//" + schemeWithAuthorityAndHost : "")
-                    + PATH_SEPARATOR;
-            return schemeWithAuthorityAndHost;
-        } catch (MalformedURLException e) {
+            URI uri = createDoi();
+            uri.toURL(); // validate
+            return uri;
+        } catch (MalformedURLException | URISyntaxException e) {
             throw new IllegalStateException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
         }
+    }
+
+    private URI createDoi() throws URISyntaxException {
+        return new URI(getProxy().getScheme(),
+            getProxy().getUserInfo(),
+            getProxy().getHost(),
+            getProxy().getPort(),
+            PATH_SEPARATOR + toIdentifier(),
+            null,
+            null);
     }
 }
