@@ -11,6 +11,11 @@ public final class PublicationDtoTestDataGenerator {
     private PublicationDtoTestDataGenerator() {
     }
 
+    /**
+     * Creates a Publication object populated with random values.
+     *
+     * @return  publication
+     */
     public static Publication createPublication() {
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
         return mapper.fromDynamodbStreamRecord(
