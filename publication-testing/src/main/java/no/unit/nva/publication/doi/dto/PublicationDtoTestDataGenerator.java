@@ -2,24 +2,44 @@ package no.unit.nva.publication.doi.dto;
 
 import no.unit.nva.publication.doi.PublicationMapper;
 
-public final class PublicationDtoTestDataGenerator {
+public class PublicationDtoTestDataGenerator {
 
     private static final String EXAMPLE_NAMESPACE = "http://example.net/namespace/";
-    public static final PublicationDynamoEventTestDataGenerator PUBLICATION_GENERATOR =
-        new PublicationDynamoEventTestDataGenerator();
+    private final PublicationDynamoEventTestDataGenerator generator;
+    private final PublicationMapper mapper;
 
-    private PublicationDtoTestDataGenerator() {
+    /**
+     * Default constructor for PublicationDynamoEventTestDataGenerator.
+     */
+    public PublicationDtoTestDataGenerator() {
+        this.generator = new PublicationDynamoEventTestDataGenerator();
+        this.mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
     }
 
     /**
-     * Creates a Publication object populated with random values.
+     * Creates a stream record filled by faker.
+     * @return PublicationDtoTestDataGenerator with one additional stream record added to list of records.
+     */
+    public PublicationDtoTestDataGenerator createRandomStreamRecord() {
+        generator.createRandomStreamRecord(null);
+        return this;
+    }
+
+    /**
+     * Clear the added stream records.
+     */
+    public void clearRecords() {
+        generator.clearRecords();
+    }
+
+    /**
+     * Provides a Publication object.
      *
      * @return  publication
      */
-    public static Publication createPublication() {
-        PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
+    public Publication asPublicationDto() {
         return mapper.fromDynamodbStreamRecord(
-            PUBLICATION_GENERATOR.createRandomStreamRecord().asDynamoDbEvent().getRecords().get(0))
+            generator.createRandomStreamRecord().asDynamoDbEvent().getRecords().get(0))
             .getNewPublication()
             .get();
     }

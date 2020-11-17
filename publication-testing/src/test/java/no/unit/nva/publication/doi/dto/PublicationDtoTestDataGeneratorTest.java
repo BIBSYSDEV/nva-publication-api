@@ -10,8 +10,10 @@ public class PublicationDtoTestDataGeneratorTest {
 
     @Test
     public void createPublicationReturnsPopulatedPublication() {
-        Publication publication = PublicationDtoTestDataGenerator.createPublication();
+        PublicationDtoTestDataGenerator generator = new PublicationDtoTestDataGenerator();
+        Publication publication = generator.createRandomStreamRecord().asPublicationDto();
         assertThat(publication, doesNotHaveNullOrEmptyFields());
+        generator.clearRecords();
     }
 
 }
