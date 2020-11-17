@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonPointer;
 @SuppressWarnings("PMD.TooManyFields")
 public class DynamodbStreamRecordJsonPointers {
 
+
     public enum DynamodbImageType {
         NONE(""),
         OLD("/dynamodb/oldImage"),
@@ -37,14 +38,14 @@ public class DynamodbStreamRecordJsonPointers {
 
     private static final String ENTITY_DESCRIPTION_REFERENCE_TYPE =
         "/entityDescription/m/reference/m/publicationInstance/m/type/s";
-    private static final String ENTITY_DESCRIPTION_MAP = "/entityDescription/m";
+
+    private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE = "/entityDescription/m/date/m";
     private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR = "/entityDescription/m/date/m/year/s";
     private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_MONTH = "/entityDescription/m/date/m/month/s";
     private static final String ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY = "/entityDescription/m/date/m/day/s";
 
     private static final String ENTITY_DESCRIPTION_MAIN_TITLE = "/entityDescription/m/mainTitle/s";
     private static final String TYPE_POINTER = "/type/s";
-
 
     private static final String ENTITY_DESCRIPTION_REFERENCE_DOI = "/entityDescription/m/reference/m/doi/s";
 
@@ -65,7 +66,8 @@ public class DynamodbStreamRecordJsonPointers {
     private final JsonPointer modifiedDateJsonPointer;
     private final JsonPointer publisherIdJsonPointer;
     private final JsonPointer entityDescriptionReferenceTypeJsonPointer;
-    private final JsonPointer entityDescriptionMapJsonPointer;
+
+    private final JsonPointer entityDescriptionDateJsonPointer;
     private final JsonPointer entityDescriptionDateYearJsonPointer;
     private final JsonPointer entityDescriptionDateMonthJsonPointer;
     private final JsonPointer entityDescritpionDateDayJsonPointer;
@@ -93,7 +95,7 @@ public class DynamodbStreamRecordJsonPointers {
         this.modifiedDateJsonPointer = JsonPointer.compile(base + MODIFIED_DATE);
         this.publisherIdJsonPointer = JsonPointer.compile(base + PUBLISHER_ID);
         this.entityDescriptionReferenceTypeJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_TYPE);
-        this.entityDescriptionMapJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_MAP);
+        this.entityDescriptionDateJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE);
         this.entityDescriptionDateYearJsonPointer = JsonPointer.compile(base
             + ENTITY_DESCRIPTION_PUBLICATION_DATE_YEAR);
         this.entityDescriptionDateMonthJsonPointer = JsonPointer.compile(base
@@ -142,8 +144,8 @@ public class DynamodbStreamRecordJsonPointers {
         return entityDescriptionReferenceTypeJsonPointer;
     }
 
-    public JsonPointer getEntityDescriptionMapJsonPointer() {
-        return entityDescriptionMapJsonPointer;
+    public JsonPointer getEntityDescriptionDateJsonPointer() {
+        return entityDescriptionDateJsonPointer;
     }
 
     public JsonPointer getEntityDescriptionDateYearJsonPointer() {

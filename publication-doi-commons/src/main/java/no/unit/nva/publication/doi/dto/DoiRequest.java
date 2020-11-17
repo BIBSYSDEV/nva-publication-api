@@ -4,21 +4,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class DoiRequest {
+public class DoiRequest extends Validatable {
 
+    private static final Logger log = LoggerFactory.getLogger(DoiRequest.class);
+    @MandatoryField
     private final DoiRequestStatus status;
+    @MandatoryField
     private final Instant modifiedDate;
 
     /**
      * Constructor for basic deserialization of DoiRequest.
      *
-     * @param status        doi request status
-     * @param modifiedDate  modified date of doi request
+     * @param status       doi request status
+     * @param modifiedDate modified date of doi request
      */
     public DoiRequest(
         @JsonProperty("status") DoiRequestStatus status,
         @JsonProperty("modifiedDate") Instant modifiedDate) {
+        super();
         this.status = status;
         this.modifiedDate = modifiedDate;
     }
@@ -49,6 +55,12 @@ public class DoiRequest {
     @Override
     public int hashCode() {
         return Objects.hash(getStatus(), getModifiedDate());
+    }
+
+    @Override
+    @JacocoGenerated
+    protected Logger logger() {
+        return log;
     }
 
     public static final class Builder {

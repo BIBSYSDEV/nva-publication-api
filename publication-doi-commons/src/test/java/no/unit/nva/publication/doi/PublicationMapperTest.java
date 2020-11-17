@@ -2,6 +2,7 @@ package no.unit.nva.publication.doi;
 
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.ERROR_MUST_BE_PUBLICATION_TYPE;
+import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType.NEW;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -10,13 +11,15 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
@@ -26,22 +29,21 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
+import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class PublicationMapperTest {
 
+    public static final String DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON = "dynamoStream_event_with_old_image.json";
     private static final String EXAMPLE_NAMESPACE = "http://example.net/nva/";
     private static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
-
     private static final Faker FAKER = new Faker();
-    private static final DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-        DynamodbImageType.NEW);
 
     @Test
     void fromDynamoStreamRecordNewImage() {
         DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-            DynamodbImageType.NEW);
+            NEW);
         Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers, StreamViewType.NEW_IMAGE.toString());
         var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
@@ -52,13 +54,13 @@ class PublicationMapperTest {
     }
 
     @Test
-    void fromDynamoStreamRecordOldImage() {
-        DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-            DynamodbImageType.OLD);
-        Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers, StreamViewType.OLD_IMAGE.toString());
-        var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
+    void fromDynamoStreamRecordOldImage() throws JsonProcessingException {
+        String dynamoStreamRecordString = IoUtils.stringFromResources(
+            Path.of(DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON));
+        DynamodbEvent.DynamodbStreamRecord recordWithOldImage = objectMapper.readValue(dynamoStreamRecordString,
+            DynamodbEvent.DynamodbStreamRecord.class);
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
-        var publicationMapping = mapper.fromDynamodbStreamRecord(dynamodbStreamRecord);
+        var publicationMapping = mapper.fromDynamodbStreamRecord(recordWithOldImage);
 
         assertTrue(publicationMapping.getOldPublication().isPresent());
         assertTrue(publicationMapping.getNewPublication().isEmpty());
@@ -66,7 +68,7 @@ class PublicationMapperTest {
 
     @Test
     void fromDynamodbStreamRecordDaoThenReturnFullyMappedPublicationDto() {
-        Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers);
+        Builder daoBuilder = validPublication(NEW);
         var dao = daoBuilder.build().asDynamodbStreamRecordDao();
 
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
@@ -84,22 +86,24 @@ class PublicationMapperTest {
     }
 
     @Test
-    void fromDynamodbStreamRecordThrowsIllegalArgumentExceptionWhenUnknownDynamodbTableType() throws IOException {
+    void fromDynamodbStreamRecordThrowsIllegalArgumentExceptionWhenUnknownDynamodbTableType() {
         var rootNode = objectMapper.createObjectNode();
         rootNode.putObject("detail")
             .putObject("dynamodb")
             .putObject("newImage")
             .putObject("type")
             .put("s", UNKNOWN_DYNAMODB_STREAMRECORD_TYPE);
-        var actualException = assertThrows(IllegalArgumentException.class, createPublicationMapperWithBadDao(rootNode));
+        var actualException = assertThrows(IllegalArgumentException.class,
+            createPublicationMapperWithBadDao(rootNode, NEW));
         assertThat(actualException.getMessage(), containsString(ERROR_MUST_BE_PUBLICATION_TYPE));
     }
 
     @Test
     void fromDynamodbStreamRecordWhenContributorWithoutNameThenIsSkipped() throws IOException {
-        var dynamodbStreamRecord = createDynamoDbStreamRecordWithoutContributorIdentityNames()
-            .asDynamoDbStreamRecord();
-        var dao = createDaoBuilder(objectMapper.convertValue(dynamodbStreamRecord, JsonNode.class))
+        var dynamodbStreamRecord =
+            createDynamoDbStreamRecordWithoutContributorIdentityNames(NEW).asDynamoDbStreamRecord();
+        JsonNode dynamoStreamRecordJsonNode = objectMapper.convertValue(dynamodbStreamRecord, JsonNode.class);
+        var dao = createDaoBuilder(dynamoStreamRecordJsonNode, NEW)
             .build();
         var publication = new PublicationMapper(EXAMPLE_NAMESPACE).fromDynamodbStreamRecordDao(
             dao);
@@ -107,13 +111,20 @@ class PublicationMapperTest {
         assertThat(publication.getContributor(), hasSize(0));
     }
 
-    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames() {
-        return PublicationStreamRecordTestDataGenerator.Builder.createValidPublication(FAKER, jsonPointers)
-            .withContributorIdentities(createContributorIdentities(true))
+    private Builder validPublication(DynamodbImageType imageType) {
+        return Builder.createValidPublication(FAKER, new DynamodbStreamRecordJsonPointers(imageType));
+    }
+
+    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames(
+        DynamodbImageType imageType
+    ) {
+        return validPublication(imageType)
+            .withContributorIdentities(createContributorIdentities(true, NEW))
             .build();
     }
 
-    private List<Identity> createContributorIdentities(boolean withoutName) {
+    private List<Identity> createContributorIdentities(boolean withoutName, DynamodbImageType imageType) {
+        DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(imageType);
         List<Identity> contributors = new ArrayList<>();
         for (int i = 0; i < FAKER.random().nextInt(1, 10); i++) {
             Identity.Builder builder = new Identity.Builder(jsonPointers);
@@ -125,13 +136,15 @@ class PublicationMapperTest {
         return contributors;
     }
 
-    private DynamodbStreamRecordImageDao.Builder createDaoBuilder(JsonNode rootNode) {
+    private DynamodbStreamRecordImageDao.Builder createDaoBuilder(JsonNode rootNode, DynamodbImageType imageType) {
+        DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(imageType);
+
         return new DynamodbStreamRecordImageDao.Builder(jsonPointers).withDynamodbStreamRecordImage(rootNode);
     }
 
-    private Executable createPublicationMapperWithBadDao(ObjectNode rootNode) {
+    private Executable createPublicationMapperWithBadDao(ObjectNode rootNode, DynamodbImageType imageType) {
         return () -> {
-            var dao = createDaoBuilder(rootNode).build();
+            var dao = createDaoBuilder(rootNode, imageType).build();
             new PublicationMapper(EXAMPLE_NAMESPACE).fromDynamodbStreamRecordDao(dao);
         };
     }

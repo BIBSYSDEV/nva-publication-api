@@ -41,27 +41,26 @@ class PublicationDateTest {
 
     private ObjectNode getPublicationWithDate() {
         var date = objectMapper.createObjectNode();
-        var dateMap = date.putObject("date").putObject("m");
-        dateMap.putObject("year").put("s", "1999");
-        dateMap.putObject("month").put("s", "07");
-        dateMap.putObject("day").put("s", "09");
+
+        date.putObject("year").put("s", "1999");
+        date.putObject("month").put("s", "07");
+        date.putObject("day").put("s", "09");
         return date;
     }
 
     private ObjectNode getPublicationRandomMissingYearMonthOrDay() {
         var date = objectMapper.createObjectNode();
-        var dateMap = date.putObject("date").putObject("m");
-        dateMap.putObject("year").put("s", "1999");
-        dateMap.putObject("month").put("s", "07");
-        dateMap.putObject("day").put("s", "09");
+        date.putObject("year").put("s", "1999");
+        date.putObject("month").put("s", "07");
+        date.putObject("day").put("s", "09");
         var fieldToRemove = faker.options().nextElement(List.of("year", "month", "day"));
-        assert ((ObjectNode) date.get("date").get("m")).remove(fieldToRemove)
+        assert (date).remove(fieldToRemove)
             != null : "Should find field " + fieldToRemove + " to remove.";
         return date;
     }
 
     private JsonNode getPublicationWithMissingYearMonthAndDay() {
         var objectNode = objectMapper.createObjectNode();
-        return objectNode.putObject("date");
+        return objectNode;
     }
 }

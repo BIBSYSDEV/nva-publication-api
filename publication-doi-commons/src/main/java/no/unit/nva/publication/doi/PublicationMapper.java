@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi;
 
+import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -9,9 +10,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dto.DoiRequest;
 import no.unit.nva.publication.doi.dto.DoiRequestStatus;
 import no.unit.nva.publication.doi.dto.Publication;
@@ -91,23 +95,70 @@ public class PublicationMapper {
      * @return Publication doi.Publication
      */
     public Publication fromDynamodbStreamRecordDao(DynamodbStreamRecordImageDao dao) {
+
         return Builder.newBuilder()
-            .withId(transformIdentifierToId(namespacePublication, dao.getIdentifier()))
-            .withInstitutionOwner(URI.create(dao.getPublisherId()))
-            .withMainTitle(dao.getMainTitle())
-            .withType(extractPublicationInstanceType(dao))
-            .withPublicationDate(new PublicationDate(dao.getPublicationReleaseDate()))
+            .withId(transformIdentifierToId(namespacePublication, dao)) //oblig
+            .withInstitutionOwner(extractPublisherId(dao))//oblig
+            .withMainTitle(dao.getMainTitle())//oblig
+            .withType(extractPublicationInstanceType(dao)) //oblig
+            .withPublicationDate(extractPublicationDate(dao)) //oblig
             .withDoi(extractDoiUrl(dao))
-            .withDoiRequest(extractDoiRequest(dao))
-            .withModifiedDate(Instant.parse(dao.getModifiedDate()))
-            .withStatus(PublicationStatus.lookup(dao.getStatus()))
-            .withContributor(ContributorMapper.fromIdentityDaos(dao.getContributorIdentities()))
+            .withDoiRequest(extractDoiRequest(dao))  //oblig
+            .withModifiedDate(extractModifiedDate(dao))//oblig
+            .withStatus(extractPublicationStatus(dao))//oblig
+            .withContributor(extractContributors(dao))
             .build();
     }
 
+    private static URI transformIdentifierToId(String namespace, DynamodbStreamRecordImageDao streamRecord) {
+        if (nonNull(namespace) && nonNull(streamRecord.getIdentifier())) {
+            return URI.create(namespace + streamRecord.getIdentifier());
+        }
+        return null;
+    }
+
+    private List<Contributor> extractContributors(DynamodbStreamRecordImageDao dao) {
+        if (nonNull(dao.getContributorIdentities())) {
+            return ContributorMapper.fromIdentityDaos(dao.getContributorIdentities());
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    private PublicationStatus extractPublicationStatus(DynamodbStreamRecordImageDao dao) {
+        return Optional.ofNullable(dao.getStatus())
+            .map(PublicationStatus::lookup)
+            .orElse(null);
+    }
+
+    private Instant extractModifiedDate(DynamodbStreamRecordImageDao dao) {
+        return nonNull(dao.getModifiedDate()) ? Instant.parse(dao.getModifiedDate()) : null;
+    }
+
+    private PublicationDate extractPublicationDate(DynamodbStreamRecordImageDao dao) {
+
+        return Optional.ofNullable(dao.getPublicationReleaseDate())
+            .map(PublicationDate::new)
+            .orElse(null);
+    }
+
+    private URI extractPublisherId(DynamodbStreamRecordImageDao dao) {
+        return Optional.ofNullable(dao.getPublisherId())
+            .map(URI::create)
+            .orElse(null);
+    }
+
     private DoiRequest extractDoiRequest(DynamodbStreamRecordImageDao dao) {
-        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
         JsonNode doiRequest = dao.getDoiRequest();
+        if (nodeExists(doiRequest)) {
+            return createNewDoiRequestObject(doiRequest);
+        } else {
+            return null;
+        }
+    }
+
+    private DoiRequest createNewDoiRequestObject(JsonNode doiRequest) {
+        var jsonPointers = new DynamodbStreamRecordJsonPointers(DynamodbImageType.NONE);
         var status = extractDoiRequestStatus(jsonPointers, doiRequest);
         var modifiedDate = extractDoiRequestModifiedDate(jsonPointers, doiRequest);
 
@@ -117,33 +168,39 @@ public class PublicationMapper {
             .build();
     }
 
+    private boolean nodeExists(JsonNode doiRequest) {
+        return nonNull(doiRequest) && !doiRequest.isMissingNode();
+    }
+
     private Instant extractDoiRequestModifiedDate(DynamodbStreamRecordJsonPointers jsonPointers, JsonNode doiRequest) {
-        var textValue = doiRequest.at(jsonPointers.getDoiRequestModifiedDateJsonPointer()).textValue();
-        return Instant.parse(textValue);
+        return Optional.of(jsonPointers.getDoiRequestModifiedDateJsonPointer())
+            .map(doiRequest::at)
+            .map(JsonNode::textValue)
+            .map(Instant::parse)
+            .orElse(null);
     }
 
     private DoiRequestStatus extractDoiRequestStatus(DynamodbStreamRecordJsonPointers jsonPointers,
                                                      JsonNode doiRequest) {
-        var textValue = doiRequest.at(jsonPointers.getDoiRequestStatusJsonPointer()).textValue();
-        return DoiRequestStatus.lookup(textValue);
-    }
 
-    private static URI transformIdentifierToId(String namespace, String identifier) {
-        return URI.create(namespace + identifier);
+        return Optional.ofNullable(jsonPointers.getDoiRequestStatusJsonPointer())
+            .map(doiRequest::at)
+            .map(JsonNode::textValue)
+            .map(DoiRequestStatus::lookup)
+            .orElse(null);
     }
 
     private boolean acceptStreamViewTypes(String streamViewType, StreamViewType... streamViewTypes) {
         return Arrays.stream(streamViewTypes)
             .map(StreamViewType::getValue)
-            .filter(s -> s.equals(streamViewType))
-            .findFirst()
-            .isPresent();
+            .anyMatch(s -> s.equals(streamViewType));
     }
 
     private Optional<Publication> fromDynamodbStreamRecordImage(Map<String, AttributeValue> image) {
         if (image == null || image.isEmpty()) {
             return Optional.empty();
         }
+
         var jsonNode = objectMapper.convertValue(image, JsonNode.class);
         return Optional.of(fromDynamodbStreamRecordImage(jsonNode));
     }
@@ -166,7 +223,6 @@ public class PublicationMapper {
 
     private PublicationType extractPublicationInstanceType(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getPublicationInstanceType())
-            .filter(not(String::isBlank))
             .map(PublicationType::findByName)
             .orElse(null);
     }

@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.publication.doi.dto.DoiRequest;
 import no.unit.nva.publication.doi.dto.DoiRequestStatus;
-import no.unit.nva.publication.doi.dto.DoiRequestTest;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.Builder;
@@ -147,7 +146,7 @@ class DynamodbStreamRecordImageDaoTest {
         assertThat(dao.getPublisherId(), is(equalTo(validPublication.getPublisherId())));
         assertThat(dao.getContributorIdentities(), is(equalTo(validPublication.getContributors())));
 
-        JsonNode getDaoDateMap = dao.getPublicationReleaseDate().get("date").get("m");
+        JsonNode getDaoDateMap = dao.getPublicationReleaseDate();
         assertThat(getDaoDateMap.get("year").get("s").textValue(), is(equalTo(validPublication.getDate().getYear())));
         assertThat(getDaoDateMap.get("month").get("s").textValue(), is(equalTo(validPublication.getDate().getMonth())));
         assertThat(getDaoDateMap.get("day").get("s").textValue(), is(equalTo(validPublication.getDate().getDay())));

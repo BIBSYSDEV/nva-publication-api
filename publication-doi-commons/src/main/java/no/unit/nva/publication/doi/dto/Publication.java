@@ -7,19 +7,30 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Publication {
+public class Publication extends Validatable {
 
+    private static final Logger log = LoggerFactory.getLogger(Publication.class);
+
+    @MandatoryField
     private final URI id;
+    @MandatoryField
     private final URI institutionOwner;
+    @MandatoryField
+    private final Instant modifiedDate;
+    @MandatoryField
+    private final PublicationType type;
+    @MandatoryField
+    private final String mainTitle;
+    @MandatoryField
+    private final PublicationStatus status;
+    @MandatoryField
+    private final PublicationDate publicationDate;
+    private final List<Contributor> contributor;
     private final URI doi;
     private final DoiRequest doiRequest;
-    private final Instant modifiedDate;
-    private final PublicationType type;
-    private final String mainTitle;
-    private final PublicationStatus status;
-    private final List<Contributor> contributor;
-    private final PublicationDate publicationDate;
 
     /**
      * doi.Publication DTO to be used to as payload format.
@@ -48,6 +59,7 @@ public class Publication {
                        @JsonProperty("status") PublicationStatus status,
                        @JsonProperty("contributors") List<Contributor> contributors,
                        @JsonProperty("publication_date") PublicationDate publicationDate) {
+        super();
         this.id = id;
         this.institutionOwner = institutionOwner;
         this.doi = doi;
@@ -108,7 +120,7 @@ public class Publication {
     /**
      * Flag used during EventBridge pattern matching.
      *
-     * @return  true if modifiedDate is same as doiRequest.modifiedDate
+     * @return true if modifiedDate is same as doiRequest.modifiedDate
      */
     @JsonProperty("sameModifiedDateForDoiRequest")
     public boolean isSameModifiedDateForDoiRequest() {
@@ -145,6 +157,12 @@ public class Publication {
     public int hashCode() {
         return Objects.hash(id, institutionOwner, doi, doiRequest, modifiedDate, type, mainTitle, status, contributor,
             publicationDate);
+    }
+
+    @Override
+    @JacocoGenerated
+    protected Logger logger() {
+        return log;
     }
 
     public static final class Builder {
