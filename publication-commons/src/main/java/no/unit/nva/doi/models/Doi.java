@@ -17,8 +17,9 @@ public abstract class Doi {
     public static final String HANDLE_STAGE_DATACITE_ORG = "handle.stage.datacite.org";
     public static final String DX_DOI_ORG = "dx.doi.org";
     public static final List<String> VALID_PROXIES = List.of(DOI_ORG, DX_DOI_ORG, HANDLE_STAGE_DATACITE_ORG);
-    protected static final String PATH_SEPARATOR = "/";
-    public static final URI DOI_PROXY = URI.create(HTTPS.concat(DOI_ORG).concat(PATH_SEPARATOR));
+    protected static final char PATH_SEPARATOR = '/';
+    protected static final String PATH_SEPARATOR_STRING = String.valueOf(PATH_SEPARATOR);
+    public static final URI DOI_PROXY = URI.create(HTTPS.concat(DOI_ORG).concat(PATH_SEPARATOR_STRING));
 
     public static ImmutableDoi.Builder builder() {
         return ImmutableDoi.builder();

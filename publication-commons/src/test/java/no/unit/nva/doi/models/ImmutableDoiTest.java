@@ -3,6 +3,7 @@ package no.unit.nva.doi.models;
 import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
+import static no.unit.nva.doi.models.ImmutableDoi.ERROR_DOI_URI_INVALID_FORMAT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -33,6 +34,7 @@ class ImmutableDoiTest {
     public static final String EXAMPLE_PREFIX = DEMO_PREFIX;
     public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
     private static final URI EXAMPLE_PROXY = STAGE_DOI_PROXY;
+    public static final URI EXAMPLE_DOI = URI.create(EXAMPLE_PROXY + EXAMPLE_IDENTIFIER);
     private static final String EXAMPLE_PREFIX_2 = "10.16903";
     private static final URI INVALID_PROXY = URI.create("https://doiproxy.invalid/");
 
@@ -182,9 +184,27 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderWithInvalidDoiThrowsIllegalArgumentException() {
+    void builderWithInvalidIdentifierThrowsIllegalArgumentException() {
         assertThrows(IllegalArgumentException.class,
             () -> ImmutableDoi.builder().withIdentifier(EXAMPLE_PREFIX).build());
+    }
+
+    @Test
+    void builderWithDoiPopulatesProxyPrefixAndSuffix() {
+        var doi = ImmutableDoi.builder().withDoi(EXAMPLE_DOI).build();
+        assertThat(doi.getProxy(), is(equalTo(EXAMPLE_PROXY)));
+        assertThat(doi.getPrefix(), is(equalTo(EXAMPLE_PREFIX)));
+        assertThat(doi.getSuffix(), is(equalTo(EXAMPLE_SUFFIX)));
+    }
+
+    @Test
+    void builderWithDoiInvalidIdentifierFormatThrowsIllegalArgumentException() {
+        URI invalidDoi = URI.create(
+            EXAMPLE_PROXY + EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX + FORWARD_SLASH + createRandomUuid());
+        var actualException = assertThrows(IllegalArgumentException.class,
+            () -> ImmutableDoi.builder().withDoi(invalidDoi));
+        assertThat(actualException.getMessage(),
+            is(equalTo(ERROR_DOI_URI_INVALID_FORMAT.concat(invalidDoi.toASCIIString()))));
     }
 
     @ParameterizedTest
@@ -263,6 +283,10 @@ class ImmutableDoiTest {
     }
 
     private static String createRandomSuffix() {
+        return createRandomUuid();
+    }
+
+    private static String createRandomUuid() {
         return UUID.randomUUID().toString();
     }
 

@@ -18,6 +18,9 @@ public final class ImmutableDoi extends Doi {
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX = "prefix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX = "suffix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER = "identifier";
+    public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI = "doi";
+    public static final String ERROR_DOI_URI_INVALID_FORMAT =
+        "DOI does not like a valid format following https://<proxy>/<prefix>/<suffix>. It was: ";
     public static final String HANDLE_DOI_PREFIX = "10.";
     public static final String CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH = "Cannot build Doi, prefix must start with ";
     public static final String CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY =
@@ -194,6 +197,16 @@ public final class ImmutableDoi extends Doi {
         }
     }
 
+    private static URI createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(URI value) {
+        try {
+            return new URI(value.getScheme(), value.getUserInfo(), value.getHost(), value.getPort(),
+                PATH_SEPARATOR_STRING,
+                null, null);
+        } catch (Exception e) {
+            throw new IllegalStateException("Could not reconstruct URI and strip path, query and fragment arguments");
+        }
+    }
+
     private boolean equalTo(ImmutableDoi another) {
         return proxy.equals(another.proxy)
             && prefix.equals(another.prefix)
@@ -234,8 +247,9 @@ public final class ImmutableDoi extends Doi {
 
         public final Builder withProxy(URI proxy) {
             checkNotIsSet(proxyIsSet(), "proxy");
-            validateProxyUri(proxy);
-            this.proxy = Objects.requireNonNull(proxy, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
+            var newProxyValue = createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(proxy);
+            validateProxyUri(newProxyValue);
+            this.proxy = Objects.requireNonNull(newProxyValue, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
             optBits |= OPT_BIT_PROXY;
             return this;
         }
@@ -284,6 +298,23 @@ public final class ImmutableDoi extends Doi {
         }
 
         /**
+         * Initializes the value for {@link Doi#getProxy()}, {@link Doi#getPrefix()} and {@link Doi#getSuffix()}
+         * attributes.
+         *
+         * @param doi Teh value (Doi Id: https://proxy/prefix/suffix) that can be parsed into proxy, prefix and suffix.
+         * @return {@code this} builder for use in a chained invocation
+         */
+        public final Builder withDoi(URI doi) {
+            Objects.requireNonNull(doi, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI);
+            if (containsOnlyLeadingForwardSlashAndSlashBetweenPrefixAndSuffix(doi)) {
+                throw new IllegalArgumentException(ERROR_DOI_URI_INVALID_FORMAT.concat(doi.toASCIIString()));
+            }
+            withIdentifier(extractDoiPathWithoutLeadingForwardSlash(doi));
+            withProxy(doi);
+            return this;
+        }
+
+        /**
          * Builds a new {@link ImmutableDoi ImmutableDoi}.
          *
          * @return An immutable instance of Doi
@@ -294,6 +325,14 @@ public final class ImmutableDoi extends Doi {
             validateProxy();
             validatePrefix();
             return new ImmutableDoi(this);
+        }
+
+        private static String extractDoiPathWithoutLeadingForwardSlash(URI doi) {
+            return doi.getPath().charAt(0) == PATH_SEPARATOR ? doi.getPath().substring(1) : doi.getPath();
+        }
+
+        private static boolean containsOnlyLeadingForwardSlashAndSlashBetweenPrefixAndSuffix(URI doi) {
+            return doi.getPath().chars().filter(ch -> ch == PATH_SEPARATOR).count() != 2;
         }
 
         private void validatePrefix() {
