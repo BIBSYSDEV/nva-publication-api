@@ -1,5 +1,6 @@
 package no.unit.nva.doi.models;
 
+import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,13 +25,13 @@ class ImmutableDoiTest {
     public static final String FORWARD_SLASH = "/";
     public static final String REQUIRED_ATTRIBUTES_ARE_NOT_SET = "required attributes are not set";
     public static final String ERROR_STRICT_BUILDER = "Builder of Doi is strict, attribute is already set";
-    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
     public static final String URI_VALID_EMAILTO_BUT_INVALID_URL = "emailto:nope@example.net";
     public static final URI INVALID_PROXY_FTP = URI.create("ftp://doi.org/");
     public static final URI INVALID_PROXY_EXAMPLE_DOT_NET = URI.create("https://example.net");
     private static final URI STAGE_DOI_PROXY = URI.create("https://handle.stage.datacite.org/");
     private static final String DEMO_PREFIX = "10.5072";
     public static final String EXAMPLE_PREFIX = DEMO_PREFIX;
+    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
     private static final URI EXAMPLE_PROXY = STAGE_DOI_PROXY;
     private static final String EXAMPLE_PREFIX_2 = "10.16903";
     private static final URI INVALID_PROXY = URI.create("https://doiproxy.invalid/");
@@ -193,6 +194,17 @@ class ImmutableDoiTest {
             .withProxy(EXAMPLE_PROXY)
             .withPrefix(invalidPrefix)
             .withSuffix(createRandomSuffix())
+            .build());
+        assertThat(actualException.getMessage(), containsString(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH));
+    }
+
+    @ParameterizedTest
+    @MethodSource("badPrefixes")
+    void builderBuildThrowsIllegalStateExceptionWhenPrefixInIdentifierIsInvalid(String invalidPrefix) {
+        String badIdentifier = invalidPrefix + PATH_SEPARATOR + createRandomSuffix();
+        var actualException = assertThrows(IllegalStateException.class, () -> ImmutableDoi.builder()
+            .withProxy(EXAMPLE_PROXY)
+            .withIdentifier(badIdentifier)
             .build());
         assertThat(actualException.getMessage(), containsString(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH));
     }
