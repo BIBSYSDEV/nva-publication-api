@@ -2,8 +2,8 @@ package no.unit.nva.doi.models;
 
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.util.List;
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Doi class for working with Dois.
@@ -13,14 +13,18 @@ import java.net.URISyntaxException;
 public abstract class Doi {
 
     public static final String ERROR_PROXY_URI_MUST_BE_A_VALID_URL = "Proxy URI must be a valid URL";
-    public static final String DOI_ORG = "doi.org";
-    public static final String HTTPS = "https://";
-    public static final String HANDLE_STAGE_DATACITE_ORG = "handle.stage.datacite.org";
-    public static final String DX_DOI_ORG = "dx.doi.org";
+    protected static final String DOI_ORG = "doi.org";
+    protected static final String HANDLE_STAGE_DATACITE_ORG = "handle.stage.datacite.org";
+    protected static final String DX_DOI_ORG = "dx.doi.org";
     public static final List<String> VALID_PROXIES = List.of(DOI_ORG, DX_DOI_ORG, HANDLE_STAGE_DATACITE_ORG);
+    protected static final String HTTPS = "https";
+    protected static final String HTTP = "http";
+    public static final List<String> VALID_SCHEMES = List.of(HTTPS, HTTP);
     protected static final char PATH_SEPARATOR = '/';
     protected static final String PATH_SEPARATOR_STRING = String.valueOf(PATH_SEPARATOR);
-    public static final URI DOI_PROXY = URI.create(HTTPS.concat(DOI_ORG).concat(PATH_SEPARATOR_STRING));
+    protected static final String SCHEMA_SEPARATOR = "://";
+    public static final URI DEFAULT_DOI_PROXY = URI.create(
+        HTTPS.concat(SCHEMA_SEPARATOR).concat(DOI_ORG).concat(PATH_SEPARATOR_STRING));
 
     public static ImmutableDoi.Builder builder() {
         return ImmutableDoi.builder();
@@ -31,8 +35,7 @@ public abstract class Doi {
     public abstract String getSuffix();
 
     public URI getProxy() {
-        // default value
-        return DOI_PROXY;
+        return DEFAULT_DOI_PROXY;
     }
 
     /**

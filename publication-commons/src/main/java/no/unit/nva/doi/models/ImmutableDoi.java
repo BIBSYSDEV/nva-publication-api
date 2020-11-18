@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -327,12 +328,22 @@ public final class ImmutableDoi extends Doi {
             return new ImmutableDoi(this);
         }
 
+        public boolean isNotHypertextTransferProtocol() {
+            return !VALID_SCHEMES.contains(proxy.getScheme().toLowerCase(Locale.US));
+        }
+
         private static String extractDoiPathWithoutLeadingForwardSlash(URI doi) {
             return doi.getPath().charAt(0) == PATH_SEPARATOR ? doi.getPath().substring(1) : doi.getPath();
         }
 
         private static boolean containsOnlyLeadingForwardSlashAndSlashBetweenPrefixAndSuffix(URI doi) {
             return doi.getPath().chars().filter(ch -> ch == PATH_SEPARATOR).count() != 2;
+        }
+
+        private static void checkNotIsSet(boolean isSet, String name) {
+            if (isSet) {
+                throw new IllegalStateException("Builder of Doi is strict, attribute is already set: ".concat(name));
+            }
         }
 
         private void validatePrefix() {
@@ -343,15 +354,13 @@ public final class ImmutableDoi extends Doi {
         }
 
         private void validateProxy() {
-            if (!VALID_PROXIES.contains(proxy.getHost().toLowerCase())) {
+            if (proxyIsSet() && (isNotHypertextTransferProtocol() || isNotValidProxy())) {
                 throw new IllegalStateException(CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY);
             }
         }
 
-        private static void checkNotIsSet(boolean isSet, String name) {
-            if (isSet) {
-                throw new IllegalStateException("Builder of Doi is strict, attribute is already set: ".concat(name));
-            }
+        private boolean isNotValidProxy() {
+            return !VALID_PROXIES.contains(proxy.getHost().toLowerCase(Locale.US));
         }
 
         private boolean proxyIsSet() {
