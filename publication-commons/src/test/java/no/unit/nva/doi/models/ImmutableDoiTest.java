@@ -128,7 +128,7 @@ class ImmutableDoiTest {
     void toIdWhereBuilderWithProxyWithoutSuffixSlashReturnsCorrectIdURI() {
         var randomSuffix = createRandomSuffix();
         var doi = ImmutableDoi.builder()
-            .withProxy(URI.create("http://doi.org"))
+            .withProxy(URI.create("https://doi.org"))
             .withPrefix(DEMO_PREFIX)
             .withSuffix(randomSuffix)
             .build();
