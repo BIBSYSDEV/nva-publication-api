@@ -25,6 +25,7 @@ import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
+import no.unit.nva.publication.doi.dto.PublicationDtoTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationDynamoEventTestDataGenerator;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
@@ -52,7 +53,6 @@ class UpdateDoiStatusHandlerTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private PublicationService publicationService;
-    private PublicationDynamoEventTestDataGenerator publicationGenerator;
     private TestAppender logger;
 
     @BeforeEach
@@ -62,8 +62,6 @@ class UpdateDoiStatusHandlerTest {
         handler = new UpdateDoiStatusHandler(publicationService);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
-
-        publicationGenerator = new PublicationDynamoEventTestDataGenerator();
 
         when(publicationService.getPublication(EXAMPLE_PUBLICATION_ID)).thenReturn(new Publication.Builder()
             .withIdentifier(EXAMPLE_PUBLICATION_ID)
