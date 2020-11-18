@@ -18,7 +18,7 @@ public final class ImmutableDoi extends Doi {
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX = "prefix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX = "suffix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER = "identifier";
-    private static final String FORWARD_SLASH = "/";
+    private static final String PATH_SEPARATOR = "/";
     private final URI proxy;
     private final String prefix;
     private final String suffix;
@@ -180,7 +180,7 @@ public final class ImmutableDoi extends Doi {
      */
     @Override
     public String toString() {
-        return getPrefix() + FORWARD_SLASH + getSuffix();
+        return getPrefix() + PATH_SEPARATOR + getSuffix();
     }
 
     private static void validateProxyUri(URI proxy) {
@@ -271,7 +271,7 @@ public final class ImmutableDoi extends Doi {
          */
         public final Builder withIdentifier(String identifier) {
             Objects.requireNonNull(identifier, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER);
-            int indexOfDivider = identifier.indexOf(FORWARD_SLASH);
+            int indexOfDivider = identifier.indexOf(PATH_SEPARATOR);
             if (indexOfDivider == -1) {
                 throw new IllegalArgumentException("Invalid DOI identifier");
             }
