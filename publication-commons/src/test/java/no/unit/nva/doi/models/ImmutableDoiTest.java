@@ -2,6 +2,9 @@ package no.unit.nva.doi.models;
 
 import static no.unit.nva.doi.models.Doi.DEFAULT_DOI_PROXY;
 import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
+import static no.unit.nva.doi.models.Doi.SCHEMA_SEPARATOR;
+import static no.unit.nva.doi.models.Doi.VALID_PROXIES;
+import static no.unit.nva.doi.models.Doi.VALID_SCHEMES;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
 import static no.unit.nva.doi.models.ImmutableDoi.ERROR_DOI_URI_INVALID_FORMAT;
@@ -13,10 +16,14 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
+import net.bytebuddy.implementation.bind.annotation.Argument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ImmutableDoiTest {
@@ -198,6 +205,17 @@ class ImmutableDoiTest {
         assertThat(doi.getSuffix(), is(equalTo(EXAMPLE_SUFFIX)));
     }
 
+    @ParameterizedTest
+    @MethodSource("validSchemesAndProxyHosts")
+    void builderWithProxyAcceptsValidSchemeAndProxyCombinations(String scheme, String proxyHost) {
+        var doi = ImmutableDoi.builder()
+            .withProxy(URI.create(scheme + SCHEMA_SEPARATOR + proxyHost))
+            .withIdentifier(EXAMPLE_IDENTIFIER)
+            .build();
+        assertThat(doi.getProxy().getScheme(), is(equalTo(scheme)));
+        assertThat(doi.getProxy().getHost(), is(equalTo(proxyHost)));
+    }
+
     @Test
     void builderWithDoiInvalidIdentifierFormatThrowsIllegalArgumentException() {
         URI invalidDoi = URI.create(
@@ -289,6 +307,16 @@ class ImmutableDoiTest {
 
     private static String createRandomUuid() {
         return UUID.randomUUID().toString();
+    }
+
+    private static Stream<Arguments> validSchemesAndProxyHosts() {
+        List<Arguments> arguments = new ArrayList<>();
+        for (String validScheme : VALID_SCHEMES) {
+            for (String validProxy : VALID_PROXIES) {
+                arguments.add(Arguments.of(validScheme, validProxy));
+            }
+        }
+        return arguments.stream();
     }
 
     private AnotherPojoDoi getAnotherPojoDoi() {
