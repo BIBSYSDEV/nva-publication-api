@@ -249,7 +249,7 @@ class ImmutableDoiTest {
         public AnotherPojoDoi(URI proxy, String prefix, String suffix) {
             this.proxy = proxy;
             this.prefix = prefix;
-            this.suffix = prefix;
+            this.suffix = suffix;
         }
 
         @Override
