@@ -1,5 +1,6 @@
 package no.unit.nva.doi.models;
 
+import static no.unit.nva.doi.models.Doi.DEFAULT_DOI_PROXY;
 import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
@@ -127,12 +128,12 @@ class ImmutableDoiTest {
     void toIdWhereBuilderWithProxyWithoutSuffixSlashReturnsCorrectIdURI() {
         var randomSuffix = createRandomSuffix();
         var doi = ImmutableDoi.builder()
-            .withProxy(URI.create("http://example.net"))
+            .withProxy(URI.create("http://doi.org"))
             .withPrefix(DEMO_PREFIX)
             .withSuffix(randomSuffix)
             .build();
         assertThat(doi.toUri(),
-            is(equalTo(URI.create("http://example.net/" + DEMO_PREFIX + FORWARD_SLASH + randomSuffix))));
+            is(equalTo(URI.create(DEFAULT_DOI_PROXY + DEMO_PREFIX + FORWARD_SLASH + randomSuffix))));
     }
 
     @Test
