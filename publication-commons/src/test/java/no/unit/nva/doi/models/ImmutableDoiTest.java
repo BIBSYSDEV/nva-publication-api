@@ -5,6 +5,7 @@ import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
 import static no.unit.nva.doi.models.Doi.SCHEMA_SEPARATOR;
 import static no.unit.nva.doi.models.Doi.VALID_PROXIES;
 import static no.unit.nva.doi.models.Doi.VALID_SCHEMES;
+import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
 import static no.unit.nva.doi.models.ImmutableDoi.ERROR_DOI_URI_INVALID_FORMAT;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -232,7 +233,7 @@ class ImmutableDoiTest {
             .withPrefix(invalidPrefix)
             .withSuffix(createRandomSuffix())
             .build());
-        assertThat(actualException.getMessage(), containsString("Cannot build Doi, prefix must start with "));
+        assertThat(actualException.getMessage(), is(equalTo(CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID)));
     }
 
     @ParameterizedTest
@@ -243,7 +244,7 @@ class ImmutableDoiTest {
             .withProxy(EXAMPLE_PROXY)
             .withIdentifier(badIdentifier)
             .build());
-        assertThat(actualException.getMessage(), containsString("Cannot build Doi, prefix must start with "));
+        assertThat(actualException.getMessage(), is(equalTo(CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID)));
     }
 
     @ParameterizedTest
