@@ -47,7 +47,7 @@ public abstract class Doi {
      *
      * @return DOI as URI with proxy, prefix and suffix.
      */
-    public URI toId() {
+    public URI toUri() {
         String schemeWithAuthorityAndHost = extractSchemeWithAuthorityAndHost();
         return URI.create(schemeWithAuthorityAndHost + getPrefix() + PATH_SEPARATOR + getSuffix());
     }

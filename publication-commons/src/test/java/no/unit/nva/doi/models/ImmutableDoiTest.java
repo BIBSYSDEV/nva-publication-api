@@ -118,7 +118,7 @@ class ImmutableDoiTest {
         String randomSuffix = createRandomSuffix();
         var doi = createDoi(randomSuffix);
         URI expectedUri = URI.create(EXAMPLE_PROXY + EXAMPLE_PREFIX + FORWARD_SLASH + randomSuffix);
-        assertThat(doi.toId(), is(equalTo(expectedUri)));
+        assertThat(doi.toUri(), is(equalTo(expectedUri)));
     }
 
     @Test
@@ -129,7 +129,7 @@ class ImmutableDoiTest {
             .withPrefix(DEMO_PREFIX)
             .withSuffix(randomSuffix)
             .build();
-        assertThat(doi.toId(),
+        assertThat(doi.toUri(),
             is(equalTo(URI.create("http://example.net/" + DEMO_PREFIX + FORWARD_SLASH + randomSuffix))));
     }
 
@@ -143,7 +143,7 @@ class ImmutableDoiTest {
     @Test
     void toIdWithAnotherSubClassOfDoiWithInvalidProxyUriThenThrowsIllegalStateException() {
         var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
-        var actualException = assertThrows(IllegalStateException.class, doi::toId);
+        var actualException = assertThrows(IllegalStateException.class, doi::toUri);
         assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
     }
 
