@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
+import nva.commons.json.JsonSerializable;
 import nva.commons.utils.JacocoGenerated;
 
 public class DoiUpdateDto implements JsonSerializable {
@@ -46,8 +47,8 @@ public class DoiUpdateDto implements JsonSerializable {
         return modifiedDate;
     }
 
-    public boolean hasAllValuesSet() {
-        return getDoi().isPresent() && getPublicationId() != null && getModifiedDate() != null;
+    public boolean hasAllRequiredValuesSet() {
+        return getPublicationId() != null && getModifiedDate() != null;
     }
 
     // Currently using test resources as input and not the builder.
