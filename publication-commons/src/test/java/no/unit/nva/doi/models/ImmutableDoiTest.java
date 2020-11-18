@@ -5,7 +5,6 @@ import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
 import static no.unit.nva.doi.models.Doi.SCHEMA_SEPARATOR;
 import static no.unit.nva.doi.models.Doi.VALID_PROXIES;
 import static no.unit.nva.doi.models.Doi.VALID_SCHEMES;
-import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
 import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
 import static no.unit.nva.doi.models.ImmutableDoi.ERROR_DOI_URI_INVALID_FORMAT;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -20,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
-import net.bytebuddy.implementation.bind.annotation.Argument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -234,7 +232,7 @@ class ImmutableDoiTest {
             .withPrefix(invalidPrefix)
             .withSuffix(createRandomSuffix())
             .build());
-        assertThat(actualException.getMessage(), containsString(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH));
+        assertThat(actualException.getMessage(), containsString("Cannot build Doi, prefix must start with "));
     }
 
     @ParameterizedTest
@@ -245,7 +243,7 @@ class ImmutableDoiTest {
             .withProxy(EXAMPLE_PROXY)
             .withIdentifier(badIdentifier)
             .build());
-        assertThat(actualException.getMessage(), containsString(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH));
+        assertThat(actualException.getMessage(), containsString("Cannot build Doi, prefix must start with "));
     }
 
     @ParameterizedTest

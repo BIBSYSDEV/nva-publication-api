@@ -22,10 +22,12 @@ public final class ImmutableDoi extends Doi {
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI = "doi";
     public static final String ERROR_DOI_URI_INVALID_FORMAT =
         "DOI does not like a valid format following https://<proxy>/<prefix>/<suffix>. It was: ";
-    public static final String HANDLE_DOI_PREFIX = "10.";
-    public static final String CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH = "Cannot build Doi, prefix must start with ";
     public static final String CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY =
         "Cannot build Doi, proxy is not a valid proxy.";
+    public static final String CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID =
+        "Cannot build Doi, prefix must start with ".concat(HANDLE_DOI_PREFIX).concat(" and contain some repository id");
+    public static final String BUILDER_OF_DOI_IS_STRICT_ATTRIBUTE_IS_ALREADY_SET =
+        "Builder of Doi is strict, attribute is already set: ";
     private final URI proxy;
     private final String prefix;
     private final String suffix;
@@ -342,14 +344,13 @@ public final class ImmutableDoi extends Doi {
 
         private static void checkNotIsSet(boolean isSet, String name) {
             if (isSet) {
-                throw new IllegalStateException("Builder of Doi is strict, attribute is already set: ".concat(name));
+                throw new IllegalStateException(BUILDER_OF_DOI_IS_STRICT_ATTRIBUTE_IS_ALREADY_SET.concat(name));
             }
         }
 
         private void validatePrefix() {
             if (!prefix.startsWith(HANDLE_DOI_PREFIX) || prefix.length() <= HANDLE_DOI_PREFIX.length()) {
-                throw new IllegalStateException(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH.concat(HANDLE_DOI_PREFIX)
-                    .concat(" and contain some repository id"));
+                throw new IllegalStateException(CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID);
             }
         }
 
