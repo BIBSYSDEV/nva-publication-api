@@ -18,7 +18,10 @@ public final class ImmutableDoi extends Doi {
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX = "prefix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX = "suffix";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER = "identifier";
-    private static final String PATH_SEPARATOR = "/";
+    public static final String HANDLE_DOI_PREFIX = "10.";
+    public static final String CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH = "Cannot build Doi, prefix must start with ";
+    public static final String CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY =
+        "Cannot build Doi, proxy is not a valid proxy.";
     private final URI proxy;
     private final String prefix;
     private final String suffix;
@@ -288,7 +291,22 @@ public final class ImmutableDoi extends Doi {
          */
         public ImmutableDoi build() {
             checkRequiredAttributes();
+            validateProxy();
+            validatePrefix();
             return new ImmutableDoi(this);
+        }
+
+        private void validatePrefix() {
+            if (!prefix.startsWith(HANDLE_DOI_PREFIX) || prefix.length() <= HANDLE_DOI_PREFIX.length()) {
+                throw new IllegalStateException(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH.concat(HANDLE_DOI_PREFIX)
+                    .concat(" and contain some repository id"));
+            }
+        }
+
+        private void validateProxy() {
+            if (!VALID_PROXIES.contains(proxy.getHost().toLowerCase())) {
+                throw new IllegalStateException(CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY);
+            }
         }
 
         private static void checkNotIsSet(boolean isSet, String name) {

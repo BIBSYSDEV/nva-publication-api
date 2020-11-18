@@ -1,5 +1,7 @@
 package no.unit.nva.doi.models;
 
+import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH;
+import static no.unit.nva.doi.models.ImmutableDoi.CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -9,7 +11,10 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ImmutableDoiTest {
 
@@ -19,13 +24,16 @@ class ImmutableDoiTest {
     public static final String FORWARD_SLASH = "/";
     public static final String REQUIRED_ATTRIBUTES_ARE_NOT_SET = "required attributes are not set";
     public static final String ERROR_STRICT_BUILDER = "Builder of Doi is strict, attribute is already set";
+    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
+    public static final String URI_VALID_EMAILTO_BUT_INVALID_URL = "emailto:nope@example.net";
+    public static final URI INVALID_PROXY_FTP = URI.create("ftp://doi.org/");
+    public static final URI INVALID_PROXY_EXAMPLE_DOT_NET = URI.create("https://example.net");
     private static final URI STAGE_DOI_PROXY = URI.create("https://handle.stage.datacite.org/");
     private static final String DEMO_PREFIX = "10.5072";
     public static final String EXAMPLE_PREFIX = DEMO_PREFIX;
-    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
     private static final URI EXAMPLE_PROXY = STAGE_DOI_PROXY;
     private static final String EXAMPLE_PREFIX_2 = "10.16903";
-    public static final String URI_VALID_EMAILTO_BUT_INVALID_URL = "emailto:nope@example.net";
+    private static final URI INVALID_PROXY = URI.create("https://doiproxy.invalid/");
 
     @Test
     void copyOfWithIdenticalAttributesReturnsSameInstance() {
@@ -178,6 +186,28 @@ class ImmutableDoiTest {
             () -> ImmutableDoi.builder().withIdentifier(EXAMPLE_PREFIX).build());
     }
 
+    @ParameterizedTest
+    @MethodSource("badPrefixes")
+    void builderBuildThrowsIllegalStateExceptionWhenPrefixIsInvalid(String invalidPrefix) {
+        var actualException = assertThrows(IllegalStateException.class, () -> ImmutableDoi.builder()
+            .withProxy(EXAMPLE_PROXY)
+            .withPrefix(invalidPrefix)
+            .withSuffix(createRandomSuffix())
+            .build());
+        assertThat(actualException.getMessage(), containsString(CANNOT_BUILD_DOI_PREFIX_MUST_START_WITH));
+    }
+
+    @ParameterizedTest
+    @MethodSource("badProxies")
+    void builderBuildThrowsIllegalStateExceptionWhenProxyIsInvalid(URI badProxy) {
+        var actualException = assertThrows(IllegalStateException.class,
+            () -> ImmutableDoi.builder()
+                .withProxy(badProxy)
+                .withIdentifier(EXAMPLE_IDENTIFIER)
+                .build());
+        assertThat(actualException.getMessage(), is(equalTo(CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY)));
+    }
+
     @Test
     void toIdentifierReturnsPrefixForwardSlashAndSuffix() {
         String randomSuffix = createRandomSuffix();
@@ -210,6 +240,14 @@ class ImmutableDoiTest {
                 .withSuffix(createRandomSuffix())
                 .withSuffix(createRandomSuffix()));
         assertThat(actualException.getMessage(), containsString(ERROR_STRICT_BUILDER));
+    }
+
+    private static Stream<String> badPrefixes() {
+        return Stream.of("local.irrigation", "wanderlust", "11.9821", "murkyWater");
+    }
+
+    private static Stream<URI> badProxies() {
+        return Stream.of(INVALID_PROXY, INVALID_PROXY_EXAMPLE_DOT_NET, INVALID_PROXY_FTP);
     }
 
     private static String createRandomSuffix() {
