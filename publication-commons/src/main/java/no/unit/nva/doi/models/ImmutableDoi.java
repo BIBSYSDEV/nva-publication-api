@@ -1,6 +1,5 @@
 package no.unit.nva.doi.models;
 
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,14 +120,6 @@ public final class ImmutableDoi extends Doi {
         return getPrefix() + PATH_SEPARATOR + getSuffix();
     }
 
-    private static void validateProxyUri(URI proxy) {
-        try {
-            proxy.toURL();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
-        }
-    }
-
     private static URI createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(URI value) {
         try {
             return new URI(value.getScheme(), value.getUserInfo(), value.getHost(), value.getPort(),
@@ -179,9 +170,7 @@ public final class ImmutableDoi extends Doi {
 
         public final Builder withProxy(URI proxy) {
             checkNotIsSet(proxyIsSet(), "proxy");
-            var newProxyValue = createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(proxy);
-            validateProxyUri(newProxyValue);
-            this.proxy = Objects.requireNonNull(newProxyValue, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
+            this.proxy = Objects.requireNonNull(proxy, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
             optBits |= OPT_BIT_PROXY;
             return this;
         }
@@ -253,6 +242,9 @@ public final class ImmutableDoi extends Doi {
          * @throws java.lang.IllegalStateException if any required attributes are missing
          */
         public ImmutableDoi build() {
+            if (hasPathInProxy()) {
+                proxy = createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(proxy);
+            }
             checkRequiredAttributes();
             validateProxy();
             validatePrefix();
@@ -275,6 +267,20 @@ public final class ImmutableDoi extends Doi {
             if (isSet) {
                 throw new IllegalStateException(BUILDER_OF_DOI_IS_STRICT_ATTRIBUTE_IS_ALREADY_SET.concat(name));
             }
+        }
+
+        private boolean hasPathInProxy() {
+            if (proxyIsSet()) {
+                return isEmptyPathOrContainOnlyPathSeparator(proxy.getPath());
+            }
+            return false;
+        }
+
+        private boolean isEmptyPathOrContainOnlyPathSeparator(String proxyPath) {
+            return proxyPath != null
+                &&
+                (proxyPath.length() > 1
+                    || proxyPath.length() > 0 && proxyPath.charAt(0) != PATH_SEPARATOR);
         }
 
         private void validatePrefix() {

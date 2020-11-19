@@ -12,8 +12,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.net.URI;
 import java.util.ArrayList;
@@ -109,10 +107,13 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderWithProxyWithInvalidUrlAsUriThrowsIllegalArgumentException() {
-        var actualException = assertThrows(IllegalArgumentException.class, () ->
-            ImmutableDoi.builder().withProxy(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL)));
-        assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
+    void builderBuildThrowsIllegalStateExceptionWhenWithProxyContainsInvalidUrl() {
+        var actualException = assertThrows(IllegalStateException.class, () ->
+            ImmutableDoi.builder()
+                .withProxy(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL))
+                .withIdentifier(EXAMPLE_IDENTIFIER)
+                .build());
+        assertThat(actualException.getMessage(), is(equalTo(CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY)));
     }
 
     @Test
@@ -260,10 +261,6 @@ class ImmutableDoiTest {
             }
         }
         return arguments.stream();
-    }
-
-    private AnotherPojoDoi getAnotherPojoDoi() {
-        return new AnotherPojoDoi(EXAMPLE_PROXY, EXAMPLE_PREFIX, EXAMPLE_SUFFIX);
     }
 
     private AnotherPojoDoi getAnotherPojoDoi(URI proxy) {
