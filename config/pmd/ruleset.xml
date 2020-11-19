@@ -21,7 +21,7 @@
     <exclude name="SystemPrintln"/>
     <exclude name="GuardLogStatement"/>
     <exclude name="AvoidPrintStackTrace"/>
-    //Allow arrays as parameters.
+    <!--Allow arrays as parameters. -->
     <exclude name="UseVarargs"/>
 
     <!-- In TableManager we map ResourceNotFoundException to TableNotFoundException -->
