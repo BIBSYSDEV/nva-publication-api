@@ -47,7 +47,7 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
         var dto = mapToPublicationDto(record);
-        logMappingResults(dto);
+        logMappingResults(dto.orElse(null));
 
         dto.ifPresent(Validatable::validate);
 
@@ -56,8 +56,8 @@ public class DynamoDbFanoutPublicationDtoProducer
             .orElse(NO_OUTPUT_NO_EVENT);
     }
 
-    private void logMappingResults(Optional<Publication> dto) {
-        logger.info("{} Publication DTO from DynamodbStreamRecord", dto.isPresent() ? CREATED : SKIPPED_CREATING);
+    private void logMappingResults(Publication dto) {
+        logger.info("{} Publication DTO from DynamodbStreamRecord", dto != null ? CREATED : SKIPPED_CREATING);
     }
 
     private Optional<Publication> mapToPublicationDto(DynamodbEvent.DynamodbStreamRecord record) {
