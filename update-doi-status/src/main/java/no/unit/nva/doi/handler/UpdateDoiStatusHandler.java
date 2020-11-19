@@ -15,6 +15,7 @@ import nva.commons.utils.JacocoGenerated;
 
 public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<DoiUpdateHolder, Void> {
 
+    public static final Void SUCCESSESFULLY_HANDLED_EVENT = null;
     private final PublicationService publicationService;
 
     /**
@@ -40,7 +41,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<DoiUpdateHolder>> event,
                                        Context context) {
         new UpdateDoiStatusProcess(publicationService, input).updateDoiStatus();
-        return null;
+        return SUCCESSESFULLY_HANDLED_EVENT;
     }
 
     @JacocoGenerated
