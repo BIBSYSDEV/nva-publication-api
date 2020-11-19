@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -92,6 +93,15 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     public void handleRequestThrowsExceptionWhenPublicationIsMissingPublicationStatus() {
         final String statusField = "status";
         publicationMissingMandatoryFieldTrhowsException(statusField, PUBLICATION_MISSING_PUBLICATION_STATUS);
+    }
+
+    @Test
+    public void handleRequestReturnsSomethingWhenEventContainsValidPublication() throws JsonProcessingException {
+        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_NEW_ONLY);
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
+
+        assertDoesNotThrow(() -> actual.getItem().validate());
     }
 
     @Test
