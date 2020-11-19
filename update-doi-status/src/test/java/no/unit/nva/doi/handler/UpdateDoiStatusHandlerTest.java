@@ -25,8 +25,6 @@ import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
-import no.unit.nva.publication.doi.dto.PublicationDtoTestDataGenerator;
-import no.unit.nva.publication.doi.dto.PublicationDynamoEventTestDataGenerator;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.exceptions.ApiIoException;

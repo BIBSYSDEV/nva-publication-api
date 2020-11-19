@@ -1,12 +1,11 @@
 package no.unit.nva.doi;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
-import no.unit.nva.doi.model.DoiUpdateDto;
-import no.unit.nva.doi.model.DoiUpdateHolder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
+import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.exceptions.ApiGatewayException;
 import org.slf4j.Logger;
@@ -60,7 +59,7 @@ public class UpdateDoiStatusProcess {
     public void updateDoiStatus() {
         try {
             publication.setModifiedDate(request.getModifiedDate());
-            publication.setDoi(URI.create(request.getDoi().get()));
+            publication.setDoi(request.getDoi().get());
             publicationService.updatePublication(publication.getIdentifier(), publication);
             logPublicationDoiUpdate();
         } catch (ApiGatewayException e) {
@@ -76,7 +75,7 @@ public class UpdateDoiStatusProcess {
     }
 
     private boolean isInvalidPayloadFormat(DoiUpdateHolder request) {
-        return request == null || !request.hasItem() || !request.getItem().hasAllValuesSet();
+        return request == null || !request.hasItem() || !request.getItem().hasAllRequiredValuesSet();
     }
 
     private void validateInput() {
