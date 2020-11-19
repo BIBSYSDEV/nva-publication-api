@@ -165,7 +165,7 @@
               "s": "https://www.crossref.org/"
             },
             "mainTitle": {
-              "s": "Exploratory product search using top-k join queries"
+              "s": "This is a long and boring title"
             },
             "description": {
               "s": "sdfsfd"
@@ -209,7 +209,7 @@
                     "identity": {
                       "m": {
                         "name": {
-                          "s": "Vlachou, Akrivi"
+                          "s": "Writerson, Writer"
                         },
                         "type": {
                           "s": "Identity"
@@ -232,7 +232,7 @@
                     "identity": {
                       "m": {
                         "name": {
-                          "s": "Doulkeridis, Christos"
+                          "s": "Authorson, Author"
                         },
                         "type": {
                           "s": "Identity"
