@@ -6,7 +6,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
 import nva.commons.json.JsonSerializable;
-import nva.commons.utils.JacocoGenerated;
 
 public class DoiUpdateDto implements JsonSerializable {
 
@@ -51,8 +50,6 @@ public class DoiUpdateDto implements JsonSerializable {
         return getPublicationId() != null && getModifiedDate() != null;
     }
 
-    // Currently using test resources as input and not the builder.
-    @JacocoGenerated
     public static class Builder {
 
         private URI doi;
