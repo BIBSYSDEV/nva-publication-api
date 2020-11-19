@@ -41,31 +41,6 @@ public final class ImmutableDoi extends Doi {
             : Objects.requireNonNull(super.getProxy(), MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
     }
 
-    @SuppressWarnings("PMD.CallSuperInConstructor")
-    private ImmutableDoi(URI proxy, String prefix, String suffix) {
-        this.proxy = proxy;
-        this.prefix = prefix;
-        this.suffix = suffix;
-    }
-
-    /**
-     * Creates an immutable copy of a {@link Doi} value. Uses accessors to get values to initialize the new immutable
-     * instance. If an instance is already immutable, it is returned as is.
-     *
-     * @param instance The instance to copy
-     * @return A copied immutable Doi instance
-     */
-    public static ImmutableDoi copyOf(Doi instance) {
-        if (instance instanceof ImmutableDoi) {
-            return (ImmutableDoi) instance;
-        }
-        return ImmutableDoi.builder()
-            .withProxy(instance.getProxy())
-            .withPrefix(instance.getPrefix())
-            .withSuffix(instance.getSuffix())
-            .build();
-    }
-
     /**
      * Creates a builder for {@link ImmutableDoi ImmutableDoi}.
      * <pre>
@@ -110,52 +85,6 @@ public final class ImmutableDoi extends Doi {
     @Override
     public String getSuffix() {
         return suffix;
-    }
-
-    /**
-     * Copy the current immutable object by setting a value for the {@link Doi#getProxy() proxy} attribute. An equals
-     * check used to prevent copying of the same value by returning {@code this}.
-     *
-     * @param value A new value for proxy
-     * @return A modified copy of the {@code this} object
-     */
-    public final ImmutableDoi withProxy(URI value) {
-        URI newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
-        if (this.proxy.equals(newValue)) {
-            return this;
-        }
-        validateProxyUri(newValue);
-        return new ImmutableDoi(newValue, this.prefix, this.suffix);
-    }
-
-    /**
-     * Copy the current immutable object by setting a value for the {@link Doi#getPrefix()} () prefix} attribute. An
-     * equals check used to prevent copying of the same value by returning {@code this}.
-     *
-     * @param value A new value for prefix
-     * @return A modified copy of the {@code this} object
-     */
-    public final ImmutableDoi withPrefix(String value) {
-        String newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX);
-        if (this.prefix.equals(newValue)) {
-            return this;
-        }
-        return new ImmutableDoi(this.proxy, newValue, this.suffix);
-    }
-
-    /**
-     * Copy the current immutable object by setting a value for the {@link Doi#getSuffix()} () suffix} attribute. An
-     * equals check used to prevent copying of the same value by returning {@code this}.
-     *
-     * @param value A new value for suffix
-     * @return A modified copy of the {@code this} object
-     */
-    public final ImmutableDoi withSuffix(String value) {
-        String newValue = Objects.requireNonNull(value, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX);
-        if (this.suffix.equals(newValue)) {
-            return this;
-        }
-        return new ImmutableDoi(this.proxy, this.prefix, newValue);
     }
 
     /**

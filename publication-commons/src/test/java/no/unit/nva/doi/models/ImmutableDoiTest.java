@@ -45,12 +45,6 @@ class ImmutableDoiTest {
     private static final String EXAMPLE_PREFIX_2 = "10.16903";
     private static final URI INVALID_PROXY = URI.create("https://doiproxy.invalid/");
 
-    @Test
-    void copyOfWithIdenticalAttributesReturnsSameInstance() {
-        var immutableDoi = createDoi();
-
-        assertThat(ImmutableDoi.copyOf(immutableDoi), is(sameInstance(immutableDoi)));
-    }
 
     @Test
     void getProxyReturnsDefaultProxyWhenNotSpecified() {
@@ -61,48 +55,6 @@ class ImmutableDoiTest {
     @Test
     void toStringReturnsPrefixAndSuffix() {
         assertThat(createDoi().toString(), is(equalTo(EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX)));
-    }
-
-    @Test
-    void copyOfWithDifferentSubclassReturnsNewImmutableInstance() {
-        AnotherPojoDoi immutableDoi = getAnotherPojoDoi();
-        assertThat(ImmutableDoi.copyOf(immutableDoi), not(is(sameInstance(immutableDoi))));
-    }
-
-    @Test
-    void withProxyWhenValueNotChangedReturnsSameInstance() {
-        var doi = createDoi();
-        assertThat(doi.withProxy(STAGE_DOI_PROXY), is(sameInstance(doi)));
-    }
-
-    @Test
-    void withProxyWhenValueHasChangedReturnsNewImmutableInstance() {
-        var doi = createDoi();
-        assertThat(doi.withProxy(DOI_PROXY), not(is(sameInstance(doi))));
-    }
-
-    @Test
-    void withPrefixWhenValueNotChangedReturnsSameInstance() {
-        var doi = createDoi();
-        assertThat(doi.withPrefix(EXAMPLE_PREFIX), is(sameInstance(doi)));
-    }
-
-    @Test
-    void withPrefixWhenValueHasChangedReturnsNewImmutableInstance() {
-        var doi = createDoi();
-        assertThat(doi.withPrefix(EXAMPLE_PREFIX + EXAMPLE_RANDOM_VALUE), not(is(sameInstance(doi))));
-    }
-
-    @Test
-    void withSuffixWhenValueNotChangedReturnsSameInstance() {
-        var doi = createDoi();
-        assertThat(doi.withSuffix(EXAMPLE_SUFFIX), is(sameInstance(doi)));
-    }
-
-    @Test
-    void withSuffixWhenValueHasChangedReturnsNewImmutalbeInstance() {
-        var doi = createDoi();
-        assertThat(doi.withSuffix(EXAMPLE_SUFFIX + EXAMPLE_RANDOM_VALUE), not(is(sameInstance(doi))));
     }
 
     @Test
@@ -153,14 +105,6 @@ class ImmutableDoiTest {
     void toIdWithAnotherSubClassOfDoiWithInvalidProxyUriThenThrowsIllegalStateException() {
         var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
         var actualException = assertThrows(IllegalStateException.class, doi::toUri);
-        assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
-    }
-
-    @Test
-    void withProxyWithInvalidUrlAsUriThrowsIllegalStateException() {
-        var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
-
-        var actualException = assertThrows(IllegalArgumentException.class, () -> ImmutableDoi.copyOf(doi));
         assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
     }
 
