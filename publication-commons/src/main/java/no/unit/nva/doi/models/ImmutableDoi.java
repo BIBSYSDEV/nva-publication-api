@@ -1,10 +1,12 @@
 package no.unit.nva.doi.models;
 
+import static java.util.Objects.hash;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * Immutable implementation of {@link Doi}.
@@ -37,7 +39,7 @@ public final class ImmutableDoi extends Doi {
         this.suffix = builder.suffix;
         this.proxy = builder.proxyIsSet()
             ? builder.proxy
-            : Objects.requireNonNull(super.getProxy(), MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
+            : requireNonNull(super.getProxy(), MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
     }
 
     /**
@@ -107,7 +109,7 @@ public final class ImmutableDoi extends Doi {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(proxy, prefix, suffix);
+        return hash(proxy, prefix, suffix);
     }
 
     /**
@@ -145,12 +147,6 @@ public final class ImmutableDoi extends Doi {
      */
     public static final class Builder {
 
-        private static final long INIT_BIT_PREFIX = 0x1L;
-        private static final long INIT_BIT_SUFFIX = 0x2L;
-        private static final long OPT_BIT_PROXY = 0x1L;
-        private long initBits = 0x3L;
-        private long optBits;
-
         private URI proxy;
         private String prefix;
         private String suffix;
@@ -170,8 +166,7 @@ public final class ImmutableDoi extends Doi {
 
         public final Builder withProxy(URI proxy) {
             checkNotIsSet(proxyIsSet(), "proxy");
-            this.proxy = Objects.requireNonNull(proxy, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
-            optBits |= OPT_BIT_PROXY;
+            this.proxy = requireNonNull(proxy, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PROXY);
             return this;
         }
 
@@ -183,8 +178,7 @@ public final class ImmutableDoi extends Doi {
          */
         public final Builder withPrefix(String prefix) {
             checkNotIsSet(prefixIsSet(), "prefix");
-            this.prefix = Objects.requireNonNull(prefix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX);
-            initBits &= ~INIT_BIT_PREFIX;
+            this.prefix = requireNonNull(prefix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_PREFIX);
             return this;
         }
 
@@ -196,8 +190,7 @@ public final class ImmutableDoi extends Doi {
          */
         public final Builder withSuffix(String suffix) {
             checkNotIsSet(suffixIsSet(), "suffix");
-            this.suffix = Objects.requireNonNull(suffix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX);
-            initBits &= ~INIT_BIT_SUFFIX;
+            this.suffix = requireNonNull(suffix, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_SUFFIX);
             return this;
         }
 
@@ -208,7 +201,7 @@ public final class ImmutableDoi extends Doi {
          * @return {@code this} builder for use in a chained invocation
          */
         public final Builder withIdentifier(String identifier) {
-            Objects.requireNonNull(identifier, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER);
+            requireNonNull(identifier, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER);
             int indexOfDivider = identifier.indexOf(PATH_SEPARATOR);
             if (indexOfDivider == -1) {
                 throw new IllegalArgumentException("Invalid DOI identifier");
@@ -226,7 +219,7 @@ public final class ImmutableDoi extends Doi {
          * @return {@code this} builder for use in a chained invocation
          */
         public final Builder withDoi(URI doi) {
-            Objects.requireNonNull(doi, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI);
+            requireNonNull(doi, MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI);
             if (containsOnlyLeadingForwardSlashAndSlashBetweenPrefixAndSuffix(doi)) {
                 throw new IllegalArgumentException(ERROR_DOI_URI_INVALID_FORMAT.concat(doi.toASCIIString()));
             }
@@ -300,19 +293,19 @@ public final class ImmutableDoi extends Doi {
         }
 
         private boolean proxyIsSet() {
-            return (optBits & OPT_BIT_PROXY) != 0;
+            return nonNull(proxy);
         }
 
         private boolean prefixIsSet() {
-            return (initBits & INIT_BIT_PREFIX) == 0;
+            return nonNull(prefix);
         }
 
         private boolean suffixIsSet() {
-            return (initBits & INIT_BIT_SUFFIX) == 0;
+            return nonNull(suffix);
         }
 
         private void checkRequiredAttributes() {
-            if (initBits != 0) {
+            if (!prefixIsSet() || !suffixIsSet()) {
                 throw new IllegalStateException(formatRequiredAttributesMessage());
             }
         }
