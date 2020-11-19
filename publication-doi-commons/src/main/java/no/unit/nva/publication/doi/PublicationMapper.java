@@ -136,7 +136,6 @@ public class PublicationMapper {
     }
 
     private PublicationDate extractPublicationDate(DynamodbStreamRecordImageDao dao) {
-
         return Optional.ofNullable(dao.getPublicationReleaseDate())
             .map(PublicationDate::new)
             .orElse(null);

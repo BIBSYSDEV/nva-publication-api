@@ -30,24 +30,45 @@ public abstract class Validatable {
 
     protected abstract Logger logger();
 
-    private static <T> Void requireNonNull(T fieldValue) {
-        Objects.requireNonNull(fieldValue);
-        return null;
+    private void requiredFieldsAreNotNull(Field[] fields) {
+        Arrays.stream(fields)
+            .filter(this::fieldIsMandatory)
+            .forEach(this::requireFieldIsNotNull);
     }
 
     private void validatableFieldsAreValid(Field[] fields) {
         Arrays.stream(fields)
-            .map(this::accessibleField)
-            .map(attempt(field -> field.get(this)))
+            .map(this::toAccessibleField)
+            .map(attempt(this::fetchValue))
             .map(Try::orElseThrow)
             .filter(this::isValidatable)
             .map(this::toValidatable)
             .forEach(Validatable::validate);
     }
 
-    private Field accessibleField(Field field) {
+    private Field toAccessibleField(Field field) {
         field.setAccessible(true);
         return field;
+    }
+
+    private Object fetchValue(Field field) throws IllegalAccessException {
+        return field.get(this);
+    }
+
+    private boolean fieldIsMandatory(Field field) {
+        return field.isAnnotationPresent(MandatoryField.class);
+    }
+
+    private static <T> Void requireNonNull(T fieldValue) {
+        Objects.requireNonNull(fieldValue);
+        return null;
+    }
+
+    private <T> void requireFieldIsNotNull(Field field) {
+        field.setAccessible(true);
+        Object value = attempt(() -> fetchValue(field)).orElseThrow();
+        attempt(() -> requireNonNull(value))
+            .orElseThrow(fail -> missingFieldError(fail, field.getName()));
     }
 
     private boolean isValidatable(Object fieldValue) {
@@ -56,23 +77,6 @@ public abstract class Validatable {
 
     private Validatable toValidatable(Object validatable) {
         return (Validatable) validatable;
-    }
-
-    private boolean fieldIsMandatory(Field field) {
-        return field.isAnnotationPresent(MandatoryField.class);
-    }
-
-    private void requiredFieldsAreNotNull(Field[] fields) {
-        Arrays.stream(fields)
-            .filter(this::fieldIsMandatory)
-            .forEach(this::requireFieldIsNotNull);
-    }
-
-    private <T> void requireFieldIsNotNull(Field field) {
-        field.setAccessible(true);
-        Object value = attempt(() -> field.get(this)).orElseThrow();
-        attempt(() -> requireNonNull(value))
-            .orElseThrow(fail -> missingFieldError(fail, field.getName()));
     }
 
     private IllegalArgumentException missingFieldError(Failure<Void> fail,
