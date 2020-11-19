@@ -11,7 +11,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -81,6 +80,14 @@ public class PublishPublicationHandlerTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void getLocationReturnsUri() {
+        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
+        URI location = handler.getLocation(UUID.randomUUID());
+
+        assertNotNull(location);
+    }
+
     private Map<String, String> getResponseHeaders(String location) {
         return Map.of(
             CONTENT_TYPE, APPLICATION_JSON.getMimeType(),
@@ -93,13 +100,5 @@ public class PublishPublicationHandlerTest {
         return Map.of(
             CONTENT_TYPE, APPLICATION_JSON.getMimeType()
         );
-    }
-
-    @Test
-    public void getLocationReturnsUri() {
-        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
-        URI location = handler.getLocation(UUID.randomUUID());
-
-        assertNotNull(location);
     }
 }

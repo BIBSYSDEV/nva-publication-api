@@ -150,7 +150,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();
-        PublicationHolder actual = objectMapper.readValue(outputString, PublicationHolder.class);
-        return actual;
+        return objectMapper.readValue(outputString, PublicationHolder.class);
     }
 }

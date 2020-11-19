@@ -21,7 +21,8 @@ public final class ContributorMapper {
      * @return list of contributor DTOs
      */
     public static List<Contributor> fromIdentityDaos(List<Identity> contributorIdentities) {
-        return contributorIdentities.stream()
+        return contributorIdentities
+            .stream()
             .map(ContributorMapper::createContributor)
             .collect(Collectors.toList());
     }

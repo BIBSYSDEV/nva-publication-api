@@ -119,6 +119,8 @@ public class PublicationStreamRecordTestDataGenerator {
      *
      * @return IndexDocument representation of object.
      */
+    //This method is used only in testing.
+    @JacocoGenerated
     public DynamodbStreamRecordImageDao asDynamodbStreamRecordDao(DynamodbStreamRecordJsonPointers jsonPointers) {
         return new DynamodbStreamRecordImageDao.Builder(jsonPointers)
             .withDynamodbStreamRecordImage(asDynamoDbStreamRecordJsonNode())
@@ -130,6 +132,8 @@ public class PublicationStreamRecordTestDataGenerator {
      *
      * @return IndexDocument representation of object.
      */
+    //This method is used only in testing.
+    @JacocoGenerated
     public DynamodbStreamRecordImageDao asDynamodbStreamRecordDao() {
         return new DynamodbStreamRecordImageDao.Builder(jsonPointers)
             .withDynamodbStreamRecordImage(asDynamoDbStreamRecordJsonNode())

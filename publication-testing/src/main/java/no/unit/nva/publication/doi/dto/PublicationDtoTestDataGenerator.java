@@ -18,7 +18,6 @@ public class PublicationDtoTestDataGenerator {
 
     /**
      * Creates a stream record filled by faker.
-     *
      * @return PublicationDtoTestDataGenerator with one additional stream record added to list of records.
      */
     public PublicationDtoTestDataGenerator createRandomStreamRecord() {
