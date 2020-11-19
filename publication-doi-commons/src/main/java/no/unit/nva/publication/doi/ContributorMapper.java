@@ -1,7 +1,7 @@
 package no.unit.nva.publication.doi;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import no.unit.nva.publication.doi.dto.Contributor;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
 
@@ -21,10 +21,11 @@ public final class ContributorMapper {
      * @return list of contributor DTOs
      */
     public static List<Contributor> fromIdentityDaos(List<Identity> contributorIdentities) {
-        return contributorIdentities
-            .stream()
-            .map(ContributorMapper::createContributor)
-            .collect(Collectors.toList());
+        var contributors = new ArrayList<Contributor>();
+        for (Identity contributorIdentity : contributorIdentities) {
+            contributors.add(createContributor(contributorIdentity));
+        }
+        return contributors;
     }
 
     private static Contributor createContributor(Identity identity) {
