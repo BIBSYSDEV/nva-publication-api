@@ -2,6 +2,7 @@ package no.unit.nva.doi.models;
 
 import static no.unit.nva.doi.models.Doi.DEFAULT_DOI_PROXY;
 import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR;
+import static no.unit.nva.doi.models.Doi.PATH_SEPARATOR_STRING;
 import static no.unit.nva.doi.models.Doi.SCHEMA_SEPARATOR;
 import static no.unit.nva.doi.models.Doi.VALID_PROXIES;
 import static no.unit.nva.doi.models.Doi.VALID_SCHEMES;
@@ -27,8 +28,7 @@ class ImmutableDoiTest {
 
     public static final URI DOI_PROXY = URI.create("https://doi.org/");
     public static final String EXAMPLE_SUFFIX = createRandomSuffix();
-    public static final String EXAMPLE_RANDOM_VALUE = "2";
-    public static final String FORWARD_SLASH = "/";
+    public static final String DOI_IDENTIFIER_SEPARATOR = "/";
     public static final String REQUIRED_ATTRIBUTES_ARE_NOT_SET = "required attributes are not set";
     public static final String ERROR_STRICT_BUILDER = "Builder of Doi is strict, attribute is already set";
     public static final String URI_VALID_EMAILTO_BUT_INVALID_URL = "emailto:nope@example.net";
@@ -37,12 +37,11 @@ class ImmutableDoiTest {
     private static final URI STAGE_DOI_PROXY = URI.create("https://handle.stage.datacite.org/");
     private static final String DEMO_PREFIX = "10.5072";
     public static final String EXAMPLE_PREFIX = DEMO_PREFIX;
-    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX;
+    public static final String EXAMPLE_IDENTIFIER = EXAMPLE_PREFIX + DOI_IDENTIFIER_SEPARATOR + EXAMPLE_SUFFIX;
     private static final URI EXAMPLE_PROXY = STAGE_DOI_PROXY;
     public static final URI EXAMPLE_DOI = URI.create(EXAMPLE_PROXY + EXAMPLE_IDENTIFIER);
     private static final String EXAMPLE_PREFIX_2 = "10.16903";
     private static final URI INVALID_PROXY = URI.create("https://doiproxy.invalid/");
-
 
     @Test
     void getProxyReturnsDefaultProxyWhenNotSpecified() {
@@ -51,8 +50,8 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void toStringReturnsPrefixAndSuffix() {
-        assertThat(createDoi().toString(), is(equalTo(EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX)));
+    void toStringReturnsPrefixAndSuffixAkaIdentifier() {
+        assertThat(createDoi().toString(), is(equalTo(EXAMPLE_PREFIX + DOI_IDENTIFIER_SEPARATOR + EXAMPLE_SUFFIX)));
     }
 
     @Test
@@ -73,15 +72,15 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void toIdThenReturnsDoiIdWhichIsProxyPrefixAndSuffix() {
+    void toUriReturnsDoiWhichIsProxyPrefixAndSuffixAsUri() {
         String randomSuffix = createRandomSuffix();
         var doi = createDoi(randomSuffix);
-        URI expectedUri = URI.create(EXAMPLE_PROXY + EXAMPLE_PREFIX + FORWARD_SLASH + randomSuffix);
+        URI expectedUri = URI.create(EXAMPLE_PROXY + EXAMPLE_PREFIX + DOI_IDENTIFIER_SEPARATOR + randomSuffix);
         assertThat(doi.toUri(), is(equalTo(expectedUri)));
     }
 
     @Test
-    void toIdWhereBuilderWithProxyWithoutSuffixSlashReturnsCorrectIdURI() {
+    void toUriReturnsDoiWhereBuilderWithProxyHasNoPath() {
         var randomSuffix = createRandomSuffix();
         var doi = ImmutableDoi.builder()
             .withProxy(URI.create("https://doi.org"))
@@ -89,25 +88,25 @@ class ImmutableDoiTest {
             .withSuffix(randomSuffix)
             .build();
         assertThat(doi.toUri(),
-            is(equalTo(URI.create(DEFAULT_DOI_PROXY + DEMO_PREFIX + FORWARD_SLASH + randomSuffix))));
+            is(equalTo(URI.create(DEFAULT_DOI_PROXY + DEMO_PREFIX + DOI_IDENTIFIER_SEPARATOR + randomSuffix))));
     }
 
     @Test
-    void builderWithIdentifierSetsPrefixAndSuffixCorrect() {
+    void builderBuildReturnsDoiWhenWithIdentifierPopulatesPrefixAndSuffix() {
         Doi doi = ImmutableDoi.builder().withIdentifier(EXAMPLE_IDENTIFIER).build();
         assertThat(doi.getPrefix(), is(equalTo(EXAMPLE_PREFIX)));
         assertThat(doi.getSuffix(), is(equalTo(EXAMPLE_SUFFIX)));
     }
 
     @Test
-    void toIdWithAnotherSubClassOfDoiWithInvalidProxyUriThenThrowsIllegalStateException() {
+    void toUriThrowsIllegalStateExceptionWhenAnotherSubClassOfDoiContainsInvalidProxyUrl() {
         var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
         var actualException = assertThrows(IllegalStateException.class, doi::toUri);
         assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
     }
 
     @Test
-    void builderBuildThrowsIllegalStateExceptionWhenWithProxyContainsInvalidUrl() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithProxyContainsInvalidUrlAsUri() {
         var actualException = assertThrows(IllegalStateException.class, () ->
             ImmutableDoi.builder()
                 .withProxy(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL))
@@ -117,32 +116,33 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderOnlyPrefixThrowsException() {
+    void builderBuildThrowsIllegalStateExceptionWhenMissingSuffix() {
         var actual = assertThrows(IllegalStateException.class,
             () -> ImmutableDoi.builder().withPrefix(EXAMPLE_PREFIX).build());
         assertThat(actual.getMessage(), containsString(REQUIRED_ATTRIBUTES_ARE_NOT_SET));
     }
 
     @Test
-    void builderOnlySuffixThrowsException() {
+    void builderBuildThrowsIllegalStateExceptionWhenMissingPrefix() {
         var actual = assertThrows(IllegalStateException.class,
-            () -> ImmutableDoi.builder().withSuffix(createRandomSuffix()).build());
+            () -> ImmutableDoi.builder()
+                .withSuffix(createRandomSuffix()).build());
         assertThat(actual.getMessage(), containsString(REQUIRED_ATTRIBUTES_ARE_NOT_SET));
     }
 
     @Test
-    void builderWithNullIdentifierThrowsNPE() {
+    void builderBuildThrowsNullPointerExceptionWhenWithIdentifierIsNull() {
         assertThrows(NullPointerException.class, () -> ImmutableDoi.builder().withIdentifier(null).build());
     }
 
     @Test
-    void builderWithInvalidIdentifierThrowsIllegalArgumentException() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithIdentifierIsMissingSuffix() {
         assertThrows(IllegalArgumentException.class,
             () -> ImmutableDoi.builder().withIdentifier(EXAMPLE_PREFIX).build());
     }
 
     @Test
-    void builderWithDoiPopulatesProxyPrefixAndSuffix() {
+    void builderBuildReturnDoiWithDoiPopulatesProxyPrefixAndSuffix() {
         var doi = ImmutableDoi.builder().withDoi(EXAMPLE_DOI).build();
         assertThat(doi.getProxy(), is(equalTo(EXAMPLE_PROXY)));
         assertThat(doi.getPrefix(), is(equalTo(EXAMPLE_PREFIX)));
@@ -151,7 +151,8 @@ class ImmutableDoiTest {
 
     @ParameterizedTest
     @MethodSource("validSchemesAndProxyHosts")
-    void builderWithProxyAcceptsValidSchemeAndProxyCombinations(String scheme, String proxyHost) {
+    void builderBuildReturnDoiWhenWithProxyInputContainsValidCombinationsOfSchemeAndProxy(String scheme,
+                                                                                          String proxyHost) {
         var doi = ImmutableDoi.builder()
             .withProxy(URI.create(scheme + SCHEMA_SEPARATOR + proxyHost))
             .withIdentifier(EXAMPLE_IDENTIFIER)
@@ -161,9 +162,9 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderWithDoiInvalidIdentifierFormatThrowsIllegalArgumentException() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithDoiUriContainsInvalidIdentifierInPath() {
         URI invalidDoi = URI.create(
-            EXAMPLE_PROXY + EXAMPLE_PREFIX + FORWARD_SLASH + EXAMPLE_SUFFIX + FORWARD_SLASH + createRandomUuid());
+            EXAMPLE_PROXY + EXAMPLE_PREFIX + DOI_IDENTIFIER_SEPARATOR + EXAMPLE_SUFFIX + DOI_IDENTIFIER_SEPARATOR + createRandomUuid());
         var actualException = assertThrows(IllegalArgumentException.class,
             () -> ImmutableDoi.builder().withDoi(invalidDoi));
         assertThat(actualException.getMessage(),
@@ -172,7 +173,7 @@ class ImmutableDoiTest {
 
     @ParameterizedTest
     @MethodSource("badPrefixes")
-    void builderBuildThrowsIllegalStateExceptionWhenPrefixIsInvalid(String invalidPrefix) {
+    void builderBuildThrowsIllegalStateExceptionWhenWithPrefixHasInvalidPrefix(String invalidPrefix) {
         var actualException = assertThrows(IllegalStateException.class, () -> ImmutableDoi.builder()
             .withProxy(EXAMPLE_PROXY)
             .withPrefix(invalidPrefix)
@@ -183,7 +184,7 @@ class ImmutableDoiTest {
 
     @ParameterizedTest
     @MethodSource("badPrefixes")
-    void builderBuildThrowsIllegalStateExceptionWhenPrefixInIdentifierIsInvalid(String invalidPrefix) {
+    void builderBuildThrowsIllegalStateExceptionWhenWithIdentifierHasInvalidPrefix(String invalidPrefix) {
         String badIdentifier = invalidPrefix + PATH_SEPARATOR + createRandomSuffix();
         var actualException = assertThrows(IllegalStateException.class, () -> ImmutableDoi.builder()
             .withProxy(EXAMPLE_PROXY)
@@ -194,7 +195,7 @@ class ImmutableDoiTest {
 
     @ParameterizedTest
     @MethodSource("badProxies")
-    void builderBuildThrowsIllegalStateExceptionWhenProxyIsInvalid(URI badProxy) {
+    void builderBuildThrowsIllegalStateExceptionWhenWithProxyWasInvalidProxy(URI badProxy) {
         var actualException = assertThrows(IllegalStateException.class,
             () -> ImmutableDoi.builder()
                 .withProxy(badProxy)
@@ -207,11 +208,11 @@ class ImmutableDoiTest {
     void toIdentifierReturnsPrefixForwardSlashAndSuffix() {
         String randomSuffix = createRandomSuffix();
         Doi doi = createDoi(randomSuffix);
-        assertThat(doi.toIdentifier(), is(equalTo(EXAMPLE_PREFIX + "/" + randomSuffix)));
+        assertThat(doi.toIdentifier(), is(equalTo(EXAMPLE_PREFIX + PATH_SEPARATOR_STRING + randomSuffix)));
     }
 
     @Test
-    void builderWithProxyCalledTwiceThrowsException() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithProxyCalledTwice() {
         var actualException = assertThrows(IllegalStateException.class, () ->
             Doi.builder()
                 .withProxy(STAGE_DOI_PROXY)
@@ -220,7 +221,7 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderWithPrefixCalledTwiceThrowsException() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithPrefixCalledTwice() {
         var actualException = assertThrows(IllegalStateException.class, () ->
             Doi.builder()
                 .withPrefix(EXAMPLE_PREFIX)
@@ -229,7 +230,7 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void builderWithSuffixCalledTwiceThrowsException() {
+    void builderBuildThrowsIllegalStateExceptionWhenWithSuffixCalledTwice() {
         var actualException = assertThrows(IllegalStateException.class, () ->
             Doi.builder()
                 .withSuffix(createRandomSuffix())
