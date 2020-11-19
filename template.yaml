@@ -53,9 +53,14 @@ Parameters:
     Type: String
     Description: Amazon DynamoDB Stream ARN.
   EventBusName:
-    Type: String
-    Default: "default"
-    Description: AWS EventBridge Event Bus Name.
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: nvaEventBusName
+  EventBusArn:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: nvaEventBusArn
+  DlqArn:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: nvaDlqArn
   FailureQueueName:
     Type: String
     Default: delete-me-fail-queue
@@ -500,14 +505,7 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: "*"
 
-  FailQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      MaximumMessageSize: 262144
-      QueueName: !Ref FailureQueueName
   DynamoDbFanoutPublicationDtoProducer:
-    DependsOn:
-      - FailQueue
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -533,10 +531,10 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Sub arn:aws:events:eu-west-1:${AWS::AccountId}:event-bus/default
+            Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt FailQueue.Arn
+            Destination: !Ref DlqArn
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
@@ -573,6 +571,39 @@ Resources:
             Enabled: true
   DynamodbEventFanoutStreamRecordsDLQ:
     Type: "AWS::SQS::Queue"
+
+  UpdateDoiStatusHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: update-doi-status
+      Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBusName
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              detail:
+                responsePayload:
+                  type:
+                    - doi.updateDoiStatus
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !Ref DlqArn
+
 
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
