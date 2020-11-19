@@ -97,15 +97,15 @@ public class PublicationMapper {
     public Publication fromDynamodbStreamRecordDao(DynamodbStreamRecordImageDao dao) {
 
         return Builder.newBuilder()
-            .withId(transformIdentifierToId(namespacePublication, dao)) //oblig
-            .withInstitutionOwner(extractPublisherId(dao))//oblig
-            .withMainTitle(dao.getMainTitle())//oblig
-            .withType(extractPublicationInstanceType(dao)) //oblig
-            .withPublicationDate(extractPublicationDate(dao)) //oblig
+            .withId(transformIdentifierToId(namespacePublication, dao))
+            .withInstitutionOwner(extractPublisherId(dao))
+            .withMainTitle(dao.getMainTitle())
+            .withType(extractPublicationInstanceType(dao))
+            .withPublicationDate(extractPublicationDate(dao))
             .withDoi(extractDoiUrl(dao))
-            .withDoiRequest(extractDoiRequest(dao))  //oblig
-            .withModifiedDate(extractModifiedDate(dao))//oblig
-            .withStatus(extractPublicationStatus(dao))//oblig
+            .withDoiRequest(extractDoiRequest(dao))
+            .withModifiedDate(extractModifiedDate(dao))
+            .withStatus(extractPublicationStatus(dao))
             .withContributor(extractContributors(dao))
             .build();
     }
