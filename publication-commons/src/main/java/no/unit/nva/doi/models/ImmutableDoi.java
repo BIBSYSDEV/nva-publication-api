@@ -122,9 +122,12 @@ public final class ImmutableDoi extends Doi {
         return getPrefix() + PATH_SEPARATOR + getSuffix();
     }
 
-    private static URI createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(URI value) {
+    private static URI createDoiUriWithoutIdentifier(URI value) {
         try {
-            return new URI(value.getScheme(), value.getUserInfo(), value.getHost(), value.getPort(),
+            return new URI(value.getScheme(),
+                value.getUserInfo(),
+                value.getHost(),
+                value.getPort(),
                 PATH_SEPARATOR_STRING,
                 null, null);
         } catch (Exception e) {
@@ -236,7 +239,7 @@ public final class ImmutableDoi extends Doi {
          */
         public ImmutableDoi build() {
             if (hasPathInProxy()) {
-                proxy = createUriWithoutPathQueryAndFragmentWithSuffixForwardSlash(proxy);
+                proxy = createDoiUriWithoutIdentifier(proxy);
             }
             checkRequiredAttributes();
             validateProxy();
