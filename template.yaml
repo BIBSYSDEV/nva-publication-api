@@ -41,10 +41,6 @@ Parameters:
     Type: String
     Description: Reference to index containing publications by owner
     Default: ByPublisher
-  PublicationsDoiRequestsByStatusIndexName:
-    Type: String
-    Description: Reference to index containing publications by owner
-    Default: doiRequestsByStatus
   PublishedPublicationsIndexName:
     Type: String
     Description: Reference to index containing published publications
