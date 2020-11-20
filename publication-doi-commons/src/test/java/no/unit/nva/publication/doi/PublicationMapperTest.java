@@ -34,10 +34,10 @@ import org.junit.jupiter.api.function.Executable;
 
 class PublicationMapperTest {
 
+    public static final String DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON = "dynamoStream_event_with_old_image.json";
     private static final String EXAMPLE_NAMESPACE = "http://example.net/nva/";
     private static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
     private static final Faker FAKER = new Faker();
-    public static final String DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON = "dynamoStream_event_with_old_image.json";
 
     @Test
     void fromDynamoStreamRecordNewImage() {
