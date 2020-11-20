@@ -9,10 +9,8 @@ import org.slf4j.LoggerFactory;
 
 public class DoiRequest extends Validatable {
 
-    private static final Logger log = LoggerFactory.getLogger(DoiRequest.class);
-    @MandatoryField
+    private final static Logger logger = LoggerFactory.getLogger(DoiRequest.class);
     private final DoiRequestStatus status;
-    @MandatoryField
     private final Instant modifiedDate;
 
     /**
@@ -27,6 +25,8 @@ public class DoiRequest extends Validatable {
         super();
         this.status = status;
         this.modifiedDate = modifiedDate;
+        requireFieldIsNotNull(status, "DoiRequest.status");
+        requireFieldIsNotNull(modifiedDate, "DoiRequest.modifiedDate");
     }
 
     public DoiRequestStatus getStatus() {
@@ -58,9 +58,8 @@ public class DoiRequest extends Validatable {
     }
 
     @Override
-    @JacocoGenerated
     protected Logger logger() {
-        return log;
+        return logger;
     }
 
     public static final class Builder {

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.doi.dto;
 
+import static java.util.Objects.isNull;
 import static nva.commons.utils.attempt.Try.attempt;
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -84,5 +85,12 @@ public abstract class Validatable {
         String errorMessage = errorMessagePrefix + missingFieldName;
         logger().error(errorMessage);
         return new IllegalArgumentException(errorMessage, fail.getException());
+    }
+
+    public <T> void requireFieldIsNotNull(T value, String fieldName) {
+        if (isNull(value)) {
+            String errorMessage = errorMessagePrefix + fieldName;
+            throw new IllegalArgumentException(errorMessage);
+        }
     }
 }
