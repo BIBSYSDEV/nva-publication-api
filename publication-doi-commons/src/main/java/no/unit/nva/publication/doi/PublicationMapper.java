@@ -222,6 +222,7 @@ public class PublicationMapper {
 
     private PublicationType extractPublicationInstanceType(DynamodbStreamRecordImageDao dao) {
         return Optional.ofNullable(dao.getPublicationInstanceType())
+            .filter(not(String::isBlank))
             .map(PublicationType::findByName)
             .orElse(null);
     }
