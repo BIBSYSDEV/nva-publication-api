@@ -22,7 +22,7 @@ public final class ImmutableDoi extends Doi {
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_IDENTIFIER = "identifier";
     public static final String MESSAGE_NON_NULL_ARGUMENT_FOR_PARAMETER_DOI = "doi";
     public static final String ERROR_DOI_URI_INVALID_FORMAT =
-        "DOI does not like a valid format following https://<proxy>/<prefix>/<suffix>. It was: ";
+        "DOI does not look like a valid format following <hypertextTransferProtocol>://<proxy>/<prefix>/<suffix>. It was: ";
     public static final String CANNOT_BUILD_DOI_PROXY_IS_NOT_A_VALID_PROXY =
         "Cannot build Doi, proxy is not a valid proxy.";
     public static final String CANNOT_BUILD_DOI_DOI_PREFIX_IS_NOT_VALID =
