@@ -114,8 +114,7 @@ class PublicationMapperTest {
         return Builder.createValidPublication(FAKER, new DynamodbStreamRecordJsonPointers(DynamodbImageType.NEW));
     }
 
-    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames(
-    ) {
+    private PublicationStreamRecordTestDataGenerator createDynamoDbStreamRecordWithoutContributorIdentityNames() {
         return validPublication()
             .withContributorIdentities(createContributorIdentities(true))
             .build();
