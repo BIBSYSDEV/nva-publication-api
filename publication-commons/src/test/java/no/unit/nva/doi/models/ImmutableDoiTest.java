@@ -105,13 +105,6 @@ class ImmutableDoiTest {
     }
 
     @Test
-    void toUriThrowsIllegalStateExceptionWhenAnotherSubClassOfDoiContainsInvalidProxyUrl() {
-        var doi = getAnotherPojoDoi(URI.create(URI_VALID_EMAILTO_BUT_INVALID_URL));
-        var actualException = assertThrows(IllegalStateException.class, doi::toUri);
-        assertThat(actualException.getMessage(), is(equalTo(Doi.ERROR_PROXY_URI_MUST_BE_A_VALID_URL)));
-    }
-
-    @Test
     void builderBuildReturnsDoiWhenWithIdentifierPopulatesPrefixAndSuffix() {
         Doi doi = ImmutableDoi.builder().withIdentifier(EXAMPLE_IDENTIFIER).build();
         assertThat(doi.getPrefix(), is(equalTo(EXAMPLE_PREFIX)));
@@ -277,10 +270,6 @@ class ImmutableDoiTest {
         return arguments.stream();
     }
 
-    private AnotherPojoDoi getAnotherPojoDoi(URI proxy) {
-        return new AnotherPojoDoi(proxy, EXAMPLE_PREFIX, EXAMPLE_SUFFIX);
-    }
-
     private ImmutableDoi createDoi(String suffix) {
         return Doi.builder()
             .withProxy(STAGE_DOI_PROXY)
@@ -295,33 +284,5 @@ class ImmutableDoiTest {
             .withPrefix(EXAMPLE_PREFIX)
             .withSuffix(EXAMPLE_SUFFIX)
             .build();
-    }
-
-    private static class AnotherPojoDoi extends Doi {
-
-        private final URI proxy;
-        private final String prefix;
-        private final String suffix;
-
-        public AnotherPojoDoi(URI proxy, String prefix, String suffix) {
-            this.proxy = proxy;
-            this.prefix = prefix;
-            this.suffix = suffix;
-        }
-
-        @Override
-        public URI getProxy() {
-            return proxy;
-        }
-
-        @Override
-        public String getPrefix() {
-            return prefix;
-        }
-
-        @Override
-        public String getSuffix() {
-            return suffix;
-        }
     }
 }
