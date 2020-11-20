@@ -13,6 +13,7 @@ public abstract class Doi {
 
     public static final String HANDLE_DOI_PREFIX = "10.";
     public static final String ERROR_PROXY_URI_MUST_BE_A_VALID_URL = "Proxy URI must be a valid URL";
+    public static final String DOI_URI_SYNTAX = "<hypertextTransferProtocol>://<proxy>/<prefix>/<suffix>";
     protected static final String DOI_ORG = "doi.org";
     protected static final String HANDLE_STAGE_DATACITE_ORG = "handle.stage.datacite.org";
     protected static final String DX_DOI_ORG = "dx.doi.org";
