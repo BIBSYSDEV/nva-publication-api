@@ -55,15 +55,13 @@ public abstract class Doi {
      */
     public URI toUri() {
         try {
-            URI uri = createDoi();
-            uri.toURL(); // validate
-            return uri;
-        } catch (MalformedURLException | URISyntaxException e) {
+            return createDoi();
+        } catch (URISyntaxException e) {
             throw new IllegalStateException(ERROR_PROXY_URI_MUST_BE_A_VALID_URL, e);
         }
     }
 
-    private URI createDoi() throws URISyntaxException {
+    protected URI createDoi() throws URISyntaxException {
         return new URI(getProxy().getScheme(),
             getProxy().getUserInfo(),
             getProxy().getHost(),
