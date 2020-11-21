@@ -2,7 +2,7 @@ package no.unit.nva.publication.doi.dto;
 
 import static java.util.Objects.isNull;
 
-public class Validatable {
+public abstract class Validatable {
 
     public static final String MANDATORY_FIELD_ERROR_PREFIX = "Mandatory field is missing: ";
     protected final String errorMessagePrefix =
@@ -18,4 +18,6 @@ public class Validatable {
             throw new IllegalArgumentException(errorMessage);
         }
     }
+
+    protected abstract void validate();
 }
