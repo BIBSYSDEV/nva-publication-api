@@ -7,26 +7,15 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Publication extends Validatable {
 
-    private static final Logger log = LoggerFactory.getLogger(Publication.class);
-
-    @MandatoryField
     private final URI id;
-    @MandatoryField
     private final URI institutionOwner;
-    @MandatoryField
     private final Instant modifiedDate;
-    @MandatoryField
     private final PublicationType type;
-    @MandatoryField
     private final String mainTitle;
-    @MandatoryField
     private final PublicationStatus status;
-    @MandatoryField
     private final PublicationDate publicationDate;
     private final List<Contributor> contributor;
     private final URI doi;
@@ -70,6 +59,19 @@ public class Publication extends Validatable {
         this.status = status;
         this.contributor = contributors;
         this.publicationDate = publicationDate;
+    }
+
+    /**
+     * Validates.
+     */
+    public void validate() {
+        requireFieldIsNotNull(id, "Publication.id");
+        requireFieldIsNotNull(institutionOwner, "Publication.institutionOwner");
+        requireFieldIsNotNull(modifiedDate, "Publication.modifiedDate");
+        requireFieldIsNotNull(type, "Publication.type");
+        requireFieldIsNotNull(mainTitle, "Publication.mainTitle");
+        requireFieldIsNotNull(status, "Publication.status");
+        requireFieldIsNotNull(publicationDate, "Publication.publicationDate");
     }
 
     protected Publication(Builder builder) {
@@ -159,11 +161,7 @@ public class Publication extends Validatable {
             publicationDate);
     }
 
-    @Override
-    @JacocoGenerated
-    protected Logger logger() {
-        return log;
-    }
+
 
     public static final class Builder {
 
@@ -236,7 +234,9 @@ public class Publication extends Validatable {
         }
 
         public Publication build() {
-            return new Publication(this);
+            Publication publication = new Publication(this);
+            publication.validate();
+            return publication;
         }
     }
 }

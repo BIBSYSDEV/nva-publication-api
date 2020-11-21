@@ -9,8 +9,6 @@ import com.fasterxml.jackson.core.JsonPointer;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PublicationDate extends Validatable {
 
@@ -18,9 +16,6 @@ public class PublicationDate extends Validatable {
     public static final JsonPointer MONTH_JSON_POINTER = JsonPointer.compile("/month/s");
     public static final JsonPointer DAY_JSON_POINTER = JsonPointer.compile("/day/s");
 
-    private static final Logger log = LoggerFactory.getLogger(PublicationDate.class);
-
-    @MandatoryField
     private final String year;
     private final String month;
     private final String day;
@@ -47,8 +42,12 @@ public class PublicationDate extends Validatable {
      *
      * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
-    public PublicationDate(JsonNode doiPublicationDto) {
-        this(extractYear(doiPublicationDto), extractMonth(doiPublicationDto), extractDay(doiPublicationDto));
+    public static PublicationDate fromJsonNode(JsonNode doiPublicationDto) {
+        PublicationDate publcationDate = new PublicationDate(extractYear(doiPublicationDto),
+            extractMonth(doiPublicationDto),
+            extractDay(doiPublicationDto));
+        publcationDate.validate();
+        return publcationDate;
     }
 
     public String getYear() {
@@ -61,6 +60,10 @@ public class PublicationDate extends Validatable {
 
     public String getDay() {
         return day;
+    }
+
+    public void validate() {
+        requireFieldIsNotNull(year, "PublicationDate.year");
     }
 
     @JsonIgnore
@@ -87,12 +90,6 @@ public class PublicationDate extends Validatable {
     @Override
     public int hashCode() {
         return Objects.hash(getYear(), getMonth(), getDay());
-    }
-
-    @Override
-    @JacocoGenerated
-    protected Logger logger() {
-        return log;
     }
 
     private static String extractDay(JsonNode record) {

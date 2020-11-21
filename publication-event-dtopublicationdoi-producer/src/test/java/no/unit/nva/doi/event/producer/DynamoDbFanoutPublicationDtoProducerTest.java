@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -14,7 +13,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
-import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.Validatable;
 import nva.commons.utils.IoUtils;
@@ -45,6 +43,8 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         "dynamodbevent_publication_missing_publication_status.json";
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST = "dynamodbevent_publication_wiithout_doi_request.json";
     private static final String NULL_AS_STRING = "null";
+    public static final String PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE =
+        "dynamodbevent_publiction_missing_doi_request_modfied_date.json";
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -61,47 +61,44 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingId() {
-        final String publicationIdField = "id";
-        publicationMissingMandatoryFieldTrhowsException(publicationIdField, PUBLICATION_WIHOUT_ID);
+        final String missingField = "id";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_WIHOUT_ID);
     }
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingPublisherId() {
-        final String institutionOwnerField = "institutionOwner";
-        publicationMissingMandatoryFieldTrhowsException(institutionOwnerField, PUBLICATION_MISSING_PUBLISHER_ID);
+        final String missingField = "institutionOwner";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLISHER_ID);
     }
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingModifiedDate() {
         final String modifiedDateField = "modifiedDate";
-        publicationMissingMandatoryFieldTrhowsException(modifiedDateField, PUBLICATION_MISSING_MODIFIED_DATE);
+        publicationMissingMandatoryFieldThrowsException(modifiedDateField, PUBLICATION_MISSING_MODIFIED_DATE);
     }
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingPublicationType() {
-        final String typeField = "type";
-        publicationMissingMandatoryFieldTrhowsException(typeField, PUBLICATION_MISSING_PUBLICATION_TYPE);
+        final String missingField = "type";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLICATION_TYPE);
     }
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingMainTitle() {
-        final String mainTitleField = "mainTitle";
-        publicationMissingMandatoryFieldTrhowsException(mainTitleField, PUBLICATION_MISSING_MAIN_TITLE);
+        final String missingField = "mainTitle";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_MAIN_TITLE);
     }
 
     @Test
     public void handleRequestThrowsExceptionWhenPublicationIsMissingPublicationStatus() {
-        final String statusField = "status";
-        publicationMissingMandatoryFieldTrhowsException(statusField, PUBLICATION_MISSING_PUBLICATION_STATUS);
+        final String missingField = "status";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLICATION_STATUS);
     }
 
     @Test
-    public void handleRequestReturnsSomethingWhenEventContainsValidPublication() throws JsonProcessingException {
-        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_STREAM_EVENT_NEW_ONLY);
-        handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
-
-        assertDoesNotThrow(() -> actual.getItem().validate());
+    public void handleRequestThrowsExceptionWhenDoiRequestIsMissingModifiedDate() {
+        final String missingField = "DoiRequest.modifiedDate";
+        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE);
     }
 
     @Test
@@ -147,14 +144,13 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         assertThat(actual, nullValue());
     }
 
-    private void publicationMissingMandatoryFieldTrhowsException(String institutionOwnerField,
-                                                                 String publicationMissingPublisherId) {
-        var event = IoUtils.inputStreamFromResources(Path.of(publicationMissingPublisherId));
+    private void publicationMissingMandatoryFieldThrowsException(String expectedFieldName,
+                                                                 String resourceFilename) {
+        var event = IoUtils.inputStreamFromResources(Path.of(resourceFilename));
         Executable action = () -> handler.handleRequest(event, outputStream, context);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(), containsString(Validatable.MANDATORY_FIELD_ERROR_PREFIX));
-        assertThat(exception.getMessage(), containsString(Publication.class.getSimpleName()));
-        assertThat(exception.getMessage(), containsString(institutionOwnerField));
+        assertThat(exception.getMessage(), containsString(expectedFieldName));
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)

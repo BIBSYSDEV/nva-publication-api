@@ -4,12 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DoiRequest extends Validatable {
 
-    private final static Logger logger = LoggerFactory.getLogger(DoiRequest.class);
     private final DoiRequestStatus status;
     private final Instant modifiedDate;
 
@@ -25,6 +22,9 @@ public class DoiRequest extends Validatable {
         super();
         this.status = status;
         this.modifiedDate = modifiedDate;
+    }
+
+    public void validate() {
         requireFieldIsNotNull(status, "DoiRequest.status");
         requireFieldIsNotNull(modifiedDate, "DoiRequest.modifiedDate");
     }
@@ -57,11 +57,6 @@ public class DoiRequest extends Validatable {
         return Objects.hash(getStatus(), getModifiedDate());
     }
 
-    @Override
-    protected Logger logger() {
-        return logger;
-    }
-
     public static final class Builder {
 
         private DoiRequestStatus status;
@@ -81,7 +76,9 @@ public class DoiRequest extends Validatable {
         }
 
         public DoiRequest build() {
-            return new DoiRequest(status, modifiedDate);
+            DoiRequest doiRequest = new DoiRequest(status, modifiedDate);
+            doiRequest.validate();
+            return doiRequest;
         }
     }
 }

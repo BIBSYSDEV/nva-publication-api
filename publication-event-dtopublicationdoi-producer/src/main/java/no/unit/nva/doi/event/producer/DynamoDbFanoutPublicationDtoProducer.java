@@ -9,7 +9,6 @@ import no.unit.nva.publication.doi.PublicationMapper;
 import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
-import no.unit.nva.publication.doi.dto.Validatable;
 import nva.commons.utils.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,6 @@ public class DynamoDbFanoutPublicationDtoProducer
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
         var dto = mapToPublicationDto(record);
         logMappingResults(dto.orElse(null));
-
-        dto.ifPresent(Validatable::validate);
 
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
