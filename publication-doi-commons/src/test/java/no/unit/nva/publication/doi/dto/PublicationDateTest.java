@@ -18,25 +18,10 @@ class PublicationDateTest {
 
     @Test
     void testJsonNodeConstructor() {
-        var actual = new PublicationDate(getPublicationWithDate());
+        var actual = PublicationDate.fromJsonNode(getPublicationWithDate());
         assertThat(actual.getYear(), is(equalTo("1999")));
         assertThat(actual.getMonth(), is(equalTo("07")));
         assertThat(actual.getDay(), is(equalTo("09")));
-    }
-
-    @Test
-    void testIsPopulated() {
-        var actual = new PublicationDate(getPublicationWithDate());
-        assertThat(actual.isPopulated(), is(true));
-
-        actual = new PublicationDate(getPublicationRandomMissingYearMonthOrDay());
-        assertThat(actual.isPopulated(), is(true));
-
-        actual = new PublicationDate(getPublicationWithMissingYearMonthAndDay());
-        assertThat(actual.isPopulated(), is(false));
-
-        actual = new PublicationDate(null);
-        assertThat(actual.isPopulated(), is(false));
     }
 
     private ObjectNode getPublicationWithDate() {

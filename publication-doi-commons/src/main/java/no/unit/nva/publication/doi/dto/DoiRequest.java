@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-public class DoiRequest {
+public class DoiRequest extends Validatable {
 
     private final DoiRequestStatus status;
     private final Instant modifiedDate;
@@ -13,14 +13,20 @@ public class DoiRequest {
     /**
      * Constructor for basic deserialization of DoiRequest.
      *
-     * @param status        doi request status
-     * @param modifiedDate  modified date of doi request
+     * @param status       doi request status
+     * @param modifiedDate modified date of doi request
      */
     public DoiRequest(
         @JsonProperty("status") DoiRequestStatus status,
         @JsonProperty("modifiedDate") Instant modifiedDate) {
+        super();
         this.status = status;
         this.modifiedDate = modifiedDate;
+    }
+
+    public void validate() {
+        requireFieldIsNotNull(status, "DoiRequest.status");
+        requireFieldIsNotNull(modifiedDate, "DoiRequest.modifiedDate");
     }
 
     public DoiRequestStatus getStatus() {
@@ -70,7 +76,9 @@ public class DoiRequest {
         }
 
         public DoiRequest build() {
-            return new DoiRequest(status, modifiedDate);
+            DoiRequest doiRequest = new DoiRequest(status, modifiedDate);
+            doiRequest.validate();
+            return doiRequest;
         }
     }
 }
