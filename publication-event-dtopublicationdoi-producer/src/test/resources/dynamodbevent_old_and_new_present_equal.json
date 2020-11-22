@@ -60,6 +60,9 @@
               "n": null,
               "b": null,
               "m": {
+                "year": {
+                  "s": "2017"
+                },
                 "type": {
                   "s": "PublicationDate",
                   "n": null,
@@ -593,6 +596,9 @@
               "n": null,
               "b": null,
               "m": {
+                "year": {
+                  "s": "2017"
+                },
                 "type": {
                   "s": "PublicationDate",
                   "n": null,
