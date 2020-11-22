@@ -10,13 +10,14 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
-import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
@@ -26,11 +27,13 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
+import nva.commons.utils.IoUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class PublicationMapperTest {
 
+    public static final String DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON = "dynamoStream_event_with_old_image.json";
     private static final String EXAMPLE_NAMESPACE = "http://example.net/nva/";
     private static final String UNKNOWN_DYNAMODB_STREAMRECORD_TYPE = "UnknownType";
 
@@ -52,13 +55,13 @@ class PublicationMapperTest {
     }
 
     @Test
-    void fromDynamoStreamRecordOldImage() {
-        DynamodbStreamRecordJsonPointers jsonPointers = new DynamodbStreamRecordJsonPointers(
-            DynamodbImageType.OLD);
-        Builder daoBuilder = Builder.createValidPublication(FAKER, jsonPointers, StreamViewType.OLD_IMAGE.toString());
-        var dynamodbStreamRecord = daoBuilder.build().asDynamoDbStreamRecord();
+    void fromDynamoStreamRecordOldImage() throws JsonProcessingException {
+        String dynamoStreamRecordString = IoUtils.stringFromResources(
+            Path.of(DYNAMO_STREAM_EVENT_WITH_OLD_IMAGE_JSON));
+        DynamodbEvent.DynamodbStreamRecord recordWithOldImage = objectMapper.readValue(dynamoStreamRecordString,
+            DynamodbEvent.DynamodbStreamRecord.class);
         PublicationMapper mapper = new PublicationMapper(EXAMPLE_NAMESPACE);
-        var publicationMapping = mapper.fromDynamodbStreamRecord(dynamodbStreamRecord);
+        var publicationMapping = mapper.fromDynamodbStreamRecord(recordWithOldImage);
 
         assertTrue(publicationMapping.getOldPublication().isPresent());
         assertTrue(publicationMapping.getNewPublication().isEmpty());
@@ -84,7 +87,7 @@ class PublicationMapperTest {
     }
 
     @Test
-    void fromDynamodbStreamRecordThrowsIllegalArgumentExceptionWhenUnknownDynamodbTableType() throws IOException {
+    void fromDynamodbStreamRecordThrowsIllegalArgumentExceptionWhenUnknownDynamodbTableType() {
         var rootNode = objectMapper.createObjectNode();
         rootNode.putObject("detail")
             .putObject("dynamodb")
@@ -96,7 +99,7 @@ class PublicationMapperTest {
     }
 
     @Test
-    void fromDynamodbStreamRecordWhenContributorWithoutNameThenIsSkipped() throws IOException {
+    void fromDynamodbStreamRecordWhenContributorWithoutNameThenIsSkipped() {
         var dynamodbStreamRecord = createDynamoDbStreamRecordWithoutContributorIdentityNames()
             .asDynamoDbStreamRecord();
         var dao = createDaoBuilder(objectMapper.convertValue(dynamodbStreamRecord, JsonNode.class))
