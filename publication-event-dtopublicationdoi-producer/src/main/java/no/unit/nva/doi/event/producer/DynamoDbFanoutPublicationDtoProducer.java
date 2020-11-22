@@ -22,9 +22,9 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     public static final PublicationHolder NO_OUTPUT_NO_EVENT = null;
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     public static final String CREATED = "Created";
     public static final String SKIPPED_CREATING = "Skipped creating";
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
@@ -47,6 +47,7 @@ public class DynamoDbFanoutPublicationDtoProducer
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
         var dto = mapToPublicationDto(record);
         logMappingResults(dto.orElse(null));
+
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
             .orElse(NO_OUTPUT_NO_EVENT);
@@ -59,8 +60,22 @@ public class DynamoDbFanoutPublicationDtoProducer
     private Optional<Publication> mapToPublicationDto(DynamodbEvent.DynamodbStreamRecord record) {
         return Optional.ofNullable(record)
             .map(publicationMapper::fromDynamodbStreamRecord)
-            .filter(this::isEffectiveChange)
+            .filter(this::shouldPropagateEvent)
             .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
+    }
+
+    private boolean shouldPropagateEvent(PublicationMapping publicationMapping) {
+        boolean isChange = isEffectiveChange(publicationMapping);
+        boolean publicationHasDoiRequest = publicationHasDoiRequest(publicationMapping);
+
+        return isChange && publicationHasDoiRequest;
+    }
+
+    private boolean publicationHasDoiRequest(PublicationMapping publicationMapping) {
+        return publicationMapping
+            .getNewPublication()
+            .map(Publication::getDoiRequest)
+            .isPresent();
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {
