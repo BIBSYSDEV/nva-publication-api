@@ -7,6 +7,8 @@ import nva.commons.utils.JacocoGenerated;
 
 public class DoiRequest extends Validatable {
 
+    public static final String DOI_REQUEST_STATUS_FIELD_INFO = "DoiRequest.status";
+    public static final String DOI_REQUEST_MODIFIED_DATE_FIELD_INFO = "DoiRequest.modifiedDate";
     private final DoiRequestStatus status;
     private final Instant modifiedDate;
 
@@ -26,8 +28,8 @@ public class DoiRequest extends Validatable {
 
     @Override
     public void validate() {
-        requireFieldIsNotNull(status, "DoiRequest.status");
-        requireFieldIsNotNull(modifiedDate, "DoiRequest.modifiedDate");
+        requireFieldIsNotNull(status, DOI_REQUEST_STATUS_FIELD_INFO);
+        requireFieldIsNotNull(modifiedDate, DOI_REQUEST_MODIFIED_DATE_FIELD_INFO);
     }
 
     public DoiRequestStatus getStatus() {

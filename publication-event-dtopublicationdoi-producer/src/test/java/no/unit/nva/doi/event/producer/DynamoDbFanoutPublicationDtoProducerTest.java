@@ -1,5 +1,12 @@
 package no.unit.nva.doi.event.producer;
 
+import static no.unit.nva.publication.doi.dto.DoiRequest.DOI_REQUEST_MODIFIED_DATE_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_ID_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_INSTITUTION_OWNER_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_MAIN_TITLE_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_MODIFIED_DATE_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_STATUS_FIELD_INFO;
+import static no.unit.nva.publication.doi.dto.Publication.PUBLICATION_TYPE_FIELD_INFO;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -120,13 +127,13 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     private static Stream<Arguments> missingFieldTestParameters() {
         return Stream.of(
-            Arguments.of("id", PUBLICATION_WIHOUT_ID),
-            Arguments.of("institutionOwner", PUBLICATION_MISSING_PUBLISHER_ID),
-            Arguments.of("modifiedDate", PUBLICATION_MISSING_MODIFIED_DATE),
-            Arguments.of("type", PUBLICATION_MISSING_PUBLICATION_TYPE),
-            Arguments.of("mainTitle", PUBLICATION_MISSING_MAIN_TITLE),
-            Arguments.of("status", PUBLICATION_MISSING_PUBLICATION_STATUS),
-            Arguments.of("DoiRequest.modifiedDate", PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE)
+            Arguments.of(PUBLICATION_ID_FIELD_INFO, PUBLICATION_WIHOUT_ID),
+            Arguments.of(PUBLICATION_INSTITUTION_OWNER_FIELD_INFO, PUBLICATION_MISSING_PUBLISHER_ID),
+            Arguments.of(PUBLICATION_MODIFIED_DATE_FIELD_INFO, PUBLICATION_MISSING_MODIFIED_DATE),
+            Arguments.of(PUBLICATION_TYPE_FIELD_INFO, PUBLICATION_MISSING_PUBLICATION_TYPE),
+            Arguments.of(PUBLICATION_MAIN_TITLE_FIELD_INFO, PUBLICATION_MISSING_MAIN_TITLE),
+            Arguments.of(PUBLICATION_STATUS_FIELD_INFO, PUBLICATION_MISSING_PUBLICATION_STATUS),
+            Arguments.of(DOI_REQUEST_MODIFIED_DATE_FIELD_INFO, PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE)
         );
     }
 

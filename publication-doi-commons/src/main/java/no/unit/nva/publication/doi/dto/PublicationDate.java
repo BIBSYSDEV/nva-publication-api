@@ -15,6 +15,7 @@ public class PublicationDate extends Validatable {
     public static final JsonPointer YEAR_JSON_POINTER = JsonPointer.compile("/date/m/year/s");
     public static final JsonPointer MONTH_JSON_POINTER = JsonPointer.compile("/date/m/month/s");
     public static final JsonPointer DAY_JSON_POINTER = JsonPointer.compile("/date/m/day/s");
+    public static final String PUBLICATION_DATE_YEAR_FIELD_INFO = "PublicationDate.year";
 
     private final String year;
     private final String month;
@@ -64,7 +65,7 @@ public class PublicationDate extends Validatable {
 
     @Override
     public void validate() {
-        requireFieldIsNotNull(year, "PublicationDate.year");
+        requireFieldIsNotNull(year, PUBLICATION_DATE_YEAR_FIELD_INFO);
     }
 
     @JsonIgnore
