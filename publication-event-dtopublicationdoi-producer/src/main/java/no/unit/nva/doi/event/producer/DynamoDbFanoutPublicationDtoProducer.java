@@ -1,5 +1,6 @@
 package no.unit.nva.doi.event.producer;
 
+import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +43,15 @@ public class DynamoDbFanoutPublicationDtoProducer
     protected PublicationHolder processInput(DynamodbEvent.DynamodbStreamRecord input,
                                              AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
                                              Context context) {
-        return fromDynamodbStreamRecords(input);
+        PublicationHolder result = fromDynamodbStreamRecords(input);
+        //temporary logging until develop stack if fixed.
+        logResults(result);
+        return result;
+    }
+
+    private void logResults(PublicationHolder result) {
+        String jsonString = attempt(() -> JsonUtils.objectMapper.writeValueAsString(result)).orElse(fail -> null);
+        logger.info("Output is: " + jsonString);
     }
 
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
@@ -51,6 +61,7 @@ public class DynamoDbFanoutPublicationDtoProducer
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
             .orElse(NO_OUTPUT_NO_EVENT);
+
     }
 
     private void logMappingResults(Publication dto) {
