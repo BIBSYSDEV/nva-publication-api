@@ -44,7 +44,7 @@ public class DynamoDbFanoutPublicationDtoProducer
                                              AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
                                              Context context) {
         PublicationHolder result = fromDynamodbStreamRecords(input);
-        //temporary logging until develop stack if fixed.
+        //temporary logging until event consumers are built
         logResults(result);
         return result;
     }
