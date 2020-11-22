@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.Validatable;
 import nva.commons.utils.IoUtils;
@@ -20,6 +21,9 @@ import nva.commons.utils.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class DynamoDbFanoutPublicationDtoProducerTest {
 
@@ -29,6 +33,8 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     public static final String PUBLICATION_MISSING_PUBLISHER_ID = "dynamodbevent_publication_missing_publisher_id.json";
     public static final String PUBLICATION_MISSING_MODIFIED_DATE = "dynamodbevent_publication_missing_modifed_date"
         + ".json";
+    public static final String PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE =
+        "dynamodbevent_publiction_missing_doi_request_modfied_date.json";
     private static final Path DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT =
         Path.of("dynamodbevent_old_and_new_present_different.json");
     private static final Path DYNAMODB_STREAM_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
@@ -43,8 +49,6 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         "dynamodbevent_publication_missing_publication_status.json";
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST = "dynamodbevent_publication_wiithout_doi_request.json";
     private static final String NULL_AS_STRING = "null";
-    public static final String PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE =
-        "dynamodbevent_publiction_missing_doi_request_modfied_date.json";
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -59,46 +63,16 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         outputStream = new ByteArrayOutputStream();
     }
 
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingId() {
-        final String missingField = "id";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_WIHOUT_ID);
-    }
+    @ParameterizedTest(name = "handleRequest throws exception when {0} is missing")
+    @MethodSource("missingFieldTestParameters")
+    public void handleRequestThrowsExceptionWhenPublicationIsMissingId(String missingField, String resourceFilename) {
+        var event = IoUtils.inputStreamFromResources(Path.of(resourceFilename));
 
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingPublisherId() {
-        final String missingField = "institutionOwner";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLISHER_ID);
-    }
+        Executable action = () -> handler.handleRequest(event, outputStream, context);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
 
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingModifiedDate() {
-        final String modifiedDateField = "modifiedDate";
-        publicationMissingMandatoryFieldThrowsException(modifiedDateField, PUBLICATION_MISSING_MODIFIED_DATE);
-    }
-
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingPublicationType() {
-        final String missingField = "type";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLICATION_TYPE);
-    }
-
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingMainTitle() {
-        final String missingField = "mainTitle";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_MAIN_TITLE);
-    }
-
-    @Test
-    public void handleRequestThrowsExceptionWhenPublicationIsMissingPublicationStatus() {
-        final String missingField = "status";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_PUBLICATION_STATUS);
-    }
-
-    @Test
-    public void handleRequestThrowsExceptionWhenDoiRequestIsMissingModifiedDate() {
-        final String missingField = "DoiRequest.modifiedDate";
-        publicationMissingMandatoryFieldThrowsException(missingField, PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE);
+        assertThat(exception.getMessage(), containsString(Validatable.MANDATORY_FIELD_ERROR_PREFIX));
+        assertThat(exception.getMessage(), containsString(missingField));
     }
 
     @Test
@@ -144,13 +118,16 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         assertThat(actual, nullValue());
     }
 
-    private void publicationMissingMandatoryFieldThrowsException(String expectedFieldName,
-                                                                 String resourceFilename) {
-        var event = IoUtils.inputStreamFromResources(Path.of(resourceFilename));
-        Executable action = () -> handler.handleRequest(event, outputStream, context);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(Validatable.MANDATORY_FIELD_ERROR_PREFIX));
-        assertThat(exception.getMessage(), containsString(expectedFieldName));
+    private static Stream<Arguments> missingFieldTestParameters() {
+        return Stream.of(
+            Arguments.of("id", PUBLICATION_WIHOUT_ID),
+            Arguments.of("institutionOwner", PUBLICATION_MISSING_PUBLISHER_ID),
+            Arguments.of("modifiedDate", PUBLICATION_MISSING_MODIFIED_DATE),
+            Arguments.of("type", PUBLICATION_MISSING_PUBLICATION_TYPE),
+            Arguments.of("mainTitle", PUBLICATION_MISSING_MAIN_TITLE),
+            Arguments.of("status", PUBLICATION_MISSING_PUBLICATION_STATUS),
+            Arguments.of("DoiRequest.modifiedDate", PUBLICATION_MISSING_DOI_REQUEST_MODIFIED_DATE)
+        );
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
