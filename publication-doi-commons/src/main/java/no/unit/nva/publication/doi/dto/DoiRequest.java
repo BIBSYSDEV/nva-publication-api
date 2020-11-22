@@ -24,6 +24,7 @@ public class DoiRequest extends Validatable {
         this.modifiedDate = modifiedDate;
     }
 
+    @Override
     public void validate() {
         requireFieldIsNotNull(status, "DoiRequest.status");
         requireFieldIsNotNull(modifiedDate, "DoiRequest.modifiedDate");

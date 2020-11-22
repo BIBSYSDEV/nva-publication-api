@@ -62,6 +62,7 @@ public class PublicationDate extends Validatable {
         return day;
     }
 
+    @Override
     public void validate() {
         requireFieldIsNotNull(year, "PublicationDate.year");
     }

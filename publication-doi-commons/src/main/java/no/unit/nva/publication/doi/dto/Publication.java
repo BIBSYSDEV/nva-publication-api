@@ -64,6 +64,7 @@ public class Publication extends Validatable {
     /**
      * Validates.
      */
+    @Override
     public void validate() {
         requireFieldIsNotNull(id, "Publication.id");
         requireFieldIsNotNull(institutionOwner, "Publication.institutionOwner");
