@@ -1,8 +1,8 @@
 package no.unit.nva.doi.event.producer;
 
-import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -50,8 +50,13 @@ public class DynamoDbFanoutPublicationDtoProducer
     }
 
     private void logResults(PublicationHolder result) {
-        String jsonString = attempt(() -> JsonUtils.objectMapper.writeValueAsString(result)).orElse(fail -> null);
-        logger.info("Output is: " + jsonString);
+
+        try {
+            String jsonString = JsonUtils.objectMapper.writeValueAsString(result);
+            logger.info("Output is: " + jsonString);
+        } catch (JsonProcessingException e) {
+            logger.info("Could not serialize output");
+        }
     }
 
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
