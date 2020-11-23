@@ -29,7 +29,7 @@ class ContributorMapperTest {
     @Test
     void fromIdentityDaoThenReturnContributorDto() {
         var dao = getIdentityBuilderDao().build();
-        var expectedDto = new Contributor(null, dao.getArpId(), dao.getName());
+        var expectedDto = Contributor.builder().withArpId(dao.getArpId()).withName(dao.getName()).build();
         assertThat(ContributorMapper.fromIdentityDao(dao), is(equalTo(expectedDto)));
     }
 
@@ -37,8 +37,10 @@ class ContributorMapperTest {
     void fromIdentityDaosThenReturnListOfContributorDtos() {
         var contributorIdentities = getContributorIdentities();
         var firstContributorIdentity = contributorIdentities.get(0);
-        var firstExpectedContributor = new Contributor(null, firstContributorIdentity.getArpId(),
-            firstContributorIdentity.getName());
+        var firstExpectedContributor = Contributor.builder()
+            .withArpId(firstContributorIdentity.getArpId())
+            .withName(firstContributorIdentity.getName())
+            .build();
         assertThat(ContributorMapper.fromIdentityDaos(contributorIdentities), hasItem(firstExpectedContributor));
     }
 

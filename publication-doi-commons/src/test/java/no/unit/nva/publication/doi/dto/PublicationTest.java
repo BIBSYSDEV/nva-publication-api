@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +24,11 @@ class PublicationTest {
     private static final String INVALID_STATUS = "invalid_status";
 
     @Test
+    public void lookupInvalidPublicationStatusThrowsIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> PublicationStatus.lookup(INVALID_STATUS));
+    }
+
+    @Test
     void buildReturnsFullyPopulatedPublicationWhenAllFieldsAreSet() {
         final var builder = createBuilderWithAllFieldsSet();
         final var publication = builder.build();
@@ -37,8 +41,12 @@ class PublicationTest {
         assertThat(publication.getMainTitle(), is(equalTo(EXAMPLE_TITLE)));
         assertThat(publication.getType(), is(equalTo(PublicationType.BOOK_ANTHOLOGY)));
         assertThat(publication.getContributor(),
-            hasItem(new Contributor(URI.create(EXAMPLE_CONTRIBUTOR_ID), EXAMPLE_CONTRIBUTOR_ARPID,
-                EXAMPLE_CONTRIBUTOR_NAME)));
+            hasItem(Contributor.builder()
+                .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
+                .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
+                .withName(
+                    EXAMPLE_CONTRIBUTOR_NAME)
+                .build()));
         assertThat(publication, doesNotHaveNullOrEmptyFields());
     }
 
@@ -67,11 +75,6 @@ class PublicationTest {
         assertThat(publication.isSameModifiedDateForDoiRequest(), is(false));
     }
 
-    @Test
-    public void lookupInvalidPublicationStatusThrowsIllegalArgumentException() {
-        assertThrows(IllegalArgumentException.class, () -> PublicationStatus.lookup(INVALID_STATUS));
-    }
-
     private Builder createBuilderWithAllFieldsSet() {
         Instant now = Instant.now();
         return Builder.newBuilder()
@@ -84,7 +87,7 @@ class PublicationTest {
             .withStatus(PublicationStatus.DRAFT)
             .withDoiRequest(new DoiRequest(DoiRequestStatus.APPROVED, now))
             .withModifiedDate(now)
-            .withContributor(List.of(new Contributor.Builder()
+            .withContributor(List.of(Contributor.builder()
                 .withId(URI.create(EXAMPLE_CONTRIBUTOR_ID))
                 .withArpId(EXAMPLE_CONTRIBUTOR_ARPID)
                 .withName(EXAMPLE_CONTRIBUTOR_NAME)

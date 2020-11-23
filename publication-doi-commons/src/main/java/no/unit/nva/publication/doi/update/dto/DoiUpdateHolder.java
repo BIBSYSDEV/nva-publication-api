@@ -1,29 +1,15 @@
 package no.unit.nva.publication.doi.update.dto;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.json.JsonSerializable;
+import org.immutables.value.Value;
 
-public class DoiUpdateHolder implements JsonSerializable {
+@Value.Immutable
+public abstract class DoiUpdateHolder {
 
-    protected String type;
-    protected DoiUpdateDto item;
+    public abstract String getType();
 
-    @JsonCreator
-    public DoiUpdateHolder(@JsonProperty("type") String type, @JsonProperty("item") DoiUpdateDto item) {
-        this.type = type;
-        this.item = item;
-    }
+    public abstract DoiUpdateDto getItem();
 
-    public String getType() {
-        return type;
-    }
-
-    public boolean hasItem() {
-        return item != null;
-    }
-
-    public DoiUpdateDto getItem() {
-        return item;
+    public static ImmutableDoiUpdateHolder.Builder builder() {
+        return ImmutableDoiUpdateHolder.builder();
     }
 }

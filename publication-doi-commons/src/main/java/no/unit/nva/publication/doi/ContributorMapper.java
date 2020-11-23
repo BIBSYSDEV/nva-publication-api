@@ -29,6 +29,6 @@ public final class ContributorMapper {
     }
 
     private static Contributor createContributor(Identity identity) {
-        return new Contributor.Builder().withArpId(identity.getArpId()).withName(identity.getName()).build();
+        return Contributor.builder().withArpId(identity.getArpId()).withName(identity.getName()).build();
     }
 }

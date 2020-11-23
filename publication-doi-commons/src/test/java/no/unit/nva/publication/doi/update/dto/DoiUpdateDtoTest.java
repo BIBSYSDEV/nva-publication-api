@@ -7,7 +7,6 @@ import static org.hamcrest.Matchers.is;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
-import no.unit.nva.publication.doi.update.dto.DoiUpdateDto.Builder;
 import org.junit.jupiter.api.Test;
 
 class DoiUpdateDtoTest {
@@ -20,12 +19,6 @@ class DoiUpdateDtoTest {
     void builderPopulatesAllFieldsViaConstructor() {
         DoiUpdateDto doiUpdateDto = createDoiUpdateDtoWithDoi();
         assertThat(doiUpdateDto, doesNotHaveNullOrEmptyFields());
-    }
-
-    @Test
-    void hasAllRequiredValuesSetReturnsTrueWhenAllRequiredFieldsIsSet() {
-        DoiUpdateDto doiUpdateDto = createDoiUpdateDtoWithoutDoi();
-        assertThat(doiUpdateDto.hasAllRequiredValuesSet(), is(equalTo(true)));
     }
 
     @Test
@@ -44,7 +37,7 @@ class DoiUpdateDtoTest {
     }
 
     private DoiUpdateDto createDoiUpdateDtoWithDoi() {
-        return new Builder()
+        return ImmutableDoiUpdateDto.builder()
             .withDoi(EXAMPLE_DOI)
             .withPublicationId(EXAMPLE_PUBLICATION_ID)
             .withModifiedDate(EXAMPLE_MODIFIED_DATE)
@@ -52,7 +45,7 @@ class DoiUpdateDtoTest {
     }
 
     private DoiUpdateDto createDoiUpdateDtoWithoutDoi() {
-        return new Builder()
+        return DoiUpdateDto.builder()
             .withPublicationId(EXAMPLE_PUBLICATION_ID)
             .withModifiedDate(EXAMPLE_MODIFIED_DATE)
             .build();
