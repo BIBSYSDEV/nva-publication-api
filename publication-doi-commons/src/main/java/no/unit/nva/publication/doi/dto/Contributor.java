@@ -2,7 +2,6 @@ package no.unit.nva.publication.doi.dto;
 
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.immutables.Builded;
 import org.immutables.value.Value;
 
 @Value.Immutable
