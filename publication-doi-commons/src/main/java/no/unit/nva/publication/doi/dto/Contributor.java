@@ -7,11 +7,14 @@ import org.immutables.value.Value;
 @Value.Immutable
 
 public abstract class Contributor {
-    public abstract Optional<URI> getId();
-    public abstract String getArpId();
-    public abstract String getName();
 
-    public static ImmutableContributor.Builder builder () {
+    public static ImmutableContributor.Builder builder() {
         return ImmutableContributor.builder();
     }
+
+    public abstract Optional<URI> getId();
+
+    public abstract String getArpId();
+
+    public abstract String getName();
 }
