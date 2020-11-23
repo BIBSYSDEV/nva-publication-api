@@ -297,6 +297,8 @@
       <property name="minLineCount" value="2"/>
       <property name="allowedAnnotations" value="Override, Test"/>
       <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
+      <property name="ignoreMethodNamesRegex"
+        value="(^get.*$)|(^set.*$)|(^copy.*$)|(^with.*$)|(^build.*$)"/>
     </module>
     <module name="MethodName">
       <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>

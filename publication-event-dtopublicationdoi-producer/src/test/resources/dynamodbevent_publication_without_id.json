@@ -18,9 +18,7 @@
     "dynamodb": {
       "approximateCreationDateTime": 1604064096000,
       "keys": {
-        "identifier": {
-          "s": "42d5f94a-f756-484a-aee0-d01a44d24e91"
-        },
+        "identifier": null,
         "modifiedDate": {
           "s": "2020-09-24T11:15:17.671542Z"
         }
@@ -29,9 +27,7 @@
         "owner": {
           "s": "og@unit.no"
         },
-        "identifier": {
-          "s": "42d5f94a-f756-484a-aee0-d01a44d24e91"
-        },
+        "identifier": null,
         "publisherOwnerDate": {
           "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#og@unit.no#2020-09-24T11:15:17.671542Z"
         },
@@ -44,7 +40,7 @@
               "s": "2020-10-22T13:09:17.317127Z"
             },
             "modifiedDate": {
-              "s": "2020-10-22T13:09:17.317127Z"
+              "s": "2020-09-24T11:15:17.671542Z"
             },
             "messages": {
               "l": [

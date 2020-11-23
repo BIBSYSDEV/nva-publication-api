@@ -200,9 +200,7 @@
             "metadataSource": {
               "s": "https://www.crossref.org/"
             },
-            "mainTitle": {
-              "s": "This is a long and boring title"
-            },
+            "mainTitle": null,
             "description": {
               "s": "sdfsfd"
             },

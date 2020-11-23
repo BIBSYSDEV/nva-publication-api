@@ -8,12 +8,15 @@ dependencies {
     }
 
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
-
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0'
-    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'sqs', version: project.ext.awsSdk2Version
+
+    compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: awsSdkVersion) {
+        because "PMD complains for the com/amazonaws/regions/Regions class"
+    }
+
+
+   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
 
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-log4j2', version: '1.1.1'
     implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: log4jVersion

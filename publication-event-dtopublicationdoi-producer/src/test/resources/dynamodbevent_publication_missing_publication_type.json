@@ -165,9 +165,7 @@
                     "peerReviewed": {
                       "bool": true
                     },
-                    "type": {
-                      "s": "JournalArticle"
-                    }
+                    "type": null
                   }
                 },
                 "type": {

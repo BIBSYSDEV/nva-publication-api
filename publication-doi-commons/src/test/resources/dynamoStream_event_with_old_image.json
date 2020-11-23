@@ -1,0 +1,442 @@
+{
+  "eventID": "e88441fb-8048-42bf-a9a9-b3fdc1c58920",
+  "eventName": "MODIFY",
+  "eventVersion": "1.1",
+  "eventSource": "aws:dynamodb",
+  "awsRegion": "eu-west-1",
+  "dynamodb": {
+    "approximateCreationDateTime": "2020-08-14T09:32:26.000+0000",
+    "keys": {
+      "identifier": {
+        "s": "123345"
+      },
+      "modifiedDate": {
+        "s": "2020-08-12T10:30:10.019991Z"
+      }
+    },
+    "newImage": {
+      "owner": {
+        "s": "sg@unit.no"
+      },
+      "identifier": {
+        "s": "98761177-e28c-4686-af62-d7745ddfb307"
+      },
+      "entityDescription": {
+        "m": {
+          "date": {
+            "m": {
+              "year": {
+                "s": "1989"
+              },
+              "month": {
+                "s": "7"
+              },
+              "day": {
+                "s": "17"
+              },
+              "type": {
+                "s": "PublicationDate"
+              }
+            }
+          },
+          "reference": {
+            "m": {
+              "publicationInstance": {
+                "m": {
+                  "volume": {
+                    "s": "100"
+                  },
+                  "pages": {
+                    "m": {
+                      "type": {
+                        "s": "Range"
+                      }
+                    }
+                  },
+                  "issue": {
+                    "s": "8"
+                  },
+                  "peerReviewed": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "JournalLeader"
+                  }
+                }
+              },
+              "type": {
+                "s": "Reference"
+              },
+              "publicationContext": {
+                "m": {
+                  "openAccess": {
+                    "bool": false
+                  },
+                  "peerReviewed": {
+                    "bool": false
+                  },
+                  "onlineIssn": {
+                    "s": "2470-0029"
+                  },
+                  "title": {
+                    "s": "Physical Review D"
+                  },
+                  "type": {
+                    "s": "Journal"
+                  }
+                }
+              },
+              "doi": {
+                "s": "http://example.net/doi/prefix/suffix/d0fbf12d-343b-47df-9fb7-dc6d53dac2d9"
+              }
+            }
+          },
+          "metadataSource": {
+            "s": "https://www.crossref.org/"
+          },
+          "mainTitle": {
+            "s": "Waiting for the Barbarians"
+          },
+          "language": {
+            "s": "http://lexvo.org/id/iso639-3/eng"
+          },
+          "contributors": {
+            "l": [
+              {
+                "m": {
+                  "sequence": {
+                    "n": "1"
+                  },
+                  "identity": {
+                    "m": {
+                      "name": {
+                        "s": "Mr Bane Eyes"
+                      },
+                      "arpId": {
+                        "s": "8665285477"
+                      },
+                      "orcId": {
+                        "s": "2396666334"
+                      },
+                      "type": {
+                        "s": "Identity"
+                      }
+                    }
+                  },
+                  "correspondingAuthor": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "Contributor"
+                  }
+                }
+              },
+              {
+                "m": {
+                  "sequence": {
+                    "n": "1"
+                  },
+                  "identity": {
+                    "m": {
+                      "name": {
+                        "s": "Red Morph"
+                      },
+                      "arpId": {
+                        "s": "3608644706"
+                      },
+                      "orcId": {
+                        "s": "1060667815"
+                      },
+                      "type": {
+                        "s": "Identity"
+                      }
+                    }
+                  },
+                  "correspondingAuthor": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "Contributor"
+                  }
+                }
+              },
+              {
+                "m": {
+                  "sequence": {
+                    "n": "1"
+                  },
+                  "identity": {
+                    "m": {
+                      "name": {
+                        "s": "General Cerebra Spirit"
+                      },
+                      "arpId": {
+                        "s": "6081271417"
+                      },
+                      "orcId": {
+                        "s": "7507217001"
+                      },
+                      "type": {
+                        "s": "Identity"
+                      }
+                    }
+                  },
+                  "correspondingAuthor": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "Contributor"
+                  }
+                }
+              }
+            ]
+          },
+          "type": {
+            "s": "EntityDescription"
+          },
+          "alternativeTitles": {
+            "m": {}
+          },
+          "tags": {
+            "l": []
+          }
+        }
+      },
+      "publisherId": {
+        "s": "http://example.net/nva/institution/6c1438b1-f842-4c1a-acfe-a14c50968e52"
+      },
+      "createdDate": {
+        "s": "2020-08-14T10:28:52.565586Z"
+      },
+      "publisherOwnerDate": {
+        "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#kiva@unit.no#2020-08-12T10:30:10.019991Z"
+      },
+      "modifiedDate": {
+        "s": "2020-11-18T15:26:41.942893Z"
+      },
+      "publisher": {
+        "m": {
+          "id": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+          },
+          "type": {
+            "s": "Organization"
+          }
+        }
+      },
+      "type": {
+        "s": "Publication"
+      },
+      "fileSet": {
+        "m": {
+          "files": {
+            "l": []
+          },
+          "type": {
+            "s": "FileSet"
+          }
+        }
+      },
+      "status": {
+        "s": "PUBLISHED"
+      },
+      "doiRequest": {
+        "m": {
+          "status": {
+            "s": "APPROVED"
+          },
+          "type": {
+            "s": "DoiRequest"
+          },
+          "modifiedDate": {
+            "s": "2020-11-18T15:26:41.942893Z"
+          }
+        }
+      }
+    },
+    "oldImage": {
+      "owner": {
+        "s": "sg@unit.no"
+      },
+      "identifier": {
+        "s": "654321"
+      },
+      "entityDescription": {
+        "m": {
+          "date": {
+            "m": {
+              "year": {
+                "s": "1989"
+              },
+              "month": {
+                "s": "7"
+              },
+              "day": {
+                "s": "17"
+              },
+              "type": {
+                "s": "PublicationDate"
+              }
+            }
+          },
+          "reference": {
+            "m": {
+              "publicationInstance": {
+                "m": {
+                  "volume": {
+                    "s": "100"
+                  },
+                  "pages": {
+                    "m": {
+                      "type": {
+                        "s": "Range"
+                      }
+                    }
+                  },
+                  "issue": {
+                    "s": "8"
+                  },
+                  "peerReviewed": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "JournalArticle"
+                  }
+                }
+              },
+              "type": {
+                "s": "Reference"
+              },
+              "publicationContext": {
+                "m": {
+                  "openAccess": {
+                    "bool": false
+                  },
+                  "peerReviewed": {
+                    "bool": false
+                  },
+                  "onlineIssn": {
+                    "s": "2470-0029"
+                  },
+                  "title": {
+                    "s": "Physical Review D"
+                  },
+                  "type": {
+                    "s": "Journal"
+                  }
+                }
+              },
+              "doi": {
+                "s": "https://doi.org/10.1103/physrevd.100.085005"
+              }
+            }
+          },
+          "metadataSource": {
+            "s": "https://www.crossref.org/"
+          },
+          "mainTitle": {
+            "s": "Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+1 dimensions"
+          },
+          "language": {
+            "s": "http://lexvo.org/id/iso639-3/eng"
+          },
+          "contributors": {
+            "l": [
+              {
+                "m": {
+                  "sequence": {
+                    "n": "1"
+                  },
+                  "identity": {
+                    "m": {
+                      "name": {
+                        "s": "Nogueira, Flavio S."
+                      },
+                      "arpId": {
+                        "s": "451001"
+                      },
+                      "orcId": {},
+                      "type": {
+                        "s": "Identity"
+                      }
+                    }
+                  },
+                  "correspondingAuthor": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "Contributor"
+                  }
+                }
+              }
+            ]
+          },
+          "type": {
+            "s": "EntityDescription"
+          },
+          "alternativeTitles": {
+            "m": {}
+          },
+          "tags": {
+            "l": []
+          }
+        }
+      },
+      "publisherId": {
+        "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+      },
+      "createdDate": {
+        "s": "2020-08-14T10:28:52.565586Z"
+      },
+      "publisherOwnerDate": {
+        "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#kiva@unit.no#2020-08-12T10:30:10.019991Z"
+      },
+      "modifiedDate": {
+        "s": "2020-08-14T10:30:10.019991Z"
+      },
+      "publisher": {
+        "m": {
+          "id": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+          },
+          "type": {
+            "s": "Organization"
+          }
+        }
+      },
+      "type": {
+        "s": "Publication"
+      },
+      "fileSet": {
+        "m": {
+          "files": {
+            "l": []
+          },
+          "type": {
+            "s": "FileSet"
+          }
+        }
+      },
+      "status": {
+        "s": "Draft"
+      },
+      "doiRequest": {
+        "m": {
+          "status": {
+            "s": "REQUESTED"
+          },
+          "type": {
+            "s": "DoiRequest"
+          },
+          "modifiedDate": {
+            "s": "2020-08-14T10:30:10.019991Z"
+          }
+        }
+      }
+    },
+    "sequenceNumber": "605204800000000056657663004",
+    "sizeBytes": 1435,
+    "streamViewType": "OLD_IMAGE"
+  },
+  "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-13T08:41:25.491"
+}

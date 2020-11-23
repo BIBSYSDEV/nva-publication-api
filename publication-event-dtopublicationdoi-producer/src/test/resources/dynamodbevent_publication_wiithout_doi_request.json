@@ -38,42 +38,6 @@
         "type": {
           "s": "Publication"
         },
-        "doiRequest": {
-          "m": {
-            "date": {
-              "s": "2020-10-22T13:09:17.317127Z"
-            },
-            "modifiedDate": {
-              "s": "2020-10-22T13:09:17.317127Z"
-            },
-            "messages": {
-              "l": [
-                {
-                  "m": {
-                    "author": {
-                      "s": "og@unit.no"
-                    },
-                    "text": {
-                      "s": "doiiii"
-                    },
-                    "type": {
-                      "s": "DoiRequestMessage"
-                    },
-                    "timestamp": {
-                      "s": "2020-10-22T13:09:17.317166Z"
-                    }
-                  }
-                }
-              ]
-            },
-            "type": {
-              "s": "DoiRequest"
-            },
-            "status": {
-              "s": "REQUESTED"
-            }
-          }
-        },
         "fileSet": {
           "m": {
             "files": {
@@ -343,9 +307,6 @@
         },
         "publishedDate": {
           "s": "2020-09-24T11:15:17.671525Z"
-        },
-        "doiRequestStatusDate": {
-          "s": "REQUESTED#2020-10-22T13:09:17.317127Z"
         },
         "status": {
           "s": "Published"

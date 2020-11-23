@@ -322,9 +322,7 @@
             }
           }
         },
-        "publisherId": {
-          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-        },
+        "publisherId": null,
         "createdDate": {
           "s": "2020-09-24T11:13:36.013058Z"
         },
@@ -333,9 +331,7 @@
         },
         "publisher": {
           "m": {
-            "id": {
-              "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-            },
+            "id": null,
             "type": {
               "s": "Organization"
             }

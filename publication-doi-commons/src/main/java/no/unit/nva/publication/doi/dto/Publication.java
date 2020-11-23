@@ -8,18 +8,25 @@ import java.util.List;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-public class Publication {
+public class Publication extends Validatable {
 
+    public static final String PUBLICATION_ID_FIELD_INFO = "Publication.id";
+    public static final String PUBLICATION_INSTITUTION_OWNER_FIELD_INFO = "Publication.institutionOwner";
+    public static final String PUBLICATION_MODIFIED_DATE_FIELD_INFO = "Publication.modifiedDate";
+    public static final String PUBLICATION_TYPE_FIELD_INFO = "Publication.type";
+    public static final String PUBLICATION_MAIN_TITLE_FIELD_INFO = "Publication.mainTitle";
+    public static final String PUBLICATION_STATUS_FIELD_INFO = "Pblication.status";
+    public static final String PUBLICATION_PUBLICATION_DATE_FIELD_INFO = "Publication.publicationDate";
     private final URI id;
     private final URI institutionOwner;
-    private final URI doi;
-    private final DoiRequest doiRequest;
     private final Instant modifiedDate;
     private final PublicationType type;
     private final String mainTitle;
     private final PublicationStatus status;
-    private final List<Contributor> contributor;
     private final PublicationDate publicationDate;
+    private final List<Contributor> contributor;
+    private final URI doi;
+    private final DoiRequest doiRequest;
 
     /**
      * doi.Publication DTO to be used to as payload format.
@@ -48,6 +55,7 @@ public class Publication {
                        @JsonProperty("status") PublicationStatus status,
                        @JsonProperty("contributors") List<Contributor> contributors,
                        @JsonProperty("publication_date") PublicationDate publicationDate) {
+        super();
         this.id = id;
         this.institutionOwner = institutionOwner;
         this.doi = doi;
@@ -58,6 +66,20 @@ public class Publication {
         this.status = status;
         this.contributor = contributors;
         this.publicationDate = publicationDate;
+    }
+
+    /**
+     * Validates.
+     */
+    @Override
+    public void validate() {
+        requireFieldIsNotNull(id, PUBLICATION_ID_FIELD_INFO);
+        requireFieldIsNotNull(institutionOwner, PUBLICATION_INSTITUTION_OWNER_FIELD_INFO);
+        requireFieldIsNotNull(modifiedDate, PUBLICATION_MODIFIED_DATE_FIELD_INFO);
+        requireFieldIsNotNull(type, PUBLICATION_TYPE_FIELD_INFO);
+        requireFieldIsNotNull(mainTitle, PUBLICATION_MAIN_TITLE_FIELD_INFO);
+        requireFieldIsNotNull(status, PUBLICATION_STATUS_FIELD_INFO);
+        requireFieldIsNotNull(publicationDate, PUBLICATION_PUBLICATION_DATE_FIELD_INFO);
     }
 
     protected Publication(Builder builder) {
@@ -108,7 +130,7 @@ public class Publication {
     /**
      * Flag used during EventBridge pattern matching.
      *
-     * @return  true if modifiedDate is same as doiRequest.modifiedDate
+     * @return true if modifiedDate is same as doiRequest.modifiedDate
      */
     @JsonProperty("sameModifiedDateForDoiRequest")
     public boolean isSameModifiedDateForDoiRequest() {
@@ -218,7 +240,9 @@ public class Publication {
         }
 
         public Publication build() {
-            return new Publication(this);
+            Publication publication = new Publication(this);
+            publication.validate();
+            return publication;
         }
     }
 }

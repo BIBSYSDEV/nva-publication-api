@@ -2,6 +2,7 @@ package no.unit.nva.doi.event.producer;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -10,6 +11,7 @@ import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.utils.JacocoGenerated;
+import nva.commons.utils.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +24,9 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
     public static final PublicationHolder NO_OUTPUT_NO_EVENT = null;
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     public static final String CREATED = "Created";
     public static final String SKIPPED_CREATING = "Skipped creating";
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     private final PublicationMapper publicationMapper;
 
     @JacocoGenerated
@@ -41,15 +43,30 @@ public class DynamoDbFanoutPublicationDtoProducer
     protected PublicationHolder processInput(DynamodbEvent.DynamodbStreamRecord input,
                                              AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
                                              Context context) {
-        return fromDynamodbStreamRecords(input);
+        PublicationHolder result = fromDynamodbStreamRecords(input);
+        //temporary logging until event consumers are built
+        logResults(result);
+        return result;
+    }
+
+    private void logResults(PublicationHolder result) {
+
+        try {
+            String jsonString = JsonUtils.objectMapper.writeValueAsString(result);
+            logger.info("Output is: " + jsonString);
+        } catch (JsonProcessingException e) {
+            logger.info("Could not serialize output");
+        }
     }
 
     private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
         var dto = mapToPublicationDto(record);
         logMappingResults(dto.orElse(null));
+
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
             .orElse(NO_OUTPUT_NO_EVENT);
+
     }
 
     private void logMappingResults(Publication dto) {
@@ -59,8 +76,22 @@ public class DynamoDbFanoutPublicationDtoProducer
     private Optional<Publication> mapToPublicationDto(DynamodbEvent.DynamodbStreamRecord record) {
         return Optional.ofNullable(record)
             .map(publicationMapper::fromDynamodbStreamRecord)
-            .filter(this::isEffectiveChange)
+            .filter(this::shouldPropagateEvent)
             .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
+    }
+
+    private boolean shouldPropagateEvent(PublicationMapping publicationMapping) {
+        boolean isChange = isEffectiveChange(publicationMapping);
+        boolean publicationHasDoiRequest = publicationHasDoiRequest(publicationMapping);
+
+        return isChange && publicationHasDoiRequest;
+    }
+
+    private boolean publicationHasDoiRequest(PublicationMapping publicationMapping) {
+        return publicationMapping
+            .getNewPublication()
+            .map(Publication::getDoiRequest)
+            .isPresent();
     }
 
     private boolean isEffectiveChange(PublicationMapping publicationMapping) {

@@ -10,11 +10,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-public class PublicationDate {
+public class PublicationDate extends Validatable {
 
     public static final JsonPointer YEAR_JSON_POINTER = JsonPointer.compile("/date/m/year/s");
     public static final JsonPointer MONTH_JSON_POINTER = JsonPointer.compile("/date/m/month/s");
     public static final JsonPointer DAY_JSON_POINTER = JsonPointer.compile("/date/m/day/s");
+    public static final String PUBLICATION_DATE_YEAR_FIELD_INFO = "PublicationDate.year";
 
     private final String year;
     private final String month;
@@ -31,6 +32,7 @@ public class PublicationDate {
     public PublicationDate(@JsonProperty("year") String year,
                            @JsonProperty("month") String month,
                            @JsonProperty("day") String day) {
+        super();
         this.year = year;
         this.month = month;
         this.day = day;
@@ -41,8 +43,12 @@ public class PublicationDate {
      *
      * @param doiPublicationDto JsonNode representation of a doiPublicationDto
      */
-    public PublicationDate(JsonNode doiPublicationDto) {
-        this(extractYear(doiPublicationDto), extractMonth(doiPublicationDto), extractDay(doiPublicationDto));
+    public static PublicationDate fromJsonNode(JsonNode doiPublicationDto) {
+        PublicationDate publcationDate = new PublicationDate(extractYear(doiPublicationDto),
+            extractMonth(doiPublicationDto),
+            extractDay(doiPublicationDto));
+        publcationDate.validate();
+        return publcationDate;
     }
 
     public String getYear() {
@@ -55,6 +61,11 @@ public class PublicationDate {
 
     public String getDay() {
         return day;
+    }
+
+    @Override
+    public void validate() {
+        requireFieldIsNotNull(year, PUBLICATION_DATE_YEAR_FIELD_INFO);
     }
 
     @JsonIgnore
