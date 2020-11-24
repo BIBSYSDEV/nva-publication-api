@@ -1,5 +1,6 @@
 package no.unit.nva.doi;
 
+import static java.util.Objects.nonNull;
 import java.time.Instant;
 import java.util.UUID;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
@@ -23,9 +24,10 @@ public class UpdateDoiStatusProcess {
     public static final String PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID =
         "Publication Identifier does not look like a id (URI)!";
     public static final String FORWARD_SLASH = "/";
-    private static final Logger logger = LoggerFactory.getLogger(UpdateDoiStatusProcess.class);
     public static final String UPDATED_PUBLICATION_FORMAT =
         "Updated publication %s with doi: %s which was last modified: %s";
+    public static final Object NO_REQUEST_PAYLOAD = null;
+    private static final Logger logger = LoggerFactory.getLogger(UpdateDoiStatusProcess.class);
     private final PublicationService publicationService;
     private final DoiUpdateDto request;
     private final Publication publication;
@@ -39,7 +41,8 @@ public class UpdateDoiStatusProcess {
     public UpdateDoiStatusProcess(PublicationService publicationService, DoiUpdateHolder request) {
         if (isInvalidPayloadFormat(request)) {
             throw new IllegalArgumentException(
-                String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT, request != null ? request.toJsonString() : null));
+                String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
+                    nonNull(request) ? request.toJsonString() : NO_REQUEST_PAYLOAD));
         }
         this.publicationService = publicationService;
         this.request = request.getItem();
