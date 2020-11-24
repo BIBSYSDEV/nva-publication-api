@@ -58,12 +58,6 @@ Parameters:
   EventBusArn:
     Type : 'AWS::SSM::Parameter::Value<String>'
     Default: nvaEventBusArn
-  DlqArn:
-    Type : 'AWS::SSM::Parameter::Value<String>'
-    Default: nvaDlqArn
-  FailureQueueName:
-    Type: String
-    Default: delete-me-fail-queue
   EventBridgeMaxAttempt:
     Type: Number
     Default: 1
@@ -505,6 +499,9 @@ Resources:
                   - lambda:InvokeFunction
                 Resource: "*"
 
+  DynamoDbFanoutPublicationDtoProducerDLQ:
+    Type: "AWS::SQS::Queue"
+
   DynamoDbFanoutPublicationDtoProducer:
     Type: AWS::Serverless::Function
     Properties:
@@ -534,7 +531,7 @@ Resources:
             Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !Ref DlqArn
+            Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
@@ -572,6 +569,9 @@ Resources:
   DynamodbEventFanoutStreamRecordsDLQ:
     Type: "AWS::SQS::Queue"
 
+  UpdateDoiStatusDLQ:
+    Type: "AWS::SQS::Queue"
+
   UpdateDoiStatusHandlerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -602,7 +602,7 @@ Resources:
             Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !Ref DlqArn
+            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
 
   NvaPublicationBasePathMapping:
