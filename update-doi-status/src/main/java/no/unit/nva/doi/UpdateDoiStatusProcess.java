@@ -26,6 +26,7 @@ public class UpdateDoiStatusProcess {
     public static final String FORWARD_SLASH = "/";
     public static final String UPDATED_PUBLICATION_FORMAT =
         "Updated publication %s with doi: %s which was last modified: %s";
+    public static final int NOT_FOUND = -1;
     public static final Object NO_REQUEST_PAYLOAD = null;
     private static final Logger logger = LoggerFactory.getLogger(UpdateDoiStatusProcess.class);
     private final PublicationService publicationService;
@@ -95,7 +96,7 @@ public class UpdateDoiStatusProcess {
     private UUID extractPublicationFromRequest() {
         String s = request.getPublicationId().toString();
         int beginIndex = s.lastIndexOf(FORWARD_SLASH);
-        if (beginIndex == -1) {
+        if (NOT_FOUND == beginIndex) {
             throw new IllegalArgumentException(PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID);
         }
         return UUID.fromString(s.substring(++beginIndex));
