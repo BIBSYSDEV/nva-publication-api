@@ -41,14 +41,25 @@ Parameters:
     Type: String
     Description: Reference to index containing publications by owner
     Default: ByPublisher
-  PublicationsDoiRequestsByStatusIndexName:
-    Type: String
-    Description: Reference to index containing publications by owner
-    Default: doiRequestsByStatus
   PublishedPublicationsIndexName:
     Type: String
     Description: Reference to index containing published publications
     Default: ByStatePublishedDate
+  DynamoDBStreamArn:
+    Type: String
+    Description: Amazon DynamoDB Stream ARN.
+  EventBusName:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: nvaEventBusName
+  EventBusArn:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: nvaEventBusArn
+  EventBridgeMaxAttempt:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 5
+    Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
 
 Resources:
 
@@ -446,6 +457,150 @@ Resources:
               - method.request.querystring.pagesize
             RestApiId: !Ref NvaPublicationApi
 
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaDefaults
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - sts:AssumeRole
+                  - sts:TagSession
+                Resource: "*"
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:*
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:*
+                  - lambda:InvokeFunction
+                Resource: "*"
+
+  DynamoDbFanoutPublicationDtoProducerDLQ:
+    Type: "AWS::SQS::Queue"
+
+  DynamoDbFanoutPublicationDtoProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: publication-event-dtopublicationdoi-producer
+      Handler: no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBusName
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          BASE_PATH: !Ref CustomDomainBasePath
+          DOMAIN_NAME: !Ref CustomDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
+  DynamodbEventFanoutStreamRecordsEventBridgeHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: publication-event-emitter
+      # DynamodbStream -> Publish DynamodbEvent to EventBridge
+      Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
+      MemorySize: 768
+      Timeout: 360
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
+          MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
+          EVENT_BUS_NAME: !Ref EventBusName
+      Policies:
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.QueueName
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: '*'
+      Events:
+        FanoutSource:
+          Type: DynamoDB
+          Properties:
+            Stream: !Ref DynamoDBStreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 10
+            Enabled: true
+  DynamodbEventFanoutStreamRecordsDLQ:
+    Type: "AWS::SQS::Queue"
+
+  UpdateDoiStatusDLQ:
+    Type: "AWS::SQS::Queue"
+
+  UpdateDoiStatusHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: update-doi-status
+      Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBusName
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              detail:
+                responsePayload:
+                  type:
+                    - doi.updateDoiStatus
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
+
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
@@ -453,4 +608,3 @@ Resources:
       DomainName: !Ref CustomDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
-

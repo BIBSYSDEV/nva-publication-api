@@ -1,0 +1,282 @@
+{
+  "dynamodb": {
+    "approximateCreationDateTime": 1605555075000,
+    "keys": {
+      "identifier": {
+        "s": "620fee96-87e3-4e9b-84f3-3a563fe3def8"
+      },
+      "modifiedDate": {
+        "s": "2020-11-10T15:40:31.609333Z"
+      }
+    },
+    "newImage": {
+      "owner": {
+        "s": "og@unit.no"
+      },
+      "identifier": {
+        "s": "620fee96-87e3-4e9b-84f3-3a563fe3def8"
+      },
+      "publisherOwnerDate": {
+        "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#og@unit.no#2020-11-10T15:40:31.609333Z"
+      },
+      "type": {
+        "s": "Publication"
+      },
+      "doiRequest": {
+        "m": {
+          "date": {
+            "s": "2020-11-10T14:34:24.232877Z"
+          },
+          "modifiedDate": {
+            "s": "2020-11-10T14:34:24.232877Z"
+          },
+          "messages": {
+            "l": [
+              {
+                "m": {
+                  "author": {
+                    "s": "og@unit.no"
+                  },
+                  "text": {
+                    "s": "Oresitis asks for DOIIII"
+                  },
+                  "type": {
+                    "s": "DoiRequestMessage"
+                  },
+                  "timestamp": {
+                    "s": "2020-11-10T14:34:24.232923Z"
+                  }
+                }
+              }
+            ]
+          },
+          "type": {
+            "s": "DoiRequest"
+          },
+          "status": {
+            "s": "APPROVED"
+          }
+        }
+      },
+      "fileSet": {
+        "m": {
+          "files": {
+            "l": [
+              {
+                "m": {
+                  "identifier": {
+                    "s": "c3d46a31-013a-440d-a77c-c437f9ae10c8"
+                  },
+                  "license": {
+                    "m": {
+                      "identifier": {
+                        "s": "CC0"
+                      },
+                      "type": {
+                        "s": "License"
+                      },
+                      "labels": {
+                        "m": {
+                          "nb": {
+                            "s": "CC0"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "size": {
+                    "n": "129655"
+                  },
+                  "publisherAuthority": {
+                    "bool": false
+                  },
+                  "name": {
+                    "s": "DTOandBOs.pdf"
+                  },
+                  "administrativeAgreement": {
+                    "bool": false
+                  },
+                  "mimeType": {
+                    "s": "application/pdf"
+                  },
+                  "embargoDate": {
+                    "s": "2020-11-10T14:33:00Z"
+                  },
+                  "type": {
+                    "s": "File"
+                  }
+                }
+              }
+            ]
+          },
+          "type": {
+            "s": "FileSet"
+          }
+        }
+      },
+      "entityDescription": {
+        "m": {
+          "date": {
+            "m": {
+              "type": {
+                "s": "PublicationDate"
+              }
+            }
+          },
+          "reference": {
+            "m": {
+              "type": {
+                "s": "Reference"
+              },
+              "publicationInstance": {
+                "m": {
+                  "articleNumber": {
+                    "s": "123"
+                  },
+                  "peerReviewed": {
+                    "bool": true
+                  },
+                  "type": {
+                    "s": "JournalArticle"
+                  }
+                }
+              },
+              "publicationContext": {
+                "m": {
+                  "level": {
+                    "s": "LEVEL_2"
+                  },
+                  "openAccess": {
+                    "bool": false
+                  },
+                  "peerReviewed": {
+                    "bool": false
+                  },
+                  "type": {
+                    "s": "Journal"
+                  },
+                  "title": {
+                    "s": "Information Systems"
+                  },
+                  "onlineIssn": {
+                    "s": "0306-4379"
+                  },
+                  "url": {
+                    "s": "http://www.elsevier.com/wps/find/journaldescription.cws_home/236/description#description"
+                  }
+                }
+              },
+              "doi": {
+                "s": ""
+              }
+            }
+          },
+          "mainTitle": {
+            "s": "Orestis Title"
+          },
+          "language": {
+            "s": "http://lexvo.org/id/iso639-3/eng"
+          },
+          "contributors": {
+            "l": [
+              {
+                "m": {
+                  "sequence": {
+                    "n": "1"
+                  },
+                  "identity": {
+                    "m": {
+                      "arpId": {
+                        "s": "1582627888604"
+                      },
+                      "name": {
+                        "s": "Gkorgkas,Orestis Stylianos"
+                      },
+                      "orcId": {
+                        "s": "0000-0001-8310-5489"
+                      },
+                      "type": {
+                        "s": "Identity"
+                      }
+                    }
+                  },
+                  "correspondingAuthor": {
+                    "bool": false
+                  },
+                  "affiliations": {
+                    "l": [
+                      {
+                        "m": {
+                          "id": {
+                            "s": "https://api.cristin.no/v2/institutions/20202"
+                          },
+                          "type": {
+                            "s": "Organization"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "type": {
+                    "s": "Contributor"
+                  }
+                }
+              }
+            ]
+          },
+          "abstract": {
+            "s": "Orestis description"
+          },
+          "type": {
+            "s": "EntityDescription"
+          },
+          "npiSubjectHeading": {
+            "s": "1039"
+          },
+          "tags": {
+            "l": [
+              {
+                "s": "hello"
+              },
+              {
+                "s": "world"
+              }
+            ]
+          }
+        }
+      },
+      "publisherId": {
+        "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+      },
+      "createdDate": {
+        "s": "2020-11-10T14:18:32.670614Z"
+      },
+      "modifiedDate": {
+        "s": "2020-11-10T15:40:31.609333Z"
+      },
+      "publisher": {
+        "m": {
+          "id": {
+            "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934ffgg"
+          },
+          "type": {
+            "s": "Organization"
+          }
+        }
+      },
+      "publishedDate": {
+        "s": "2020-11-10T14:33:32.569641Z"
+      },
+      "doiRequestStatusDate": {
+        "s": "APPROVED#2020-11-10T14:34:24.232877Z"
+      },
+      "status": {
+        "s": "Published"
+      }
+    },
+    "sequenceNumber": "1054408700000000001537662819",
+    "sizeBytes": 1922,
+    "streamViewType": "NEW_IMAGE"
+  },
+  "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-19T09:27:44.804"
+}

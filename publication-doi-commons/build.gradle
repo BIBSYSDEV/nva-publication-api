@@ -1,0 +1,52 @@
+repositories {
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
+dependencies {
+    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.nvaCommonsVersion
+    api(group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0') {
+        because('Contains DynamodbEvent.DynamodbStreamRecord')
+    }
+
+    testImplementation project(":publication-testing")
+
+    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
+}
+
+configurations.testImplementation.canBeResolved = true
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/dynamodb-local'
+}
+
+// Build and package publication-commons and dependencies for Lambda Layer
+
+configurations.api.canBeResolved = true
+
+task copyDepsForLayer(type: Copy) {
+    from(configurations.api) {
+    }
+    into 'build/libs'
+}
+
+task buildZipForLayer(type: Zip) {
+    from('build/libs') {
+    }
+    into('java/lib')
+}
+
+buildZipForLayer.dependsOn copyDepsForLayer
+build.dependsOn buildZipForLayer
