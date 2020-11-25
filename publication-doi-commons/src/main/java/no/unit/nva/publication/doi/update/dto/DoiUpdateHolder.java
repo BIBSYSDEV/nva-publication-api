@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.json.JsonSerializable;
 
 public class DoiUpdateHolder implements JsonSerializable {
-
+    public static final String DEFAULT_TYPE = "doi.updateDoiStatus";
     protected String type;
     protected DoiUpdateDto item;
 
