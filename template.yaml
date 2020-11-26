@@ -588,7 +588,7 @@ Resources:
             EventBusName: !Ref EventBusName
             Pattern:
               detail-type:
-                #Standard message for successful invocation of Lambda function using Labmda destinations
+                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
                 - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
