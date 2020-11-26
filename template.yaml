@@ -579,7 +579,7 @@ Resources:
       MemorySize: 1408
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName
+          TABLE_NAME: !Ref PublicationsTableName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
@@ -587,15 +587,12 @@ Resources:
           Properties:
             EventBusName: !Ref EventBusName
             Pattern:
+              detail-type:
               detail:
                 responsePayload:
                   type:
                     - doi.updateDoiStatus
       EventInvokeConfig:
-        DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
