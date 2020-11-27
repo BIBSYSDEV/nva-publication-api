@@ -57,7 +57,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         "dynamodbevent_publication_missing_publication_status.json";
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST = "dynamodbevent_publication_wiithout_doi_request.json";
     private static final String NULL_AS_STRING = "null";
-    public static final Path DYNAMODB_EVENT_PUBLICATION_WITH_DOI_UPDATE = Path.of(
+    public static final Path EVENT_PUBLICATION_WITH_DOI_IS_UPDATED = Path.of(
         "dynamodbevent_updated_metadata_with_existing_doi.json");
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
@@ -103,7 +103,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
     @Test
     void handlerCreatesOutputWithNonEmptyDoiWhenNewImageHasPublicationWithDoi() throws JsonProcessingException {
-        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_EVENT_PUBLICATION_WITH_DOI_UPDATE);
+        var eventInputStream = IoUtils.inputStreamFromResources(EVENT_PUBLICATION_WITH_DOI_IS_UPDATED);
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
         URI doiInResourceFile = URI.create("https://doi.org/10.1103/physrevd.100.085005");
