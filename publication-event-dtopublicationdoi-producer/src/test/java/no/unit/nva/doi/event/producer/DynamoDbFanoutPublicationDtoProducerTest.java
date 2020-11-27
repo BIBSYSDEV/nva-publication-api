@@ -19,6 +19,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
@@ -56,6 +57,8 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         "dynamodbevent_publication_missing_publication_status.json";
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST = "dynamodbevent_publication_wiithout_doi_request.json";
     private static final String NULL_AS_STRING = "null";
+    public static final Path DYNAMODB_EVENT_PUBLICATION_WITH_DOI_UPDATE = Path.of(
+        "dynamodbevent_updated_metadata_with_existing_doi.json");
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -96,6 +99,16 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
         assertThat(actual.getItem(), notNullValue());
+    }
+
+    @Test
+    void handlerCreatesOutputWithNonEmptyDoiWhenNewImageHasPublicationWithDoi() throws JsonProcessingException {
+        var eventInputStream = IoUtils.inputStreamFromResources(DYNAMODB_EVENT_PUBLICATION_WITH_DOI_UPDATE);
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        URI doiInResourceFile = URI.create("https://doi.org/10.1103/physrevd.100.085005");
+        URI actualDoi = actual.getItem().getDoi();
+        assertThat(actualDoi, is(equalTo(doiInResourceFile)));
     }
 
     @Test
