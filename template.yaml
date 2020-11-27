@@ -598,12 +598,10 @@ Resources:
                   type:
                     - doi.updateDoiStatus
       EventInvokeConfig:
-        OnFailure:
-          Type: SQS
-          Destination: !GetAtt UpdateDoiStatusDLQ.Arn
-        OnSuccess:
-          Type: SQS
-          Destination: !GetAtt UpdateDoiStatusDLQ.Arn
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
 
   NvaPublicationBasePathMapping:
