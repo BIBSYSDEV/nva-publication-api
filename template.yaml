@@ -581,6 +581,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
