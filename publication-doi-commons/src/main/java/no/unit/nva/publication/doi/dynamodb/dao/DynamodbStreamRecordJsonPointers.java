@@ -46,7 +46,7 @@ public class DynamodbStreamRecordJsonPointers {
     private static final String TYPE_POINTER = "/type/s";
 
 
-    private static final String ENTITY_DESCRIPTION_REFERENCE_DOI = "/entityDescription/m/reference/m/doi/s";
+    private static final String DOI_POINTER = "/doi/s";
 
     private static final String ENTITY_DESCRIPTION_CONTRIBUTORS = "/entityDescription/m/contributors";
     private static final String ENTITY_DESCRIPTION_CONTRIBUTORS_LIST = "/entityDescription/m/contributors/l";
@@ -101,7 +101,7 @@ public class DynamodbStreamRecordJsonPointers {
         this.entityDescritpionDateDayJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_PUBLICATION_DATE_DAY);
         this.entityDescriptionMainTitle = JsonPointer.compile(base + ENTITY_DESCRIPTION_MAIN_TITLE);
         this.typeJsonPointer = JsonPointer.compile(base + TYPE_POINTER);
-        this.doiJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_REFERENCE_DOI);
+        this.doiJsonPointer = JsonPointer.compile(base + DOI_POINTER);
         this.contributorsJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS);
         this.contributorsListJsonPointer = JsonPointer.compile(base + ENTITY_DESCRIPTION_CONTRIBUTORS_LIST);
 

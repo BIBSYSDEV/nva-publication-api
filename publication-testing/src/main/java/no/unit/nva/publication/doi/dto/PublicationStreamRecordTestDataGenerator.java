@@ -3,7 +3,6 @@ package no.unit.nva.publication.doi.dto;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_LIST;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DYNAMODB_TYPE_STRING;
-
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.StreamViewType;
 import com.fasterxml.jackson.core.JsonPointer;
@@ -100,7 +99,7 @@ public class PublicationStreamRecordTestDataGenerator {
         updateReferenceType(instanceType, event);
         updateEntityDescriptionMainTitle(mainTitle, event);
         updateEntityDescriptionContributors(contributors, event);
-        updateEntityDescriptionReferenceDoi(doi, event);
+        updateDoi(doi, event);
         updatePublisherId(publisherId, event);
         updateDate(date, event);
         updatePublicationStatus(status, event);
@@ -204,7 +203,7 @@ public class PublicationStreamRecordTestDataGenerator {
             DYNAMODB_TYPE_STRING, mainTitle);
     }
 
-    private void updateEntityDescriptionReferenceDoi(String doi, ObjectNode event) {
+    private void updateDoi(String doi, ObjectNode event) {
         updateEventAtPointerWithNameAndValue(event, jsonPointers.getDoiJsonPointer(), DYNAMODB_TYPE_STRING, doi);
     }
 
