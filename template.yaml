@@ -25,8 +25,9 @@ Globals:
 
 Parameters:
   CognitoAuthorizerArn:
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
+    Default: CognitoAuthorizerArn
   CustomDomain:
     Type: String
     Description: Custom API to connect this lambda to
@@ -298,6 +299,11 @@ Resources:
         - java11
       LicenseInfo: 'MIT'
       RetentionPolicy: Retain
+  DynamodbEventFanoutStreamRecordsDLQ:
+    Type: "AWS::SQS::Queue"
+  UpdateDoiStatusDLQ:
+    Type: "AWS::SQS::Queue"
+
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -478,8 +484,7 @@ Resources:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
-                  - sts:AssumeRole
-                  - sts:TagSession
+                  - lambda:InvokeFunction
                 Resource: "*"
         - PolicyName: Events
           PolicyDocument:
@@ -491,8 +496,6 @@ Resources:
                   - sqs:SendMessage
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
-                  - sqs:*
-                  - lambda:InvokeFunction
                 Resource: "*"
 
   DynamoDbFanoutPublicationDtoProducerDLQ:
@@ -562,11 +565,55 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
-  DynamodbEventFanoutStreamRecordsDLQ:
-    Type: "AWS::SQS::Queue"
 
-  UpdateDoiStatusDLQ:
-    Type: "AWS::SQS::Queue"
+  UpdateDoiStatusLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaDefaults
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - lambda:InvokeFunction
+                Resource: "*"
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt UpdateDoiStatusDLQ.Arn
+        - PolicyName: DynamoDbAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:GetItem
+                  - dynamodb:Query
+                  - dynamodb:BatchGetItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                Resource:
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
 
   UpdateDoiStatusHandlerFunction:
     Type: AWS::Serverless::Function
@@ -577,9 +624,12 @@ Resources:
       Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
+      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
@@ -587,15 +637,15 @@ Resources:
           Properties:
             EventBusName: !Ref EventBusName
             Pattern:
+              detail-type:
+                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
+                - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
                   type:
                     - doi.updateDoiStatus
       EventInvokeConfig:
         DestinationConfig:
-          OnSuccess:
-            Type: EventBridge
-            Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
