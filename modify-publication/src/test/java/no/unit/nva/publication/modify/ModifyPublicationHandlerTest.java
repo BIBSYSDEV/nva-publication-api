@@ -31,6 +31,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -46,6 +47,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.handlers.GatewayResponse;
 import nva.commons.utils.Environment;
+import nva.commons.utils.IoUtils;
 import nva.commons.utils.log.LogUtils;
 import nva.commons.utils.log.TestAppender;
 import org.apache.http.entity.ContentType;
@@ -94,6 +96,21 @@ public class ModifyPublicationHandlerTest {
         modifyPublicationHandler =
             new ModifyPublicationHandler(publicationService, environment);
         publication = createPublication();
+    }
+
+    @Test
+    @DisplayName("handler returns OK Response on ReportBasic input")
+    public void handlerReturnsOkResponseOnReportBasicInput() throws IOException, ApiGatewayException {
+        Path reportBasic = Path.of("ReportBasicTest.json");
+        Publication modifiedPublication = objectMapper
+                .readValue(IoUtils.stringFromResources(reportBasic), Publication.class);
+        serviceSucceedsAndReturnsModifiedPublication(modifiedPublication);
+        InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
+                modifiedPublication.getIdentifier());
+        modifyPublicationHandler.handleRequest(inputStream, output, context);
+        GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+
     }
 
     @Test
