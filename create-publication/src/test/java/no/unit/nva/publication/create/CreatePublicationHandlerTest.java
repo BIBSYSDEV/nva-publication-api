@@ -82,7 +82,7 @@ public class CreatePublicationHandlerTest {
 
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(publication.getEntityDescription());
-        request.setProject(publication.getProject());
+        request.setProjects(publication.getProjects());
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
