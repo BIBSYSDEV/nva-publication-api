@@ -1,0 +1,104 @@
+{
+  "type": "Publication",
+  "identifier": "843e70ea-892b-4b59-bb82-b26160059a0a",
+  "createdDate": "2020-11-30T11:36:27.802598Z",
+  "owner": "kjmo@unit.no",
+  "status": "Draft",
+  "entityDescription": {
+    "type": "EntityDescription",
+    "abstract": "",
+    "contributors": [],
+    "date": {
+      "type": "PublicationDate",
+      "year": "",
+      "month": "",
+      "day": ""
+    },
+    "description": "",
+    "language": "",
+    "mainTitle": "titt tei",
+    "npiSubjectHeading": "",
+    "reference": {
+      "type": "Reference",
+      "doi": "",
+      "publicationContext": {
+        "type": "Report"
+      },
+      "publicationInstance": {
+        "type": "ReportBasic",
+        "pages": {
+          "type": "MonographPages",
+          "pages": ""
+        }
+      }
+    },
+    "tags": []
+  },
+  "fileSet": {
+    "type": "FileSet",
+    "files": [
+      {
+        "type": "File",
+        "identifier": "3d0a7793-9deb-4b87-a1a0-9a427b47b036",
+        "name": "Capture.PNG",
+        "mimeType": "image/png",
+        "size": 12101,
+        "administrativeAgreement": false,
+        "publisherAuthority": false
+      }
+    ]
+  },
+  "project": null,
+  "publisher": {
+    "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+    "type": "Organization"
+  },
+  "modifiedDate": "2020-11-30T13:43:28.181937Z",
+  "publisherId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+  "publisherOwnerDate": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#kjmo@unit.no#2020-11-30T13:43:28.181937Z",
+  "@context": {
+    "@vocab": "https://nva.unit.no/publication#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "type": "@type",
+    "id": "@id",
+    "handle": {
+      "@type": "@id"
+    },
+    "alternativeTitles": {
+      "@container": "@language"
+    },
+    "createdDate": {
+      "@type": "xsd:dateTime"
+    },
+    "publishedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "indexedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "modifiedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "link": {
+      "@type": "@id"
+    },
+    "hasTag": {
+      "@container": "@list"
+    },
+    "labels": {
+      "@container": "@language"
+    },
+    "language": {
+      "@type": "@id"
+    },
+    "year": {
+      "@type": "xsd:gYear"
+    },
+    "month": {
+      "@type": "xsd:gMonth"
+    },
+    "day": {
+      "@type": "xsd:gDay"
+    }
+  }
+}
