@@ -1,7 +1,7 @@
 package no.unit.nva.publication.doi.dynamodb.dao;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Objects;
@@ -14,6 +14,7 @@ public class DynamodbStreamRecordImageDao {
     public static final String PUBLICATION_TYPE = "Publication";
     public static final String ERROR_MUST_BE_PUBLICATION_TYPE = "Must be a dynamodb stream record image of type "
         + "Publication";
+    public static final String PUBLICATION_MISSING_IDENTIFIER = "Invalid Publication: Missing identifier";
 
     private final String identifier;
     private final String publicationInstanceType;
@@ -28,6 +29,7 @@ public class DynamodbStreamRecordImageDao {
     private final List<Identity> contributorIdentities;
 
     protected DynamodbStreamRecordImageDao(Builder builder) {
+        validate(builder);
         this.identifier = builder.identifier;
         this.publicationInstanceType = builder.publicationInstanceType;
         this.mainTitle = builder.mainTitle;
@@ -39,6 +41,12 @@ public class DynamodbStreamRecordImageDao {
         this.modifiedDate = builder.modifiedDate;
         this.status = builder.status;
         this.contributorIdentities = builder.contributorIdentities;
+    }
+
+    private void validate(Builder builder) {
+        if (isNull(builder.identifier)) {
+            throw new IllegalStateException(PUBLICATION_MISSING_IDENTIFIER);
+        }
     }
 
     public String getIdentifier() {
