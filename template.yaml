@@ -531,6 +531,35 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
+
+  PublicationFanoutHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+
+  PublicationFanoutHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: publication-fanout-handler
+      Handler: no.unit.nva.publication.events.PublicationFanoutHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
+
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
