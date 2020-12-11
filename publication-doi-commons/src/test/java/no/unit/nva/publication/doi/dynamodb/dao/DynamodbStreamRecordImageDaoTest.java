@@ -19,7 +19,6 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.publication.doi.dto.DoiRequest;
 import no.unit.nva.publication.doi.dto.DoiRequestStatus;
-import no.unit.nva.publication.doi.dto.DoiRequestTest;
 import no.unit.nva.publication.doi.dto.PublicationStreamRecordTestDataGenerator;
 import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.Builder;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Test;
 class DynamodbStreamRecordImageDaoTest {
 
     public static final String EXPECTED_PUBLICATION_TYPE = "Publication";
+    public static final String SAMPE_PUBLICATION_IDENTIFIER = "PublicationIdentifier";
     private Faker faker;
     private Random random;
     private DynamodbStreamRecordJsonPointers jsonPointers;
@@ -164,7 +164,8 @@ class DynamodbStreamRecordImageDaoTest {
     }
 
     private Builder getBuilder() {
-        return new DynamodbStreamRecordImageDao.Builder(jsonPointers);
+        return new DynamodbStreamRecordImageDao.Builder(jsonPointers)
+            .withIdentifier(SAMPE_PUBLICATION_IDENTIFIER);
     }
 
     private Locale pickRandomLocale() {
