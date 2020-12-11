@@ -25,6 +25,8 @@ public class PublicationFanoutHandlerTest {
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final String DYNAMODBEVENT_NEW_IMAGE_JSON = "dynamodbevent_new_image.json";
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
+    public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
+    public static final String DYNAMODBEVENT_OLD_IMAGE_JSON = "dynamodbevent_old_image.json";
 
     private OutputStream outputStream;
     private Context context;
@@ -36,7 +38,7 @@ public class PublicationFanoutHandlerTest {
     }
 
     @Test
-    public void handleRequestReturnsPublicationUpdateEvent() {
+    public void handleRequestReturnsPublicationUpdateEventWhenEventContainsOnlyNewImage() {
         PublicationFanoutHandler handler = new PublicationFanoutHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
@@ -51,7 +53,37 @@ public class PublicationFanoutHandlerTest {
     }
 
     @Test
-    public void handleRequestThrowsRuntimeException() {
+    public void handleRequestReturnsPublicationUpdateEventWhenEventContainsOnlyOldImage() {
+        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+
+        InputStream inputStream = IoUtils.inputStreamFromResources(
+                DYNAMODBEVENT_OLD_IMAGE_JSON);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        PublicationUpdateEvent response = parseResponse();
+
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(nullValue()));
+    }
+
+    @Test
+    public void handleRequestReturnsPublicationUpdateEventWhenEventContainsNewAndOldImage() {
+        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+
+        InputStream inputStream = IoUtils.inputStreamFromResources(
+                DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        PublicationUpdateEvent response = parseResponse();
+
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
+    }
+
+    @Test
+    public void handleRequestThrowsRuntimeExceptionWhenImageIsInvalid() {
         PublicationFanoutHandler handler = new PublicationFanoutHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
