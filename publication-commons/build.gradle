@@ -4,7 +4,9 @@ repositories {
 
 dependencies {
     api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
-    api group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: '0.11.1'
+    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
     api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
     api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion

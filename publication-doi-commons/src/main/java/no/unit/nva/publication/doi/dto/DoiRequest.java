@@ -5,10 +5,8 @@ import java.time.Instant;
 import java.util.Objects;
 import nva.commons.utils.JacocoGenerated;
 
-public class DoiRequest extends Validatable {
+public class DoiRequest {
 
-    public static final String DOI_REQUEST_STATUS_FIELD_INFO = "DoiRequest.status";
-    public static final String DOI_REQUEST_MODIFIED_DATE_FIELD_INFO = "DoiRequest.modifiedDate";
     private final DoiRequestStatus status;
     private final Instant modifiedDate;
 
@@ -24,12 +22,6 @@ public class DoiRequest extends Validatable {
         super();
         this.status = status;
         this.modifiedDate = modifiedDate;
-    }
-
-    @Override
-    public void validate() {
-        requireFieldIsNotNull(status, DOI_REQUEST_STATUS_FIELD_INFO);
-        requireFieldIsNotNull(modifiedDate, DOI_REQUEST_MODIFIED_DATE_FIELD_INFO);
     }
 
     public DoiRequestStatus getStatus() {
@@ -79,9 +71,7 @@ public class DoiRequest extends Validatable {
         }
 
         public DoiRequest build() {
-            DoiRequest doiRequest = new DoiRequest(status, modifiedDate);
-            doiRequest.validate();
-            return doiRequest;
+            return new DoiRequest(status, modifiedDate);
         }
     }
 }
