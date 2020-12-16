@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
@@ -58,6 +59,8 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
+    public static final String DELETION_ERROR = "Not allowed to delete Publication not in DRAFT status";
+    public static final String ERROR_UPDATING_STATUS = "Error updating status";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -303,6 +306,25 @@ public class DynamoDBPublicationService implements PublicationService {
 
     private boolean isPublished(Publication publication) {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
+    }
+
+    @Override
+    public void markPublicationForDeletion(UUID identifier) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
+        updateStatusForDeletion(publication);
+        updatePublication(identifier, publication);
+    }
+
+    private void updateStatusForDeletion(Publication publication) throws ApiGatewayException {
+        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+            try {
+                publication.updateStatus(PublicationStatus.DRAFT_FOR_DELETION);
+            } catch (InvalidPublicationStatusTransitionException e) {
+                throw new InputException(ERROR_UPDATING_STATUS, e);
+            }
+        } else {
+            throw new NotImplementedException();
+        }
     }
 
     public static class PublishPublicationValidator {
