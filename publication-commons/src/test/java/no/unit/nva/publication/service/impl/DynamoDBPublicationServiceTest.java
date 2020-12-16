@@ -466,7 +466,7 @@ class DynamoDBPublicationServiceTest {
         Publication publication = publicationWithIdentifier();
         publicationService.createPublication(publication);
 
-        publicationService.deletePublication(publication.getIdentifier());
+        publicationService.markPublicationForDeletion(publication.getIdentifier());
 
         Publication publicationForDeletion = publicationService.getPublication(publication.getIdentifier());
         assertThat(publicationForDeletion.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
@@ -478,9 +478,10 @@ class DynamoDBPublicationServiceTest {
         Publication publication = insertPublishedPublication();
 
         assertThrows(NotImplementedException.class,
-                () -> publicationService.deletePublication(publication.getIdentifier()));
+            () -> publicationService.markPublicationForDeletion(publication.getIdentifier()));
     }
 
+    //TODO: not in use, remove
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
         List<PublicationSummary> publicationSummaries = new ArrayList<>();
 
