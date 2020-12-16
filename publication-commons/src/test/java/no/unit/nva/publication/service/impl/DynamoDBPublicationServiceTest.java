@@ -15,6 +15,7 @@ import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -458,6 +459,26 @@ class DynamoDBPublicationServiceTest {
         assertThat(publication.getIdentifier(), is(nullValue()));
         Publication actual = publicationService.createPublication(publication);
         assertThat(actual.getIdentifier(), is(not(nullValue())));
+    }
+
+    @Test
+    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publicationService.createPublication(publication);
+
+        publicationService.deletePublication(publication.getIdentifier());
+
+        Publication publicationForDeletion = publicationService.getPublication(publication.getIdentifier());
+        assertThat(publicationForDeletion.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+    }
+
+    @Test
+    public void deletePublicationThrowsNotImplementedExceptionWhenDeletingPublishedPublication()
+            throws ApiGatewayException {
+        Publication publication = insertPublishedPublication();
+
+        assertThrows(NotImplementedException.class,
+                () -> publicationService.deletePublication(publication.getIdentifier()));
     }
 
     private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
