@@ -3,12 +3,17 @@ plugins {
     id 'jacoco'
     id 'checkstyle'
     id 'pmd'
+    id 'base'
 }
 
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
 allprojects {
+
+    apply plugin: 'base'
+    apply plugin: 'jacoco'
+
     repositories {
         jcenter()
         maven { url "https://jitpack.io" }
