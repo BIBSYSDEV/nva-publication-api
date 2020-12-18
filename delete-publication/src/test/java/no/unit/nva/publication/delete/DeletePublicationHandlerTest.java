@@ -38,7 +38,6 @@ public class DeletePublicationHandlerTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final String WILDCARD = "*";
-    public static final String EVENT = "api-gw-proxy-event.json";
     public static final String SOME_OWNER = "some_owner";
     public static final String REQUEST_CONTEXT = "requestContext";
     public static final String AUTHORIZER = "authorizer";
