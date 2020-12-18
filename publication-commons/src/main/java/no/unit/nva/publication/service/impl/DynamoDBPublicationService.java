@@ -309,10 +309,18 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public void markPublicationForDeletion(UUID identifier) throws ApiGatewayException {
-        Publication publication = getPublication(identifier);
+    public void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException {
+        Publication publication = getPublicationForOwner(identifier, owner);
         updateStatusForDeletion(publication);
         updatePublication(identifier, publication);
+    }
+
+    private Publication getPublicationForOwner(UUID identifier, String owner) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
+        if (publication.getOwner().equals(owner)) {
+            return publication;
+        }
+        throw new NotFoundException(PUBLICATION_NOT_FOUND + publication.getIdentifier().toString());
     }
 
     private void updateStatusForDeletion(Publication publication) throws ApiGatewayException {

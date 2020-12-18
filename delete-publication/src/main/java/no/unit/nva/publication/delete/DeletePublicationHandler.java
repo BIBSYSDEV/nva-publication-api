@@ -46,11 +46,12 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void,Void> {
         super(Void.class, environment, logger);
         this.publicationService = publicationService;
     }
-    
+
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         UUID identifier = RequestUtil.getIdentifier(requestInfo);
-        publicationService.markPublicationForDeletion(identifier);
+        String owner = RequestUtil.getOwner(requestInfo);
+        publicationService.markPublicationForDeletion(identifier, owner);
 
         return null;
     }
