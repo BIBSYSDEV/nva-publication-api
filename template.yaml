@@ -195,6 +195,32 @@ Resources:
                   description: OK
                   schema:
                     $ref: '#/definitions/Publication'
+            delete:
+              summary: Delete Publication for Identifier
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: []
+              parameters:
+                - in: path
+                  name: identifier
+                  type: string
+                  format: uuid
+                  required: true
+                  description: UUID identifier of the Publication to delete.
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '202':
+                  description: Accepted
+                  schema:
+                    $ref: '#/definitions/Publication'
           /by-owner:
             get:
               summary: Get Publications by Owner
@@ -380,6 +406,31 @@ Resources:
           Properties:
             Path: /{identifier}
             Method: put
+            RestApiId: !Ref NvaPublicationApi
+  NvaDeletePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: delete-publication
+      Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}
+            Method: delete
             RestApiId: !Ref NvaPublicationApi
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function

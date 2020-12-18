@@ -45,7 +45,6 @@ subprojects {
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-migrationsupport', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
     }
 
