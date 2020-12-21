@@ -9,6 +9,9 @@ import java.util.Objects;
 
 public class PublicationUpdateEvent {
 
+    public static final String PUBLICATION_UPDATE_TYPE = "publication.update";
+
+    private final String type;
     private final String updateType;
     private final Publication oldPublication;
     private final Publication newPublication;
@@ -16,18 +19,25 @@ public class PublicationUpdateEvent {
     /**
      * Constructor for creating PublicationUpdateEvent.
      *
+     * @param type  type
      * @param updateType    eventName from DynamodbStreamRecord
      * @param oldPublication    old Publication
      * @param newPublication    new Publication
      */
     @JsonCreator
     public PublicationUpdateEvent(
+            @JsonProperty("type") String type,
             @JsonProperty("updateType") String updateType,
             @JsonProperty("oldPublication") Publication oldPublication,
             @JsonProperty("newPublication") Publication newPublication) {
+        this.type = type;
         this.updateType = updateType;
         this.oldPublication = oldPublication;
         this.newPublication = newPublication;
+    }
+
+    public String getType() {
+        return type;
     }
 
     public String getUpdateType() {
@@ -52,7 +62,8 @@ public class PublicationUpdateEvent {
             return false;
         }
         PublicationUpdateEvent that = (PublicationUpdateEvent) o;
-        return getUpdateType().equals(that.getUpdateType())
+        return getType().equals(that.getType())
+                && getUpdateType().equals(that.getUpdateType())
                 && Objects.equals(getOldPublication(), that.getOldPublication())
                 && Objects.equals(getNewPublication(), that.getNewPublication());
     }
@@ -60,6 +71,6 @@ public class PublicationUpdateEvent {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getUpdateType(), getOldPublication(), getNewPublication());
+        return Objects.hash(getType(), getUpdateType(), getOldPublication(), getNewPublication());
     }
 }
