@@ -549,7 +549,7 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: "*"
 
-  DynamoDbFanoutPublicationDtoProducerDLQ:
+  DeletePublicationEventProducerDlq:
     Type: "AWS::SQS::Queue"
 
   DeletePublicationEventProducer:
@@ -562,12 +562,6 @@ Resources:
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
-      Environment:
-        Variables:
-          EVENT_BUS: !Ref EventBusName
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          BASE_PATH: !Ref CustomDomainBasePath
-          DOMAIN_NAME: !Ref CustomDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -583,7 +577,10 @@ Resources:
             Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
+            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
+  DynamoDbFanoutPublicationDtoProducerDLQ:
+    Type: "AWS::SQS::Queue"
 
   DynamoDbFanoutPublicationDtoProducer:
     Type: AWS::Serverless::Function
