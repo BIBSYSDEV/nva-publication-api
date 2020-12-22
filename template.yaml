@@ -569,7 +569,8 @@ Resources:
             EventBusName: !Ref EventBusName
             Pattern:
               responsePayload:
-                type: publication.update
+                type:
+                  - publication.update
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
