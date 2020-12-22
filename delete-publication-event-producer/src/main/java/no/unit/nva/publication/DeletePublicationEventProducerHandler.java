@@ -23,10 +23,15 @@ public class DeletePublicationEventProducerHandler
             AwsEventBridgeEvent<AwsEventBridgeDetail<PublicationUpdateEvent>> event,
             Context context) {
         Publication publication = input.getNewPublication();
-        if (publication != null && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION)) {
+        if (isDraftForDeletion(publication)) {
             return toDeletePublicationEvent(publication);
         }
         return null;
+    }
+
+    private boolean isDraftForDeletion(Publication publication) {
+        return publication != null
+                && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
     }
 
     private DeletePublicationEvent toDeletePublicationEvent(Publication publication) {
