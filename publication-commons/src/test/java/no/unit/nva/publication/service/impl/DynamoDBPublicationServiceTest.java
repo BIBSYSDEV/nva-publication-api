@@ -18,6 +18,7 @@ import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -481,16 +482,32 @@ class DynamoDBPublicationServiceTest {
             () -> publicationService.markPublicationForDeletion(publication.getIdentifier(), publication.getOwner()));
     }
 
-    //TODO: not in use, remove
-    private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
-        List<PublicationSummary> publicationSummaries = new ArrayList<>();
+    @Test
+    public void canDeleteDraftPublicationWithStatusDraftForDeletion() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
+        Publication createdPublication = publicationService.createPublication(publication);
 
-        publicationSummaries.add(createPublication(ID1, INSTANT1));
-        publicationSummaries.add(createPublication(ID1, INSTANT2));
-        publicationSummaries.add(createPublication(ID2, INSTANT3));
-        publicationSummaries.add(createPublication(ID2, INSTANT4));
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier(), createdPublication.getOwner());
 
-        return publicationSummaries;
+        NotFoundException exception = assertThrows(NotFoundException.class,
+            () -> publicationService.getPublication(createdPublication.getIdentifier()));
+        assertThat(exception, is(instanceOf(NotFoundException.class)));
+    }
+
+    //TODO: remove when publications table no longer uses versioning
+    @Test
+    public void canDeleteDraftPublicationWhenPublicationHasMultipleVersions() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        Publication createdPublication = publicationService.createPublication(publication);
+        publicationService.markPublicationForDeletion(
+                createdPublication.getIdentifier(), createdPublication.getOwner());
+
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier(), createdPublication.getOwner());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+            () -> publicationService.getPublication(createdPublication.getIdentifier()));
+        assertThat(exception, is(instanceOf(NotFoundException.class)));
     }
 
     private List<PublicationSummary> publicationSummariesWithoutDuplicateUuIds() {
