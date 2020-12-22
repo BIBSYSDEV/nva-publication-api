@@ -549,6 +549,36 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: "*"
 
+  DeletePublicationEventProducerDlq:
+    Type: "AWS::SQS::Queue"
+
+  DeletePublicationEventProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: delete-publication-event-producer
+      Handler: no.unit.nva.publication.DeletePublicationEventProducer::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              responsePayload:
+                type: publication.update
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
   DynamoDbFanoutPublicationDtoProducerDLQ:
     Type: "AWS::SQS::Queue"
 
