@@ -642,8 +642,8 @@ Resources:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
-  DeleteDraftPublicationHandlerDLQ:
-    Type: "AWS::SQS::Queue"
+    DeleteDraftPublicationHandlerDLQ:
+      Type: "AWS::SQS::Queue"
 
     DeleteDraftPublicationHandler:
       Type: AWS::Serverless::Function
@@ -671,7 +671,7 @@ Resources:
               Destination: !Ref EventBusArn
             OnFailure:
               Type: SQS
-              Destination: !GetAtt DeleteDraftPublicationHandler.Arn
+              Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
