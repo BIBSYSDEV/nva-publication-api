@@ -488,7 +488,7 @@ class DynamoDBPublicationServiceTest {
         publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
         Publication createdPublication = publicationService.createPublication(publication);
 
-        publicationService.deleteDraftPublication(createdPublication.getIdentifier(), createdPublication.getOwner());
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> publicationService.getPublication(createdPublication.getIdentifier()));
@@ -503,7 +503,7 @@ class DynamoDBPublicationServiceTest {
         publicationService.markPublicationForDeletion(
                 createdPublication.getIdentifier(), createdPublication.getOwner());
 
-        publicationService.deleteDraftPublication(createdPublication.getIdentifier(), createdPublication.getOwner());
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier());
 
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> publicationService.getPublication(createdPublication.getIdentifier()));

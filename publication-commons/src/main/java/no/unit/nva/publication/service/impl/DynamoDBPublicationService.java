@@ -357,8 +357,8 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public void deleteDraftPublication(UUID identifier, String owner) throws ApiGatewayException {
-        Publication publication = getPublicationForOwner(identifier, owner);
+    public void deleteDraftPublication(UUID identifier) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
         if (DRAFT_FOR_DELETION.equals(publication.getStatus())) {
             for (PublicationSummary publicationSummary : getPublicationSummaries(identifier)) {
                 deleteSinglePublication(publicationSummary);
