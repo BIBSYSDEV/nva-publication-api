@@ -664,6 +664,8 @@ Resources:
               responsePayload:
                 type:
                   - delete.publication
+                hasDoi:
+                  - false
         EventInvokeConfig:
           DestinationConfig:
             OnSuccess:
