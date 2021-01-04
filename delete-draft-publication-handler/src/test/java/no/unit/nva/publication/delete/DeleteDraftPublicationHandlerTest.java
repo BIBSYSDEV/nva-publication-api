@@ -72,7 +72,7 @@ public class DeleteDraftPublicationHandlerTest {
     }
 
     @Test
-    public void handleRequestDeletesPublicationWithStatusDraftForDeletion() throws ApiGatewayException {
+    public void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
         Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT_FOR_DELETION);
 
         ByteArrayInputStream inputStream = getInputStreamForEvent(
@@ -87,20 +87,7 @@ public class DeleteDraftPublicationHandlerTest {
     }
 
     @Test
-    public void handleRequestDoesNotDeletePublicationWithStatusDraft() throws ApiGatewayException {
-        Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT);
-
-        ByteArrayInputStream inputStream = getInputStreamForEvent(
-                DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, publication.getIdentifier());
-
-        handler.handleRequest(inputStream, outputStream, context);
-
-        Publication notDeletedPublication = publicationService.getPublication(publication.getIdentifier());
-        assertThat(notDeletedPublication, notNullValue());
-    }
-
-    @Test
-    public void handleRequestThrowsRuntimeExceptionOnServiceException() throws ApiGatewayException {
+    public void handleRequestThrowsRuntimeExceptionOnServiceException() {
         UUID identifier = UUID.randomUUID();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
                 DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
