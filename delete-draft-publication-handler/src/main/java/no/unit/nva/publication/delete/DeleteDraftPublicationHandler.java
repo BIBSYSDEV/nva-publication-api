@@ -16,6 +16,8 @@ import static nva.commons.utils.JsonUtils.objectMapper;
 
 public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<DeletePublicationEvent, Void> {
 
+    public static final String DELETE_WITH_DOI_ERROR = "Not allowed to delete Draft Publication with DOI. "
+            + "Remove DOI first and try again";
     private final PublicationService publicationService;
 
     /**
@@ -46,6 +48,9 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
             DeletePublicationEvent input,
             AwsEventBridgeEvent<AwsEventBridgeDetail<DeletePublicationEvent>> event,
             Context context) {
+        if (input.hasDoi()) {
+            throw new RuntimeException(DELETE_WITH_DOI_ERROR);
+        }
         try {
             publicationService.deleteDraftPublication(input.getIdentifier());
         } catch (ApiGatewayException e) {

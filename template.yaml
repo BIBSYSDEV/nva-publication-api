@@ -654,7 +654,9 @@ Resources:
         Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
         Runtime: java11
         MemorySize: 512
-        Role: !GetAtt LambdaRole.Arn
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref PublicationsTableName
         Events:
           EventBridgeEvent:
             Type: EventBridgeRule
