@@ -106,7 +106,7 @@ public class DeleteDraftPublicationHandlerTest {
                 DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> handler.handleRequest(inputStream, outputStream, context));
+            () -> handler.handleRequest(inputStream, outputStream, context));
         String message = DeleteDraftPublicationHandler.DELETE_WITH_DOI_ERROR;
         assertThat(exception.getMessage(), equalTo(message));
     }

@@ -39,7 +39,8 @@ public class DeletePublicationEventProducerHandler
                 DeletePublicationEvent.DELETE_PUBLICATION,
                 publication.getIdentifier(),
                 publication.getStatus().getValue(),
-                publication.getDoi()
+                publication.getDoi(),
+                publication.getPublisher().getId()
         );
     }
 }

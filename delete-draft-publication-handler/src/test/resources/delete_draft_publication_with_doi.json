@@ -31,6 +31,7 @@
       "type": "delete.publication",
       "identifier": "%s",
       "doi": "http://example.org/some.doi",
+      "customerId": "http://example.org/some.customer",
       "status": "DRAFT",
       "hasDoi": true
     }
