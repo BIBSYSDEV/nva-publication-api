@@ -33,5 +33,5 @@ public interface PublicationService {
 
     void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException;
 
-    void deleteDraftPublication(UUID identifier, String owner) throws ApiGatewayException;
+    void deleteDraftPublication(UUID identifier) throws ApiGatewayException;
 }
