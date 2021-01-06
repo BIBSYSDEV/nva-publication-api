@@ -16,6 +16,7 @@ public class DeletePublicationEvent {
     private final UUID identifier;
     private final String status;
     private final URI doi;
+    private final URI customerId;
 
     /**
      * Constructor for DeletePublicationEvent.
@@ -24,17 +25,20 @@ public class DeletePublicationEvent {
      * @param identifier    identifier
      * @param status    status
      * @param doi   doi
+     * @param customerId    customerId
      */
     @JsonCreator
     public DeletePublicationEvent(
             @JsonProperty("type") String type,
             @JsonProperty("identifier") UUID identifier,
             @JsonProperty("status") String status,
-            @JsonProperty("doi") URI doi) {
+            @JsonProperty("doi") URI doi,
+            @JsonProperty("customerId") URI customerId) {
         this.type = type;
         this.identifier = identifier;
         this.status = status;
         this.doi = doi;
+        this.customerId = customerId;
     }
 
     public String getType() {
@@ -51,6 +55,10 @@ public class DeletePublicationEvent {
 
     public URI getDoi() {
         return doi;
+    }
+
+    public URI getCustomerId() {
+        return customerId;
     }
 
     @JsonProperty("hasDoi")
@@ -71,12 +79,13 @@ public class DeletePublicationEvent {
         return type.equals(that.type)
                 && identifier.equals(that.identifier)
                 && status.equals(that.status)
-                && Objects.equals(doi, that.doi);
+                && Objects.equals(doi, that.doi)
+                && Objects.equals(customerId, that.customerId);
     }
 
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(type, identifier, status, doi);
+        return Objects.hash(type, identifier, status, doi, customerId);
     }
 }
