@@ -44,6 +44,7 @@ import static java.util.Objects.requireNonNull;
 import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static org.slf4j.LoggerFactory.getLogger;
 
+@SuppressWarnings("PMD.GodClass")
 public class DynamoDBPublicationService implements PublicationService {
 
     public static final String IDENTIFIER = "identifier";

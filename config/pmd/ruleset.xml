@@ -15,7 +15,10 @@
     <exclude name="BeanMembersShouldSerialize"/>
   </rule>
 
-  <rule ref="category/java/multithreading.xml"/>
+  <rule ref="category/java/multithreading.xml">
+    <!-- Because it complains for the Map interface in the Resource class.-->
+    <exclude name="UseConcurrentHashMap"/>
+  </rule>
 
   <rule ref="category/java/bestpractices.xml">
     <exclude name="SystemPrintln"/>

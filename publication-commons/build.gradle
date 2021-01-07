@@ -22,6 +22,8 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
+
+    implementation project (":storage-model")
 }
 
 configurations.testImplementation.canBeResolved = true
