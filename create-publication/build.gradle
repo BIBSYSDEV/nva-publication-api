@@ -12,4 +12,9 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
+
+    compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
+        because "PMD complains for the com/amazonaws/regions/Regions class"
+    }
+    implementation project (':storage-model')
 }

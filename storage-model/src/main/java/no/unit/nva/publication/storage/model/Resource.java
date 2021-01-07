@@ -34,13 +34,12 @@ public class Resource implements WithIdentifier {
     public Resource() {
     }
 
-    public static Resource fromPublication(Publication publication){
+    public static Resource fromPublication(Publication publication) {
         Resource resource = new Resource();
 
-        if(publication.getIdentifier()==null){
+        if (publication.getIdentifier() == null) {
             resource.setIdentifier(SortableIdentifier.next());
-        }
-        else {
+        } else {
             resource.setIdentifier(new SortableIdentifier(publication.getIdentifier().toString()));
         }
         resource.setCreatedDate(publication.getCreatedDate());
@@ -48,7 +47,7 @@ public class Resource implements WithIdentifier {
         resource.setPublisher(publication.getPublisher());
         resource.setOwner(publication.getOwner());
         resource.setStatus(publication.getStatus());
-        return  resource;
+        return resource;
     }
 
     public Instant getCreatedDate() {
@@ -101,8 +100,6 @@ public class Resource implements WithIdentifier {
         this.publisher = publisher;
     }
 
-
-
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -125,9 +122,8 @@ public class Resource implements WithIdentifier {
     }
 
     @Override
-    public String toString(){
-        return attempt(()-> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
+    public String toString() {
+        return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
     }
-
 }
 

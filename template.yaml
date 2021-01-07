@@ -286,6 +286,34 @@ Resources:
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
+          /resources:
+            post:
+              summary: Create Resource
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: [ ]
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateResourceFunction.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '201':
+                  description: Created
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
@@ -355,6 +383,28 @@ Resources:
           Type: Api
           Properties:
             Path: /
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+  NvaCreateResourceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-publication
+      Handler: no.unit.nva.publication.create.CreateResourceHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /resources
             Method: post
             RestApiId: !Ref NvaPublicationApi
   NvaFetchPublicationFunction:
