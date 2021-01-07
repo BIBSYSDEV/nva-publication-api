@@ -16,6 +16,7 @@ public class DeletePublicationEventTest {
 
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final String SOME_DOI = "http://example.org/doi/123";
+    public static final String SOME_CUSTOMER = "http://example.org/customer/123";
 
     @Test
     public void writeDeletePublicationEventToJsonAndReadBackAsObject() throws JsonProcessingException {
@@ -23,7 +24,8 @@ public class DeletePublicationEventTest {
                 DeletePublicationEvent.DELETE_PUBLICATION,
                 UUID.randomUUID(),
                 PublicationStatus.DRAFT_FOR_DELETION.getValue(),
-                URI.create(SOME_DOI));
+                URI.create(SOME_DOI),
+                URI.create(SOME_CUSTOMER));
 
         var json = objectMapper.writeValueAsString(event);
         var mappedEvent = objectMapper.readValue(json, DeletePublicationEvent.class);
