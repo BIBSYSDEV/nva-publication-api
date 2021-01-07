@@ -37,6 +37,7 @@ public class PublicationFanoutHandler
         String updateType = input.getEventName();
 
         return new PublicationUpdateEvent(
+                PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE,
                 updateType,
                 oldPublication.orElse(NO_VALUE),
                 newPublication.orElse(NO_VALUE)

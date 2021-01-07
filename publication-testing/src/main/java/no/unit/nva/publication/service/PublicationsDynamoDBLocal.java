@@ -1,7 +1,4 @@
-package no.unit.nva.publication.service.impl;
-
-import static com.amazonaws.services.dynamodbv2.model.BillingMode.PAY_PER_REQUEST;
-import static com.amazonaws.services.dynamodbv2.model.ScalarAttributeType.S;
+package no.unit.nva.publication.service;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -9,6 +6,7 @@ import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
+import com.amazonaws.services.dynamodbv2.model.BillingMode;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
 import com.amazonaws.services.dynamodbv2.model.CreateTableResult;
 import com.amazonaws.services.dynamodbv2.model.GlobalSecondaryIndex;
@@ -18,6 +16,8 @@ import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
 import java.util.Arrays;
 import java.util.List;
+
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.rules.ExternalResource;
 
 public class PublicationsDynamoDBLocal extends ExternalResource {
@@ -57,12 +57,12 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
 
     private CreateTableResult createPublicationsTable(AmazonDynamoDB ddb) {
         List<AttributeDefinition> attributeDefinitions = Arrays.asList(
-            new AttributeDefinition(IDENTIFIER, S),
-            new AttributeDefinition(MODIFIED_DATE, S),
-            new AttributeDefinition(PUBLISHER_ID, S),
-            new AttributeDefinition(PUBLISHER_OWNER_DATE, S),
-            new AttributeDefinition(STATUS, S),
-            new AttributeDefinition(PUBLISHED_DATE, S)
+            new AttributeDefinition(IDENTIFIER, ScalarAttributeType.S),
+            new AttributeDefinition(MODIFIED_DATE, ScalarAttributeType.S),
+            new AttributeDefinition(PUBLISHER_ID, ScalarAttributeType.S),
+            new AttributeDefinition(PUBLISHER_OWNER_DATE, ScalarAttributeType.S),
+            new AttributeDefinition(STATUS, ScalarAttributeType.S),
+            new AttributeDefinition(PUBLISHED_DATE, ScalarAttributeType.S)
         );
 
         List<KeySchemaElement> keySchema = Arrays.asList(
@@ -103,7 +103,7 @@ public class PublicationsDynamoDBLocal extends ExternalResource {
                 .withAttributeDefinitions(attributeDefinitions)
                 .withKeySchema(keySchema)
                 .withGlobalSecondaryIndexes(globalSecondaryIndexes)
-                .withBillingMode(PAY_PER_REQUEST);
+                .withBillingMode(BillingMode.PAY_PER_REQUEST);
 
         return ddb.createTable(createTableRequest);
     }

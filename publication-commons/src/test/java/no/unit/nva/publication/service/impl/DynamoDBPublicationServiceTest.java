@@ -1,20 +1,24 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.publication.PublicationGenerator.OWNER;
+import static no.unit.nva.publication.PublicationGenerator.PUBLISHER_ID;
+import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_MAPPING_ITEM_TO_PUBLICATION;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_READING_FROM_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_WRITING_TO_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLICATION_NOT_FOUND;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_COMPLETED;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
-import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME;
-import static no.unit.nva.publication.service.impl.PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME;
 import static nva.commons.utils.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -34,17 +38,15 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.File;
+
 import no.unit.nva.model.FileSet;
-import no.unit.nva.model.License;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.DynamoDBException;
@@ -54,6 +56,7 @@ import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService.PublishPublicationValidator;
 import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
@@ -77,8 +80,6 @@ class DynamoDBPublicationServiceTest {
     private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
     private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
 
-    public static final String OWNER = "owner@example.org";
-    public static final URI PUBLISHER_ID = URI.create("http://example.org/123");
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
@@ -124,7 +125,7 @@ class DynamoDBPublicationServiceTest {
     @Test
     @DisplayName("missing Table Env")
     public void missingTableEnv() {
-        when(environment.readEnv(TABLE_NAME_ENV)).thenReturn(NVA_RESOURCES_TABLE_NAME);
+        when(environment.readEnv(TABLE_NAME_ENV)).thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
         assertThrows(IllegalArgumentException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -133,7 +134,8 @@ class DynamoDBPublicationServiceTest {
     @Test
     @DisplayName("missing Index Env")
     public void missingIndexEnv() {
-        when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV)).thenReturn(BY_PUBLISHER_INDEX_NAME);
+        when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV))
+                .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
         assertThrows(IllegalArgumentException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -145,7 +147,7 @@ class DynamoDBPublicationServiceTest {
         Environment environment = Mockito.mock(Environment.class);
         when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV)).thenReturn(TABLE_NAME_ENV);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
-            .thenReturn(BY_PUBLISHER_INDEX_NAME);
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
                 .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         new DynamoDBPublicationService(client, objectMapper, environment);
@@ -216,8 +218,8 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
-            OWNER,
-            PUBLISHER_ID);
+                OWNER,
+                URI.create(PUBLISHER_ID));
 
         assertEquals(0, publications.size());
     }
@@ -241,7 +243,7 @@ class DynamoDBPublicationServiceTest {
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
             OWNER,
-            PUBLISHER_ID);
+            URI.create(PUBLISHER_ID));
         assertEquals(2, publications.size());
     }
 
@@ -274,7 +276,7 @@ class DynamoDBPublicationServiceTest {
 
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
             OWNER,
-            PUBLISHER_ID);
+            URI.create(PUBLISHER_ID));
 
         assertEquals(1, publications.size());
         assertEquals(publication.getEntityDescription().getMainTitle(), publications.get(0).getMainTitle());
@@ -331,7 +333,7 @@ class DynamoDBPublicationServiceTest {
         when(failingIndex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
                 generateFailingService(mock(Table.class), failingIndex, mock(Index.class));
-        Executable executable = () -> failingService.getPublicationsByOwner(OWNER, PUBLISHER_ID);
+        Executable executable = () -> failingService.getPublicationsByOwner(OWNER, URI.create(PUBLISHER_ID));
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
@@ -460,15 +462,52 @@ class DynamoDBPublicationServiceTest {
         assertThat(actual.getIdentifier(), is(not(nullValue())));
     }
 
-    private List<PublicationSummary> publicationSummariesWithDuplicateUuuIds() {
-        List<PublicationSummary> publicationSummaries = new ArrayList<>();
+    @Test
+    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publicationService.createPublication(publication);
 
-        publicationSummaries.add(createPublication(ID1, INSTANT1));
-        publicationSummaries.add(createPublication(ID1, INSTANT2));
-        publicationSummaries.add(createPublication(ID2, INSTANT3));
-        publicationSummaries.add(createPublication(ID2, INSTANT4));
+        publicationService.markPublicationForDeletion(publication.getIdentifier(), publication.getOwner());
 
-        return publicationSummaries;
+        Publication publicationForDeletion = publicationService.getPublication(publication.getIdentifier());
+        assertThat(publicationForDeletion.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+    }
+
+    @Test
+    public void deletePublicationThrowsNotImplementedExceptionWhenDeletingPublishedPublication()
+            throws ApiGatewayException {
+        Publication publication = insertPublishedPublication();
+
+        assertThrows(NotImplementedException.class,
+            () -> publicationService.markPublicationForDeletion(publication.getIdentifier(), publication.getOwner()));
+    }
+
+    @Test
+    public void canDeleteDraftPublicationWithStatusDraftForDeletion() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publication.setStatus(PublicationStatus.DRAFT_FOR_DELETION);
+        Publication createdPublication = publicationService.createPublication(publication);
+
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+            () -> publicationService.getPublication(createdPublication.getIdentifier()));
+        assertThat(exception, is(instanceOf(NotFoundException.class)));
+    }
+
+    //TODO: remove when publications table no longer uses versioning
+    @Test
+    public void canDeleteDraftPublicationWhenPublicationHasMultipleVersions() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        Publication createdPublication = publicationService.createPublication(publication);
+        publicationService.markPublicationForDeletion(
+                createdPublication.getIdentifier(), createdPublication.getOwner());
+
+        publicationService.deleteDraftPublication(createdPublication.getIdentifier());
+
+        NotFoundException exception = assertThrows(NotFoundException.class,
+            () -> publicationService.getPublication(createdPublication.getIdentifier()));
+        assertThat(exception, is(instanceOf(NotFoundException.class)));
     }
 
     private List<PublicationSummary> publicationSummariesWithoutDuplicateUuIds() {
@@ -486,39 +525,6 @@ class DynamoDBPublicationServiceTest {
             .withOwner("junit")
             .withMainTitle("Some main title")
             .withStatus(DRAFT)
-            .build();
-    }
-
-    private Publication publicationWithIdentifier() {
-        return generatePublication(UUID.randomUUID());
-    }
-
-    private Publication publicationWithoutIdentifier() {
-        return generatePublication(null);
-    }
-
-    private Publication generatePublication(UUID uuid) {
-        Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
-        return new Publication.Builder()
-            .withIdentifier(uuid)
-            .withCreatedDate(oneMinuteInThePast)
-            .withModifiedDate(oneMinuteInThePast)
-            .withOwner(OWNER)
-            .withStatus(PublicationStatus.DRAFT)
-            .withPublisher(new Organization.Builder()
-                .withId(PUBLISHER_ID)
-                .build())
-            .withEntityDescription(new EntityDescription.Builder()
-                .withMainTitle("DynamoDB Local Testing")
-                .build())
-            .withFileSet(new FileSet.Builder()
-                .withFiles(List.of(new File.Builder()
-                    .withIdentifier(UUID.randomUUID())
-                    .withLicense(new License.Builder()
-                        .withIdentifier("licenseId")
-                        .build())
-                    .build()))
-                .build())
             .build();
     }
 

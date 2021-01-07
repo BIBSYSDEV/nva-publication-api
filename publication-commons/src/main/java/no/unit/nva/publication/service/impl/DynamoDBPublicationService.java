@@ -12,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
 import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.InputException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
@@ -40,11 +41,13 @@ import java.util.stream.Stream;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
 import static org.slf4j.LoggerFactory.getLogger;
 
 public class DynamoDBPublicationService implements PublicationService {
 
     public static final String IDENTIFIER = "identifier";
+    public static final String MODIFIED_DATE = "modifiedDate";
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String DYNAMODB_KEY_DELIMITER = "#";
@@ -58,6 +61,8 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
+    public static final String DELETION_ERROR = "Not allowed to delete Publication not in DRAFT status";
+    public static final String ERROR_UPDATING_STATUS = "Error updating status";
 
     private final ObjectMapper objectMapper;
     private final Table table;
@@ -206,10 +211,15 @@ public class DynamoDBPublicationService implements PublicationService {
     @Override
     public  List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
 
+        List<PublicationSummary> publications = getPublicationSummaries(PublicationStatus.PUBLISHED, pageSize);
+
+        return filterOutOlderVersionsOfPublications(publications);
+    }
+
+    private List<PublicationSummary> getPublicationSummaries(PublicationStatus status, int pageSize)
+            throws DynamoDBException {
         Map<String, String> nameMap = Map.of("#status", "status");
-
-
-        Map<String, Object> valueMap = Map.of(":status", PublicationStatus.PUBLISHED.getValue());
+        Map<String, Object> valueMap = Map.of(":status", status.getValue());
 
         QuerySpec querySpec = new QuerySpec()
                 .withKeyConditionExpression("#status = :status")
@@ -228,7 +238,21 @@ public class DynamoDBPublicationService implements PublicationService {
         }
 
         List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
-        return filterOutOlderVersionsOfPublications(publications);
+        return publications;
+    }
+
+    //TODO: remove when publications table no longer uses versioning
+    private List<PublicationSummary> getPublicationSummaries(UUID identifier) throws DynamoDBException {
+        ItemCollection<QueryOutcome> items;
+        try {
+            items = table.query(IDENTIFIER, identifier.toString());
+        } catch (Exception e) {
+            getLogger(DynamoDBPublicationService.class).info(e.getMessage(), e);
+            throw new DynamoDBException(ERROR_READING_FROM_TABLE, e);
+        }
+
+        List<PublicationSummary> publications = parseJsonToPublicationSummaries(items);
+        return publications;
     }
 
     private List<PublicationSummary> parseJsonToPublicationSummaries(ItemCollection<QueryOutcome> items) {
@@ -304,6 +328,55 @@ public class DynamoDBPublicationService implements PublicationService {
     private boolean isPublished(Publication publication) {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
+
+    @Override
+    public void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException {
+        Publication publication = getPublicationForOwner(identifier, owner);
+        updateStatusForDeletion(publication);
+        updatePublication(identifier, publication);
+    }
+
+    private Publication getPublicationForOwner(UUID identifier, String owner) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
+        if (publication.getOwner().equals(owner)) {
+            return publication;
+        }
+        throw new NotFoundException(PUBLICATION_NOT_FOUND + publication.getIdentifier().toString());
+    }
+
+    private void updateStatusForDeletion(Publication publication) throws ApiGatewayException {
+        if (PublicationStatus.DRAFT.equals(publication.getStatus())) {
+            try {
+                publication.updateStatus(DRAFT_FOR_DELETION);
+            } catch (InvalidPublicationStatusTransitionException e) {
+                throw new InputException(ERROR_UPDATING_STATUS, e);
+            }
+        } else {
+            throw new NotImplementedException();
+        }
+    }
+
+    @Override
+    public void deleteDraftPublication(UUID identifier) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
+        if (DRAFT_FOR_DELETION.equals(publication.getStatus())) {
+            for (PublicationSummary publicationSummary : getPublicationSummaries(identifier)) {
+                deleteSinglePublication(publicationSummary);
+            }
+        }
+    }
+
+    private void deleteSinglePublication(PublicationSummary publicationSummary) throws DynamoDBException {
+        try {
+            table.deleteItem(
+                    IDENTIFIER, publicationSummary.getIdentifier().toString(),
+                    MODIFIED_DATE, publicationSummary.getModifiedDate().toString()
+            );
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
+        }
+    }
+
 
     public static class PublishPublicationValidator {
 

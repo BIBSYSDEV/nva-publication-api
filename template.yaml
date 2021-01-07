@@ -19,7 +19,7 @@ Globals:
     Timeout: 20
   Api:
     Cors:
-      AllowMethods: "'PUT, GET,OPTIONS'"
+      AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
       AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
       AllowOrigin: "'*'"
 
@@ -193,6 +193,32 @@ Resources:
               responses:
                 '200':
                   description: OK
+                  schema:
+                    $ref: '#/definitions/Publication'
+            delete:
+              summary: Delete Publication for Identifier
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: []
+              parameters:
+                - in: path
+                  name: identifier
+                  type: string
+                  format: uuid
+                  required: true
+                  description: UUID identifier of the Publication to delete.
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
+                responses: {}
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '202':
+                  description: Accepted
                   schema:
                     $ref: '#/definitions/Publication'
           /by-owner:
@@ -381,6 +407,31 @@ Resources:
             Path: /{identifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
+  NvaDeletePublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: delete-publication
+      Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        PutEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}
+            Method: delete
+            RestApiId: !Ref NvaPublicationApi
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -498,6 +549,37 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: "*"
 
+  DeletePublicationEventProducerDlq:
+    Type: "AWS::SQS::Queue"
+
+  DeletePublicationEventProducer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: delete-publication-event-producer
+      Handler: no.unit.nva.publication.DeletePublicationEventProducer::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              responsePayload:
+                type:
+                  - publication.update
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
+
   DynamoDbFanoutPublicationDtoProducerDLQ:
     Type: "AWS::SQS::Queue"
 
@@ -559,6 +641,41 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
+
+    DeleteDraftPublicationHandlerDLQ:
+      Type: "AWS::SQS::Queue"
+
+    DeleteDraftPublicationHandler:
+      Type: AWS::Serverless::Function
+      Properties:
+        Layers:
+          - !Ref NvaPublicationCommonsLayer
+        CodeUri: delete-draft-publication-handler
+        Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
+        Runtime: java11
+        MemorySize: 512
+        Policies:
+          - DynamoDBReadPolicy:
+              TableName: !Ref PublicationsTableName
+        Events:
+          EventBridgeEvent:
+            Type: EventBridgeRule
+            Properties:
+              EventBusName: !Ref EventBusName
+            Pattern:
+              responsePayload:
+                type:
+                  - delete.publication
+                hasDoi:
+                  - false
+        EventInvokeConfig:
+          DestinationConfig:
+            OnSuccess:
+              Type: EventBridge
+              Destination: !Ref EventBusArn
+            OnFailure:
+              Type: SQS
+              Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function

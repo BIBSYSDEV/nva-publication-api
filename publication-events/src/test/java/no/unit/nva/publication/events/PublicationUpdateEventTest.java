@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.UUID;
 
+import static no.unit.nva.publication.events.PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -26,7 +27,11 @@ public class PublicationUpdateEventTest {
 
     @Test
     public void writePublicationUpdateEventToJsonAndReadBackAsObject() throws JsonProcessingException {
-        var event = new PublicationUpdateEvent(INSERT_UPDATE_TYPE, createPublication(), NO_VALUE);
+        var event = new PublicationUpdateEvent(
+                PUBLICATION_UPDATE_TYPE,
+                INSERT_UPDATE_TYPE,
+                createPublication(),
+                NO_VALUE);
         var json = objectMapper.writeValueAsString(event);
         var mappedEvent = objectMapper.readValue(json, PublicationUpdateEvent.class);
 
