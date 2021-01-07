@@ -399,7 +399,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: Resources
       Events:
         GetEvent:
           Type: Api
