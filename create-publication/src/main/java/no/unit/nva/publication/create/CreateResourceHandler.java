@@ -24,8 +24,8 @@ public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {
 
     @Override
     protected Resource processInput(Void input, RequestInfo requestInfo, Context context) {
-        String feideId = requestInfo.getFeideId().orElseThrow();
-        URI customerId = getCustomerUri(requestInfo);
+        String feideId = "og@unit.no";
+        URI customerId = URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
         logger.info("FeideId:" + feideId);
         logger.info("CustomerId:" + customerId);
         Resource resource = new Resource();
@@ -42,11 +42,11 @@ public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {
         return new Organization.Builder().withId(customerId).build();
     }
 
-    private URI getCustomerUri(RequestInfo requestInfo) {
-        return requestInfo.getCustomerId()
-            .map(URI::create)
-            .orElseThrow();
-    }
+//    private URI getCustomerUri(RequestInfo requestInfo) {
+//        return requestInfo.getCustomerId()
+//            .map(URI::create)
+//            .orElseThrow();
+//    }
 
     @Override
     protected Integer getSuccessStatusCode(Void input, Resource output) {
