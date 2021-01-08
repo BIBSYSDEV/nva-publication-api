@@ -1,5 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
+import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
+import static org.slf4j.LoggerFactory.getLogger;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
@@ -10,6 +14,18 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
@@ -25,24 +41,6 @@ import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.utils.Environment;
 import nva.commons.utils.JacocoGenerated;
 import org.apache.http.HttpStatus;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Objects.isNull;
-import static java.util.Objects.requireNonNull;
-import static no.unit.nva.model.PublicationStatus.DRAFT_FOR_DELETION;
-import static org.slf4j.LoggerFactory.getLogger;
 
 @SuppressWarnings("PMD.GodClass")
 public class DynamoDBPublicationService implements PublicationService {
@@ -130,16 +128,6 @@ public class DynamoDBPublicationService implements PublicationService {
         return itemToPublication(item);
     }
 
-    protected Publication itemToPublication(Item item) throws ApiGatewayException {
-        Publication publicationOutcome;
-        try {
-            publicationOutcome = objectMapper.readValue(item.toJSON(), Publication.class);
-        } catch (Exception e) {
-            throw new DynamoDBException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
-        }
-        return publicationOutcome;
-    }
-
     @Override
     public Publication updatePublication(UUID identifier, Publication publication)
         throws ApiGatewayException {
@@ -152,23 +140,6 @@ public class DynamoDBPublicationService implements PublicationService {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
         return publication;
-    }
-
-    protected Item publicationToItem(Publication publication) throws ApiGatewayException {
-        Item item;
-        try {
-            item = Item.fromJSON(objectMapper.writeValueAsString(publication));
-        } catch (JsonProcessingException e) {
-            throw new InputException(ERROR_MAPPING_PUBLICATION_TO_ITEM, e);
-        }
-        return item;
-    }
-
-    private void validateIdentifier(UUID identifier, Publication publication) throws ApiGatewayException {
-        if (!identifier.equals(publication.getIdentifier())) {
-            throw new InputException(
-                String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
-        }
     }
 
     @JacocoGenerated
@@ -210,25 +181,115 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public  List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
+    public List<PublicationSummary> listPublishedPublicationsByDate(int pageSize) throws ApiGatewayException {
 
         List<PublicationSummary> publications = getPublicationSummaries(PublicationStatus.PUBLISHED, pageSize);
 
         return filterOutOlderVersionsOfPublications(publications);
     }
 
+    @Override
+    public PublishPublicationStatusResponse publishPublication(UUID identifier) throws ApiGatewayException {
+        Publication publicationToPublish = getPublication(identifier);
+        if (isPublished(publicationToPublish)) {
+            return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
+        } else {
+            validatePublication(publicationToPublish);
+            setPublishedProperties(publicationToPublish);
+            updatePublication(identifier, publicationToPublish);
+            return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
+        }
+    }
+
+    @Override
+    public void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException {
+        Publication publication = getPublicationForOwner(identifier, owner);
+        updateStatusForDeletion(publication);
+        updatePublication(identifier, publication);
+    }
+
+    @Override
+    public void deleteDraftPublication(UUID identifier) throws ApiGatewayException {
+        Publication publication = getPublication(identifier);
+        if (DRAFT_FOR_DELETION.equals(publication.getStatus())) {
+            for (PublicationSummary publicationSummary : getPublicationSummaries(identifier)) {
+                deleteSinglePublication(publicationSummary);
+            }
+        }
+    }
+
+    protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
+        List<PublicationSummary> publications) {
+        return publications.stream()
+            .collect(groupByIdentifer())
+            .entrySet()
+            .parallelStream()
+            .flatMap(DynamoDBPublicationService::pickNewestVersion)
+            .collect(Collectors.toList());
+    }
+
+    protected Publication itemToPublication(Item item) throws ApiGatewayException {
+        Publication publicationOutcome;
+        try {
+            publicationOutcome = objectMapper.readValue(item.toJSON(), Publication.class);
+        } catch (Exception e) {
+            throw new DynamoDBException(ERROR_MAPPING_ITEM_TO_PUBLICATION, e);
+        }
+        return publicationOutcome;
+    }
+
+    protected Item publicationToItem(Publication publication) throws ApiGatewayException {
+        Item item;
+        try {
+            item = Item.fromJSON(objectMapper.writeValueAsString(publication));
+        } catch (JsonProcessingException e) {
+            throw new InputException(ERROR_MAPPING_PUBLICATION_TO_ITEM, e);
+        }
+        return item;
+    }
+
+    protected Optional<PublicationSummary> toPublicationSummary(Item item) {
+        try {
+            PublicationSummary publicationSummary;
+            publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
+            return Optional.of(publicationSummary);
+        } catch (JsonProcessingException e) {
+            System.out.println(e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
+        return Collectors.groupingBy(PublicationSummary::getIdentifier);
+    }
+
+    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
+        List<PublicationSummary> publications = group.getValue();
+        Optional<PublicationSummary> mostRecent = publications.stream()
+            .max(Comparator.comparing(
+                PublicationSummary::getModifiedDate));
+        return mostRecent.stream();
+    }
+
+    private void validateIdentifier(UUID identifier, Publication publication) throws ApiGatewayException {
+        if (!identifier.equals(publication.getIdentifier())) {
+            throw new InputException(
+                String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
+        }
+    }
+
     private List<PublicationSummary> getPublicationSummaries(PublicationStatus status, int pageSize)
-            throws DynamoDBException {
+        throws DynamoDBException {
         Map<String, String> nameMap = Map.of("#status", "status");
         Map<String, Object> valueMap = Map.of(":status", status.getValue());
 
         QuerySpec querySpec = new QuerySpec()
-                .withKeyConditionExpression("#status = :status")
-                .withNameMap(nameMap)
-                .withValueMap(valueMap)
-                .withMaxPageSize(pageSize)
-                .withScanIndexForward(false)
-                .withMaxResultSize(pageSize);
+            .withKeyConditionExpression("#status = :status")
+            .withNameMap(nameMap)
+            .withValueMap(valueMap)
+            .withMaxPageSize(pageSize)
+            .withScanIndexForward(false)
+            .withMaxResultSize(pageSize);
 
         ItemCollection<QueryOutcome> items;
         try {
@@ -262,56 +323,9 @@ public class DynamoDBPublicationService implements PublicationService {
         return publications;
     }
 
-
-    protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
-        List<PublicationSummary> publications) {
-        return publications.stream()
-            .collect(groupByIdentifer())
-            .entrySet()
-            .parallelStream()
-            .flatMap(DynamoDBPublicationService::pickNewestVersion)
-            .collect(Collectors.toList());
-    }
-
-    private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
-        return Collectors.groupingBy(PublicationSummary::getIdentifier);
-    }
-
-    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
-        List<PublicationSummary> publications = group.getValue();
-        Optional<PublicationSummary> mostRecent = publications.stream()
-            .max(Comparator.comparing(
-                PublicationSummary::getModifiedDate));
-        return mostRecent.stream();
-    }
-
     private void allFieldsAreNonNull(String owner, URI publisherId) {
         requireNonNull(owner);
         requireNonNull(publisherId);
-    }
-
-    protected Optional<PublicationSummary> toPublicationSummary(Item item) {
-        try {
-            PublicationSummary publicationSummary;
-            publicationSummary = objectMapper.readValue(item.toJSON(), PublicationSummary.class);
-            return Optional.of(publicationSummary);
-        } catch (JsonProcessingException e) {
-            System.out.println(e.getMessage());
-            return Optional.empty();
-        }
-    }
-
-    @Override
-    public PublishPublicationStatusResponse publishPublication(UUID identifier) throws ApiGatewayException {
-        Publication publicationToPublish = getPublication(identifier);
-        if (isPublished(publicationToPublish)) {
-            return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
-        } else {
-            validatePublication(publicationToPublish);
-            setPublishedProperties(publicationToPublish);
-            updatePublication(identifier, publicationToPublish);
-            return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpStatus.SC_ACCEPTED);
-        }
     }
 
     private void setPublishedProperties(Publication publicationToPublish) {
@@ -328,13 +342,6 @@ public class DynamoDBPublicationService implements PublicationService {
 
     private boolean isPublished(Publication publication) {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
-    }
-
-    @Override
-    public void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException {
-        Publication publication = getPublicationForOwner(identifier, owner);
-        updateStatusForDeletion(publication);
-        updatePublication(identifier, publication);
     }
 
     private Publication getPublicationForOwner(UUID identifier, String owner) throws ApiGatewayException {
@@ -357,27 +364,16 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
-    @Override
-    public void deleteDraftPublication(UUID identifier) throws ApiGatewayException {
-        Publication publication = getPublication(identifier);
-        if (DRAFT_FOR_DELETION.equals(publication.getStatus())) {
-            for (PublicationSummary publicationSummary : getPublicationSummaries(identifier)) {
-                deleteSinglePublication(publicationSummary);
-            }
-        }
-    }
-
     private void deleteSinglePublication(PublicationSummary publicationSummary) throws DynamoDBException {
         try {
             table.deleteItem(
-                    IDENTIFIER, publicationSummary.getIdentifier().toString(),
-                    MODIFIED_DATE, publicationSummary.getModifiedDate().toString()
+                IDENTIFIER, publicationSummary.getIdentifier().toString(),
+                MODIFIED_DATE, publicationSummary.getModifiedDate().toString()
             );
         } catch (Exception e) {
             throw new DynamoDBException(ERROR_WRITING_TO_TABLE, e);
         }
     }
-
 
     public static class PublishPublicationValidator {
 

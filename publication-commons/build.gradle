@@ -24,7 +24,7 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    implementation project (":storage-model")
+    api project (":storage-model")
 }
 
 configurations.testImplementation.canBeResolved = true

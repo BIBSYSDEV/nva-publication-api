@@ -15,15 +15,13 @@ public class SortableIdentifierSerializer extends JsonSerializer<SortableIdentif
     @Override
     public void serialize(SortableIdentifier value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
-        try{
-            if(Objects.nonNull(value)) {
+        try {
+            if (Objects.nonNull(value)) {
                 gen.writeString(value.toString());
-            }
-            else{
+            } else {
                 gen.writeNull();
             }
-        }
-        catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(SERIALIZATION_EXCEPTION_ERROR + " " + printIdentifierValue(value));
         }
     }

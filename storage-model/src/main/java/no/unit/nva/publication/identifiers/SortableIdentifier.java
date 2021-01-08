@@ -13,7 +13,7 @@ public final class SortableIdentifier implements Comparable<SortableIdentifier> 
     public static final int TIMESTAMP_LENGTH = 12;
     public static final int EXTRA_DASH = 1;
     public static final int SORTABLE_ID_LENGTH = UUID_LENGTH + TIMESTAMP_LENGTH + EXTRA_DASH;
-    private static final String IDENTIFIER_FORMATTING = "%" + TIMESTAMP_LENGTH + "x-%s";
+    private static final String IDENTIFIER_FORMATTING = "%0" + TIMESTAMP_LENGTH + "x-%s";
 
     private final String identifier;
 

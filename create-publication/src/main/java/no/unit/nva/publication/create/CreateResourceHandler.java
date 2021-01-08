@@ -9,6 +9,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
+import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.handlers.ApiGatewayHandler;
 import nva.commons.handlers.RequestInfo;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {
     }
 
     @Override
-    protected Resource processInput(Void input, RequestInfo requestInfo, Context context) {
+    protected Resource processInput(Void input, RequestInfo requestInfo, Context context) throws ConflictException {
         String feideId = "og@unit.no";
         URI customerId = URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
         logger.info("FeideId:" + feideId);
@@ -42,11 +43,7 @@ public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {
         return new Organization.Builder().withId(customerId).build();
     }
 
-//    private URI getCustomerUri(RequestInfo requestInfo) {
-//        return requestInfo.getCustomerId()
-//            .map(URI::create)
-//            .orElseThrow();
-//    }
+
 
     @Override
     protected Integer getSuccessStatusCode(Void input, Resource output) {

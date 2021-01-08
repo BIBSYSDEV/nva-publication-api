@@ -1,4 +1,4 @@
-package no.unit.nva.publication.storage.model;
+package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
@@ -14,10 +14,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.storage.model.Resource;
+import nva.commons.utils.JacocoGenerated;
 
 @JsonTypeName("Resource")
-public class ResourceDao {
+public class ResourceDao implements WithPrimaryKey{
 
     public static final String PATH_SEPARATOR = "/";
 
@@ -40,22 +44,26 @@ public class ResourceDao {
         this.resource = resource;
     }
 
+    @Override
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public String getPrimaryKeyPartitionKey() {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT,
             Resource.TYPE, publisherId(), resource.getOwner());
     }
 
+    @JacocoGenerated
     public void setPrimaryKeyPartitionKey(String key) {
         // do nothing
     }
 
+    @Override
     @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
     public String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT,
-            Resource.TYPE, publisherId(), resource.getOwner());
+            Resource.TYPE, resource.getIdentifier());
     }
 
+    @JacocoGenerated
     public void setPrimaryKeySortKey(String key) {
         // do nothing
     }
@@ -63,8 +71,15 @@ public class ResourceDao {
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME)
     public String getByTypeCustomerStatusPk() {
         String publisherId = publisherId();
-        String publicationStatus = resource.getStatus().toString().toUpperCase(Locale.ROOT);
+        String publicationStatus = extractStatus();
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT, Resource.TYPE, publisherId, publicationStatus);
+    }
+
+    private String extractStatus() {
+        return Optional.of(resource.getStatus())
+            .map(Enum::toString)
+            .map(str -> str.toUpperCase(Locale.ROOT))
+            .orElse(PublicationStatus.DRAFT.toString());
     }
 
     public void setByTypeCustomerStatusPk(String byTypeCustomerStatusPk) {
@@ -80,6 +95,7 @@ public class ResourceDao {
         // do nothing
     }
 
+    @Override
     public Map<String, AttributeValue> primaryKey() {
         final Map<String, AttributeValue> map = new ConcurrentHashMap<>();
         AttributeValue partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());

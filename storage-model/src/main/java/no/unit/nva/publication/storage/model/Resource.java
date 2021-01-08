@@ -3,6 +3,7 @@ package no.unit.nva.publication.storage.model;
 import static java.util.Objects.hash;
 import static nva.commons.utils.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,46 @@ public class Resource implements WithIdentifier {
     private Instant modifiedDate;
 
     public Resource() {
+    }
+
+    public static Resource emptyResource(String userIdentifier, URI organizationId) {
+        return emptyResource(userIdentifier, organizationId, SortableIdentifier.next());
+    }
+    public static Resource emptyResource(String userIdentifier, URI organizationId,
+                                         String resourceIdentifier){
+        return  emptyResource(userIdentifier,organizationId,new SortableIdentifier(resourceIdentifier));
+    }
+    public static Resource emptyResource(String userIdentifier, URI organizationId,
+                                         SortableIdentifier resourceIdentifier) {
+        Resource resource = new Resource();
+        resource.setPublisher(new Organization.Builder().withId(organizationId).build());
+        resource.setOwner(userIdentifier);
+        resource.setIdentifier(resourceIdentifier);
+        return resource;
+    }
+
+    private Resource(Builder builder) {
+        setIdentifier(builder.identifier);
+        setOwner(builder.owner);
+        setStatus(builder.status);
+        setPublisher(builder.publisher);
+        setCreatedDate(builder.createdDate);
+        setModifiedDate(builder.modifiedDate);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public Builder copy() {
+        return
+            builder()
+                .withIdentifier(getIdentifier())
+                .withOwner(getOwner())
+                .withPublisher(getPublisher())
+                .withStatus(getStatus())
+                .withCreatedDate(getCreatedDate())
+                .withModifiedDate(getModifiedDate());
     }
 
     public static Resource fromPublication(Publication publication) {
@@ -124,6 +165,54 @@ public class Resource implements WithIdentifier {
     @Override
     public String toString() {
         return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
+    }
+
+    public static class Builder {
+
+        private SortableIdentifier identifier;
+        private PublicationStatus status;
+        private String owner;
+        private Organization publisher;
+        private Instant createdDate;
+        private Instant modifiedDate;
+
+        private Builder() {
+
+        }
+
+        public Builder withIdentifier(SortableIdentifier identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder withStatus(PublicationStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder withOwner(String owner) {
+            this.owner = owner;
+            return this;
+        }
+
+        public Builder withPublisher(Organization publisher) {
+            this.publisher = publisher;
+            return this;
+        }
+
+        public Builder withCreatedDate(Instant createdDate) {
+            this.createdDate = createdDate;
+            return this;
+        }
+
+        public Builder withModifiedDate(Instant modifiedDate) {
+            this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Resource build() {
+            return new Resource(this);
+        }
     }
 }
 

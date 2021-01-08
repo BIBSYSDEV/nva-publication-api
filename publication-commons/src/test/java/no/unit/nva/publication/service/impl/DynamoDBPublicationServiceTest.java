@@ -153,6 +153,7 @@ class DynamoDBPublicationServiceTest {
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 
+    //DONE
     @Test
     public void getPublicationReturnsExistingPublicationWhenInputIsExistingIdentifier() throws Exception {
         Publication storedPublication = publicationWithIdentifier();
@@ -161,6 +162,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(retrievedPublication, storedPublication);
     }
 
+    //DONE
     @Test
     public void getPublicationOnEmptyTableThrowsNotFoundException() {
         UUID nonExistingIdentifier = UUID.randomUUID();
@@ -169,6 +171,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerWithNewOwner() throws Exception {
         String newOwner = "New Owner";
