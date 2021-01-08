@@ -392,18 +392,18 @@ Resources:
       TableName: OrestisResources
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        -
-            AttributeName: PK0
-            AttributeType: SK0
-        -
-          AttributeName: PK1
-          AttributeType: SK1
-        -
-          AttributeName: PK2
-          AttributeType: SK2
-        -
-          AttributeName: PK3
-          AttributeType: SK3
+        - AttributeName: PK0
+          AttributeType: S
+        - AttributeName: SK0
+          AttributeType: S
+        - AttributeName: PK1
+          AttributeType: S
+        - AttributeName: SK1
+          AttributeType: S
+        - AttributeName: PK2
+          AttributeType: S
+        - AttributeName: S2
+          AttributeType: S
       KeySchema:
         -
           AttributeName: PK0
