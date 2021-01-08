@@ -412,14 +412,15 @@ Resources:
           AttributeName: SK0
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        IndexName: byTypeCustomerStatus
-        KeySchema:
-          -
-            AttributeName: PK1
-            AttributeType: HASH
-          -
-            AttibuteName: SK1
-            AttributeType: RANGE
+        -
+          IndexName: byTypeCustomerStatus
+          KeySchema:
+            -
+              AttributeName: PK1
+              AttributeType: HASH
+            -
+              AttibuteName: SK1
+              AttributeType: RANGE
 
   NvaCreateResourceFunction:
     DependsOn:
