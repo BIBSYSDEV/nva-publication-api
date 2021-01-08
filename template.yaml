@@ -400,10 +400,6 @@ Resources:
           AttributeType: S
         - AttributeName: SK1
           AttributeType: S
-        - AttributeName: PK2
-          AttributeType: S
-        - AttributeName: S2
-          AttributeType: S
       KeySchema:
         -
           AttributeName: PK0
