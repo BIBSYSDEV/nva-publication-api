@@ -389,7 +389,8 @@ Resources:
   OrestisResources:
     Type: AWS::DynamoDB::Table
     Properties:
-      BillingMode: OnDemand
+      TableName: OrestisResources
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
          -
             AttributeName: PK0
