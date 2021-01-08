@@ -4,7 +4,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly project(':publication-commons')
+    implementation project(':publication-commons')
 
     testImplementation project(':publication-commons')
     testImplementation project(":publication-testing")

@@ -385,7 +385,44 @@ Resources:
             Path: /
             Method: post
             RestApiId: !Ref NvaPublicationApi
+
+  OrestisResources:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: OnDemand
+      AttributeDefinitions:
+         -
+            AttributeName: PK0
+            AttributeType: SK0
+        -
+          AttributeName: PK1
+          AttributeType: SK1
+        -
+          AttributeName: PK2
+          AttributeType: SK2
+        -
+          AttributeName: PK3
+          AttributeType: SK3
+      KeySchema:
+        -
+          AttributeName: PK0
+          KeyType: HASH
+        -
+          AttributeName: SK0
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        IndexName: byTypeCustomerStatus
+        KeySchema:
+          -
+            AttributeName: PK1
+            AttributeType: HASH
+          -
+            AttibuteName: SK1
+            AttributeType: RANGE
+
   NvaCreateResourceFunction:
+    DependsOn:
+      - OrestisResources
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-publication
@@ -399,7 +436,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: Resources
+            TableName: OrestisResources
       Events:
         GetEvent:
           Type: Api

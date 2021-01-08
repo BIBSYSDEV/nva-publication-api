@@ -2,7 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 public final class DatabaseConstants {
 
-    public static final String RESOURCES_TABLE_NAME = "resources";
+    public static final String RESOURCES_TABLE_NAME = "OrestisResources";
 
     public static final String KEY_VALUES_SEPARATOR = ":";
     public static final String STRING_PLACEHOLDER = "%s";
