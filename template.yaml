@@ -392,7 +392,7 @@ Resources:
       TableName: OrestisResources
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-         -
+        -
             AttributeName: PK0
             AttributeType: SK0
         -
