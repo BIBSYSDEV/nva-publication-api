@@ -419,7 +419,7 @@ Resources:
               AttributeName: PK1
               KeyType: HASH
             -
-              AttibuteName: SK1
+              AttributeName: SK1
               KeyType: RANGE
 
   NvaCreateResourceFunction:
