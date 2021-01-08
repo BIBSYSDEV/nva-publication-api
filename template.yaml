@@ -421,6 +421,7 @@ Resources:
             -
               AttributeName: SK1
               KeyType: RANGE
+          Projection: ALL
 
   NvaCreateResourceFunction:
     DependsOn:
