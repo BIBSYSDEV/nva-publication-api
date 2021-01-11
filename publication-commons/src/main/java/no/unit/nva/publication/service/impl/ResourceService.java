@@ -50,7 +50,8 @@ public class ResourceService {
 
     public void createResource(Resource resource) throws ConflictException {
         resource.setCreatedDate(clockForTimestamps.instant());
-        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(createTransactionItems(resource));
+        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(resource);
+        TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendRequest(putRequest);
     }
 
@@ -97,9 +98,13 @@ public class ResourceService {
             .withDelete(new Delete().withTableName(tableName).withKey(resourceDao.primaryKey()));
     }
 
-    private TransactWriteItem[] createTransactionItems(Resource resource) {
-        TransactWriteItem dataEntry = newPutTransactionItem(createNewDataEntry(resource));
-        TransactWriteItem identifierEntry = newPutTransactionItem(createEntryForEnsuringUniqueIdentifier(resource));
+    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
+        Put resourceEntry = createNewDataEntry(resource);
+        Put uniqueIdentifierEntry = createEntryForEnsuringUniqueIdentifier(resource);
+
+        TransactWriteItem dataEntry = newPutTransactionItem(resourceEntry);
+        TransactWriteItem identifierEntry = newPutTransactionItem(uniqueIdentifierEntry);
+
         return new TransactWriteItem[]{dataEntry, identifierEntry};
     }
 
