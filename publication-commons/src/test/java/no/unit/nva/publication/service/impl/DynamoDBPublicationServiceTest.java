@@ -184,6 +184,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(newOwner, updatedPublication.getOwner());
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerChangesModifiedDate() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -195,6 +196,7 @@ class DynamoDBPublicationServiceTest {
         assertNotEquals(initialInstant, updatedInstant);
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerPreservesCreatedDate() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -218,6 +220,7 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    //DONE
     @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(

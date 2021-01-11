@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.utils.JacocoGenerated;
@@ -24,6 +25,8 @@ import nva.commons.utils.JacocoGenerated;
 public class ResourceDao implements WithPrimaryKey{
 
     public static final String PATH_SEPARATOR = "/";
+    public static final String  ORGANIZATION= Organization.class.getSimpleName();
+    public static  final String PUBLICATION_STATUS=  PublicationStatus.class.getSimpleName();
 
     @JsonProperty("resource")
     private Resource resource;
@@ -72,7 +75,10 @@ public class ResourceDao implements WithPrimaryKey{
     public String getByTypeCustomerStatusPk() {
         String publisherId = publisherId();
         String publicationStatus = extractStatus();
-        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT, Resource.TYPE, publisherId, publicationStatus);
+        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,
+            ORGANIZATION, publisherId,
+            PUBLICATION_STATUS,publicationStatus
+        );
     }
 
     private String extractStatus() {

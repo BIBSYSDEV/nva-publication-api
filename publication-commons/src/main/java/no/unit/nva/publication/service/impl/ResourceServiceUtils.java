@@ -23,7 +23,7 @@ public final class ResourceServiceUtils {
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
     public static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
-    public static final Map<String, String> PRIMARY_kEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
+    public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();

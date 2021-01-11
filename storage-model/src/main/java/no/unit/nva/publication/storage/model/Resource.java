@@ -31,24 +31,9 @@ public class Resource implements WithIdentifier {
     private Organization publisher;
     private Instant createdDate;
     private Instant modifiedDate;
+    private String title;
 
     public Resource() {
-    }
-
-    public static Resource emptyResource(String userIdentifier, URI organizationId) {
-        return emptyResource(userIdentifier, organizationId, SortableIdentifier.next());
-    }
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
-                                         String resourceIdentifier){
-        return  emptyResource(userIdentifier,organizationId,new SortableIdentifier(resourceIdentifier));
-    }
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
-                                         SortableIdentifier resourceIdentifier) {
-        Resource resource = new Resource();
-        resource.setPublisher(new Organization.Builder().withId(organizationId).build());
-        resource.setOwner(userIdentifier);
-        resource.setIdentifier(resourceIdentifier);
-        return resource;
     }
 
     private Resource(Builder builder) {
@@ -58,21 +43,29 @@ public class Resource implements WithIdentifier {
         setPublisher(builder.publisher);
         setCreatedDate(builder.createdDate);
         setModifiedDate(builder.modifiedDate);
+        setTitle(builder.title);
+    }
+
+    public static Resource emptyResource(String userIdentifier, URI organizationId) {
+        return emptyResource(userIdentifier, organizationId, SortableIdentifier.next());
+    }
+
+    public static Resource emptyResource(String userIdentifier, URI organizationId,
+                                         String resourceIdentifier) {
+        return emptyResource(userIdentifier, organizationId, new SortableIdentifier(resourceIdentifier));
+    }
+
+    public static Resource emptyResource(String userIdentifier, URI organizationId,
+                                         SortableIdentifier resourceIdentifier) {
+        Resource resource = new Resource();
+        resource.setPublisher(new Organization.Builder().withId(organizationId).build());
+        resource.setOwner(userIdentifier);
+        resource.setIdentifier(resourceIdentifier);
+        return resource;
     }
 
     public static Builder builder() {
         return new Builder();
-    }
-
-    public Builder copy() {
-        return
-            builder()
-                .withIdentifier(getIdentifier())
-                .withOwner(getOwner())
-                .withPublisher(getPublisher())
-                .withStatus(getStatus())
-                .withCreatedDate(getCreatedDate())
-                .withModifiedDate(getModifiedDate());
     }
 
     public static Resource fromPublication(Publication publication) {
@@ -89,6 +82,17 @@ public class Resource implements WithIdentifier {
         resource.setOwner(publication.getOwner());
         resource.setStatus(publication.getStatus());
         return resource;
+    }
+
+    public Builder copy() {
+        return
+            builder()
+                .withIdentifier(getIdentifier())
+                .withOwner(getOwner())
+                .withPublisher(getPublisher())
+                .withStatus(getStatus())
+                .withCreatedDate(getCreatedDate())
+                .withModifiedDate(getModifiedDate());
     }
 
     public Instant getCreatedDate() {
@@ -141,6 +145,14 @@ public class Resource implements WithIdentifier {
         this.publisher = publisher;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -157,9 +169,11 @@ public class Resource implements WithIdentifier {
         }
         Resource resource = (Resource) o;
         return Objects.equals(getIdentifier(), resource.getIdentifier()) && getStatus() == resource.getStatus()
-            && Objects.equals(getOwner(), resource.getOwner()) && Objects.equals(getPublisher(),
-            resource.getPublisher()) && Objects.equals(getCreatedDate(), resource.getCreatedDate())
-            && Objects.equals(getModifiedDate(), resource.getModifiedDate());
+            && Objects.equals(getOwner(), resource.getOwner())
+            && Objects.equals(getPublisher(), resource.getPublisher())
+            && Objects.equals(getCreatedDate(), resource.getCreatedDate())
+            && Objects.equals(getModifiedDate(), resource.getModifiedDate())
+            & Objects.equals(getTitle(), resource.getTitle());
     }
 
     @Override
@@ -175,6 +189,7 @@ public class Resource implements WithIdentifier {
         private Organization publisher;
         private Instant createdDate;
         private Instant modifiedDate;
+        private String title;
 
         private Builder() {
 
@@ -207,6 +222,11 @@ public class Resource implements WithIdentifier {
 
         public Builder withModifiedDate(Instant modifiedDate) {
             this.modifiedDate = modifiedDate;
+            return this;
+        }
+
+        public Builder withTitle(String title) {
+            this.title = title;
             return this;
         }
 

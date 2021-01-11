@@ -7,13 +7,18 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.UUID;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
@@ -21,7 +26,11 @@ import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.exceptions.commonexceptions.NotFoundException;
+import nva.commons.utils.log.LogUtils;
+import nva.commons.utils.log.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -36,14 +45,16 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_OTHER_USER = "some_other@user.no";
 
     private  static final Instant RESOURCE_CREATION_TIME= Instant.parse("1900-12-03T10:15:30.00Z");
-    private  static final Instant RESOURCE_UPDATE_TIME= Instant.parse("2000-01-03T00:00:18.00Z");
+    private  static final Instant RESOURCE_MODIFIED_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
+    public static final String ORIGINAL_TITLE = "OriginalTitle";
+    public static final String UPDATED_TITLE = "UpdatedTitle";
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
         Clock clock =mock(Clock.class);
-        when(clock.instant()).thenReturn(RESOURCE_CREATION_TIME).thenReturn(RESOURCE_UPDATE_TIME);
+        when(clock.instant()).thenReturn(RESOURCE_CREATION_TIME).thenReturn(RESOURCE_MODIFIED_TIME);
         resourceService = new ResourceService(client,clock);
     }
 
@@ -99,7 +110,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void whenPublicationOwnerIsUpdatedTheResourceEntryBecomesUnavailableForPreviousOwner()
+    public void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
         throws ConflictException, NotFoundException {
         Resource sampleResource = emptyResource();
         UserInstance oldOwner = new UserInstance(sampleResource.getOwner(),sampleResource.getPublisher().getId());
@@ -111,10 +122,12 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThatResourceDoesNotExist(sampleResource);
 
         Resource newResource= resourceService.getResource(newOwner,sampleResource.getIdentifier());
+
         Resource expectedResource = sampleResource.copy()
             .withOwner(someOtherUser().getUserId())
             .withPublisher(userOrganization(someOtherUser()))
-            .withModifiedDate(RESOURCE_UPDATE_TIME)
+            .withCreatedDate(RESOURCE_CREATION_TIME)
+            .withModifiedDate(RESOURCE_MODIFIED_TIME)
             .build();
 
 
@@ -123,6 +136,91 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
 
     }
+
+
+    @Test
+    public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
+        throws ConflictException, NotFoundException {
+        Resource sampleResource = emptyResource();
+        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(),sampleResource.getPublisher().getId());
+        UserInstance newOwner = someOtherUser();
+
+        resourceService.createResource(sampleResource);
+        resourceService.updateOwner(sampleResource.getIdentifier().toString(),oldOwner,newOwner);
+
+        assertThatResourceDoesNotExist(sampleResource);
+
+        Resource newResource= resourceService.getResource(newOwner,sampleResource.getIdentifier());
+
+        assertThat(newResource.getModifiedDate(), is(equalTo(RESOURCE_MODIFIED_TIME)));
+    }
+
+
+    @Test
+    public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ConflictException, NotFoundException {
+        Resource resource = emptyResource();
+        resourceService.createResource(resource);
+        Resource actualOriginalResourcce = resourceService.getResource(resource);
+        assertThat(actualOriginalResourcce,is(equalTo(resource)));
+
+        Resource resourceUpdate = createResourceUpdate(resource);
+
+        resourceService.updateResource(resourceUpdate);
+        Resource actualUpdatedResource = resourceService.getResource(resource);
+
+        assertThat(actualUpdatedResource, is(equalTo(resourceUpdate)));
+        assertThat(actualUpdatedResource,is(not(equalTo(actualOriginalResourcce))));
+
+    }
+
+
+    @Test
+    @DisplayName("resourceUpdate fails when Update changes the primary key (owner-part)")
+    public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
+        Resource resource =emptyResource();
+        resourceService.createResource(resource);
+        Resource resourceUpdate = createResourceUpdate(resource);
+
+        resourceUpdate.setOwner(ANOTHER_OWNER);
+        assertThatUpdateFails(resourceUpdate);
+    }
+
+    @Test
+    @DisplayName("resourceUpdate fails when Update changes the primary key (organization-part)")
+    public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
+        throws ConflictException, NotFoundException {
+        Resource resource =emptyResource();
+        resourceService.createResource(resource);
+        Resource resourceUpdate = createResourceUpdate(resource);
+
+        resourceUpdate.setPublisher(newOrganization(SOME_OTHER_ORG));
+        assertThatUpdateFails(resourceUpdate);
+    }
+
+
+    @Test
+    @DisplayName("resourceUpdate fails when Update changes the primary key (primary-key-part)")
+    public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
+        throws ConflictException, NotFoundException {
+        Resource resource =emptyResource();
+        resourceService.createResource(resource);
+        Resource resourceUpdate = createResourceUpdate(resource);
+
+        resourceUpdate.setIdentifier(SortableIdentifier.next());
+        assertThatUpdateFails(resourceUpdate);
+    }
+
+    private void assertThatUpdateFails(Resource resourceUpdate) {
+        Executable action = () -> resourceService.updateResource(resourceUpdate);
+        ConditionalCheckFailedException exception = assertThrows(ConditionalCheckFailedException.class, action);
+        String message = exception.getMessage();
+        assertThat(message, containsString(ConditionalCheckFailedException.class.getSimpleName()));
+    }
+
+    private Resource createResourceUpdate(Resource resource) {
+        return resource.copy().withTitle(UPDATED_TITLE).build();
+    }
+
 
     private void assertThatResourceDoesNotExist(Resource sampleResource) {
         assertThrows(NotFoundException.class,()->resourceService.getResource(sampleResource));
@@ -139,6 +237,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private Resource emptyResource() {
         Resource resource = Resource.emptyResource(SAMPLE_USER.getUserId(), SAMPLE_USER.getOrganizationUri());
         resource.setStatus(PublicationStatus.DRAFT);
+        resource.setTitle(ORIGINAL_TITLE);
         return resource;
+    }
+
+    private Organization newOrganization(URI customerId) {
+        return new Organization.Builder().withId(customerId).build();
     }
 }

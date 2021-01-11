@@ -1,9 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.amazonaws.auth.policy.actions.DynamoDBv2Actions.PutItem;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_kEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PARTITION_KEY_NAME_PLACEHOLDER;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.SORT_KEY_NAME_PLACEHOLDER;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseResult;
@@ -18,6 +21,8 @@ import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -34,6 +39,8 @@ import nva.commons.utils.attempt.Failure;
 
 public class ResourceService {
 
+    private static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
+    private static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -55,8 +62,20 @@ public class ResourceService {
         sendRequest(putRequest);
     }
 
-    private void sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
-        attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
+    public void updateResource(Resource resourceUpdate)  {
+        ResourceDao resourceDao = new ResourceDao(resourceUpdate);
+        String conditionExpression = primaryKeyHasNotChangedCondition();
+
+        Map<String, AttributeValue> valuesMap = primaryKeyAttributeValuesMap(resourceDao);
+
+        PutItemRequest putItemRequest = new PutItemRequest()
+            .withItem(toDynamoFormat(resourceDao))
+            .withTableName(tableName)
+            .withConditionExpression(conditionExpression)
+            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
+            .withExpressionAttributeValues(valuesMap);
+
+        client.putItem(putItemRequest);
     }
 
     public Resource getResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -82,6 +101,22 @@ public class ResourceService {
         TransactWriteItem insertionAction = newPutTransactionItem(createNewDataEntry(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
+    }
+
+    private Map<String, AttributeValue> primaryKeyAttributeValuesMap(ResourceDao resourceDao) {
+        return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
+            new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
+            SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
+    }
+
+    private String primaryKeyHasNotChangedCondition() {
+        return String.format("%s = %s AND %s = %s",
+            PARTITION_KEY_NAME_PLACEHOLDER, PARTITION_KEY_VALUE_PLACEHOLDER, SORT_KEY_NAME_PLACEHOLDER,
+            SORT_KEY_VALUE_PLACEHOLDER);
+    }
+
+    private void sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
+        attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
@@ -127,7 +162,7 @@ public class ResourceService {
     private <T extends WithPrimaryKey> Put createPutEntry(T data) {
         return new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
             .withConditionExpression(KEY_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_kEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING);
+            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING);
     }
 
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
