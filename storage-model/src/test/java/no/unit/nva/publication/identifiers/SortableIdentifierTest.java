@@ -35,15 +35,6 @@ public class SortableIdentifierTest {
 
     }
 
-
-    @Test
-    public void test(){
-        Long x=Long.decode("0xFFFFFFFFFFFF");
-        Instant i = Instant.ofEpochMilli(x);
-        System.out.println(i);
-
-    }
-
     @Test
     public void sortableIdentifierAcceptsUuidString() {
         UUID oldId = UUID.randomUUID();
