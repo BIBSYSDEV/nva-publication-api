@@ -2,6 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 public final class DatabaseConstants {
 
+    //TODO: remove when functionality is in place and read table name from Environment
     public static final String RESOURCES_TABLE_NAME = "OrestisResources";
 
     public static final String DELIMITER = ":";
