@@ -7,9 +7,9 @@ import java.util.Map;
 public interface WithPrimaryKey {
 
     String getPrimaryKeyPartitionKey();
+
     String getPrimaryKeySortKey();
 
     @JsonIgnore
     Map<String, AttributeValue> primaryKey();
-
 }

@@ -11,7 +11,7 @@ public class SortableIdentifierDeserializer extends JsonDeserializer<SortableIde
     @Override
     public SortableIdentifier deserialize(JsonParser p, DeserializationContext ctxt)
         throws IOException, JsonProcessingException {
-        String value=p.getValueAsString();
+        String value = p.getValueAsString();
         return new SortableIdentifier(value);
     }
 }

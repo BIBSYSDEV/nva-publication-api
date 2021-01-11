@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.amazonaws.auth.policy.actions.DynamoDBv2Actions.PutItem;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PARTITION_KEY_NAME_PLACEHOLDER;
@@ -22,7 +21,6 @@ import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.PutRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
@@ -98,7 +96,7 @@ public class ResourceService {
         Resource existingResource = getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = newPutTransactionItem(createNewDataEntry(newResource));
+        TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
     }
@@ -134,8 +132,8 @@ public class ResourceService {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        Put resourceEntry = createNewDataEntry(resource);
-        Put uniqueIdentifierEntry = createEntryForEnsuringUniqueIdentifier(resource);
+        Put resourceEntry = createNewTransactionPutDataEntry(resource);
+        Put uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
 
         TransactWriteItem dataEntry = newPutTransactionItem(resourceEntry);
         TransactWriteItem identifierEntry = newPutTransactionItem(uniqueIdentifierEntry);
@@ -143,12 +141,12 @@ public class ResourceService {
         return new TransactWriteItem[]{dataEntry, identifierEntry};
     }
 
-    private Put createNewDataEntry(Resource resource) {
-        return createPutEntry(new ResourceDao(resource));
+    private Put createNewTransactionPutDataEntry(Resource resource) {
+        return createTransactionPutEntry(new ResourceDao(resource));
     }
 
-    private Put createEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return createPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
+    private Put createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
+        return createTransactionPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
     }
 
     private ConflictException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
@@ -159,7 +157,7 @@ public class ResourceService {
         return Resource.emptyResource(userInstance.getUserId(), userInstance.getOrganizationUri(), resourceIdentifier);
     }
 
-    private <T extends WithPrimaryKey> Put createPutEntry(T data) {
+    private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {
         return new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
             .withConditionExpression(KEY_EXISTS_CONDITION)
             .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING);

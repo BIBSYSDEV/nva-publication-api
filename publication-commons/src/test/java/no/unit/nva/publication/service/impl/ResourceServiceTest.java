@@ -14,11 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.UUID;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
@@ -26,10 +24,7 @@ import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.exceptions.commonexceptions.NotFoundException;
-import nva.commons.utils.log.LogUtils;
-import nva.commons.utils.log.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -37,25 +32,23 @@ import org.junit.jupiter.api.function.Executable;
 public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final String ANOTHER_OWNER = "another@owner.no";
-    private static final String SOME_USER = "some@user.com";
-    private static final URI SOME_ORG = URI.create("https://example.org/123-456");
-
-    public static final UserInstance SAMPLE_USER = new UserInstance(SOME_USER, SOME_ORG);
-    private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
     public static final String SOME_OTHER_USER = "some_other@user.no";
-
-    private  static final Instant RESOURCE_CREATION_TIME= Instant.parse("1900-12-03T10:15:30.00Z");
-    private  static final Instant RESOURCE_MODIFIED_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     public static final String ORIGINAL_TITLE = "OriginalTitle";
     public static final String UPDATED_TITLE = "UpdatedTitle";
+    private static final String SOME_USER = "some@user.com";
+    private static final URI SOME_ORG = URI.create("https://example.org/123-456");
+    public static final UserInstance SAMPLE_USER = new UserInstance(SOME_USER, SOME_ORG);
+    private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
+    private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
+    private static final Instant RESOURCE_MODIFIED_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
         super.init();
-        Clock clock =mock(Clock.class);
+        Clock clock = mock(Clock.class);
         when(clock.instant()).thenReturn(RESOURCE_CREATION_TIME).thenReturn(RESOURCE_MODIFIED_TIME);
-        resourceService = new ResourceService(client,clock);
+        resourceService = new ResourceService(client, clock);
     }
 
     @Test
@@ -91,7 +84,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         final Resource anotherResource = emptyResource();
 
         resourceService.createResource(sampleResource);
-        assertDoesNotThrow(()->resourceService.createResource(anotherResource));
+        assertDoesNotThrow(() -> resourceService.createResource(anotherResource));
     }
 
     @Test
@@ -103,8 +96,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void getResourceByIdentifierReturnsResourceWhenResourceExists() throws NotFoundException, ConflictException {
-        Resource sampleResource = emptyResource();
-        resourceService.createResource(sampleResource);
+        Resource sampleResource = createSampleResource();
         Resource savedResource = resourceService.getResource(SAMPLE_USER, sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
     }
@@ -112,56 +104,59 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
         throws ConflictException, NotFoundException {
-        Resource sampleResource = emptyResource();
-        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(),sampleResource.getPublisher().getId());
+        Resource sampleResource = createSampleResource();
+
+        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
 
-        resourceService.createResource(sampleResource);
-        resourceService.updateOwner(sampleResource.getIdentifier().toString(),oldOwner,newOwner);
+        resourceService.updateOwner(sampleResource.getIdentifier().toString(), oldOwner, newOwner);
 
         assertThatResourceDoesNotExist(sampleResource);
 
-        Resource newResource= resourceService.getResource(newOwner,sampleResource.getIdentifier());
+        Resource newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
 
-        Resource expectedResource = sampleResource.copy()
-            .withOwner(someOtherUser().getUserId())
-            .withPublisher(userOrganization(someOtherUser()))
-            .withCreatedDate(RESOURCE_CREATION_TIME)
-            .withModifiedDate(RESOURCE_MODIFIED_TIME)
-            .build();
-
+        Resource expectedResource = expectedUpdatedResource(sampleResource);
 
         assertThat(newResource, is(equalTo(expectedResource)));
-        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserId())));
-        assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
-
     }
 
+    @Test
+    public void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
+        throws ConflictException, NotFoundException {
+        Resource originalResource = createSampleResource();
+        UserInstance oldOwner = new UserInstance(originalResource.getOwner(), originalResource.getPublisher().getId());
+        UserInstance newOwner = someOtherUser();
+
+        resourceService.updateOwner(originalResource.getIdentifier().toString(), oldOwner, newOwner);
+
+        Resource newResource = resourceService.getResource(newOwner, originalResource.getIdentifier());
+
+        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserId())));
+        assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
+    }
 
     @Test
     public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
         throws ConflictException, NotFoundException {
         Resource sampleResource = emptyResource();
-        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(),sampleResource.getPublisher().getId());
+        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
 
         resourceService.createResource(sampleResource);
-        resourceService.updateOwner(sampleResource.getIdentifier().toString(),oldOwner,newOwner);
+        resourceService.updateOwner(sampleResource.getIdentifier().toString(), oldOwner, newOwner);
 
         assertThatResourceDoesNotExist(sampleResource);
 
-        Resource newResource= resourceService.getResource(newOwner,sampleResource.getIdentifier());
+        Resource newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
 
         assertThat(newResource.getModifiedDate(), is(equalTo(RESOURCE_MODIFIED_TIME)));
     }
 
-
     @Test
     public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ConflictException, NotFoundException {
-        Resource resource = emptyResource();
-        resourceService.createResource(resource);
+        Resource resource = createSampleResource();
         Resource actualOriginalResourcce = resourceService.getResource(resource);
-        assertThat(actualOriginalResourcce,is(equalTo(resource)));
+        assertThat(actualOriginalResourcce, is(equalTo(resource)));
 
         Resource resourceUpdate = createResourceUpdate(resource);
 
@@ -169,16 +164,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Resource actualUpdatedResource = resourceService.getResource(resource);
 
         assertThat(actualUpdatedResource, is(equalTo(resourceUpdate)));
-        assertThat(actualUpdatedResource,is(not(equalTo(actualOriginalResourcce))));
-
+        assertThat(actualUpdatedResource, is(not(equalTo(actualOriginalResourcce))));
     }
-
 
     @Test
     @DisplayName("resourceUpdate fails when Update changes the primary key (owner-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
-        Resource resource =emptyResource();
-        resourceService.createResource(resource);
+        Resource resource = createSampleResource();
         Resource resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setOwner(ANOTHER_OWNER);
@@ -189,25 +181,37 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @DisplayName("resourceUpdate fails when Update changes the primary key (organization-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
         throws ConflictException, NotFoundException {
-        Resource resource =emptyResource();
-        resourceService.createResource(resource);
+        Resource resource = createSampleResource();
         Resource resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setPublisher(newOrganization(SOME_OTHER_ORG));
         assertThatUpdateFails(resourceUpdate);
     }
 
-
     @Test
     @DisplayName("resourceUpdate fails when Update changes the primary key (primary-key-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
         throws ConflictException, NotFoundException {
-        Resource resource =emptyResource();
-        resourceService.createResource(resource);
+        Resource resource = createSampleResource();
         Resource resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setIdentifier(SortableIdentifier.next());
         assertThatUpdateFails(resourceUpdate);
+    }
+
+    private Resource expectedUpdatedResource(Resource sampleResource) {
+        return sampleResource.copy()
+            .withOwner(someOtherUser().getUserId())
+            .withPublisher(userOrganization(someOtherUser()))
+            .withCreatedDate(RESOURCE_CREATION_TIME)
+            .withModifiedDate(RESOURCE_MODIFIED_TIME)
+            .build();
+    }
+
+    private Resource createSampleResource() throws ConflictException {
+        Resource originalResource = emptyResource();
+        resourceService.createResource(originalResource);
+        return originalResource;
     }
 
     private void assertThatUpdateFails(Resource resourceUpdate) {
@@ -221,13 +225,12 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         return resource.copy().withTitle(UPDATED_TITLE).build();
     }
 
-
     private void assertThatResourceDoesNotExist(Resource sampleResource) {
-        assertThrows(NotFoundException.class,()->resourceService.getResource(sampleResource));
+        assertThrows(NotFoundException.class, () -> resourceService.getResource(sampleResource));
     }
 
     private UserInstance someOtherUser() {
-        return new UserInstance(SOME_OTHER_USER,SOME_OTHER_ORG);
+        return new UserInstance(SOME_OTHER_USER, SOME_OTHER_ORG);
     }
 
     private Organization anotherPublisher() {
