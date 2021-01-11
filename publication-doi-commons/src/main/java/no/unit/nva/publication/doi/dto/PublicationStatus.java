@@ -10,8 +10,8 @@ public enum PublicationStatus {
 
     NEW("NEW"),
     DRAFT("DRAFT"),
-    DELETED("DELETED"),
-    PUBLISHED("PUBLISHED");
+    PUBLISHED("PUBLISHED"),
+    DRAFT_FOR_DELETION("DRAFT_FOR_DELETION");
 
     public static final String ERROR_MESSAGE_TEMPLATE = "%s not a valid PublicationStatus, expected one of: %s";
     public static final String DELIMITER = ", ";
