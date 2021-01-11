@@ -2,6 +2,9 @@ package no.unit.nva.publication.service.impl;
 
 import java.net.URI;
 
+/**
+ *  Class used internally in the Resource service to represent a user.
+ */
 public class UserInstance {
 
     private final URI organizationUri;

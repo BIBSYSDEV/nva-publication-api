@@ -5,6 +5,12 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Generates ids of the form "0176f264a5ad-446893d8-3c02-4f64-936b-2997fec34e98".
+ * where the first part is an Instant encoded in 12 hex digits (enough until the year 10889)
+ * and the rest is a UUID.
+ * The timestamp is should be used only for sorting and not for identifying creation date
+ */
 @JsonSerialize(using = SortableIdentifierSerializer.class)
 @JsonDeserialize(using = SortableIdentifierDeserializer.class)
 public final class SortableIdentifier implements Comparable<SortableIdentifier> {

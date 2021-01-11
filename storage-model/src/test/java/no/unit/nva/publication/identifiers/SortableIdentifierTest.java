@@ -5,6 +5,7 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,16 @@ public class SortableIdentifierTest {
         String identifierString = identifier.toString();
         String[] identifierParts = identifierString.split(DELIMITER);
         assertThat(identifierParts.length, is(equalTo(6)));
+
+    }
+
+
+    @Test
+    public void test(){
+        Long x=Long.decode("0xFFFFFFFFFFFF");
+        Instant i = Instant.ofEpochMilli(x);
+        System.out.println(i);
+
     }
 
     @Test
