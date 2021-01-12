@@ -17,7 +17,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_
 import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
@@ -31,7 +30,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
