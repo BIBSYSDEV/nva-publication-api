@@ -10,7 +10,7 @@ import java.util.Optional;
 public class SortableIdentifierSerializer extends JsonSerializer<SortableIdentifier> {
 
     public static final String NULL_AS_STRING = "null";
-    public static final String SERIALIZATION_EXCEPTION_ERROR = "Could not serialize SortableIdentifier with value:";
+    public static final String SERIALIZATION_EXCEPTION_ERROR = "Could not serialize SortableIdentifier with value: ";
 
     @Override
     public void serialize(SortableIdentifier value, JsonGenerator gen, SerializerProvider serializers)
@@ -22,7 +22,7 @@ public class SortableIdentifierSerializer extends JsonSerializer<SortableIdentif
                 gen.writeNull();
             }
         } catch (Exception e) {
-            throw new RuntimeException(SERIALIZATION_EXCEPTION_ERROR + " " + printIdentifierValue(value));
+            throw new RuntimeException(SERIALIZATION_EXCEPTION_ERROR + printIdentifierValue(value));
         }
     }
 
