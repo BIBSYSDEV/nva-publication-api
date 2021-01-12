@@ -111,7 +111,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("notImplemented Methods Throws NotImplementedException")
     public void notImplementedMethodsThrowsNotImplementedException() {
         assertThrows(NotImplementedException.class, () -> publicationService
-                .getPublicationsByPublisher(null));
+            .getPublicationsByPublisher(null));
     }
 
     @Test
@@ -135,7 +135,7 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("missing Index Env")
     public void missingIndexEnv() {
         when(environment.readEnv(BY_PUBLISHER_INDEX_NAME_ENV))
-                .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
         assertThrows(IllegalArgumentException.class,
             () -> new DynamoDBPublicationService(client, objectMapper, environment)
         );
@@ -149,7 +149,7 @@ class DynamoDBPublicationServiceTest {
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
             .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
-                .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
+            .thenReturn(BY_PUBLISHED_PUBLICATIONS_INDEX_NAME);
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 
@@ -225,8 +225,8 @@ class DynamoDBPublicationServiceTest {
     @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(
-                OWNER,
-                URI.create(PUBLISHER_ID));
+            OWNER,
+            URI.create(PUBLISHER_ID));
 
         assertEquals(0, publications.size());
     }
@@ -264,7 +264,6 @@ class DynamoDBPublicationServiceTest {
 
         Publication publication2 = insertPublishedPublication();
         publicationService.updatePublication(publication2.getIdentifier(), publication2);
-
 
         List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(10);
         assertEquals(2, publications.size());
@@ -317,14 +316,13 @@ class DynamoDBPublicationServiceTest {
         assertThat(expected, containsInAnyOrder(actual.toArray()));
     }
 
-
     //Done
     @Test
     public void createPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
-                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
+            generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Executable executable = () -> failingService.createPublication(publicationWithIdentifier());
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
@@ -336,7 +334,7 @@ class DynamoDBPublicationServiceTest {
         Table failingTable = mock(Table.class);
         when(failingTable.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
-                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
+            generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Executable executable = () -> failingService.getPublication(UUID.randomUUID());
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
@@ -348,7 +346,7 @@ class DynamoDBPublicationServiceTest {
         Index failingIndex = mock(Index.class);
         when(failingIndex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
-                generateFailingService(mock(Table.class), failingIndex, mock(Index.class));
+            generateFailingService(mock(Table.class), failingIndex, mock(Index.class));
         Executable executable = () -> failingService.getPublicationsByOwner(OWNER, URI.create(PUBLISHER_ID));
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
@@ -360,7 +358,7 @@ class DynamoDBPublicationServiceTest {
         Table failingTable = mock(Table.class);
         when(failingTable.putItem(any(Item.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
-                generateFailingService(failingTable, mock(Index.class), mock(Index.class));
+            generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Publication publication = publicationWithIdentifier();
         publication.setIdentifier(UUID.randomUUID());
         Executable executable = () -> failingService.updatePublication(publication.getIdentifier(), publication);
@@ -374,13 +372,11 @@ class DynamoDBPublicationServiceTest {
         Index failingIndex = mock(Index.class);
         when(failingIndex.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
-                generateFailingService(mock(Table.class), mock(Index.class), failingIndex);
+            generateFailingService(mock(Table.class), mock(Index.class), failingIndex);
         Executable executable = () -> failingService.listPublishedPublicationsByDate(0);
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
-
-
 
     //Done
     @Test
@@ -388,12 +384,11 @@ class DynamoDBPublicationServiceTest {
         ObjectMapper failingObjectMapper = mock(ObjectMapper.class);
         when(failingObjectMapper.writeValueAsString(any(Publication.class))).thenThrow(JsonProcessingException.class);
         DynamoDBPublicationService failingService = generateFailingService(failingObjectMapper,
-                db.getTable(), db.getByPublisherIndex(), db.getByPublishedDateIndex());
+            db.getTable(), db.getByPublisherIndex(), db.getByPublishedDateIndex());
         Executable executable = () -> failingService.publicationToItem(publicationWithIdentifier());
         InputException exception = assertThrows(InputException.class, executable);
         assertEquals(DynamoDBPublicationService.ERROR_MAPPING_PUBLICATION_TO_ITEM, exception.getMessage());
     }
-
 
     //Done
     @Test
@@ -456,7 +451,7 @@ class DynamoDBPublicationServiceTest {
         Executable executable = () -> publicationService.publishPublication(publicationToPublish.getIdentifier());
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, executable);
         String errorMessage = String.format(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE,
-                PublishPublicationValidator.MAIN_TITLE);
+            PublishPublicationValidator.MAIN_TITLE);
         assertEquals(errorMessage, exception.getMessage());
         assertEquals(SC_CONFLICT, exception.getStatusCode());
     }
@@ -497,7 +492,7 @@ class DynamoDBPublicationServiceTest {
 
     @Test
     public void deletePublicationThrowsNotImplementedExceptionWhenDeletingPublishedPublication()
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         Publication publication = insertPublishedPublication();
 
         assertThrows(NotImplementedException.class,
@@ -523,7 +518,7 @@ class DynamoDBPublicationServiceTest {
         Publication publication = publicationWithIdentifier();
         Publication createdPublication = publicationService.createPublication(publication);
         publicationService.markPublicationForDeletion(
-                createdPublication.getIdentifier(), createdPublication.getOwner());
+            createdPublication.getIdentifier(), createdPublication.getOwner());
 
         publicationService.deleteDraftPublication(createdPublication.getIdentifier());
 
