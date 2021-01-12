@@ -9,10 +9,10 @@ public class UserInstance {
 
     private final URI organizationUri;
 
-    private final String userId;
+    private final String userIdentifier;
 
-    public UserInstance(String userId, URI organizationUri) {
-        this.userId = userId;
+    public UserInstance(String userIdentifier, URI organizationUri) {
+        this.userIdentifier = userIdentifier;
         this.organizationUri = organizationUri;
     }
 
@@ -20,7 +20,7 @@ public class UserInstance {
         return organizationUri;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getUserIdentifier() {
+        return userIdentifier;
     }
 }

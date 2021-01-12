@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PARTITION_KEY_NAME_PLACEHOLDER;
@@ -8,24 +9,34 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.SORT_KEY_NAME_PLACEHOLDER;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseResult;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
+import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -43,6 +54,7 @@ public class ResourceService {
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
             + " AND "
             + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
+    public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -57,11 +69,12 @@ public class ResourceService {
         this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
 
-    public void createResource(Resource resource) throws ConflictException {
+    public Void createResource(Resource resource) throws ConflictException {
         resource.setCreatedDate(clockForTimestamps.instant());
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(resource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendRequest(putRequest);
+        return null;
     }
 
     public void updateResource(Resource resourceUpdate) {
@@ -84,24 +97,82 @@ public class ResourceService {
         return getResource(createQueryObject(userInstance, resourceIdentifier.toString()));
     }
 
-    public Resource getResource(UserInstance userInstance, String resourceIdentifier) throws NotFoundException {
+    public Resource getResource(UserInstance userInstance, String resourceIdentifier)
+        throws NotFoundException {
         return getResource(createQueryObject(userInstance, resourceIdentifier));
     }
 
     public Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseResult(getResult);
+        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(),ResourceDao.class);
         return fetchedDao.getResource();
     }
 
-    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner) throws NotFoundException {
+    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner)
+        throws NotFoundException {
         Resource existingResource = getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
         TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
+    }
+
+    public List<Resource> getResourcesByOwner(UserInstance userInstance) {
+        String partitionKey=
+            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(),userInstance.getUserIdentifier());
+        QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
+        Map<String, AttributeValue> valuesMap = getValueMap(querySpec.getValueMap(), String.class);
+        Map<String, String> namesMap = querySpec.getNameMap();
+        QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
+
+        List<Resource> resources = result.getItems()
+            .stream()
+            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+            .map(ResourceDao::getResource)
+            .collect(Collectors.toList());
+        return resources;
+
+    }
+
+    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
+                                 Map<String, String> namesMap) {
+        return client.query(
+            new QueryRequest().withKeyConditionExpression(conditionExpression)
+                .withExpressionAttributeNames(namesMap)
+                .withExpressionAttributeValues(valuesMap)
+                .withTableName(tableName)
+        );
+    }
+
+    private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
+        return new ExpressionSpecBuilder()
+            .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
+    }
+
+    private static  <T> Map<String,AttributeValue> getValueMap(Map<String,Object> valuesMap, Class<T> valueClass) {
+        if(String.class.equals(valueClass)){
+            return valuesMap
+                .entrySet()
+                .stream()
+                .collect(
+                    Collectors.toMap(
+                        Entry::getKey,
+                        mapEntry->convertObjectToStringAttributeValue(mapEntry.getValue())
+                    )
+                );
+
+        }
+        else {
+            throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
+        }
+
+
+    }
+
+    private static AttributeValue convertObjectToStringAttributeValue(Object mapValueEntry) {
+        return new AttributeValue((String)mapValueEntry);
     }
 
     private Map<String, AttributeValue> primaryKeyAttributeValuesMap(ResourceDao resourceDao) {
@@ -117,7 +188,7 @@ public class ResourceService {
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource.copy()
             .withPublisher(userOrganization(newOwner))
-            .withOwner(newOwner.getUserId())
+            .withOwner(newOwner.getUserIdentifier())
             .withModifiedDate(clockForTimestamps.instant())
             .build();
     }
@@ -151,7 +222,7 @@ public class ResourceService {
     }
 
     private Resource createQueryObject(UserInstance userInstance, String resourceIdentifier) {
-        return Resource.emptyResource(userInstance.getUserId(), userInstance.getOrganizationUri(), resourceIdentifier);
+        return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(), resourceIdentifier);
     }
 
     private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {

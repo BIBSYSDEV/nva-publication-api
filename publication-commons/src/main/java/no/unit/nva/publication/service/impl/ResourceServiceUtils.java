@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.utils.JsonUtils.objectMapper;
@@ -7,16 +8,15 @@ import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.storage.model.daos.ResourceDao;
 
 public final class ResourceServiceUtils {
 
@@ -27,6 +27,7 @@ public final class ResourceServiceUtils {
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
+    public static final String PARSING_NULL_MAP_ERROR = "Trying to parse null valuesMap";
 
     private ResourceServiceUtils() {
     }
@@ -36,11 +37,16 @@ public final class ResourceServiceUtils {
         return ItemUtils.toAttributeValues(item);
     }
 
-    static ResourceDao parseResult(GetItemResult getResult) {
-        Item item = ItemUtils.toItem(getResult.getItem());
-        return attempt(item::toJSON)
-            .map(json -> objectMapper.readValue(json, ResourceDao.class))
-            .orElseThrow();
+
+    public static <T> T parseAttributeValuesMap(Map<String,AttributeValue> valuesMap, Class<T> dataClass){
+        if(nonNull(valuesMap)){
+            Item item = ItemUtils.toItem(valuesMap);
+            return attempt(()->objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
+        }
+        else{
+            throw new RuntimeException(PARSING_NULL_MAP_ERROR);
+        }
+
     }
 
     static Organization newOrganization(URI organizationUri) {

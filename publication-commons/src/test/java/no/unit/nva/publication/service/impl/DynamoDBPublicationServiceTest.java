@@ -330,6 +330,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 
+    //Done
     @Test
     public void getPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
@@ -340,6 +341,7 @@ class DynamoDBPublicationServiceTest {
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
+
 
     @Test
     public void getPublicationsByOwnerTableErrorThrowsException() {

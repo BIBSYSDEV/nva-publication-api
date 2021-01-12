@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static nva.commons.utils.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,6 +22,9 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
@@ -136,7 +140,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         Resource newResource = resourceService.getResource(newOwner, originalResource.getIdentifier());
 
-        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserId())));
+        assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserIdentifier())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
     }
 
@@ -185,7 +189,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     @DisplayName("resourceUpdate fails when Update changes the primary key (organization-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
-        throws ConflictException, NotFoundException {
+        throws ConflictException {
         Resource resource = createSampleResource();
         Resource resourceUpdate = createResourceUpdate(resource);
 
@@ -196,7 +200,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     @DisplayName("resourceUpdate fails when Update changes the primary key (primary-key-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
-        throws ConflictException, NotFoundException {
+        throws ConflictException {
         Resource resource = createSampleResource();
         Resource resourceUpdate = createResourceUpdate(resource);
 
@@ -240,9 +244,31 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     }
 
+    @Test
+    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() throws ConflictException {
+        Set<Resource> userResources = createSampleResources();
+        UserInstance userInstance= new UserInstance(SOME_USER,SOME_ORG);
+
+        List<Resource> actualResources=resourceService.getResourcesByOwner(userInstance);
+        HashSet<Resource> actualResourcesSet = new HashSet<>(actualResources);
+
+        assertThat(actualResourcesSet,is(equalTo(userResources)));
+
+    }
+
+
+
+    private Set<Resource> createSampleResources() throws ConflictException {
+        Set<Resource> userResources = Set.of(emptyResource(), emptyResource(),emptyResource());
+        for(Resource resource:userResources){
+            resourceService.createResource(resource);
+        }
+        return userResources;
+    }
+
     private Resource expectedUpdatedResource(Resource sampleResource) {
         return sampleResource.copy()
-            .withOwner(someOtherUser().getUserId())
+            .withOwner(someOtherUser().getUserIdentifier())
             .withPublisher(userOrganization(someOtherUser()))
             .withCreatedDate(RESOURCE_CREATION_TIME)
             .withModifiedDate(RESOURCE_MODIFIED_TIME)
@@ -279,7 +305,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Resource emptyResource() {
-        Resource resource = Resource.emptyResource(SAMPLE_USER.getUserId(), SAMPLE_USER.getOrganizationUri());
+        Resource resource = Resource.emptyResource(SAMPLE_USER.getUserIdentifier(), SAMPLE_USER.getOrganizationUri());
         resource.setStatus(PublicationStatus.DRAFT);
         resource.setTitle(ORIGINAL_TITLE);
         return resource;

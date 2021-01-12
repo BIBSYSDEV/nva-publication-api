@@ -11,6 +11,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -50,8 +51,7 @@ public class ResourceDao implements WithPrimaryKey {
     @Override
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public String getPrimaryKeyPartitionKey() {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT,
-            Resource.TYPE, publisherId(), resource.getOwner());
+        return formatPrimaryPartitionKey(resource.getPublisher().getId(),resource.getOwner());
     }
 
     @JacocoGenerated
@@ -129,7 +129,20 @@ public class ResourceDao implements WithPrimaryKey {
     }
 
     private String publisherId() {
-        String[] pathParts = resource.getPublisher().getId().getPath().split(PATH_SEPARATOR);
+        return orgUriToOrgIdentifier(resource.getPublisher().getId());
+    }
+
+    private static String orgUriToOrgIdentifier(URI uri) {
+        String[] pathParts = uri.getPath().split(PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
+    }
+
+    public static String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
+        String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
+        return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
+    }
+
+    private static String formatPrimaryPartitionKey(String publisherId, String owner) {
+        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE, publisherId, owner);
     }
 }
