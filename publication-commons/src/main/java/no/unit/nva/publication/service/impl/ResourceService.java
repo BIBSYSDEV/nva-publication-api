@@ -3,13 +3,14 @@ package no.unit.nva.publication.service.impl;
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PARTITION_KEY_NAME_PLACEHOLDER;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.SORT_KEY_NAME_PLACEHOLDER;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
@@ -33,7 +34,6 @@ import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
@@ -46,13 +46,6 @@ import nva.commons.utils.attempt.Failure;
 
 public class ResourceService {
 
-    private static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
-    private static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
-    public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
-        PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
-            + " AND "
-            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
-    public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -103,7 +96,7 @@ public class ResourceService {
     public Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(),ResourceDao.class);
+        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
         return fetchedDao.getResource();
     }
 
@@ -118,24 +111,26 @@ public class ResourceService {
     }
 
     public List<Resource> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey=
-            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(),userInstance.getUserIdentifier());
+        String partitionKey =
+            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
-        Map<String, AttributeValue> valuesMap = getValueMap(querySpec.getValueMap(), String.class);
+        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
-        List<Resource> resources = result.getItems()
+        return queryResultToResourceList(result);
+    }
+
+    private static List<Resource> queryResultToResourceList(QueryResult result) {
+        return result.getItems()
             .stream()
             .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
             .map(ResourceDao::getResource)
             .collect(Collectors.toList());
-        return resources;
-
     }
 
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                 Map<String, String> namesMap) {
+                                     Map<String, String> namesMap) {
         return client.query(
             new QueryRequest().withKeyConditionExpression(conditionExpression)
                 .withExpressionAttributeNames(namesMap)
@@ -147,36 +142,6 @@ public class ResourceService {
     private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
         return new ExpressionSpecBuilder()
             .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
-
-    private static  <T> Map<String,AttributeValue> getValueMap(Map<String,Object> valuesMap, Class<T> valueClass) {
-        if(String.class.equals(valueClass)){
-            return valuesMap
-                .entrySet()
-                .stream()
-                .collect(
-                    Collectors.toMap(
-                        Entry::getKey,
-                        mapEntry->convertObjectToStringAttributeValue(mapEntry.getValue())
-                    )
-                );
-
-        }
-        else {
-            throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
-        }
-
-
-    }
-
-    private static AttributeValue convertObjectToStringAttributeValue(Object mapValueEntry) {
-        return new AttributeValue((String)mapValueEntry);
-    }
-
-    private Map<String, AttributeValue> primaryKeyAttributeValuesMap(ResourceDao resourceDao) {
-        return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
-            new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
-            SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
     }
 
     private void sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
@@ -220,7 +185,8 @@ public class ResourceService {
     }
 
     private Resource createQueryObject(UserInstance userInstance, String resourceIdentifier) {
-        return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(), resourceIdentifier);
+        return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+            resourceIdentifier);
     }
 
     private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {

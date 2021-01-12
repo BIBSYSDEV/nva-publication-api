@@ -10,6 +10,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Locale;
@@ -22,7 +23,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.utils.JacocoGenerated;
 
-@JsonTypeName("Resource")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao implements WithPrimaryKey {
 
     public static final String PATH_SEPARATOR = "/";

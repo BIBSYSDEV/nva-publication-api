@@ -4,8 +4,10 @@ import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIde
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static nva.commons.utils.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.StringContains.containsString;
@@ -16,12 +18,20 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -49,6 +59,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
     private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     private static final Instant RESOURCE_MODIFIED_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
+    public static final String SOME_INVALID_FIELD = "someInvalidField";
+    public static final String SOME_STRING = "someValue";
     private ResourceService resourceService;
     private Clock clock;
 
@@ -208,59 +220,115 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThatUpdateFails(resourceUpdate);
     }
 
-
-
     @Test
     public void createResourceThrowsConflictExceptionWithInternalCauseWhenCreatingResourceFails() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
-        RuntimeException expectedCause= new RuntimeException(expectedMessage);
+        RuntimeException expectedCause = new RuntimeException(expectedMessage);
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(expectedCause);
 
-        ResourceService resourceService = new ResourceService(client,clock);
+        ResourceService failingService = new ResourceService(client, clock);
 
         Resource resource = emptyResource();
-        Executable action = () -> resourceService.createResource(resource);
+        Executable action = () -> failingService.createResource(resource);
         ConflictException actualException = assertThrows(ConflictException.class, action);
         Throwable actualCause = actualException.getCause();
-        assertThat(actualCause.getMessage(),is(equalTo(expectedMessage)));
+        assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
     }
 
     @Test
-    public void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason(){
+    public void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
-        RuntimeException exptedMessage= new RuntimeException(expectedMessage);
+        RuntimeException exptedMessage = new RuntimeException(expectedMessage);
         when(client.getItem(any(GetItemRequest.class)))
             .thenThrow(exptedMessage);
         Resource resource = emptyResource();
 
-        ResourceService resourceService = new ResourceService(client,clock);
+        ResourceService failingResourceService = new ResourceService(client, clock);
 
-        Executable action = () -> resourceService.getResource(resource);
+        Executable action = () -> failingResourceService.getResource(resource);
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
-
     }
 
     @Test
     public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() throws ConflictException {
         Set<Resource> userResources = createSampleResources();
-        UserInstance userInstance= new UserInstance(SOME_USER,SOME_ORG);
 
-        List<Resource> actualResources=resourceService.getResourcesByOwner(userInstance);
+        List<Resource> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
         HashSet<Resource> actualResourcesSet = new HashSet<>(actualResources);
 
-        assertThat(actualResourcesSet,is(equalTo(userResources)));
+        assertThat(actualResourcesSet, is(equalTo(userResources)));
+    }
 
+    @Test
+    public void getResourcesByOwnerReturnsEmpyListWhenUseHasNoPublications() {
+
+        List<Resource> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
+        HashSet<Resource> actualResourcesSet = new HashSet<>(actualResources);
+
+        assertThat(actualResourcesSet, is(equalTo(Collections.emptySet())));
+    }
+
+    @Test
+    public void getResourcesByOwnerPropagatesExceptionWhenExceptionIsThrown() {
+        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
+        String expectedMessage = "expectedMessage";
+        RuntimeException expectedException = new RuntimeException(expectedMessage);
+        when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
+
+        ResourceService failingResourceService = new ResourceService(client, clock);
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+            () -> failingResourceService.getResourcesByOwner(SAMPLE_USER));
+
+        assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
+    }
+
+    @Test
+    public void getResourcesByOwnerPropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
+        AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
+        Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
+        QueryResult responseWithInvalidItem = new QueryResult().withItems(ItemUtils.toAttributeValues(invalidItem));
+        when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
+
+        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
+
+        assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
+            () -> failingResourceService.getResourcesByOwner(SAMPLE_USER));
     }
 
 
 
+    @Test
+    public void getResourcePropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
+
+        AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
+        Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
+        GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
+        when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
+
+        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
+
+        SortableIdentifier someIdentifier = SortableIdentifier.next();
+        Executable action = () -> failingResourceService.getResource(SAMPLE_USER, someIdentifier);
+
+        assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass, action);
+    }
+
+    private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,
+                                                             Executable action) {
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getCause(), is(instanceOf(expectedExceptionClass)));
+    }
+
     private Set<Resource> createSampleResources() throws ConflictException {
-        Set<Resource> userResources = Set.of(emptyResource(), emptyResource(),emptyResource());
-        for(Resource resource:userResources){
+        Set<Resource> userResources = Set.of(emptyResource(), emptyResource(), emptyResource());
+        for (Resource resource : userResources) {
             resourceService.createResource(resource);
         }
         return userResources;

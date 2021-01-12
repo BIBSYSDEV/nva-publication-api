@@ -342,7 +342,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
 
-
+    //Done
     @Test
     public void getPublicationsByOwnerTableErrorThrowsException() {
         Index failingIndex = mock(Index.class);
@@ -354,6 +354,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
 
+    //Done
     @Test
     public void updatePublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
@@ -367,6 +368,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
     }
 
+    //Obsolete
     @Test
     public void listPublishedPublicationsTableErrorThrowsException() {
         Index failingIndex = mock(Index.class);
@@ -379,6 +381,8 @@ class DynamoDBPublicationServiceTest {
     }
 
 
+
+    //Done
     @Test
     public void publicationToItemThrowsExceptionWhenInvalidJson() throws JsonProcessingException {
         ObjectMapper failingObjectMapper = mock(ObjectMapper.class);
@@ -390,6 +394,8 @@ class DynamoDBPublicationServiceTest {
         assertEquals(DynamoDBPublicationService.ERROR_MAPPING_PUBLICATION_TO_ITEM, exception.getMessage());
     }
 
+
+    //Done
     @Test
     public void itemToPublicationThrowsExceptionWhenInvalidJson() {
         Item item = mock(Item.class);

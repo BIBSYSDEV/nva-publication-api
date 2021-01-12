@@ -11,23 +11,32 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
+import no.unit.nva.publication.storage.model.daos.ResourceDao;
 
 public final class ResourceServiceUtils {
 
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
     public static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
+    public static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
+    public static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
+    public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
+        PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
+            + " AND "
+            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
     public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
     public static final String PARSING_NULL_MAP_ERROR = "Trying to parse null valuesMap";
+    public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
 
     private ResourceServiceUtils() {
     }
@@ -37,16 +46,19 @@ public final class ResourceServiceUtils {
         return ItemUtils.toAttributeValues(item);
     }
 
-
-    public static <T> T parseAttributeValuesMap(Map<String,AttributeValue> valuesMap, Class<T> dataClass){
-        if(nonNull(valuesMap)){
+    static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
+        if (nonNull(valuesMap)) {
             Item item = ItemUtils.toItem(valuesMap);
-            return attempt(()->objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
-        }
-        else{
+            return attempt(() -> objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
+        } else {
             throw new RuntimeException(PARSING_NULL_MAP_ERROR);
         }
+    }
 
+    static Map<String, AttributeValue> primaryKeyAttributeValuesMap(ResourceDao resourceDao) {
+        return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
+            new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
+            SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
     }
 
     static Organization newOrganization(URI organizationUri) {
@@ -63,6 +75,23 @@ public final class ResourceServiceUtils {
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
+    }
+
+    static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
+                                                                                Class<T> valueClass) {
+        if (String.class.equals(valueClass)) {
+            return valuesMap
+                .entrySet()
+                .stream()
+                .collect(
+                    Collectors.toMap(
+                        Entry::getKey,
+                        mapEntry -> new AttributeValue((String)mapEntry.getValue())
+                    )
+                );
+        } else {
+            throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
+        }
     }
 
     private static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
