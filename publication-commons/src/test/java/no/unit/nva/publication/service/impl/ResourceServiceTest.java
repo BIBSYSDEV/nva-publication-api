@@ -11,9 +11,13 @@ import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
+import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -42,11 +46,12 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     private static final Instant RESOURCE_MODIFIED_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private ResourceService resourceService;
+    private Clock clock;
 
     @BeforeEach
     public void init() {
         super.init();
-        Clock clock = mock(Clock.class);
+        clock = mock(Clock.class);
         when(clock.instant()).thenReturn(RESOURCE_CREATION_TIME).thenReturn(RESOURCE_MODIFIED_TIME);
         resourceService = new ResourceService(client, clock);
     }
@@ -197,6 +202,42 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         resourceUpdate.setIdentifier(SortableIdentifier.next());
         assertThatUpdateFails(resourceUpdate);
+    }
+
+
+
+    @Test
+    public void createResourceThrowsConflictExceptionWithInternalCauseWhenCreatingResourceFails() {
+        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
+        String expectedMessage = "expectedMessage";
+        RuntimeException expectedCause= new RuntimeException(expectedMessage);
+        when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
+            .thenThrow(expectedCause);
+
+        ResourceService resourceService = new ResourceService(client,clock);
+
+        Resource resource = emptyResource();
+        Executable action = () -> resourceService.createResource(resource);
+        ConflictException actualException = assertThrows(ConflictException.class, action);
+        Throwable actualCause = actualException.getCause();
+        assertThat(actualCause.getMessage(),is(equalTo(expectedMessage)));
+    }
+
+    @Test
+    public void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason(){
+        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
+        String expectedMessage = "expectedMessage";
+        RuntimeException exptedMessage= new RuntimeException(expectedMessage);
+        when(client.getItem(any(GetItemRequest.class)))
+            .thenThrow(exptedMessage);
+        Resource resource = emptyResource();
+
+        ResourceService resourceService = new ResourceService(client,clock);
+
+        Executable action = () -> resourceService.getResource(resource);
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
+
     }
 
     private Resource expectedUpdatedResource(Resource sampleResource) {

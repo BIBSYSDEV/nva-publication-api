@@ -207,6 +207,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(publication.getCreatedDate(), updatedPublication.getCreatedDate());
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerWithDifferentIdentifiersThrowsException() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -230,6 +231,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(0, publications.size());
     }
 
+    //DONE
     @Test
     @DisplayName("empty Table Returns No Published Publications")
     public void emptyTableReturnsNoPublishedPublications() throws ApiGatewayException {
@@ -237,6 +239,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(0, publications.size());
     }
 
+    //DONE
     @Test
     public void getPublicationsByOwnerReturnsOnlyMostRecentVersionOfPublication() throws ApiGatewayException {
         Publication publication1 = publicationWithIdentifier();
@@ -253,6 +256,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(2, publications.size());
     }
 
+    //OBSOLETE
     @Test
     public void listPublishedPublicationsByDateReturnsOnlyMostRecentVersionOfPublication() throws ApiGatewayException {
         Publication publication1 = insertPublishedPublication();
@@ -274,6 +278,7 @@ class DynamoDBPublicationServiceTest {
         return publication;
     }
 
+    //DONE
     @Test
     @DisplayName("nonEmpty Table Returns Publications")
     public void nonEmptyTableReturnsPublications() throws ApiGatewayException {
@@ -298,6 +303,7 @@ class DynamoDBPublicationServiceTest {
         Assertions.assertTrue(publicationSummary.isEmpty());
     }
 
+    //DONE
     @Test
     @DisplayName("filterOutOlderVersionsOfPublications returns only the single version of a publication")
     public void filterOutOlderVersionsOfPublicationsReturnsTheSingleVersionOfAPublication() {
@@ -311,6 +317,8 @@ class DynamoDBPublicationServiceTest {
         assertThat(expected, containsInAnyOrder(actual.toArray()));
     }
 
+
+    //Done
     @Test
     public void createPublicationTableErrorThrowsException() {
         Table failingTable = mock(Table.class);
