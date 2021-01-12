@@ -39,6 +39,10 @@ public class ResourceService {
 
     private static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
     private static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
+    public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
+        PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
+            + " AND "
+            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -60,16 +64,15 @@ public class ResourceService {
         sendRequest(putRequest);
     }
 
-    public void updateResource(Resource resourceUpdate)  {
+    public void updateResource(Resource resourceUpdate) {
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
-        String conditionExpression = primaryKeyHasNotChangedCondition();
 
         Map<String, AttributeValue> valuesMap = primaryKeyAttributeValuesMap(resourceDao);
 
         PutItemRequest putItemRequest = new PutItemRequest()
             .withItem(toDynamoFormat(resourceDao))
             .withTableName(tableName)
-            .withConditionExpression(conditionExpression)
+            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
             .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
             .withExpressionAttributeValues(valuesMap);
 
@@ -105,12 +108,6 @@ public class ResourceService {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
             SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
-    }
-
-    private String primaryKeyHasNotChangedCondition() {
-        return String.format("%s = %s AND %s = %s",
-            PARTITION_KEY_NAME_PLACEHOLDER, PARTITION_KEY_VALUE_PLACEHOLDER, SORT_KEY_NAME_PLACEHOLDER,
-            SORT_KEY_VALUE_PLACEHOLDER);
     }
 
     private void sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
