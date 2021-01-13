@@ -10,9 +10,9 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditio
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.valueMapForKeyConditionCheck;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.utils.attempt.Try.attempt;
@@ -26,15 +26,27 @@ import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import no.unit.nva.model.FileSet;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -42,43 +54,71 @@ import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.exceptions.commonexceptions.NotFoundException;
+import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Failure;
 
 public class ResourceService {
 
+    public static final String EMPTY_STRING = "";
+    public static final String DOUBLE_QUOTES = "\"";
+    public static final String STATUS_FIELD_IN_RESOURCE = "status";
+    public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
+    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
+    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+    public static final String RESOURCE_MAIN_TITLE_FIELD = "title";
+    public static final String RESOURCE_LINK_FIELD = "link";
+    public static final String RESOURCE_FILES_FIELD = "files";
+    public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
+    private final Supplier<SortableIdentifier> identifierSupplier;
 
-    public ResourceService(AmazonDynamoDB client, Clock clock) {
+    public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         tableName = RESOURCES_TABLE_NAME;
         this.client = client;
         this.clockForTimestamps = clock;
+        this.identifierSupplier = identifierSupplier;
     }
 
     public ResourceService() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone(),DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Void createResource(Resource resource) throws ConflictException {
-        resource.setCreatedDate(clockForTimestamps.instant());
-        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(resource);
+    public ResourceService(AmazonDynamoDB client, Clock clock) {
+        this(client,clock,DEFAULT_IDENTIFIER_SUPPLIER);
+    }
+
+    public Resource createResource(Resource inputData) throws ConflictException {
+
+        Resource newResource = inputData.copy().withIdentifier(identifierSupplier.get()).build();
+        newResource.setCreatedDate(clockForTimestamps.instant());
+        TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendRequest(putRequest);
-        return null;
+
+        return fetchEventuallyConsistentResource(newResource);
+    }
+
+    private Resource fetchEventuallyConsistentResource(Resource newResource) {
+        Resource savedResource=null;
+        for (int times=0; times<10 || savedResource==null;times++){
+            savedResource = attempt(()->getResource(newResource)).orElse(fail->null);
+        }
+        return savedResource;
     }
 
     public void updateResource(Resource resourceUpdate) {
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
-        Map<String, AttributeValue> valuesMap = primaryKeyAttributeValuesMap(resourceDao);
+        Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
 
         PutItemRequest putItemRequest = new PutItemRequest()
             .withItem(toDynamoFormat(resourceDao))
             .withTableName(tableName)
             .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
             .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
-            .withExpressionAttributeValues(valuesMap);
+            .withExpressionAttributeValues(primaryKeyCheckValuesMap);
 
         client.putItem(putItemRequest);
     }
@@ -121,6 +161,95 @@ public class ResourceService {
         return queryResultToResourceList(result);
     }
 
+    public Resource publishResource(Resource resource)
+        throws JsonProcessingException, NotFoundException, InvalidPublicationException {
+        Resource existingResource = getResource(resource);
+        if (PublicationStatus.PUBLISHED.equals(existingResource.getStatus())) {
+            return existingResource;
+        }
+        validateForPublishing(resource);
+        ResourceDao dao = new ResourceDao(resource);
+        UpdateItemRequest updateRequest = publishUpdateRequest(dao);
+        return sendRequest(updateRequest);
+    }
+
+    private void validateForPublishing(Resource resource) throws InvalidPublicationException {
+        boolean hasNoTitle = isNull(resource.getTitle());
+        boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
+
+        if( hasNoTitle ){
+            String missingField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_MAIN_TITLE_FIELD))
+                .orElseThrow();
+            throw new InvalidPublicationException(Collections.singletonList(missingField));
+        }
+        else if( hasNeitherLinkNorFile ){
+            String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
+            String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILES_FIELD)).orElseThrow();
+            throw new InvalidPublicationException(List.of(files,linkField));
+        }
+
+
+    }
+
+    private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
+        return resource.getClass().getDeclaredField(resourceField).getName();
+    }
+
+    private boolean emptyResourceFiles(Resource resource) {
+        return Optional.ofNullable(resource.getFiles())
+            .map(FileSet::getFiles)
+            .map(List::isEmpty)
+            .orElse(true);
+    }
+
+    private Resource sendRequest(UpdateItemRequest updateRequest) {
+        UpdateItemResult requestResult = client.updateItem(updateRequest);
+        ResourceDao updatedResource = parseAttributeValuesMap(requestResult.getAttributes(), ResourceDao.class);
+        return updatedResource.getResource();
+    }
+
+    private UpdateItemRequest publishUpdateRequest(ResourceDao dao) throws JsonProcessingException {
+
+        ConcurrentHashMap<String, String> expressionNamesMap = publishUpdateExpressionNamesMap();
+        ConcurrentHashMap<String, AttributeValue> expressionValuesMap = publishUpdateExpressionValuesMap();
+
+        String updateExpression = "SET"
+            + " #resource.#status = :status, "
+            + "#resource.#modifiedDate = :modifiedDate, "
+            + "#resource.#publishedDate = :modifiedDate ";
+        return new UpdateItemRequest()
+            .withTableName(tableName)
+            .withKey(dao.primaryKey())
+            .withUpdateExpression(updateExpression)
+            .withConditionExpression("#resource.#status <> " + PublicationStatus.PUBLISHED.toString())
+            .withExpressionAttributeNames(expressionNamesMap)
+            .withExpressionAttributeValues(expressionValuesMap)
+            .withReturnValues(ReturnValue.ALL_NEW);
+    }
+    private ConcurrentHashMap<String, String> publishUpdateExpressionNamesMap() {
+        ConcurrentHashMap<String, String> expressionNamesMap = new ConcurrentHashMap<>();
+        expressionNamesMap.put("#status", STATUS_FIELD_IN_RESOURCE);
+        expressionNamesMap.put("#modifiedDate", MODIFIED_FIELD_IN_RESOURCE);
+        expressionNamesMap.put("#publishedDate",PUBLISHED_DATE_FIELD_IN_RESOURCE);
+        expressionNamesMap.put("#resource",RESOURCE_FIELD_IN_RESOURCE_DAO);
+
+        return expressionNamesMap;
+    }
+
+    private ConcurrentHashMap<String, AttributeValue> publishUpdateExpressionValuesMap()
+        throws JsonProcessingException {
+        String nowString = instantAsString(clockForTimestamps.instant());
+        ConcurrentHashMap<String, AttributeValue> expressionValuesMap= new ConcurrentHashMap<>();
+        expressionValuesMap.put(":status",new AttributeValue(PublicationStatus.PUBLISHED.toString()));
+        expressionValuesMap.put(":modifiedDate",new AttributeValue(nowString));
+        return expressionValuesMap;
+    }
+
+    private String instantAsString(Instant instant) throws JsonProcessingException {
+        String jsonString = JsonUtils.objectMapper.writeValueAsString(instant);
+        return jsonString.replaceAll(DOUBLE_QUOTES,EMPTY_STRING);
+    }
+
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
             .stream()
@@ -144,8 +273,8 @@ public class ResourceService {
             .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
 
-    private void sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
-        attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
+    private TransactWriteItemsResult sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
+         return attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {

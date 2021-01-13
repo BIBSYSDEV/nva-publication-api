@@ -27,10 +27,13 @@ public final class ResourceServiceUtils {
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
     public static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
     public static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
+
+    // #partitionKey = :partitionKey AND #sortKey = :sortKey
     public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
             + " AND "
             + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
+
     public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
 
@@ -55,7 +58,7 @@ public final class ResourceServiceUtils {
         }
     }
 
-    static Map<String, AttributeValue> primaryKeyAttributeValuesMap(ResourceDao resourceDao) {
+    static Map<String, AttributeValue> valueMapForKeyConditionCheck(ResourceDao resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
             SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));

@@ -401,6 +401,7 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    //Done
     public void canPublishPublicationReturnsAccepted() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publicationWithIdentifier());
 
@@ -412,6 +413,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(expected, actual);
     }
 
+    //DONE
     @Test
     public void publishedPublicationHasPublishedDate() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publicationWithIdentifier());
@@ -420,6 +422,7 @@ class DynamoDBPublicationServiceTest {
         assertNotNull(publishedPublication.getPublishedDate());
     }
 
+    //DONE
     @Test
     public void publishedPublicationHasStatusPublished() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publicationWithIdentifier());
@@ -428,6 +431,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(PublicationStatus.PUBLISHED, publishedPublication.getStatus());
     }
 
+    //DONE
     @Test
     public void publicationAlreadyPublishedReturnsNoContent() throws Exception {
         Publication publicationToPublish = publicationService.createPublication(publicationWithIdentifier());
@@ -456,6 +460,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(SC_CONFLICT, exception.getStatusCode());
     }
 
+    //Done
     @Test
     public void publishPublicationWithMissingLinkAndFileReturnsConflict() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -471,6 +476,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(SC_CONFLICT, exception.getStatusCode());
     }
 
+    //Done
     @Test
     public void createPublicationReturnsPublicationWithIdentifierWhenInputIsValid() throws ApiGatewayException {
         Publication publication = publicationWithoutIdentifier();
