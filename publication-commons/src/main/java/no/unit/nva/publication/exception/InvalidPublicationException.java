@@ -1,7 +1,7 @@
 package no.unit.nva.publication.exception;
 
 import java.util.List;
-import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.http.HttpStatus;
 
 public class InvalidPublicationException extends ApiGatewayException {

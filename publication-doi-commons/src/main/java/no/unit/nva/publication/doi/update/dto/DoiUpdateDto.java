@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
-import nva.commons.json.JsonSerializable;
+import nva.commons.core.JsonSerializable;
 
 public class DoiUpdateDto implements JsonSerializable {
 

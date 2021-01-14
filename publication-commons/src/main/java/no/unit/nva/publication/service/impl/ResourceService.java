@@ -15,7 +15,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrga
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.valueMapForKeyConditionCheck;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -54,11 +54,11 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
-import nva.commons.exceptions.commonexceptions.ConflictException;
-import nva.commons.exceptions.commonexceptions.NotFoundException;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.attempt.Failure;
-import nva.commons.utils.attempt.Try;
+import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Failure;
+import nva.commons.core.attempt.Try;
 
 public class ResourceService {
 

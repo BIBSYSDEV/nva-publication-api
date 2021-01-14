@@ -9,9 +9,10 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
-import nva.commons.exceptions.commonexceptions.ConflictException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.RequestInfo;
+
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ConflictException;
 import org.slf4j.LoggerFactory;
 
 public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {

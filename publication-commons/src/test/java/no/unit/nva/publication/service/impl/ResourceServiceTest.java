@@ -4,7 +4,8 @@ import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_MAIN_TITLE_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -53,11 +54,10 @@ import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.exceptions.commonexceptions.ConflictException;
-import nva.commons.exceptions.commonexceptions.NotFoundException;
-import nva.commons.utils.JsonUtils;
-import nva.commons.utils.attempt.Try;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.attempt.Try;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -479,7 +479,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private ResourceService resourceServiceReceivingNoValue(Resource resource) throws JsonProcessingException {
-        String jsonString = JsonUtils.objectMapper.writeValueAsString(new ResourceDao(resource));
+        String jsonString = objectMapper.writeValueAsString(new ResourceDao(resource));
         Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         when(client.getItem(any(GetItemRequest.class)))

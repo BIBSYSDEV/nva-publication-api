@@ -25,9 +25,8 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
+import nva.commons.core.ioutils.IoUtils;import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.TooManyFields")
 public class PublicationStreamRecordTestDataGenerator {

@@ -1,6 +1,6 @@
 package no.unit.nva.publication;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -10,8 +10,8 @@ import java.net.URI;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.publication.exception.InputException;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.RequestInfo;
 import org.junit.jupiter.api.Test;
 
 public class RequestUtilTest {

@@ -8,7 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.util.List;
-import nva.commons.utils.JsonUtils;
+
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 class PublicationDateTest {

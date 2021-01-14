@@ -2,8 +2,7 @@ package no.unit.nva.publication.events;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.utils.IoUtils;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.ioutils.IoUtils;import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

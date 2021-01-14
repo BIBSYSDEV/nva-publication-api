@@ -2,7 +2,7 @@ package no.unit.nva.publication.doi;
 
 import static no.unit.nva.hamcrest.DoesNotHaveNullOrEmptyFields.doesNotHaveNullOrEmptyFields;
 import static no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao.ERROR_MUST_BE_PUBLICATION_TYPE;
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -27,8 +27,7 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
-import nva.commons.utils.IoUtils;
-import org.junit.jupiter.api.Test;
+import nva.commons.core.ioutils.IoUtils;import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class PublicationMapperTest {

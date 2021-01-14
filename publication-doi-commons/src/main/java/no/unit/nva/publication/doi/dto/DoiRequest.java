@@ -3,7 +3,7 @@ package no.unit.nva.publication.doi.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
 import java.util.Objects;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class DoiRequest {
 

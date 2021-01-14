@@ -1,8 +1,8 @@
 package no.unit.nva.doi.event.producer;
 
 import java.net.URI;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public final class AppConfig {
