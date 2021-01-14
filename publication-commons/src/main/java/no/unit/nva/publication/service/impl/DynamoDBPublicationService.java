@@ -398,10 +398,18 @@ public class DynamoDBPublicationService implements PublicationService {
             if (isNull(publication.getEntityDescription().getMainTitle())) {
                 missingFields.add(MAIN_TITLE);
             }
-            if (isNull(publication.getLink()) && publication.getFileSet().getFiles().isEmpty()) {
+            if (isNull(publication.getLink()) && emptyFiles(publication)) {
                 missingFields.add(LINK_OR_FILE);
             }
             return missingFields;
+        }
+
+        private static boolean emptyFiles(Publication publication) {
+            if (publication.getFileSet() == null || publication.getFileSet().getFiles() == null) {
+                return true;
+            } else {
+                return publication.getFileSet().getFiles().isEmpty();
+            }
         }
     }
 }

@@ -27,6 +27,7 @@ public class PublicationFanoutHandlerTest {
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
     public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
     public static final String DYNAMODBEVENT_OLD_IMAGE_JSON = "dynamodbevent_old_image.json";
+    public static final String DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON = "dynamodbevent_empty_attribute_value.json";
 
     private OutputStream outputStream;
     private Context context;
@@ -93,6 +94,21 @@ public class PublicationFanoutHandlerTest {
             () -> handler.handleRequest(inputStream, outputStream, context));
 
         assertThat(exception.getMessage(), containsString(PublicationFanoutHandler.MAPPING_ERROR));
+    }
+
+    @Test
+    public void test() {
+        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+
+        InputStream inputStream = IoUtils.inputStreamFromResources(
+                DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        PublicationUpdateEvent response = parseResponse();
+
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
     }
 
     private PublicationUpdateEvent parseResponse() {
