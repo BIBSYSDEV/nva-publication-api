@@ -39,7 +39,6 @@ public final class ResourceServiceUtils {
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
-    public static final String PARSING_NULL_OR_EMPTY_MAP_ERROR = "Trying to parse null or empty valuesMap";
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
 
     private ResourceServiceUtils() {

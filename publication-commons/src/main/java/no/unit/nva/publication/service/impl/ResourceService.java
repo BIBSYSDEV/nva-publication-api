@@ -60,6 +60,7 @@ import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Failure;
 import nva.commons.utils.attempt.Try;
 
+@SuppressWarnings("PMD.GodClass")
 public class ResourceService {
 
     public static final String EMPTY_STRING = "";
@@ -193,8 +194,6 @@ public class ResourceService {
         throw new RuntimeException(failure.getException());
     }
 
-
-
     private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) throws JsonProcessingException {
         String updateExpression = "SET "
                                   + "#resource.#status = :status, "
@@ -251,7 +250,6 @@ public class ResourceService {
             .orElseThrow();
     }
 
-
     private UpdateItemRequest publishUpdateRequest(ResourceDao dao) throws JsonProcessingException {
 
         ConcurrentHashMap<String, String> expressionNamesMap = publishUpdateExpressionNamesMap();
@@ -286,7 +284,8 @@ public class ResourceService {
         return expressionNamesMap;
     }
 
-    private ConcurrentHashMap<String, AttributeValue> updateStatusExpresionValuesMap(PublicationStatus publicationStatus)
+    private ConcurrentHashMap<String, AttributeValue> updateStatusExpresionValuesMap(
+        PublicationStatus publicationStatus)
         throws JsonProcessingException {
         String nowString = instantAsString(clockForTimestamps.instant());
         ConcurrentHashMap<String, AttributeValue> expressionValuesMap = new ConcurrentHashMap<>();

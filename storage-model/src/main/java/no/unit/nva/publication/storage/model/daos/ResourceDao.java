@@ -11,7 +11,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Locale;
 import java.util.Map;
