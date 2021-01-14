@@ -20,28 +20,28 @@ import org.junit.jupiter.api.Test;
 public class ResourceTest {
 
     public static final String SOME_TITLE = "SomeTitle";
+    public static final URI SAMPLE_ORG_URI = URI.create("https://www.example.com/123");
+    public static final Organization SAMPLE_ORG = new Organization.Builder().withId(SAMPLE_ORG_URI).build();
+    public static final String SOME_OWNER = "some@owner.no";
+    public static final String SOME_LINK = "https://example.org/somelink";
     private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
-    public static final URI SAMPLE_ORG_URI= URI.create("https://www.example.com/123");
-    public static final Organization SAMPLE_ORG = new Organization.Builder().withId(SAMPLE_ORG_URI).build();
-    public static final String SOME_OWNER = "some@owner.no";
-    public static final String SOME_LINK = "https://example.org/somelink";
 
     @Test
-    public void builderContainsAllFields(){
+    public void builderContainsAllFields() {
         Resource resource = sampleResource();
-        assertThat(resource,doesNotHaveNullOrEmptyFields());
+        assertThat(resource, doesNotHaveNullOrEmptyFields());
     }
 
     @Test
-    public void copyContainsAllFields(){
+    public void copyContainsAllFields() {
         Resource resource = sampleResource();
         Resource copy = resource.copy().build();
         JsonNode resourceJson = JsonUtils.objectMapper.convertValue(resource, JsonNode.class);
         JsonNode copyJson = JsonUtils.objectMapper.convertValue(copy, JsonNode.class);
-        assertThat(resource,doesNotHaveNullOrEmptyFields());
+        assertThat(resource, doesNotHaveNullOrEmptyFields());
         assertThat(copy, is(equalTo(resource)));
         assertThat(resourceJson, is(equalTo(copyJson)));
     }

@@ -32,8 +32,8 @@ public final class ResourceServiceUtils {
     // #partitionKey = :partitionKey AND #sortKey = :sortKey
     public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
-            + " AND "
-            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
+        + " AND "
+        + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
 
     public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
@@ -80,6 +80,10 @@ public final class ResourceServiceUtils {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
+    static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
+        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
+    }
+
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
                                                                                 Class<T> valueClass) {
         if (String.class.equals(valueClass)) {
@@ -89,16 +93,12 @@ public final class ResourceServiceUtils {
                 .collect(
                     Collectors.toMap(
                         Entry::getKey,
-                        mapEntry -> new AttributeValue((String)mapEntry.getValue())
+                        mapEntry -> new AttributeValue((String) mapEntry.getValue())
                     )
                 );
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }
-    }
-
-    private static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
-        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
 
     private static Map<String, String> primaryKeyAttributeNamesMapping() {
