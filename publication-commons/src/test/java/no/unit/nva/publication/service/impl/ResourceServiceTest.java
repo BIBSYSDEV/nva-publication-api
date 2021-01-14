@@ -11,7 +11,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
-import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -22,12 +21,15 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
@@ -35,6 +37,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -46,10 +49,16 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
+import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import nva.commons.exceptions.ApiGatewayException;
 import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.exceptions.commonexceptions.NotFoundException;
+import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Try;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -356,6 +365,21 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
+    public void publishResourceReturnsUpdatedResource()
+        throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
+        Resource resource = createSampleResource();
+        Resource resourceUpdate = resourceService.publishResource(resource);
+
+        Resource expectedResource = resource.copy()
+            .withStatus(PublicationStatus.PUBLISHED)
+            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
+            .build();
+
+        assertThat(resourceUpdate, is(equalTo(expectedResource)));
+    }
+
+    @Test
     public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
         throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
         Resource resource = createSampleResource();
@@ -430,17 +454,90 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Resource sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
-        resourceService.createResource(sampleResource);
         Resource updatedResource = resourceService.publishResource(sampleResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
+    public void publishResourcePublishesShouldThrowExceptionWhenNoReturnValueIsReturned()
+        throws JsonProcessingException {
+        Resource sampleResource = sampleResource();
+        sampleResource.setIdentifier(SortableIdentifier.next());
+
+        ResourceService resourceServiceThatReceivesNoValue = resourceServiceReceivingNoValue(sampleResource);
+
+        Executable action = () -> resourceServiceThatReceivesNoValue.publishResource(sampleResource);
+        RuntimeException thrownException = assertThrows(RuntimeException.class, action);
+
+        assertThatCauseIsEmptyValueMapException(thrownException);
+    }
+
+    private void assertThatCauseIsEmptyValueMapException(RuntimeException thrownException) {
+        EmptyValueMapException expectedCause = new EmptyValueMapException();
+        assertThat(thrownException.getCause().getClass(), is(equalTo(expectedCause.getClass())));
+        assertThat(thrownException.getCause().getMessage(), is(equalTo(expectedCause.getMessage())));
+    }
+
+    private ResourceService resourceServiceReceivingNoValue(Resource resource) throws JsonProcessingException {
+        String jsonString = JsonUtils.objectMapper.writeValueAsString(new ResourceDao(resource));
+        Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
+        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
+        when(client.getItem(any(GetItemRequest.class)))
+            .thenReturn(new GetItemResult().withItem(getItemResultMap));
+        when(client.updateItem(any(UpdateItemRequest.class))).thenReturn(new UpdateItemResult()
+            .withAttributes(Collections.emptyMap()));
+        return new ResourceService(client, clock);
     }
 
     @Test
     public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws ConflictException {
         Resource sampleResource = sampleResource();
         Resource savedResource = resourceService.createResource(sampleResource);
-        assertThat(sampleResource.getIdentifier(),is(equalTo(null)));
-        assertThat(savedResource.getIdentifier(),is(notNullValue()));
+        assertThat(sampleResource.getIdentifier(), is(equalTo(null)));
+        assertThat(savedResource.getIdentifier(), is(notNullValue()));
+    }
+
+    @Test
+    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException, JsonProcessingException {
+        Resource resource = createSampleResource();
+
+        Resource resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+
+        Resource resourceForDeletion = resourceService.getResource(resource);
+        assertThat(resourceForDeletion.getStatus(),
+            Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+    }
+
+    @Test
+    public void deletePublicationReturnsUpdatedResourceCanMarkDraftForDeletion()
+        throws ApiGatewayException, JsonProcessingException {
+        Resource resource = createSampleResource();
+
+        Resource resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+    }
+
+    @Test
+    public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
+        throws ApiGatewayException, JsonProcessingException {
+        Resource resource = createSampleResource();
+        resourceService.publishResource(resource);
+        Executable action = () -> resourceService.markPublicationForDeletion(resource);
+        ResourceCannotBeDeletedException exception = assertThrows(ResourceCannotBeDeletedException.class, action);
+        assertThat(exception.getMessage(), containsString(ResourceCannotBeDeletedException.DEFAULT_MESSAGE));
+        assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
+    }
+
+    @Test
+    public void deleteResourceThrowsNoErrorWhenDeletingPublicationThatIsMarkedForDeletion()
+        throws ApiGatewayException, JsonProcessingException {
+        Resource resource = createSampleResource();
+        resourceService.markPublicationForDeletion(resource);
+        Resource actualResource = resourceService.getResource(resource);
+        assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
+
+        assertDoesNotThrow(() -> resourceService.markPublicationForDeletion(resource));
     }
 
     private Resource expectedResourceFromSampleResource(Resource sampleResource, Resource savedResource) {
@@ -451,10 +548,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private ResourceService resourceServiceProvidingDuplicateIdentifiers() {
-
         Supplier<SortableIdentifier> duplicateIdSupplier = () -> SOME_IDENTIFIER;
-        ResourceService resourceService = new ResourceService(client, clock, duplicateIdSupplier);
-        return resourceService;
+        return new ResourceService(client, clock, duplicateIdSupplier);
     }
 
     private FileSet emptyFileSet() {

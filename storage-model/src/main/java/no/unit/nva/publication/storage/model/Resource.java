@@ -50,10 +50,6 @@ public class Resource implements WithIdentifier {
         setLink(builder.link);
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId) {
-        return emptyResource(userIdentifier, organizationId, SortableIdentifier.next());
-    }
-
     public static Resource emptyResource(String userIdentifier, URI organizationId,
                                          String resourceIdentifier) {
         return emptyResource(userIdentifier, organizationId, new SortableIdentifier(resourceIdentifier));
@@ -67,7 +63,6 @@ public class Resource implements WithIdentifier {
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
-
 
 
     public Builder copy() {

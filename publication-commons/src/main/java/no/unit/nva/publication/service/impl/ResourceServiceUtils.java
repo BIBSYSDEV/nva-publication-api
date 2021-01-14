@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
+import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 
 public final class ResourceServiceUtils {
@@ -38,7 +39,7 @@ public final class ResourceServiceUtils {
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
-    public static final String PARSING_NULL_MAP_ERROR = "Trying to parse null valuesMap";
+    public static final String PARSING_NULL_OR_EMPTY_MAP_ERROR = "Trying to parse null or empty valuesMap";
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
 
     private ResourceServiceUtils() {
@@ -50,11 +51,11 @@ public final class ResourceServiceUtils {
     }
 
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
-        if (nonNull(valuesMap)) {
+        if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
             Item item = ItemUtils.toItem(valuesMap);
             return attempt(() -> objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
         } else {
-            throw new RuntimeException(PARSING_NULL_MAP_ERROR);
+            throw new EmptyValueMapException();
         }
     }
 

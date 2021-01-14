@@ -19,6 +19,7 @@ import static nva.commons.utils.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
@@ -48,6 +49,7 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.identifiers.SortableIdentifier;
+import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
@@ -56,6 +58,7 @@ import nva.commons.exceptions.commonexceptions.ConflictException;
 import nva.commons.exceptions.commonexceptions.NotFoundException;
 import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Failure;
+import nva.commons.utils.attempt.Try;
 
 public class ResourceService {
 
@@ -82,11 +85,11 @@ public class ResourceService {
     }
 
     public ResourceService() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone(),DEFAULT_IDENTIFIER_SUPPLIER);
+        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     public ResourceService(AmazonDynamoDB client, Clock clock) {
-        this(client,clock,DEFAULT_IDENTIFIER_SUPPLIER);
+        this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     public Resource createResource(Resource inputData) throws ConflictException {
@@ -95,15 +98,15 @@ public class ResourceService {
         newResource.setCreatedDate(clockForTimestamps.instant());
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
-        sendRequest(putRequest);
+        sendTransactionWriteRequest(putRequest);
 
         return fetchEventuallyConsistentResource(newResource);
     }
 
     private Resource fetchEventuallyConsistentResource(Resource newResource) {
-        Resource savedResource=null;
-        for (int times=0; times<10 || savedResource==null;times++){
-            savedResource = attempt(()->getResource(newResource)).orElse(fail->null);
+        Resource savedResource = null;
+        for (int times = 0; times < 10 && savedResource == null; times++) {
+            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
         }
         return savedResource;
     }
@@ -154,7 +157,8 @@ public class ResourceService {
         String partitionKey =
             ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
-        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(), String.class);
+        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
+            String.class);
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
@@ -170,25 +174,61 @@ public class ResourceService {
         validateForPublishing(resource);
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = publishUpdateRequest(dao);
-        return sendRequest(updateRequest);
+        return sendUpdateRequest(updateRequest);
+    }
+
+    public Resource markPublicationForDeletion(Resource resource)
+        throws JsonProcessingException, ResourceCannotBeDeletedException {
+        ResourceDao dao = new ResourceDao(resource);
+        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
+        return attempt(() -> sendUpdateRequest(updateRequest))
+            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
+    }
+
+    private <E extends Exception> ResourceCannotBeDeletedException handleConditionFailureException(
+        Failure<Resource> failure, Resource resource) {
+        if (failure.getException() instanceof ConditionalCheckFailedException) {
+            return new ResourceCannotBeDeletedException(resource.getIdentifier().toString());
+        }
+        throw new RuntimeException(failure.getException());
+    }
+
+
+
+    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) throws JsonProcessingException {
+        String updateExpression = "SET "
+                                  + "#resource.#status = :status, "
+                                  + "#resource.#modifiedDate = :modifiedDate";
+        String conditionExpression = "#resource.#status <> :publishedStatus";
+
+        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
+            updateStatusExpresionValuesMap(PublicationStatus.DRAFT_FOR_DELETION);
+        expressionValuesMap.put(":publishedStatus",
+            new AttributeValue(PublicationStatus.PUBLISHED.toString()));
+
+        return new UpdateItemRequest()
+            .withTableName(tableName)
+            .withKey(dao.primaryKey())
+            .withUpdateExpression(updateExpression)
+            .withConditionExpression(conditionExpression)
+            .withExpressionAttributeNames(updateStatusNamesExpressionMap())
+            .withExpressionAttributeValues(expressionValuesMap)
+            .withReturnValues(ReturnValue.ALL_NEW);
     }
 
     private void validateForPublishing(Resource resource) throws InvalidPublicationException {
         boolean hasNoTitle = isNull(resource.getTitle());
         boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
 
-        if( hasNoTitle ){
+        if (hasNoTitle) {
             String missingField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_MAIN_TITLE_FIELD))
                 .orElseThrow();
             throw new InvalidPublicationException(Collections.singletonList(missingField));
-        }
-        else if( hasNeitherLinkNorFile ){
+        } else if (hasNeitherLinkNorFile) {
             String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
             String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILES_FIELD)).orElseThrow();
-            throw new InvalidPublicationException(List.of(files,linkField));
+            throw new InvalidPublicationException(List.of(files, linkField));
         }
-
-
     }
 
     private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
@@ -202,21 +242,26 @@ public class ResourceService {
             .orElse(true);
     }
 
-    private Resource sendRequest(UpdateItemRequest updateRequest) {
+    private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
-        ResourceDao updatedResource = parseAttributeValuesMap(requestResult.getAttributes(), ResourceDao.class);
-        return updatedResource.getResource();
+        return Try.of(requestResult)
+            .map(UpdateItemResult::getAttributes)
+            .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
+            .map(ResourceDao::getResource)
+            .orElseThrow();
     }
+
 
     private UpdateItemRequest publishUpdateRequest(ResourceDao dao) throws JsonProcessingException {
 
         ConcurrentHashMap<String, String> expressionNamesMap = publishUpdateExpressionNamesMap();
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap = publishUpdateExpressionValuesMap();
+        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
+            updateStatusExpresionValuesMap(PublicationStatus.PUBLISHED);
 
         String updateExpression = "SET"
-            + " #resource.#status = :status, "
-            + "#resource.#modifiedDate = :modifiedDate, "
-            + "#resource.#publishedDate = :modifiedDate ";
+                                  + " #resource.#status = :status, "
+                                  + "#resource.#modifiedDate = :modifiedDate, "
+                                  + "#resource.#publishedDate = :modifiedDate ";
         return new UpdateItemRequest()
             .withTableName(tableName)
             .withKey(dao.primaryKey())
@@ -226,28 +271,33 @@ public class ResourceService {
             .withExpressionAttributeValues(expressionValuesMap)
             .withReturnValues(ReturnValue.ALL_NEW);
     }
-    private ConcurrentHashMap<String, String> publishUpdateExpressionNamesMap() {
-        ConcurrentHashMap<String, String> expressionNamesMap = new ConcurrentHashMap<>();
-        expressionNamesMap.put("#status", STATUS_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#modifiedDate", MODIFIED_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#publishedDate",PUBLISHED_DATE_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#resource",RESOURCE_FIELD_IN_RESOURCE_DAO);
 
+    private ConcurrentHashMap<String, String> publishUpdateExpressionNamesMap() {
+        ConcurrentHashMap<String, String> expressionNamesMap = updateStatusNamesExpressionMap();
+        expressionNamesMap.put("#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE);
         return expressionNamesMap;
     }
 
-    private ConcurrentHashMap<String, AttributeValue> publishUpdateExpressionValuesMap()
+    private ConcurrentHashMap<String, String> updateStatusNamesExpressionMap() {
+        ConcurrentHashMap<String, String> expressionNamesMap = new ConcurrentHashMap<>();
+        expressionNamesMap.put("#status", STATUS_FIELD_IN_RESOURCE);
+        expressionNamesMap.put("#modifiedDate", MODIFIED_FIELD_IN_RESOURCE);
+        expressionNamesMap.put("#resource", RESOURCE_FIELD_IN_RESOURCE_DAO);
+        return expressionNamesMap;
+    }
+
+    private ConcurrentHashMap<String, AttributeValue> updateStatusExpresionValuesMap(PublicationStatus publicationStatus)
         throws JsonProcessingException {
         String nowString = instantAsString(clockForTimestamps.instant());
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap= new ConcurrentHashMap<>();
-        expressionValuesMap.put(":status",new AttributeValue(PublicationStatus.PUBLISHED.toString()));
-        expressionValuesMap.put(":modifiedDate",new AttributeValue(nowString));
+        ConcurrentHashMap<String, AttributeValue> expressionValuesMap = new ConcurrentHashMap<>();
+        expressionValuesMap.put(":status", new AttributeValue(publicationStatus.getValue()));
+        expressionValuesMap.put(":modifiedDate", new AttributeValue(nowString));
         return expressionValuesMap;
     }
 
     private String instantAsString(Instant instant) throws JsonProcessingException {
         String jsonString = JsonUtils.objectMapper.writeValueAsString(instant);
-        return jsonString.replaceAll(DOUBLE_QUOTES,EMPTY_STRING);
+        return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -273,8 +323,9 @@ public class ResourceService {
             .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
     }
 
-    private TransactWriteItemsResult sendRequest(TransactWriteItemsRequest putRequest) throws ConflictException {
-         return attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
+    private TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest putRequest)
+        throws ConflictException {
+        return attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {

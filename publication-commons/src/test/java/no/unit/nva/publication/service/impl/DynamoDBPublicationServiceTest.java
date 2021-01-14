@@ -5,6 +5,7 @@ import static no.unit.nva.publication.PublicationGenerator.OWNER;
 import static no.unit.nva.publication.PublicationGenerator.PUBLISHER_ID;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.publication.exception.InvalidPublicationException.ERROR_MESSAGE_TEMPLATE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_MAPPING_ITEM_TO_PUBLICATION;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_READING_FROM_TABLE;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ERROR_WRITING_TO_TABLE;
@@ -22,6 +23,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -454,9 +456,8 @@ class DynamoDBPublicationServiceTest {
         Publication publicationToPublish = publicationService.createPublication(publication);
         Executable executable = () -> publicationService.publishPublication(publicationToPublish.getIdentifier());
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, executable);
-        String errorMessage = String.format(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE,
-            PublishPublicationValidator.MAIN_TITLE);
-        assertEquals(errorMessage, exception.getMessage());
+        String actualErrorMessage = exception.getMessage();
+        assertThat(actualErrorMessage, containsString(ERROR_MESSAGE_TEMPLATE));
         assertEquals(SC_CONFLICT, exception.getStatusCode());
     }
 
@@ -469,10 +470,8 @@ class DynamoDBPublicationServiceTest {
         Publication publicationToPublish = publicationService.createPublication(publication);
         Executable executable = () -> publicationService.publishPublication(publicationToPublish.getIdentifier());
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, executable);
-        String errorMessage = String.format(
-            InvalidPublicationException.ERROR_MESSAGE_TEMPLATE,
-            PublishPublicationValidator.LINK_OR_FILE);
-        assertEquals(errorMessage, exception.getMessage());
+        String actualErrorMessage = exception.getMessage();
+        assertThat(actualErrorMessage, containsString(ERROR_MESSAGE_TEMPLATE));
         assertEquals(SC_CONFLICT, exception.getStatusCode());
     }
 
@@ -485,6 +484,7 @@ class DynamoDBPublicationServiceTest {
         assertThat(actual.getIdentifier(), is(not(nullValue())));
     }
 
+    //Done
     @Test
     public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
@@ -496,6 +496,7 @@ class DynamoDBPublicationServiceTest {
         assertThat(publicationForDeletion.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
 
+    //Done
     @Test
     public void deletePublicationThrowsNotImplementedExceptionWhenDeletingPublishedPublication()
         throws ApiGatewayException {
@@ -505,6 +506,7 @@ class DynamoDBPublicationServiceTest {
             () -> publicationService.markPublicationForDeletion(publication.getIdentifier(), publication.getOwner()));
     }
 
+    //Done
     @Test
     public void canDeleteDraftPublicationWithStatusDraftForDeletion() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
@@ -518,7 +520,7 @@ class DynamoDBPublicationServiceTest {
         assertThat(exception, is(instanceOf(NotFoundException.class)));
     }
 
-    //TODO: remove when publications table no longer uses versioning
+    //Done
     @Test
     public void canDeleteDraftPublicationWhenPublicationHasMultipleVersions() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
