@@ -1,0 +1,197 @@
+{
+  "version": "0",
+  "id": "6e6a9d53-2f14-5bc9-cd15-cab7d6fd31f5",
+  "detail-type": "dynamodb-stream-event",
+  "source": "aws-dynamodb-stream-eventbridge-fanout",
+  "account": "884807050265",
+  "time": "2021-01-11T09:46:54Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-19T09:27:44.804"
+  ],
+  "detail": {
+    "eventID": "fb543f93892110d098a60eca895d45ae",
+    "eventName": "INSERT",
+    "eventVersion": "1.1",
+    "eventSource": "aws:dynamodb",
+    "awsRegion": "eu-west-1",
+    "dynamodb": {
+      "approximateCreationDateTime": 1610358410000,
+      "keys": {
+        "identifier": {
+          "s": "f5bdde5d-de48-4b43-8c38-3721ae916bcd"
+        },
+        "modifiedDate": {
+          "s": "2021-01-11T09:46:49.859831Z"
+        }
+      },
+      "newImage": {
+        "owner": {
+          "s": "kjmo@unit.no"
+        },
+        "identifier": {
+          "s": "f5bdde5d-de48-4b43-8c38-3721ae916bcd"
+        },
+        "entityDescription": {
+          "m": {
+            "date": {
+              "m": {
+                "type": {
+                  "s": "PublicationDate"
+                }
+              }
+            },
+            "reference": {
+              "m": {
+                "type": {
+                  "s": "Reference"
+                },
+                "publicationInstance": {
+                  "m": {
+                    "pages": {
+                      "m": {
+                        "pages": {
+                          "s": "123"
+                        },
+                        "illustrated": {
+                          "bool": false
+                        },
+                        "type": {
+                          "s": "MonographPages"
+                        }
+                      }
+                    },
+                    "textbookContent": {
+                      "bool": false
+                    },
+                    "peerReviewed": {
+                      "bool": false
+                    },
+                    "type": {
+                      "s": "BookMonograph"
+                    }
+                  }
+                },
+                "publicationContext": {
+                  "m": {
+                    "isbnList": {
+                      "l": [
+                        {
+                          "s": "9788252591514"
+                        }
+                      ]
+                    },
+                    "level": {
+                      "s": "NO_LEVEL"
+                    },
+                    "openAccess": {
+                      "bool": false
+                    },
+                    "peerReviewed": {
+                      "bool": false
+                    },
+                    "publisher": {
+                      "s": "Nature Publishing Group"
+                    },
+                    "type": {
+                      "s": "Book"
+                    },
+                    "seriesTitle": {
+                      "s": "Earth Observations and Remote Sensing"
+                    }
+                  }
+                },
+                "doi": {
+                  "s": ""
+                }
+              }
+            },
+            "language": {
+              "s": ""
+            },
+            "contributors": {
+              "l": []
+            },
+            "type": {
+              "s": "EntityDescription"
+            },
+            "tags": {
+              "l": []
+            }
+          }
+        },
+        "publisherId": {
+          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+        },
+        "createdDate": {
+          "s": "2021-01-11T08:36:24.414635Z"
+        },
+        "projects": {
+          "l": []
+        },
+        "publisherOwnerDate": {
+          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#kjmo@unit.no#2021-01-11T09:46:49.859831Z"
+        },
+        "modifiedDate": {
+          "s": "2021-01-11T09:46:49.859831Z"
+        },
+        "publisher": {
+          "m": {
+            "id": {
+              "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+            },
+            "type": {
+              "s": "Organization"
+            }
+          }
+        },
+        "type": {
+          "s": "Publication"
+        },
+        "fileSet": {
+          "m": {
+            "files": {
+              "l": [
+                {
+                  "m": {
+                    "identifier": {
+                      "s": "646691d4-fe46-4ad0-a27e-5c50189ac5a2"
+                    },
+                    "size": {
+                      "n": "12101"
+                    },
+                    "publisherAuthority": {
+                      "bool": false
+                    },
+                    "name": {
+                      "s": "Capture.PNG"
+                    },
+                    "administrativeAgreement": {
+                      "bool": false
+                    },
+                    "mimeType": {
+                      "s": "image/png"
+                    },
+                    "type": {
+                      "s": "File"
+                    }
+                  }
+                }
+              ]
+            },
+            "type": {
+              "s": "FileSet"
+            }
+          }
+        },
+        "status": {
+          "s": "DRAFT"
+        }
+      },
+      "sequenceNumber": "1318731900000000016782341093",
+      "sizeBytes": 1209,
+      "streamViewType": "NEW_IMAGE"
+    },
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-19T09:27:44.804"
+  }
+}
