@@ -153,6 +153,7 @@ class DynamoDBPublicationServiceTest {
         new DynamoDBPublicationService(client, objectMapper, environment);
     }
 
+    //DONE
     @Test
     public void getPublicationReturnsExistingPublicationWhenInputIsExistingIdentifier() throws Exception {
         Publication storedPublication = publicationWithIdentifier();
@@ -161,6 +162,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(retrievedPublication, storedPublication);
     }
 
+    //DONE
     @Test
     public void getPublicationOnEmptyTableThrowsNotFoundException() {
         UUID nonExistingIdentifier = UUID.randomUUID();
@@ -169,6 +171,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerWithNewOwner() throws Exception {
         String newOwner = "New Owner";
@@ -181,6 +184,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(newOwner, updatedPublication.getOwner());
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerChangesModifiedDate() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -192,6 +196,7 @@ class DynamoDBPublicationServiceTest {
         assertNotEquals(initialInstant, updatedInstant);
     }
 
+    //DONE
     @Test
     public void updateExistingCustomerPreservesCreatedDate() throws Exception {
         Publication publication = publicationWithIdentifier();
@@ -215,6 +220,7 @@ class DynamoDBPublicationServiceTest {
     }
 
     @Test
+    //DONE
     @DisplayName("empty Table Returns No Publications")
     public void emptyTableReturnsNoPublications() throws ApiGatewayException {
         List<PublicationSummary> publications = publicationService.getPublicationsByOwner(

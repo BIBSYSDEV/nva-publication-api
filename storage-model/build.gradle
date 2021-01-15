@@ -1,0 +1,8 @@
+dependencies {
+    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
+    compileOnly group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+
+}
