@@ -74,19 +74,16 @@ import org.mockito.Mockito;
 @EnableRuleMigrationSupport
 class DynamoDBPublicationServiceTest {
 
-    private static final UUID ID1 = UUID.randomUUID();
-    private static final UUID ID2 = UUID.randomUUID();
-
-    private static final Instant INSTANT1 = Instant.now();
-    private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
-    private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
-    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
-
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
-
+    private static final UUID ID1 = UUID.randomUUID();
+    private static final UUID ID2 = UUID.randomUUID();
+    private static final Instant INSTANT1 = Instant.now();
+    private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
+    private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
+    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
 
@@ -269,14 +266,6 @@ class DynamoDBPublicationServiceTest {
 
         List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(10);
         assertEquals(2, publications.size());
-    }
-
-    private Publication insertPublishedPublication() throws ApiGatewayException {
-        Publication publication = publicationWithIdentifier();
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.setPublishedDate(Instant.now());
-        publication = publicationService.createPublication(publication);
-        return publication;
     }
 
     //DONE
@@ -533,6 +522,14 @@ class DynamoDBPublicationServiceTest {
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> publicationService.getPublication(createdPublication.getIdentifier()));
         assertThat(exception, is(instanceOf(NotFoundException.class)));
+    }
+
+    private Publication insertPublishedPublication() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        publication.setPublishedDate(Instant.now());
+        publication = publicationService.createPublication(publication);
+        return publication;
     }
 
     private List<PublicationSummary> publicationSummariesWithoutDuplicateUuIds() {

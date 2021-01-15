@@ -4,9 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import nva.commons.utils.JsonUtils;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
+
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;

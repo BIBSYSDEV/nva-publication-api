@@ -16,10 +16,7 @@ dependencies {
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    implementation( group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: '0.7.4'){
-        because 'nva-datamodel-java uses its own version of commons'
-    }
-    //testRuntimeOnly  group: 'com.github.BIBSYSDEV', name: 'nva-commons', version:'0.7.4'
+    implementation( group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion)
 
     compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"

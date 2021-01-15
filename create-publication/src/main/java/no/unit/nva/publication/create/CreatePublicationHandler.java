@@ -78,7 +78,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         Publication createdPublication = publicationService.createPublication(newPublication);
 
         setLocationHeader(createdPublication.getIdentifier());
-        Item
 
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
     }

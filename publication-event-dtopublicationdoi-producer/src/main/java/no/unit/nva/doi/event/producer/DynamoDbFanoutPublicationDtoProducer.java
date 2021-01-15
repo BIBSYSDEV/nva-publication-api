@@ -11,7 +11,7 @@ import no.unit.nva.publication.doi.dto.Publication;
 import no.unit.nva.publication.doi.dto.PublicationHolder;
 import no.unit.nva.publication.doi.dto.PublicationMapping;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +66,6 @@ public class DynamoDbFanoutPublicationDtoProducer
         return dto
             .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
             .orElse(NO_OUTPUT_NO_EVENT);
-
     }
 
     private void logMappingResults(Publication dto) {
