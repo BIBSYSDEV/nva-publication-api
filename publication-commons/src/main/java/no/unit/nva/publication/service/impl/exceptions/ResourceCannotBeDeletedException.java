@@ -6,8 +6,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 public class ResourceCannotBeDeletedException extends ApiGatewayException {
 
     public static final String DEFAULT_MESSAGE = "Resource cannot be deleted: ";
-    public ResourceCannotBeDeletedException(String resourceIdentifier ) {
-        super(DEFAULT_MESSAGE+resourceIdentifier);
+
+    public ResourceCannotBeDeletedException(String resourceIdentifier) {
+        super(DEFAULT_MESSAGE + resourceIdentifier);
     }
 
     @Override

@@ -39,7 +39,9 @@ public class Resource implements WithIdentifier {
     private URI link;
     private FileSet files;
 
-    public Resource(SortableIdentifier identifier,
+    //for lombok.
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    private Resource(SortableIdentifier identifier,
                     PublicationStatus status,
                     String owner,
                     Organization publisher,

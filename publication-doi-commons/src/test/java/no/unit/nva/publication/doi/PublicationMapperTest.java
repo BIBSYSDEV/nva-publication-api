@@ -27,7 +27,8 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
-import nva.commons.core.ioutils.IoUtils;import org.junit.jupiter.api.Test;
+import nva.commons.core.ioutils.IoUtils;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
 class PublicationMapperTest {

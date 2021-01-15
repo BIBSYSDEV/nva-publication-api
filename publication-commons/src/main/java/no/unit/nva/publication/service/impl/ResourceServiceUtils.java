@@ -77,9 +77,7 @@ public final class ResourceServiceUtils {
         return new TransactWriteItem().withPut(newDataEntry);
     }
 
-    static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return newTransactWriteItemsRequest(Arrays.asList(transaction));
-    }
+
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
                                                                                 Class<T> valueClass) {
@@ -96,6 +94,10 @@ public final class ResourceServiceUtils {
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }
+    }
+
+    static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
+        return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
     private static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {

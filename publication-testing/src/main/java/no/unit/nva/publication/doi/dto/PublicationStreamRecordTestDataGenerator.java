@@ -25,8 +25,9 @@ import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
 import no.unit.nva.publication.doi.dynamodb.dao.Identity;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
-import nva.commons.core.ioutils.IoUtils;import nva.commons.core.JacocoGenerated;
+import nva.commons.core.ioutils.IoUtils;
 
 @SuppressWarnings("PMD.TooManyFields")
 public class PublicationStreamRecordTestDataGenerator {
@@ -109,20 +110,6 @@ public class PublicationStreamRecordTestDataGenerator {
         return toDynamodbStreamRecord(event);
     }
 
-    private void updateDoiRequest(DoiRequest doiRequest, ObjectNode event) {
-        var jsonNode = event.at(jsonPointers.getDoiRequestJsonPointer());
-
-        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestModifiedDateJsonPointer(),
-            DYNAMODB_TYPE_STRING, doiRequest.getModifiedDate().toString());
-        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestStatusJsonPointer(),
-            DYNAMODB_TYPE_STRING, doiRequest.getStatus().name());
-    }
-
-    private void updateModifiedDate(Instant modifiedDate, ObjectNode event) {
-        updateEventAtPointerWithNameAndValue(event, jsonPointers.getModifiedDateJsonPointer(),
-            DYNAMODB_TYPE_STRING, modifiedDate.toString());
-    }
-
     public JsonNode asDynamoDbStreamRecordJsonNode() {
         return mapper.convertValue(asDynamoDbStreamRecord(), JsonNode.class);
     }
@@ -136,6 +123,20 @@ public class PublicationStreamRecordTestDataGenerator {
         return new DynamodbStreamRecordImageDao.Builder(jsonPointers)
             .withDynamodbStreamRecordImage(asDynamoDbStreamRecordJsonNode())
             .build();
+    }
+
+    private void updateDoiRequest(DoiRequest doiRequest, ObjectNode event) {
+        var jsonNode = event.at(jsonPointers.getDoiRequestJsonPointer());
+
+        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestModifiedDateJsonPointer(),
+            DYNAMODB_TYPE_STRING, doiRequest.getModifiedDate().toString());
+        updateEventAtPointerWithNameAndValue(jsonNode, jsonPointers.getDoiRequestStatusJsonPointer(),
+            DYNAMODB_TYPE_STRING, doiRequest.getStatus().name());
+    }
+
+    private void updateModifiedDate(Instant modifiedDate, ObjectNode event) {
+        updateEventAtPointerWithNameAndValue(event, jsonPointers.getModifiedDateJsonPointer(),
+            DYNAMODB_TYPE_STRING, modifiedDate.toString());
     }
 
     private ObjectNode getEventTemplate() {
@@ -322,26 +323,7 @@ public class PublicationStreamRecordTestDataGenerator {
             return createValidPublication(faker, jsonPointers, StreamViewType.NEW_IMAGE.getValue());
         }
 
-
         // Getters public due to VisibleForTesting. (dont want to pull in Guava just because of this)
-
-        private static List<Identity> getIdentities(Faker faker,
-                                                    DynamodbStreamRecordJsonPointers jsonPointers) {
-            var identities = new ArrayList<Identity>();
-            for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
-                identities.add(createRandomIdentity(faker, jsonPointers));
-            }
-            return identities;
-        }
-
-        private static Identity createRandomIdentity(Faker faker,
-                                                     DynamodbStreamRecordJsonPointers jsonPointers) {
-            var builder = new Identity.Builder(jsonPointers);
-            builder.withArpId(faker.number().digits(10));
-            builder.withOrcId(faker.number().digits(10));
-            builder.withName(faker.superhero().name());
-            return builder.build();
-        }
 
         @JacocoGenerated
         public String getEventId() {
@@ -485,6 +467,24 @@ public class PublicationStreamRecordTestDataGenerator {
 
         public PublicationStreamRecordTestDataGenerator build() {
             return new PublicationStreamRecordTestDataGenerator(this);
+        }
+
+        private static List<Identity> getIdentities(Faker faker,
+                                                    DynamodbStreamRecordJsonPointers jsonPointers) {
+            var identities = new ArrayList<Identity>();
+            for (int i = 0; i < faker.random().nextInt(1, 10); i++) {
+                identities.add(createRandomIdentity(faker, jsonPointers));
+            }
+            return identities;
+        }
+
+        private static Identity createRandomIdentity(Faker faker,
+                                                     DynamodbStreamRecordJsonPointers jsonPointers) {
+            var builder = new Identity.Builder(jsonPointers);
+            builder.withArpId(faker.number().digits(10));
+            builder.withOrcId(faker.number().digits(10));
+            builder.withName(faker.superhero().name());
+            return builder.build();
         }
     }
 }
