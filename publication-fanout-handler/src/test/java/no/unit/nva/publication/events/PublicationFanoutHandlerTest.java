@@ -2,6 +2,7 @@ package no.unit.nva.publication.events;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.model.Publication;
 import nva.commons.utils.IoUtils;
 import nva.commons.utils.JsonUtils;
 import nva.commons.utils.attempt.Try;
@@ -97,7 +98,7 @@ public class PublicationFanoutHandlerTest {
     }
 
     @Test
-    public void test() {
+    public void handleRequestReturnsPublicationUpdateEventWhenImageHasEmptyAttributeValues() {
         PublicationFanoutHandler handler = new PublicationFanoutHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
@@ -109,6 +110,14 @@ public class PublicationFanoutHandlerTest {
 
         assertThat(response.getOldPublication(), is(nullValue()));
         assertThat(response.getNewPublication(), is(notNullValue()));
+
+        Publication publication = response.getNewPublication();
+
+        assertThat(publication.getEntityDescription(), is(notNullValue()));
+        assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
+
+        assertThat(publication.getEntityDescription().getReference().getDoi(), is(nullValue()));
+        assertThat(publication.getEntityDescription().getLanguage(), is(nullValue()));
     }
 
     private PublicationUpdateEvent parseResponse() {
