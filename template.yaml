@@ -645,7 +645,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: delete-publication-event-producer
-      Handler: no.unit.nva.publication.DeletePublicationEventProducer::handleRequest
+      Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
