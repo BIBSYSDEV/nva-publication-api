@@ -27,9 +27,11 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.exceptions.ApiIoException;
-import nva.commons.core.ioutils.IoUtils;import nva.commons.utils.log.LogUtils;
-import nva.commons.utils.log.TestAppender;
+
+import nva.commons.apigateway.exceptions.ApiIoException;
+import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

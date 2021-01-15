@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import no.unit.nva.model.Publication;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -25,6 +26,7 @@ public class PublicationFanoutHandlerTest {
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
     public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
     public static final String DYNAMODBEVENT_OLD_IMAGE_JSON = "dynamodbevent_old_image.json";
+    public static final String DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON = "dynamodbevent_empty_attribute_value.json";
 
     private OutputStream outputStream;
     private Context context;
@@ -91,6 +93,29 @@ public class PublicationFanoutHandlerTest {
             () -> handler.handleRequest(inputStream, outputStream, context));
 
         assertThat(exception.getMessage(), containsString(PublicationFanoutHandler.MAPPING_ERROR));
+    }
+
+    @Test
+    public void handleRequestReturnsPublicationUpdateEventWhenImageHasEmptyAttributeValues() {
+        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+
+        InputStream inputStream = IoUtils.inputStreamFromResources(
+                DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON);
+
+        handler.handleRequest(inputStream, outputStream, context);
+
+        PublicationUpdateEvent response = parseResponse();
+
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
+
+        Publication publication = response.getNewPublication();
+
+        assertThat(publication.getEntityDescription(), is(notNullValue()));
+        assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
+
+        assertThat(publication.getEntityDescription().getReference().getDoi(), is(nullValue()));
+        assertThat(publication.getEntityDescription().getLanguage(), is(nullValue()));
     }
 
     private PublicationUpdateEvent parseResponse() {

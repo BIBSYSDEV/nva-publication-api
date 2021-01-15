@@ -8,8 +8,8 @@ dependencies {
     implementation project(":publication-doi-commons")
     testImplementation project(':publication-commons')
 
-    compileOnly "com.github.BIBSYSDEV.nva-commons.eventhandlers:${project.ext.nvaCommonsVersion}"
-    testImplementation "com.github.BIBSYSDEV.nva-commons.eventhandlers:${project.ext.nvaCommonsVersion}"
+    compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
 
     testImplementation project(":publication-testing")

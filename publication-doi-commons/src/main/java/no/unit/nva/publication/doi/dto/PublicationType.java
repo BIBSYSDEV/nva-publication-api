@@ -1,21 +1,26 @@
 package no.unit.nva.publication.doi.dto;
 
 public enum PublicationType {
-    JOURNAL_ARTICLE("JournalArticle"),
-    JOURNAL_LETTER("JournalLetter"),
-    JOURNAL_LEADER("JournalLeader"),
-    JOURNAL_REVIEW("JournalReview"),
-    JOURNAL_SHORT_COMMUNICATION("JournalShortCommunication"),
-    BOOK_MONOGRAPH("BookMonograph"),
     BOOK_ANTHOLOGY("BookAnthology"),
+    BOOK_MONOGRAPH("BookMonograph"),
+    CARTOGRAPHIC_MAP("CartographicMap"),
+    CHAPTER_ARTICLE("ChapterArticle"),
     DEGREE_BACHELOR("DegreeBachelor"),
     DEGREE_MASTER("DegreeMaster"),
     DEGREE_PHD("DegreePhd"),
-    REPORT("Report"),
+    FEATURE_ARTICLE("FeatureArticle"),
+    JOURNAL_ARTICLE("JournalArticle"),
+    JOURNAL_CORRIGENDUM("JournalCorrigendum"),
+    JOURNAL_LEADER("JournalLeader"),
+    JOURNAL_LETTER("JournalLetter"),
+    JOURNAL_REVIEW("JournalReview"),
+    JOURNAL_SHORT_COMMUNICATION("JournalShortCommunication"),
+    MUSIC_NOTATION("MusicNotation"),
+    OTHER_STUDENT_WORK("OtherStudentWork"),
+    REPORT_BASIC("ReportBasic"),
     REPORT_POLICY("ReportPolicy"),
     REPORT_RESEARCH("ReportResearch"),
-    REPORT_WORKING_PAPER("ReportWorkingPaper"),
-    CHAPTER_ARTICLE("ChapterArticle");
+    REPORT_WORKING_PAPER("ReportWorkingPaper");
 
     private final String name;
 
