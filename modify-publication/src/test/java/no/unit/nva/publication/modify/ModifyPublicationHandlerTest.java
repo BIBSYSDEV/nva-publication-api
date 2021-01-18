@@ -177,7 +177,7 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("Handler returns NotFound response when resource does not exist")
     void handlerReturnsNotFoundResponseWhenResourceDoesNotExist() throws IOException, ApiGatewayException {
-        SortableIdentifier identifier=  SortableIdentifier.next();
+        SortableIdentifier identifier = SortableIdentifier.next();
         String expectedDetail = serviceFailsOnGetRequestWithNotFoundError(identifier);
         modifyPublicationHandler.handleRequest(
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier),
@@ -209,7 +209,8 @@ public class ModifyPublicationHandlerTest {
 
     private String serviceFailsOnGetRequestWithNotFoundError(SortableIdentifier identifier) throws ApiGatewayException {
         String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
-        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(new NotFoundException(expectedDetail));
+        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(
+            new NotFoundException(expectedDetail));
         return expectedDetail;
     }
 

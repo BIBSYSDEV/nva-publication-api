@@ -57,7 +57,7 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
-        + "is not equal to identifier in customer object '%s'";
+                                                       + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
@@ -190,7 +190,8 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public PublishPublicationStatusResponse publishPublication(SortableIdentifier identifier) throws ApiGatewayException {
+    public PublishPublicationStatusResponse publishPublication(SortableIdentifier identifier)
+        throws ApiGatewayException {
         Publication publicationToPublish = getPublication(identifier);
         if (isPublished(publicationToPublish)) {
             return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);

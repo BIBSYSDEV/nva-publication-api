@@ -161,7 +161,7 @@ class DynamoDBPublicationServiceTest {
     //DONE
     @Test
     public void getPublicationOnEmptyTableThrowsNotFoundException() {
-        SortableIdentifier nonExistingIdentifier= SortableIdentifier.next();
+        SortableIdentifier nonExistingIdentifier = SortableIdentifier.next();
         NotFoundException exception = assertThrows(NotFoundException.class, () -> publicationService.getPublication(
             nonExistingIdentifier));
         assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
