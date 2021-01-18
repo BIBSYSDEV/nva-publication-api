@@ -730,41 +730,41 @@ Resources:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
-    DeleteDraftPublicationHandlerDLQ:
-      Type: "AWS::SQS::Queue"
+  DeleteDraftPublicationHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
-    DeleteDraftPublicationHandler:
-      Type: AWS::Serverless::Function
-      Properties:
-        Layers:
-          - !Ref NvaPublicationCommonsLayer
-        CodeUri: delete-draft-publication-handler
-        Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
-        Runtime: java11
-        MemorySize: 512
-        Policies:
-          - DynamoDBReadPolicy:
-              TableName: !Ref PublicationsTableName
-        Events:
-          EventBridgeEvent:
-            Type: EventBridgeRule
-            Properties:
-              EventBusName: !Ref EventBusName
-            Pattern:
-              detail:
-                responsePayload:
-                  type:
-                    - delete.publication
-                  hasDoi:
-                    - false
-        EventInvokeConfig:
-          DestinationConfig:
-            OnSuccess:
-              Type: EventBridge
-              Destination: !Ref EventBusArn
-            OnFailure:
-              Type: SQS
-              Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+  DeleteDraftPublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: delete-draft-publication-handler
+      Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+          Pattern:
+            detail:
+              responsePayload:
+                type:
+                  - delete.publication
+                hasDoi:
+                  - false
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
