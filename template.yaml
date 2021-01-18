@@ -746,9 +746,10 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref PublicationsTableName
       Environment:
-        TABLE_NAME: !Ref PublicationsTableName
-        BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-        BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+        Variables:
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
