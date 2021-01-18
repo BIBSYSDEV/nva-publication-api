@@ -438,6 +438,7 @@ class DynamoDBPublicationServiceTest {
         assertEquals(expected, actual);
     }
 
+    //Done
     @Test
     public void publishPublicationWithMissingMainTitleReturnsConflict() throws Exception {
         Publication publication = publicationWithIdentifier();
