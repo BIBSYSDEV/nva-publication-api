@@ -8,6 +8,7 @@ import java.util.Map;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
@@ -72,19 +73,19 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
         Publication createdPublication = publicationService.createPublication(newPublication);
 
-        setLocationHeader(createdPublication.getIdentifier().toString());
+        setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
     }
 
-    private void setLocationHeader(String identifier) {
+    private void setLocationHeader(SortableIdentifier identifier) {
         setAdditionalHeadersSupplier(() -> Map.of(
             HttpHeaders.LOCATION,
             getLocation(identifier).toString())
         );
     }
 
-    protected URI getLocation(String identifier) {
+    protected URI getLocation(SortableIdentifier identifier) {
         return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
     }
 

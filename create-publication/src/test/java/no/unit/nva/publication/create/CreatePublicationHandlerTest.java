@@ -90,14 +90,14 @@ public class CreatePublicationHandlerTest {
 
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
             PublicationMapper.convertValue(publication, PublicationResponse.class),
-            getResponseHeadersWithLocation(publication.getIdentifier().toString()),
+            getResponseHeadersWithLocation(publication.getIdentifier()),
             HttpStatus.SC_CREATED
         );
 
         assertEquals(expected, actual);
     }
 
-    private Map<String,String> getResponseHeadersWithLocation(String identifier) {
+    private Map<String,String> getResponseHeadersWithLocation(SortableIdentifier identifier) {
         Map<String, String> map = new HashMap<>(getResponseHeaders());
         map.put(HttpHeaders.LOCATION, handler.getLocation(identifier).toString());
         return map;
