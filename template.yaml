@@ -750,13 +750,13 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !Ref EventBusName
-          Pattern:
-            detail:
-              responsePayload:
-                type:
-                  - delete.publication
-                hasDoi:
-                  - false
+            Pattern:
+              detail:
+                responsePayload:
+                  type:
+                    - delete.publication
+                  hasDoi:
+                    - false
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
