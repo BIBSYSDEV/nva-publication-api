@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model;
 
 import java.util.Objects;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class PublishPublicationStatusResponse {
 

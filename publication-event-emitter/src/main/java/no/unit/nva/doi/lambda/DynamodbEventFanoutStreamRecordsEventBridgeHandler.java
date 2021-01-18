@@ -8,7 +8,7 @@ import no.unit.nva.doi.publisher.EventBridgePublisher;
 import no.unit.nva.doi.publisher.EventBridgeRetryClient;
 import no.unit.nva.doi.publisher.EventPublisher;
 import no.unit.nva.doi.publisher.SqsEventPublisher;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;

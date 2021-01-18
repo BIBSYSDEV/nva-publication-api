@@ -5,7 +5,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class IdentifierEntry implements WithPrimaryKey {
 

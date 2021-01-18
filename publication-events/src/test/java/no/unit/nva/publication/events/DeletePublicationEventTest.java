@@ -3,7 +3,7 @@ package no.unit.nva.publication.events;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.model.PublicationStatus;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;

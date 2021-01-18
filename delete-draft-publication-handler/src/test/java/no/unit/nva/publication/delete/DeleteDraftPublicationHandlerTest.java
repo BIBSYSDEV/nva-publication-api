@@ -1,7 +1,17 @@
 package no.unit.nva.publication.delete;
 
+import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
+import static nva.commons.core.ioutils.IoUtils.streamToString;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
@@ -9,26 +19,14 @@ import no.unit.nva.publication.exception.NotFoundException;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.UUID;
-
-import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.utils.IoUtils.inputStreamFromResources;
-import static nva.commons.utils.IoUtils.streamToString;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 
 @EnableRuleMigrationSupport
 public class DeleteDraftPublicationHandlerTest {
@@ -112,8 +110,7 @@ public class DeleteDraftPublicationHandlerTest {
     }
 
     private ByteArrayInputStream getInputStreamForEvent(String path, UUID identifier) {
-        String eventTemplate = streamToString(inputStreamFromResources(
-                path));
+        String eventTemplate = streamToString(inputStreamFromResources(path));
         String event = String.format(eventTemplate, identifier);
 
         return new ByteArrayInputStream(event.getBytes());

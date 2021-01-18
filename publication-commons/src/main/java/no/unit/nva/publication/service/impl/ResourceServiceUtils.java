@@ -1,13 +1,14 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
+
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -15,7 +16,10 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
+import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 
 public final class ResourceServiceUtils {
@@ -23,10 +27,20 @@ public final class ResourceServiceUtils {
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
     public static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
+    public static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";
+    public static final String SORT_KEY_VALUE_PLACEHOLDER = ":sortKey";
+
+    // #partitionKey = :partitionKey AND #sortKey = :sortKey
+    public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
+        PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
+            + " AND "
+            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
+
     public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
 
     public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
+    public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
 
     private ResourceServiceUtils() {
     }
@@ -36,11 +50,19 @@ public final class ResourceServiceUtils {
         return ItemUtils.toAttributeValues(item);
     }
 
-    static ResourceDao parseResult(GetItemResult getResult) {
-        Item item = ItemUtils.toItem(getResult.getItem());
-        return attempt(item::toJSON)
-            .map(json -> objectMapper.readValue(json, ResourceDao.class))
-            .orElseThrow();
+    static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
+        if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
+            Item item = ItemUtils.toItem(valuesMap);
+            return attempt(() -> objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
+        } else {
+            throw new EmptyValueMapException();
+        }
+    }
+
+    static Map<String, AttributeValue> valueMapForKeyConditionCheck(ResourceDao resourceDao) {
+        return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
+            new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
+            SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
     }
 
     static Organization newOrganization(URI organizationUri) {
@@ -53,6 +75,25 @@ public final class ResourceServiceUtils {
 
     static TransactWriteItem newPutTransactionItem(Put newDataEntry) {
         return new TransactWriteItem().withPut(newDataEntry);
+    }
+
+
+
+    static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
+                                                                                Class<T> valueClass) {
+        if (String.class.equals(valueClass)) {
+            return valuesMap
+                .entrySet()
+                .stream()
+                .collect(
+                    Collectors.toMap(
+                        Entry::getKey,
+                        mapEntry -> new AttributeValue((String)mapEntry.getValue())
+                    )
+                );
+        } else {
+            throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
+        }
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {

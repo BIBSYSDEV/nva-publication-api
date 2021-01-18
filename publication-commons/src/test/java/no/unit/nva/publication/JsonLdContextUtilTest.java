@@ -1,6 +1,6 @@
 package no.unit.nva.publication;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.junit.Assert.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;

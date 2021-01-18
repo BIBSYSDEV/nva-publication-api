@@ -9,17 +9,17 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.RequestInfo;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.RequestInfo;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 

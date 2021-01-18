@@ -1,7 +1,7 @@
 package no.unit.nva.publication.doi.dto;
 
 import java.util.Optional;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 /**
  * {@link PublicationMapping} is a holder object for holding `oldPublication` and `newPublication` (DTO) because a
