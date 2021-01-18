@@ -14,7 +14,6 @@ import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
-
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
