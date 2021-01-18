@@ -645,7 +645,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: delete-publication-event-producer
-      Handler: no.unit.nva.publication.DeletePublicationEventProducer::handleRequest
+      Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
@@ -655,9 +655,10 @@ Resources:
           Properties:
             EventBusName: !Ref EventBusName
             Pattern:
-              responsePayload:
-                type:
-                  - publication.update
+              detail:
+                responsePayload:
+                  type:
+                    - publication.update
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -750,11 +751,12 @@ Resources:
             Properties:
               EventBusName: !Ref EventBusName
             Pattern:
-              responsePayload:
-                type:
-                  - delete.publication
-                hasDoi:
-                  - false
+              detail:
+                responsePayload:
+                  type:
+                    - delete.publication
+                  hasDoi:
+                    - false
         EventInvokeConfig:
           DestinationConfig:
             OnSuccess:
