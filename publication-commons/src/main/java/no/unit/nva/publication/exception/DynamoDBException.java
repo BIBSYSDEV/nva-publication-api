@@ -2,7 +2,7 @@ package no.unit.nva.publication.exception;
 
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 
-import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 
 public class DynamoDBException extends ApiGatewayException {
 

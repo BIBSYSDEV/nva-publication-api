@@ -10,10 +10,10 @@ import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.handlers.GatewayResponse;
-import nva.commons.utils.Environment;
-import nva.commons.utils.JsonUtils;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Collections.singletonMap;
-import static nva.commons.handlers.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
+
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 

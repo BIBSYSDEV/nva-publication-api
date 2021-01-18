@@ -12,7 +12,7 @@ import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.ER
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLICATION_NOT_FOUND;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_COMPLETED;
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
-import static nva.commons.utils.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.HttpStatus.SC_CONFLICT;
 import static org.apache.http.HttpStatus.SC_NO_CONTENT;
@@ -60,8 +60,8 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService.PublishPublicationValidator;
-import nva.commons.exceptions.ApiGatewayException;
-import nva.commons.utils.Environment;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
 import org.junit.Rule;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -74,19 +74,16 @@ import org.mockito.Mockito;
 @EnableRuleMigrationSupport
 class DynamoDBPublicationServiceTest {
 
-    private static final UUID ID1 = UUID.randomUUID();
-    private static final UUID ID2 = UUID.randomUUID();
-
-    private static final Instant INSTANT1 = Instant.now();
-    private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
-    private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
-    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
-
     public static final String TABLE_NAME_ENV = "TABLE_NAME";
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
-
+    private static final UUID ID1 = UUID.randomUUID();
+    private static final UUID ID2 = UUID.randomUUID();
+    private static final Instant INSTANT1 = Instant.now();
+    private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
+    private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
+    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
 
@@ -269,14 +266,6 @@ class DynamoDBPublicationServiceTest {
 
         List<PublicationSummary> publications = publicationService.listPublishedPublicationsByDate(10);
         assertEquals(2, publications.size());
-    }
-
-    private Publication insertPublishedPublication() throws ApiGatewayException {
-        Publication publication = publicationWithIdentifier();
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        publication.setPublishedDate(Instant.now());
-        publication = publicationService.createPublication(publication);
-        return publication;
     }
 
     //DONE
@@ -533,6 +522,14 @@ class DynamoDBPublicationServiceTest {
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> publicationService.getPublication(createdPublication.getIdentifier()));
         assertThat(exception, is(instanceOf(NotFoundException.class)));
+    }
+
+    private Publication insertPublishedPublication() throws ApiGatewayException {
+        Publication publication = publicationWithIdentifier();
+        publication.setStatus(PublicationStatus.PUBLISHED);
+        publication.setPublishedDate(Instant.now());
+        publication = publicationService.createPublication(publication);
+        return publication;
     }
 
     private List<PublicationSummary> publicationSummariesWithoutDuplicateUuIds() {

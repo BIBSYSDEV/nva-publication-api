@@ -2,7 +2,7 @@ package no.unit.nva.publication.doi.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class PublicationHolder {
     private final String type;

@@ -1,7 +1,7 @@
 package no.unit.nva.doi.lambda;
 
-import nva.commons.utils.Environment;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public final class AppEnv {

@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.storage.model.Resource;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao implements WithPrimaryKey {

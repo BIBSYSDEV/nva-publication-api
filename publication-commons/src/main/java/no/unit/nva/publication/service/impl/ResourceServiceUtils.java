@@ -3,8 +3,8 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import static nva.commons.utils.JsonUtils.objectMapper;
-import static nva.commons.utils.attempt.Try.attempt;
+import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -77,7 +77,8 @@ public final class ResourceServiceUtils {
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return newTransactWriteItemsRequest(Arrays.asList(transaction));
+        return
+            newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {

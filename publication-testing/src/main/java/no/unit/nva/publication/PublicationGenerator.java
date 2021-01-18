@@ -7,7 +7,7 @@ import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
