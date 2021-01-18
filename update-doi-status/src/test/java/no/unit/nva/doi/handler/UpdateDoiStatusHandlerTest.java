@@ -20,14 +20,13 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.UUID;
 import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.publication.service.PublicationService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-
 import nva.commons.apigateway.exceptions.ApiIoException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -44,7 +43,8 @@ class UpdateDoiStatusHandlerTest {
     public static final String NULL_OBJECT = "{ }";
     public static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
-    private static final UUID EXAMPLE_PUBLICATION_ID = UUID.fromString("41076d56-2839-11eb-b644-1bb5be85c01b");
+    private static final SortableIdentifier EXAMPLE_PUBLICATION_ID =
+        new SortableIdentifier("41076d56-2839-11eb-b644-1bb5be85c01b");
     private static final Path BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO = Path.of(
         "update_doi_status_event_bad_input_not_matching_pojo.json");
     private static final Path OK_EVENT = Path.of("update_doi_status_event.json");

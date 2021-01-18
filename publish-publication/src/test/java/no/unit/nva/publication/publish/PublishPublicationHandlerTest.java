@@ -1,7 +1,6 @@
 package no.unit.nva.publication.publish;
 
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
-
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.ApiGatewayHandler.CONTENT_TYPE;
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -12,20 +11,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Map;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
-
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +54,7 @@ public class PublishPublicationHandlerTest {
 
     @Test
     public void canPublishPublication() throws Exception {
-        UUID identifier = UUID.randomUUID();
+        SortableIdentifier identifier = SortableIdentifier.next();
         PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
             PUBLISH_IN_PROGRESS, SC_ACCEPTED);
         when(publicationService.publishPublication(identifier)).thenReturn(status);
@@ -100,7 +97,7 @@ public class PublishPublicationHandlerTest {
     @Test
     public void getLocationReturnsUri() {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
-        URI location = handler.getLocation(UUID.randomUUID());
+        URI location = handler.getLocation(SortableIdentifier.next());
 
         assertNotNull(location);
     }

@@ -1,7 +1,6 @@
 package no.unit.nva.doi.publisher;
 
 import static org.mockito.Mockito.verify;
-
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import java.util.Collections;
 import java.util.UUID;

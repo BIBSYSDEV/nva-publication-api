@@ -2,10 +2,9 @@ package no.unit.nva.publication.events;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
-
-import java.util.Objects;
 
 public class PublicationUpdateEvent {
 

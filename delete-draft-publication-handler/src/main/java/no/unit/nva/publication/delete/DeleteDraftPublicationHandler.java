@@ -1,8 +1,8 @@
 package no.unit.nva.publication.delete;
 
+import static nva.commons.core.JsonUtils.objectMapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -12,8 +12,6 @@ import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-
-import static nva.commons.core.JsonUtils.objectMapper;
 
 public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<DeletePublicationEvent, Void> {
 

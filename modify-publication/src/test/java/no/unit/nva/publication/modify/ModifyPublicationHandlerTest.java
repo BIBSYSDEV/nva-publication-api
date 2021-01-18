@@ -33,9 +33,9 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -177,7 +177,7 @@ public class ModifyPublicationHandlerTest {
     @Test
     @DisplayName("Handler returns NotFound response when resource does not exist")
     void handlerReturnsNotFoundResponseWhenResourceDoesNotExist() throws IOException, ApiGatewayException {
-        UUID identifier = UUID.randomUUID();
+        SortableIdentifier identifier=  SortableIdentifier.next();
         String expectedDetail = serviceFailsOnGetRequestWithNotFoundError(identifier);
         modifyPublicationHandler.handleRequest(
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier),
@@ -195,7 +195,7 @@ public class ModifyPublicationHandlerTest {
 
     private void publicationServiceThrowsException() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
             .then((Answer<Publication>) invocation -> {
                 throw new RuntimeException(ModifyPublicationHandlerTest.SOME_MESSAGE);
             });
@@ -203,35 +203,35 @@ public class ModifyPublicationHandlerTest {
 
     private void serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
             .thenThrow(RuntimeException.class);
     }
 
-    private String serviceFailsOnGetRequestWithNotFoundError(UUID identifier) throws ApiGatewayException {
+    private String serviceFailsOnGetRequestWithNotFoundError(SortableIdentifier identifier) throws ApiGatewayException {
         String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
-        when(publicationService.getPublication(any(UUID.class))).thenThrow(new NotFoundException(expectedDetail));
+        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(new NotFoundException(expectedDetail));
         return expectedDetail;
     }
 
     private void serviceSucceedsOnGetRequest(Publication publication) throws ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class))).thenReturn(publication);
+        when(publicationService.getPublication(any(SortableIdentifier.class))).thenReturn(publication);
     }
 
     private void serviceSucceedsAndReturnsModifiedPublication(Publication modifiedPublication)
         throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
             .thenReturn(modifiedPublication);
     }
 
     private void serviceSucceedsOnGetRequestAndFailsOnUpdate() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(UUID.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
             .thenThrow(ErrorResponseException.class);
     }
 
-    private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(UUID identifier) throws
-                                                                                                     IOException {
+    private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(SortableIdentifier identifier)
+        throws IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
             .withBody(createPublication(identifier))
             .withHeaders(generateHeaders())
@@ -253,10 +253,10 @@ public class ModifyPublicationHandlerTest {
     }
 
     private Publication createPublication() {
-        return createPublication(UUID.randomUUID());
+        return createPublication(SortableIdentifier.next());
     }
 
-    private Publication createPublication(UUID identifier) {
+    private Publication createPublication(SortableIdentifier identifier) {
         return new Publication.Builder()
             .withIdentifier(identifier)
             .withModifiedDate(Instant.now())

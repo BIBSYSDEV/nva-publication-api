@@ -1,25 +1,23 @@
 package no.unit.nva.publication.modify;
 
+import static nva.commons.core.JsonUtils.objectMapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.UpdatePublicationRequest;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
-
-import static nva.commons.core.JsonUtils.objectMapper;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
@@ -53,7 +51,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        UUID identifier = RequestUtil.getIdentifier(requestInfo);
+        SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication existingPublication = publicationService.getPublication(identifier);
 
         Publication publication = PublicationMapper.toExistingPublication(

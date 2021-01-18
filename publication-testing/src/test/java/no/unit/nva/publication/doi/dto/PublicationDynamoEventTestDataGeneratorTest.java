@@ -3,7 +3,6 @@ package no.unit.nva.publication.doi.dto;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
-
 import org.junit.jupiter.api.Test;
 
 class PublicationDynamoEventTestDataGeneratorTest {

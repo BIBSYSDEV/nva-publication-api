@@ -1,20 +1,17 @@
 package no.unit.nva.publication.events;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-
-import nva.commons.core.JsonUtils;
-import org.junit.jupiter.api.Test;
-
-import java.net.URI;
-import java.time.Instant;
-import java.util.UUID;
-
 import static no.unit.nva.publication.events.PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.time.Instant;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import nva.commons.core.JsonUtils;
+import org.junit.jupiter.api.Test;
 
 public class PublicationUpdateEventTest {
 
@@ -39,7 +36,7 @@ public class PublicationUpdateEventTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-                .withIdentifier(UUID.randomUUID())
+                .withIdentifier(SortableIdentifier.next())
                 .withModifiedDate(Instant.now())
                 .withOwner(OWNER)
                 .withPublisher(new Organization.Builder()

@@ -31,7 +31,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Index;
 import com.amazonaws.services.dynamodbv2.document.Item;
@@ -40,14 +39,13 @@ import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -59,7 +57,6 @@ import no.unit.nva.publication.exception.NotImplementedException;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService.PublishPublicationValidator;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.junit.Rule;
@@ -164,7 +161,7 @@ class DynamoDBPublicationServiceTest {
     //DONE
     @Test
     public void getPublicationOnEmptyTableThrowsNotFoundException() {
-        UUID nonExistingIdentifier = UUID.randomUUID();
+        SortableIdentifier nonExistingIdentifier= SortableIdentifier.next();
         NotFoundException exception = assertThrows(NotFoundException.class, () -> publicationService.getPublication(
             nonExistingIdentifier));
         assertEquals(PUBLICATION_NOT_FOUND + nonExistingIdentifier, exception.getMessage());
@@ -211,7 +208,7 @@ class DynamoDBPublicationServiceTest {
     public void updateExistingCustomerWithDifferentIdentifiersThrowsException() throws Exception {
         Publication publication = publicationWithIdentifier();
         publicationService.createPublication(publication);
-        UUID differentIdentifier = UUID.randomUUID();
+        SortableIdentifier differentIdentifier = SortableIdentifier.next();
         Executable executable = () -> publicationService.updatePublication(differentIdentifier, publication);
         InputException exception = assertThrows(InputException.class, executable);
         String expectedMessage = String.format(DynamoDBPublicationService.IDENTIFIERS_NOT_EQUAL,
@@ -326,7 +323,7 @@ class DynamoDBPublicationServiceTest {
         when(failingTable.query(any(QuerySpec.class))).thenThrow(RuntimeException.class);
         DynamoDBPublicationService failingService =
             generateFailingService(failingTable, mock(Index.class), mock(Index.class));
-        Executable executable = () -> failingService.getPublication(UUID.randomUUID());
+        Executable executable = () -> failingService.getPublication(SortableIdentifier.next());
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_READING_FROM_TABLE, exception.getMessage());
     }
@@ -351,7 +348,7 @@ class DynamoDBPublicationServiceTest {
         DynamoDBPublicationService failingService =
             generateFailingService(failingTable, mock(Index.class), mock(Index.class));
         Publication publication = publicationWithIdentifier();
-        publication.setIdentifier(UUID.randomUUID());
+        publication.setIdentifier(SortableIdentifier.next());
         Executable executable = () -> failingService.updatePublication(publication.getIdentifier(), publication);
         DynamoDBException exception = assertThrows(DynamoDBException.class, executable);
         assertEquals(ERROR_WRITING_TO_TABLE, exception.getMessage());
