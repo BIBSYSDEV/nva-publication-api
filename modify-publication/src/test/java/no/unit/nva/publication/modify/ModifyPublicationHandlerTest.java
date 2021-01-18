@@ -294,8 +294,8 @@ public class ModifyPublicationHandlerTest {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
     }
 
-    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse) throws
-                                                                                                                 JsonProcessingException {
+    private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse)
+        throws JsonProcessingException {
         return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();
     }
 }
