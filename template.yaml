@@ -61,6 +61,9 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
+  OrestisResources:
+    Type: String
+    Default: 'OrestisResources'
 
 Resources:
 
@@ -386,43 +389,8 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  OrestisResources:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: OrestisResources
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: PK0
-          AttributeType: S
-        - AttributeName: SK0
-          AttributeType: S
-        - AttributeName: PK1
-          AttributeType: S
-        - AttributeName: SK1
-          AttributeType: S
-      KeySchema:
-        -
-          AttributeName: PK0
-          KeyType: HASH
-        -
-          AttributeName: SK0
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        -
-          IndexName: byTypeCustomerStatus
-          KeySchema:
-            -
-              AttributeName: PK1
-              KeyType: HASH
-            -
-              AttributeName: SK1
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
 
   NvaCreateResourceFunction:
-    DependsOn:
-      - OrestisResources
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-publication
@@ -436,7 +404,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: OrestisResources
+            TableName: !Ref OrestisResources
       Events:
         GetEvent:
           Type: Api
