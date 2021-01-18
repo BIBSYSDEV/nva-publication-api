@@ -8,7 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import no.unit.nva.publication.events.PublicationUpdateEvent;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class DeletePublicationEventProducerHandler
         extends DestinationsEventBridgeEventHandler<PublicationUpdateEvent, DeletePublicationEvent> {
