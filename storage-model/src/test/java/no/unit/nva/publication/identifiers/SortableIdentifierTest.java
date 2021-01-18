@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 

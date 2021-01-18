@@ -9,11 +9,12 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.identifiers.SortableIdentifier;
+
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 

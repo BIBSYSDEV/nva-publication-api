@@ -43,12 +43,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
@@ -283,7 +283,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() throws ConflictException {
+    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser()  {
         Set<Resource> userResources = createSampleResources();
 
         List<Resource> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
