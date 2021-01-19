@@ -61,6 +61,9 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
+  OrestisResources:
+    Type: String
+    Default: 'OrestisResources'
 
 Resources:
 
@@ -286,6 +289,34 @@ Resources:
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
+          /resources:
+            post:
+              summary: Create Resource
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: [ ]
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateResourceFunction.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+              responses:
+                '201':
+                  description: Created
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
@@ -355,6 +386,30 @@ Resources:
           Type: Api
           Properties:
             Path: /
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+
+  NvaCreateResourceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-publication
+      Handler: no.unit.nva.publication.create.CreateResourceHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrestisResources
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /resources
             Method: post
             RestApiId: !Ref NvaPublicationApi
   NvaFetchPublicationFunction:
@@ -558,7 +613,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: delete-publication-event-producer
-      Handler: no.unit.nva.publication.DeletePublicationEventProducer::handleRequest
+      Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
@@ -568,9 +623,10 @@ Resources:
           Properties:
             EventBusName: !Ref EventBusName
             Pattern:
-              responsePayload:
-                type:
-                  - publication.update
+              detail:
+                responsePayload:
+                  type:
+                    - publication.update
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -642,40 +698,46 @@ Resources:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
-    DeleteDraftPublicationHandlerDLQ:
-      Type: "AWS::SQS::Queue"
+  DeleteDraftPublicationHandlerDLQ:
+    Type: "AWS::SQS::Queue"
 
-    DeleteDraftPublicationHandler:
-      Type: AWS::Serverless::Function
-      Properties:
-        Layers:
-          - !Ref NvaPublicationCommonsLayer
-        CodeUri: delete-draft-publication-handler
-        Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
-        Runtime: java11
-        MemorySize: 512
-        Policies:
-          - DynamoDBReadPolicy:
-              TableName: !Ref PublicationsTableName
-        Events:
-          EventBridgeEvent:
-            Type: EventBridgeRule
-            Properties:
-              EventBusName: !Ref EventBusName
+  DeleteDraftPublicationHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: delete-draft-publication-handler
+      Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PublicationsTableName
+          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
+          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
             Pattern:
-              responsePayload:
-                type:
-                  - delete.publication
-                hasDoi:
-                  - false
-        EventInvokeConfig:
-          DestinationConfig:
-            OnSuccess:
-              Type: EventBridge
-              Destination: !Ref EventBusArn
-            OnFailure:
-              Type: SQS
-              Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+              detail:
+                responsePayload:
+                  type:
+                    - delete.publication
+                  hasDoi:
+                    - false
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function

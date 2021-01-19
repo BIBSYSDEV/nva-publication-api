@@ -1,6 +1,6 @@
 package no.unit.nva.publication.exception;
 
-import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

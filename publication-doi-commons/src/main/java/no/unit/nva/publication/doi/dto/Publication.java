@@ -6,7 +6,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class Publication {
 

@@ -8,7 +8,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
 import no.unit.nva.publication.service.PublicationService;
-import nva.commons.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

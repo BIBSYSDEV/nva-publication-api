@@ -27,7 +27,7 @@ import no.unit.nva.publication.doi.dto.PublicationType;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordImageDao;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers;
 import no.unit.nva.publication.doi.dynamodb.dao.DynamodbStreamRecordJsonPointers.DynamodbImageType;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
 
 /**
  * {@link PublicationMapper} reads DAOs under {@link no.unit.nva.publication.doi.dynamodb.dao} related to streaming

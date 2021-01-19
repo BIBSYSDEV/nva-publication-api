@@ -3,7 +3,7 @@ package no.unit.nva.publication.doi.dynamodb.dao;
 import static no.unit.nva.publication.doi.JsonPointerUtils.textFromNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Objects;
-import nva.commons.utils.JacocoGenerated;
+import nva.commons.core.JacocoGenerated;
 
 public class Identity {
 

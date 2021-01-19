@@ -8,7 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import no.unit.nva.publication.doi.dto.DoiRequest.Builder;
-import nva.commons.utils.JsonUtils;
+import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class DoiRequestTest {

@@ -1,9 +1,10 @@
 package no.unit.nva.publication.publish;
 
 import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
-import static nva.commons.handlers.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static nva.commons.handlers.ApiGatewayHandler.CONTENT_TYPE;
-import static nva.commons.utils.JsonUtils.objectMapper;
+
+import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static nva.commons.apigateway.ApiGatewayHandler.CONTENT_TYPE;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.LOCATION;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -22,9 +23,10 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
-import nva.commons.handlers.ApiGatewayHandler;
-import nva.commons.handlers.GatewayResponse;
-import nva.commons.utils.Environment;
+import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.GatewayResponse;
+
+import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

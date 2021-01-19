@@ -5,7 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Optional;
-import nva.commons.utils.IoUtils;
+
+import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

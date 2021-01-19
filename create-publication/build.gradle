@@ -12,4 +12,13 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
+
+    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
+    implementation( group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion)
+
+    compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
+        because "PMD complains for the com/amazonaws/regions/Regions class"
+    }
 }
