@@ -26,6 +26,7 @@ import java.util.UUID;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.exceptions.InvalidPublicationStatusTransitionException;
@@ -56,7 +57,7 @@ public class DynamoDBPublicationService implements PublicationService {
     public static final String ERROR_MAPPING_ITEM_TO_PUBLICATION = "Error mapping Item to Publication";
     public static final String ERROR_MAPPING_PUBLICATION_TO_ITEM = "Error mapping Publication to Item";
     public static final String IDENTIFIERS_NOT_EQUAL = "Identifier in request parameters '%s' "
-        + "is not equal to identifier in customer object '%s'";
+                                                       + "is not equal to identifier in customer object '%s'";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
@@ -97,7 +98,7 @@ public class DynamoDBPublicationService implements PublicationService {
     public Publication createPublication(Publication publication) throws ApiGatewayException {
         try {
             //TODO: set identifier in PublicationMapper.newPublication(...)
-            publication.setIdentifier(UUID.randomUUID());
+            publication.setIdentifier(new SortableIdentifier(UUID.randomUUID().toString()));
             Item item = publicationToItem(publication);
             table.putItem(item);
         } catch (Exception e) {
@@ -107,7 +108,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication getPublication(UUID identifier) throws ApiGatewayException {
+    public Publication getPublication(SortableIdentifier identifier) throws ApiGatewayException {
         Item item = null;
         try {
             QuerySpec spec = new QuerySpec()
@@ -129,7 +130,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public Publication updatePublication(UUID identifier, Publication publication)
+    public Publication updatePublication(SortableIdentifier identifier, Publication publication)
         throws ApiGatewayException {
         validateIdentifier(identifier, publication);
         try {
@@ -189,7 +190,8 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public PublishPublicationStatusResponse publishPublication(UUID identifier) throws ApiGatewayException {
+    public PublishPublicationStatusResponse publishPublication(SortableIdentifier identifier)
+        throws ApiGatewayException {
         Publication publicationToPublish = getPublication(identifier);
         if (isPublished(publicationToPublish)) {
             return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpStatus.SC_NO_CONTENT);
@@ -202,14 +204,14 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     @Override
-    public void markPublicationForDeletion(UUID identifier, String owner) throws ApiGatewayException {
+    public void markPublicationForDeletion(SortableIdentifier identifier, String owner) throws ApiGatewayException {
         Publication publication = getPublicationForOwner(identifier, owner);
         updateStatusForDeletion(publication);
         updatePublication(identifier, publication);
     }
 
     @Override
-    public void deleteDraftPublication(UUID identifier) throws ApiGatewayException {
+    public void deleteDraftPublication(SortableIdentifier identifier) throws ApiGatewayException {
         Publication publication = getPublication(identifier);
         if (DRAFT_FOR_DELETION.equals(publication.getStatus())) {
             for (PublicationSummary publicationSummary : getPublicationSummaries(identifier)) {
@@ -271,7 +273,7 @@ public class DynamoDBPublicationService implements PublicationService {
         return mostRecent.stream();
     }
 
-    private void validateIdentifier(UUID identifier, Publication publication) throws ApiGatewayException {
+    private void validateIdentifier(SortableIdentifier identifier, Publication publication) throws ApiGatewayException {
         if (!identifier.equals(publication.getIdentifier())) {
             throw new InputException(
                 String.format(IDENTIFIERS_NOT_EQUAL, identifier, publication.getIdentifier()), null);
@@ -304,7 +306,7 @@ public class DynamoDBPublicationService implements PublicationService {
     }
 
     //TODO: remove when publications table no longer uses versioning
-    private List<PublicationSummary> getPublicationSummaries(UUID identifier) throws DynamoDBException {
+    private List<PublicationSummary> getPublicationSummaries(SortableIdentifier identifier) throws DynamoDBException {
         ItemCollection<QueryOutcome> items;
         try {
             items = table.query(IDENTIFIER, identifier.toString());
@@ -344,7 +346,7 @@ public class DynamoDBPublicationService implements PublicationService {
         return PublicationStatus.PUBLISHED.equals(publication.getStatus());
     }
 
-    private Publication getPublicationForOwner(UUID identifier, String owner) throws ApiGatewayException {
+    private Publication getPublicationForOwner(SortableIdentifier identifier, String owner) throws ApiGatewayException {
         Publication publication = getPublication(identifier);
         if (publication.getOwner().equals(owner)) {
             return publication;

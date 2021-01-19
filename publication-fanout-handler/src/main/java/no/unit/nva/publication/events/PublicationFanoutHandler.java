@@ -1,19 +1,17 @@
 package no.unit.nva.publication.events;
 
+import static no.unit.nva.publication.events.DynamodbStreamRecordPublicationMapper.toPublication;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
+import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.Optional;
-
-import static no.unit.nva.publication.events.DynamodbStreamRecordPublicationMapper.toPublication;
 
 public class PublicationFanoutHandler
         extends EventHandler<DynamodbEvent.DynamodbStreamRecord, PublicationUpdateEvent> {

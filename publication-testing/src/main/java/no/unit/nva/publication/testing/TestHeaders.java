@@ -1,11 +1,9 @@
 package no.unit.nva.publication.testing;
 
-
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.ApiGatewayHandler.CONTENT_TYPE;
 import static org.apache.http.HttpHeaders.ACCEPT;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
-
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 

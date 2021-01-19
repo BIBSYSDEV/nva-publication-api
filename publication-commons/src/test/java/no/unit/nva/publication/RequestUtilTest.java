@@ -3,15 +3,14 @@ package no.unit.nva.publication;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.Map;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.InputException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.Test;
 
 public class RequestUtilTest {
@@ -22,11 +21,11 @@ public class RequestUtilTest {
 
     @Test
     public void canGetIdentifierFromRequest() throws ApiGatewayException {
-        UUID uuid = UUID.randomUUID();
+        SortableIdentifier uuid = SortableIdentifier.next();
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setPathParameters(Map.of(RequestUtil.IDENTIFIER, uuid.toString()));
 
-        UUID identifier = RequestUtil.getIdentifier(requestInfo);
+        SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
 
         assertEquals(uuid, identifier);
     }
@@ -86,7 +85,7 @@ public class RequestUtilTest {
     }
 
     @Test
-    public void getPageSizeRequestInvalidRangeThrowsException() throws Exception {
+    public void getPageSizeRequestInvalidRangeThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
 
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-1");
@@ -96,7 +95,7 @@ public class RequestUtilTest {
     }
 
     @Test
-    public void getPageSizeRequestInvalidValueThrowsException() throws Exception {
+    public void getPageSizeRequestInvalidValueThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
 
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE,"-abc");

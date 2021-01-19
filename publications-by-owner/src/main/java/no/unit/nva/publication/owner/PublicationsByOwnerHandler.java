@@ -1,7 +1,6 @@
 package no.unit.nva.publication.owner;
 
 import static nva.commons.core.JsonUtils.objectMapper;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -10,9 +9,9 @@ import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
 import org.slf4j.LoggerFactory;

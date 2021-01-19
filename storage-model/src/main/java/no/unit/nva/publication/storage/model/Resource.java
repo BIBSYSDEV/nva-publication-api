@@ -8,10 +8,10 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.identifiers.SortableIdentifier;
 
 //TODO: Remove all Lombok dependencies from the final class.
 

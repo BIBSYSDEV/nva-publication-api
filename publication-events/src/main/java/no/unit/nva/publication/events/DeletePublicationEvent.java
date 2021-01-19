@@ -2,18 +2,17 @@ package no.unit.nva.publication.events;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.util.Objects;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
+import nva.commons.core.JacocoGenerated;
 
 public class DeletePublicationEvent {
 
     public static final String DELETE_PUBLICATION = "delete.publication";
 
     private final String type;
-    private final UUID identifier;
+    private final SortableIdentifier identifier;
     private final String status;
     private final URI doi;
     private final URI customerId;
@@ -30,7 +29,7 @@ public class DeletePublicationEvent {
     @JsonCreator
     public DeletePublicationEvent(
             @JsonProperty("type") String type,
-            @JsonProperty("identifier") UUID identifier,
+            @JsonProperty("identifier") SortableIdentifier identifier,
             @JsonProperty("status") String status,
             @JsonProperty("doi") URI doi,
             @JsonProperty("customerId") URI customerId) {
@@ -45,7 +44,7 @@ public class DeletePublicationEvent {
         return type;
     }
 
-    public UUID getIdentifier() {
+    public SortableIdentifier getIdentifier() {
         return identifier;
     }
 

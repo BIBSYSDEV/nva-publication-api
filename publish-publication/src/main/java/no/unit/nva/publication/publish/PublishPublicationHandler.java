@@ -1,19 +1,18 @@
 package no.unit.nva.publication.publish;
 
 import static nva.commons.core.JsonUtils.objectMapper;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.util.Map;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpHeaders;
@@ -58,13 +57,13 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     @Override
     protected PublishPublicationStatusResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        UUID identifier = RequestUtil.getIdentifier(requestInfo);
+        SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         setAdditionalHeadersSupplier(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
         return publicationService.publishPublication(identifier);
     }
 
-    protected URI getLocation(UUID identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
+    protected URI getLocation(SortableIdentifier identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier.toString()));
     }
 
     @Override

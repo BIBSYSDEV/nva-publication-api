@@ -11,7 +11,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
@@ -49,10 +49,10 @@ public class DeleteDraftPublicationHandlerTest {
     public void setUp() {
         prepareEnvironment();
         publicationService = new DynamoDBPublicationService(
-                objectMapper,
-                db.getTable(),
-                db.getByPublisherIndex(),
-                db.getByPublishedDateIndex()
+            objectMapper,
+            db.getTable(),
+            db.getByPublisherIndex(),
+            db.getByPublishedDateIndex()
         );
         handler = new DeleteDraftPublicationHandler(publicationService);
         outputStream = new ByteArrayOutputStream();
@@ -63,11 +63,11 @@ public class DeleteDraftPublicationHandlerTest {
         environment = Mockito.mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV))
-                .thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
+            .thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
-                .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
         when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
-                .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHED_DATE_INDEX_NAME);
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHED_DATE_INDEX_NAME);
     }
 
     @Test
@@ -75,7 +75,7 @@ public class DeleteDraftPublicationHandlerTest {
         Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT_FOR_DELETION);
 
         ByteArrayInputStream inputStream = getInputStreamForEvent(
-                DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, publication.getIdentifier());
+            DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, publication.getIdentifier());
 
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -87,9 +87,9 @@ public class DeleteDraftPublicationHandlerTest {
 
     @Test
     public void handleRequestThrowsRuntimeExceptionOnServiceException() {
-        UUID identifier = UUID.randomUUID();
+        SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
-                DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
+            DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
@@ -99,9 +99,9 @@ public class DeleteDraftPublicationHandlerTest {
 
     @Test
     public void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
-        UUID identifier = UUID.randomUUID();
+        SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
-                DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
+            DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
@@ -109,7 +109,7 @@ public class DeleteDraftPublicationHandlerTest {
         assertThat(exception.getMessage(), equalTo(message));
     }
 
-    private ByteArrayInputStream getInputStreamForEvent(String path, UUID identifier) {
+    private ByteArrayInputStream getInputStreamForEvent(String path, SortableIdentifier identifier) {
         String eventTemplate = streamToString(inputStreamFromResources(path));
         String event = String.format(eventTemplate, identifier);
 
@@ -121,6 +121,4 @@ public class DeleteDraftPublicationHandlerTest {
         publicationToCreate.setStatus(status);
         return publicationService.createPublication(publicationToCreate);
     }
-
-
 }

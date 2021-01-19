@@ -4,7 +4,6 @@ import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
 import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
-
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -12,9 +11,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -23,11 +22,10 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import com.fasterxml.jackson.databind.JavaType;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
@@ -99,7 +97,7 @@ public class CreatePublicationHandlerTest {
         assertEquals(expected, actual);
     }
 
-    private Map<String,String> getResponseHeadersWithLocation(UUID identifier) {
+    private Map<String,String> getResponseHeadersWithLocation(SortableIdentifier identifier) {
         Map<String, String> map = new HashMap<>(getResponseHeaders());
         map.put(HttpHeaders.LOCATION, handler.getLocation(identifier).toString());
         return map;
@@ -149,7 +147,7 @@ public class CreatePublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-            .withIdentifier(UUID.randomUUID())
+            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
             .withModifiedDate(Instant.now())
             .withOwner("owner")
             .withPublisher(new Organization.Builder()

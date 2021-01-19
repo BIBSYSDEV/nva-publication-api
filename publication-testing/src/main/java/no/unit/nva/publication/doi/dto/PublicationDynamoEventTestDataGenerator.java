@@ -1,7 +1,6 @@
 package no.unit.nva.publication.doi.dto;
 
 import static nva.commons.core.JsonUtils.objectMapper;
-
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.github.javafaker.Faker;
 import java.io.IOException;

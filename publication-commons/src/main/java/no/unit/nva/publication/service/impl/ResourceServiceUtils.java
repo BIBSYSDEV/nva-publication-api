@@ -5,7 +5,6 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -33,8 +32,8 @@ public final class ResourceServiceUtils {
     // #partitionKey = :partitionKey AND #sortKey = :sortKey
     public static final String PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION =
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
-            + " AND "
-            + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
+        + " AND "
+        + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
 
     public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
         primaryKeyAttributeNamesMapping();
@@ -77,7 +76,14 @@ public final class ResourceServiceUtils {
         return new TransactWriteItem().withPut(newDataEntry);
     }
 
+    static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
+        return
+            newTransactWriteItemsRequest(Arrays.asList(transaction));
+    }
 
+    static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
+        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
+    }
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
                                                                                 Class<T> valueClass) {
@@ -88,20 +94,12 @@ public final class ResourceServiceUtils {
                 .collect(
                     Collectors.toMap(
                         Entry::getKey,
-                        mapEntry -> new AttributeValue((String)mapEntry.getValue())
+                        mapEntry -> new AttributeValue((String) mapEntry.getValue())
                     )
                 );
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }
-    }
-
-    static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return newTransactWriteItemsRequest(Arrays.asList(transaction));
-    }
-
-    private static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
-        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
 
     private static Map<String, String> primaryKeyAttributeNamesMapping() {

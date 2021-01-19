@@ -3,10 +3,10 @@ package no.unit.nva.publication.storage.model;
 import java.net.URI;
 import java.time.Instant;
 import no.unit.nva.PublicationBase;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.identifiers.SortableIdentifier;
 
 public interface WithInternal extends PublicationBase {
 

@@ -1,17 +1,15 @@
 package no.unit.nva.publication;
 
+import static java.lang.Integer.parseInt;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.InputException;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.UUID;
-
-import static java.lang.Integer.parseInt;
 
 public final class RequestUtil {
 
@@ -40,13 +38,13 @@ public final class RequestUtil {
      * @return the identifier
      * @throws ApiGatewayException exception thrown if value is missing
      */
-    public static UUID getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
+    public static SortableIdentifier getIdentifier(RequestInfo requestInfo) throws ApiGatewayException {
         String identifier = null;
         try {
             logger.info("Trying to read Publication identifier...");
             identifier = requestInfo.getPathParameters().get(IDENTIFIER);
             logger.info("Requesting publication metadata for ID:" + identifier);
-            return UUID.fromString(identifier);
+            return new SortableIdentifier(identifier);
         } catch (Exception e) {
             throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
         }

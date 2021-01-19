@@ -27,8 +27,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
-import java.util.UUID;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.ErrorResponseException;
@@ -80,7 +80,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.getPublication(any(UUID.class))).thenReturn(publication);
+        when(publicationService.getPublication(any(SortableIdentifier.class))).thenReturn(publication);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -91,7 +91,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class)))
+        when(publicationService.getPublication(any(SortableIdentifier.class)))
             .thenThrow(new NotFoundException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -134,7 +134,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class))).thenThrow(new NullPointerException());
+        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(new NullPointerException());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
         String actualDetail = getProblemDetail(gatewayResponse);
@@ -147,7 +147,7 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns BadGateway Response On Communication Problems")
     public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(UUID.class)))
+        when(publicationService.getPublication(any(SortableIdentifier.class)))
             .thenThrow(new ErrorResponseException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -187,7 +187,7 @@ public class FetchPublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-            .withIdentifier(UUID.randomUUID())
+            .withIdentifier(SortableIdentifier.next())
             .withModifiedDate(Instant.now())
             .withOwner(OWNER)
             .withPublisher(new Organization.Builder()

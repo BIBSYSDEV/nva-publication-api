@@ -14,10 +14,9 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.Projection;
 import com.amazonaws.services.dynamodbv2.model.ProjectionType;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import java.util.Arrays;
 import java.util.List;
-
-import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import org.junit.rules.ExternalResource;
 
 public class PublicationsDynamoDBLocal extends ExternalResource {

@@ -2,8 +2,8 @@ package no.unit.nva.doi;
 
 import static java.util.Objects.nonNull;
 import java.time.Instant;
-import java.util.UUID;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
@@ -49,7 +49,7 @@ public class UpdateDoiStatusProcess {
         this.request = request.getItem();
 
         try {
-            UUID requestedPublicationId = extractPublicationFromRequest();
+            SortableIdentifier requestedPublicationId = extractPublicationFromRequest();
             this.publication = publicationService.getPublication(requestedPublicationId);
         } catch (ApiGatewayException e) {
             throw DependencyRemoteNvaApiException.wrap(e);
@@ -93,12 +93,12 @@ public class UpdateDoiStatusProcess {
         }
     }
 
-    private UUID extractPublicationFromRequest() {
+    private SortableIdentifier extractPublicationFromRequest() {
         String s = request.getPublicationId().toString();
         int beginIndex = s.lastIndexOf(FORWARD_SLASH);
         if (NOT_FOUND == beginIndex) {
             throw new IllegalArgumentException(PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID);
         }
-        return UUID.fromString(s.substring(++beginIndex));
+        return new SortableIdentifier(s.substring(++beginIndex));
     }
 }
