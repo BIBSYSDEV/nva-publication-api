@@ -235,7 +235,7 @@ public class ResourceService {
     }
 
     private boolean emptyResourceFiles(Resource resource) {
-        return Optional.ofNullable(resource.getFiles())
+        return Optional.ofNullable(resource.getFileSet())
             .map(FileSet::getFiles)
             .map(List::isEmpty)
             .orElse(true);

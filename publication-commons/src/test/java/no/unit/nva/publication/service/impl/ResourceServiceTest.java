@@ -422,7 +422,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         throws ConflictException, NoSuchFieldException {
         Resource sampleResource = sampleResource();
         sampleResource.setLink(null);
-        sampleResource.setFiles(emptyFileSet());
+        sampleResource.setFileSet(emptyFileSet());
         Resource savedResource = resourceService.createResource(sampleResource);
 
         Executable action = () -> resourceService.publishResource(savedResource);
@@ -441,7 +441,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         throws ConflictException, InvalidPublicationException, NotFoundException,
                JsonProcessingException {
         Resource sampleResource = sampleResource();
-        sampleResource.setFiles(emptyFileSet());
+        sampleResource.setFileSet(emptyFileSet());
         Resource savedResource = resourceService.createResource(sampleResource);
         Resource updatedResource = resourceService.publishResource(savedResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
@@ -618,7 +618,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .withStatus(PublicationStatus.DRAFT)
             .withOwner(SOME_USER)
             .withPublisher(newOrganization(SOME_ORG))
-            .withFiles(files)
+            .withFileSet(files)
             .withLink(SOME_LINK)
             .build();
     }
