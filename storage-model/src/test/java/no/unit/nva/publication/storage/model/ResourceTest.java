@@ -259,7 +259,6 @@ public class ResourceTest {
             .withName(randomString())
             .build();
         files.setFiles(List.of(file));
-
         return files;
     }
 
