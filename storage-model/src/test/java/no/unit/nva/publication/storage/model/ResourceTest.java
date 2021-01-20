@@ -66,10 +66,10 @@ public class ResourceTest {
     public static final String SAMPLE_ISSN = "2049-3630";
     public static final String SOME_HOST = "https://example.org/";
 
-    public final DoiRequest EMPTY_DOI_REQUEST = new DoiRequest.Builder().build();
+    public final DoiRequest emptyDoiRequest = new DoiRequest.Builder().build();
 
-    private final FileSet SAMPLE_FILE_SET = sampleFileSet();
-    private final List<ResearchProject> SAMPLE_PROJECTS = sampleProjects();
+    private final FileSet sampleFileSet = sampleFileSet();
+    private final List<ResearchProject> sampleProjects = sampleProjects();
     private final Javers javers = JaversBuilder.javers().build();
 
     @Test
@@ -100,7 +100,7 @@ public class ResourceTest {
     }
 
     @Test
-    public void fromDTOtoDAOtoDTOReturnsDtoWithoutLossOfInformation()
+    public void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation()
         throws MalformedURLException, InvalidIssnException {
         Publication expected = samplePublication(sampleJournalArticleReference());
         assertThat(expected, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
@@ -122,12 +122,12 @@ public class ResourceTest {
             .withOwner(SOME_OWNER)
             .withPublisher(SAMPLE_ORG)
             .withDoi(SAMPLE_DOI)
-            .withFileSet(SAMPLE_FILE_SET)
+            .withFileSet(sampleFileSet)
             .withHandle(randomUri())
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(SOME_LINK)
-            .withProjects(SAMPLE_PROJECTS)
-            .withDoiRequest(EMPTY_DOI_REQUEST)
+            .withProjects(sampleProjects)
+            .withDoiRequest(emptyDoiRequest)
             .withEntityDescription(sampleEntityDescription(reference))
             .build();
     }
