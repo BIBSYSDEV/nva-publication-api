@@ -1,5 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILES_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_MAIN_TITLE_FIELD;
@@ -40,14 +42,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
@@ -99,10 +101,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createResourceCreatesResource() throws NotFoundException, ConflictException {
-        Resource resource = sampleResource();
-        Resource savedResource = resourceService.createResource(resource);
-        Resource readResource = resourceService.getResource(savedResource);
-        Resource expectedResource = expectedResourceFromSampleResource(resource, savedResource);
+
+        Publication resource = PublicationGenerator.publicationWithIdentifier();
+        Publication savedResource = resourceService.createResource(resource);
+        Publication readResource = resourceService.getResource(savedResource);
+        Publication expectedResource = expectedResourceFromSampleResource(resource, savedResource);
         boolean x = savedResource.equals(expectedResource);
         assertThat(x, is(true));
 
@@ -113,8 +116,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createResourceThrowsConflictExceptionWhenResourceWithSameIdentifierExists() throws ConflictException {
-        final Resource sampleResource = createSampleResource();
-        final Resource collidingResource = sampleResource.copy()
+        final Publication sampleResource = publicationWithIdentifier();
+        final Publication collidingResource = sampleResource.copy()
             .withPublisher(anotherPublisher())
             .withOwner(ANOTHER_OWNER)
             .build();
@@ -131,8 +134,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
         throws ConflictException {
-        final Resource sampleResource = sampleResource();
-        final Resource anotherResource = sampleResource();
+        final Publication sampleResource = publicationWithIdentifier();
+        final Publication anotherResource = publicationWithIdentifier();
 
         resourceService.createResource(sampleResource);
         assertDoesNotThrow(() -> resourceService.createResource(anotherResource));
@@ -147,15 +150,15 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void getResourceByIdentifierReturnsResourceWhenResourceExists() throws NotFoundException, ConflictException {
-        Resource sampleResource = createSampleResource();
-        Resource savedResource = resourceService.getResource(SAMPLE_USER, sampleResource.getIdentifier());
+        Publication sampleResource = createSampleResource();
+        Publication savedResource = resourceService.getResource(SAMPLE_USER, sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
     }
 
     @Test
     public void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
         throws ConflictException, NotFoundException {
-        Resource sampleResource = createSampleResource();
+        Publication sampleResource = createSampleResource();
 
         UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
@@ -164,9 +167,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         assertThatResourceDoesNotExist(sampleResource);
 
-        Resource newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
+        Publication newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
 
-        Resource expectedResource = expectedUpdatedResource(sampleResource);
+        Publication expectedResource = expectedUpdatedResource(sampleResource);
 
         assertThat(newResource, is(equalTo(expectedResource)));
     }
@@ -174,13 +177,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
         throws ConflictException, NotFoundException {
-        Resource originalResource = createSampleResource();
+        Publication originalResource = createSampleResource();
         UserInstance oldOwner = new UserInstance(originalResource.getOwner(), originalResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
 
         resourceService.updateOwner(originalResource.getIdentifier().toString(), oldOwner, newOwner);
 
-        Resource newResource = resourceService.getResource(newOwner, originalResource.getIdentifier());
+        Publication newResource = resourceService.getResource(newOwner, originalResource.getIdentifier());
 
         assertThat(newResource.getOwner(), is(equalTo(newOwner.getUserIdentifier())));
         assertThat(newResource.getPublisher().getId(), is(equalTo(newOwner.getOrganizationUri())));
@@ -189,7 +192,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
         throws ConflictException, NotFoundException {
-        Resource sampleResource = createSampleResource();
+        Publication sampleResource = createSampleResource();
         UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
 
@@ -197,31 +200,37 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         assertThatResourceDoesNotExist(sampleResource);
 
-        Resource newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
+        Publication newResource = resourceService.getResource(newOwner, sampleResource.getIdentifier());
 
         assertThat(newResource.getModifiedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
     }
 
     @Test
     public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ConflictException, NotFoundException {
-        Resource resource = createSampleResource();
-        Resource actualOriginalResourcce = resourceService.getResource(resource);
-        assertThat(actualOriginalResourcce, is(equalTo(resource)));
+        Publication resource = createSampleResource();
+        Publication actualOriginalResource = resourceService.getResource(resource);
+        assertThat(actualOriginalResource, is(equalTo(resource)));
 
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Publication resourceUpdate = createResourceUpdate(resource);
 
         resourceService.updateResource(resourceUpdate);
-        Resource actualUpdatedResource = resourceService.getResource(resource);
+        Publication actualUpdatedResource = resourceService.getResource(resource);
 
         assertThat(actualUpdatedResource, is(equalTo(resourceUpdate)));
-        assertThat(actualUpdatedResource, is(not(equalTo(actualOriginalResourcce))));
+        assertThat(actualUpdatedResource, is(not(equalTo(actualOriginalResource))));
+    }
+
+    private Publication createResourceUpdate(Publication resource) {
+        Publication updatedPublication = resource.copy().build();
+        updatedPublication.getEntityDescription().setMainTitle(UPDATED_TITLE);
+        return updatedPublication;
     }
 
     @Test
     @DisplayName("resourceUpdate fails when Update changes the primary key (owner-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
-        Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Publication resource = createSampleResource();
+        Publication resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setOwner(ANOTHER_OWNER);
         assertThatUpdateFails(resourceUpdate);
@@ -231,8 +240,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @DisplayName("resourceUpdate fails when Update changes the primary key (organization-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
         throws ConflictException {
-        Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Publication resource = createSampleResource();
+        Publication resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setPublisher(newOrganization(SOME_OTHER_ORG));
         assertThatUpdateFails(resourceUpdate);
@@ -242,8 +251,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @DisplayName("resourceUpdate fails when Update changes the primary key (primary-key-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
         throws ConflictException {
-        Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Publication resource = createSampleResource();
+        Publication resourceUpdate = createResourceUpdate(resource);
 
         resourceUpdate.setIdentifier(SortableIdentifier.next());
         assertThatUpdateFails(resourceUpdate);
@@ -259,7 +268,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         ResourceService failingService = new ResourceService(client, clock);
 
-        Resource resource = sampleResource();
+        Publication resource = publicationWithIdentifier();
         Executable action = () -> failingService.createResource(resource);
         ConflictException actualException = assertThrows(ConflictException.class, action);
         Throwable actualCause = actualException.getCause();
@@ -273,7 +282,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         RuntimeException exptedMessage = new RuntimeException(expectedMessage);
         when(client.getItem(any(GetItemRequest.class)))
             .thenThrow(exptedMessage);
-        Resource resource = sampleResource();
+        Publication resource = publicationWithIdentifier();
 
         ResourceService failingResourceService = new ResourceService(client, clock);
 
@@ -283,8 +292,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser()  {
-        Set<Resource> userResources = createSampleResources();
+    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
+        Set<Publication> userResources = createSamplePublications();
 
         List<Resource> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
         HashSet<Resource> actualResourcesSet = new HashSet<>(actualResources);
@@ -350,11 +359,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void publishResourceSetsPublicationStatusToPublished()
         throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
-        Resource resource = createSampleResource();
-        Resource resourceInResponse = resourceService.publishResource(resource);
-        Resource actualResource = resourceService.getResource(resource);
+        Publication resource = createSampleResource();
+        Publication resourceInResponse = resourceService.publishResource(resource);
+        Publication actualResource = resourceService.getResource(resource);
 
-        Resource expectedResource = resource.copy()
+        Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
             .withModifiedDate(RESOURCE_MODIFICATION_TIME)
             .withPublishedDate(RESOURCE_MODIFICATION_TIME)
@@ -367,10 +376,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void publishResourceReturnsUpdatedResource()
         throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
-        Resource resource = createSampleResource();
-        Resource resourceUpdate = resourceService.publishResource(resource);
+        Publication resource = createSampleResource();
+        Publication resourceUpdate = resourceService.publishResource(resource);
 
-        Resource expectedResource = resource.copy()
+        Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
             .withModifiedDate(RESOURCE_MODIFICATION_TIME)
             .withPublishedDate(RESOURCE_MODIFICATION_TIME)
@@ -382,10 +391,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
         throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
-        Resource resource = createSampleResource();
+        Publication resource = createSampleResource();
         resourceService.publishResource(resource);
-        Resource updatedResource = resourceService.publishResource(resource);
-        Resource expectedResource = resource.copy()
+        Publication updatedResource = resourceService.publishResource(resource);
+        Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
             .withPublishedDate(RESOURCE_MODIFICATION_TIME)
             .withModifiedDate(RESOURCE_MODIFICATION_TIME)
@@ -397,17 +406,17 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void publishPublicationSetsPublishedDate()
         throws ConflictException, NotFoundException, JsonProcessingException, InvalidPublicationException {
-        Resource resource = createSampleResource();
-        Resource updatedResource = resourceService.publishResource(resource);
+        Publication resource = createSampleResource();
+        Publication updatedResource = resourceService.publishResource(resource);
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
     }
 
     @Test
     public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
         throws ConflictException {
-        Resource sampleResource = sampleResource();
-        sampleResource.setTitle(null);
-        Resource savedResource = resourceService.createResource(sampleResource);
+        Publication sampleResource = publicationWithIdentifier();
+        sampleResource.getEntityDescription().setMainTitle(null);
+        Publication savedResource = resourceService.createResource(sampleResource);
 
         Executable action = () -> resourceService.publishResource(savedResource);
 
@@ -420,10 +429,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
         throws ConflictException, NoSuchFieldException {
-        Resource sampleResource = sampleResource();
+        Publication sampleResource = publicationWithoutIdentifier();
         sampleResource.setLink(null);
         sampleResource.setFileSet(emptyFileSet());
-        Resource savedResource = resourceService.createResource(sampleResource);
+        Publication savedResource = resourceService.createResource(sampleResource);
 
         Executable action = () -> resourceService.publishResource(savedResource);
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
@@ -440,10 +449,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles()
         throws ConflictException, InvalidPublicationException, NotFoundException,
                JsonProcessingException {
-        Resource sampleResource = sampleResource();
+        Publication sampleResource = publicationWithIdentifier();
         sampleResource.setFileSet(emptyFileSet());
-        Resource savedResource = resourceService.createResource(sampleResource);
-        Resource updatedResource = resourceService.publishResource(savedResource);
+        Publication savedResource = resourceService.createResource(sampleResource);
+        Publication updatedResource = resourceService.publishResource(savedResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
@@ -451,17 +460,17 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink()
         throws ConflictException, InvalidPublicationException, NotFoundException,
                JsonProcessingException {
-        Resource sampleResource = createSampleResource();
+        Publication sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
-        Resource updatedResource = resourceService.publishResource(sampleResource);
+        Publication updatedResource = resourceService.publishResource(sampleResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
     public void publishResourcePublishesShouldThrowExceptionWhenNoReturnValueIsReturned()
         throws JsonProcessingException {
-        Resource sampleResource = sampleResource();
+        Publication sampleResource = publicationWithIdentifier();
         sampleResource.setIdentifier(SortableIdentifier.next());
 
         ResourceService resourceServiceThatReceivesNoValue = resourceServiceReceivingNoValue(sampleResource);
@@ -478,8 +487,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(thrownException.getCause().getMessage(), is(equalTo(expectedCause.getMessage())));
     }
 
-    private ResourceService resourceServiceReceivingNoValue(Resource resource) throws JsonProcessingException {
-        String jsonString = objectMapper.writeValueAsString(new ResourceDao(resource));
+    private ResourceService resourceServiceReceivingNoValue(Publication publication) throws JsonProcessingException {
+        String jsonString = objectMapper.writeValueAsString(new ResourceDao(Resource.fromPublication(publication)));
         Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         when(client.getItem(any(GetItemRequest.class)))
@@ -491,20 +500,20 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws ConflictException {
-        Resource sampleResource = sampleResource();
-        Resource savedResource = resourceService.createResource(sampleResource);
+        Publication sampleResource = publicationWithIdentifier();
+        Publication savedResource = resourceService.createResource(sampleResource);
         assertThat(sampleResource.getIdentifier(), is(equalTo(null)));
         assertThat(savedResource.getIdentifier(), is(notNullValue()));
     }
 
     @Test
     public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException, JsonProcessingException {
-        Resource resource = createSampleResource();
+        Publication resource = createSampleResource();
 
-        Resource resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        Publication resourceUpdate = resourceService.markPublicationForDeletion(resource);
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
-        Resource resourceForDeletion = resourceService.getResource(resource);
+        Publication resourceForDeletion = resourceService.getResource(resource);
         assertThat(resourceForDeletion.getStatus(),
             Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
@@ -512,16 +521,16 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void deletePublicationReturnsUpdatedResourceCanMarkDraftForDeletion()
         throws ApiGatewayException, JsonProcessingException {
-        Resource resource = createSampleResource();
+        Publication resource = createSampleResource();
 
-        Resource resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        Publication resourceUpdate = resourceService.markPublicationForDeletion(resource);
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
 
     @Test
     public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
         throws ApiGatewayException, JsonProcessingException {
-        Resource resource = createSampleResource();
+        Publication resource = createSampleResource();
         resourceService.publishResource(resource);
         Executable action = () -> resourceService.markPublicationForDeletion(resource);
         ResourceCannotBeDeletedException exception = assertThrows(ResourceCannotBeDeletedException.class, action);
@@ -532,15 +541,15 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void deleteResourceThrowsNoErrorWhenDeletingPublicationThatIsMarkedForDeletion()
         throws ApiGatewayException, JsonProcessingException {
-        Resource resource = createSampleResource();
+        Publication resource = createSampleResource();
         resourceService.markPublicationForDeletion(resource);
-        Resource actualResource = resourceService.getResource(resource);
+        Publication actualResource = resourceService.getResource(resource);
         assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
         assertDoesNotThrow(() -> resourceService.markPublicationForDeletion(resource));
     }
 
-    private Resource expectedResourceFromSampleResource(Resource sampleResource, Resource savedResource) {
+    private Publication expectedResourceFromSampleResource(Publication sampleResource, Publication savedResource) {
         return sampleResource.copy()
             .withIdentifier(savedResource.getIdentifier())
             .withCreatedDate(savedResource.getCreatedDate())
@@ -562,16 +571,17 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(exception.getCause(), is(instanceOf(expectedExceptionClass)));
     }
 
-    private Set<Resource> createSampleResources() {
+    private Set<Publication> createSamplePublications() {
 
         return
-            Set.of(sampleResource(), sampleResource(), sampleResource()).stream()
+            Set.of(publicationWithoutIdentifier(), publicationWithoutIdentifier(), publicationWithoutIdentifier())
+                .stream()
                 .map(attempt(res -> resourceService.createResource(res)))
                 .map(Try::orElseThrow)
                 .collect(Collectors.toSet());
     }
 
-    private Resource expectedUpdatedResource(Resource sampleResource) {
+    private Publication expectedUpdatedResource(Publication sampleResource) {
         return sampleResource.copy()
             .withOwner(someOtherUser().getUserIdentifier())
             .withPublisher(userOrganization(someOtherUser()))
@@ -580,23 +590,21 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .build();
     }
 
-    private Resource createSampleResource() throws ConflictException {
-        Resource originalResource = sampleResource();
+    private Publication createSampleResource() throws ConflictException {
+         var originalResource = publicationWithIdentifier();
         return resourceService.createResource(originalResource);
     }
 
-    private void assertThatUpdateFails(Resource resourceUpdate) {
+    private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updateResource(resourceUpdate);
         ConditionalCheckFailedException exception = assertThrows(ConditionalCheckFailedException.class, action);
         String message = exception.getMessage();
         assertThat(message, containsString(ConditionalCheckFailedException.class.getSimpleName()));
     }
 
-    private Resource createResourceUpdate(Resource resource) {
-        return resource.copy().withTitle(UPDATED_TITLE).build();
-    }
 
-    private void assertThatResourceDoesNotExist(Resource sampleResource) {
+
+    private void assertThatResourceDoesNotExist(Publication sampleResource) {
         assertThrows(NotFoundException.class, () -> resourceService.getResource(sampleResource));
     }
 
@@ -606,21 +614,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Organization anotherPublisher() {
         return new Organization.Builder().withId(SOME_OTHER_ORG).build();
-    }
-
-    private Resource sampleResource() {
-
-        FileSet files = new FileSet();
-        File file = new File.Builder().withIdentifier(UUID.randomUUID()).build();
-        files.setFiles(List.of(file));
-        return Resource.builder()
-            .withTitle(ORIGINAL_TITLE)
-            .withStatus(PublicationStatus.DRAFT)
-            .withOwner(SOME_USER)
-            .withPublisher(newOrganization(SOME_ORG))
-            .withFileSet(files)
-            .withLink(SOME_LINK)
-            .build();
     }
 
     private Organization newOrganization(URI customerId) {
