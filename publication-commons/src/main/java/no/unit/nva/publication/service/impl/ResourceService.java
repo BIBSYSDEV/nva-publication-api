@@ -38,7 +38,6 @@ import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
@@ -68,11 +68,12 @@ public class ResourceService {
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     public static final String RESOURCE_MAIN_TITLE_FIELD = "title";
     public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String RESOURCE_FILES_FIELD = "files";
+    public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
+    public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
+    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -102,14 +103,6 @@ public class ResourceService {
         sendTransactionWriteRequest(putRequest);
 
         return fetchEventuallyConsistentResource(newResource);
-    }
-
-    private Resource fetchEventuallyConsistentResource(Resource newResource) {
-        Resource savedResource = null;
-        for (int times = 0; times < 10 && savedResource == null; times++) {
-            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
-        }
-        return savedResource;
     }
 
     public void updateResource(Resource resourceUpdate) {
@@ -186,6 +179,22 @@ public class ResourceService {
             .orElseThrow(failure -> handleConditionFailureException(failure, resource));
     }
 
+    private static List<Resource> queryResultToResourceList(QueryResult result) {
+        return result.getItems()
+            .stream()
+            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+            .map(ResourceDao::getResource)
+            .collect(Collectors.toList());
+    }
+
+    private Resource fetchEventuallyConsistentResource(Resource newResource) {
+        Resource savedResource = null;
+        for (int times = 0; times < 10 && savedResource == null; times++) {
+            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
+        }
+        return savedResource;
+    }
+
     private <E extends Exception> ResourceCannotBeDeletedException handleConditionFailureException(
         Failure<Resource> failure, Resource resource) {
         if (failure.getException() instanceof ConditionalCheckFailedException) {
@@ -216,18 +225,29 @@ public class ResourceService {
     }
 
     private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        boolean hasNoTitle = isNull(resource.getTitle());
+        boolean hasNoTitle = Optional.of(resource)
+            .map(Resource::getEntityDescription)
+            .map(EntityDescription::getMainTitle)
+            .isEmpty();
         boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
 
         if (hasNoTitle) {
-            String missingField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_MAIN_TITLE_FIELD))
-                .orElseThrow();
-            throw new InvalidPublicationException(Collections.singletonList(missingField));
+            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
         } else if (hasNeitherLinkNorFile) {
-            String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-            String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILES_FIELD)).orElseThrow();
-            throw new InvalidPublicationException(List.of(files, linkField));
+            throwErrorWhenPublishingResourceWithoutData(resource);
         }
+    }
+
+    private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
+        String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
+        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
+        throw new InvalidPublicationException(List.of(files, linkField));
+    }
+
+    private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
+        throws InvalidPublicationException {
+        throw new
+            InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
     }
 
     private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
@@ -297,14 +317,6 @@ public class ResourceService {
     private String instantAsString(Instant instant) throws JsonProcessingException {
         String jsonString = JsonUtils.objectMapper.writeValueAsString(instant);
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
-    }
-
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
-            .collect(Collectors.toList());
     }
 
     private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,

@@ -68,11 +68,9 @@ public class ResourceTest {
 
     public final DoiRequest EMPTY_DOI_REQUEST = new DoiRequest.Builder().build();
 
-
     private final FileSet SAMPLE_FILE_SET = sampleFileSet();
     private final List<ResearchProject> SAMPLE_PROJECTS = sampleProjects();
     private final Javers javers = JaversBuilder.javers().build();
-
 
     @Test
     public void builderContainsAllFields() {
@@ -107,14 +105,12 @@ public class ResourceTest {
         Publication expected = samplePublication(sampleJournalArticleReference());
         assertThat(expected, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
 
-        Publication transformed= Resource.fromPublication(expected).toPublication();
-        assertThat(transformed,is(equalTo(expected)));
+        Publication transformed = Resource.fromPublication(expected).toPublication();
+        assertThat(transformed, is(equalTo(expected)));
 
         Diff diff = javers.compare(expected, transformed);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }
-
-
 
     private Publication samplePublication(Reference reference) {
         return new Publication.Builder()
@@ -157,7 +153,7 @@ public class ResourceTest {
         return UUID.randomUUID().toString();
     }
 
-    private EntityDescription sampleEntityDescription(Reference reference){
+    private EntityDescription sampleEntityDescription(Reference reference) {
         Map<String, String> alternativeTitles = Map.of(randomString(), randomString());
         return new EntityDescription.Builder()
             .withDate(randomPublicationDate())
@@ -266,23 +262,9 @@ public class ResourceTest {
         return files;
     }
 
-    private Resource sampleResource() {
-
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setMainTitle(SOME_TITLE);
-        return Resource.builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withEntityDescription(entityDescription)
-            .withStatus(PublicationStatus.DRAFT)
-            .withOwner(SOME_OWNER)
-            .withCreatedDate(RESOURCE_CREATION_TIME)
-            .withModifiedDate(RESOURCE_SECOND_MODIFICATION_TIME)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-            .withIndexedDate(RESOURCE_PUBLISHED_DATE)
-            .withPublisher(SAMPLE_ORG)
-            .withFileSet(SAMPLE_FILE_SET)
-            .withLink(SOME_LINK)
-            .build();
+    private Resource sampleResource()  {
+        return attempt(()->Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
+            .orElseThrow();
     }
 
     private URI randomUri() {

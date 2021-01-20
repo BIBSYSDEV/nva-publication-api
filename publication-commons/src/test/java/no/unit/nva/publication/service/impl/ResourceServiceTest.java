@@ -1,8 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILES_FIELD;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_MAIN_TITLE_FIELD;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
@@ -44,6 +45,8 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.EntityDescription.Builder;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
@@ -59,6 +62,9 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.hamcrest.Matchers;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -84,6 +90,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
     private ResourceService resourceService;
     private Clock clock;
+
+    private final Javers javers = JaversBuilder.javers().build();
+
+
 
     @BeforeEach
     public void init() {
@@ -208,7 +218,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Resource actualOriginalResourcce = resourceService.getResource(resource);
         assertThat(actualOriginalResourcce, is(equalTo(resource)));
 
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Resource resourceUpdate = updateResourceTitle(resource);
 
         resourceService.updateResource(resourceUpdate);
         Resource actualUpdatedResource = resourceService.getResource(resource);
@@ -221,7 +231,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @DisplayName("resourceUpdate fails when Update changes the primary key (owner-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
         Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Resource resourceUpdate = updateResourceTitle(resource);
 
         resourceUpdate.setOwner(ANOTHER_OWNER);
         assertThatUpdateFails(resourceUpdate);
@@ -232,7 +242,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
         throws ConflictException {
         Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Resource resourceUpdate = updateResourceTitle(resource);
 
         resourceUpdate.setPublisher(newOrganization(SOME_OTHER_ORG));
         assertThatUpdateFails(resourceUpdate);
@@ -243,7 +253,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
         throws ConflictException {
         Resource resource = createSampleResource();
-        Resource resourceUpdate = createResourceUpdate(resource);
+        Resource resourceUpdate = updateResourceTitle(resource);
 
         resourceUpdate.setIdentifier(SortableIdentifier.next());
         assertThatUpdateFails(resourceUpdate);
@@ -406,15 +416,14 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
         throws ConflictException {
         Resource sampleResource = sampleResource();
-        sampleResource.setTitle(null);
+        sampleResource.getEntityDescription().setMainTitle(null);
         Resource savedResource = resourceService.createResource(sampleResource);
 
         Executable action = () -> resourceService.publishResource(savedResource);
 
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
-        assertThat(actualMessage, containsString(InvalidPublicationException.ERROR_MESSAGE_TEMPLATE));
-        assertThat(actualMessage, containsString(RESOURCE_MAIN_TITLE_FIELD));
+        assertThat(actualMessage, containsString(RESOURCE_WITHOUT_MAIN_TITLE_ERROR));
     }
 
     @Test
@@ -433,7 +442,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessage, containsString(sampleResource.getClass()
             .getDeclaredField(RESOURCE_LINK_FIELD).getName()));
         assertThat(actualMessage, containsString(sampleResource.getClass()
-            .getDeclaredField(RESOURCE_FILES_FIELD).getName()));
+            .getDeclaredField(RESOURCE_FILE_SET_FIELD).getName()));
     }
 
     @Test
@@ -592,8 +601,20 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(message, containsString(ConditionalCheckFailedException.class.getSimpleName()));
     }
 
-    private Resource createResourceUpdate(Resource resource) {
-        return resource.copy().withTitle(UPDATED_TITLE).build();
+    private Resource updateResourceTitle(Resource resource) {
+        EntityDescription newEntityDescription =
+            new EntityDescription.Builder().withMainTitle(UPDATED_TITLE).build();
+
+        assertThatNewEntityDescriptionDiffersOnlyInTitle(resource.getEntityDescription(), newEntityDescription);
+        return resource.copy().withEntityDescription(newEntityDescription).build();
+
+
+    }
+
+    private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,
+                                                                  EntityDescription newEntityDescription) {
+        Diff diff = javers.compare(oldEntityDescription, newEntityDescription);
+        assertThat(diff.getChanges().size(),is(equalTo(1)));
     }
 
     private void assertThatResourceDoesNotExist(Resource sampleResource) {
@@ -613,8 +634,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         FileSet files = new FileSet();
         File file = new File.Builder().withIdentifier(UUID.randomUUID()).build();
         files.setFiles(List.of(file));
+        EntityDescription entityDescription = new Builder().withMainTitle(ORIGINAL_TITLE).build();
         return Resource.builder()
-            .withTitle(ORIGINAL_TITLE)
+            .withEntityDescription(entityDescription)
             .withStatus(PublicationStatus.DRAFT)
             .withOwner(SOME_USER)
             .withPublisher(newOrganization(SOME_ORG))
