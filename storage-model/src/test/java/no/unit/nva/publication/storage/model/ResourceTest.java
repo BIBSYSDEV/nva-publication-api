@@ -262,8 +262,8 @@ public class ResourceTest {
         return files;
     }
 
-    private Resource sampleResource()  {
-        return attempt(()->Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
+    private Resource sampleResource() {
+        return attempt(() -> Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
             .orElseThrow();
     }
 
