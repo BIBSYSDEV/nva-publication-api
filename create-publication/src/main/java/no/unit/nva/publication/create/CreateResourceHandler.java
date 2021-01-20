@@ -35,7 +35,7 @@ public class CreateResourceHandler extends ApiGatewayHandler<Void, Resource> {
         resource.setOwner(feideId);
         resource.setStatus(PublicationStatus.DRAFT);
         resource.setCreatedDate(Instant.now());
-        resourceService.createResource(resource.toPublication());
+        resourceService.createPublication(resource.toPublication());
         return resource;
     }
 

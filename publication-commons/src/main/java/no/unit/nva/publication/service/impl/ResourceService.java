@@ -97,7 +97,7 @@ public class ResourceService {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Publication createResource(Publication inputData) throws ConflictException {
+    public Publication createPublication(Publication inputData) throws ConflictException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
@@ -108,39 +108,23 @@ public class ResourceService {
         return fetchEventuallyConsistentResource(newResource).toPublication();
     }
 
-    public void updateResource(Publication publication) {
+    public void updatePublication(Publication publication) {
         updateResource(Resource.fromPublication(publication));
     }
 
-    public void updateResource(Resource resourceUpdate) {
-
-        ResourceDao resourceDao = new ResourceDao(resourceUpdate);
-
-        Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
-
-        PutItemRequest putItemRequest = new PutItemRequest()
-            .withItem(toDynamoFormat(resourceDao))
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
-            .withExpressionAttributeValues(primaryKeyCheckValuesMap);
-
-        client.putItem(putItemRequest);
-    }
-
-    public Publication getResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         return getResource(createQueryObject(userInstance, resourceIdentifier.toString()))
             .toPublication();
     }
 
-    public Publication getResource(UserInstance userInstance, String resourceIdentifier)
+    public Publication getPublication(UserInstance userInstance, String resourceIdentifier)
         throws NotFoundException {
         return getResource(createQueryObject(userInstance, resourceIdentifier))
             .toPublication();
     }
 
-    public Publication getResource(Publication publication) throws NotFoundException {
+    public Publication getPublication(Publication publication) throws NotFoundException {
         return getResource(Resource.fromPublication(publication)).toPublication();
     }
 
@@ -169,14 +153,14 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    public Publication publishResource(Publication dto)
+    public Publication publishPublication(Publication dto)
         throws InvalidPublicationException, NotFoundException, JsonProcessingException {
         return publishResource(Resource.fromPublication(dto)).toPublication();
     }
 
     public Publication markPublicationForDeletion(Publication publication)
         throws JsonProcessingException, ResourceCannotBeDeletedException {
-        return markPublicationForDeletion(Resource.fromPublication(publication)).toPublication();
+        return markResourceForDeletion(Resource.fromPublication(publication)).toPublication();
     }
 
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -187,7 +171,23 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    private Resource markPublicationForDeletion(Resource resource)
+    private void updateResource(Resource resourceUpdate) {
+
+        ResourceDao resourceDao = new ResourceDao(resourceUpdate);
+
+        Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
+
+        PutItemRequest putItemRequest = new PutItemRequest()
+            .withItem(toDynamoFormat(resourceDao))
+            .withTableName(tableName)
+            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
+            .withExpressionAttributeValues(primaryKeyCheckValuesMap);
+
+        client.putItem(putItemRequest);
+    }
+
+    private Resource markResourceForDeletion(Resource resource)
         throws JsonProcessingException, ResourceCannotBeDeletedException {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
