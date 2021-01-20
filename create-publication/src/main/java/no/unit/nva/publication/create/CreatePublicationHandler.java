@@ -69,7 +69,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             null, //TODO: set link
             createPublisherFromCustomerId(RequestUtil.getCustomerId(requestInfo)));
 
-        Publication createdPublication = publicationService.createResource(newPublication);
+        Publication createdPublication = publicationService.createPublication(newPublication);
 
         setLocationHeader(createdPublication.getIdentifier());
 

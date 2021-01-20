@@ -77,7 +77,7 @@ public class CreatePublicationHandlerTest {
     @Test
     public void requestToHandlerReturnsCustomerCreated() throws Exception {
         Publication publication = createPublication();
-        when(publicationServiceMock.createResource(any(Publication.class))).thenReturn(publication);
+        when(publicationServiceMock.createPublication(any(Publication.class))).thenReturn(publication);
 
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(publication.getEntityDescription());
@@ -106,7 +106,7 @@ public class CreatePublicationHandlerTest {
     @Test
     public void canCreateNewPublication() throws Exception {
         Publication publication = createPublication();
-        when(publicationServiceMock.createResource(any(Publication.class))).thenReturn(publication);
+        when(publicationServiceMock.createPublication(any(Publication.class))).thenReturn(publication);
 
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
