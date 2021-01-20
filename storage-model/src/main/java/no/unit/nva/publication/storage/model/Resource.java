@@ -29,7 +29,7 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier, WithType {
+public class Resource implements WithIdentifier {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
@@ -110,10 +110,7 @@ public class Resource implements WithIdentifier, WithType {
             .build();
     }
 
-    @Override
-    public String getType() {
-        return TYPE;
-    }
+
 
     private DoiRequest emptyDoiRequest() {
         return new DoiRequest.Builder().build();
