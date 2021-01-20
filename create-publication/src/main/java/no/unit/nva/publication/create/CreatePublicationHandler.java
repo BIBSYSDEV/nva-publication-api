@@ -1,9 +1,9 @@
 package no.unit.nva.publication.create;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
@@ -13,8 +13,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -30,7 +29,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public static final String API_SCHEME = "API_SCHEME";
     public static final String API_HOST = "API_HOST";
 
-    private final PublicationService publicationService;
+    private final ResourceService publicationService;
     private final String apiScheme;
     private final String apiHost;
 
@@ -39,10 +38,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      */
     @JacocoGenerated
     public CreatePublicationHandler() {
-        this(new DynamoDBPublicationService(
+        this(new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
+                Clock.systemDefaultZone()),
             new Environment());
     }
 
@@ -52,7 +50,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      * @param publicationService publicationService
      * @param environment        environment
      */
-    public CreatePublicationHandler(PublicationService publicationService,
+    public CreatePublicationHandler(ResourceService publicationService,
                                     Environment environment) {
         super(CreatePublicationRequest.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
         this.publicationService = publicationService;
@@ -71,7 +69,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             null, //TODO: set link
             createPublisherFromCustomerId(RequestUtil.getCustomerId(requestInfo)));
 
-        Publication createdPublication = publicationService.createPublication(newPublication);
+        Publication createdPublication = publicationService.createResource(newPublication);
 
         setLocationHeader(createdPublication.getIdentifier());
 

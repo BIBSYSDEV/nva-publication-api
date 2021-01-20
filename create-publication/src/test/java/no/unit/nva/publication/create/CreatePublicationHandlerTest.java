@@ -29,7 +29,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.apache.http.HttpHeaders;
@@ -52,7 +52,7 @@ public class CreatePublicationHandlerTest {
     public static final String HEADERS = "headers";
     public static final String BODY = "body";
 
-    private PublicationService publicationServiceMock;
+    private ResourceService publicationServiceMock;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
@@ -64,7 +64,7 @@ public class CreatePublicationHandlerTest {
      */
     @BeforeEach
     public void setUp() {
-        publicationServiceMock = mock(PublicationService.class);
+        publicationServiceMock = mock(ResourceService.class);
         Environment environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_SCHEME)).thenReturn(HTTPS);
@@ -77,7 +77,7 @@ public class CreatePublicationHandlerTest {
     @Test
     public void requestToHandlerReturnsCustomerCreated() throws Exception {
         Publication publication = createPublication();
-        when(publicationServiceMock.createPublication(any(Publication.class))).thenReturn(publication);
+        when(publicationServiceMock.createResource(any(Publication.class))).thenReturn(publication);
 
         CreatePublicationRequest request = new CreatePublicationRequest();
         request.setEntityDescription(publication.getEntityDescription());
@@ -106,7 +106,7 @@ public class CreatePublicationHandlerTest {
     @Test
     public void canCreateNewPublication() throws Exception {
         Publication publication = createPublication();
-        when(publicationServiceMock.createPublication(any(Publication.class))).thenReturn(publication);
+        when(publicationServiceMock.createResource(any(Publication.class))).thenReturn(publication);
 
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
