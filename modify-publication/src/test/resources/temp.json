@@ -1,0 +1,118 @@
+{
+  "type": "Publication",
+  "identifier": "a0c7ea23-cba6-45aa-a9aa-99f7ef86fc78",
+  "createdDate": "2021-01-20T10:50:13.130515Z",
+  "modifiedDate": "2021-01-20T10:52:13.429742Z",
+  "owner": "og@unit.no",
+  "status": "DRAFT",
+  "entityDescription": {
+    "type": "EntityDescription",
+    "abstract": "",
+    "contributors": [],
+    "date": {
+      "type": "PublicationDate",
+      "year": "2021",
+      "month": "1",
+      "day": "20"
+    },
+    "description": "",
+    "language": "http://lexvo.org/id/iso639-3/eng",
+    "mainTitle": "Title20200120",
+    "npiSubjectHeading": "",
+    "reference": {
+      "type": "Reference",
+      "doi": "",
+      "publicationContext": {
+        "type": "Chapter",
+        "level": "",
+        "onlineIssn": "",
+        "openAccess": false,
+        "peerReviewed": false,
+        "title": "",
+        "url": "",
+        "linkedContext": ""
+      },
+      "publicationInstance": {
+        "type": "ChapterArticle",
+        "articleNumber": "",
+        "issue": "",
+        "pages": {
+          "type": "Range",
+          "begin": "",
+          "end": ""
+        },
+        "peerReviewed": false,
+        "volume": "",
+        "corrigendumFor": "",
+        "textbookContent": false
+      }
+    },
+    "tags": []
+  },
+  "fileSet": {
+    "type": "FileSet",
+    "files": [
+      {
+        "type": "File",
+        "identifier": "c7c94366-de86-46ee-873e-6716fe3e53f3",
+        "name": "vldb09-677233.pdf",
+        "mimeType": "application/pdf",
+        "size": 428244,
+        "administrativeAgreement": false,
+        "publisherAuthority": false
+      }
+    ]
+  },
+  "projects": [],
+  "publisher": {
+    "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+    "type": "Organization"
+  },
+  "publisherId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+  "publisherOwnerDate": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#og@unit.no#2021-01-20T10:52:13.429742Z",
+  "@context": {
+    "@vocab": "https://nva.unit.no/publication#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "type": "@type",
+    "id": "@id",
+    "handle": {
+      "@type": "@id"
+    },
+    "alternativeTitles": {
+      "@container": "@language"
+    },
+    "createdDate": {
+      "@type": "xsd:dateTime"
+    },
+    "publishedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "indexedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "modifiedDate": {
+      "@type": "xsd:dateTime"
+    },
+    "link": {
+      "@type": "@id"
+    },
+    "hasTag": {
+      "@container": "@list"
+    },
+    "labels": {
+      "@container": "@language"
+    },
+    "language": {
+      "@type": "@id"
+    },
+    "year": {
+      "@type": "xsd:gYear"
+    },
+    "month": {
+      "@type": "xsd:gMonth"
+    },
+    "day": {
+      "@type": "xsd:gDay"
+    }
+  }
+}

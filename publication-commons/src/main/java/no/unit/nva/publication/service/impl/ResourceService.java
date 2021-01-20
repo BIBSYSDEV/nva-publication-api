@@ -38,7 +38,6 @@ import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,8 +71,11 @@ public class ResourceService {
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
     public static final String RESOURCE_MAIN_TITLE_FIELD = "title";
     public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String RESOURCE_FILES_FIELD = "files";
+    public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
+    public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
+    public static final int MAX_FETCH_ATTEMPTS = 10;
+    public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -96,8 +98,8 @@ public class ResourceService {
     }
 
     public Publication createResource(Publication inputData) throws ConflictException {
-
         Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
@@ -106,10 +108,12 @@ public class ResourceService {
         return fetchEventuallyConsistentResource(newResource).toPublication();
     }
 
-    public void updateResource(Publication publication){
-         updateResource(Resource.fromPublication(publication));
+    public void updateResource(Publication publication) {
+        updateResource(Resource.fromPublication(publication));
     }
-    private void updateResource(Resource resourceUpdate) {
+
+    public void updateResource(Resource resourceUpdate) {
+
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
         Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
@@ -150,7 +154,7 @@ public class ResourceService {
         client.transactWriteItems(request);
     }
 
-    public List<Resource> getResourcesByOwner(UserInstance userInstance) {
+    public List<Publication> getResourcesByOwner(UserInstance userInstance) {
         String partitionKey =
             ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
@@ -159,7 +163,10 @@ public class ResourceService {
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
-        return queryResultToResourceList(result);
+        return queryResultToResourceList(result)
+            .stream()
+            .map(Resource::toPublication)
+            .collect(Collectors.toList());
     }
 
     public Publication publishResource(Publication dto)
@@ -169,16 +176,7 @@ public class ResourceService {
 
     public Publication markPublicationForDeletion(Publication publication)
         throws JsonProcessingException, ResourceCannotBeDeletedException {
-       return markPublicationForDeletion(Resource.fromPublication(publication)).toPublication();
-    }
-
-
-    private Resource markPublicationForDeletion(Resource resource)
-        throws JsonProcessingException, ResourceCannotBeDeletedException {
-        ResourceDao dao = new ResourceDao(resource);
-        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
-        return attempt(() -> sendUpdateRequest(updateRequest))
-            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
+        return markPublicationForDeletion(Resource.fromPublication(publication)).toPublication();
     }
 
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -189,12 +187,26 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
+    private Resource markPublicationForDeletion(Resource resource)
+        throws JsonProcessingException, ResourceCannotBeDeletedException {
+        ResourceDao dao = new ResourceDao(resource);
+        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
+        return attempt(() -> sendUpdateRequest(updateRequest))
+            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
+    }
+
     private Resource fetchEventuallyConsistentResource(Resource newResource) {
         Resource savedResource = null;
-        for (int times = 0; times < 10 && savedResource == null; times++) {
+        for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedResource == null; times++) {
             savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
+            attempt(this::waitBeforeFetching).orElseThrow();
         }
         return savedResource;
+    }
+
+    private Void waitBeforeFetching() throws InterruptedException {
+        Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
+        return null;
     }
 
     private Resource getResource(Resource resource) throws NotFoundException {
@@ -249,27 +261,26 @@ public class ResourceService {
         boolean hasNoTitle = Optional.of(resource)
             .map(Resource::getEntityDescription)
             .map(EntityDescription::getMainTitle)
-            .isPresent();
-
+            .isEmpty();
         boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
 
         if (hasNoTitle) {
-            throwErrorForPublishingResourceWithoutTitle(resource);
+            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
         } else if (hasNeitherLinkNorFile) {
-            throwErrorForPublishingResourceWithoutData(resource);
+            throwErrorWhenPublishingResourceWithoutData(resource);
         }
     }
 
-    private void throwErrorForPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
+    private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
         String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILES_FIELD)).orElseThrow();
+        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
         throw new InvalidPublicationException(List.of(files, linkField));
     }
 
-    private void throwErrorForPublishingResourceWithoutTitle(Resource resource) throws InvalidPublicationException {
-        String missingField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_MAIN_TITLE_FIELD))
-            .orElseThrow();
-        throw new InvalidPublicationException(Collections.singletonList(missingField));
+    private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
+        throws InvalidPublicationException {
+        throw new
+            InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
     }
 
     private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {

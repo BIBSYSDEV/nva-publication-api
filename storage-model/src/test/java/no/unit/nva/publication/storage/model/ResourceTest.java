@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Approval;
@@ -65,14 +66,13 @@ public class ResourceTest {
     public static final URI SAMPLE_LANGUAGE = URI.create("https://some.com/language");
     public static final String SAMPLE_ISSN = "2049-3630";
     public static final String SOME_HOST = "https://example.org/";
+    public static final String DOI_REQUEST_FIELD = "doiRequest";
 
-    public final DoiRequest EMPTY_DOI_REQUEST = new DoiRequest.Builder().build();
+    public static final DoiRequest EMPTY_DOI_REQUEST = null;
 
-
-    private final FileSet SAMPLE_FILE_SET = sampleFileSet();
-    private final List<ResearchProject> SAMPLE_PROJECTS = sampleProjects();
+    private final FileSet sampleFileSet = sampleFileSet();
+    private final List<ResearchProject> sampleProjects = sampleProjects();
     private final Javers javers = JaversBuilder.javers().build();
-
 
     @Test
     public void builderContainsAllFields() {
@@ -102,19 +102,18 @@ public class ResourceTest {
     }
 
     @Test
-    public void fromDTOtoDAOtoDTOReturnsDtoWithoutLossOfInformation()
+    public void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation()
         throws MalformedURLException, InvalidIssnException {
         Publication expected = samplePublication(sampleJournalArticleReference());
-        assertThat(expected, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
+        assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
 
-        Publication transformed= Resource.fromPublication(expected).toPublication();
-        assertThat(transformed,is(equalTo(expected)));
+        Publication transformed = Resource.fromPublication(expected).toPublication();
 
         Diff diff = javers.compare(expected, transformed);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
+
+        assertThat(transformed, is(equalTo(expected)));
     }
-
-
 
     private Publication samplePublication(Reference reference) {
         return new Publication.Builder()
@@ -126,11 +125,11 @@ public class ResourceTest {
             .withOwner(SOME_OWNER)
             .withPublisher(SAMPLE_ORG)
             .withDoi(SAMPLE_DOI)
-            .withFileSet(SAMPLE_FILE_SET)
+            .withFileSet(sampleFileSet)
             .withHandle(randomUri())
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(SOME_LINK)
-            .withProjects(SAMPLE_PROJECTS)
+            .withProjects(sampleProjects)
             .withDoiRequest(EMPTY_DOI_REQUEST)
             .withEntityDescription(sampleEntityDescription(reference))
             .build();
@@ -157,7 +156,7 @@ public class ResourceTest {
         return UUID.randomUUID().toString();
     }
 
-    private EntityDescription sampleEntityDescription(Reference reference){
+    private EntityDescription sampleEntityDescription(Reference reference) {
         Map<String, String> alternativeTitles = Map.of(randomString(), randomString());
         return new EntityDescription.Builder()
             .withDate(randomPublicationDate())
@@ -267,22 +266,8 @@ public class ResourceTest {
     }
 
     private Resource sampleResource() {
-
-        EntityDescription entityDescription = new EntityDescription();
-        entityDescription.setMainTitle(SOME_TITLE);
-        return Resource.builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withEntityDescription(entityDescription)
-            .withStatus(PublicationStatus.DRAFT)
-            .withOwner(SOME_OWNER)
-            .withCreatedDate(RESOURCE_CREATION_TIME)
-            .withModifiedDate(RESOURCE_SECOND_MODIFICATION_TIME)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-            .withIndexedDate(RESOURCE_PUBLISHED_DATE)
-            .withPublisher(SAMPLE_ORG)
-            .withFileSet(SAMPLE_FILE_SET)
-            .withLink(SOME_LINK)
-            .build();
+        return attempt(() -> Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
+            .orElseThrow();
     }
 
     private URI randomUri() {

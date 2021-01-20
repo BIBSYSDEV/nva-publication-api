@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
@@ -29,7 +28,7 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier, WithType {
+public class Resource implements WithIdentifier {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
@@ -104,19 +103,10 @@ public class Resource implements WithIdentifier, WithType {
             .withFileSet(getFileSet())
             .withProjects(getProjects())
             .withEntityDescription(getEntityDescription())
-            .withDoiRequest(emptyDoiRequest())
+            .withDoiRequest(null)
             .withDoi(getDoi())
             .withHandle(getHandle())
             .build();
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
-    }
-
-    private DoiRequest emptyDoiRequest() {
-        return new DoiRequest.Builder().build();
     }
 }
 
