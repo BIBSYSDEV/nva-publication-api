@@ -38,7 +38,6 @@ public class Resource implements WithIdentifier, WithType {
     private String owner;
     private Organization publisher;
     private Instant createdDate;
-    private String title;
     private Instant modifiedDate;
     private Instant publishedDate;
     private Instant indexedDate;
@@ -84,7 +83,6 @@ public class Resource implements WithIdentifier, WithType {
             .withFileSet(publication.getFileSet())
             .withPublisher(publication.getPublisher())
             .withLink(publication.getLink())
-            .withTitle(publication.getEntityDescription().getMainTitle())
             .withProjects(publication.getProjects())
             .withEntityDescription(publication.getEntityDescription())
             .withDoi(publication.getDoi())
@@ -102,7 +100,6 @@ public class Resource implements WithIdentifier, WithType {
             .withIndexedDate(getIndexedDate())
             .withPublisher(getPublisher())
             .withPublishedDate(getPublishedDate())
-            .withEntityDescription(new EntityDescription.Builder().withMainTitle(getTitle()).build())
             .withLink(getLink())
             .withFileSet(getFileSet())
             .withProjects(getProjects())

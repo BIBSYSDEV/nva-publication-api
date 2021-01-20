@@ -64,14 +64,14 @@ public class ResourceTest {
     public static final Instant RESOURCE_INDEXED_TIME = Instant.parse("2013-05-03T12:22:22.00Z");
     public static final URI SAMPLE_LANGUAGE = URI.create("https://some.com/language");
     public static final String SAMPLE_ISSN = "2049-3630";
+    public static final String SOME_HOST = "https://example.org/";
 
     public final DoiRequest EMPTY_DOI_REQUEST = new DoiRequest.Builder().build();
 
 
     private final FileSet SAMPLE_FILE_SET = sampleFileSet();
     private final List<ResearchProject> SAMPLE_PROJECTS = sampleProjects();
-    private Javers javers = JaversBuilder.javers().build();
-
+    private final Javers javers = JaversBuilder.javers().build();
 
 
     @Test
@@ -104,16 +104,15 @@ public class ResourceTest {
     @Test
     public void fromDTOtoDAOtoDTOReturnsDtoWithoutLossOfInformation()
         throws MalformedURLException, InvalidIssnException {
-        Publication publication = samplePublication(sampleJournalArticleReference());
-        assertThat(publication, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
+        Publication expected = samplePublication(sampleJournalArticleReference());
+        assertThat(expected, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
 
-        Publication fromDao= Resource.fromPublication(publication).toPublication();
-        Diff diff = javers.compare(publication, fromDao);
+        Publication transformed= Resource.fromPublication(expected).toPublication();
+        assertThat(transformed,is(equalTo(expected)));
+
+        Diff diff = javers.compare(expected, transformed);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
-        assertThat(publication,is(equalTo(fromDao)));
     }
-
-
 
 
 
@@ -150,7 +149,7 @@ public class ResourceTest {
     private static Organization sampleOrganization() {
         return new Organization.Builder()
             .withId(SAMPLE_ORG_URI)
-            .withLabels(Map.of("labelKey", "labelValue"))
+            .withLabels(Map.of(randomString(), randomString()))
             .build();
     }
 
@@ -180,11 +179,11 @@ public class ResourceTest {
         return new Reference.Builder()
             .withDoi(randomUri())
             .withPublishingContext(sampleJournalInstance())
-            .withPublicationInstance(samlpeJournalArticle())
+            .withPublicationInstance(sampleJournalArticle())
             .build();
     }
 
-    private JournalArticle samlpeJournalArticle() {
+    private JournalArticle sampleJournalArticle() {
         return new JournalArticle.Builder()
             .withPeerReviewed(true)
             .withArticleNumber(randomString())
@@ -228,14 +227,14 @@ public class ResourceTest {
     private List<ResearchProject> sampleProjects() {
         Approval approval = new Approval.Builder()
             .withApprovalStatus(ApprovalStatus.APPLIED)
-            .withApplicationCode("SomeApplicationCode")
+            .withApplicationCode(randomString())
             .withApprovedBy(ApprovalsBody.NMA)
             .withDate(SAMPLE_APPROVAL_DATE)
             .build();
 
         Grant grant = new Grant.Builder()
             .withId(randomString())
-            .withSource("Some grant source")
+            .withSource(randomString())
             .build();
         ResearchProject researchProject = new Builder().withId(randomUri())
             .withApprovals(List.of(approval))
@@ -251,7 +250,7 @@ public class ResourceTest {
         License license = new License.Builder()
             .withIdentifier(randomString())
             .withLabels(Map.of(randomString(), randomString()))
-            .withLink(URI.create("https://www.example.com/sample/license/link"))
+            .withLink(randomUri())
             .build();
         File file = new File.Builder()
             .withIdentifier(UUID.randomUUID())
@@ -269,9 +268,11 @@ public class ResourceTest {
 
     private Resource sampleResource() {
 
+        EntityDescription entityDescription = new EntityDescription();
+        entityDescription.setMainTitle(SOME_TITLE);
         return Resource.builder()
             .withIdentifier(SortableIdentifier.next())
-            .withTitle(SOME_TITLE)
+            .withEntityDescription(entityDescription)
             .withStatus(PublicationStatus.DRAFT)
             .withOwner(SOME_OWNER)
             .withCreatedDate(RESOURCE_CREATION_TIME)
@@ -285,6 +286,6 @@ public class ResourceTest {
     }
 
     private URI randomUri() {
-        return URI.create("https://example.com/" + UUID.randomUUID().toString());
+        return URI.create(SOME_HOST + UUID.randomUUID().toString());
     }
 }
