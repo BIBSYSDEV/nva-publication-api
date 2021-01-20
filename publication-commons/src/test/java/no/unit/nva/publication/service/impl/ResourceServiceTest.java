@@ -88,12 +88,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
+    private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
-
-    private final Javers javers = JaversBuilder.javers().build();
-
-
 
     @BeforeEach
     public void init() {
@@ -481,23 +478,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThatCauseIsEmptyValueMapException(thrownException);
     }
 
-    private void assertThatCauseIsEmptyValueMapException(RuntimeException thrownException) {
-        EmptyValueMapException expectedCause = new EmptyValueMapException();
-        assertThat(thrownException.getCause().getClass(), is(equalTo(expectedCause.getClass())));
-        assertThat(thrownException.getCause().getMessage(), is(equalTo(expectedCause.getMessage())));
-    }
-
-    private ResourceService resourceServiceReceivingNoValue(Resource resource) throws JsonProcessingException {
-        String jsonString = objectMapper.writeValueAsString(new ResourceDao(resource));
-        Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-        when(client.getItem(any(GetItemRequest.class)))
-            .thenReturn(new GetItemResult().withItem(getItemResultMap));
-        when(client.updateItem(any(UpdateItemRequest.class))).thenReturn(new UpdateItemResult()
-            .withAttributes(Collections.emptyMap()));
-        return new ResourceService(client, clock);
-    }
-
     @Test
     public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws ConflictException {
         Resource sampleResource = sampleResource();
@@ -547,6 +527,23 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
         assertDoesNotThrow(() -> resourceService.markPublicationForDeletion(resource));
+    }
+
+    private void assertThatCauseIsEmptyValueMapException(RuntimeException thrownException) {
+        EmptyValueMapException expectedCause = new EmptyValueMapException();
+        assertThat(thrownException.getCause().getClass(), is(equalTo(expectedCause.getClass())));
+        assertThat(thrownException.getCause().getMessage(), is(equalTo(expectedCause.getMessage())));
+    }
+
+    private ResourceService resourceServiceReceivingNoValue(Resource resource) throws JsonProcessingException {
+        String jsonString = objectMapper.writeValueAsString(new ResourceDao(resource));
+        Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
+        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
+        when(client.getItem(any(GetItemRequest.class)))
+            .thenReturn(new GetItemResult().withItem(getItemResultMap));
+        when(client.updateItem(any(UpdateItemRequest.class))).thenReturn(new UpdateItemResult()
+            .withAttributes(Collections.emptyMap()));
+        return new ResourceService(client, clock);
     }
 
     private Resource expectedResourceFromSampleResource(Resource sampleResource, Resource savedResource) {
