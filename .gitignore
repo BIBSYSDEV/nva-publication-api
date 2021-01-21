@@ -5,6 +5,8 @@
 #AWS SAM
 .aws-sam
 
+#Lombok configuration files
+lombok.config
 ### Eclipse ###
 .entityDescription
 bin/
