@@ -1,6 +1,7 @@
 package no.unit.nva.publication.fetch;
 
 import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -52,6 +53,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     @Override
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
+        String userInstanceString = attempt(() -> objectMapper.writeValueAsString(userInstance)).orElseThrow();
+        logger.info("User instance: " + userInstanceString);
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublication(userInstance, identifier);
         return toJsonNodeWithContext(publication);
