@@ -426,7 +426,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref OrestisResources
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:

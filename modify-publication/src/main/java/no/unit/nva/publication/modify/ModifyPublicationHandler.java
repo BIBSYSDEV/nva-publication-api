@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
-    private final ResourceService publicationService;
+    private final ResourceService resourceService;
 
     /**
      * Default constructor for MainHandler.
@@ -38,13 +38,13 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     /**
      * Constructor for MainHandler.
      *
-     * @param publicationService publicationService
-     * @param environment        environment
+     * @param resourceService publicationService
+     * @param environment     environment
      */
-    public ModifyPublicationHandler(ResourceService publicationService,
+    public ModifyPublicationHandler(ResourceService resourceService,
                                     Environment environment) {
         super(UpdatePublicationRequest.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
-        this.publicationService = publicationService;
+        this.resourceService = resourceService;
     }
 
     @Override
@@ -54,14 +54,14 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         UserInstance userInstance = extractUserInstance(requestInfo);
 
-        Publication existingPublication = publicationService.getPublication(userInstance, identifier);
+        Publication existingPublication = resourceService.getPublication(userInstance, identifier);
 
         Publication publication = PublicationMapper.toExistingPublication(
             input,
             existingPublication
         );
 
-        Publication updatedPublication = publicationService.updatePublication(publication);
+        Publication updatedPublication = resourceService.updatePublication(publication);
 
         return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
     }
