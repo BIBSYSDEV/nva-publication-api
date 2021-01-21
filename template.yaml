@@ -159,6 +159,8 @@ Resources:
                 - application/json
               produces:
                 - application/json
+              security:
+                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
@@ -474,6 +476,7 @@ Resources:
             Path: /{identifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
+
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
