@@ -342,6 +342,7 @@ Resources:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
       DeploymentPreference:
         Type: AllAtOnce # Or Canary10Percent5Minutes, Linear10PercentEvery1Minute, ...
       ProvisionedConcurrencyConfig:
