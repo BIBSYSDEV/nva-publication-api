@@ -50,11 +50,21 @@ Parameters:
     Type: String
     Description: Amazon DynamoDB Stream ARN.
   EventBusName:
-    Type : 'AWS::SSM::Parameter::Value<String>'
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Default: nvaEventBusName
   EventBusArn:
-    Type : 'AWS::SSM::Parameter::Value<String>'
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Default: nvaEventBusArn
+  MaxConcurrency:
+    Type: Number
+    Default: 100
+    Description: Max number of provisioned hot instnaces for a lambda function
+  MinConcurrency:
+    Type: Number
+    Default: 1
+    MaxValue: 1
+    MinValue: 1
+    Description: Min number of provisioned hot instnaces for a lambda function
   EventBridgeMaxAttempt:
     Type: Number
     Default: 1
@@ -367,15 +377,15 @@ Resources:
   NvaCreatePublicationFunctionScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MaxCapacity: 100
-      MinCapacity: 1
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
       ResourceId: !Sub function:${NvaCreatePublicationFunction}:live # You need to specify an alis or version here
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
       ScalableDimension: lambda:function:ProvisionedConcurrency
       ServiceNamespace: lambda
     DependsOn: NvaCreatePublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
 
-  MyTargetTrackingScalingPolicy:
+  NvaCreatePublicationFucntionScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
       PolicyName: NvaCreatePublicationScalingPolicy
@@ -396,6 +406,11 @@ Resources:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -410,6 +425,30 @@ Resources:
             Path: /{identifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
+  NvaFecthPublicationFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  NvaFetchPublicationFucntionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaFetchPublicationFucntionScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaFecthPublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
   NvaModifyPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
