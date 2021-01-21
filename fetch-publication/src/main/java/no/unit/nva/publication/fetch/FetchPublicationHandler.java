@@ -52,9 +52,13 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
     @Override
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
         String userInstanceString = attempt(() -> objectMapper.writeValueAsString(userInstance)).orElseThrow();
+
+        String requestInfoString = attempt(() -> objectMapper.writeValueAsString(requestInfo)).orElseThrow();
         logger.info("User instance: " + userInstanceString);
+        logger.info("Request info: " + requestInfoString);
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublication(userInstance, identifier);
         return toJsonNodeWithContext(publication);
