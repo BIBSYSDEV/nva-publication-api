@@ -167,7 +167,6 @@ public class ResourceTest {
             .withNpiSubjectHeading(randomString())
             .withTags(List.of(randomString()))
             .withReference(reference)
-
             .build();
     }
 
