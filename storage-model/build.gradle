@@ -14,7 +14,6 @@ dependencies {
 
 
     compileOnly group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-    testImplementation group: 'org.javers', name: 'javers-core', version: '5.14.0'
 
 
 }
