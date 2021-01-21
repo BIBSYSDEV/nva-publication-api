@@ -377,16 +377,16 @@ Resources:
       ServiceNamespace: lambda
     DependsOn: NvaCreatePublicationFunctionlive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
 
-    MyTargetTrackingScalingPolicy:
-      Type: AWS::ApplicationAutoScaling::ScalingPolicy
-      Properties:
-        PolicyName: utilization
-        PolicyType: TargetTrackingScaling
-        ScalingTargetId: !Ref NvaCreatePublicationFunctionScalableTarget
-        TargetTrackingScalingPolicyConfiguration:
-          TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-          PredefinedMetricSpecification:
-            PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+  MyTargetTrackingScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaCreatePublicationScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaCreatePublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
   NvaFetchPublicationFunction:
