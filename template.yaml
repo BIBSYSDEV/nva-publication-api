@@ -419,7 +419,7 @@ Resources:
           TABLE_NAME: !Ref OrestisResources
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref OrestisResources
       Events:
         GetEvent:
           Type: Api
