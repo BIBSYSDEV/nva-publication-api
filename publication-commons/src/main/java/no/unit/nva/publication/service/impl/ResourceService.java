@@ -142,7 +142,8 @@ public class ResourceService {
 
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
         String partitionKey =
-            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
+            ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+                userInstance.getUserIdentifier());
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
             String.class);
@@ -172,7 +173,7 @@ public class ResourceService {
         return result.getItems()
             .stream()
             .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
+            .map(ResourceDao::getData)
             .collect(Collectors.toList());
     }
 
@@ -219,7 +220,7 @@ public class ResourceService {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return fetchedDao.getResource();
+        return fetchedDao.getData();
     }
 
     private Resource publishResource(Resource resource) throws NotFoundException, InvalidPublicationException {
@@ -322,7 +323,7 @@ public class ResourceService {
         return Try.of(requestResult)
             .map(UpdateItemResult::getAttributes)
             .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
+            .map(ResourceDao::getData)
             .orElseThrow();
     }
 
