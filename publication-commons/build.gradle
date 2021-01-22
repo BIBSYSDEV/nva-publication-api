@@ -3,7 +3,10 @@ repositories {
 }
 
 dependencies {
+    api project(":storage-model")
+
     api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
+
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
@@ -24,7 +27,6 @@ dependencies {
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
     api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
-    api group: 'com.github.BIBSYSDEV.nva-commons', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
     testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
@@ -32,7 +34,7 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    api project (":storage-model")
+    testImplementation group: 'org.javers', name: 'javers-core', version: '5.14.0'
 }
 
 configurations.testImplementation.canBeResolved = true
