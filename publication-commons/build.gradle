@@ -33,8 +33,6 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-
-    testImplementation group: 'org.javers', name: 'javers-core', version: '5.14.0'
 }
 
 configurations.testImplementation.canBeResolved = true

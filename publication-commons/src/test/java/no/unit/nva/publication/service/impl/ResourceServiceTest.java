@@ -87,7 +87,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
-    private static final URI SOME_LINK = URI.create("https://example.org");
+
+    public static final String MAIN_TITLE_FIELD = "mainTitle";
+    public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
+                                                                              + " does not have a field"
+                                                                              + MAIN_TITLE_FIELD;
+    private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
+
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
@@ -613,8 +619,15 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,
                                                                   EntityDescription newEntityDescription) {
+        String mainTitleFieldName = fetchMainTitleFieldName();
         Diff diff = javers.compare(oldEntityDescription, newEntityDescription);
-        assertThat(diff.getChanges().size(), is(equalTo(1)));
+        int mainTitleChanges = diff.getPropertyChanges(mainTitleFieldName).size();
+        assertThat(mainTitleChanges, is(equalTo(1)));
+    }
+
+    private String fetchMainTitleFieldName() {
+        return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName())
+            .orElseThrow(fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
 
     private void assertThatResourceDoesNotExist(Publication sampleResource) {

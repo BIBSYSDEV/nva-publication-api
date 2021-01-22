@@ -53,7 +53,7 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
         try {
             publicationService.deleteDraftPublication(input.getIdentifier());
         } catch (ApiGatewayException e) {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e.getMessage(), e);
         }
         return null;
     }
