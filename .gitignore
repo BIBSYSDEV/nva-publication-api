@@ -2,9 +2,12 @@
 # Created by https://www.gitignore.io/api/java,linux,macos,gradle,windows,eclipse,intellij+all,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=java,linux,macos,gradle,windows,eclipse,intellij+all,visualstudiocode
 
+#AWS SAM folder
 .aws-sam
 
+#Lombok configration files
 lombok.config
+
 ### Eclipse ###
 .entityDescription
 bin/

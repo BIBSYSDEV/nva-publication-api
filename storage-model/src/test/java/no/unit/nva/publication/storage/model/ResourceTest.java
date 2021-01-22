@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -12,6 +12,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Approval;
@@ -47,7 +48,6 @@ import org.junit.jupiter.api.Test;
 
 public class ResourceTest {
 
-    public static final String SOME_TITLE = "SomeTitle";
     public static final URI SAMPLE_ORG_URI = URI.create("https://www.example.com/123");
     public static final Organization SAMPLE_ORG = sampleOrganization();
     public static final URI SAMPLE_DOI = URI.create("http://doi.org/123-456");
@@ -65,8 +65,10 @@ public class ResourceTest {
     public static final URI SAMPLE_LANGUAGE = URI.create("https://some.com/language");
     public static final String SAMPLE_ISSN = "2049-3630";
     public static final String SOME_HOST = "https://example.org/";
+    public static final String DOI_REQUEST_FIELD = "doiRequest";
 
-    public final DoiRequest emptyDoiRequest = new DoiRequest.Builder().build();
+    public static final DoiRequest EMPTY_DOI_REQUEST = null;
+    public static final boolean NON_DEFAULT_BOOLEAN_VALUE = true;
 
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
@@ -103,13 +105,14 @@ public class ResourceTest {
     public void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation()
         throws MalformedURLException, InvalidIssnException {
         Publication expected = samplePublication(sampleJournalArticleReference());
-        assertThat(expected, doesNotHaveEmptyValuesIgnoringClasses(List.of(DoiRequest.class)));
+        assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
 
         Publication transformed = Resource.fromPublication(expected).toPublication();
-        assertThat(transformed, is(equalTo(expected)));
 
         Diff diff = javers.compare(expected, transformed);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
+
+        assertThat(transformed, is(equalTo(expected)));
     }
 
     private Publication samplePublication(Reference reference) {
@@ -127,7 +130,7 @@ public class ResourceTest {
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(SOME_LINK)
             .withProjects(sampleProjects)
-            .withDoiRequest(emptyDoiRequest)
+            .withDoiRequest(EMPTY_DOI_REQUEST)
             .withEntityDescription(sampleEntityDescription(reference))
             .build();
     }
@@ -180,7 +183,7 @@ public class ResourceTest {
 
     private JournalArticle sampleJournalArticle() {
         return new JournalArticle.Builder()
-            .withPeerReviewed(true)
+            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
             .withArticleNumber(randomString())
             .withIssue(randomString())
             .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
@@ -193,8 +196,8 @@ public class ResourceTest {
             .withLevel(Level.LEVEL_2)
             .withOnlineIssn(SAMPLE_ISSN)
             .withTitle(randomString())
-            .withOpenAccess(true)
-            .withPeerReviewed(true)
+            .withOpenAccess(NON_DEFAULT_BOOLEAN_VALUE)
+            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
             .withPrintIssn(SAMPLE_ISSN)
             .withUrl(randomUri().toURL())
             .build();
@@ -249,7 +252,7 @@ public class ResourceTest {
             .build();
         File file = new File.Builder()
             .withIdentifier(UUID.randomUUID())
-            .withAdministrativeAgreement(true)
+            .withAdministrativeAgreement(NON_DEFAULT_BOOLEAN_VALUE)
             .withIdentifier(UUID.randomUUID())
             .withEmbargoDate(EMBARGO_DATE)
             .withMimeType(randomString())

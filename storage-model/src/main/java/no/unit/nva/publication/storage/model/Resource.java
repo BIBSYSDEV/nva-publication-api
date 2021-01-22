@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
@@ -104,16 +103,10 @@ public class Resource implements WithIdentifier {
             .withFileSet(getFileSet())
             .withProjects(getProjects())
             .withEntityDescription(getEntityDescription())
-            .withDoiRequest(emptyDoiRequest())
+            .withDoiRequest(null)
             .withDoi(getDoi())
             .withHandle(getHandle())
             .build();
-    }
-
-
-
-    private DoiRequest emptyDoiRequest() {
-        return new DoiRequest.Builder().build();
     }
 }
 

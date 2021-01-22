@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
@@ -73,6 +74,8 @@ public class ResourceService {
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
     public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
+    public static final int MAX_FETCH_ATTEMPTS = 10;
+    public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -94,18 +97,82 @@ public class ResourceService {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Resource createResource(Resource inputData) throws ConflictException {
-
-        Resource newResource = inputData.copy().withIdentifier(identifierSupplier.get()).build();
+    public Publication createPublication(Publication inputData) throws ConflictException {
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
-        return fetchEventuallyConsistentResource(newResource);
+        return fetchEventuallyConsistentResource(newResource).toPublication();
     }
 
-    public void updateResource(Resource resourceUpdate) {
+    public void updatePublication(Publication publication) {
+        updateResource(Resource.fromPublication(publication));
+    }
+
+    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        return getResource(createQueryObject(userInstance, resourceIdentifier.toString()))
+            .toPublication();
+    }
+
+    public Publication getPublication(UserInstance userInstance, String resourceIdentifier)
+        throws NotFoundException {
+        return getResource(createQueryObject(userInstance, resourceIdentifier))
+            .toPublication();
+    }
+
+    public Publication getPublication(Publication publication) throws NotFoundException {
+        return getResource(Resource.fromPublication(publication)).toPublication();
+    }
+
+    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner)
+        throws NotFoundException {
+        Resource existingResource = getResource(createQueryObject(oldOwner, identifier));
+        Resource newResource = updateResourceOwner(newOwner, existingResource);
+        TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
+        TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
+        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
+        client.transactWriteItems(request);
+    }
+
+    public List<Publication> getResourcesByOwner(UserInstance userInstance) {
+        String partitionKey =
+            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
+        QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
+        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
+            String.class);
+        Map<String, String> namesMap = querySpec.getNameMap();
+        QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
+
+        return queryResultToResourceList(result)
+            .stream()
+            .map(Resource::toPublication)
+            .collect(Collectors.toList());
+    }
+
+    public Publication publishPublication(Publication dto)
+        throws InvalidPublicationException, NotFoundException, JsonProcessingException {
+        return publishResource(Resource.fromPublication(dto)).toPublication();
+    }
+
+    public Publication markPublicationForDeletion(Publication publication)
+        throws JsonProcessingException, ResourceCannotBeDeletedException {
+        return markResourceForDeletion(Resource.fromPublication(publication)).toPublication();
+    }
+
+    private static List<Resource> queryResultToResourceList(QueryResult result) {
+        return result.getItems()
+            .stream()
+            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
+            .map(ResourceDao::getResource)
+            .collect(Collectors.toList());
+    }
+
+    private void updateResource(Resource resourceUpdate) {
+
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
         Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
@@ -120,46 +187,36 @@ public class ResourceService {
         client.putItem(putItemRequest);
     }
 
-    public Resource getResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
-        return getResource(createQueryObject(userInstance, resourceIdentifier.toString()));
+    private Resource markResourceForDeletion(Resource resource)
+        throws JsonProcessingException, ResourceCannotBeDeletedException {
+        ResourceDao dao = new ResourceDao(resource);
+        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
+        return attempt(() -> sendUpdateRequest(updateRequest))
+            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
     }
 
-    public Resource getResource(UserInstance userInstance, String resourceIdentifier)
-        throws NotFoundException {
-        return getResource(createQueryObject(userInstance, resourceIdentifier));
+    private Resource fetchEventuallyConsistentResource(Resource newResource) {
+        Resource savedResource = null;
+        for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedResource == null; times++) {
+            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
+            attempt(this::waitBeforeFetching).orElseThrow();
+        }
+        return savedResource;
     }
 
-    public Resource getResource(Resource resource) throws NotFoundException {
+    private Void waitBeforeFetching() throws InterruptedException {
+        Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
+        return null;
+    }
+
+    private Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
         return fetchedDao.getResource();
     }
 
-    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException {
-        Resource existingResource = getResource(oldOwner, identifier);
-        Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
-        client.transactWriteItems(request);
-    }
-
-    public List<Resource> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey =
-            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
-        QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
-        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
-            String.class);
-        Map<String, String> namesMap = querySpec.getNameMap();
-        QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
-
-        return queryResultToResourceList(result);
-    }
-
-    public Resource publishResource(Resource resource)
+    private Resource publishResource(Resource resource)
         throws JsonProcessingException, NotFoundException, InvalidPublicationException {
         Resource existingResource = getResource(resource);
         if (PublicationStatus.PUBLISHED.equals(existingResource.getStatus())) {
@@ -169,30 +226,6 @@ public class ResourceService {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = publishUpdateRequest(dao);
         return sendUpdateRequest(updateRequest);
-    }
-
-    public Resource markPublicationForDeletion(Resource resource)
-        throws JsonProcessingException, ResourceCannotBeDeletedException {
-        ResourceDao dao = new ResourceDao(resource);
-        UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
-        return attempt(() -> sendUpdateRequest(updateRequest))
-            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
-    }
-
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
-            .collect(Collectors.toList());
-    }
-
-    private Resource fetchEventuallyConsistentResource(Resource newResource) {
-        Resource savedResource = null;
-        for (int times = 0; times < 10 && savedResource == null; times++) {
-            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
-        }
-        return savedResource;
     }
 
     private <E extends Exception> ResourceCannotBeDeletedException handleConditionFailureException(
@@ -340,7 +373,8 @@ public class ResourceService {
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
-        return existingResource.copy()
+        return existingResource
+            .copy()
             .withPublisher(userOrganization(newOwner))
             .withOwner(newOwner.getUserIdentifier())
             .withModifiedDate(clockForTimestamps.instant())
