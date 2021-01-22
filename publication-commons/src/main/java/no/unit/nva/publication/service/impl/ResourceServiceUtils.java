@@ -35,10 +35,10 @@ public final class ResourceServiceUtils {
         + " AND "
         + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
 
-    public static final Map<String, String> PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING =
-        primaryKeyAttributeNamesMapping();
+    public static final Map<String, String> PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES =
+        primaryKeyEqualityConditionAttributeNames();
 
-    public static final String KEY_EXISTS_CONDITION = keyExistsCondition();
+    public static final String KEY_NOT_EXISTS_CONDITION = keyNotExistsCondition();
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
 
     private ResourceServiceUtils() {
@@ -58,7 +58,7 @@ public final class ResourceServiceUtils {
         }
     }
 
-    static Map<String, AttributeValue> valueMapForKeyConditionCheck(ResourceDao resourceDao) {
+    static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(ResourceDao resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
             SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
@@ -102,14 +102,14 @@ public final class ResourceServiceUtils {
         }
     }
 
-    private static Map<String, String> primaryKeyAttributeNamesMapping() {
+    private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {
         return Map.of(
             PARTITION_KEY_NAME_PLACEHOLDER, PRIMARY_KEY_PARTITION_KEY_NAME,
             SORT_KEY_NAME_PLACEHOLDER, PRIMARY_KEY_SORT_KEY_NAME
         );
     }
 
-    private static String keyExistsCondition() {
+    private static String keyNotExistsCondition() {
         return String.format("attribute_not_exists(%s) AND attribute_not_exists(%s)",
             PARTITION_KEY_NAME_PLACEHOLDER, SORT_KEY_NAME_PLACEHOLDER);
     }
