@@ -48,7 +48,6 @@ import org.junit.jupiter.api.Test;
 
 public class ResourceTest {
 
-    public static final String SOME_TITLE = "SomeTitle";
     public static final URI SAMPLE_ORG_URI = URI.create("https://www.example.com/123");
     public static final Organization SAMPLE_ORG = sampleOrganization();
     public static final URI SAMPLE_DOI = URI.create("http://doi.org/123-456");
@@ -69,6 +68,7 @@ public class ResourceTest {
     public static final String DOI_REQUEST_FIELD = "doiRequest";
 
     public static final DoiRequest EMPTY_DOI_REQUEST = null;
+    public static final boolean NON_DEFAULT_BOOLEAN_VALUE = true;
 
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
@@ -183,7 +183,7 @@ public class ResourceTest {
 
     private JournalArticle sampleJournalArticle() {
         return new JournalArticle.Builder()
-            .withPeerReviewed(true)
+            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
             .withArticleNumber(randomString())
             .withIssue(randomString())
             .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
@@ -196,8 +196,8 @@ public class ResourceTest {
             .withLevel(Level.LEVEL_2)
             .withOnlineIssn(SAMPLE_ISSN)
             .withTitle(randomString())
-            .withOpenAccess(true)
-            .withPeerReviewed(true)
+            .withOpenAccess(NON_DEFAULT_BOOLEAN_VALUE)
+            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
             .withPrintIssn(SAMPLE_ISSN)
             .withUrl(randomUri().toURL())
             .build();
@@ -252,7 +252,7 @@ public class ResourceTest {
             .build();
         File file = new File.Builder()
             .withIdentifier(UUID.randomUUID())
-            .withAdministrativeAgreement(true)
+            .withAdministrativeAgreement(NON_DEFAULT_BOOLEAN_VALUE)
             .withIdentifier(UUID.randomUUID())
             .withEmbargoDate(EMBARGO_DATE)
             .withMimeType(randomString())

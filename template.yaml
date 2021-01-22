@@ -726,7 +726,7 @@ Resources:
       Runtime: java11
       MemorySize: 512
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
       Environment:
         Variables:
