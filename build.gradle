@@ -5,6 +5,7 @@ plugins {
     id 'pmd'
     id 'base'
     id "io.freefair.lombok" version "5.3.0"
+    id "maven"
 }
 
 group 'no.unit.nva'
@@ -36,6 +37,7 @@ subprojects {
     apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
+    apply plugin: 'maven'
 
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
@@ -130,6 +132,17 @@ subprojects {
                 }
             }
         }
+    }
+
+
+    // publish submodules
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives sourcesJar
     }
 
 }
