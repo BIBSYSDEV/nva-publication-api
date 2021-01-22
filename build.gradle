@@ -5,7 +5,7 @@ plugins {
     id 'pmd'
     id 'base'
     id "io.freefair.lombok" version "5.3.0"
-    id "mvaven"
+    id "maven"
 }
 
 group 'no.unit.nva'
