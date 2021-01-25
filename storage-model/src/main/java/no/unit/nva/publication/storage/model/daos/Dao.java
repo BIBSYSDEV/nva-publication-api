@@ -9,14 +9,22 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Optional;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
+    @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
+})
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     implements WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
@@ -86,16 +94,16 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     }
 
     @JsonIgnore
-    protected abstract String getType();
+    public abstract String getType();
 
     @JsonIgnore
-    protected abstract URI getCustomerId();
+    public abstract URI getCustomerId();
 
     @JsonIgnore
     protected abstract String getOwner();
 
     @JsonIgnore
-    protected abstract String getIdentifier();
+    public abstract SortableIdentifier getIdentifier();
 
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,

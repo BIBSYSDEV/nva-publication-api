@@ -9,11 +9,14 @@ public final class DatabaseConstants {
     public static final String STRING_PLACEHOLDER = "%s";
 
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_NAME = "byTypeCustomerStatus";
+    public static final String BY_RESOURCE_INDEX_NAME = "ByResource";
 
     public static final String PRIMARY_KEY_PARTITION_KEY_NAME = "PK0";
     public static final String PRIMARY_KEY_SORT_KEY_NAME = "SK0";
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME = "PK1";
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME = "SK1";
+    public static final String BY_RESOURCE_INDEX_PARTITION_KEY_NAME = "PK2";
+    public static final String BY_RESOURCE_INDEX_SORT_KEY_NAME = "SK2";
 
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String STATUS_INDEX_FIELD_PREFIX = "Status";

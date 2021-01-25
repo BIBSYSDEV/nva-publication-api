@@ -1,12 +1,17 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-public class DoiRequestDao extends Dao<DoiRequest> implements JsonSerializable {
+public class DoiRequestDao extends Dao<DoiRequest>
+    implements
+    JoinWithResource,
+    JsonSerializable {
 
     private DoiRequest data;
 
@@ -30,13 +35,18 @@ public class DoiRequestDao extends Dao<DoiRequest> implements JsonSerializable {
         this.data = data;
     }
 
-    @Override
-    protected String getType() {
+    @JsonIgnore
+    public static String getContainedType() {
         return DoiRequest.TYPE;
     }
 
     @Override
-    protected URI getCustomerId() {
+    public String getType() {
+        return DoiRequest.TYPE;
+    }
+
+    @Override
+    public URI getCustomerId() {
         return data.getCustomerId();
     }
 
@@ -46,8 +56,8 @@ public class DoiRequestDao extends Dao<DoiRequest> implements JsonSerializable {
     }
 
     @Override
-    protected String getIdentifier() {
-        return data.getIdentifier().toString();
+    public SortableIdentifier getIdentifier() {
+        return data.getIdentifier();
     }
 
     @Override
@@ -70,5 +80,11 @@ public class DoiRequestDao extends Dao<DoiRequest> implements JsonSerializable {
     @Override
     public String toString() {
         return toJsonString();
+    }
+
+    @Override
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return data.getResourceIdentifier();
     }
 }
