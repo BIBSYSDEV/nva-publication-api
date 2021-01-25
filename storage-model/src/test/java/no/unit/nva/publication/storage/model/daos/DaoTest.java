@@ -52,7 +52,7 @@ class DaoTest {
         String expectedCustomerId = dao.getData().getCustomerId().toString();
         assertThat(expectedCustomerId, is(not(emptyString())));
 
-        assertThat(dao.getCustomerId(), is(equalTo(expectedCustomerId)));
+        assertThat(dao.getCustomerId().toString(), is(equalTo(expectedCustomerId)));
     }
 
     @ParameterizedTest

@@ -14,10 +14,11 @@ public class ResourceDao extends Dao<Resource> {
     private Resource data;
 
     public ResourceDao() {
-        data = new Resource();
+        this(new Resource());
     }
 
     public ResourceDao(Resource resource) {
+        super();
         this.data = resource;
     }
 

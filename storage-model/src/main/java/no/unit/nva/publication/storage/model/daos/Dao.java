@@ -23,7 +23,10 @@ import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
 import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implements WithPrimaryKey {
+
+    public static final String CONTAINED_DATA_FIELD_NAME = "data";
 
     @Override
     @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
@@ -37,6 +40,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implement
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 
+    @Override
     public final Map<String, AttributeValue> primaryKey() {
         final Map<String, AttributeValue> map = new ConcurrentHashMap<>();
         AttributeValue partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
@@ -56,7 +60,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implement
         // do nothing
     }
 
-    @JsonProperty("data")
+    @JsonProperty(CONTAINED_DATA_FIELD_NAME)
     public abstract R getData();
 
     public abstract void setData(R data);

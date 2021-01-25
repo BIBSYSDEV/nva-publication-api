@@ -92,7 +92,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
 
-
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
@@ -394,18 +393,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+    public void publishPublicationThrowsConditionalCheckExceptionOnPublishedPublication()
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
-        Publication updatedResource = resourceService.publishPublication(resource);
-        Publication expectedResource = resource.copy()
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-            .build();
-
-        assertThat(updatedResource, is(equalTo(expectedResource)));
+        assertThrows(ConditionalCheckFailedException.class, () -> resourceService.publishPublication(resource));
     }
 
     @Test
