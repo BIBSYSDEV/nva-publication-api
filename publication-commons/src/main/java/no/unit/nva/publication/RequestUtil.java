@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.service.impl.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.logging.log4j.util.Strings;
@@ -101,11 +102,17 @@ public final class RequestUtil {
                     throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
                 }
             } else {
-                logger.debug(USING_DEFAULT_VALUE  + DEFAULT_PAGESIZE);
+                logger.debug(USING_DEFAULT_VALUE + DEFAULT_PAGESIZE);
                 return DEFAULT_PAGESIZE;
             }
         } catch (Exception e) {
             throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
         }
+    }
+
+    public static UserInstance extractUserInstance(RequestInfo requestInfo) {
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        String useIdentifier = requestInfo.getFeideId().orElse(null);
+        return new UserInstance(useIdentifier, customerId);
     }
 }

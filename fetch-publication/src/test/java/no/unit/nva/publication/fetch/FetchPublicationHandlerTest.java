@@ -5,7 +5,6 @@ import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIG
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -31,8 +30,8 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.ErrorResponseException;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -55,7 +54,7 @@ public class FetchPublicationHandlerTest {
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
     public static final String ANY_ERROR = "Error";
 
-    private PublicationService publicationService;
+    private ResourceService publicationService;
     private Context context;
 
     private ByteArrayOutputStream output;
@@ -69,7 +68,7 @@ public class FetchPublicationHandlerTest {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        publicationService = mock(PublicationService.class);
+        publicationService = mock(ResourceService.class);
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
@@ -80,7 +79,8 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns Ok Response On Valid Input")
     public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
         Publication publication = createPublication();
-        when(publicationService.getPublication(any(SortableIdentifier.class))).thenReturn(publication);
+        when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenReturn(publication);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -91,7 +91,7 @@ public class FetchPublicationHandlerTest {
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
     public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(SortableIdentifier.class)))
+        when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
             .thenThrow(new NotFoundException(ANY_ERROR));
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -101,7 +101,7 @@ public class FetchPublicationHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
 
         String actualDetail = getProblemDetail(gatewayResponse);
-        assertThat(actualDetail,containsString(ANY_ERROR));
+        assertThat(actualDetail, containsString(ANY_ERROR));
     }
 
     @Test
@@ -134,26 +134,14 @@ public class FetchPublicationHandlerTest {
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(new NullPointerException());
+        when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenThrow(new NullPointerException());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
         String actualDetail = getProblemDetail(gatewayResponse);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
-    }
-
-    @Test
-    @DisplayName("handler Returns BadGateway Response On Communication Problems")
-    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-        throws IOException, ApiGatewayException {
-        when(publicationService.getPublication(any(SortableIdentifier.class)))
-            .thenThrow(new ErrorResponseException(ANY_ERROR));
-        fetchPublicationHandler.handleRequest(generateHandlerRequest(), output, context);
-        GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
-        String actualDetail = getProblemDetail(gatewayResponse);
-        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(actualDetail, containsString(ANY_ERROR));
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
