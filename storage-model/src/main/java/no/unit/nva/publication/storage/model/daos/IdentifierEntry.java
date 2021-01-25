@@ -2,9 +2,7 @@ package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 
 public class IdentifierEntry implements WithPrimaryKey {
@@ -42,13 +40,6 @@ public class IdentifierEntry implements WithPrimaryKey {
         return sortKey;
     }
 
-    @Override
-    public Map<String, AttributeValue> primaryKey() {
-        return Map.of(
-            PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(getPrimaryKeyPartitionKey()),
-            PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(getPrimaryKeySortKey())
-        );
-    }
 
     public void setPrimaryKeySortKey(String sortKey) {
         throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);

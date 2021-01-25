@@ -1,7 +1,9 @@
 package no.unit.nva.publication.storage.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
@@ -20,7 +22,7 @@ import no.unit.nva.model.ResearchProject;
 
 //TODO: Remove all Lombok dependencies from the final class.
 
-@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @Data
 @Builder(
@@ -33,19 +35,33 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
+    @JsonProperty
     private SortableIdentifier identifier;
+    @JsonProperty
     private String status;
+    @JsonProperty
     private String owner;
+    @JsonProperty
     private Organization publisher;
+    @JsonProperty
     private Instant createdDate;
+    @JsonProperty
     private Instant modifiedDate;
+    @JsonProperty
     private Instant publishedDate;
+    @JsonProperty
     private Instant indexedDate;
+    @JsonProperty
     private URI link;
+    @JsonProperty
     private FileSet fileSet;
+    @JsonProperty
     private List<ResearchProject> projects;
+    @JsonProperty
     private EntityDescription entityDescription;
+    @JsonProperty
     private URI doi;
+    @JsonProperty
     private URI handle;
 
     public Resource() {
@@ -64,10 +80,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
         resource.setOwner(userIdentifier);
         resource.setIdentifier(resourceIdentifier);
         return resource;
-    }
-
-    public ResourceBuilder copy() {
-        return this.toBuilder();
     }
 
     public static Resource fromPublication(Publication publication) {
@@ -95,11 +107,15 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
         return TYPE;
     }
 
+    public ResourceBuilder copy() {
+        return this.toBuilder();
+    }
+
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
             .withOwner(getOwner())
-            .withStatus(PublicationStatus.lookup(getStatus()))
+            .withStatus(PublicationStatus.lookup(this.getStatus()))
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
             .withIndexedDate(getIndexedDate())
