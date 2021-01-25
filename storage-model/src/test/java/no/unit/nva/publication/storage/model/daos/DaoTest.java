@@ -35,30 +35,30 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class DaoTest extends ResourcesDynamoDbLocalTest {
+public class DaoTest extends ResourcesDynamoDbLocalTest {
 
     @BeforeEach
     public void init() {
         super.init();
     }
 
-    @ParameterizedTest(name = "get Type Returns Name Of The Contained Object: {0}")
+    @ParameterizedTest(name = "getTypeReturnsNameOfTheContainedObject: {0}")
     @MethodSource("instanceProvider")
     public void getTypeReturnsNameOfTheContainedObject(Dao<?> daoInstance) {
         String expectedType = daoInstance.getData().getClass().getSimpleName();
         assertThat(daoInstance.getType(), is(equalTo(expectedType)));
     }
 
-    @ParameterizedTest(name = "get Identifier Returns TheIdentifier Of The Contained Object {0}")
+    @ParameterizedTest(name = "getIdentifierReturnsTheIdentifierOfTheContainedObject: {0}")
     @MethodSource("instanceProvider")
     public void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao<?> daoInstance) {
         String expectedIdentifier = daoInstance.getData().getIdentifier().toString();
         assertThat(expectedIdentifier, is(not(emptyString())));
 
-        assertThat(daoInstance.getIdentifier(), is(equalTo(expectedIdentifier)));
+        assertThat(daoInstance.getIdentifier().toString(), is(equalTo(expectedIdentifier)));
     }
 
-    @ParameterizedTest(name = "getCustomerId Returns TheCustomerI dOfThe Contained Object:{0}")
+    @ParameterizedTest(name = "getCustomerIdReturnsTheCustomerIdOfTheContainedObject:{0}")
     @MethodSource("instanceProvider")
     public void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao<?> dao) {
         String expectedCustomerId = dao.getData().getCustomerId().toString();
@@ -159,7 +159,7 @@ class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
 
-    private Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
+    private static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
         return DaoUtils.instanceProvider();
     }
 
