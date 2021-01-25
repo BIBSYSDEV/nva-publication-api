@@ -69,7 +69,6 @@ public class ResourceService {
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
-    public static final String RESOURCE_MAIN_TITLE_FIELD = "title";
     public static final String RESOURCE_LINK_FIELD = "link";
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
@@ -97,6 +96,7 @@ public class ResourceService {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
+
     public Publication createPublication(Publication inputData) throws ConflictException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
@@ -108,8 +108,9 @@ public class ResourceService {
         return fetchEventuallyConsistentResource(newResource).toPublication();
     }
 
-    public void updatePublication(Publication publication) {
+    public Publication updatePublication(Publication publication) {
         updateResource(Resource.fromPublication(publication));
+        return publication;
     }
 
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)

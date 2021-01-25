@@ -125,7 +125,7 @@ Resources:
                     $ref: '#/definitions/Publication'
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}:live/invocations
                 responses: {}
                 httpMethod: POST
                 type: AWS_PROXY
@@ -289,34 +289,6 @@ Resources:
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
-          /resources:
-            post:
-              summary: Create Resource
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              security:
-                - CognitoUserPool: [ ]
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateResourceFunction.Arn}/invocations
-                responses: { }
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '201':
-                  description: Created
-                  schema:
-                    $ref: '#/definitions/Publication'
-                '400':
-                  description: Bad Request
-                  schema:
-                    $ref: '#/definitions/Problem'
-                '502':
-                  description: Bad Gateway
-                  schema:
-                    $ref: '#/definitions/Problem'
         definitions:
           Publication:
             type: object
@@ -370,6 +342,11 @@ Resources:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce # Or Canary10Percent5Minutes, Linear10PercentEvery1Minute, ...
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -380,7 +357,7 @@ Resources:
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref OrestisResources
       Events:
         GetEvent:
           Type: Api
@@ -389,29 +366,29 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-
-  NvaCreateResourceFunction:
-    Type: AWS::Serverless::Function
+  NvaCreatePublicationFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      CodeUri: create-publication
-      Handler: no.unit.nva.publication.create.CreateResourceHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
-      Runtime: java11
-      MemorySize: 1408
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /resources
-            Method: post
-            RestApiId: !Ref NvaPublicationApi
+      MaxCapacity: 100
+      MinCapacity: 1
+      ResourceId: !Sub function:${NvaCreatePublicationFunction}:live # You need to specify an alis or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaCreatePublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  MyTargetTrackingScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaCreatePublicationScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaCreatePublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -449,12 +426,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref OrestisResources
           BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref OrestisResources
       Events:
         PutEvent:
           Type: Api

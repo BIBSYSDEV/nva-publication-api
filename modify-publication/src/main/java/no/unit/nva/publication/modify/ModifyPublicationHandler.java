@@ -1,16 +1,17 @@
 package no.unit.nva.publication.modify;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
+import java.time.Clock;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.api.UpdatePublicationRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -21,30 +22,29 @@ import org.slf4j.LoggerFactory;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
 
-    private final PublicationService publicationService;
+    private final ResourceService resourceService;
 
     /**
      * Default constructor for MainHandler.
      */
     @JacocoGenerated
     public ModifyPublicationHandler() {
-        this(new DynamoDBPublicationService(
+        this(new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
+                Clock.systemDefaultZone()),
             new Environment());
     }
 
     /**
      * Constructor for MainHandler.
      *
-     * @param publicationService publicationService
-     * @param environment        environment
+     * @param resourceService publicationService
+     * @param environment     environment
      */
-    public ModifyPublicationHandler(PublicationService publicationService,
+    public ModifyPublicationHandler(ResourceService resourceService,
                                     Environment environment) {
         super(UpdatePublicationRequest.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
-        this.publicationService = publicationService;
+        this.resourceService = resourceService;
     }
 
     @Override
@@ -52,16 +52,24 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
         throws ApiGatewayException {
 
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        Publication existingPublication = publicationService.getPublication(identifier);
+        UserInstance userInstance = extractUserInstance(requestInfo);
+
+        Publication existingPublication = resourceService.getPublication(userInstance, identifier);
 
         Publication publication = PublicationMapper.toExistingPublication(
             input,
             existingPublication
         );
 
-        Publication updatedPublication = publicationService.updatePublication(identifier, publication);
+        Publication updatedPublication = resourceService.updatePublication(publication);
 
         return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
+    }
+
+    private UserInstance extractUserInstance(RequestInfo requestInfo) {
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        String useIdentifier = requestInfo.getFeideId().orElse(null);
+        return new UserInstance(useIdentifier, customerId);
     }
 
     @Override

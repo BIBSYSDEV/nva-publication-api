@@ -5,6 +5,8 @@ repositories {
 dependencies {
     compileOnly project(':publication-commons')
 
+    compileOnly(group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion)
+    testImplementation(group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion)
     testImplementation project(':publication-commons')
     testImplementation project(':publication-testing')
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {

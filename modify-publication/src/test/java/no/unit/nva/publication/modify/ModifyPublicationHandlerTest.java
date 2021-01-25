@@ -5,11 +5,9 @@ import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.apigateway.ApiGatewayHandler.DEFAULT_ERROR_MESSAGE;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -39,12 +37,12 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.ErrorResponseException;
-import no.unit.nva.publication.exception.NotFoundException;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -72,7 +70,7 @@ public class ModifyPublicationHandlerTest {
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
 
-    private PublicationService publicationService;
+    private ResourceService publicationService;
     private Context context;
 
     private ByteArrayOutputStream output;
@@ -88,7 +86,7 @@ public class ModifyPublicationHandlerTest {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        publicationService = mock(PublicationService.class);
+        publicationService = mock(ResourceService.class);
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
@@ -134,18 +132,6 @@ public class ModifyPublicationHandlerTest {
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
-    }
-
-    @Test
-    @DisplayName("handler Returns BadGateway Response On Communication Problems")
-    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-        throws IOException, ApiGatewayException {
-        serviceSucceedsOnGetRequestAndFailsOnUpdate();
-        modifyPublicationHandler.handleRequest(
-            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
-        GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
-        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-        assertThat(getProblemDetail(gatewayResponse), containsString(DEFAULT_ERROR_MESSAGE));
     }
 
     @Test
@@ -195,7 +181,7 @@ public class ModifyPublicationHandlerTest {
 
     private void publicationServiceThrowsException() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(Publication.class)))
             .then((Answer<Publication>) invocation -> {
                 throw new RuntimeException(ModifyPublicationHandlerTest.SOME_MESSAGE);
             });
@@ -203,32 +189,27 @@ public class ModifyPublicationHandlerTest {
 
     private void serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(Publication.class)))
             .thenThrow(RuntimeException.class);
     }
 
     private String serviceFailsOnGetRequestWithNotFoundError(SortableIdentifier identifier) throws ApiGatewayException {
         String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
-        when(publicationService.getPublication(any(SortableIdentifier.class))).thenThrow(
-            new NotFoundException(expectedDetail));
+        when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenThrow(new NotFoundException(expectedDetail));
         return expectedDetail;
     }
 
     private void serviceSucceedsOnGetRequest(Publication publication) throws ApiGatewayException {
-        when(publicationService.getPublication(any(SortableIdentifier.class))).thenReturn(publication);
+        when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenReturn(publication);
     }
 
     private void serviceSucceedsAndReturnsModifiedPublication(Publication modifiedPublication)
         throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
+        when(publicationService.updatePublication(any(Publication.class)))
             .thenReturn(modifiedPublication);
-    }
-
-    private void serviceSucceedsOnGetRequestAndFailsOnUpdate() throws ApiGatewayException {
-        serviceSucceedsOnGetRequest(publication);
-        when(publicationService.updatePublication(any(SortableIdentifier.class), any(Publication.class)))
-            .thenThrow(ErrorResponseException.class);
     }
 
     private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(SortableIdentifier identifier)
