@@ -90,7 +90,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
-    private static final URI SOME_LINK = URI.create("https://example.org");
+
+    private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
+
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
@@ -361,7 +363,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceSetsPublicationStatusToPublished()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceInResponse = resourceService.publishPublication(resource);
         Publication actualResource = resourceService.getPublication(resource);
@@ -378,7 +380,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceReturnsUpdatedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceUpdate = resourceService.publishPublication(resource);
 
@@ -393,7 +395,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
         Publication updatedResource = resourceService.publishPublication(resource);
@@ -408,7 +410,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishPublicationSetsPublishedDate()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication updatedResource = resourceService.publishPublication(resource);
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
@@ -449,8 +451,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
         sampleResource.setFileSet(emptyFileSet());
@@ -461,8 +462,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
@@ -507,7 +507,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deletePublicationReturnsUpdatedResourceCanMarkDraftForDeletion()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
 
         Publication resourceUpdate =
@@ -517,7 +517,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
         Executable action =
@@ -627,7 +627,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
                                                                   EntityDescription newEntityDescription) {
         String mainTitleFieldName = fetchMainTitleFieldName();
         Diff diff = javers.compare(oldEntityDescription, newEntityDescription);
-        assertThat(diff.getChanges().size(), is(equalTo(1)));
         int mainTitleChanges = diff.getPropertyChanges(mainTitleFieldName).size();
         assertThat(mainTitleChanges, is(equalTo(1)));
     }

@@ -468,7 +468,7 @@ Resources:
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref OrestisResources
       Events:
         PutEvent:
           Type: Api
@@ -726,7 +726,7 @@ Resources:
       Runtime: java11
       MemorySize: 512
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
       Environment:
         Variables:
