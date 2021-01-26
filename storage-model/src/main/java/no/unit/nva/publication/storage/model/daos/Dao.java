@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
@@ -11,6 +12,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Optional;
+
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
@@ -62,8 +65,11 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     }
 
     @Override
+    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
     public final String getByTypeCustomerStatusSortKey() {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, getType(), getData().getIdentifier().toString());
+        //Codacy complains that identifier is already a String
+        SortableIdentifier identifier = getData().getIdentifier();
+        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.getType(), identifier.toString());
     }
 
     @JsonIgnore
