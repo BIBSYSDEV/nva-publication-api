@@ -2,12 +2,10 @@ package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
@@ -25,7 +23,6 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
@@ -135,7 +132,7 @@ public class ResourceService {
         Resource existingResource = getResource(createQueryObject(oldOwner, identifier));
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
+        TransactWriteItem insertionAction = createNewTransactionPutDataEntry(newResource);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
     }
@@ -400,20 +397,20 @@ public class ResourceService {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        Put resourceEntry = createNewTransactionPutDataEntry(resource);
-        Put uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-
-        TransactWriteItem dataEntry = newPutTransactionItem(resourceEntry);
-        TransactWriteItem identifierEntry = newPutTransactionItem(uniqueIdentifierEntry);
-
-        return new TransactWriteItem[]{dataEntry, identifierEntry};
+        TransactWriteItem resourceEntry = createNewTransactionPutDataEntry(resource);
+        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
-    private Put createNewTransactionPutDataEntry(Resource resource) {
+    private TransactWriteItem createNewTransactionPutDataEntry(Resource resource) {
         return createTransactionPutEntry(new ResourceDao(resource));
     }
 
-    private Put createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
+    private <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T resourceDao) {
+        return ResourceServiceUtils.createTransactionPutEntry(resourceDao, tableName);
+    }
+
+    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
         return createTransactionPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
     }
 
@@ -424,12 +421,6 @@ public class ResourceService {
     private Resource createQueryObject(UserInstance userInstance, String resourceIdentifier) {
         return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
             resourceIdentifier);
-    }
-
-    private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {
-        return new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
     }
 
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {

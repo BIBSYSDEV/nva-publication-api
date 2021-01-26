@@ -127,7 +127,7 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
     }
 
     private DoiRequestStatus parseStatus(String status) {
-        return DoiRequestStatus.parse(status);
+        return nonNull(status) ? DoiRequestStatus.parse(status) : null;
     }
 
     private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {
