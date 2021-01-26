@@ -122,6 +122,7 @@ class DaoTest extends ResourcesDynamoDbLocalTest {
     @MethodSource("instanceProvider")
     public void daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder(
         Dao<? extends WithStatus> dao) throws JsonProcessingException {
+
         JsonNode jsonNode = serializeInstance(dao);
         assertThat(jsonNode.get(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME), is(not(nullValue())));
         String byTypeCustomerStatusIndexPartitionKey = dao.getByTypeCustomerStatusPartitionKey();
