@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
@@ -81,7 +82,9 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implement
 
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
     public final String getByTypeCustomerStatusSortKey() {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, Resource.TYPE, getData().getIdentifier().toString());
+        //Codacy complains that identifier is already a String
+        SortableIdentifier identifier = getData().getIdentifier();
+        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, Resource.TYPE, identifier.toString());
     }
 
     public final void setByTypeCustomerStatusSortKey(String byTypeCustomerStatusSk) {
