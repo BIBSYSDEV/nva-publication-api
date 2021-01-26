@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
@@ -70,14 +71,26 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     }
 
     @Override
+    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
     public final String getByTypeCustomerStatusSortKey() {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, getType(), getData().getIdentifier().toString());
+        //Codacy complains that identifier is already a String
+        SortableIdentifier identifier = getData().getIdentifier();
+        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, this.getType(), identifier.toString());
     }
 
     @JsonIgnore
     public final String getCustomerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }
+
+    @JsonIgnore
+    public abstract String getType();
+
+    @JsonIgnore
+    public abstract URI getCustomerId();
+
+    @JsonIgnore
+    public abstract SortableIdentifier getIdentifier();
 
     protected static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
@@ -94,16 +107,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     }
 
     @JsonIgnore
-    public abstract String getType();
-
-    @JsonIgnore
-    public abstract URI getCustomerId();
-
-    @JsonIgnore
     protected abstract String getOwner();
-
-    @JsonIgnore
-    public abstract SortableIdentifier getIdentifier();
 
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,

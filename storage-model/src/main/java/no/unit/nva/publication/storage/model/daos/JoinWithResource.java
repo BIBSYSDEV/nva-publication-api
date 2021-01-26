@@ -27,22 +27,26 @@ public interface JoinWithResource {
     @JsonProperty(BY_RESOURCE_INDEX_PARTITION_KEY_NAME)
     default String getByResourcePartitionKey() {
         return
-            CUSTOMER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER +
-            getResourceIdentifier().toString() + KEY_FIELDS_DELIMITER;
+            CUSTOMER_INDEX_FIELD_PREFIX
+            + KEY_FIELDS_DELIMITER
+            + getResourceIdentifier().toString()
+            + KEY_FIELDS_DELIMITER;
     }
 
     @JsonProperty(BY_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByResourceSortKey() {
         return
-            this.getType() + KEY_FIELDS_DELIMITER +
-            getIdentifier().toString();
+            this.getType()
+            + KEY_FIELDS_DELIMITER
+            + getIdentifier().toString();
     }
 
     /**
      * Retrieve all entries that are connected to a Resource with types that are alphabetically greater or equal to the
      * left type and less or equal to right type.
-     * <p>
-     * For example the command:
+     *
+     * <p>For example the command:
+     *
      * <p>{@code
      * byResource("DoiRequest", "Resource") }</p> returns all entries that  are between the types "DoiRequest" and
      * "Resource" including "DoiRequest" and "Resource" and they are connected to the Resource with identifier {@link
@@ -50,16 +54,18 @@ public interface JoinWithResource {
      *
      * @param greaterOrEqual the left type.
      * @param lessOrEqual    the right type.
-     * @return
+     * @return a Map for using in the
+     * {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)} method.
+     *
      */
     default Map<String, Condition> byResourceIdentifierKey(String greaterOrEqual,
                                                            String lessOrEqual) {
-        Condition partitionKeyCondition = new Condition().
-            withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
+        Condition partitionKeyCondition = new Condition()
+            .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);
 
-        Condition sortKeyCondition = new Condition().
-            withAttributeValueList(new AttributeValue(greaterOrEqual),
+        Condition sortKeyCondition = new Condition()
+            .withAttributeValueList(new AttributeValue(greaterOrEqual),
                 new AttributeValue(lessOrEqual + LAST_PRINTABLE_ASCII_CHAR))
             .withComparisonOperator(ComparisonOperator.BETWEEN);
 
@@ -70,12 +76,12 @@ public interface JoinWithResource {
     }
 
     default Map<String, Condition> byResourceIdentifierKey(String selectedType) {
-        Condition partitionKeyCondition = new Condition().
-            withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
+        Condition partitionKeyCondition = new Condition()
+            .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);
 
-        Condition sortKeyCondition = new Condition().
-            withAttributeValueList(new AttributeValue(selectedType))
+        Condition sortKeyCondition = new Condition()
+            .withAttributeValueList(new AttributeValue(selectedType))
             .withComparisonOperator(ComparisonOperator.BEGINS_WITH);
 
         return Map.of(
