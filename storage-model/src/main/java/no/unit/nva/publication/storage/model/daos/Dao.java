@@ -76,7 +76,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implement
     }
 
     public void setByTypeCustomerStatusPartitionKey(String byTypeCustomerStatusPk) {
-        // do nothing
+        //Do nothing
     }
 
     @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
@@ -85,7 +85,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity> implement
     }
 
     public final void setByTypeCustomerStatusSortKey(String byTypeCustomerStatusSk) {
-        // do nothing
+        //Do nothing
     }
 
     @JsonIgnore
