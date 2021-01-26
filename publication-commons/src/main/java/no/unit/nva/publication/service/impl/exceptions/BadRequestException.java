@@ -3,9 +3,9 @@ package no.unit.nva.publication.service.impl.exceptions;
 import java.net.HttpURLConnection;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 
-public class DoiRequestForNonExistingResourceException extends ApiGatewayException {
+public class BadRequestException extends ApiGatewayException {
 
-    public DoiRequestForNonExistingResourceException(Exception exception) {
+    public BadRequestException(Exception exception) {
         super(exception);
     }
 

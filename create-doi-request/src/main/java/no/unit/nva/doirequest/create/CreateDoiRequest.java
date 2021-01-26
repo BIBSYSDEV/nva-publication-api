@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.identifiers.SortableIdentifier;
 
-public class CreateDoiRequestRequest {
+public class CreateDoiRequest {
 
     @JsonAlias("identifier")
     private final SortableIdentifier resourceIdentifier;
@@ -13,8 +13,8 @@ public class CreateDoiRequestRequest {
     private final String message;
 
     @JsonCreator
-    public CreateDoiRequestRequest(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
-                                   @JsonProperty("message") String message) {
+    public CreateDoiRequest(@JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+                            @JsonProperty("message") String message) {
         this.resourceIdentifier = resourceIdentifier;
         this.message = message;
     }

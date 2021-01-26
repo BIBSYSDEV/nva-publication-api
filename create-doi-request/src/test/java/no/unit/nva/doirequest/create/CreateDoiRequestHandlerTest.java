@@ -3,6 +3,7 @@ package no.unit.nva.doirequest.create;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -13,6 +14,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -31,6 +33,7 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -39,6 +42,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
+    public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
@@ -69,14 +73,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createPublication();
         resourceService.publishPublication(publication);
 
-        CreateDoiRequestRequest request = new CreateDoiRequestRequest(publication.getIdentifier(), null);
-        InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequestRequest>(objectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(publication.getOwner())
-            .withBody(request)
-            .build();
-
-        handler.handleRequest(inputStream, outputStream, context);
+        sendRequest(publication, publication.getOwner());
 
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
         String doiRequestIdentifier = extractLocationHeader(response);
@@ -92,18 +89,56 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createPublication();
         resourceService.publishPublication(publication);
 
-        CreateDoiRequestRequest request = new CreateDoiRequestRequest(publication.getIdentifier(), null);
-        InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequestRequest>(objectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(NOT_THE_RESOURCE_OWNER)
-            .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
-            .withBody(request)
-            .build();
-
-        handler.handleRequest(inputStream, outputStream, context);
+        sendRequest(publication, NOT_THE_RESOURCE_OWNER);
 
         GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
         assertThat(response.getStatusCode(), is(HttpURLConnection.HTTP_BAD_REQUEST));
+    }
+
+    @Test
+    public void handleRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
+        CreateDoiRequest request = new CreateDoiRequest(null, null);
+        InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
+            .withBody(request)
+            .withFeideId(NOT_THE_RESOURCE_OWNER)
+            .withCustomerId(SOME_PUBLISHER.toString())
+            .build();
+
+        handler.handleRequest(inputStream, outputStream, context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
+    }
+
+    @Test
+    public void handlerReturnsBadRequestErrorWenDoiRequestAlreadyExists()
+        throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
+        Publication publication = createPublication();
+        resourceService.publishPublication(publication);
+
+        sendRequest(publication, publication.getOwner());
+
+        outputStream = new ByteArrayOutputStream();
+
+        sendRequest(publication, publication.getOwner());
+
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
+    public void sendRequest(Publication publication, String owner) throws IOException {
+        InputStream inputStream = createRequest(publication, owner);
+        handler.handleRequest(inputStream, outputStream, context);
+    }
+
+    private InputStream createRequest(Publication publication, String user)
+        throws com.fasterxml.jackson.core.JsonProcessingException {
+        CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), null);
+        return new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
+            .withCustomerId(publication.getPublisher().getId().toString())
+            .withFeideId(user)
+            .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
+            .withBody(request)
+            .build();
     }
 
     private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier) {

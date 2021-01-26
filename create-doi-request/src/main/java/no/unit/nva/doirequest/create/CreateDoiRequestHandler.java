@@ -16,7 +16,7 @@ import nva.commons.core.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequestRequest, Void> {
+public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateDoiRequestHandler.class);
     private final DoiRequestService doiRequestService;
@@ -28,12 +28,12 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequestR
     }
 
     public CreateDoiRequestHandler(DoiRequestService requestService, Environment environment) {
-        super(CreateDoiRequestRequest.class, environment, LOGGER);
+        super(CreateDoiRequest.class, environment, LOGGER);
         this.doiRequestService = requestService;
     }
 
     @Override
-    protected Void processInput(CreateDoiRequestRequest input, RequestInfo requestInfo, Context context)
+    protected Void processInput(CreateDoiRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         String user = requestInfo.getFeideId().orElse(null);
@@ -47,7 +47,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequestR
     }
 
     @Override
-    protected Integer getSuccessStatusCode(CreateDoiRequestRequest input, Void output) {
+    protected Integer getSuccessStatusCode(CreateDoiRequest input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
     }
 

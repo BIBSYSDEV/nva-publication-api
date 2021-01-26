@@ -9,16 +9,19 @@ import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.impl.exceptions.DoiRequestForNonExistingResourceException;
+import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
+import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
+import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.core.attempt.Failure;
 
 public class DoiRequestService {
@@ -36,14 +39,19 @@ public class DoiRequestService {
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws DoiRequestForNonExistingResourceException {
+        throws BadRequestException {
 
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
 
-        client.transactWriteItems(request);
+        attempt(() -> client.transactWriteItems(request))
+            .orElseThrow(this::handleFailedTransactionError);
         return doiRequest.getIdentifier();
+    }
+
+    private BadRequestException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
+        return new BadRequestException(fail.getException());
     }
 
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
@@ -60,13 +68,13 @@ public class DoiRequestService {
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws DoiRequestForNonExistingResourceException {
+        throws BadRequestException {
         return attempt(() -> resourceService.getPublication(userInstance, resourceIdentifier))
             .orElseThrow(this::handleResourceNotFetchedError);
     }
 
-    private DoiRequestForNonExistingResourceException handleResourceNotFetchedError(Failure<Publication> fail) {
-        return new DoiRequestForNonExistingResourceException(fail.getException());
+    private BadRequestException handleResourceNotFetchedError(Failure<Publication> fail) {
+        return new BadRequestException(fail.getException());
     }
 
     private DoiRequest createNewDoiRequestEntry(Publication publication) {
@@ -84,22 +92,31 @@ public class DoiRequestService {
     private TransactWriteItemsRequest createInsertionTransactionRequest(DoiRequest doiRequest) {
         TransactWriteItem doiRequestEntry = createDoiRequestInsertionEntry(doiRequest);
         TransactWriteItem identifierEntry = createUniqueIdentifierEntry(doiRequest);
+        TransactWriteItem uniqueDoiRequestEntry = createUniqueDoiRequestEntry(doiRequest);
 
-        TransactWriteItemsRequest request = new TransactWriteItemsRequest().withTransactItems(identifierEntry,
-            doiRequestEntry);
-        return request;
+        return new TransactWriteItemsRequest()
+            .withTransactItems(
+                identifierEntry,
+                uniqueDoiRequestEntry,
+                doiRequestEntry);
+    }
+
+    private TransactWriteItem createUniqueDoiRequestEntry(DoiRequest doiRequest) {
+        UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
+            doiRequest.getResourceIdentifier().toString());
+        return createTransactionPutEntry(uniqueDoiRequestEntry);
+    }
+
+    private <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T uniqueDoiRequestEntry) {
+        return ResourceServiceUtils.createTransactionPutEntry(uniqueDoiRequestEntry, tableName);
     }
 
     private TransactWriteItem createDoiRequestInsertionEntry(DoiRequest doiRequest) {
-        TransactWriteItem doiRequestEntry =
-            ResourceServiceUtils.createTransactionPutEntry(new DoiRequestDao(doiRequest), tableName);
-        return doiRequestEntry;
+        return createTransactionPutEntry(new DoiRequestDao(doiRequest));
     }
 
     private TransactWriteItem createUniqueIdentifierEntry(DoiRequest doiRequest) {
         IdentifierEntry identifierEntry = new IdentifierEntry(doiRequest.getIdentifier().toString());
-        TransactWriteItem transactWriteItem = ResourceServiceUtils.createTransactionPutEntry(identifierEntry,
-            tableName);
-        return transactWriteItem;
+        return createTransactionPutEntry(identifierEntry);
     }
 }
