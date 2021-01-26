@@ -29,6 +29,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
         DoiRequest doi = new DoiRequest(
             doiRequestIdentifier,
             doiRequestIdentifier,
+            null,
             owner,
             publisherId,
             null,

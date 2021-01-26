@@ -82,6 +82,7 @@ public class DoiRequestService {
         return new DoiRequest(
             SortableIdentifier.next(),
             publication.getIdentifier(),
+            publication.getEntityDescription().getMainTitle(),
             publication.getOwner(),
             publication.getPublisher().getId(),
             DoiRequestStatus.REQUESTED.toString(),
