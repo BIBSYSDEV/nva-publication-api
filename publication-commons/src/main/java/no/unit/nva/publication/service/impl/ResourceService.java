@@ -2,20 +2,22 @@ package no.unit.nva.publication.service.impl;
 
 import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.valueMapForKeyConditionCheck;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -35,13 +37,10 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -55,9 +54,9 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 
@@ -75,6 +74,9 @@ public class ResourceService {
     public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     public static final int MAX_FETCH_ATTEMPTS = 10;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
+    public static final String INVALID_PATH_ERROR =
+        "The document path provided in the update expression is invalid for update";
+    public static final String NOT_FOUND_ERROR_MESSAGE = "The resource could not be found";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -95,7 +97,6 @@ public class ResourceService {
     public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
-
 
     public Publication createPublication(Publication inputData) throws ConflictException {
         Resource newResource = Resource.fromPublication(inputData);
@@ -155,13 +156,16 @@ public class ResourceService {
     }
 
     public Publication publishPublication(Publication dto)
-        throws InvalidPublicationException, NotFoundException, JsonProcessingException {
+        throws InvalidPublicationException, NotFoundException {
         return publishResource(Resource.fromPublication(dto)).toPublication();
     }
 
-    public Publication markPublicationForDeletion(Publication publication)
-        throws JsonProcessingException, ResourceCannotBeDeletedException {
-        return markResourceForDeletion(Resource.fromPublication(publication)).toPublication();
+    public Publication markPublicationForDeletion(UserInstance userInstance,
+                                                  SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+
+        return markResourceForDeletion(createQueryObject(userInstance, resourceIdentifier.toString()))
+            .toPublication();
     }
 
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -176,20 +180,21 @@ public class ResourceService {
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
-        Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
+        Map<String, AttributeValue> primaryKeyConditionAttributeValues =
+            primaryKeyEqualityConditionAttributeValues(resourceDao);
 
         PutItemRequest putItemRequest = new PutItemRequest()
             .withItem(toDynamoFormat(resourceDao))
             .withTableName(tableName)
             .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
-            .withExpressionAttributeValues(primaryKeyCheckValuesMap);
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         client.putItem(putItemRequest);
     }
 
     private Resource markResourceForDeletion(Resource resource)
-        throws JsonProcessingException, ResourceCannotBeDeletedException {
+        throws ApiGatewayException {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
         return attempt(() -> sendUpdateRequest(updateRequest))
@@ -217,8 +222,7 @@ public class ResourceService {
         return fetchedDao.getResource();
     }
 
-    private Resource publishResource(Resource resource)
-        throws JsonProcessingException, NotFoundException, InvalidPublicationException {
+    private Resource publishResource(Resource resource) throws NotFoundException, InvalidPublicationException {
         Resource existingResource = getResource(resource);
         if (PublicationStatus.PUBLISHED.equals(existingResource.getStatus())) {
             return existingResource;
@@ -229,31 +233,49 @@ public class ResourceService {
         return sendUpdateRequest(updateRequest);
     }
 
-    private <E extends Exception> ResourceCannotBeDeletedException handleConditionFailureException(
+    private <E extends Exception> ApiGatewayException handleConditionFailureException(
         Failure<Resource> failure, Resource resource) {
-        if (failure.getException() instanceof ConditionalCheckFailedException) {
+        if (primaryKeyConditionFailed(failure.getException())) {
+            return new NotFoundException(NOT_FOUND_ERROR_MESSAGE);
+        } else if (failure.getException() instanceof ConditionalCheckFailedException) {
             return new ResourceCannotBeDeletedException(resource.getIdentifier().toString());
         }
         throw new RuntimeException(failure.getException());
     }
 
-    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) throws JsonProcessingException {
-        String updateExpression = "SET "
-                                  + "#resource.#status = :status, "
-                                  + "#resource.#modifiedDate = :modifiedDate";
-        String conditionExpression = "#resource.#status <> :publishedStatus";
+    private boolean primaryKeyConditionFailed(Exception exception) {
+        return exception instanceof AmazonServiceException
+               && messageRefersToInvalidPath(exception);
+    }
 
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
-            updateStatusExpresionValuesMap(PublicationStatus.DRAFT_FOR_DELETION);
-        expressionValuesMap.put(":publishedStatus",
-            new AttributeValue(PublicationStatus.PUBLISHED.toString()));
+    private boolean messageRefersToInvalidPath(Exception exception) {
+        return exception.getMessage().contains(INVALID_PATH_ERROR);
+    }
+
+    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) {
+        String updateExpression = "SET "
+                                  + "#resource.#status = :newStatus, "
+                                  + "#resource.#modifiedDate = :modifiedDate";
+
+        String conditionExpression = "#resource.#status = :expectedExistingStatus";
+
+        Map<String, AttributeValue> expressionValuesMap = Map.of(
+            ":newStatus", new AttributeValue(PublicationStatus.DRAFT_FOR_DELETION.getValue()),
+            ":modifiedDate", new AttributeValue(nowAsString()),
+            ":expectedExistingStatus", new AttributeValue(PublicationStatus.DRAFT.toString())
+        );
+
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
+            "#resource", RESOURCE_FIELD_IN_RESOURCE_DAO);
 
         return new UpdateItemRequest()
             .withTableName(tableName)
             .withKey(dao.primaryKey())
             .withUpdateExpression(updateExpression)
             .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(updateStatusNamesExpressionMap())
+            .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionValuesMap)
             .withReturnValues(ReturnValue.ALL_NEW);
     }
@@ -304,52 +326,40 @@ public class ResourceService {
             .orElseThrow();
     }
 
-    private UpdateItemRequest publishUpdateRequest(ResourceDao dao) throws JsonProcessingException {
+    private UpdateItemRequest publishUpdateRequest(ResourceDao dao) {
 
-        ConcurrentHashMap<String, String> expressionNamesMap = publishUpdateExpressionNamesMap();
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
-            updateStatusExpresionValuesMap(PublicationStatus.PUBLISHED);
+        final String updateExpression = "SET"
+                                        + " #resource.#status = :newStatus, "
+                                        + "#resource.#modifiedDate = :modifiedDate, "
+                                        + "#resource.#publishedDate = :modifiedDate ";
 
-        String updateExpression = "SET"
-                                  + " #resource.#status = :status, "
-                                  + "#resource.#modifiedDate = :modifiedDate, "
-                                  + "#resource.#publishedDate = :modifiedDate ";
+        final String conditionExpression = "#resource.#status <> :publishedStatus";
+
+        Map<String, String> expressionNamesMap = Map.of(
+            "#resource", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
+            "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE
+        );
+
+        Map<String, AttributeValue> expressionValuesMap = Map.of(
+            ":newStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
+            ":modifiedDate", new AttributeValue(nowAsString()),
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()));
+
         return new UpdateItemRequest()
             .withTableName(tableName)
             .withKey(dao.primaryKey())
             .withUpdateExpression(updateExpression)
-            .withConditionExpression("#resource.#status <> " + PublicationStatus.PUBLISHED.toString())
+            .withConditionExpression(conditionExpression)
             .withExpressionAttributeNames(expressionNamesMap)
             .withExpressionAttributeValues(expressionValuesMap)
             .withReturnValues(ReturnValue.ALL_NEW);
     }
 
-    private ConcurrentHashMap<String, String> publishUpdateExpressionNamesMap() {
-        ConcurrentHashMap<String, String> expressionNamesMap = updateStatusNamesExpressionMap();
-        expressionNamesMap.put("#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE);
-        return expressionNamesMap;
-    }
-
-    private ConcurrentHashMap<String, String> updateStatusNamesExpressionMap() {
-        ConcurrentHashMap<String, String> expressionNamesMap = new ConcurrentHashMap<>();
-        expressionNamesMap.put("#status", STATUS_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#modifiedDate", MODIFIED_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#resource", RESOURCE_FIELD_IN_RESOURCE_DAO);
-        return expressionNamesMap;
-    }
-
-    private ConcurrentHashMap<String, AttributeValue> updateStatusExpresionValuesMap(
-        PublicationStatus publicationStatus)
-        throws JsonProcessingException {
-        String nowString = instantAsString(clockForTimestamps.instant());
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap = new ConcurrentHashMap<>();
-        expressionValuesMap.put(":status", new AttributeValue(publicationStatus.getValue()));
-        expressionValuesMap.put(":modifiedDate", new AttributeValue(nowString));
-        return expressionValuesMap;
-    }
-
-    private String instantAsString(Instant instant) throws JsonProcessingException {
-        String jsonString = JsonUtils.objectMapper.writeValueAsString(instant);
+    private String nowAsString() {
+        String jsonString = attempt(() -> objectMapper.writeValueAsString(clockForTimestamps.instant()))
+            .orElseThrow();
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
@@ -417,8 +427,8 @@ public class ResourceService {
 
     private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {
         return new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
-            .withConditionExpression(KEY_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING);
+            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
     }
 
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {

@@ -79,7 +79,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_INVALID_FIELD = "someInvalidField";
     public static final String SOME_STRING = "someValue";
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
-
+    public static final String MAIN_TITLE_FIELD = "mainTitle";
+    public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
+                                                                              + " does not have a field"
+                                                                              + MAIN_TITLE_FIELD;
     private static final URI SOME_ORG = URI.create(PublicationGenerator.PUBLISHER_ID);
     public static final UserInstance SAMPLE_USER = new UserInstance(PublicationGenerator.OWNER, SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
@@ -87,11 +90,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
+
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
-    public static final String MAIN_TITLE_FIELD = "mainTitle";
-    public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
-                                                                              + " does not have a field"
-                                                                              + MAIN_TITLE_FIELD;
+
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
@@ -362,7 +363,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceSetsPublicationStatusToPublished()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceInResponse = resourceService.publishPublication(resource);
         Publication actualResource = resourceService.getPublication(resource);
@@ -379,7 +380,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceReturnsUpdatedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceUpdate = resourceService.publishPublication(resource);
 
@@ -394,7 +395,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
         Publication updatedResource = resourceService.publishPublication(resource);
@@ -409,7 +410,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishPublicationSetsPublishedDate()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication updatedResource = resourceService.publishPublication(resource);
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
@@ -450,8 +451,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
         sampleResource.setFileSet(emptyFileSet());
@@ -462,8 +462,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
@@ -494,10 +493,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException, JsonProcessingException {
+    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
         Publication resource = createSampleResource();
 
-        Publication resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        Publication resourceUpdate =
+            resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
         Publication resourceForDeletion = resourceService.getPublication(resource);
@@ -507,33 +507,41 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deletePublicationReturnsUpdatedResourceCanMarkDraftForDeletion()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
 
-        Publication resourceUpdate = resourceService.markPublicationForDeletion(resource);
+        Publication resourceUpdate =
+            resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
 
     @Test
     public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
-        Executable action = () -> resourceService.markPublicationForDeletion(resource);
+        Executable action =
+            () -> resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
         ResourceCannotBeDeletedException exception = assertThrows(ResourceCannotBeDeletedException.class, action);
         assertThat(exception.getMessage(), containsString(ResourceCannotBeDeletedException.DEFAULT_MESSAGE));
         assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
     }
 
     @Test
-    public void deleteResourceThrowsNoErrorWhenDeletingPublicationThatIsMarkedForDeletion()
-        throws ApiGatewayException, JsonProcessingException {
+    public void deleteResourceThrowsErrorWhenDeletingPublicationThatIsMarkedForDeletion()
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
-        resourceService.markPublicationForDeletion(resource);
+        resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
         Publication actualResource = resourceService.getPublication(resource);
         assertThat(actualResource.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
-        assertDoesNotThrow(() -> resourceService.markPublicationForDeletion(resource));
+        Executable action = () -> resourceService.markPublicationForDeletion(extractUserInstance(resource),
+            resource.getIdentifier());
+        assertThrows(ResourceCannotBeDeletedException.class, action);
+    }
+
+    private UserInstance extractUserInstance(Publication resource) {
+        return new UserInstance(resource.getOwner(), resource.getPublisher().getId());
     }
 
     private ResourceService resourceServiceReceivingNoValue(Publication publication) throws JsonProcessingException {
