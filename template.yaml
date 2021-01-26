@@ -468,7 +468,7 @@ Resources:
           BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !Ref OrestisResources
       Events:
         PutEvent:
           Type: Api
