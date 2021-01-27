@@ -1,4 +1,4 @@
-package no.unit.nva.publication.service.impl;
+package no.unit.nva.publication.storage.model;
 
 import java.net.URI;
 
@@ -8,7 +8,6 @@ import java.net.URI;
 public class UserInstance {
 
     private final URI organizationUri;
-
     private final String userIdentifier;
 
     public UserInstance(String userIdentifier, URI organizationUri) {

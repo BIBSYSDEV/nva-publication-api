@@ -36,7 +36,7 @@ public interface JoinWithResource {
     @JsonProperty(BY_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByResourceSortKey() {
         return
-            this.getType()
+            this.getOrderedType()
             + KEY_FIELDS_DELIMITER
             + getIdentifier().toString();
     }
@@ -92,7 +92,8 @@ public interface JoinWithResource {
 
     SortableIdentifier getIdentifier();
 
-    String getType();
+    @JsonIgnore
+    String getOrderedType();
 
     @JsonIgnore
     SortableIdentifier getResourceIdentifier();

@@ -20,6 +20,7 @@ import nva.commons.core.JacocoGenerated;
 public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     public static final String TYPE = DoiRequest.class.getSimpleName();
+
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
     @JsonProperty
     private final SortableIdentifier resourceIdentifier;
@@ -76,6 +77,10 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         );
     }
 
+    public static String getType() {
+        return DoiRequest.TYPE;
+    }
+
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -103,8 +108,8 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                && Objects.equals(getIdentifier(), that.getIdentifier());
     }
 
-    public String getResourceStatus() {
-        return resourceStatus.getValue();
+    public PublicationStatus getResourceStatus() {
+        return resourceStatus;
     }
 
     public String getResourceTitle() {

@@ -11,14 +11,17 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAtt
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
@@ -30,11 +33,13 @@ import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,7 +53,11 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
@@ -75,8 +84,11 @@ public class ResourceService {
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String NOT_FOUND_ERROR_MESSAGE = "The resource could not be found";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
+    public static final String DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO = "data";
+    public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
+    public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
+    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -118,13 +130,7 @@ public class ResourceService {
         if (isNull(resourceIdentifier)) {
             throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
         }
-        return getResource(createQueryObject(userInstance, resourceIdentifier.toString()))
-            .toPublication();
-    }
-
-    public Publication getPublication(UserInstance userInstance, String resourceIdentifier)
-        throws NotFoundException {
-        return getResource(createQueryObject(userInstance, resourceIdentifier))
+        return getResource(userInstance, resourceIdentifier)
             .toPublication();
     }
 
@@ -132,9 +138,9 @@ public class ResourceService {
         return getResource(Resource.fromPublication(publication)).toPublication();
     }
 
-    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner)
+    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
-        Resource existingResource = getResource(createQueryObject(oldOwner, identifier));
+        Resource existingResource = getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
         TransactWriteItem insertionAction = createNewTransactionPutDataEntry(newResource);
@@ -158,16 +164,16 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    public Publication publishPublication(Publication dto)
-        throws InvalidPublicationException, NotFoundException {
-        return publishResource(Resource.fromPublication(dto)).toPublication();
+    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifer)
+        throws ApiGatewayException {
+        publishResource(userInstance, resourceIdentifer);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance,
                                                   SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
 
-        return markResourceForDeletion(createQueryObject(userInstance, resourceIdentifier.toString()))
+        return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
             .toPublication();
     }
 
@@ -218,6 +224,10 @@ public class ResourceService {
         return null;
     }
 
+    private Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
+        return getResource(resourceQueryObject(userInstance, identifier));
+    }
+
     private Resource getResource(Resource resource) throws NotFoundException {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
@@ -225,12 +235,139 @@ public class ResourceService {
         return fetchedDao.getData();
     }
 
-    private Resource publishResource(Resource resource) throws NotFoundException, InvalidPublicationException {
+    @SuppressWarnings("rawtypes")
+    private void publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+        ResourceDao resourceDao = extractResourceDao(daos);
+        Optional<DoiRequestDao> doiRequestDao = extractDoiRequest(daos);
 
-        validateForPublishing(resource);
-        ResourceDao dao = new ResourceDao(resource);
-        UpdateItemRequest updateRequest = publishUpdateRequest(dao);
-        return sendUpdateRequest(updateRequest);
+        validateForPublishing(resourceDao.getData());
+
+        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        String nowString = nowAsString();
+        transactionItems.add(publishUpdateRequest(resourceDao, nowString));
+        doiRequestDao.ifPresent(dao -> transactionItems.add(updateDoiRequestResourceStatus(dao, nowString)));
+
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+            .withTransactItems(transactionItems);
+        client.transactWriteItems(transactWriteItemsRequest);
+    }
+
+    private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
+
+        dao.getData().setStatus(PublicationStatus.PUBLISHED);
+        final String updateExpression = "SET"
+                                        + " #data.#status = :newStatus, "
+                                        + "#data.#modifiedDate = :modifiedDate, "
+                                        + "#data.#publishedDate = :modifiedDate, "
+                                        + "#PK1 = :PK1, "
+                                        + "#SK1 = :SK1 ";
+
+        final String conditionExpression = "#data.#status <> :publishedStatus";
+
+        Map<String, String> expressionNamesMap = Map.of(
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
+            "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE,
+            "#PK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
+            "#SK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME
+        );
+
+        Map<String, AttributeValue> expressionValuesMap = Map.of(
+            ":newStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
+            ":modifiedDate", new AttributeValue(nowString),
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
+            ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
+            ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
+
+        Update update = new Update()
+            .withTableName(tableName)
+            .withKey(dao.primaryKey())
+            .withUpdateExpression(updateExpression)
+            .withConditionExpression(conditionExpression)
+            .withExpressionAttributeNames(expressionNamesMap)
+            .withExpressionAttributeValues(expressionValuesMap);
+        return new TransactWriteItem().withUpdate(update);
+    }
+
+    private TransactWriteItem updateDoiRequestResourceStatus(DoiRequestDao doiRequestDao, String nowString) {
+
+        String updateExpression = "SET "
+                                  + "#data.#resourceStatus = :publishedStatus,"
+                                  + "#data.#modifiedDate = :modifiedDate ";
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO,
+            "#resourceStatus", RESOURCE_STATUS_FIELD_IN_DOI_REQUEST,
+            "#modifiedDate", MODIFIED_DATE_FIELD_IN_DOI_REQUEST
+        );
+        Map<String, AttributeValue> attributeValueMap = Map.of(
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
+            ":modifiedDate", new AttributeValue(nowString)
+        );
+
+        Update update = new Update().withTableName(tableName)
+            .withKey(doiRequestDao.primaryKey())
+            .withUpdateExpression(updateExpression)
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(attributeValueMap);
+
+        return new TransactWriteItem().withUpdate(update);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
+        if (doiRequestExists(daos)) {
+            return ((ResourceDao) daos.get(1));
+        } else if (onlyResourceExisits(daos)) {
+            return ((ResourceDao) daos.get(0));
+        }
+        throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean onlyResourceExisits(List<Dao> daos) {
+        return daos.size() == 1;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private boolean doiRequestExists(List<Dao> daos) {
+        return daos.size() == 2;
+    }
+
+    @SuppressWarnings("rawtypes")
+    private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
+        if (doiRequestExists(daos)) {
+            return Optional.of(((DoiRequestDao) daos.get(0)));
+        }
+        return Optional.empty();
+    }
+
+    @SuppressWarnings({"rawtypes"})
+    private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
+                                                                       SortableIdentifier resourceIdentifier) {
+        ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = queryByResourceIndex(queryObject);
+        QueryResult queryResult = client.query(queryRequest);
+        return parseResultSetToDaos(queryResult);
+    }
+
+    @SuppressWarnings({"rawtypes"})
+    private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
+        return queryResult.getItems()
+            .stream()
+            .map(values -> parseAttributeValuesMap(values, Dao.class))
+            .collect(Collectors.toList());
+    }
+
+    private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
+        Map<String, Condition> keyConditions = queryObject
+            .byResourceIdentifierKey(DoiRequestDao.getOrderedContainedType(), ResourceDao.getOrderedContainedType());
+        return new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(keyConditions);
     }
 
     private <E extends Exception> ApiGatewayException markForDeletionError(
@@ -326,36 +463,7 @@ public class ResourceService {
             .orElseThrow();
     }
 
-    private UpdateItemRequest publishUpdateRequest(ResourceDao dao) {
 
-        final String updateExpression = "SET"
-                                        + " #data.#status = :newStatus, "
-                                        + "#data.#modifiedDate = :modifiedDate, "
-                                        + "#data.#publishedDate = :modifiedDate ";
-
-        final String conditionExpression = "#data.#status <> :publishedStatus";
-
-        Map<String, String> expressionNamesMap = Map.of(
-            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
-            "#status", STATUS_FIELD_IN_RESOURCE,
-            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
-            "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE
-        );
-
-        Map<String, AttributeValue> expressionValuesMap = Map.of(
-            ":newStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":modifiedDate", new AttributeValue(nowAsString()),
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()));
-
-        return new UpdateItemRequest()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap)
-            .withReturnValues(ReturnValue.ALL_NEW);
-    }
 
     private String nowAsString() {
         String jsonString = attempt(() -> objectMapper.writeValueAsString(clockForTimestamps.instant()))
@@ -418,11 +526,6 @@ public class ResourceService {
 
     private ConflictException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
         return new ConflictException(fail.getException());
-    }
-
-    private Resource createQueryObject(UserInstance userInstance, String resourceIdentifier) {
-        return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
-            resourceIdentifier);
     }
 
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {

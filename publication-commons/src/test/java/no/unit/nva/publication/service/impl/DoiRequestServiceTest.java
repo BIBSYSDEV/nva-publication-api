@@ -20,10 +20,11 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +60,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
-        throws ConflictException, NotFoundException, InvalidPublicationException, BadRequestException {
+        throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
         SortableIdentifier doiRequestIdentifier = createDoiRequest(publication, publication.getOwner());
@@ -69,15 +70,15 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     public Publication createPublishedPublication()
-        throws ConflictException, InvalidPublicationException, NotFoundException {
+        throws ApiGatewayException {
         Publication publication = createPublication();
-        resourceService.publishPublication(publication);
+        resourceService.publishPublication(createUserInstance(publication), publication.getIdentifier());
         return publication;
     }
 
     @Test
     public void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
-        throws ConflictException, NotFoundException, InvalidPublicationException {
+        throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
         Executable action = () -> createDoiRequest(publication, NOT_THE_RESOURCE_OWNER);
@@ -95,7 +96,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestThrowsConflictExceptionWhenDoiRequestAlreadyExists()
-        throws ConflictException, NotFoundException, InvalidPublicationException, BadRequestException {
+        throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
         createDoiRequest(publication, publication.getOwner());
@@ -108,7 +109,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestThrowsExceptionWhenDuplicateIdentifierIsCreated()
-        throws ConflictException, NotFoundException, InvalidPublicationException {
+        throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
         SortableIdentifier duplicateIdentifier = SortableIdentifier.next();
@@ -125,14 +126,11 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createDoiRequestStatusThrowsBadRequestExceptionWhenResourceIsNotPublished() throws ConflictException {
+    public void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws ConflictException {
         Publication publication = createPublication();
         UserInstance userInstance = createUserInstance(publication);
         Executable action = () -> doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
-        BadRequestException actualException = assertThrows(BadRequestException.class, action);
-
-        String actualMessage = actualException.getMessage();
-        assertThat(actualMessage, is(equalTo(DoiRequestService.RESOURCE_IS_NOT_PUBLISHED_ERROR)));
+        assertDoesNotThrow(action);
     }
 
     private UserInstance createUserInstance(Publication publication) {

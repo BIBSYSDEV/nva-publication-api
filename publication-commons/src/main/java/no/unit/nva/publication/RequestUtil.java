@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.InputException;
-import no.unit.nva.publication.service.impl.UserInstance;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.apache.logging.log4j.util.Strings;

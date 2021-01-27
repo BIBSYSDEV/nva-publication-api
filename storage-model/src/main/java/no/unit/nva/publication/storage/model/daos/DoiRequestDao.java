@@ -1,18 +1,24 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
+@JsonTypeName("DoiRequest")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class DoiRequestDao extends Dao<DoiRequest>
     implements
     JoinWithResource,
     JsonSerializable {
 
+    public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
     private DoiRequest data;
 
     @JacocoGenerated
@@ -50,8 +56,13 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
 
     @JsonIgnore
-    public static String getContainedType() {
-        return DoiRequest.TYPE;
+    public static String getOrderedContainedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
+    }
+
+    @JsonIgnore
+    public String getOrderedType() {
+        return getOrderedContainedType();
     }
 
     @Override

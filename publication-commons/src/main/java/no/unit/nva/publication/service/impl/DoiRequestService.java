@@ -17,9 +17,9 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
@@ -55,7 +55,6 @@ public class DoiRequestService {
         throws BadRequestException, ConflictException {
 
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
-        checkResourceIsPublished(publication);
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
 
@@ -64,12 +63,6 @@ public class DoiRequestService {
         return doiRequest.getIdentifier();
     }
 
-
-    private void checkResourceIsPublished(Publication publication) throws BadRequestException {
-        if (!PublicationStatus.PUBLISHED.equals(publication.getStatus())) {
-            throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHED_ERROR);
-        }
-    }
 
     private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
         return new ConflictException(fail.getException());

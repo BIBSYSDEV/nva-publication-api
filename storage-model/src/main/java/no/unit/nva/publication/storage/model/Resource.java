@@ -68,9 +68,9 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
-                                         String resourceIdentifier) {
-        return emptyResource(userIdentifier, organizationId, new SortableIdentifier(resourceIdentifier));
+    public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+        return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+            resourceIdentifier);
     }
 
     public static Resource emptyResource(String userIdentifier, URI organizationId,
