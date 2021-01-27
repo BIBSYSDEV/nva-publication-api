@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
@@ -24,6 +25,8 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
     private final SortableIdentifier resourceIdentifier;
     @JsonProperty
     private final DoiRequestStatus status;
+    @JsonProperty
+    private final PublicationStatus resourceStatus;
     @JsonProperty
     private final Instant modifiedDate;
     @JsonProperty
@@ -44,13 +47,15 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                       @JsonProperty("resourceTitle") String resourceTitle,
                       @JsonProperty("owner") String owner,
                       @JsonProperty("customerId") URI customerId,
-                      @JsonProperty("status") String status,
+                      @JsonProperty("status") DoiRequestStatus status,
+                      @JsonProperty("resourceStatus") PublicationStatus resourceStatus,
                       @JsonProperty("modifiedDate") Instant modifiedDate,
                       @JsonProperty("createdDate") Instant createdDate) {
         this.identifier = identifier;
         this.resourceTitle = resourceTitle;
         this.resourceIdentifier = validateResourceIdentifier(resourceIdentifier);
-        this.status = parseStatus(status);
+        this.status = status;
+        this.resourceStatus = resourceStatus;
         this.modifiedDate = modifiedDate;
         this.createdDate = createdDate;
         this.customerId = customerId;
@@ -64,7 +69,8 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
             resource.getEntityDescription().getMainTitle(),
             resource.getOwner(),
             resource.getCustomerId(),
-            DoiRequestStatus.REQUESTED.toString(),
+            DoiRequestStatus.REQUESTED,
+            resource.getStatus(),
             now,
             now
         );
@@ -97,6 +103,10 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                && Objects.equals(getIdentifier(), that.getIdentifier());
     }
 
+    public String getResourceStatus() {
+        return resourceStatus.getValue();
+    }
+
     public String getResourceTitle() {
         return resourceTitle;
     }
@@ -115,9 +125,8 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         return resourceIdentifier;
     }
 
-    @Override
-    public String getStatus() {
-        return status.toString();
+    public DoiRequestStatus getStatus() {
+        return status;
     }
 
     public Instant getModifiedDate() {
@@ -138,8 +147,9 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         return owner;
     }
 
-    private DoiRequestStatus parseStatus(String status) {
-        return nonNull(status) ? DoiRequestStatus.parse(status) : null;
+    @Override
+    public String getStatusString() {
+        return getStatus().toString();
     }
 
     private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {

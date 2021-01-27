@@ -363,7 +363,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceSetsPublicationStatusToPublished()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceInResponse = resourceService.publishPublication(resource);
         Publication actualResource = resourceService.getPublication(resource);
@@ -380,7 +380,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceReturnsUpdatedResource()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication resourceUpdate = resourceService.publishPublication(resource);
 
@@ -397,13 +397,14 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void publishPublicationThrowsConditionalCheckExceptionOnPublishedPublication()
         throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
+
         resourceService.publishPublication(resource);
         assertThrows(ConditionalCheckFailedException.class, () -> resourceService.publishPublication(resource));
     }
 
     @Test
     public void publishPublicationSetsPublishedDate()
-        throws NotFoundException, JsonProcessingException, InvalidPublicationException, ConflictException {
+        throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         Publication updatedResource = resourceService.publishPublication(resource);
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
@@ -444,8 +445,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
         sampleResource.setFileSet(emptyFileSet());
@@ -456,8 +456,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink()
-        throws ConflictException, InvalidPublicationException, NotFoundException,
-               JsonProcessingException {
+        throws ConflictException, InvalidPublicationException, NotFoundException {
         Publication sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
@@ -502,7 +501,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deletePublicationReturnsUpdatedResourceCanMarkDraftForDeletion()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
 
         Publication resourceUpdate =
@@ -512,7 +511,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
         Executable action =

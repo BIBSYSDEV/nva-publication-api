@@ -114,7 +114,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
             CUSTOMER_INDEX_FIELD_PREFIX,
             dao.getCustomerIdentifier(),
             STATUS_INDEX_FIELD_PREFIX,
-            dao.getData().getStatus());
+            dao.getData().getStatusString());
 
         assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
     }

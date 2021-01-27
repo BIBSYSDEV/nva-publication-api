@@ -64,6 +64,7 @@ public class DoiRequestService {
         return doiRequest.getIdentifier();
     }
 
+
     private void checkResourceIsPublished(Publication publication) throws BadRequestException {
         if (!PublicationStatus.PUBLISHED.equals(publication.getStatus())) {
             throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHED_ERROR);
@@ -105,7 +106,8 @@ public class DoiRequestService {
             publication.getEntityDescription().getMainTitle(),
             publication.getOwner(),
             publication.getPublisher().getId(),
-            DoiRequestStatus.REQUESTED.toString(),
+            DoiRequestStatus.REQUESTED,
+            publication.getStatus(),
             now,
             now);
     }

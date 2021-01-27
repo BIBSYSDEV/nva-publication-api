@@ -119,7 +119,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     private Optional<String> extractStatus() {
         return attempt(this::getData)
             .map(data -> (WithStatus) data)
-            .map(WithStatus::getStatus)
+            .map(WithStatus::getStatusString)
             .toOptional();
     }
 

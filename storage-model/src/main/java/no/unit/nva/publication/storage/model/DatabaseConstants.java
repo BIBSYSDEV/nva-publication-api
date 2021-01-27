@@ -19,7 +19,7 @@ public final class DatabaseConstants {
     public static final String BY_RESOURCE_INDEX_SORT_KEY_NAME = "SK2";
 
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
-    public static final String STATUS_INDEX_FIELD_PREFIX = "Status";
+    public static final String STATUS_INDEX_FIELD_PREFIX = "no.unit.nva.publication.storage.model.Status";
 
     private static final String OWNER_IDENTIFIER = STRING_PLACEHOLDER;
     private static final String RECORD_TYPE = STRING_PLACEHOLDER;

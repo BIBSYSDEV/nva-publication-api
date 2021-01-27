@@ -226,10 +226,7 @@ public class ResourceService {
     }
 
     private Resource publishResource(Resource resource) throws NotFoundException, InvalidPublicationException {
-        Resource existingResource = getResource(resource);
-        if (PublicationStatus.PUBLISHED.equals(existingResource.getStatus())) {
-            return existingResource;
-        }
+
         validateForPublishing(resource);
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = publishUpdateRequest(dao);

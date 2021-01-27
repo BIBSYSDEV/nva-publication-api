@@ -34,6 +34,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
             publisherId,
             null,
             null,
+            null,
             null);
         return new DoiRequestDao(doi);
     }

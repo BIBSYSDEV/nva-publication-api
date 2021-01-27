@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -63,6 +64,7 @@ public class DoiRequestTest {
             sampleDoiRequest.getOwner(),
             sampleDoiRequest.getCustomerId(),
             sampleDoiRequest.getStatus(),
+            PublicationStatus.DRAFT,
             sampleDoiRequest.getCreatedDate(),
             sampleDoiRequest.getModifiedDate());
     }
