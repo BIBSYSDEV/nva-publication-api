@@ -46,6 +46,7 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -75,6 +76,7 @@ public class ResourceService {
         "The document path provided in the update expression is invalid for update";
     public static final String NOT_FOUND_ERROR_MESSAGE = "The resource could not be found";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+    public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -112,7 +114,10 @@ public class ResourceService {
     }
 
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
+        throws ApiGatewayException {
+        if (isNull(resourceIdentifier)) {
+            throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
+        }
         return getResource(createQueryObject(userInstance, resourceIdentifier.toString()))
             .toPublication();
     }

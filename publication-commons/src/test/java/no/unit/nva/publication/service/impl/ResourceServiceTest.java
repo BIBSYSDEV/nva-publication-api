@@ -159,7 +159,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierReturnsResourceWhenResourceExists() throws NotFoundException, ConflictException {
+    public void getResourceByIdentifierReturnsResourceWhenResourceExists()
+        throws ApiGatewayException {
         Publication sampleResource = createSampleResource();
         Publication savedResource = resourceService.getPublication(SAMPLE_USER, sampleResource.getIdentifier());
         assertThat(savedResource, is(equalTo(sampleResource)));
@@ -167,7 +168,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
-        throws ConflictException, NotFoundException {
+        throws ApiGatewayException {
         Publication sampleResource = createSampleResource();
 
         UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
@@ -186,7 +187,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
-        throws ConflictException, NotFoundException {
+        throws ApiGatewayException {
         Publication originalResource = createSampleResource();
         UserInstance oldOwner = new UserInstance(originalResource.getOwner(), originalResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();
@@ -201,7 +202,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
-        throws ConflictException, NotFoundException {
+        throws ApiGatewayException {
         Publication sampleResource = createSampleResource();
         UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
         UserInstance newOwner = someOtherUser();

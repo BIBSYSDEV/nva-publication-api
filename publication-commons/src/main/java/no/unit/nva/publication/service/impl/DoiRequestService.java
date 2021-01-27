@@ -13,35 +13,49 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.attempt.Failure;
 
 public class DoiRequestService {
 
+    public static final String RESOURCE_IS_NOT_PUBLISHED_ERROR = "Resource is not published";
+    private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
     private final String tableName;
+    private final Supplier<SortableIdentifier> identifierProvider;
 
     public DoiRequestService(AmazonDynamoDB client, Clock clock) {
+        this(client,
+            clock,
+            DEFAULT_IDENTIFIER_PROVIDER);
+    }
+
+    protected DoiRequestService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierProvider) {
         this.client = client;
         this.clock = clock;
         this.resourceService = new ResourceService(client, clock);
         this.tableName = RESOURCES_TABLE_NAME;
+        this.identifierProvider = identifierProvider;
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException {
+        throws BadRequestException, ConflictException {
 
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
+        checkResourceIsPublished(publication);
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
 
@@ -50,8 +64,14 @@ public class DoiRequestService {
         return doiRequest.getIdentifier();
     }
 
-    private BadRequestException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
-        return new BadRequestException(fail.getException());
+    private void checkResourceIsPublished(Publication publication) throws BadRequestException {
+        if (!PublicationStatus.PUBLISHED.equals(publication.getStatus())) {
+            throw new BadRequestException(RESOURCE_IS_NOT_PUBLISHED_ERROR);
+        }
+    }
+
+    private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
+        return new ConflictException(fail.getException());
     }
 
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
@@ -80,7 +100,7 @@ public class DoiRequestService {
     private DoiRequest createNewDoiRequestEntry(Publication publication) {
         Instant now = clock.instant();
         return new DoiRequest(
-            SortableIdentifier.next(),
+            identifierProvider.get(),
             publication.getIdentifier(),
             publication.getEntityDescription().getMainTitle(),
             publication.getOwner(),

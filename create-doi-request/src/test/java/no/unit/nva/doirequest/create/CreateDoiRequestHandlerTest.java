@@ -96,7 +96,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void handleRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
+    public void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
             .withBody(request)
@@ -110,7 +110,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void handlerReturnsBadRequestErrorWenDoiRequestAlreadyExists()
+    public void createDoiRequestBadRequestErrorWenDoiRequestAlreadyExists()
         throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
         Publication publication = createPublication();
         resourceService.publishPublication(publication);
