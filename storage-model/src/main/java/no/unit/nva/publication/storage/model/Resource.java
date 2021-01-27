@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
@@ -28,12 +29,12 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier {
+public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
     private SortableIdentifier identifier;
-    private PublicationStatus status;
+    private String status;
     private String owner;
     private Organization publisher;
     private Instant createdDate;
@@ -77,7 +78,7 @@ public class Resource implements WithIdentifier {
             .withModifiedDate(publication.getModifiedDate())
             .withIndexedDate(publication.getIndexedDate())
             .withPublishedDate(publication.getPublishedDate())
-            .withStatus(publication.getStatus())
+            .withStatus(publication.getStatus().getValue())
             .withPublishedDate(publication.getPublishedDate())
             .withFileSet(publication.getFileSet())
             .withPublisher(publication.getPublisher())
@@ -89,11 +90,16 @@ public class Resource implements WithIdentifier {
             .build();
     }
 
+    @JsonIgnore
+    public static String getType() {
+        return TYPE;
+    }
+
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
             .withOwner(getOwner())
-            .withStatus(getStatus())
+            .withStatus(PublicationStatus.lookup(getStatus()))
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
             .withIndexedDate(getIndexedDate())
@@ -107,6 +113,12 @@ public class Resource implements WithIdentifier {
             .withDoi(getDoi())
             .withHandle(getHandle())
             .build();
+    }
+
+    @Override
+    @JsonIgnore
+    public URI getCustomerId() {
+        return this.getPublisher().getId();
     }
 }
 

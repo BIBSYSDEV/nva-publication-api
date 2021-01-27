@@ -59,7 +59,6 @@ public class ResourceTest {
 
     public static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     public static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
-    public static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     public static final Instant RESOURCE_PUBLISHED_DATE = Instant.parse("2012-04-03T06:12:35.00Z");
     public static final Instant RESOURCE_INDEXED_TIME = Instant.parse("2013-05-03T12:22:22.00Z");
     public static final URI SAMPLE_LANGUAGE = URI.create("https://some.com/language");
@@ -115,7 +114,7 @@ public class ResourceTest {
         assertThat(transformed, is(equalTo(expected)));
     }
 
-    private Publication samplePublication(Reference reference) {
+    public Publication samplePublication(Reference reference) {
         return new Publication.Builder()
             .withIdentifier(SortableIdentifier.next())
             .withCreatedDate(RESOURCE_CREATION_TIME)
@@ -173,7 +172,7 @@ public class ResourceTest {
             .build();
     }
 
-    private Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
+    public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
         return new Reference.Builder()
             .withDoi(randomUri())
             .withPublishingContext(sampleJournalInstance())

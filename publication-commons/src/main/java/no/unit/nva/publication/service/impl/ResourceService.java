@@ -67,7 +67,7 @@ public class ResourceService {
     public static final String DOUBLE_QUOTES = "\"";
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
-    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
+    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = ResourceDao.CONTAINED_DATA_FIELD_NAME;
     public static final String RESOURCE_LINK_FIELD = "link";
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
@@ -142,7 +142,8 @@ public class ResourceService {
 
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
         String partitionKey =
-            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
+            ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+                userInstance.getUserIdentifier());
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
             String.class);
@@ -172,7 +173,7 @@ public class ResourceService {
         return result.getItems()
             .stream()
             .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
+            .map(ResourceDao::getData)
             .collect(Collectors.toList());
     }
 
@@ -198,7 +199,7 @@ public class ResourceService {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
         return attempt(() -> sendUpdateRequest(updateRequest))
-            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
+            .orElseThrow(failure -> markForDeletionError(failure, resource));
     }
 
     private Resource fetchEventuallyConsistentResource(Resource newResource) {
@@ -219,7 +220,7 @@ public class ResourceService {
         Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
         GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
         ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return fetchedDao.getResource();
+        return fetchedDao.getData();
     }
 
     private Resource publishResource(Resource resource) throws NotFoundException, InvalidPublicationException {
@@ -233,7 +234,7 @@ public class ResourceService {
         return sendUpdateRequest(updateRequest);
     }
 
-    private <E extends Exception> ApiGatewayException handleConditionFailureException(
+    private <E extends Exception> ApiGatewayException markForDeletionError(
         Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
             return new NotFoundException(NOT_FOUND_ERROR_MESSAGE);
@@ -254,10 +255,10 @@ public class ResourceService {
 
     private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) {
         String updateExpression = "SET "
-                                  + "#resource.#status = :newStatus, "
-                                  + "#resource.#modifiedDate = :modifiedDate";
+                                  + "#data.#status = :newStatus, "
+                                  + "#data.#modifiedDate = :modifiedDate";
 
-        String conditionExpression = "#resource.#status = :expectedExistingStatus";
+        String conditionExpression = "#data.#status = :expectedExistingStatus";
 
         Map<String, AttributeValue> expressionValuesMap = Map.of(
             ":newStatus", new AttributeValue(PublicationStatus.DRAFT_FOR_DELETION.getValue()),
@@ -268,7 +269,7 @@ public class ResourceService {
         Map<String, String> expressionAttributeNames = Map.of(
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
-            "#resource", RESOURCE_FIELD_IN_RESOURCE_DAO);
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
 
         return new UpdateItemRequest()
             .withTableName(tableName)
@@ -322,21 +323,21 @@ public class ResourceService {
         return Try.of(requestResult)
             .map(UpdateItemResult::getAttributes)
             .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
+            .map(ResourceDao::getData)
             .orElseThrow();
     }
 
     private UpdateItemRequest publishUpdateRequest(ResourceDao dao) {
 
         final String updateExpression = "SET"
-                                        + " #resource.#status = :newStatus, "
-                                        + "#resource.#modifiedDate = :modifiedDate, "
-                                        + "#resource.#publishedDate = :modifiedDate ";
+                                        + " #data.#status = :newStatus, "
+                                        + "#data.#modifiedDate = :modifiedDate, "
+                                        + "#data.#publishedDate = :modifiedDate ";
 
-        final String conditionExpression = "#resource.#status <> :publishedStatus";
+        final String conditionExpression = "#data.#status <> :publishedStatus";
 
         Map<String, String> expressionNamesMap = Map.of(
-            "#resource", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
             "#status", STATUS_FIELD_IN_RESOURCE,
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE

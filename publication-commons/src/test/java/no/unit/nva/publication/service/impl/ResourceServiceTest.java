@@ -394,18 +394,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationHasNoEffectOnAlreadyPublishedResource()
+    public void publishPublicationThrowsConditionalCheckExceptionOnPublishedPublication()
         throws NotFoundException, InvalidPublicationException, ConflictException {
         Publication resource = createSampleResource();
         resourceService.publishPublication(resource);
-        Publication updatedResource = resourceService.publishPublication(resource);
-        Publication expectedResource = resource.copy()
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-            .build();
-
-        assertThat(updatedResource, is(equalTo(expectedResource)));
+        assertThrows(ConditionalCheckFailedException.class, () -> resourceService.publishPublication(resource));
     }
 
     @Test
