@@ -89,6 +89,7 @@ public class ResourceService {
     public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+    public static final String RAWTYPES = "rawtypes";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -316,35 +317,35 @@ public class ResourceService {
         return new TransactWriteItem().withUpdate(update);
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return ((ResourceDao) daos.get(1));
+            return (ResourceDao) daos.get(1);
         } else if (onlyResourceExisits(daos)) {
-            return ((ResourceDao) daos.get(0));
+            return (ResourceDao) daos.get(0);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private boolean onlyResourceExisits(List<Dao> daos) {
         return daos.size() == 1;
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private boolean doiRequestExists(List<Dao> daos) {
         return daos.size() == 2;
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of(((DoiRequestDao) daos.get(0)));
+            return Optional.of((DoiRequestDao) daos.get(0));
         }
         return Optional.empty();
     }
 
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings(RAWTYPES)
     private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                        SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
@@ -353,7 +354,7 @@ public class ResourceService {
         return parseResultSetToDaos(queryResult);
     }
 
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings(RAWTYPES)
     private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
         return queryResult.getItems()
             .stream()

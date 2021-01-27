@@ -60,6 +60,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
     }
 
+    @Override
     @JsonIgnore
     public String getOrderedType() {
         return getOrderedContainedType();
