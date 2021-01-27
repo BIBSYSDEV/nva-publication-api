@@ -33,6 +33,7 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
     private final URI customerId;
     @JsonProperty("owner")
     private final String owner;
+    @JsonProperty("resourceTitle")
     private final String resourceTitle;
     @JsonProperty
     private SortableIdentifier identifier;
