@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -40,6 +41,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
+    public static final String SOME_CURATOR = "some@curator";
 
     private Clock mockClock;
     private ResourceService resourceService;
@@ -131,6 +133,33 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance userInstance = createUserInstance(publication);
         Executable action = () -> doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
         assertDoesNotThrow(action);
+    }
+
+    @Test
+    public void listDoiRequestsForPublishedResourcesReturnsAllDoiRequestsWithStatusRequestedForPublishedResources()
+        throws ApiGatewayException {
+        Publication publishedPublication = createPublication();
+        resourceService.publishPublication(
+            createUserInstance(publishedPublication),
+            publishedPublication.getIdentifier());
+        Publication draftPublication = createPublication();
+
+        SortableIdentifier expectedDoiRequestIdentifier = doiRequestService.createDoiRequest(
+            createUserInstance(publishedPublication),
+            publishedPublication.getIdentifier());
+        DoiRequest expectedDoiRequest = doiRequestService
+            .getDoiRequest(createUserInstance(publishedPublication), expectedDoiRequestIdentifier);
+
+        doiRequestService.createDoiRequest(
+            createUserInstance(draftPublication),
+            draftPublication.getIdentifier());
+
+        UserInstance userInstance = new UserInstance(SOME_CURATOR,
+            publishedPublication.getPublisher().getId());
+        List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
+
+        assertThat(doiRequests, is(not(nullValue())));
+        assertThat(doiRequests, is(equalTo(List.of(expectedDoiRequest))));
     }
 
     private UserInstance createUserInstance(Publication publication) {

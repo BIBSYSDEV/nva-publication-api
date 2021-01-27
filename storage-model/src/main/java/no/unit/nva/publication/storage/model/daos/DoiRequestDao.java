@@ -19,6 +19,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
     JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
+    public static final String RESOURCE_STATUS_FIELD_NAME = "resourceStatus";
     private DoiRequest data;
 
     @JacocoGenerated
@@ -45,6 +46,15 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return new DoiRequestDao(doi);
     }
 
+    @JsonIgnore
+    public static String getOrderedContainedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
+    }
+
+    public static String getContainedType() {
+        return DoiRequest.TYPE;
+    }
+
     @Override
     public DoiRequest getData() {
         return data;
@@ -55,9 +65,24 @@ public class DoiRequestDao extends Dao<DoiRequest>
         this.data = data;
     }
 
-    @JsonIgnore
-    public static String getOrderedContainedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
+    @Override
+    public String getType() {
+        return getContainedType();
+    }
+
+    @Override
+    public URI getCustomerId() {
+        return data.getCustomerId();
+    }
+
+    @Override
+    public SortableIdentifier getIdentifier() {
+        return data.getIdentifier();
+    }
+
+    @Override
+    protected String getOwner() {
+        return data.getOwner();
     }
 
     @Override
@@ -67,23 +92,9 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
 
     @Override
-    public String getType() {
-        return DoiRequest.TYPE;
-    }
-
-    @Override
-    public URI getCustomerId() {
-        return data.getCustomerId();
-    }
-
-    @Override
-    protected String getOwner() {
-        return data.getOwner();
-    }
-
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return data.getResourceIdentifier();
     }
 
     @Override
@@ -106,11 +117,5 @@ public class DoiRequestDao extends Dao<DoiRequest>
     @Override
     public String toString() {
         return toJsonString();
-    }
-
-    @Override
-    @JsonIgnore
-    public SortableIdentifier getResourceIdentifier() {
-        return data.getResourceIdentifier();
     }
 }

@@ -45,6 +45,11 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + Resource.getType();
     }
 
+    @JsonIgnore
+    public static String getContainedType() {
+        return Resource.getType();
+    }
+
     @Override
     public Resource getData() {
         return data;
