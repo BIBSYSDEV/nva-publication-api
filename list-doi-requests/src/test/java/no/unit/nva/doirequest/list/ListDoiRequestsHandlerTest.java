@@ -46,9 +46,6 @@ import org.junit.jupiter.api.Test;
 
 public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
-    public static final String HTTP_PATH_SEPARATOR = "/";
-    public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
-    public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
     public static final String SOME_CURATOR = "SomeCurator";
     public static final String SOME_OTHER_OWNER_NO = "someOther@owner.no";
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
@@ -92,10 +89,11 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         handler.handleRequest(request, outputStream, context);
 
-        GatewayResponse<DoiRequest[]> response = GatewayResponse.fromOutputStream(outputStream);
-        List<DoiRequest> actualResponse = Arrays.asList(response.getBodyObject(DoiRequest[].class));
+        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+        List<Publication> actualResponse = Arrays.asList(response.getBodyObject(Publication[].class));
 
-        assertThat(actualResponse, is(equalTo(expectedDoiRequests)));
+        List<Publication> expectedResponse = toPublications(expectedDoiRequests);
+        assertThat(actualResponse, is(equalTo(expectedResponse)));
     }
 
     @Test
@@ -116,28 +114,35 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         handler.handleRequest(request, outputStream, context);
 
-        GatewayResponse<DoiRequest[]> response = GatewayResponse.fromOutputStream(outputStream);
-        List<DoiRequest> actualResponse = Arrays.asList(response.getBodyObject(DoiRequest[].class));
+        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+        List<Publication> actualResponse = Arrays.asList(response.getBodyObject(Publication[].class));
 
-        DoiRequest expectedDoiRequest = filterDoiRequests(createdDoiRequests,
+        Publication expectedResponse = filterDoiRequests(createdDoiRequests,
             doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer, doiRequest));
 
-        DoiRequest unexpectedDoiRequest = filterDoiRequests(createdDoiRequests,
-            (doiRequest -> !doiRequestBelongsToCustomer(curatorsCustomer, doiRequest)));
+        Publication unexpectedDoiResponse = filterDoiRequests(createdDoiRequests,
+            doiRequest -> !doiRequestBelongsToCustomer(curatorsCustomer, doiRequest));
 
-        assertThat(actualResponse, hasItem(expectedDoiRequest));
-        assertThat(actualResponse, not(hasItem(unexpectedDoiRequest)));
+        assertThat(actualResponse, hasItem(expectedResponse));
+        assertThat(actualResponse, not(hasItem(unexpectedDoiResponse)));
     }
 
     public boolean doiRequestBelongsToCustomer(URI curatorsCustomer, DoiRequest doiRequest) {
         return doiRequest.getCustomerId().equals(curatorsCustomer);
     }
 
-    private DoiRequest filterDoiRequests(List<DoiRequest> createdDoiRequests,
-                                         Function<DoiRequest, Boolean> filter) {
+    private List<Publication> toPublications(List<DoiRequest> expectedDoiRequests) {
+        return expectedDoiRequests.stream()
+            .map(DoiRequest::toPublication)
+            .collect(Collectors.toList());
+    }
+
+    private Publication filterDoiRequests(List<DoiRequest> createdDoiRequests,
+                                          Function<DoiRequest, Boolean> filter) {
         return createdDoiRequests
             .stream()
             .filter(filter::apply)
+            .map(DoiRequest::toPublication)
             .collect(SingletonCollector.collect());
     }
 

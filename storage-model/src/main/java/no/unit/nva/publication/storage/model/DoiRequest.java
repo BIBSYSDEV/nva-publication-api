@@ -12,7 +12,11 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequest.Builder;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
@@ -50,8 +54,8 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                       @JsonProperty("customerId") URI customerId,
                       @JsonProperty("status") DoiRequestStatus status,
                       @JsonProperty("resourceStatus") PublicationStatus resourceStatus,
-                      @JsonProperty("modifiedDate") Instant modifiedDate,
-                      @JsonProperty("createdDate") Instant createdDate) {
+                      @JsonProperty("createdDate") Instant createdDate,
+                      @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.identifier = identifier;
         this.resourceTitle = resourceTitle;
         this.resourceIdentifier = validateResourceIdentifier(resourceIdentifier);
@@ -162,5 +166,32 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
             return resourceIdentifier;
         }
         throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
+    }
+
+    public Publication toPublication() {
+
+        no.unit.nva.model.DoiRequest doiRequest = new Builder()
+            .withStatus(getStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .build();
+
+        EntityDescription entityDescription = new EntityDescription.Builder()
+            .withMainTitle(getResourceTitle())
+            .build();
+
+        Organization customer = new Organization.Builder()
+            .withId(getCustomerId())
+            .build();
+
+        return new
+            Publication.Builder()
+            .withIdentifier(getResourceIdentifier())
+            .withStatus(getResourceStatus())
+            .withEntityDescription(entityDescription)
+            .withPublisher(customer)
+            .withOwner(getOwner())
+            .withDoiRequest(doiRequest)
+            .build();
     }
 }
