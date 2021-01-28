@@ -58,13 +58,13 @@ Parameters:
   MaxConcurrency:
     Type: Number
     Default: 100
-    Description: Max number of provisioned hot instnaces for a lambda function
+    Description: Max number of provisioned hot instances for a lambda function
   MinConcurrency:
     Type: Number
     Default: 1
     MaxValue: 1
     MinValue: 1
-    Description: Min number of provisioned hot instnaces for a lambda function
+    Description: Min number of provisioned hot instances for a lambda function
   EventBridgeMaxAttempt:
     Type: Number
     Default: 1

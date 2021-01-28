@@ -9,8 +9,6 @@ import no.unit.nva.publication.storage.model.Resource;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource> {
 
-    public static final String PATH_SEPARATOR = "/";
-
     private Resource data;
 
     public ResourceDao() {
