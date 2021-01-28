@@ -79,14 +79,14 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
             return false;
         }
         DoiRequest that = (DoiRequest) o;
-        boolean i = Objects.equals(getIdentifier(), that.getIdentifier())
-                    && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-                    && getStatus().equals(that.getStatus())
-                    && Objects.equals(getModifiedDate(), that.getModifiedDate());
-        return i
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner());
+        return
+            Objects.equals(getIdentifier(), that.getIdentifier())
+            && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+            && getStatus().equals(that.getStatus())
+            && Objects.equals(getModifiedDate(), that.getModifiedDate())
+            && Objects.equals(getCreatedDate(), that.getCreatedDate())
+            && Objects.equals(getCustomerId(), that.getCustomerId())
+            && Objects.equals(getOwner(), that.getOwner());
     }
 
     @Override
