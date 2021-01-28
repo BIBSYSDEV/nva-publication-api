@@ -165,9 +165,9 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifer)
+    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        publishResource(userInstance, resourceIdentifer);
+        publishResource(userInstance, resourceIdentifier);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance,
@@ -236,7 +236,7 @@ public class ResourceService {
         return fetchedDao.getData();
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private void publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
