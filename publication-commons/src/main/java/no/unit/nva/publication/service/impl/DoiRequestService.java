@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -14,6 +15,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.kms.model.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -34,11 +36,13 @@ import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 
 public class DoiRequestService {
 
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
+    public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
@@ -119,6 +123,22 @@ public class DoiRequestService {
             .map(map -> parseAttributeValuesMap(map, DoiRequestDao.class))
             .map(DoiRequestDao::getData)
             .collect(Collectors.toList());
+    }
+
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier) {
+        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(queryObject.byResourceIdentifierKey(DoiRequestDao.joinByResourceContainedOrderedType()));
+        QueryResult queryResult = client.query(queryRequest);
+        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()))
+            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
     }
 
     private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {

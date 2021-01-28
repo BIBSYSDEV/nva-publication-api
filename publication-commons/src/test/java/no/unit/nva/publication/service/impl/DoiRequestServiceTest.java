@@ -2,7 +2,9 @@ package no.unit.nva.publication.service.impl;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.emptyCollectionOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -12,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
-import java.io.IOException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -42,6 +43,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
     public static final String SOME_CURATOR = "some@curator";
+    private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.com");
 
     private Clock mockClock;
     private ResourceService resourceService;
@@ -65,8 +67,8 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
-        SortableIdentifier doiRequestIdentifier = createDoiRequest(publication, publication.getOwner());
-        DoiRequest doiRequest = readDoiRequest(publication, doiRequestIdentifier);
+        createDoiRequest(publication);
+        DoiRequest doiRequest = getDoiRequest(publication);
         assertThat(doiRequest.getCreatedDate(), is(equalTo(DOI_REQUEST_CREATION_TIME)));
         assertThat(doiRequest, is(not(nullValue())));
     }
@@ -74,7 +76,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     public Publication createPublishedPublication()
         throws ApiGatewayException {
         Publication publication = createPublication();
-        resourceService.publishPublication(createUserInstance(publication), publication.getIdentifier());
+        publishPublication(publication);
         return publication;
     }
 
@@ -89,7 +91,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsBadRequestExceptionWhenPublicationIdIsEmpty() throws IOException {
+    public void createDoiRequestThrowsBadRequestExceptionWhenPublicationIdIsEmpty() {
         UserInstance userInstance = new UserInstance(SOME_USER, SOME_PUBLISHER);
         Executable action = () -> doiRequestService.createDoiRequest(userInstance, null);
         BadRequestException exception = assertThrows(BadRequestException.class, action);
@@ -101,9 +103,9 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
-        createDoiRequest(publication, publication.getOwner());
+        createDoiRequest(publication);
 
-        Executable action = () -> createDoiRequest(publication, publication.getOwner());
+        Executable action = () -> createDoiRequest(publication);
         ConflictException exception = assertThrows(ConflictException.class, action);
 
         assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
@@ -139,43 +141,71 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     public void listDoiRequestsForPublishedResourcesReturnsAllDoiRequestsWithStatusRequestedForPublishedResources()
         throws ApiGatewayException {
         Publication publishedPublication = createPublication();
+        publishPublication(publishedPublication);
+        Publication draftPublication = createPublication();
+
+        createDoiRequest(publishedPublication);
+        createDoiRequest(draftPublication);
+
+        UserInstance curator = new UserInstance(SOME_CURATOR, publishedPublication.getPublisher().getId());
+        List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(curator);
+
+        DoiRequest expectedDoiRequest = getDoiRequest(publishedPublication);
+        DoiRequest unexpectedDoiRequest = getDoiRequest(draftPublication);
+
+        assertThat(doiRequests, hasItem(expectedDoiRequest));
+        assertThat(doiRequests, not(hasItem(unexpectedDoiRequest)));
+    }
+
+    @Test
+    public void listDoiRequestsForPublishedResourcesReturnsEmptyListForUserFromDifferentOrganization()
+        throws ApiGatewayException {
+        Publication publishedPublication = createPublication();
+        publishPublication(publishedPublication);
+
+        createDoiRequest(publishedPublication);
+
+        UserInstance irrelevantUser = new UserInstance(SOME_CURATOR, SOME_OTHER_PUBLISHER);
+        List<DoiRequest> resultForIrrelevantUser =
+            doiRequestService.listDoiRequestsForPublishedPublications(irrelevantUser);
+        assertThat(resultForIrrelevantUser, is(emptyCollectionOf(DoiRequest.class)));
+
+        UserInstance relevantUser = new UserInstance(SOME_CURATOR, publishedPublication.getPublisher().getId());
+        List<DoiRequest> resultForRelevantUser =
+            doiRequestService.listDoiRequestsForPublishedPublications(relevantUser);
+
+        DoiRequest expectedDoiRequest = getDoiRequest(publishedPublication);
+        assertThat(resultForRelevantUser, hasItem(expectedDoiRequest));
+    }
+
+    public DoiRequest getDoiRequest(Publication publishedPublication) {
+        return doiRequestService
+            .getDoiRequestByResourceIdentifier(
+                createUserInstance(publishedPublication),
+                publishedPublication.getIdentifier()
+            );
+    }
+
+    public void publishPublication(Publication publishedPublication) throws ApiGatewayException {
         resourceService.publishPublication(
             createUserInstance(publishedPublication),
             publishedPublication.getIdentifier());
-        Publication draftPublication = createPublication();
+    }
 
-        SortableIdentifier expectedDoiRequestIdentifier = doiRequestService.createDoiRequest(
-            createUserInstance(publishedPublication),
-            publishedPublication.getIdentifier());
-        DoiRequest expectedDoiRequest = doiRequestService
-            .getDoiRequest(createUserInstance(publishedPublication), expectedDoiRequestIdentifier);
-
+    private void createDoiRequest(Publication publishedPublication)
+        throws BadRequestException, ConflictException {
         doiRequestService.createDoiRequest(
-            createUserInstance(draftPublication),
-            draftPublication.getIdentifier());
+            createUserInstance(publishedPublication), publishedPublication.getIdentifier());
+    }
 
-        UserInstance userInstance = new UserInstance(SOME_CURATOR,
-            publishedPublication.getPublisher().getId());
-        List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
-
-        assertThat(doiRequests, is(not(nullValue())));
-        assertThat(doiRequests, is(equalTo(List.of(expectedDoiRequest))));
+    private void createDoiRequest(Publication publication, String owner)
+        throws BadRequestException, ConflictException {
+        UserInstance userInstance = new UserInstance(owner, publication.getPublisher().getId());
+        doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
     }
 
     private UserInstance createUserInstance(Publication publication) {
         return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
-    }
-
-    private DoiRequest readDoiRequest(Publication publication, SortableIdentifier doiRequestIdentifier) {
-        UserInstance userInstance = createUserInstance(publication);
-
-        return doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-    }
-
-    private SortableIdentifier createDoiRequest(Publication publication, String owner)
-        throws BadRequestException, ConflictException {
-        UserInstance userInstance = new UserInstance(owner, publication.getPublisher().getId());
-        return doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
     }
 
     private Publication createPublication() throws ConflictException {

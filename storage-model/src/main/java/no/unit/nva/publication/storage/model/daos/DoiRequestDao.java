@@ -8,6 +8,7 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
@@ -46,8 +47,23 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return new DoiRequestDao(doi);
     }
 
+    public static DoiRequestDao queryByResourceIdentifier(UserInstance userInstance,
+                                                          SortableIdentifier resourceIdentifier) {
+        DoiRequest doi = new DoiRequest(
+            null,
+            resourceIdentifier,
+            null,
+            userInstance.getUserIdentifier(),
+            userInstance.getOrganizationUri(),
+            null,
+            null,
+            null,
+            null);
+        return new DoiRequestDao(doi);
+    }
+
     @JsonIgnore
-    public static String getOrderedContainedType() {
+    public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
     }
 
@@ -87,8 +103,8 @@ public class DoiRequestDao extends Dao<DoiRequest>
 
     @Override
     @JsonIgnore
-    public String getOrderedType() {
-        return getOrderedContainedType();
+    public String joinByResourceOrderedType() {
+        return joinByResourceContainedOrderedType();
     }
 
     @Override
