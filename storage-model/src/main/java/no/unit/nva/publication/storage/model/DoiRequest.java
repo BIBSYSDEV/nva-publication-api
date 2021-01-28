@@ -1,6 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -23,14 +23,17 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
 
+    public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
+    public static final String STATUS_FIELD = "status";
     public static final String TYPE = DoiRequest.class.getSimpleName();
 
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
     @JsonProperty
     private final SortableIdentifier resourceIdentifier;
-    @JsonProperty
+
+    @JsonProperty(STATUS_FIELD)
     private final DoiRequestStatus status;
-    @JsonProperty
+    @JsonProperty(RESOURCE_STATUS_FIELD)
     private final PublicationStatus resourceStatus;
     @JsonProperty
     private final Instant modifiedDate;
@@ -52,13 +55,13 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                       @JsonProperty("resourceTitle") String resourceTitle,
                       @JsonProperty("owner") String owner,
                       @JsonProperty("customerId") URI customerId,
-                      @JsonProperty("status") DoiRequestStatus status,
-                      @JsonProperty("resourceStatus") PublicationStatus resourceStatus,
+                      @JsonProperty(STATUS_FIELD) DoiRequestStatus status,
+                      @JsonProperty(RESOURCE_STATUS_FIELD) PublicationStatus resourceStatus,
                       @JsonProperty("createdDate") Instant createdDate,
                       @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.identifier = identifier;
         this.resourceTitle = resourceTitle;
-        this.resourceIdentifier = validateResourceIdentifier(resourceIdentifier);
+        this.resourceIdentifier = resourceIdentifier;
         this.status = status;
         this.resourceStatus = resourceStatus;
         this.modifiedDate = modifiedDate;
@@ -83,6 +86,30 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
 
     public static String getType() {
         return DoiRequest.TYPE;
+    }
+
+    public static DoiRequest newEntry(SortableIdentifier identifier,
+                                      SortableIdentifier resourceIdentifer,
+                                      String mainTitle,
+                                      String owner,
+                                      URI id,
+                                      DoiRequestStatus requested,
+                                      PublicationStatus status,
+                                      Instant createdDate) {
+
+        DoiRequest doiRequest = new DoiRequest(
+            identifier,
+            resourceIdentifer,
+            mainTitle,
+            owner,
+            id,
+            requested,
+            status,
+            createdDate,
+            createdDate
+        );
+        doiRequest.validate();
+        return doiRequest;
     }
 
     public PublicationStatus getResourceStatus() {
@@ -189,10 +216,9 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
             .build();
     }
 
-    private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        if (nonNull(resourceIdentifier)) {
-            return resourceIdentifier;
+    public void validate() {
+        if (isNull(resourceIdentifier)) {
+            throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
         }
-        throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
     }
 }
