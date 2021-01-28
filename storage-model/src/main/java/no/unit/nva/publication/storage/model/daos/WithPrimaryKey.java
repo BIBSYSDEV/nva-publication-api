@@ -9,10 +9,34 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public interface WithPrimaryKey {
 
+    /**
+     * Returns the value for the Partition key of the DynamoDB table (primary key), not the key of any index.
+     *
+     * @return a String with value of the partition key of the DynamoDB table.
+     */
     String getPrimaryKeyPartitionKey();
+
+    /**
+     * Returns the value for the Sort key of the DynamoDB table (primary key), not the key of any index.
+     *
+     * @return a String with value of the sort key of the DynamoDB table.
+     */
 
     String getPrimaryKeySortKey();
 
+    /**
+     * Returns a Map of field-name:fieldValue for the primary key of the DynamoDB table. It's intended use is primarily
+     * to get a specific item
+     *
+     * <p>Example:
+     *
+     * <p>{@code
+     * GetItemRequest getItemRequest = new GetItemRequest() .withTableName(tableName) .withKey(dao.primaryKey());
+     * GetItemResult queryResult=client.getItem(getItemRequest); Map<String, AttributeValue> item =
+     * queryResult.getItem(); ResourceDao resourceDao = parseAttributeValuesMap(item,ResourceDao.class); }
+     *
+     * @return a Map with field-name:field-value pairs.
+     */
     @JsonIgnore
     default Map<String, AttributeValue> primaryKey() {
         final Map<String, AttributeValue> map = new ConcurrentHashMap<>();

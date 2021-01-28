@@ -85,33 +85,6 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         return DoiRequest.TYPE;
     }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(), getCustomerId(),
-            getOwner(), getResourceTitle(), getIdentifier());
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof DoiRequest)) {
-            return false;
-        }
-        DoiRequest that = (DoiRequest) o;
-        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && getStatus().equals(that.getStatus())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
-               && Objects.equals(getIdentifier(), that.getIdentifier());
-    }
-
     public PublicationStatus getResourceStatus() {
         return resourceStatus;
     }
@@ -161,11 +134,32 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         return getStatus().toString();
     }
 
-    private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        if (nonNull(resourceIdentifier)) {
-            return resourceIdentifier;
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(), getCustomerId(),
+            getOwner(), getResourceTitle(), getIdentifier());
+    }
+
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
+        if (!(o instanceof DoiRequest)) {
+            return false;
+        }
+        DoiRequest that = (DoiRequest) o;
+        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && getStatus() == that.getStatus()
+               && getResourceStatus() == that.getResourceStatus()
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && Objects.equals(getIdentifier(), that.getIdentifier());
     }
 
     public Publication toPublication() {
@@ -193,5 +187,12 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
             .withOwner(getOwner())
             .withDoiRequest(doiRequest)
             .build();
+    }
+
+    private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        if (nonNull(resourceIdentifier)) {
+            return resourceIdentifier;
+        }
+        throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
     }
 }
