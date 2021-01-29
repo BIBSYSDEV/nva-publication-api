@@ -48,8 +48,8 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     * <p>
-     * byResource("DoiRequest", "Resource") }
+     *            byResource("DoiRequest", "Resource")
+     *    }
      *
      * <p>returns all entries that  are between the types "DoiRequest" and
      * "Resource" including "DoiRequest" and "Resource" and they are connected to the Resource with identifier {@link
@@ -84,7 +84,8 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     * byResource("Message") }
+     *            byResource("Message")
+     *    }
      *
      * <p>returns all entries that  are between the type "Message" and they are connected to the Resource
      * with identifier {@link JoinWithResource#getResourceIdentifier}
