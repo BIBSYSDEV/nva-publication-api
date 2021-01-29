@@ -84,7 +84,6 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     * <p>
      * byResource("Message") }
      *
      * <p>returns all entries that  are between the type "Message" and they are connected to the Resource
