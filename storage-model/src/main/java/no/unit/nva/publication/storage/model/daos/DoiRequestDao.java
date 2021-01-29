@@ -34,7 +34,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
 
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
-        DoiRequest doi = new DoiRequest(
+        DoiRequest doi = DoiRequest.unvalidatedEntry(
             doiRequestIdentifier,
             doiRequestIdentifier,
             null,
@@ -54,7 +54,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
 
     public static DoiRequestDao queryByResourceIdentifier(UserInstance userInstance,
                                                           SortableIdentifier resourceIdentifier) {
-        DoiRequest doi = new DoiRequest(
+        DoiRequest doi = DoiRequest.unvalidatedEntry(
             null,
             resourceIdentifier,
             null,

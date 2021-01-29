@@ -67,7 +67,7 @@ public class DoiRequestTest {
 
     @Test
     public void toPublicationReturnsPublicationInstanceWithoutLossOfInformation() {
-        DoiRequest doiRequest = new DoiRequest(
+        DoiRequest doiRequest = DoiRequest.unvalidatedEntry(
             DOI_REQUEST_IDENTIFIER,
             RESOURCE_IDENTIFIER,
             RESOURCE_TITLE,
@@ -97,7 +97,7 @@ public class DoiRequestTest {
     }
 
     private DoiRequest doiRequestWithoutResourceReference() {
-        return new DoiRequest(
+        return DoiRequest.newEntry(
             sampleDoiRequest.getIdentifier(),
             null,
             sampleDoiRequest.getResourceTitle(),
@@ -105,8 +105,8 @@ public class DoiRequestTest {
             sampleDoiRequest.getCustomerId(),
             sampleDoiRequest.getStatus(),
             PublicationStatus.DRAFT,
-            sampleDoiRequest.getCreatedDate(),
-            sampleDoiRequest.getModifiedDate());
+            sampleDoiRequest.getCreatedDate()
+        );
     }
 
     private DoiRequest sampleDoiRequest() {

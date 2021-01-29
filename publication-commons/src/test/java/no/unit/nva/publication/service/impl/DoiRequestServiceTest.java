@@ -211,7 +211,8 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         }
 
         UserInstance userInstance = createUserInstance(publications.get(0));
-        List<DoiRequest> result = doiRequestService.listDoiRequestsForUser(userInstance);
+        int resultSizePerQuery = 1;
+        List<DoiRequest> result = doiRequestService.listDoiRequestsForUser(userInstance, resultSizePerQuery);
 
         assertThat(result, hasSize(endExclusive));
     }

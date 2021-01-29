@@ -21,7 +21,7 @@ import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
+public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
@@ -50,15 +50,15 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
     private SortableIdentifier identifier;
 
     @JsonCreator
-    public DoiRequest(@JsonProperty("identifier") SortableIdentifier identifier,
-                      @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
-                      @JsonProperty("resourceTitle") String resourceTitle,
-                      @JsonProperty("owner") String owner,
-                      @JsonProperty("customerId") URI customerId,
-                      @JsonProperty(STATUS_FIELD) DoiRequestStatus status,
-                      @JsonProperty(RESOURCE_STATUS_FIELD) PublicationStatus resourceStatus,
-                      @JsonProperty("createdDate") Instant createdDate,
-                      @JsonProperty("modifiedDate") Instant modifiedDate) {
+    private DoiRequest(@JsonProperty("identifier") SortableIdentifier identifier,
+                       @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+                       @JsonProperty("resourceTitle") String resourceTitle,
+                       @JsonProperty("owner") String owner,
+                       @JsonProperty("customerId") URI customerId,
+                       @JsonProperty(STATUS_FIELD) DoiRequestStatus status,
+                       @JsonProperty(RESOURCE_STATUS_FIELD) PublicationStatus resourceStatus,
+                       @JsonProperty("createdDate") Instant createdDate,
+                       @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.identifier = identifier;
         this.resourceTitle = resourceTitle;
         this.resourceIdentifier = resourceIdentifier;
@@ -70,26 +70,43 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         this.owner = owner;
     }
 
+    public static DoiRequest unvalidatedEntry(SortableIdentifier identifier,
+                                              SortableIdentifier resourceIdentifier,
+                                              String mainTitle,
+                                              String owner,
+                                              URI id,
+                                              DoiRequestStatus requested,
+                                              PublicationStatus status,
+                                              Instant createdDate,
+                                              Instant modifiedDate) {
+        return new DoiRequest(
+            identifier,
+            resourceIdentifier,
+            mainTitle,
+            owner,
+            id,
+            requested,
+            status,
+            createdDate,
+            modifiedDate
+        );
+    }
+
     public static DoiRequest fromResource(Resource resource, Clock clock) {
         Instant now = clock.instant();
-        return new DoiRequest(SortableIdentifier.next(),
+        return newEntry(SortableIdentifier.next(),
             resource.getIdentifier(),
             resource.getEntityDescription().getMainTitle(),
             resource.getOwner(),
             resource.getCustomerId(),
             DoiRequestStatus.REQUESTED,
             resource.getStatus(),
-            now,
             now
         );
     }
 
-    public static String getType() {
-        return DoiRequest.TYPE;
-    }
-
     public static DoiRequest newEntry(SortableIdentifier identifier,
-                                      SortableIdentifier resourceIdentifer,
+                                      SortableIdentifier resourceIdentifier,
                                       String mainTitle,
                                       String owner,
                                       URI id,
@@ -97,9 +114,9 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
                                       PublicationStatus status,
                                       Instant createdDate) {
 
-        DoiRequest doiRequest = new DoiRequest(
+        DoiRequest doiRequest = unvalidatedEntry(
             identifier,
-            resourceIdentifer,
+            resourceIdentifier,
             mainTitle,
             owner,
             id,
@@ -110,6 +127,10 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         );
         doiRequest.validate();
         return doiRequest;
+    }
+
+    public static String getType() {
+        return DoiRequest.TYPE;
     }
 
     public PublicationStatus getResourceStatus() {

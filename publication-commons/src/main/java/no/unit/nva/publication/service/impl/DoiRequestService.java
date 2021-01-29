@@ -46,6 +46,7 @@ public class DoiRequestService {
 
     public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
+    private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
@@ -87,10 +88,14 @@ public class DoiRequestService {
     }
 
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
-        QueryRequest query = listDoiRequestForUserQuery(userInstance);
-        List<DoiRequest> result = performQueryWithPotentiallyManyResults(query);
-        return  result;
+        return listDoiRequestsForUser(userInstance,DEFAULT_QUERY_RESULT_SIZE);
     }
+
+    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance,int maxResultSize) {
+        QueryRequest query = listDoiRequestForUserQuery(userInstance,maxResultSize);
+        return performQueryWithPotentiallyManyResults(query);
+    }
+
 
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier) {
@@ -139,7 +144,7 @@ public class DoiRequestService {
         return startKey != null && !startKey.isEmpty();
     }
 
-    private QueryRequest listDoiRequestForUserQuery(UserInstance userInstance) {
+    private QueryRequest listDoiRequestForUserQuery(UserInstance userInstance, int maxResultSize) {
         String queryExpression = "#PK= :PK";
         String filterExpression = "#data.#status = :requestedStatus OR #data.#status = :rejectedStatus";
 
@@ -162,7 +167,7 @@ public class DoiRequestService {
             .withFilterExpression(filterExpression)
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues)
-            .withLimit(1);
+            .withLimit(maxResultSize);
         return query;
     }
 
