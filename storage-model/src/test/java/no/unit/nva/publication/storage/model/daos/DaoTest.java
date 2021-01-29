@@ -42,14 +42,14 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         super.init();
     }
 
-    @ParameterizedTest(name = "getTypeReturnsNameOfTheContainedObject: {0}")
+    @ParameterizedTest(name = "getType returns name gf the contained object: {0}")
     @MethodSource("instanceProvider")
     public void getTypeReturnsNameOfTheContainedObject(Dao<?> daoInstance) {
         String expectedType = daoInstance.getData().getClass().getSimpleName();
         assertThat(daoInstance.getType(), is(equalTo(expectedType)));
     }
 
-    @ParameterizedTest(name = "getIdentifierReturnsTheIdentifierOfTheContainedObject: {0}")
+    @ParameterizedTest(name = "getIdentifer returns the identifier of the contained object: {0}")
     @MethodSource("instanceProvider")
     public void getIdentifierReturnsTheIdentifierOfTheContainedObject(Dao<?> daoInstance) {
         String expectedIdentifier = daoInstance.getData().getIdentifier().toString();
@@ -58,7 +58,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(daoInstance.getIdentifier().toString(), is(equalTo(expectedIdentifier)));
     }
 
-    @ParameterizedTest(name = "getCustomerIdReturnsTheCustomerIdOfTheContainedObject:{0}")
+    @ParameterizedTest(name = "getCustomerId returns the customerId of the contained object: {0}")
     @MethodSource("instanceProvider")
     public void getCustomerIdReturnsTheCustomerIdOfTheContainedObject(Dao<?> dao) {
         String expectedCustomerId = dao.getData().getCustomerId().toString();
@@ -67,7 +67,8 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(dao.getCustomerId().toString(), is(equalTo(expectedCustomerId)));
     }
 
-    @ParameterizedTest(name = "daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder:{0}")
+    @ParameterizedTest(name = "daoPrimaryKeyPartitionKey contains only Type, CustomerIdentifier, and Owner "
+                              + "in that order: {0}")
     @MethodSource("instanceProvider")
     public void daoPrimaryKeyPartitionKeyContainsOnlyTypeCustomerIdentifierAndOwnerInThatOrder(Dao<?> daoInstance)
         throws JsonProcessingException {
@@ -85,7 +86,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(primaryKeyPartitionKey, is(equalTo(expectedFormat)));
     }
 
-    @ParameterizedTest(name = "daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder:{0}")
+    @ParameterizedTest(name = "daoPrimaryKeySortKey contains only Type and Identifier in that order: {0}")
     @MethodSource("instanceProvider")
     public void daoPrimaryKeySortKeyContainsOnlyTypeAndIdentifierInThatOrder(Dao<?> daoInstance)
         throws JsonProcessingException {
@@ -100,7 +101,8 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
     }
 
     @ParameterizedTest
-        (name = "daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder:{0}")
+        (name = "daoByCustomerAndStatusIndexPartitionKey contains only Type, CustomerIdentifier and Status "
+                + "in that order: {0}")
     @MethodSource("instanceProvider")
     public void daoByCustomerAndStatusIndexPartitionKeyContainsOnlyTypeCustomerIdentifierAndStatusInThatOrder(
         Dao<? extends WithStatus> dao) throws JsonProcessingException {
@@ -119,7 +121,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
     }
 
-    @ParameterizedTest(name = "daoByCustomerAndStatusIndexSortKeyContainsOnlyTypeAndIdentifier:{0}")
+    @ParameterizedTest(name = "daoByCustomerAndStatusIndexSortKey contains only type and identifier: {0}")
     @MethodSource("instanceProvider")
     public void daoByCustomerAndStatusIndexSortKeyContainsOnlyTypeAndIdentifier(Dao<? extends WithStatus> dao)
         throws JsonProcessingException {
@@ -134,7 +136,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(byTypeCustomerStatusIndexPartitionKey, is(equalTo(expectedFormat)));
     }
 
-    @ParameterizedTest(name = "daoCanBeRetrievedByPrimaryKeyFromDynamo:{0}")
+    @ParameterizedTest(name = "dao can be retrieved by primary-key from dynamo: {0}")
     @MethodSource("instanceProvider")
     public void daoCanBeRetrievedByPrimaryKeyFromDynamo(Dao<?> originalResource) {
 
@@ -148,7 +150,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
 
-    @ParameterizedTest(name = "daoCanBeRetrievedByTypePublisherStatusIndex:{0}")
+    @ParameterizedTest(name = "dan can be retrieved by the ByTypePublisherStatus index: {0}")
     @MethodSource("instanceProvider")
     public void daoCanBeRetrievedByTypePublisherStatusIndex(Dao<?> originalDao) {
         client.putItem(toPutItemRequest(originalDao));

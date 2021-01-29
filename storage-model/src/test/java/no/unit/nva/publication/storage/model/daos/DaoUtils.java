@@ -30,7 +30,7 @@ public final class DaoUtils {
             resourceGenerator.sampleJournalArticleReference()));
     }
 
-    public static ResourceDao resourceDao() throws InvalidIssnException, MalformedURLException {
+    public static ResourceDao sampleResourceDao() throws InvalidIssnException, MalformedURLException {
         return Try.of(sampleResource())
             .map(ResourceDao::new)
             .orElseThrow();
@@ -51,7 +51,7 @@ public final class DaoUtils {
     }
 
     public static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
-        ResourceDao resourceDao = resourceDao();
+        ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         return Stream.of(resourceDao, doiRequestDao);
     }

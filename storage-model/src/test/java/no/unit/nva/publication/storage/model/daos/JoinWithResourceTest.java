@@ -4,7 +4,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURC
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.doiRequestDao;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.daos.DaoUtils.resourceDao;
+import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.toPutItemRequest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -29,7 +29,7 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void byResourceIdentifierKeyReturnsDoiRequestWithReferencedResource()
         throws InvalidIssnException, MalformedURLException {
-        ResourceDao resourceDao = resourceDao();
+        ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         assertThat(doiRequestDao.getData().getResourceIdentifier(), is(equalTo(resourceDao.getData().getIdentifier())));
 
@@ -54,7 +54,7 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void byResourceIdentifierKeyReturnsSingleTypeWhenLeftAndRightTypeAreEqual()
         throws InvalidIssnException, MalformedURLException {
-        ResourceDao resourceDao = resourceDao();
+        ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         assertThat(doiRequestDao.getData().getResourceIdentifier(), is(equalTo(resourceDao.getData().getIdentifier())));
 
