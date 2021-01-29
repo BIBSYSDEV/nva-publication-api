@@ -48,18 +48,21 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     * byResource("DoiRequest", "Resource") }</p> returns all entries that  are between the types "DoiRequest" and
+     * <p>
+     * byResource("DoiRequest", "Resource") }
+     *
+     * <p>returns all entries that  are between the types "DoiRequest" and
      * "Resource" including "DoiRequest" and "Resource" and they are connected to the Resource with identifier {@link
      * JoinWithResource#getResourceIdentifier}
      *
      * @param greaterOrEqual the left type.
      * @param lessOrEqual    the right type.
      * @return a Map for using in the
-     * {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)} method.
-     *
+     * {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)}
+     *     method.
      */
-    default Map<String, Condition> byResourceIdentifierKey(String greaterOrEqual,
-                                                           String lessOrEqual) {
+    default Map<String, Condition> byResource(String greaterOrEqual,
+                                              String lessOrEqual) {
         Condition partitionKeyCondition = new Condition()
             .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);
@@ -75,7 +78,24 @@ public interface JoinWithResource {
         );
     }
 
-    default Map<String, Condition> byResourceIdentifierKey(String selectedType) {
+    /**
+     * Retrieve all entries that are connected to a Resource with types that to the input type.
+     *
+     * <p>For example the command:
+     *
+     * <p>{@code
+     * <p>
+     * byResource("Message") }
+     *
+     * <p>returns all entries that  are between the type "Message" and they are connected to the Resource
+     * with identifier {@link JoinWithResource#getResourceIdentifier}
+     *
+     * @param selectedType the input type.
+     * @return a Map for using in the
+     * {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)}
+     *     method.
+     */
+    default Map<String, Condition> byResource(String selectedType) {
         Condition partitionKeyCondition = new Condition()
             .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);

@@ -79,7 +79,7 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
             .withTableName(RESOURCES_TABLE_NAME)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
             .withKeyConditions(
-                resourceDao.byResourceIdentifierKey(greaterOrEqual, lessOrEqual)
+                resourceDao.byResource(greaterOrEqual, lessOrEqual)
             );
     }
 
@@ -91,7 +91,7 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
             .withTableName(RESOURCES_TABLE_NAME)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
             .withKeyConditions(
-                resourceDao.byResourceIdentifierKey(selectedType)
+                resourceDao.byResource(selectedType)
             );
     }
 
