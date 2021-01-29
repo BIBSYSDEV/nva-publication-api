@@ -7,8 +7,8 @@ import nva.commons.core.JacocoGenerated;
 
 public class IdentifierEntry implements WithPrimaryKey {
 
-    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be altered or "
-        + "deserialized";
+    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be read, altered "
+                                                              + "or deserialized";
     private static String TYPE = "IdEntry#";
     private String partitionKey;
     private String sortKey;
@@ -30,7 +30,8 @@ public class IdentifierEntry implements WithPrimaryKey {
         return partitionKey;
     }
 
-    public void setPrimaryKeyPartitionKey(String partitionKey) {
+    @Override
+    public final void setPrimaryKeySortKey(String sortKey) {
         throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
     }
 
@@ -40,8 +41,8 @@ public class IdentifierEntry implements WithPrimaryKey {
         return sortKey;
     }
 
-
-    public void setPrimaryKeySortKey(String sortKey) {
+    @Override
+    public final void setPrimaryKeyPartitionKey(String partitionKey) {
         throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
     }
 }
