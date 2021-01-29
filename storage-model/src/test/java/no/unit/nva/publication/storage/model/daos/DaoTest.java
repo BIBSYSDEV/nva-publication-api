@@ -42,7 +42,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         super.init();
     }
 
-    @ParameterizedTest(name = "getType returns name gf the contained object: {0}")
+    @ParameterizedTest(name = "getType returns name of the contained object: {0}")
     @MethodSource("instanceProvider")
     public void getTypeReturnsNameOfTheContainedObject(Dao<?> daoInstance) {
         String expectedType = daoInstance.getData().getClass().getSimpleName();
