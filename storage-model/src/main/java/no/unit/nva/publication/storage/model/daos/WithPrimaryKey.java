@@ -4,8 +4,10 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import nva.commons.core.JacocoGenerated;
 
 public interface WithPrimaryKey {
 
@@ -14,15 +16,26 @@ public interface WithPrimaryKey {
      *
      * @return a String with value of the partition key of the DynamoDB table.
      */
+    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     String getPrimaryKeyPartitionKey();
+
+    @JacocoGenerated
+    default void setPrimaryKeyPartitionKey(String key) {
+        // do nothing
+    }
 
     /**
      * Returns the value for the Sort key of the DynamoDB table (primary key), not the key of any index.
      *
      * @return a String with value of the sort key of the DynamoDB table.
      */
-
+    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
     String getPrimaryKeySortKey();
+
+    @JacocoGenerated
+    default void setPrimaryKeySortKey(String key) {
+        // do nothing
+    }
 
     /**
      * Returns a Map of field-name:fieldValue for the primary key of the DynamoDB table. It's intended use is primarily

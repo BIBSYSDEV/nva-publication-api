@@ -4,15 +4,14 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CU
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Optional;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
@@ -20,6 +19,11 @@ import no.unit.nva.publication.storage.model.WithStatus;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
+    @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
+})
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     implements WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
@@ -28,22 +32,22 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
 
     @Override
-    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public final String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner());
     }
 
     @Override
-    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
     public final String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 
+    @Override
     @JacocoGenerated
     public final void setPrimaryKeySortKey(String key) {
         // do nothing
     }
 
+    @Override
     @JacocoGenerated
     public final void setPrimaryKeyPartitionKey(String key) {
         // do nothing
@@ -77,6 +81,15 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
         return orgUriToOrgIdentifier(getCustomerId());
     }
 
+    @JsonIgnore
+    public abstract String getType();
+
+    @JsonIgnore
+    public abstract URI getCustomerId();
+
+    @JsonIgnore
+    public abstract SortableIdentifier getIdentifier();
+
     protected static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
@@ -92,16 +105,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     }
 
     @JsonIgnore
-    protected abstract String getType();
-
-    @JsonIgnore
-    protected abstract URI getCustomerId();
-
-    @JsonIgnore
     protected abstract String getOwner();
-
-    @JsonIgnore
-    protected abstract String getIdentifier();
 
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,

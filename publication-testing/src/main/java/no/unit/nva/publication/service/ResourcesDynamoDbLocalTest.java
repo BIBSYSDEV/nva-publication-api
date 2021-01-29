@@ -1,5 +1,8 @@
 package no.unit.nva.publication.service;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
@@ -58,6 +61,11 @@ public class ResourcesDynamoDbLocalTest {
                 BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
                 BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
         );
+        indexes.add(
+            newGsi(BY_RESOURCE_INDEX_NAME,
+                BY_RESOURCE_INDEX_PARTITION_KEY_NAME,
+                BY_RESOURCE_INDEX_SORT_KEY_NAME)
+        );
         return indexes;
     }
 
@@ -89,6 +97,8 @@ public class ResourcesDynamoDbLocalTest {
         attributesList.add(newAttribute(PRIMARY_KEY_SORT_KEY_NAME));
         attributesList.add(newAttribute(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME));
         attributesList.add(newAttribute(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME));
+        attributesList.add(newAttribute(BY_RESOURCE_INDEX_PARTITION_KEY_NAME));
+        attributesList.add(newAttribute(BY_RESOURCE_INDEX_SORT_KEY_NAME));
         AttributeDefinition[] attributesArray = new AttributeDefinition[attributesList.size()];
         attributesList.toArray(attributesArray);
         return attributesArray;

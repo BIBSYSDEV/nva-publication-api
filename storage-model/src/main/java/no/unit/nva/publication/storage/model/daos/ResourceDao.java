@@ -1,13 +1,15 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao extends Dao<Resource> {
+public class ResourceDao extends Dao<Resource> implements JoinWithResource {
 
     private Resource data;
 
@@ -35,13 +37,17 @@ public class ResourceDao extends Dao<Resource> {
         this.data = resource;
     }
 
+    public static String getContainedType() {
+        return Resource.TYPE;
+    }
+
     @Override
-    protected String getType() {
+    public String getType() {
         return Resource.getType();
     }
 
     @Override
-    protected URI getCustomerId() {
+    public URI getCustomerId() {
         return data.getPublisher().getId();
     }
 
@@ -51,8 +57,8 @@ public class ResourceDao extends Dao<Resource> {
     }
 
     @Override
-    protected String getIdentifier() {
-        return data.getIdentifier().toString();
+    public SortableIdentifier getIdentifier() {
+        return data.getIdentifier();
     }
 
     @Override
@@ -70,5 +76,11 @@ public class ResourceDao extends Dao<Resource> {
         }
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
+    }
+
+    @Override
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return this.getIdentifier();
     }
 }
