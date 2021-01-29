@@ -3,8 +3,8 @@ package no.unit.nva.publication.owner;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static nva.commons.apigateway.HttpHeaders.CONTENT_TYPE;
 import static nva.commons.core.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
 import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -37,7 +37,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
-import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -139,7 +138,7 @@ public class PublicationsByOwnerHandlerTest {
             singletonMap("authorizer",
                 singletonMap("claims",
                     Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID, VALID_ORG_NUMBER))));
-        event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
+        event.put("headers", singletonMap(nva.commons.apigateway.HttpHeaders.CONTENT_TYPE,
             ContentType.APPLICATION_JSON.getMimeType()));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
