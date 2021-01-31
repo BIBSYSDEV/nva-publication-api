@@ -74,8 +74,7 @@ public final class ResourceServiceUtils {
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return
-            newTransactWriteItemsRequest(Arrays.asList(transaction));
+        return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
