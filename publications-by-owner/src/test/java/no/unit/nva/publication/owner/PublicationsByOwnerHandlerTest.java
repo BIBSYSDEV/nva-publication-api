@@ -35,6 +35,7 @@ import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.testutils.HandlerUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
@@ -138,7 +139,7 @@ public class PublicationsByOwnerHandlerTest {
             singletonMap("authorizer",
                 singletonMap("claims",
                     Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID, VALID_ORG_NUMBER))));
-        event.put("headers", singletonMap(nva.commons.apigateway.HttpHeaders.CONTENT_TYPE,
+        event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
             ContentType.APPLICATION_JSON.getMimeType()));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
