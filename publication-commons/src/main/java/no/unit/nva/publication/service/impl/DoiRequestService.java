@@ -88,14 +88,8 @@ public class DoiRequestService {
     }
 
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
-        return listDoiRequestsForUser(userInstance,DEFAULT_QUERY_RESULT_SIZE);
+        return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
-
-    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance,int maxResultSize) {
-        QueryRequest query = listDoiRequestForUserQuery(userInstance,maxResultSize);
-        return performQueryWithPotentiallyManyResults(query);
-    }
-
 
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier) {
@@ -126,17 +120,21 @@ public class DoiRequestService {
         return dao.getData();
     }
 
+    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
+        QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
+        return performQueryWithPotentiallyManyResults(query);
+    }
+
     private List<DoiRequest> performQueryWithPotentiallyManyResults(QueryRequest query) {
-        Map<String, AttributeValue> startKey=null;
-        List<DoiRequest>  result = new ArrayList<>();
-        do{
+        Map<String, AttributeValue> startKey = null;
+        List<DoiRequest> result = new ArrayList<>();
+        do {
             query.withExclusiveStartKey(startKey);
             QueryResult queryResult = client.query(query);
             List<DoiRequest> lastItems = parseListingDoiRequestsQueryResult(queryResult);
             result.addAll(lastItems);
             startKey = queryResult.getLastEvaluatedKey();
-
-        }while(noMoreResults(startKey));
+        } while (noMoreResults(startKey));
         return result;
     }
 
