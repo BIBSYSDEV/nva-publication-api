@@ -292,7 +292,7 @@ Resources:
                   schema:
                     $ref: "#/definitions/CreateDoiRequest"
               responses:
-                201:
+                '201':
                   description: "Created"
               x-amazon-apigateway-integration:
                 uri:
