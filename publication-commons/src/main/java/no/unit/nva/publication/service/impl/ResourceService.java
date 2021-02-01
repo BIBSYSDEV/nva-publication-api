@@ -90,6 +90,10 @@ public class ResourceService {
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     public static final String RAWTYPES = "rawtypes";
+
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
+    private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -144,7 +148,7 @@ public class ResourceService {
         Resource existingResource = getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = createNewTransactionPutDataEntry(newResource);
+        TransactWriteItem insertionAction = createTransactionEntyForInsertingResource(newResource);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
     }
@@ -236,7 +240,7 @@ public class ResourceService {
         return fetchedDao.getData();
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private void publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
@@ -320,9 +324,9 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(1);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
         } else if (onlyResourceExisits(daos)) {
-            return (ResourceDao) daos.get(0);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
@@ -340,7 +344,7 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(0));
+            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
         }
         return Optional.empty();
     }
@@ -364,10 +368,11 @@ public class ResourceService {
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         Map<String, Condition> keyConditions = queryObject
-            .byResourceIdentifierKey(
+            .byResource(
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
+
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
@@ -511,12 +516,12 @@ public class ResourceService {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = createNewTransactionPutDataEntry(resource);
+        TransactWriteItem resourceEntry = createTransactionEntyForInsertingResource(resource);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
-    private TransactWriteItem createNewTransactionPutDataEntry(Resource resource) {
+    private TransactWriteItem createTransactionEntyForInsertingResource(Resource resource) {
         return createTransactionPutEntry(new ResourceDao(resource));
     }
 

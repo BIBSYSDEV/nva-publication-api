@@ -3,15 +3,17 @@ repositories {
 }
 
 dependencies {
-
+    // compileOnly because under current deployment model, these dependencies are included
+    // in the publication-commons layer.
     compileOnly project(":storage-model")
-    compileOnly project(":publication-commons")
-
     testImplementation project(":storage-model")
+
+    compileOnly project(":publication-commons")
     testImplementation project(":publication-commons")
 
     compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
     testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
+
     compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'apigateway', version: project.ext.nvaCommonsVersion
     testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'apigateway', version: project.ext.nvaCommonsVersion
 

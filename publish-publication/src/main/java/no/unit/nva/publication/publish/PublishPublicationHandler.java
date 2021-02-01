@@ -11,11 +11,11 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.HttpHeaders;
 import org.slf4j.LoggerFactory;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatusResponse> {

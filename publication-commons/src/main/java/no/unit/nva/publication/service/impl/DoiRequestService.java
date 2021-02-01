@@ -131,7 +131,7 @@ public class DoiRequestService {
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResourceIdentifierKey(DoiRequestDao.joinByResourceContainedOrderedType()));
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
         Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
             .stream()

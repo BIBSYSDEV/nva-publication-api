@@ -37,7 +37,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
     public static final String SOME_USER = "some@user.com";
-    public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
+    public static final URI SOME_PUBLISHER = URI.create("https://some-publisher.example.org");
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
