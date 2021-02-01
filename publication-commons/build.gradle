@@ -5,7 +5,9 @@ repositories {
 dependencies {
     api project(":storage-model")
 
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
 
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
@@ -19,14 +21,12 @@ dependencies {
     api group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-
     api group: 'org.zalando', name: 'problem', version: '0.23.0'
     api group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
     api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
     api group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.11.933'
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
     api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-
 
     testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
