@@ -30,6 +30,7 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -148,8 +149,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private String extractLocationHeader(GatewayResponse<Void> response) {
-        //TODO: replace magic string with nva-commons headers when headers have been updated.
-        String locationHeader = response.getHeaders().get("Location");
+        String locationHeader = response.getHeaders().get(HttpHeaders.LOCATION);
         String[] headerArray = locationHeader.split(HTTP_PATH_SEPARATOR);
         return headerArray[headerArray.length - 1];
     }

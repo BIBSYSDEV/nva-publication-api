@@ -7,9 +7,9 @@ import nva.commons.core.JacocoGenerated;
 
 public abstract class UniquenessEntry implements WithPrimaryKey {
 
-    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be altered or "
-                                                              + "deserialized";
-    private static final String TYPE = "IdEntry#";
+    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be read,"
+                                                              + "altered or deserialized";
+
     private String partitionKey;
     private String sortKey;
 
@@ -21,7 +21,7 @@ public abstract class UniquenessEntry implements WithPrimaryKey {
 
     public UniquenessEntry(String identifier) {
         this.partitionKey = getType() + identifier;
-        this.sortKey = TYPE + identifier;
+        this.sortKey = partitionKey;
     }
 
     @Override
@@ -30,6 +30,7 @@ public abstract class UniquenessEntry implements WithPrimaryKey {
         return partitionKey;
     }
 
+    @Override
     public final void setPrimaryKeyPartitionKey(String partitionKey) {
         throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
     }
@@ -40,6 +41,7 @@ public abstract class UniquenessEntry implements WithPrimaryKey {
         return sortKey;
     }
 
+    @Override
     public final void setPrimaryKeySortKey(String sortKey) {
         throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
     }
