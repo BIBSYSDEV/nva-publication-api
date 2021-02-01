@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events;
 
-import static no.unit.nva.publication.events.PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE;
+import static no.unit.nva.publication.events.DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,7 +13,7 @@ import no.unit.nva.model.Publication;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
-public class PublicationUpdateEventTest {
+public class DynamoEntryUpdateEventTest {
 
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final Publication NO_VALUE = null;
@@ -23,13 +23,13 @@ public class PublicationUpdateEventTest {
 
     @Test
     public void writePublicationUpdateEventToJsonAndReadBackAsObject() throws JsonProcessingException {
-        var event = new PublicationUpdateEvent(
+        var event = new DynamoEntryUpdateEvent(
                 PUBLICATION_UPDATE_TYPE,
                 INSERT_UPDATE_TYPE,
                 createPublication(),
                 NO_VALUE);
         var json = objectMapper.writeValueAsString(event);
-        var mappedEvent = objectMapper.readValue(json, PublicationUpdateEvent.class);
+        var mappedEvent = objectMapper.readValue(json, DynamoEntryUpdateEvent.class);
 
         assertThat(event, equalTo(mappedEvent));
     }

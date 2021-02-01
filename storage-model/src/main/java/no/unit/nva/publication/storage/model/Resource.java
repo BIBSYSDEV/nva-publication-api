@@ -20,7 +20,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.publication.storage.model.daos.ResourceUpdate;
 
 //TODO: Remove all Lombok dependencies from the final class.
 
@@ -37,7 +37,7 @@ public class Resource implements
                       WithIdentifier,
                       RowLevelSecurity,
                       WithStatus,
-                      JsonSerializable {
+                      ResourceUpdate {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
@@ -118,6 +118,7 @@ public class Resource implements
         return this.toBuilder();
     }
 
+    @Override
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
@@ -148,5 +149,6 @@ public class Resource implements
     public String getStatusString() {
         return nonNull(getStatus()) ? getStatus().toString() : null;
     }
+
 }
 

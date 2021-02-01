@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PublicationFanoutHandler
-        extends EventHandler<DynamodbEvent.DynamodbStreamRecord, PublicationUpdateEvent> {
+        extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DynamoEntryUpdateEvent> {
 
     private static final Logger logger = LoggerFactory.getLogger(PublicationFanoutHandler.class);
     public static final String MAPPING_ERROR = "Error mapping Dynamodb Image to Publication";
@@ -26,7 +26,7 @@ public class PublicationFanoutHandler
     }
 
     @Override
-    protected PublicationUpdateEvent processInput(
+    protected DynamoEntryUpdateEvent processInput(
             DynamodbEvent.DynamodbStreamRecord input,
             AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
             Context context) {
@@ -34,8 +34,8 @@ public class PublicationFanoutHandler
         Optional<Publication> newPublication = getPublication(input.getDynamodb().getNewImage());
         String updateType = input.getEventName();
 
-        return new PublicationUpdateEvent(
-                PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE,
+        return new DynamoEntryUpdateEvent(
+                DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE,
                 updateType,
                 oldPublication.orElse(NO_VALUE),
                 newPublication.orElse(NO_VALUE)
@@ -47,8 +47,8 @@ public class PublicationFanoutHandler
             return Optional.empty();
         }
         try {
-            var publication = toPublication(image);
-            return Optional.of(publication);
+            Publication publication = toPublication(image);
+            return Optional.ofNullable(publication);
         } catch (Exception e) {
             logger.error(MAPPING_ERROR, e);
             throw new RuntimeException(MAPPING_ERROR, e);

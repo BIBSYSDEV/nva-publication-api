@@ -1,4 +1,7 @@
 dependencies {
+
+    implementation project (":storage-model")
+
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }

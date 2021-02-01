@@ -18,15 +18,15 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.storage.model.daos.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public final class DoiRequest implements
                               WithIdentifier,
                               RowLevelSecurity,
                               WithStatus,
-                              JsonSerializable {
+                              ResourceUpdate {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
@@ -187,6 +187,7 @@ public final class DoiRequest implements
         return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
     }
 
+    @Override
     public Publication toPublication() {
 
         no.unit.nva.model.DoiRequest doiRequest = new Builder()

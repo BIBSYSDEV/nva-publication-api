@@ -14,7 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.WithIdentifier;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 
 public final class DynamodbStreamRecordPublicationMapper {
@@ -36,7 +40,18 @@ public final class DynamodbStreamRecordPublicationMapper {
             throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
-        return objectMapper.readValue(item.toJSON(), Publication.class);
+        Dao<?> dao= objectMapper.readValue(item.toJSON(), Dao.class);
+        WithIdentifier data = dao.getData();
+        if(isResourceUpdate(data)){
+            return ((ResourceUpdate)data).toPublication();
+        }
+        else{
+            return null;
+        }
+    }
+
+    private static boolean isResourceUpdate(WithIdentifier data) {
+        return data instanceof ResourceUpdate;
     }
 
     /*These methods are a copy of ItemUtils.toItem. The only difference is that instead of throwing an exception
