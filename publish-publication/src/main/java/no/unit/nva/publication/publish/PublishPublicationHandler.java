@@ -23,9 +23,9 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "API_SCHEME";
     public static final String API_HOST = "API_HOST";
-    private String apiScheme;
-    private String apiHost;
-    private ResourceService resourceService;
+    private final String apiScheme;
+    private final String apiHost;
+    private final ResourceService resourceService;
 
     /**
      * Default constructor for PublishPublicationHandler.
