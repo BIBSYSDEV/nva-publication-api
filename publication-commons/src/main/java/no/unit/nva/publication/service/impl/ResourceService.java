@@ -144,7 +144,7 @@ public class ResourceService {
         Resource existingResource = getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = createNewTransactionPutDataEntry(newResource);
+        TransactWriteItem insertionAction = createTransactionEntyForInsertingResource(newResource);
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         client.transactWriteItems(request);
     }
@@ -364,7 +364,7 @@ public class ResourceService {
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         Map<String, Condition> keyConditions = queryObject
-            .byResourceIdentifierKey(
+            .byResource(
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
@@ -511,12 +511,12 @@ public class ResourceService {
     }
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = createNewTransactionPutDataEntry(resource);
+        TransactWriteItem resourceEntry = createTransactionEntyForInsertingResource(resource);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
-    private TransactWriteItem createNewTransactionPutDataEntry(Resource resource) {
+    private TransactWriteItem createTransactionEntyForInsertingResource(Resource resource) {
         return createTransactionPutEntry(new ResourceDao(resource));
     }
 

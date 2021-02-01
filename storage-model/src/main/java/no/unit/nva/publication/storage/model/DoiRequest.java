@@ -182,33 +182,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
         return getStatus().toString();
     }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(), getCustomerId(),
-            getOwner(), getResourceTitle(), getIdentifier());
-    }
 
-    @Override
-    @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof DoiRequest)) {
-            return false;
-        }
-        DoiRequest that = (DoiRequest) o;
-        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && getStatus() == that.getStatus()
-               && getResourceStatus() == that.getResourceStatus()
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
-               && Objects.equals(getIdentifier(), that.getIdentifier());
-    }
 
     public Publication toPublication() {
 
@@ -241,5 +215,34 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
         if (isNull(resourceIdentifier)) {
             throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
         }
+    }
+
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DoiRequest)) {
+            return false;
+        }
+        DoiRequest that = (DoiRequest) o;
+        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && getStatus() == that.getStatus()
+               && getResourceStatus() == that.getResourceStatus()
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && Objects.equals(getIdentifier(), that.getIdentifier());
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(),
+            getCreatedDate(),
+            getCustomerId(), getOwner(), getResourceTitle(), getIdentifier());
     }
 }

@@ -4,9 +4,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CU
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,7 +12,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Optional;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
@@ -34,25 +31,30 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
 
+    public static String orgUriToOrgIdentifier(URI uri) {
+        String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
+        return pathParts[pathParts.length - 1];
+    }
+
     @Override
-    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
     public final String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner());
     }
 
     @Override
-    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
+    @JacocoGenerated
+    public final void setPrimaryKeyPartitionKey(String key) {
+        // do nothing
+    }
+
+    @Override
     public final String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 
+    @Override
     @JacocoGenerated
     public final void setPrimaryKeySortKey(String key) {
-        // do nothing
-    }
-
-    @JacocoGenerated
-    public final void setPrimaryKeyPartitionKey(String key) {
         // do nothing
     }
 
@@ -92,11 +94,6 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
 
     @JsonIgnore
     public abstract SortableIdentifier getIdentifier();
-
-    public static String orgUriToOrgIdentifier(URI uri) {
-        String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
-        return pathParts[pathParts.length - 1];
-    }
 
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);

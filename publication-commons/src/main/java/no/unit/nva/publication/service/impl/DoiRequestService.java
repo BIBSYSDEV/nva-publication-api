@@ -87,9 +87,7 @@ public class DoiRequestService {
         return parseListingDoiRequestsQueryResult(result);
     }
 
-    public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
-        return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
-    }
+
 
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier) {
@@ -97,7 +95,7 @@ public class DoiRequestService {
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResourceIdentifierKey(DoiRequestDao.joinByResourceContainedOrderedType()));
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
         Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
             .stream()
@@ -118,6 +116,10 @@ public class DoiRequestService {
         Map<String, AttributeValue> item = result.getItem();
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
+    }
+
+    public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
+        return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
 
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
@@ -171,8 +173,7 @@ public class DoiRequestService {
 
     private String doiRequestPrimaryKeyPartionKeyValue(UserInstance userInstance) {
         DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
-        String primaryKeyPartitionKeyValue = queryObject.getPrimaryKeyPartitionKey();
-        return primaryKeyPartitionKeyValue;
+        return queryObject.getPrimaryKeyPartitionKey();
     }
 
     private QueryRequest queryForListingDoiRequestsForPublishedResourcesByCustomer(UserInstance userInstance) {
