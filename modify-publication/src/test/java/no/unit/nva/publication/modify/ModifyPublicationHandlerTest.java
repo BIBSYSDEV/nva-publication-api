@@ -38,7 +38,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.UserInstance;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

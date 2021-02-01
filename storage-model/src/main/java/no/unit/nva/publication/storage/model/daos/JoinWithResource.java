@@ -40,7 +40,7 @@ public interface JoinWithResource {
     @JsonProperty(BY_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByResourceSortKey() {
         return
-            this.getType()
+            this.getOrderedType()
             + KEY_FIELDS_DELIMITER
             + getIdentifier().toString();
     }
@@ -52,8 +52,7 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     *            byResource("DoiRequest", "Resource")
-     *    }
+     * byResource("DoiRequest", "Resource") }
      *
      * <p>returns all entries that  are between the types "DoiRequest" and
      * "Resource" including "DoiRequest" and "Resource" and they are connected to the Resource with identifier {@link
@@ -88,8 +87,7 @@ public interface JoinWithResource {
      * <p>For example the command:
      *
      * <p>{@code
-     *            byResource("Message")
-     *    }
+     * byResource("Message") }
      *
      * <p>returns all entries that  are between the type "Message" and they are connected to the Resource
      * with identifier {@link JoinWithResource#getResourceIdentifier}
@@ -116,7 +114,8 @@ public interface JoinWithResource {
 
     SortableIdentifier getIdentifier();
 
-    String getType();
+    @JsonIgnore
+    String getOrderedType();
 
     @JsonIgnore
     SortableIdentifier getResourceIdentifier();

@@ -26,8 +26,8 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.UserInstance;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.HttpHeaders;
@@ -72,7 +72,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
         Publication publication = createPublication();
-        resourceService.publishPublication(publication);
+
 
         sendRequest(publication, publication.getOwner());
 
@@ -88,7 +88,6 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
         throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
         Publication publication = createPublication();
-        resourceService.publishPublication(publication);
 
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
 
@@ -112,9 +111,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestBadRequestErrorWenDoiRequestAlreadyExists()
-        throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
+        throws ConflictException, IOException {
         Publication publication = createPublication();
-        resourceService.publishPublication(publication);
 
         sendRequest(publication, publication.getOwner());
 

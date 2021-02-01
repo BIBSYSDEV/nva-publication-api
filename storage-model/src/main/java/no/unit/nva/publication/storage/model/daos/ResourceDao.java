@@ -3,14 +3,19 @@ package no.unit.nva.publication.storage.model.daos;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
 
+@JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource> implements JoinWithResource {
 
+    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     private Resource data;
 
     public ResourceDao() {
@@ -22,9 +27,22 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
         this.data = resource;
     }
 
+    public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+        Resource resource = Resource.emptyResource(
+            userInstance.getUserIdentifier(),
+            userInstance.getOrganizationUri(),
+            resourceIdentifier);
+        return new ResourceDao(resource);
+    }
+
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
             orgUriToOrgIdentifier(customerId), owner);
+    }
+
+    @JsonIgnore
+    public static String getOrderedContainedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + Resource.getType();
     }
 
     @Override
@@ -35,10 +53,6 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
     @Override
     public void setData(Resource resource) {
         this.data = resource;
-    }
-
-    public static String getContainedType() {
-        return Resource.TYPE;
     }
 
     @Override
@@ -52,13 +66,24 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
     }
 
     @Override
+    public SortableIdentifier getIdentifier() {
+        return data.getIdentifier();
+    }
+
+    @Override
     protected String getOwner() {
         return data.getOwner();
     }
 
     @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
+    public String getOrderedType() {
+        return getOrderedContainedType();
+    }
+
+    @Override
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return this.getIdentifier();
     }
 
     @Override
@@ -76,11 +101,5 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
         }
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
-    }
-
-    @Override
-    @JsonIgnore
-    public SortableIdentifier getResourceIdentifier() {
-        return this.getIdentifier();
     }
 }

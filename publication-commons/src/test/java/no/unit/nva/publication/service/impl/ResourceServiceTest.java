@@ -6,7 +6,6 @@ import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -24,15 +23,13 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
@@ -40,7 +37,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -53,9 +50,11 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
-import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -154,7 +153,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void getResourceByIdentifierReturnsNotFoundWhenResourceDoesNotExist() {
-        String nonExistingIdentifier = SortableIdentifier.next().toString();
+        SortableIdentifier nonExistingIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublication(SAMPLE_USER, nonExistingIdentifier);
         assertThrows(NotFoundException.class, action);
     }
@@ -172,10 +171,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException {
         Publication sampleResource = createSampleResource();
 
-        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
+        UserInstance oldOwner = extractUserInstance(sampleResource);
         UserInstance newOwner = someOtherUser();
 
-        resourceService.updateOwner(sampleResource.getIdentifier().toString(), oldOwner, newOwner);
+        resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
 
         assertThatResourceDoesNotExist(sampleResource);
 
@@ -190,10 +189,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
         throws ApiGatewayException {
         Publication originalResource = createSampleResource();
-        UserInstance oldOwner = new UserInstance(originalResource.getOwner(), originalResource.getPublisher().getId());
+        UserInstance oldOwner = extractUserInstance(originalResource);
         UserInstance newOwner = someOtherUser();
 
-        resourceService.updateOwner(originalResource.getIdentifier().toString(), oldOwner, newOwner);
+        resourceService.updateOwner(originalResource.getIdentifier(), oldOwner, newOwner);
 
         Publication newResource = resourceService.getPublication(newOwner, originalResource.getIdentifier());
 
@@ -205,10 +204,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
         throws ApiGatewayException {
         Publication sampleResource = createSampleResource();
-        UserInstance oldOwner = new UserInstance(sampleResource.getOwner(), sampleResource.getPublisher().getId());
+        UserInstance oldOwner = extractUserInstance(sampleResource);
         UserInstance newOwner = someOtherUser();
 
-        resourceService.updateOwner(sampleResource.getIdentifier().toString(), oldOwner, newOwner);
+        resourceService.updateOwner(sampleResource.getIdentifier(), oldOwner, newOwner);
 
         assertThatResourceDoesNotExist(sampleResource);
 
@@ -364,9 +363,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceSetsPublicationStatusToPublished()
-        throws NotFoundException, InvalidPublicationException, ConflictException {
+        throws ApiGatewayException {
+
         Publication resource = createSampleResource();
-        Publication resourceInResponse = resourceService.publishPublication(resource);
+        UserInstance userInstance = extractUserInstance(resource);
+        resourceService.publishPublication(userInstance, resource.getIdentifier());
         Publication actualResource = resourceService.getPublication(resource);
 
         Publication expectedResource = resource.copy()
@@ -375,38 +376,63 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .withPublishedDate(RESOURCE_MODIFICATION_TIME)
             .build();
 
-        assertThat(resourceInResponse, is(equalTo(expectedResource)));
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
 
     @Test
-    public void publishResourceReturnsUpdatedResource()
-        throws NotFoundException, InvalidPublicationException, ConflictException {
+    public void publishResourceReturnsUpdatedResource() throws ApiGatewayException {
         Publication resource = createSampleResource();
-        Publication resourceUpdate = resourceService.publishPublication(resource);
-
+        publishResource(resource);
+        Publication updatedResource = resourceService.getPublication(resource);
         Publication expectedResource = resource.copy()
             .withStatus(PublicationStatus.PUBLISHED)
             .withModifiedDate(RESOURCE_MODIFICATION_TIME)
             .withPublishedDate(RESOURCE_MODIFICATION_TIME)
             .build();
 
-        assertThat(resourceUpdate, is(equalTo(expectedResource)));
+        assertThat(updatedResource, is(equalTo(expectedResource)));
     }
 
     @Test
-    public void publishPublicationThrowsConditionalCheckExceptionOnPublishedPublication()
-        throws NotFoundException, InvalidPublicationException, ConflictException {
+    public void publishPublicationThrowsTransactionCheckExceptionOnPublishedPublication()
+        throws ApiGatewayException {
         Publication resource = createSampleResource();
-        resourceService.publishPublication(resource);
-        assertThrows(ConditionalCheckFailedException.class, () -> resourceService.publishPublication(resource));
+
+        Executable action = () -> publishResource(resource);
+
+        assertDoesNotThrow(action);
+        assertThrows(TransactionCanceledException.class, action);
     }
 
     @Test
-    public void publishPublicationSetsPublishedDate()
-        throws NotFoundException, InvalidPublicationException, ConflictException {
-        Publication resource = createSampleResource();
-        Publication updatedResource = resourceService.publishPublication(resource);
+    public void byTypeCustomerStatusIndexIsUpdatedWhenResourceIsUpdated() throws ApiGatewayException {
+        Publication resourceWithStatusDraft = createSampleResource();
+        ResourceDao resourceDaoWithStatusDraft = new ResourceDao(Resource.fromPublication(resourceWithStatusDraft));
+
+        assertThatResourceCanBeFoundInDraftResources(resourceDaoWithStatusDraft);
+
+        resourceService.publishPublication(extractUserInstance(resourceWithStatusDraft),
+            resourceWithStatusDraft.getIdentifier());
+
+        verifyThatTheSampleHasStillStatusDraft(resourceWithStatusDraft);
+
+        verifyThatTheResourceWasMovedFromtheDrafts(resourceDaoWithStatusDraft);
+
+        verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
+    }
+
+    public void verifyThatTheSampleHasStillStatusDraft(Publication resourceWithStatusDraft) {
+        assertThat(resourceWithStatusDraft.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+    }
+
+    public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
+        QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
+        return parseResult(queryResult);
+    }
+
+    @Test
+    public void publishPublicationSetsPublishedDate() throws ApiGatewayException {
+        Publication updatedResource = createPublishedResource();
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
     }
 
@@ -417,7 +443,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         sampleResource.getEntityDescription().setMainTitle(null);
         Publication savedResource = resourceService.createPublication(sampleResource);
 
-        Executable action = () -> resourceService.publishPublication(savedResource);
+        Executable action = () ->
+            resourceService.publishPublication(extractUserInstance(sampleResource), savedResource.getIdentifier());
 
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
@@ -432,7 +459,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         sampleResource.setFileSet(emptyFileSet());
         Publication savedResource = resourceService.createPublication(sampleResource);
 
-        Executable action = () -> resourceService.publishPublication(savedResource);
+        Executable action =
+            () -> publishResource(savedResource);
         InvalidPublicationException exception = assertThrows(InvalidPublicationException.class, action);
         String actualMessage = exception.getMessage();
 
@@ -444,38 +472,58 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles()
-        throws ConflictException, InvalidPublicationException, NotFoundException {
+    public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
+
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
         sampleResource.setFileSet(emptyFileSet());
         Publication savedResource = resourceService.createPublication(sampleResource);
-        Publication updatedResource = resourceService.publishPublication(savedResource);
-        assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+        Publication updatedResource =
+            publishResource(savedResource);
+        assertThat(updatedResource.getStatus().toString(), is(equalTo(PublicationStatus.PUBLISHED.toString())));
+    }
+
+    public Publication publishResource(Publication resource) throws ApiGatewayException {
+        resourceService.publishPublication(extractUserInstance(resource), resource.getIdentifier());
+        return resourceService.getPublication(resource);
     }
 
     @Test
-    public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink()
-        throws ConflictException, InvalidPublicationException, NotFoundException {
+    public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
+
         Publication sampleResource = createSampleResource();
         sampleResource.setLink(null);
 
-        Publication updatedResource = resourceService.publishPublication(sampleResource);
+        Publication updatedResource =
+            publishResource(sampleResource);
         assertThat(updatedResource.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
-    public void publishResourcePublishesShouldThrowExceptionWhenNoReturnValueIsReturned()
-        throws JsonProcessingException {
-        Publication sampleResource = publicationWithIdentifier();
-        sampleResource.setIdentifier(SortableIdentifier.next());
+    public void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
+        throws ApiGatewayException {
+        Publication publication = createSampleResource();
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        UserInstance userInstance = extractUserInstance(publication);
+        SortableIdentifier doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
+            publication.getIdentifier());
 
-        ResourceService resourceServiceThatReceivesNoValue = resourceServiceReceivingNoValue(sampleResource);
+        publishResource(publication);
 
-        Executable action = () -> resourceServiceThatReceivesNoValue.publishPublication(sampleResource);
-        RuntimeException thrownException = assertThrows(RuntimeException.class, action);
+        DoiRequest actualDoiRequest = doiRequestService.getDoiRequest(
+            userInstance, doiRequestIdentifier);
 
-        assertThatCauseIsEmptyValueMapException(thrownException);
+        assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
+    public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication() throws ApiGatewayException {
+        Publication resource = createPublishedResource();
+        Executable action =
+            () -> resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
+        ResourceCannotBeDeletedException exception = assertThrows(ResourceCannotBeDeletedException.class, action);
+        assertThat(exception.getMessage(), containsString(ResourceCannotBeDeletedException.DEFAULT_MESSAGE));
+        assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
     }
 
     @Test
@@ -510,18 +558,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteResourceThrowsExceptionWhenDeletingPublishedPublication()
-        throws ApiGatewayException {
-        Publication resource = createSampleResource();
-        resourceService.publishPublication(resource);
-        Executable action =
-            () -> resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
-        ResourceCannotBeDeletedException exception = assertThrows(ResourceCannotBeDeletedException.class, action);
-        assertThat(exception.getMessage(), containsString(ResourceCannotBeDeletedException.DEFAULT_MESSAGE));
-        assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
-    }
-
-    @Test
     public void deleteResourceThrowsErrorWhenDeletingPublicationThatIsMarkedForDeletion()
         throws ApiGatewayException {
         Publication resource = createSampleResource();
@@ -534,25 +570,55 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThrows(ResourceCannotBeDeletedException.class, action);
     }
 
+    private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
+        ResourceDao resourceDaoWithStatusPublished = queryObjectForPublishedResource(resourceWithStatusDraft);
+
+        Optional<ResourceDao> publishedResource = searchForResource(resourceDaoWithStatusPublished);
+        assertThat(publishedResource.isPresent(), is(true));
+
+        ResourceDao actualResourceDao = publishedResource.orElseThrow();
+        assertThat(actualResourceDao.getData().getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    private void verifyThatTheResourceWasMovedFromtheDrafts(ResourceDao resourceDaoWithStatusDraft) {
+        Optional<ResourceDao> expectedEmptyResult = searchForResource(resourceDaoWithStatusDraft);
+        assertThat(expectedEmptyResult.isEmpty(), is(true));
+    }
+
+    private void assertThatResourceCanBeFoundInDraftResources(ResourceDao resourceDaoWithStatusDraft) {
+        Optional<ResourceDao> savedResource = searchForResource(resourceDaoWithStatusDraft);
+        assertThat(savedResource.isPresent(), is(true));
+    }
+
+    private ResourceDao queryObjectForPublishedResource(Publication resourceWithStatusDraft) {
+        Resource resourceWithStatusPublished = Resource.fromPublication(resourceWithStatusDraft).copy()
+            .withStatus(PublicationStatus.PUBLISHED)
+            .build();
+        return new ResourceDao(resourceWithStatusPublished);
+    }
+
+    private QueryResult queryForDraftResource(ResourceDao resourceDao) {
+        return client.query(new QueryRequest()
+            .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+            .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+            .withKeyConditions(resourceDao.byTypeCustomerStatusKey())
+        );
+    }
+
+    private Optional<ResourceDao> parseResult(QueryResult result) {
+        return result.getItems().stream()
+            .map(map -> ResourceServiceUtils.parseAttributeValuesMap(map, ResourceDao.class))
+            .findAny();
+    }
+
+    private Publication createPublishedResource() throws ApiGatewayException {
+        Publication resource = createSampleResource();
+        publishResource(resource);
+        return resourceService.getPublication(resource);
+    }
+
     private UserInstance extractUserInstance(Publication resource) {
         return new UserInstance(resource.getOwner(), resource.getPublisher().getId());
-    }
-
-    private ResourceService resourceServiceReceivingNoValue(Publication publication) throws JsonProcessingException {
-        String jsonString = objectMapper.writeValueAsString(new ResourceDao(Resource.fromPublication(publication)));
-        Map<String, AttributeValue> getItemResultMap = ItemUtils.toAttributeValues(Item.fromJSON(jsonString));
-        AmazonDynamoDB client = mock(AmazonDynamoDB.class);
-        when(client.getItem(any(GetItemRequest.class)))
-            .thenReturn(new GetItemResult().withItem(getItemResultMap));
-        when(client.updateItem(any(UpdateItemRequest.class))).thenReturn(new UpdateItemResult()
-            .withAttributes(Collections.emptyMap()));
-        return new ResourceService(client, clock);
-    }
-
-    private void assertThatCauseIsEmptyValueMapException(RuntimeException thrownException) {
-        EmptyValueMapException expectedCause = new EmptyValueMapException();
-        assertThat(thrownException.getCause().getClass(), is(equalTo(expectedCause.getClass())));
-        assertThat(thrownException.getCause().getMessage(), is(equalTo(expectedCause.getMessage())));
     }
 
     private Publication expectedResourceFromSampleResource(Publication sampleResource, Publication savedResource) {

@@ -22,7 +22,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.UserInstance;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -93,7 +93,8 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     void handleRequestReturnsBadRequestWhenOnPublishedPublication() throws IOException, ApiGatewayException {
         Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
-        publicationService.publishPublication(publication);
+
+        publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
@@ -106,6 +107,10 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo((HttpURLConnection.HTTP_BAD_REQUEST))));
+    }
+
+    private UserInstance createUserInstance(Publication publication) {
+        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
 
     @Test

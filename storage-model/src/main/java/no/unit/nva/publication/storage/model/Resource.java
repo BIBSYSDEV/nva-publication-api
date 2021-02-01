@@ -38,7 +38,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
-    private String status;
+    private PublicationStatus status;
     @JsonProperty
     private String owner;
     @JsonProperty
@@ -68,9 +68,9 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
-                                         String resourceIdentifier) {
-        return emptyResource(userIdentifier, organizationId, new SortableIdentifier(resourceIdentifier));
+    public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+        return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+            resourceIdentifier);
     }
 
     public static Resource emptyResource(String userIdentifier, URI organizationId,
@@ -90,7 +90,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
             .withModifiedDate(publication.getModifiedDate())
             .withIndexedDate(publication.getIndexedDate())
             .withPublishedDate(publication.getPublishedDate())
-            .withStatus(publication.getStatus().getValue())
+            .withStatus(publication.getStatus())
             .withPublishedDate(publication.getPublishedDate())
             .withFileSet(publication.getFileSet())
             .withPublisher(publication.getPublisher())
@@ -115,7 +115,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
             .withOwner(getOwner())
-            .withStatus(PublicationStatus.lookup(this.getStatus()))
+            .withStatus(this.getStatus())
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
             .withIndexedDate(getIndexedDate())
@@ -135,6 +135,11 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
     @JsonIgnore
     public URI getCustomerId() {
         return this.getPublisher().getId();
+    }
+
+    @Override
+    public String getStatusString() {
+        return getStatus().toString();
     }
 }
 

@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Process handling Update DOI Status event for Publication.
+ * Process handling Update DOI no.unit.nva.publication.storage.model.Status event for Publication.
  */
 public class UpdateDoiStatusProcess {
 
@@ -58,7 +58,7 @@ public class UpdateDoiStatusProcess {
     }
 
     /**
-     * Update DOI Status.
+     * Update DOI no.unit.nva.publication.storage.model.Status.
      */
     public void updateDoiStatus() {
         try {

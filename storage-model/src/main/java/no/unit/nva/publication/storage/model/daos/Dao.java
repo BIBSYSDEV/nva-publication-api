@@ -43,13 +43,13 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
 
     @Override
     @JacocoGenerated
-    public final void setPrimaryKeySortKey(String key) {
+    public final void setPrimaryKeyPartitionKey(String key) {
         // do nothing
     }
 
     @Override
     @JacocoGenerated
-    public final void setPrimaryKeyPartitionKey(String key) {
+    public final void setPrimaryKeySortKey(String key) {
         // do nothing
     }
 
@@ -117,7 +117,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     private Optional<String> extractStatus() {
         return attempt(this::getData)
             .map(data -> (WithStatus) data)
-            .map(WithStatus::getStatus)
+            .map(WithStatus::getStatusString)
             .toOptional();
     }
 
