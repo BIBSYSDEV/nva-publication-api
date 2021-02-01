@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 
 public final class ResourceServiceUtils {
 
@@ -72,13 +73,8 @@ public final class ResourceServiceUtils {
         return newOrganization(user.getOrganizationUri());
     }
 
-    static TransactWriteItem newPutTransactionItem(Put newDataEntry) {
-        return new TransactWriteItem().withPut(newDataEntry);
-    }
-
     static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return
-            newTransactWriteItemsRequest(Arrays.asList(transaction));
+        return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
     static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
@@ -100,6 +96,14 @@ public final class ResourceServiceUtils {
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }
+    }
+
+    static <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T data, String tableName) {
+
+        Put put = new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
+            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        return new TransactWriteItem().withPut(put);
     }
 
     private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {

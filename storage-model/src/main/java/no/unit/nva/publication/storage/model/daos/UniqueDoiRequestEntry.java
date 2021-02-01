@@ -3,19 +3,16 @@ package no.unit.nva.publication.storage.model.daos;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
-public class IdentifierEntry extends UniquenessEntry {
+public class UniqueDoiRequestEntry extends UniquenessEntry {
 
+    private static final String TYPE = "DoiRequestEntry" + DatabaseConstants.KEY_FIELDS_DELIMITER;
 
-    private static final String TYPE = "IdEntry" + DatabaseConstants.KEY_FIELDS_DELIMITER;
-
-
-    /*For JSON Jackson*/
     @JacocoGenerated
-    public IdentifierEntry() {
+    public UniqueDoiRequestEntry() {
         super();
     }
 
-    public IdentifierEntry(String identifier) {
+    public UniqueDoiRequestEntry(String identifier) {
         super(identifier);
     }
 

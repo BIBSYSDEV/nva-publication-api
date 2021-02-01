@@ -25,6 +25,19 @@ public class DoiRequestDao extends Dao<DoiRequest>
         this.data = doiRequest;
     }
 
+    public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
+        DoiRequest doi = new DoiRequest(
+            doiRequestIdentifier,
+            doiRequestIdentifier,
+            null,
+            owner,
+            publisherId,
+            null,
+            null,
+            null);
+        return new DoiRequestDao(doi);
+    }
+
     @Override
     public DoiRequest getData() {
         return data;

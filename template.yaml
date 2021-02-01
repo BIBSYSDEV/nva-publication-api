@@ -277,6 +277,29 @@ Resources:
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
+          /doirequest:
+            post:
+              summary: Create a DOI request
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: body
+                  name: CreateDoiRequest
+                  schema:
+                    $ref: "#/definitions/CreateDoiRequest"
+              responses:
+                201:
+                  description: "Created"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateDoiRequetFucntion.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
         definitions:
           Publication:
             type: object
@@ -296,6 +319,15 @@ Resources:
                 type: integer
               detail:
                 type: string
+          CreateDoiRequest:
+            type: object
+            properties:
+              identifier:
+                type: string
+                description: The resource identifier
+              message:
+                type: string
+                description: Optional message to Curator
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
@@ -373,6 +405,32 @@ Resources:
         TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+  NvaCreateDoiRequetFucntion:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: create-doi-request
+      Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrestisResources
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /doirequest
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
 
 
   NvaFetchPublicationFunction:
@@ -503,6 +561,7 @@ Resources:
             Path: /by-owner
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:

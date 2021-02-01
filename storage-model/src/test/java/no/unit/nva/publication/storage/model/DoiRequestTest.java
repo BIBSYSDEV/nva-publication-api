@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,14 @@ public class DoiRequestTest {
         assertThat(exception.getMessage(), is(equalTo(DoiRequest.MISSING_RESOURCE_REFERENCE_ERROR)));
     }
 
+    @Test
+    public void doiRequestContainsResourcesMainTitle() {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        Resource resource = Resource.fromPublication(publication);
+        DoiRequest doiRequest = DoiRequest.fromResource(resource, fixedClock());
+        assertThat(doiRequest.getResourceTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
+    }
+
     private static Clock fixedClock() {
         return Clock.fixed(NOW, ZoneId.systemDefault());
     }
@@ -50,6 +59,7 @@ public class DoiRequestTest {
         return new DoiRequest(
             sampleDoiRequest.getIdentifier(),
             null,
+            sampleDoiRequest.getResourceTitle(),
             sampleDoiRequest.getOwner(),
             sampleDoiRequest.getCustomerId(),
             sampleDoiRequest.getStatus(),

@@ -4,6 +4,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURC
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 
@@ -28,7 +30,9 @@ public interface JoinWithResource {
     default String getByResourcePartitionKey() {
         return
             CUSTOMER_INDEX_FIELD_PREFIX
+            + Dao.orgUriToOrgIdentifier(getCustomerId())
             + KEY_FIELDS_DELIMITER
+            + RESOURCE_INDEX_FIELD_PREFIX
             + getResourceIdentifier().toString()
             + KEY_FIELDS_DELIMITER;
     }
@@ -116,4 +120,6 @@ public interface JoinWithResource {
 
     @JsonIgnore
     SortableIdentifier getResourceIdentifier();
+
+    URI getCustomerId();
 }
