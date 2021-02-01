@@ -46,7 +46,7 @@ public class PublicationFanoutHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        PublicationUpdateEvent response = parseResponse();
+        DynamoEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldPublication(), is(nullValue()));
         assertThat(response.getNewPublication(), is(notNullValue()));
@@ -61,7 +61,7 @@ public class PublicationFanoutHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        PublicationUpdateEvent response = parseResponse();
+        DynamoEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldPublication(), is(notNullValue()));
         assertThat(response.getNewPublication(), is(nullValue()));
@@ -76,7 +76,7 @@ public class PublicationFanoutHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        PublicationUpdateEvent response = parseResponse();
+        DynamoEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldPublication(), is(notNullValue()));
         assertThat(response.getNewPublication(), is(notNullValue()));
@@ -104,7 +104,7 @@ public class PublicationFanoutHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        PublicationUpdateEvent response = parseResponse();
+        DynamoEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldPublication(), is(nullValue()));
         assertThat(response.getNewPublication(), is(notNullValue()));
@@ -118,8 +118,8 @@ public class PublicationFanoutHandlerTest {
         assertThat(publication.getEntityDescription().getLanguage(), is(nullValue()));
     }
 
-    private PublicationUpdateEvent parseResponse() {
-        return Try.attempt(() -> objectMapper.readValue(outputStream.toString(), PublicationUpdateEvent.class))
-                .orElseThrow();
+    private DynamoEntryUpdateEvent parseResponse() {
+        return Try.attempt(() -> objectMapper.readValue(outputStream.toString(), DynamoEntryUpdateEvent.class))
+            .orElseThrow();
     }
 }

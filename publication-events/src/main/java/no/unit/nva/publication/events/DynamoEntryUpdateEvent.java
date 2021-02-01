@@ -6,7 +6,7 @@ import java.util.Objects;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 
-public class PublicationUpdateEvent {
+public class DynamoEntryUpdateEvent {
 
     public static final String PUBLICATION_UPDATE_TYPE = "publication.update";
 
@@ -18,17 +18,17 @@ public class PublicationUpdateEvent {
     /**
      * Constructor for creating PublicationUpdateEvent.
      *
-     * @param type  type
-     * @param updateType    eventName from DynamodbStreamRecord
-     * @param oldPublication    old Publication
-     * @param newPublication    new Publication
+     * @param type           type
+     * @param updateType     eventName from DynamodbStreamRecord
+     * @param oldPublication old Publication
+     * @param newPublication new Publication
      */
     @JsonCreator
-    public PublicationUpdateEvent(
-            @JsonProperty("type") String type,
-            @JsonProperty("updateType") String updateType,
-            @JsonProperty("oldPublication") Publication oldPublication,
-            @JsonProperty("newPublication") Publication newPublication) {
+    public DynamoEntryUpdateEvent(
+        @JsonProperty("type") String type,
+        @JsonProperty("updateType") String updateType,
+        @JsonProperty("oldPublication") Publication oldPublication,
+        @JsonProperty("newPublication") Publication newPublication) {
         this.type = type;
         this.updateType = updateType;
         this.oldPublication = oldPublication;
@@ -60,7 +60,7 @@ public class PublicationUpdateEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        PublicationUpdateEvent that = (PublicationUpdateEvent) o;
+        DynamoEntryUpdateEvent that = (DynamoEntryUpdateEvent) o;
         return getType().equals(that.getType())
                 && getUpdateType().equals(that.getUpdateType())
                 && Objects.equals(getOldPublication(), that.getOldPublication())
