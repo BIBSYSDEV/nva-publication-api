@@ -9,6 +9,7 @@ import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -19,7 +20,8 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -34,7 +36,7 @@ public class PublishPublicationHandlerTest {
     public static final String WILDCARD = "*";
 
     private Environment environment;
-    private PublicationService publicationService;
+    private ResourceService publicationService;
     private ByteArrayOutputStream output;
     private Context context;
 
@@ -47,7 +49,7 @@ public class PublishPublicationHandlerTest {
         when(environment.readEnv(PublishPublicationHandler.API_SCHEME)).thenReturn(HTTPS);
         when(environment.readEnv(PublishPublicationHandler.API_HOST)).thenReturn(NVA_UNIT_NO);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        publicationService = mock(PublicationService.class);
+        publicationService = mock(ResourceService.class);
         output = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
@@ -57,7 +59,8 @@ public class PublishPublicationHandlerTest {
         SortableIdentifier identifier = SortableIdentifier.next();
         PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
             PUBLISH_IN_PROGRESS, SC_ACCEPTED);
-        when(publicationService.publishPublication(identifier)).thenReturn(status);
+        when(publicationService.publishPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenReturn(status);
 
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerUtils(objectMapper).requestObjectToApiGatewayRequestInputSteam(

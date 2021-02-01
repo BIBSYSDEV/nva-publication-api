@@ -179,10 +179,8 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
 
     @Override
     public String getStatusString() {
-        return getStatus().toString();
+        return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
     }
-
-
 
     public Publication toPublication() {
 
