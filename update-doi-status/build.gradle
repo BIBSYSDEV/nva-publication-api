@@ -8,18 +8,12 @@ dependencies {
     implementation project(":publication-doi-commons")
     testImplementation project(':publication-commons')
 
-    compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-
+    compileOnly group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
-
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
 }

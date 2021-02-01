@@ -4,6 +4,7 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'base'
+    id 'nebula.lint' version '16.15.9'
     id "io.freefair.lombok" version "5.3.0"
 }
 
@@ -15,15 +16,20 @@ allprojects {
     apply plugin: 'base'
     apply plugin: 'jacoco'
 
+    gradleLint {
+        rules = ['unused-dependency']
+    }
+
     repositories {
         jcenter()
         maven { url "https://jitpack.io" }
+        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
         awsSdkVersion = '1.11.871'
         awsSdk2Version = '2.14.16'
-        nvaCommonsVersion = '0.8.1'
+        nvaCommonsVersion = '1.0.0'
         nvaDatamodelVersion = 'eda02301f3a1fc1a98dc5782c14fc8335df2f133'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
@@ -58,9 +64,8 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-        compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
-
+        compileOnly group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+        testImplementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'

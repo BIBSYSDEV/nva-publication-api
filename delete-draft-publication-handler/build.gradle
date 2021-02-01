@@ -6,11 +6,10 @@ repositories {
 dependencies {
     compileOnly project(':publication-commons')
     implementation project(":publication-events")
-
+    implementation group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     testImplementation project(':publication-commons')
     testImplementation project(":publication-testing")
-    testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'

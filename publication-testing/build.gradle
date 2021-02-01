@@ -7,7 +7,8 @@ dependencies {
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
     api(group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2') {
         because('For generating test data in tests. Another alternative is jfairy')
