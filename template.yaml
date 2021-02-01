@@ -74,6 +74,8 @@ Parameters:
   OrestisResources:
     Type: String
     Default: 'OrestisResources'
+  OrestisResourcesStream:
+    Type: String
 
 Resources:
 
@@ -786,7 +788,7 @@ Resources:
         FanoutSource:
           Type: DynamoDB
           Properties:
-            Stream: !Ref DynamoDBStreamArn
+            Stream: !Sub 'arn:aws:dynamodb:eu-west-1:${AWS::AccountId}:table/OrestisResources/stream/2021-02-01T12:02:08.358'
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
