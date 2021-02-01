@@ -236,7 +236,7 @@ public class ResourceService {
         return fetchedDao.getData();
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings(RAWTYPES)
     private void publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
@@ -364,7 +364,7 @@ public class ResourceService {
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         Map<String, Condition> keyConditions = queryObject
-            .byResourceIdentifierKey(DoiRequestDao.getOrderedContainedType(), ResourceDao.getOrderedContainedType());
+            .byResource(DoiRequestDao.getOrderedContainedType(), ResourceDao.getOrderedContainedType());
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
