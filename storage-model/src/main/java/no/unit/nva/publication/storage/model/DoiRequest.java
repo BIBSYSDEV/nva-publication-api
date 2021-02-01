@@ -19,9 +19,14 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
+public final class DoiRequest implements
+                              WithIdentifier,
+                              RowLevelSecurity,
+                              WithStatus,
+                              JsonSerializable {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";

@@ -20,6 +20,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import nva.commons.core.JsonSerializable;
 
 //TODO: Remove all Lombok dependencies from the final class.
 
@@ -32,7 +33,11 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
+public class Resource implements
+                      WithIdentifier,
+                      RowLevelSecurity,
+                      WithStatus,
+                      JsonSerializable {
 
     public static final String TYPE = Resource.class.getSimpleName();
 

@@ -17,6 +17,7 @@ import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -24,7 +25,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
 })
-public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
+public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & JsonSerializable>
     implements WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
 
