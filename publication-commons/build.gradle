@@ -5,6 +5,7 @@ repositories {
 dependencies {
     api project(":storage-model")
 
+    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
     api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
     api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
     api group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
