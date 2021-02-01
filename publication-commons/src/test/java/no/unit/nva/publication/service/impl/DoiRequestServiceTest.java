@@ -158,7 +158,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForPublishedResourcesReturnsEmptyListForUserFromDifferentOrganization()
+    public void listDoiRequestsForPublishedResourcesDoesNotReturnDoiRequestsFromDifferentOrganization()
         throws ApiGatewayException {
         Publication publishedPublication = createPublication();
         publishPublication(publishedPublication);
