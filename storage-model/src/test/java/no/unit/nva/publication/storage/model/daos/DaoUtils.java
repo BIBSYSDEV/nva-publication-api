@@ -16,6 +16,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceTest;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import nva.commons.core.attempt.Try;
@@ -62,7 +63,8 @@ public final class DaoUtils {
             .orElseThrow();
     }
 
-    protected static <R extends WithIdentifier & RowLevelSecurity> PutItemRequest toPutItemRequest(Dao<R> resource) {
+    protected static <R extends WithIdentifier & RowLevelSecurity & ResourceUpdate> PutItemRequest
+    toPutItemRequest(Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(toDynamoFormat(resource));
     }

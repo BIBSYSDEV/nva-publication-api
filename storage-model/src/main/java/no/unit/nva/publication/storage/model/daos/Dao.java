@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
@@ -24,7 +25,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
 })
-public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
+public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
     implements WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
 

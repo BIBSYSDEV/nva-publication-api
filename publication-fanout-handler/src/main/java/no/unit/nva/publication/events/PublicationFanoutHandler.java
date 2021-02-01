@@ -47,8 +47,7 @@ public class PublicationFanoutHandler
             return Optional.empty();
         }
         try {
-            var publication = toPublication(image);
-            return Optional.of(publication);
+             return toPublication(image);
         } catch (Exception e) {
             logger.error(MAPPING_ERROR, e);
             throw new RuntimeException(MAPPING_ERROR, e);
