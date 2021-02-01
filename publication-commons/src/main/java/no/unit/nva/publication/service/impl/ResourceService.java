@@ -66,8 +66,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class ResourceService {
@@ -92,11 +90,14 @@ public class ResourceService {
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     public static final String RAWTYPES = "rawtypes";
+
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
+    private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
-    public static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         tableName = RESOURCES_TABLE_NAME;
@@ -323,9 +324,9 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(1);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
         } else if (onlyResourceExisits(daos)) {
-            return (ResourceDao) daos.get(0);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
@@ -343,7 +344,7 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(0));
+            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
         }
         return Optional.empty();
     }
@@ -352,8 +353,6 @@ public class ResourceService {
     private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                        SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        String json = attempt(() -> objectMapper.writeValueAsString(queryObject)).orElseThrow();
-        logger.info("QueryObject:" + json);
         QueryRequest queryRequest = queryByResourceIndex(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
