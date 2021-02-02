@@ -74,6 +74,9 @@ Parameters:
   OrestisResources:
     Type: String
     Default: 'OrestisResources'
+  OrestisResourcesStreamArn:
+    Type: String
+
 
 Resources:
 
@@ -761,7 +764,7 @@ Resources:
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
-      CodeUri: publication-event-emitter
+      CodeUri: dynamodb-event-emitter
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
@@ -786,7 +789,7 @@ Resources:
         FanoutSource:
           Type: DynamoDB
           Properties:
-            Stream: !Ref DynamoDBStreamArn
+            Stream: !Ref OrestisResourcesStreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
