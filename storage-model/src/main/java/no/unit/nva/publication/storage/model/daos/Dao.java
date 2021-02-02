@@ -90,7 +90,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     @JsonIgnore
     public abstract SortableIdentifier getIdentifier();
 
-    protected static String orgUriToOrgIdentifier(URI uri) {
+    public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
     }

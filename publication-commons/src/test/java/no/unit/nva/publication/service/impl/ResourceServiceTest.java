@@ -598,6 +598,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private QueryResult queryForDraftResource(ResourceDao resourceDao) {
+
         return client.query(new QueryRequest()
             .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
             .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)

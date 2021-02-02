@@ -41,8 +41,13 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
     }
 
     @JsonIgnore
-    public static String getOrderedContainedType() {
+    public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + Resource.getType();
+    }
+
+    @JsonIgnore
+    public static String getContainedType() {
+        return Resource.getType();
     }
 
     @Override
@@ -76,8 +81,8 @@ public class ResourceDao extends Dao<Resource> implements JoinWithResource {
     }
 
     @Override
-    public String getOrderedType() {
-        return getOrderedContainedType();
+    public String joinByResourceOrderedType() {
+        return joinByResourceContainedOrderedType();
     }
 
     @Override

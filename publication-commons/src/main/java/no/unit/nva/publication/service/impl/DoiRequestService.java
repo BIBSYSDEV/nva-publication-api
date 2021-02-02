@@ -1,36 +1,48 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
+import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
+import com.amazonaws.services.kms.model.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
+import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 
 public class DoiRequestService {
 
-    public static final String RESOURCE_IS_NOT_PUBLISHED_ERROR = "Resource is not published";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
+    public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
@@ -63,6 +75,71 @@ public class DoiRequestService {
         return doiRequest.getIdentifier();
     }
 
+    public List<DoiRequest> listDoiRequestsForPublishedPublications(UserInstance userInstance) {
+        QueryRequest query = queryForListingDoiRequestsForPublishedResourcesByCustomer(userInstance);
+
+        QueryResult result = client.query(query);
+
+        return parseListingDoiRequestsQueryResult(result);
+    }
+
+    private QueryRequest queryForListingDoiRequestsForPublishedResourcesByCustomer(UserInstance userInstance) {
+        final String keyConditionExpression = "#partitionKeyName = :partitionKeyValue";
+        final String partitionKeyValue = formatPartitionKeyValueForByTypeCustomerStatusIndex(userInstance);
+        final String filterExpression = "#data.#resourceStatus = :publishedStatus";
+
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", Dao.CONTAINED_DATA_FIELD_NAME,
+            "#resourceStatus", DoiRequestDao.RESOURCE_STATUS_FIELD_NAME,
+            "#partitionKeyName", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME
+        );
+
+        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+            ":partitionKeyValue", new AttributeValue(partitionKeyValue),
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString())
+        );
+
+        QueryRequest query = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+            .withKeyConditionExpression(keyConditionExpression)
+            .withFilterExpression(filterExpression)
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues);
+        return query;
+    }
+
+    private String formatPartitionKeyValueForByTypeCustomerStatusIndex(UserInstance userInstance) {
+        return WithByTypeCustomerStatusIndex.formatByTypeCustomerStatusPartitionKey(
+            DoiRequestDao.getContainedType(),
+            DoiRequestStatus.REQUESTED.toString(),
+            userInstance.getOrganizationUri()
+        );
+    }
+
+    private List<DoiRequest> parseListingDoiRequestsQueryResult(QueryResult result) {
+        return result.getItems()
+            .stream()
+            .map(map -> parseAttributeValuesMap(map, DoiRequestDao.class))
+            .map(DoiRequestDao::getData)
+            .collect(Collectors.toList());
+    }
+
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier) {
+        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+        QueryResult queryResult = client.query(queryRequest);
+        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()))
+            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
+    }
 
     private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
         return new ConflictException(fail.getException());

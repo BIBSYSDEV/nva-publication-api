@@ -38,8 +38,8 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
 
         QueryResult result = client.query(fetchResourceAndDoiRequest(
             resourceDao,
-            DoiRequestDao.getOrderedContainedType(),
-            ResourceDao.getOrderedContainedType())
+            DoiRequestDao.joinByResourceContainedOrderedType(),
+            ResourceDao.joinByResourceContainedOrderedType())
         );
 
         List<JoinWithResource> retrievedData = parseResult(result);
@@ -61,7 +61,8 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
         client.putItem(toPutItemRequest(resourceDao));
         client.putItem(toPutItemRequest(doiRequestDao));
 
-        QueryRequest query = fetchResourceAndDoiRequest(resourceDao, DoiRequestDao.getOrderedContainedType());
+        QueryRequest query = fetchResourceAndDoiRequest(resourceDao,
+            DoiRequestDao.joinByResourceContainedOrderedType());
         QueryResult result = client.query(query);
 
         List<JoinWithResource> retrievedData = parseResult(result);

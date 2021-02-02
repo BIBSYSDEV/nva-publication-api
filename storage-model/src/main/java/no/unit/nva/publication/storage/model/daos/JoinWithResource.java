@@ -30,17 +30,18 @@ public interface JoinWithResource {
     default String getByResourcePartitionKey() {
         return
             CUSTOMER_INDEX_FIELD_PREFIX
+            + KEY_FIELDS_DELIMITER
             + Dao.orgUriToOrgIdentifier(getCustomerId())
             + KEY_FIELDS_DELIMITER
             + RESOURCE_INDEX_FIELD_PREFIX
-            + getResourceIdentifier().toString()
-            + KEY_FIELDS_DELIMITER;
+            + KEY_FIELDS_DELIMITER
+            + getResourceIdentifier().toString();
     }
 
     @JsonProperty(BY_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByResourceSortKey() {
         return
-            this.getOrderedType()
+            this.joinByResourceOrderedType()
             + KEY_FIELDS_DELIMITER
             + getIdentifier().toString();
     }
@@ -115,7 +116,7 @@ public interface JoinWithResource {
     SortableIdentifier getIdentifier();
 
     @JsonIgnore
-    String getOrderedType();
+    String joinByResourceOrderedType();
 
     @JsonIgnore
     SortableIdentifier getResourceIdentifier();

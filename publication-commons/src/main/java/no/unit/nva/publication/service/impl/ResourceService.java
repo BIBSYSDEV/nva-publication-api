@@ -368,7 +368,11 @@ public class ResourceService {
 
     private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
         Map<String, Condition> keyConditions = queryObject
-            .byResource(DoiRequestDao.getOrderedContainedType(), ResourceDao.getOrderedContainedType());
+            .byResource(
+                DoiRequestDao.joinByResourceContainedOrderedType(),
+                ResourceDao.joinByResourceContainedOrderedType()
+            );
+
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)

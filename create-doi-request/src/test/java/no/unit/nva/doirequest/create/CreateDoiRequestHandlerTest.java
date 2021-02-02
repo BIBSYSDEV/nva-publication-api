@@ -70,9 +70,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
-        throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
+        throws ConflictException, IOException {
         Publication publication = createPublication();
-
 
         sendRequest(publication, publication.getOwner());
 
