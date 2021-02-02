@@ -764,7 +764,7 @@ Resources:
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
-      CodeUri: publication-event-emitter
+      CodeUri: dynamodb-event-emitter
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
