@@ -92,17 +92,18 @@ public class ResourceService {
     public static final String DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO = "data";
     public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
-
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-
     public static final String RAWTYPES = "rawtypes";
+    public static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
+    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
+    private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
-    public static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         tableName = RESOURCES_TABLE_NAME;
@@ -352,9 +353,9 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(1);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
         } else if (onlyResourceExisits(daos)) {
-            return (ResourceDao) daos.get(0);
+            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
@@ -372,7 +373,7 @@ public class ResourceService {
     @SuppressWarnings(RAWTYPES)
     private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
         if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(0));
+            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
         }
         return Optional.empty();
     }
@@ -402,6 +403,7 @@ public class ResourceService {
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
+
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
