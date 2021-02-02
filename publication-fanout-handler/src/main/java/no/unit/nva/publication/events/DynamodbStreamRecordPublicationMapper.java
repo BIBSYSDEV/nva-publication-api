@@ -17,6 +17,7 @@ import java.util.Set;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 
@@ -39,15 +40,16 @@ public final class DynamodbStreamRecordPublicationMapper {
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
-        Dao<?> publication = objectMapper.readValue(item.toJSON(), Dao.class);
-        if (isResourceUpdate(publication.getData())) {
-            return Optional.of(publication)
-                .map(Dao::getData)
-                .filter(DynamodbStreamRecordPublicationMapper::isResourceUpdate)
-                .map(ResourceUpdate::toPublication);
-        } else {
-            return Optional.empty();
-        }
+        DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
+        return Optional.of(dynamoEntry)
+            .filter(entry -> isDao(dynamoEntry))
+            .map(dao -> ((Dao<?>) dao).getData())
+            .filter(DynamodbStreamRecordPublicationMapper::isResourceUpdate)
+            .map(ResourceUpdate::toPublication);
+    }
+
+    private static boolean isDao(DynamoEntry dynamoEntry) {
+        return dynamoEntry instanceof Dao<?>;
     }
 
     private static boolean isResourceUpdate(Object data) {

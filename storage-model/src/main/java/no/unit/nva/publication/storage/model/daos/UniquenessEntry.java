@@ -3,12 +3,16 @@ package no.unit.nva.publication.storage.model.daos;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import nva.commons.core.JacocoGenerated;
 
-public abstract class UniquenessEntry implements WithPrimaryKey {
-
-    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be read,"
-                                                              + "altered or deserialized";
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(IdentifierEntry.class),
+    @JsonSubTypes.Type(UniqueDoiRequestEntry.class),
+})
+public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
 
     private String partitionKey;
     private String sortKey;
@@ -32,7 +36,7 @@ public abstract class UniquenessEntry implements WithPrimaryKey {
 
     @Override
     public final void setPrimaryKeyPartitionKey(String partitionKey) {
-        throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
+        this.partitionKey = partitionKey;
     }
 
     @Override
@@ -43,7 +47,7 @@ public abstract class UniquenessEntry implements WithPrimaryKey {
 
     @Override
     public final void setPrimaryKeySortKey(String sortKey) {
-        throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
+        this.sortKey = sortKey;
     }
 
     protected abstract String getType();

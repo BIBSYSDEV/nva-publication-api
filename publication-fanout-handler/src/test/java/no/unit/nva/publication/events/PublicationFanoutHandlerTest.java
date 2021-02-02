@@ -33,6 +33,7 @@ public class PublicationFanoutHandlerTest {
     public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
     public static final String DYNAMODBEVENT_OLD_IMAGE_JSON = "dynamodbevent_old_image.json";
     public static final String DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON = "dynamodbevent_empty_attribute_value.json";
+    public static final String DYNAMODBEVENT_UNIQUENESS_ENTRY = "dynamodbevent_uniqueness_entry.json";
     private static final SortableIdentifier IDENTIFIER_IN_RESOURCE =
         new SortableIdentifier("0177627d7889-8e380cb5-6851-43fc-b05d-c85f26967270");
 
@@ -129,6 +130,19 @@ public class PublicationFanoutHandlerTest {
         assertThat(fieldWithValueEmptyString(publication), is(nullValue()));
         assertThat(fieldWithValueEmptyArray(publication), is(nullValue()));
         assertThat(fieldWithValueEmptyMap(publication), is(nullValue()));
+    }
+
+    @Test
+    public void handlerReturnsNullWhenInputIsAnUniqueIdentifierEntry() {
+        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        InputStream inputStream = IoUtils.inputStreamFromResources(
+            DYNAMODBEVENT_UNIQUENESS_ENTRY);
+
+        handler.handleRequest(inputStream, outputStream, context);
+        DynamoEntryUpdateEvent response = parseResponse();
+
+        assertThat(response.getNewPublication(), is(nullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
     }
 
     private Pages fieldWithValueEmptyMap(Publication publication) {

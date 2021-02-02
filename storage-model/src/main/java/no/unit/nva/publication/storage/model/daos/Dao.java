@@ -21,12 +21,14 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
 })
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
-    implements WithPrimaryKey,
+    implements DynamoEntry,
+               WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
 
     public static final String URI_PATH_SEPARATOR = "/";
