@@ -182,6 +182,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
         return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
     }
 
+    @Override
     public Publication toPublication() {
 
         no.unit.nva.model.DoiRequest doiRequest = new Builder()

@@ -113,6 +113,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
         return this.toBuilder();
     }
 
+    @Override
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
