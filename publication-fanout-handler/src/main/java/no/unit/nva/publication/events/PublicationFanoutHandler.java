@@ -30,6 +30,7 @@ public class PublicationFanoutHandler
         DynamodbEvent.DynamodbStreamRecord input,
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
+
         Optional<Publication> oldPublication = getPublication(input.getDynamodb().getOldImage());
         Optional<Publication> newPublication = getPublication(input.getDynamodb().getNewImage());
         String updateType = input.getEventName();
