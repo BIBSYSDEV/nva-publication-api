@@ -87,8 +87,6 @@ public class DoiRequestService {
         return parseListingDoiRequestsQueryResult(result);
     }
 
-
-
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier) {
         DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
