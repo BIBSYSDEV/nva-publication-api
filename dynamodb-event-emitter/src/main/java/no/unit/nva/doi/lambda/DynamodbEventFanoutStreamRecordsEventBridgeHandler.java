@@ -1,6 +1,5 @@
 package no.unit.nva.doi.lambda;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
@@ -10,9 +9,6 @@ import no.unit.nva.doi.publisher.EventBridgeRetryClient;
 import no.unit.nva.doi.publisher.EventPublisher;
 import no.unit.nva.doi.publisher.SqsEventPublisher;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryPolicy;
@@ -31,8 +27,6 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements Reque
 
     public static final String AWS_REGION = "AWS_REGION";
     private final EventPublisher eventPublisher;
-    private static final Logger logger = LoggerFactory
-        .getLogger(DynamodbEventFanoutStreamRecordsEventBridgeHandler.class);
 
     @JacocoGenerated
     public DynamodbEventFanoutStreamRecordsEventBridgeHandler() {
@@ -89,8 +83,6 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements Reque
 
     @Override
     public Void handleRequest(DynamodbEvent event, Context context) {
-        String json = attempt(() -> JsonUtils.objectMapper.writeValueAsString(event)).orElseThrow();
-        logger.info("event:" + json);
         eventPublisher.publish(event);
         return null;
     }
