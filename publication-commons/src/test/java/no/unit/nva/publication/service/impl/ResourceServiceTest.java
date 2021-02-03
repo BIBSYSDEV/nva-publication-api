@@ -395,7 +395,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationReturnsPublicationResponseIndicatingThetRequestWasAccepted()
+    public void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
         Publication resource = createSampleResource();
 
@@ -407,7 +407,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublishedPublicationReturnsPublicationResponseIndicatingThatNoActionWasTaken()
+    public void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
         throws ApiGatewayException {
         Publication resource = createSampleResource();
 
