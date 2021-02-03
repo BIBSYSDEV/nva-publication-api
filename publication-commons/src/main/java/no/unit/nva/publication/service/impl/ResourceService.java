@@ -69,8 +69,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class ResourceService {
@@ -96,7 +94,7 @@ public class ResourceService {
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RAWTYPES = "rawtypes";
-    public static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
@@ -417,8 +415,6 @@ public class ResourceService {
     private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                        SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        String json = attempt(() -> objectMapper.writeValueAsString(queryObject)).orElseThrow();
-        logger.info("QueryObject:" + json);
         QueryRequest queryRequest = queryByResourceIndex(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
@@ -438,7 +434,6 @@ public class ResourceService {
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
-
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
