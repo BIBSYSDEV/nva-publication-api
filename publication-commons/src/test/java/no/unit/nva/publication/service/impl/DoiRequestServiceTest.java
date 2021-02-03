@@ -99,39 +99,6 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
-    private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
-                                                             DoiRequest actualDoiRequest) {
-        return DoiRequest.unvalidatedEntry(
-            actualDoiRequest.getIdentifier(),
-            emptyPublication.getIdentifier(),
-            null,
-            emptyPublication.getOwner(),
-            emptyPublication.getPublisher().getId(),
-            DoiRequestStatus.REQUESTED,
-            PublicationStatus.DRAFT,
-            DOI_REQUEST_CREATION_TIME,
-            DOI_REQUEST_CREATION_TIME
-        );
-    }
-
-    private void skipPublicationUpdate() {
-        mockClock.instant();
-    }
-
-    private Publication emptyPublication() throws ConflictException {
-        Organization publisher = new Builder().withId(SOME_PUBLISHER).build();
-        Publication publication = new Publication.Builder()
-            .withOwner(SOME_USER)
-            .withPublisher(publisher)
-            .withStatus(PublicationStatus.DRAFT)
-            .build();
-
-        Publication emptyPublication = resourceService.createPublication(publication);
-        skipPublicationUpdate();
-
-        return emptyPublication;
-    }
-
     @Test
     public void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
         throws ApiGatewayException {
@@ -274,6 +241,39 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(
             createUserInstance(publishedPublication),
             publishedPublication.getIdentifier());
+    }
+
+    private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
+                                                             DoiRequest actualDoiRequest) {
+        return DoiRequest.unvalidatedEntry(
+            actualDoiRequest.getIdentifier(),
+            emptyPublication.getIdentifier(),
+            null,
+            emptyPublication.getOwner(),
+            emptyPublication.getPublisher().getId(),
+            DoiRequestStatus.REQUESTED,
+            PublicationStatus.DRAFT,
+            DOI_REQUEST_CREATION_TIME,
+            DOI_REQUEST_CREATION_TIME
+        );
+    }
+
+    private void skipPublicationUpdate() {
+        mockClock.instant();
+    }
+
+    private Publication emptyPublication() throws ConflictException {
+        Organization publisher = new Builder().withId(SOME_PUBLISHER).build();
+        Publication publication = new Publication.Builder()
+            .withOwner(SOME_USER)
+            .withPublisher(publisher)
+            .withStatus(PublicationStatus.DRAFT)
+            .build();
+
+        Publication emptyPublication = resourceService.createPublication(publication);
+        skipPublicationUpdate();
+
+        return emptyPublication;
     }
 
     private Publication createPublishedPublication()
