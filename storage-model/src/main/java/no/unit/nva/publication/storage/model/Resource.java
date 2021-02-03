@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -140,7 +141,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
 
     @Override
     public String getStatusString() {
-        return getStatus().toString();
+        return nonNull(getStatus()) ? getStatus().toString() : null;
     }
 }
 

@@ -29,8 +29,8 @@ import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
@@ -49,6 +49,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -394,14 +395,28 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationThrowsTransactionCheckExceptionOnPublishedPublication()
+    public void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
         Publication resource = createSampleResource();
 
-        Executable action = () -> publishResource(resource);
+        UserInstance userInstance = extractUserInstance(resource);
+        PublishPublicationStatusResponse response = resourceService.publishPublication(
+            userInstance, resource.getIdentifier());
 
-        assertDoesNotThrow(action);
-        assertThrows(TransactionCanceledException.class, action);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
+    }
+
+    @Test
+    public void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
+        throws ApiGatewayException {
+        Publication resource = createSampleResource();
+
+        UserInstance userInstance = extractUserInstance(resource);
+        resourceService.publishPublication(userInstance, resource.getIdentifier());
+        PublishPublicationStatusResponse response = resourceService.publishPublication(
+            userInstance, resource.getIdentifier());
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NO_CONTENT)));
     }
 
     @Test

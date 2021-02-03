@@ -38,6 +38,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
 import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
+import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,7 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -89,6 +91,10 @@ public class ResourceService {
     public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+
+    public static final String PUBLISH_COMPLETED = "Publication is published.";
+    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
+
     public static final String RAWTYPES = "rawtypes";
 
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
@@ -169,9 +175,10 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+    public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
+                                                               SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        publishResource(userInstance, resourceIdentifier);
+        return publishResource(userInstance, resourceIdentifier);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance,
@@ -241,22 +248,44 @@ public class ResourceService {
     }
 
     @SuppressWarnings(RAWTYPES)
-    private void publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+    private PublishPublicationStatusResponse publishResource(UserInstance userInstance,
+                                                             SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
-        Optional<DoiRequestDao> doiRequestDao = extractDoiRequest(daos);
+
+        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
+            return publishCompletedStatus();
+        }
 
         validateForPublishing(resourceDao.getData());
+        setResourceStatusToPublished(daos, resourceDao);
+        return publishingInProgressStatus();
+    }
 
-        List<TransactWriteItem> transactionItems = new ArrayList<>();
-        String nowString = nowAsString();
-        transactionItems.add(publishUpdateRequest(resourceDao, nowString));
-        doiRequestDao.ifPresent(dao -> transactionItems.add(updateDoiRequestResourceStatus(dao, nowString)));
+    private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
+        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
             .withTransactItems(transactionItems);
         client.transactWriteItems(transactWriteItemsRequest);
+    }
+
+    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
+        String nowString = nowAsString();
+        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.add(publishUpdateRequest(resourceDao, nowString));
+        Optional<DoiRequestDao> doiRequestDao = extractDoiRequest(daos);
+        doiRequestDao.ifPresent(dao -> transactionItems.add(updateDoiRequestResourceStatus(dao, nowString)));
+        return transactionItems;
+    }
+
+    private PublishPublicationStatusResponse publishingInProgressStatus() {
+        return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
+    }
+
+    private PublishPublicationStatusResponse publishCompletedStatus() {
+        return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
     }
 
     private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
