@@ -4,6 +4,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -21,6 +22,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
     private static final Logger LOGGER = LoggerFactory.getLogger(ListDoiRequestsHandler.class);
+    public static final String EMPTY_STRING = "";
     private final DoiRequestService doiRequestService;
 
     public ListDoiRequestsHandler(Environment environment,
@@ -34,13 +36,33 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         String role = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
         String userId = requestInfo.getFeideId().orElse(null);
+        String userRoles = requestInfo.getAssignedRoles().orElse(EMPTY_STRING);
         UserInstance userInstance = new UserInstance(userId, customerId);
-        if (role.equals(CURATOR_ROLE)) {
+        if (userIsACurator(role, userRoles)) {
             return fetchDoiRequestsForCurator(userInstance);
-        } else if (CREATOR_ROLE.equals(role)) {
+        } else if (userIsACreator(role, userRoles)) {
             return fetchDoiRequestsForUser(userInstance);
         }
         return new Publication[0];
+    }
+
+    private boolean userIsACreator(String requestedRole, String userRolesCsv) {
+        return userHasRequestedRole(requestedRole, userRolesCsv, CREATOR_ROLE);
+    }
+
+    private boolean userIsACurator(String role, String userRolesCsv) {
+        return userHasRequestedRole(role, userRolesCsv, CURATOR_ROLE);
+    }
+
+    private boolean userHasRequestedRole(String requestedRole, String userRolesCsv, String systemDefinedRole) {
+        boolean userHasRequestedRole = userHasRequestedRole(requestedRole, userRolesCsv);
+        return requestedRole.equals(systemDefinedRole) && userHasRequestedRole;
+    }
+
+    private boolean userHasRequestedRole(String role, String userRolesCsv) {
+        String userRolesUpperCased = userRolesCsv.toUpperCase(Locale.getDefault());
+        String requestedRole = role.toUpperCase(Locale.getDefault());
+        return userRolesUpperCased.contains(requestedRole);
     }
 
     @Override
