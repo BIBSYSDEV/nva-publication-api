@@ -74,9 +74,6 @@ Parameters:
   OrestisResources:
     Type: String
     Default: 'OrestisResources'
-  OrestisResourcesStreamArn:
-    Type: String
-
 
 Resources:
 
@@ -789,7 +786,7 @@ Resources:
         FanoutSource:
           Type: DynamoDB
           Properties:
-            Stream: !Ref OrestisResourcesStreamArn
+            Stream: !Ref DynamoDBStreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
