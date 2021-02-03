@@ -16,7 +16,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.kms.model.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -39,6 +38,7 @@ import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 
@@ -87,9 +87,6 @@ public class DoiRequestService {
         return parseListingDoiRequestsQueryResult(result);
     }
 
-
-
-
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
 
         DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier(),
@@ -107,8 +104,11 @@ public class DoiRequestService {
         return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
 
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier) {
+    public static DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                               SortableIdentifier resourceIdentifier,
+                                                               String tableName,
+                                                               AmazonDynamoDB client
+    ) throws NotFoundException {
         DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
@@ -121,6 +121,12 @@ public class DoiRequestService {
             .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
+    }
+
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
     }
 
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {

@@ -23,12 +23,12 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -51,6 +51,7 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -92,6 +93,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
 
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
+    public static final String ANOTHER_TITLE = "anotherTitle";
 
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
@@ -585,6 +587,57 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThrows(ResourceCannotBeDeletedException.class, action);
     }
 
+    @Test
+    public void updateResourceUpdatesLinkedDoiRequestUponUpdate()
+        throws ConflictException, BadRequestException, NotFoundException {
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        Publication resource = createSampleResource();
+        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
+        DoiRequest originalDoiRequest = createDoiRequest(doiRequestService, resource, userInstance);
+
+        resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
+        resourceService.updatePublication(resource);
+
+        DoiRequest updatedDoiRequest = doiRequestService
+            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+
+        DoiRequest expectedDoiRequest = DoiRequest.unvalidatedEntry(
+            originalDoiRequest.getIdentifier(),
+            resource.getIdentifier(),
+            ANOTHER_TITLE,
+            resource.getOwner(),
+            resource.getPublisher().getId(),
+            originalDoiRequest.getStatus(),
+            resource.getStatus(),
+            originalDoiRequest.getCreatedDate(),
+            resource.getModifiedDate()
+        );
+        assertThat(updatedDoiRequest, is(equalTo(expectedDoiRequest)));
+    }
+
+    @Test
+    public void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
+        throws ConflictException {
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        Publication resource = createSampleResource();
+        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
+
+        resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
+        resourceService.updatePublication(resource);
+
+        Executable action = () -> doiRequestService
+            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+
+        assertThrows(NotFoundException.class, action);
+    }
+
+    private DoiRequest createDoiRequest(DoiRequestService doiRequestService, Publication resource,
+                                        UserInstance userInstance)
+        throws BadRequestException, ConflictException, NotFoundException {
+        doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
+        return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+    }
+
     private void verifyThatTheResourceIsInThePublishedResources(Publication resourceWithStatusDraft) {
         ResourceDao resourceDaoWithStatusPublished = queryObjectForPublishedResource(resourceWithStatusDraft);
 
@@ -686,9 +739,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updatePublication(resourceUpdate);
-        ConditionalCheckFailedException exception = assertThrows(ConditionalCheckFailedException.class, action);
+        TransactionCanceledException exception = assertThrows(TransactionCanceledException.class, action);
         String message = exception.getMessage();
-        assertThat(message, containsString(ConditionalCheckFailedException.class.getSimpleName()));
+        assertThat(message, containsString(TransactionCanceledException.class.getSimpleName()));
     }
 
     private Publication updateResourceTitle(Publication resource) {
