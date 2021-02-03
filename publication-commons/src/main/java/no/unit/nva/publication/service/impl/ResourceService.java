@@ -264,14 +264,14 @@ public class ResourceService {
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
-        List<TransactWriteItem> transactionItems = crateUpdateTransactionItems(daos, resourceDao);
+        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
             .withTransactItems(transactionItems);
         client.transactWriteItems(transactWriteItemsRequest);
     }
 
-    private List<TransactWriteItem> crateUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
+    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
         String nowString = nowAsString();
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(publishUpdateRequest(resourceDao, nowString));
