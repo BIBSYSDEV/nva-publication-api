@@ -1,10 +1,12 @@
 package no.unit.nva.publication.service.impl;
 
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.emptyCollectionOf;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
@@ -19,6 +21,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
@@ -29,6 +33,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -37,13 +42,15 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
     public static final String SOME_USER = "some@user.com";
+
     public static final URI SOME_PUBLISHER = URI.create("https://some-publisher.example.org");
+    public static final String SOME_CURATOR = "some@curator";
+
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
-    public static final String SOME_CURATOR = "some@curator";
-    private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.com");
+    private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.example.org");
 
     private Clock mockClock;
     private ResourceService resourceService;
@@ -160,8 +167,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void listDoiRequestsForPublishedResourcesDoesNotReturnDoiRequestsFromDifferentOrganization()
         throws ApiGatewayException {
-        Publication publishedPublication = createPublication();
-        publishPublication(publishedPublication);
+        Publication publishedPublication = createPublishedPublication();
 
         createDoiRequest(publishedPublication);
 
@@ -176,6 +182,39 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
         DoiRequest expectedDoiRequest = getDoiRequest(publishedPublication);
         assertThat(resultForRelevantUser, hasItem(expectedDoiRequest));
+    }
+
+    @Test
+    public void listDoiRequestsForUserReturnsDoiRequestsWithStatusRequested() throws ApiGatewayException {
+        Publication publication = createPublication();
+        createDoiRequest(publication);
+
+        UserInstance userInstance = createUserInstance(publication);
+        List<DoiRequest> result = doiRequestService.listDoiRequestsForUser(userInstance);
+
+        var expectedDoiRequest =
+            doiRequestService.getDoiRequestByResourceIdentifier(userInstance, publication.getIdentifier());
+
+        assertThat(result, is(equalTo(List.of(expectedDoiRequest))));
+    }
+
+    @Test
+    public void listDoiRequestsForUserReturnsAllRelevantDoiRequests() throws ApiGatewayException {
+        int endExclusive = 10;
+        List<Publication> publications = IntStream.range(0, endExclusive).boxed()
+            .map(attempt(i -> createPublication()))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
+
+        for (Publication publication : publications) {
+            doiRequestService.createDoiRequest(createUserInstance(publication), publication.getIdentifier());
+        }
+
+        UserInstance userInstance = createUserInstance(publications.get(0));
+        int resultSizePerQuery = 1;
+        List<DoiRequest> result = doiRequestService.listDoiRequestsForUser(userInstance, resultSizePerQuery);
+
+        assertThat(result, hasSize(endExclusive));
     }
 
     public DoiRequest getDoiRequest(Publication publishedPublication) {

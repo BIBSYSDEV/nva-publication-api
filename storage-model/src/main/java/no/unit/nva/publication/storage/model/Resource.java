@@ -73,7 +73,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
             resourceIdentifier);
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
+    public static Resource emptyResource(String userIdentifier,
+                                         URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setPublisher(new Organization.Builder().withId(organizationId).build());

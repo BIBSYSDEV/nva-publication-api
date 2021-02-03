@@ -169,9 +169,9 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifer)
+    public void publishPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        publishResource(userInstance, resourceIdentifer);
+        publishResource(userInstance, resourceIdentifier);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance,
@@ -372,7 +372,6 @@ public class ResourceService {
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
-
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)

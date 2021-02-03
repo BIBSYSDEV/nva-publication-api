@@ -20,7 +20,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
     JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
-    public static final String RESOURCE_STATUS_FIELD_NAME = "resourceStatus";
+
     private DoiRequest data;
 
     @JacocoGenerated
@@ -34,7 +34,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
 
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
-        DoiRequest doi = new DoiRequest(
+        DoiRequest doi = DoiRequest.unvalidatedEntry(
             doiRequestIdentifier,
             doiRequestIdentifier,
             null,
@@ -47,9 +47,14 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return new DoiRequestDao(doi);
     }
 
+    public static DoiRequestDao queryObject(URI publisherId, String owner) {
+        return queryObject(publisherId,owner,null);
+    }
+
+
     public static DoiRequestDao queryByResourceIdentifier(UserInstance userInstance,
                                                           SortableIdentifier resourceIdentifier) {
-        DoiRequest doi = new DoiRequest(
+        DoiRequest doi = DoiRequest.unvalidatedEntry(
             null,
             resourceIdentifier,
             null,

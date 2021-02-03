@@ -1,6 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,21 +12,28 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequest.Builder;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
+public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
 
+    public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
+    public static final String STATUS_FIELD = "status";
     public static final String TYPE = DoiRequest.class.getSimpleName();
 
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
     @JsonProperty
     private final SortableIdentifier resourceIdentifier;
-    @JsonProperty
+
+    @JsonProperty(STATUS_FIELD)
     private final DoiRequestStatus status;
-    @JsonProperty
+    @JsonProperty(RESOURCE_STATUS_FIELD)
     private final PublicationStatus resourceStatus;
     @JsonProperty
     private final Instant modifiedDate;
@@ -43,18 +50,18 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
     private SortableIdentifier identifier;
 
     @JsonCreator
-    public DoiRequest(@JsonProperty("identifier") SortableIdentifier identifier,
-                      @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
-                      @JsonProperty("resourceTitle") String resourceTitle,
-                      @JsonProperty("owner") String owner,
-                      @JsonProperty("customerId") URI customerId,
-                      @JsonProperty("status") DoiRequestStatus status,
-                      @JsonProperty("resourceStatus") PublicationStatus resourceStatus,
-                      @JsonProperty("modifiedDate") Instant modifiedDate,
-                      @JsonProperty("createdDate") Instant createdDate) {
+    private DoiRequest(@JsonProperty("identifier") SortableIdentifier identifier,
+                       @JsonProperty("resourceIdentifier") SortableIdentifier resourceIdentifier,
+                       @JsonProperty("resourceTitle") String resourceTitle,
+                       @JsonProperty("owner") String owner,
+                       @JsonProperty("customerId") URI customerId,
+                       @JsonProperty(STATUS_FIELD) DoiRequestStatus status,
+                       @JsonProperty(RESOURCE_STATUS_FIELD) PublicationStatus resourceStatus,
+                       @JsonProperty("createdDate") Instant createdDate,
+                       @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.identifier = identifier;
         this.resourceTitle = resourceTitle;
-        this.resourceIdentifier = validateResourceIdentifier(resourceIdentifier);
+        this.resourceIdentifier = resourceIdentifier;
         this.status = status;
         this.resourceStatus = resourceStatus;
         this.modifiedDate = modifiedDate;
@@ -63,49 +70,67 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         this.owner = owner;
     }
 
+    public static DoiRequest unvalidatedEntry(SortableIdentifier identifier,
+                                              SortableIdentifier resourceIdentifier,
+                                              String mainTitle,
+                                              String owner,
+                                              URI id,
+                                              DoiRequestStatus requested,
+                                              PublicationStatus status,
+                                              Instant createdDate,
+                                              Instant modifiedDate) {
+        return new DoiRequest(
+            identifier,
+            resourceIdentifier,
+            mainTitle,
+            owner,
+            id,
+            requested,
+            status,
+            createdDate,
+            modifiedDate
+        );
+    }
+
     public static DoiRequest fromResource(Resource resource, Clock clock) {
         Instant now = clock.instant();
-        return new DoiRequest(SortableIdentifier.next(),
+        return newEntry(SortableIdentifier.next(),
             resource.getIdentifier(),
             resource.getEntityDescription().getMainTitle(),
             resource.getOwner(),
             resource.getCustomerId(),
             DoiRequestStatus.REQUESTED,
             resource.getStatus(),
-            now,
             now
         );
     }
 
+    public static DoiRequest newEntry(SortableIdentifier identifier,
+                                      SortableIdentifier resourceIdentifier,
+                                      String mainTitle,
+                                      String owner,
+                                      URI id,
+                                      DoiRequestStatus requested,
+                                      PublicationStatus status,
+                                      Instant createdDate) {
+
+        DoiRequest doiRequest = unvalidatedEntry(
+            identifier,
+            resourceIdentifier,
+            mainTitle,
+            owner,
+            id,
+            requested,
+            status,
+            createdDate,
+            createdDate
+        );
+        doiRequest.validate();
+        return doiRequest;
+    }
+
     public static String getType() {
         return DoiRequest.TYPE;
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(), getCustomerId(),
-            getOwner(), getResourceTitle(), getIdentifier());
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof DoiRequest)) {
-            return false;
-        }
-        DoiRequest that = (DoiRequest) o;
-        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && getStatus().equals(that.getStatus())
-               && Objects.equals(getModifiedDate(), that.getModifiedDate())
-               && Objects.equals(getCreatedDate(), that.getCreatedDate())
-               && Objects.equals(getCustomerId(), that.getCustomerId())
-               && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
-               && Objects.equals(getIdentifier(), that.getIdentifier());
     }
 
     public PublicationStatus getResourceStatus() {
@@ -157,10 +182,67 @@ public class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus 
         return getStatus().toString();
     }
 
-    private SortableIdentifier validateResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        if (nonNull(resourceIdentifier)) {
-            return resourceIdentifier;
+
+
+    public Publication toPublication() {
+
+        no.unit.nva.model.DoiRequest doiRequest = new Builder()
+            .withStatus(getStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .build();
+
+        EntityDescription entityDescription = new EntityDescription.Builder()
+            .withMainTitle(getResourceTitle())
+            .build();
+
+        Organization customer = new Organization.Builder()
+            .withId(getCustomerId())
+            .build();
+
+        return new
+            Publication.Builder()
+            .withIdentifier(getResourceIdentifier())
+            .withStatus(getResourceStatus())
+            .withEntityDescription(entityDescription)
+            .withPublisher(customer)
+            .withOwner(getOwner())
+            .withDoiRequest(doiRequest)
+            .build();
+    }
+
+    public void validate() {
+        if (isNull(resourceIdentifier)) {
+            throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
         }
-        throw new IllegalArgumentException(MISSING_RESOURCE_REFERENCE_ERROR);
+    }
+
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DoiRequest)) {
+            return false;
+        }
+        DoiRequest that = (DoiRequest) o;
+        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && getStatus() == that.getStatus()
+               && getResourceStatus() == that.getResourceStatus()
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && Objects.equals(getIdentifier(), that.getIdentifier());
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(),
+            getCreatedDate(),
+            getCustomerId(), getOwner(), getResourceTitle(), getIdentifier());
     }
 }

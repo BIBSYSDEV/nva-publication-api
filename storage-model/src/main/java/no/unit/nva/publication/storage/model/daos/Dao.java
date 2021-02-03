@@ -31,20 +31,25 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
 
+    public static String orgUriToOrgIdentifier(URI uri) {
+        String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
+        return pathParts[pathParts.length - 1];
+    }
+
     @Override
     public final String getPrimaryKeyPartitionKey() {
         return formatPrimaryPartitionKey(getCustomerId(), getOwner());
     }
 
     @Override
-    public final String getPrimaryKeySortKey() {
-        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
-    }
-
-    @Override
     @JacocoGenerated
     public final void setPrimaryKeyPartitionKey(String key) {
         // do nothing
+    }
+
+    @Override
+    public final String getPrimaryKeySortKey() {
+        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 
     @Override
@@ -89,11 +94,6 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
 
     @JsonIgnore
     public abstract SortableIdentifier getIdentifier();
-
-    public static String orgUriToOrgIdentifier(URI uri) {
-        String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
-        return pathParts[pathParts.length - 1];
-    }
 
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);

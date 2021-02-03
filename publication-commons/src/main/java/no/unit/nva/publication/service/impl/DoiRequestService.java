@@ -5,6 +5,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURC
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.daos.DoiRequestDao.queryObject;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -18,6 +19,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.kms.model.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -27,6 +29,7 @@ import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -41,8 +44,9 @@ import nva.commons.core.attempt.Failure;
 
 public class DoiRequestService {
 
-    private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
+    private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
+    private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
@@ -83,6 +87,93 @@ public class DoiRequestService {
         return parseListingDoiRequestsQueryResult(result);
     }
 
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier) {
+        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+        QueryResult queryResult = client.query(queryRequest);
+        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()))
+            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
+    }
+
+    public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
+
+        DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier(),
+            identifier);
+        GetItemRequest getItemRequest = new GetItemRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withKey(queryObject.primaryKey());
+        GetItemResult result = client.getItem(getItemRequest);
+        Map<String, AttributeValue> item = result.getItem();
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
+    }
+
+    public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
+        return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
+    }
+
+    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
+        QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
+        return performQueryWithPotentiallyManyResults(query);
+    }
+
+    private List<DoiRequest> performQueryWithPotentiallyManyResults(QueryRequest query) {
+        Map<String, AttributeValue> startKey = null;
+        List<DoiRequest> result = new ArrayList<>();
+        do {
+            query.withExclusiveStartKey(startKey);
+            QueryResult queryResult = client.query(query);
+            List<DoiRequest> lastItems = parseListingDoiRequestsQueryResult(queryResult);
+            result.addAll(lastItems);
+            startKey = queryResult.getLastEvaluatedKey();
+        } while (noMoreResults(startKey));
+        return result;
+    }
+
+    private boolean noMoreResults(Map<String, AttributeValue> startKey) {
+        return startKey != null && !startKey.isEmpty();
+    }
+
+    private QueryRequest listDoiRequestForUserQuery(UserInstance userInstance, int maxResultSize) {
+        String queryExpression = "#PK= :PK";
+        String filterExpression = "#data.#status = :requestedStatus OR #data.#status = :rejectedStatus";
+
+        Map<String, String> expressionAttributeNames =
+            Map.of(
+                "#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME,
+                "#data", DoiRequestDao.CONTAINED_DATA_FIELD_NAME,
+                "#status", DoiRequest.STATUS_FIELD);
+
+        String primaryKeyPartitionKeyValue = doiRequestPrimaryKeyPartionKeyValue(userInstance);
+
+        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+            ":PK", new AttributeValue(primaryKeyPartitionKeyValue),
+            ":requestedStatus", new AttributeValue(DoiRequestStatus.REQUESTED.toString()),
+            ":rejectedStatus", new AttributeValue(DoiRequestStatus.REJECTED.toString())
+        );
+
+        QueryRequest query = new QueryRequest().withTableName(tableName)
+            .withKeyConditionExpression(queryExpression)
+            .withFilterExpression(filterExpression)
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues)
+            .withLimit(maxResultSize);
+        return query;
+    }
+
+    private String doiRequestPrimaryKeyPartionKeyValue(UserInstance userInstance) {
+        DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
+        return queryObject.getPrimaryKeyPartitionKey();
+    }
+
     private QueryRequest queryForListingDoiRequestsForPublishedResourcesByCustomer(UserInstance userInstance) {
         final String keyConditionExpression = "#partitionKeyName = :partitionKeyValue";
         final String partitionKeyValue = formatPartitionKeyValueForByTypeCustomerStatusIndex(userInstance);
@@ -90,7 +181,7 @@ public class DoiRequestService {
 
         Map<String, String> expressionAttributeNames = Map.of(
             "#data", Dao.CONTAINED_DATA_FIELD_NAME,
-            "#resourceStatus", DoiRequestDao.RESOURCE_STATUS_FIELD_NAME,
+            "#resourceStatus", DoiRequest.RESOURCE_STATUS_FIELD,
             "#partitionKeyName", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME
         );
 
@@ -125,37 +216,8 @@ public class DoiRequestService {
             .collect(Collectors.toList());
     }
 
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier) {
-        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
-        QueryResult queryResult = client.query(queryRequest);
-        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
-            .stream()
-            .collect(SingletonCollector.collect()))
-            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
-        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
-        return dao.getData();
-    }
-
     private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
         return new ConflictException(fail.getException());
-    }
-
-    public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
-
-        DoiRequestDao queryObject = DoiRequestDao
-            .queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier(), identifier);
-        GetItemRequest getItemRequest = new GetItemRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withKey(queryObject.primaryKey());
-        GetItemResult result = client.getItem(getItemRequest);
-        Map<String, AttributeValue> item = result.getItem();
-        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
-        return dao.getData();
     }
 
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -170,7 +232,8 @@ public class DoiRequestService {
 
     private DoiRequest createNewDoiRequestEntry(Publication publication) {
         Instant now = clock.instant();
-        return new DoiRequest(
+
+        return DoiRequest.newEntry(
             identifierProvider.get(),
             publication.getIdentifier(),
             publication.getEntityDescription().getMainTitle(),
@@ -178,7 +241,6 @@ public class DoiRequestService {
             publication.getPublisher().getId(),
             DoiRequestStatus.REQUESTED,
             publication.getStatus(),
-            now,
             now);
     }
 
