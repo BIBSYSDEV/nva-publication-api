@@ -87,8 +87,21 @@ public class DoiRequestService {
         return parseListingDoiRequestsQueryResult(result);
     }
 
-
-
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier) {
+        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+        QueryResult queryResult = client.query(queryRequest);
+        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()))
+            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
+    }
 
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
 
@@ -105,22 +118,6 @@ public class DoiRequestService {
 
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
         return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
-    }
-
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier) {
-        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
-        QueryResult queryResult = client.query(queryRequest);
-        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
-            .stream()
-            .collect(SingletonCollector.collect()))
-            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
-        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
-        return dao.getData();
     }
 
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
