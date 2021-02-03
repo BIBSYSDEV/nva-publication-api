@@ -63,8 +63,8 @@ public final class DaoUtils {
             .orElseThrow();
     }
 
-    protected static <R extends WithIdentifier & RowLevelSecurity & ResourceUpdate> PutItemRequest
-    toPutItemRequest(Dao<R> resource) {
+    protected static <R extends WithIdentifier & RowLevelSecurity & ResourceUpdate> PutItemRequest toPutItemRequest(
+        Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(toDynamoFormat(resource));
     }
