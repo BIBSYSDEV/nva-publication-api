@@ -86,6 +86,12 @@ public class DoiRequestService {
         return dao.getData();
     }
 
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
+    }
+
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException, ConflictException {
 
@@ -117,12 +123,6 @@ public class DoiRequestService {
         Map<String, AttributeValue> item = result.getItem();
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
-    }
-
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
-        return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
     }
 
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
