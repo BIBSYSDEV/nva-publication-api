@@ -10,6 +10,8 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
@@ -22,7 +24,7 @@ public class DynamoDbFanoutPublicationDtoProducer
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
-
+    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
     @JacocoGenerated
     public DynamoDbFanoutPublicationDtoProducer() {
         super(DynamoEntryUpdateEvent.class);
@@ -34,6 +36,7 @@ public class DynamoDbFanoutPublicationDtoProducer
         AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
         Context context) {
 
+        logger.info(event.toJsonString());
         PublicationHolder updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
         validate(updatedDoiInformationEvent);
         return updatedDoiInformationEvent;
