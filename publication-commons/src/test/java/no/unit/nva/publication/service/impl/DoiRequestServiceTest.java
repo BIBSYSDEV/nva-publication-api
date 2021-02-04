@@ -24,7 +24,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
@@ -80,11 +84,19 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(doiRequest, is(not(nullValue())));
     }
 
-    public Publication createPublishedPublication()
-        throws ApiGatewayException {
-        Publication publication = createPublication();
-        publishPublication(publication);
-        return publication;
+    @Test
+    public void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
+        throws ConflictException, BadRequestException {
+        Publication emptyPublication = emptyPublication();
+        UserInstance userInstance = createUserInstance(emptyPublication);
+        doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
+
+        DoiRequest actualDoiRequest = doiRequestService.getDoiRequestByResourceIdentifier(userInstance,
+            emptyPublication.getIdentifier());
+
+        DoiRequest expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
+
+        assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
     @Test
@@ -229,6 +241,46 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(
             createUserInstance(publishedPublication),
             publishedPublication.getIdentifier());
+    }
+
+    private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
+                                                             DoiRequest actualDoiRequest) {
+        return DoiRequest.unvalidatedEntry(
+            actualDoiRequest.getIdentifier(),
+            emptyPublication.getIdentifier(),
+            null,
+            emptyPublication.getOwner(),
+            emptyPublication.getPublisher().getId(),
+            DoiRequestStatus.REQUESTED,
+            PublicationStatus.DRAFT,
+            DOI_REQUEST_CREATION_TIME,
+            DOI_REQUEST_CREATION_TIME
+        );
+    }
+
+    private void skipPublicationUpdate() {
+        mockClock.instant();
+    }
+
+    private Publication emptyPublication() throws ConflictException {
+        Organization publisher = new Builder().withId(SOME_PUBLISHER).build();
+        Publication publication = new Publication.Builder()
+            .withOwner(SOME_USER)
+            .withPublisher(publisher)
+            .withStatus(PublicationStatus.DRAFT)
+            .build();
+
+        Publication emptyPublication = resourceService.createPublication(publication);
+        skipPublicationUpdate();
+
+        return emptyPublication;
+    }
+
+    private Publication createPublishedPublication()
+        throws ApiGatewayException {
+        Publication publication = createPublication();
+        publishPublication(publication);
+        return publication;
     }
 
     private void createDoiRequest(Publication publishedPublication)

@@ -68,8 +68,6 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.GodClass")
 public class ResourceService {
@@ -106,7 +104,6 @@ public class ResourceService {
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
-    public static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         tableName = RESOURCES_TABLE_NAME;
@@ -251,7 +248,6 @@ public class ResourceService {
     }
 
     @SuppressWarnings(RAWTYPES)
-
     private PublishPublicationStatusResponse publishResource(UserInstance userInstance,
                                                              SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
@@ -268,14 +264,14 @@ public class ResourceService {
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
-        List<TransactWriteItem> transactionItems = crateUpdateTransactionItems(daos, resourceDao);
+        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
             .withTransactItems(transactionItems);
         client.transactWriteItems(transactWriteItemsRequest);
     }
 
-    private List<TransactWriteItem> crateUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
+    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
         String nowString = nowAsString();
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(publishUpdateRequest(resourceDao, nowString));
@@ -386,8 +382,6 @@ public class ResourceService {
     private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                        SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        String json = attempt(() -> objectMapper.writeValueAsString(queryObject)).orElseThrow();
-        logger.info("QueryObject:" + json);
         QueryRequest queryRequest = queryByResourceIndex(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
@@ -407,7 +401,6 @@ public class ResourceService {
                 DoiRequestDao.joinByResourceContainedOrderedType(),
                 ResourceDao.joinByResourceContainedOrderedType()
             );
-
         return new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_RESOURCE_INDEX_NAME)
