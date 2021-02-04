@@ -45,8 +45,8 @@ class UpdateDoiStatusHandlerTest {
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
     private static final SortableIdentifier PUBLICATION_IDENTIFIER_IN_RESOURCES =
         new SortableIdentifier("41076d56-2839-11eb-b644-1bb5be85c01b");
-    private static final Path BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO = Path.of(
-        "update_doi_status_event_bad_input_not_matching_pojo.json");
+    private static final String BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO =
+        "update_doi_status_event_bad_input_not_matching_pojo.json";
     private static final Path OK_EVENT = Path.of("update_doi_status_event.json");
     private UpdateDoiStatusHandler handler;
     private ByteArrayOutputStream outputStream;
@@ -89,7 +89,8 @@ class UpdateDoiStatusHandlerTest {
 
     @Test
     void handleRequestThrowsIllegalArgumentExceptionWherePayloadNotMatchingDoiRequestHolderPojo() {
-        var eventInputStream = IoUtils.inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
+        var eventInputStream = IoUtils
+            .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
 
         var actualException = assertThrows(IllegalArgumentException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
