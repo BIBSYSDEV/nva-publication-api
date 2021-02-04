@@ -1,4 +1,4 @@
-package no.unit.nva.doi.event.producer;
+package no.unit.nva.publication.doi.update.dto;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

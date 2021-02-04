@@ -8,6 +8,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.doi.update.dto.PublicationHolder;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -25,6 +26,7 @@ public class DynamoDbFanoutPublicationDtoProducer
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
+
     @JacocoGenerated
     public DynamoDbFanoutPublicationDtoProducer() {
         super(DynamoEntryUpdateEvent.class);
