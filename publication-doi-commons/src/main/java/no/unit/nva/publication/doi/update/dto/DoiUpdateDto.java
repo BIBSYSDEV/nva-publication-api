@@ -10,22 +10,22 @@ import nva.commons.core.JsonSerializable;
 public class DoiUpdateDto implements JsonSerializable {
 
     private final URI doi;
-    private final URI publicationId;
+    private final String publicationIdentifier;
     private final Instant modifiedDate;
 
     /**
      * Constructor for DoiUpdateDto.
      *
-     * @param doi           doi
-     * @param publicationId publicationId
-     * @param modifiedDate  modifiedDate
+     * @param doi                   doi
+     * @param publicationIdentifier publicationId
+     * @param modifiedDate          modifiedDate
      */
     @JsonCreator
     public DoiUpdateDto(@JsonProperty("doi") URI doi,
-                        @JsonProperty("publicationId") URI publicationId,
+                        @JsonProperty("publicationId") String publicationIdentifier,
                         @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.doi = doi;
-        this.publicationId = publicationId;
+        this.publicationIdentifier = publicationIdentifier;
         this.modifiedDate = modifiedDate;
     }
 
@@ -38,8 +38,8 @@ public class DoiUpdateDto implements JsonSerializable {
         return Optional.ofNullable(doi);
     }
 
-    public URI getPublicationId() {
-        return publicationId;
+    public String getPublicationIdentifier() {
+        return publicationIdentifier;
     }
 
     public Instant getModifiedDate() {
@@ -47,13 +47,13 @@ public class DoiUpdateDto implements JsonSerializable {
     }
 
     public boolean hasAllRequiredValuesSet() {
-        return getPublicationId() != null && getModifiedDate() != null;
+        return getPublicationIdentifier() != null && getModifiedDate() != null;
     }
 
     public static class Builder {
 
         private URI doi;
-        private URI publicationId;
+        private String publicationIdentifier;
         private Instant modifiedDate;
 
         public Builder() {
@@ -64,8 +64,8 @@ public class DoiUpdateDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublicationId(URI publicationId) {
-            this.publicationId = publicationId;
+        public Builder withPublicationId(String publicationIdentifier) {
+            this.publicationIdentifier = publicationIdentifier;
             return this;
         }
 
@@ -75,7 +75,7 @@ public class DoiUpdateDto implements JsonSerializable {
         }
 
         public DoiUpdateDto build() {
-            return new DoiUpdateDto(doi, publicationId, modifiedDate);
+            return new DoiUpdateDto(doi, publicationIdentifier, modifiedDate);
         }
     }
 }

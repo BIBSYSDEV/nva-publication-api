@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class DoiUpdateDtoTest {
 
     public static final URI EXAMPLE_DOI = URI.create("https://example.net/doi/prefix/suffix");
-    public static final URI EXAMPLE_PUBLICATION_ID = URI.create("https://example.net/env/publication/id");
+    public static final String EXAMPLE_PUBLICATION_IDENTIFIER = "SomePublicationIdentifier";
     public static final Instant EXAMPLE_MODIFIED_DATE = Instant.now();
 
     @Test
@@ -46,14 +46,14 @@ class DoiUpdateDtoTest {
     private DoiUpdateDto createDoiUpdateDtoWithDoi() {
         return new Builder()
             .withDoi(EXAMPLE_DOI)
-            .withPublicationId(EXAMPLE_PUBLICATION_ID)
+            .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
             .withModifiedDate(EXAMPLE_MODIFIED_DATE)
             .build();
     }
 
     private DoiUpdateDto createDoiUpdateDtoWithoutDoi() {
         return new Builder()
-            .withPublicationId(EXAMPLE_PUBLICATION_ID)
+            .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
             .withModifiedDate(EXAMPLE_MODIFIED_DATE)
             .build();
     }

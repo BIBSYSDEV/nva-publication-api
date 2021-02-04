@@ -94,7 +94,7 @@ public class UpdateDoiStatusProcess {
     }
 
     private SortableIdentifier extractPublicationFromRequest() {
-        String s = request.getPublicationId().toString();
+        String s = request.getPublicationIdentifier().toString();
         int beginIndex = s.lastIndexOf(FORWARD_SLASH);
         if (NOT_FOUND == beginIndex) {
             throw new IllegalArgumentException(PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID);
