@@ -7,13 +7,14 @@ import static org.hamcrest.Matchers.is;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto.Builder;
 import org.junit.jupiter.api.Test;
 
 class DoiUpdateDtoTest {
 
     public static final URI EXAMPLE_DOI = URI.create("https://example.net/doi/prefix/suffix");
-    public static final String EXAMPLE_PUBLICATION_IDENTIFIER = "SomePublicationIdentifier";
+    public static final SortableIdentifier EXAMPLE_PUBLICATION_IDENTIFIER = SortableIdentifier.next();
     public static final Instant EXAMPLE_MODIFIED_DATE = Instant.now();
 
     @Test

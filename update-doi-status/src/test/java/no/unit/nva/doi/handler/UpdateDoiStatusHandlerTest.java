@@ -43,7 +43,7 @@ class UpdateDoiStatusHandlerTest {
     public static final String NULL_OBJECT = "{ }";
     public static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
-    private static final SortableIdentifier EXAMPLE_PUBLICATION_ID =
+    private static final SortableIdentifier PUBLICATION_IDENTIFIER_IN_RESOURCES =
         new SortableIdentifier("41076d56-2839-11eb-b644-1bb5be85c01b");
     private static final Path BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO = Path.of(
         "update_doi_status_event_bad_input_not_matching_pojo.json");
@@ -62,9 +62,10 @@ class UpdateDoiStatusHandlerTest {
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
 
-        when(publicationService.getPublication(EXAMPLE_PUBLICATION_ID)).thenReturn(new Publication.Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
-            .build());
+        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(
+            new Publication.Builder()
+                .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
+                .build());
     }
 
     @Test
@@ -99,7 +100,7 @@ class UpdateDoiStatusHandlerTest {
     @Test
     void handleRequestThrowsDependencyRemoteNvaApiExceptionWhenPublicationServiceFailsToFetchPublication()
         throws ApiGatewayException {
-        when(publicationService.getPublication(EXAMPLE_PUBLICATION_ID)).thenThrow(ApiIoException.class);
+        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(ApiIoException.class);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
 
@@ -112,10 +113,10 @@ class UpdateDoiStatusHandlerTest {
     void handleRequestThrowsDependencyRemoteNvaApiExceptionWhenPublicationServiceFailsToUpdatePublication()
         throws ApiGatewayException, JsonProcessingException {
         Publication publication = new Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
+            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
-        when(publicationService.getPublication(EXAMPLE_PUBLICATION_ID)).thenReturn(publication);
-        when(publicationService.updatePublication(eq(EXAMPLE_PUBLICATION_ID), any(Publication.class)))
+        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
+        when(publicationService.updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES), any(Publication.class)))
             .thenThrow(ApiIoException.class);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
@@ -128,11 +129,11 @@ class UpdateDoiStatusHandlerTest {
     void handleRequestSuccessfullyWhenPayloadContainsDoiUpdateHolderWithValidFields()
         throws ApiGatewayException, JsonProcessingException {
         var publication = new Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
+            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
 
         var expectedPublicationUpdate = new Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
+            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .withDoi(EXAMPLE_DOI)
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
@@ -148,11 +149,11 @@ class UpdateDoiStatusHandlerTest {
     void handleRequestSuccessfullyThenLogsInformationMessage()
         throws ApiGatewayException, JsonProcessingException {
         var publication = new Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
+            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
 
         var expectedPublicationUpdate = new Builder()
-            .withIdentifier(EXAMPLE_PUBLICATION_ID)
+            .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .withDoi(EXAMPLE_DOI)
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
@@ -163,7 +164,7 @@ class UpdateDoiStatusHandlerTest {
         handler.handleRequest(eventInputStream, outputStream, context);
 
         assertThat(logger.getMessages(), containsString(String.format(UpdateDoiStatusProcess.UPDATED_PUBLICATION_FORMAT,
-            EXAMPLE_PUBLICATION_ID,
+            PUBLICATION_IDENTIFIER_IN_RESOURCES,
             EXAMPLE_DOI,
             EXAMPLE_DOI_MODIFIED_DATE
         )));
@@ -171,15 +172,16 @@ class UpdateDoiStatusHandlerTest {
 
     private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) throws ApiGatewayException {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
-        verify(publicationService).updatePublication(eq(EXAMPLE_PUBLICATION_ID), publicationServiceCaptor.capture());
+        verify(publicationService).updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES),
+            publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();
         assertThat(actualPublicationUpdate, is(equalTo(expectedPublicationUpdate)));
     }
 
     private void stubSuccessfullDoiStatusUpdate(Publication publication, Publication expectedPublicationUpdate)
         throws ApiGatewayException {
-        when(publicationService.getPublication(EXAMPLE_PUBLICATION_ID)).thenReturn(publication);
-        when(publicationService.updatePublication(eq(EXAMPLE_PUBLICATION_ID), any(Publication.class)))
+        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
+        when(publicationService.updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES), any(Publication.class)))
             .thenReturn(expectedPublicationUpdate);
     }
 }

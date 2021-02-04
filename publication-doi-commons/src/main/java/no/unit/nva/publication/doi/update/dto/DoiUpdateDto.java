@@ -5,12 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonSerializable;
 
 public class DoiUpdateDto implements JsonSerializable {
 
     private final URI doi;
-    private final String publicationIdentifier;
+    private final SortableIdentifier publicationIdentifier;
     private final Instant modifiedDate;
 
     /**
@@ -22,7 +23,7 @@ public class DoiUpdateDto implements JsonSerializable {
      */
     @JsonCreator
     public DoiUpdateDto(@JsonProperty("doi") URI doi,
-                        @JsonProperty("publicationId") String publicationIdentifier,
+                        @JsonProperty("publicationId") SortableIdentifier publicationIdentifier,
                         @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.doi = doi;
         this.publicationIdentifier = publicationIdentifier;
@@ -38,7 +39,7 @@ public class DoiUpdateDto implements JsonSerializable {
         return Optional.ofNullable(doi);
     }
 
-    public String getPublicationIdentifier() {
+    public SortableIdentifier getPublicationIdentifier() {
         return publicationIdentifier;
     }
 
@@ -53,7 +54,7 @@ public class DoiUpdateDto implements JsonSerializable {
     public static class Builder {
 
         private URI doi;
-        private String publicationIdentifier;
+        private SortableIdentifier publicationIdentifier;
         private Instant modifiedDate;
 
         public Builder() {
@@ -64,7 +65,7 @@ public class DoiUpdateDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublicationId(String publicationIdentifier) {
+        public Builder withPublicationId(SortableIdentifier publicationIdentifier) {
             this.publicationIdentifier = publicationIdentifier;
             return this;
         }
