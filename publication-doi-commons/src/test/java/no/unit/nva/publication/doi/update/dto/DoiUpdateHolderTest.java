@@ -14,10 +14,10 @@ class DoiUpdateHolderTest {
     public static final String EXAMPLE_TYPE = "doi.updateDoi";
     public static final URI EXAMPLE_DOI = URI.create("https://example.net/doi/prefix/suffix");
     public static final Instant EXAMPLE_NOW = Instant.now();
-    public static final URI EXAMPLE_PUBLICATION_ID = URI.create("https://example.net/env/publication/id2");
+    public static final String EXAMPLE_PUBLICATION_IDENTIFIER = "ID2";
     public static final DoiUpdateDto EXAMPLE_ITEM = new DoiUpdateDto(
         EXAMPLE_DOI,
-        EXAMPLE_PUBLICATION_ID,
+        EXAMPLE_PUBLICATION_IDENTIFIER,
         EXAMPLE_NOW);
 
     @Test
@@ -44,7 +44,6 @@ class DoiUpdateHolderTest {
         DoiUpdateHolder doiUpdateHolder = createPopulatedDoiUpdateHolder();
         assertThat(doiUpdateHolder.getItem(), notNullValue());
     }
-
 
     private DoiUpdateHolder createPopulatedDoiUpdateHolder() {
         return new DoiUpdateHolder(EXAMPLE_TYPE, EXAMPLE_ITEM);
