@@ -5,12 +5,11 @@ repositories {
 dependencies {
     api project(":storage-model")
 
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion
+    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
 
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
 
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
