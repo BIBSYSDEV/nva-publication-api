@@ -171,13 +171,13 @@ public class DoiRequestService {
             ":rejectedStatus", new AttributeValue(DoiRequestStatus.REJECTED.toString())
         );
 
-        QueryRequest query = new QueryRequest().withTableName(tableName)
+        return new QueryRequest()
+            .withTableName(tableName)
             .withKeyConditionExpression(queryExpression)
             .withFilterExpression(filterExpression)
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues)
             .withLimit(maxResultSize);
-        return query;
     }
 
     private String doiRequestPrimaryKeyPartionKeyValue(UserInstance userInstance) {

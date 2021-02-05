@@ -51,6 +51,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     }
 
     @Override
+    @JacocoGenerated
     public final String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
