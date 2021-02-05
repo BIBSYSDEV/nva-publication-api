@@ -3,11 +3,13 @@ repositories {
 }
 
 dependencies {
+    //This package is added by SAM template in the runtime environment
     compileOnly project(':publication-commons')
-
-    compileOnly(group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion)
-    testImplementation(group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion)
     testImplementation project(':publication-commons')
+
+    implementation(group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion)
+
+
     testImplementation project(':publication-testing')
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'

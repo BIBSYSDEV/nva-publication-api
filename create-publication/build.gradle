@@ -4,9 +4,10 @@ repositories {
 }
 
 dependencies {
+    //This package is added by SAM template in the runtime environment
     compileOnly project(':publication-commons')
-
     testImplementation project(':publication-commons')
+
     testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
@@ -16,7 +17,6 @@ dependencies {
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    implementation( group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.ext.nvaCommonsVersion)
 
     compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
