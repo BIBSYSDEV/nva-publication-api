@@ -28,9 +28,11 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
     public static final String TYPE = DoiRequest.class.getSimpleName();
 
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
+
+    @JsonProperty
+    private final SortableIdentifier identifier;
     @JsonProperty
     private final SortableIdentifier resourceIdentifier;
-
     @JsonProperty(STATUS_FIELD)
     private final DoiRequestStatus status;
     @JsonProperty(RESOURCE_STATUS_FIELD)
@@ -46,8 +48,6 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
     private final String owner;
     @JsonProperty("resourceTitle")
     private final String resourceTitle;
-    @JsonProperty
-    private SortableIdentifier identifier;
 
     @JsonCreator
     private DoiRequest(@JsonProperty("identifier") SortableIdentifier identifier,
@@ -75,8 +75,8 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
                                               String mainTitle,
                                               String owner,
                                               URI publisherId,
-                                              DoiRequestStatus requested,
-                                              PublicationStatus status,
+                                              DoiRequestStatus doiRequestStatus,
+                                              PublicationStatus resourceStatus,
                                               Instant createdDate,
                                               Instant modifiedDate) {
         return new DoiRequest(
@@ -85,8 +85,8 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
             mainTitle,
             owner,
             publisherId,
-            requested,
-            status,
+            doiRequestStatus,
+            resourceStatus,
             createdDate,
             modifiedDate
         );
@@ -133,6 +133,20 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
         return DoiRequest.TYPE;
     }
 
+    public DoiRequest update(Resource resource) {
+        return new DoiRequest(
+            this.getIdentifier(),
+            this.getResourceIdentifier(),
+            resource.getEntityDescription().getMainTitle(),
+            resource.getOwner(),
+            resource.getPublisher().getId(),
+            this.getStatus(),
+            this.getResourceStatus(),
+            this.getCreatedDate(),
+            resource.getModifiedDate()
+        );
+    }
+
     public PublicationStatus getResourceStatus() {
         return resourceStatus;
     }
@@ -148,7 +162,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
 
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
+        throw new UnsupportedOperationException();
     }
 
     public SortableIdentifier getResourceIdentifier() {
@@ -218,6 +232,14 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
 
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(),
+            getCreatedDate(),
+            getCustomerId(), getOwner(), getResourceTitle(), getIdentifier());
+    }
+
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -235,13 +257,5 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getResourceTitle(), that.getResourceTitle())
                && Objects.equals(getIdentifier(), that.getIdentifier());
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getStatus(), getResourceStatus(), getModifiedDate(),
-            getCreatedDate(),
-            getCustomerId(), getOwner(), getResourceTitle(), getIdentifier());
     }
 }

@@ -39,6 +39,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
@@ -268,7 +269,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(userInstance, pub.getIdentifier());
     }
 
-    private DoiRequest creteDoiRequest(Publication pub) throws BadRequestException, ConflictException {
+    private DoiRequest creteDoiRequest(Publication pub) throws BadRequestException, ConflictException,
+                                                               NotFoundException {
         UserInstance userInstance = createUserInstance(pub);
         doiRequestService.createDoiRequest(userInstance, pub.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, pub.getIdentifier());

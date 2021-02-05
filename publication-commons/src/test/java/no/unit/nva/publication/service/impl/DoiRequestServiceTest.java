@@ -86,7 +86,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
-        throws ConflictException, BadRequestException {
+        throws ConflictException, BadRequestException, NotFoundException {
         Publication emptyPublication = emptyPublication();
         UserInstance userInstance = createUserInstance(emptyPublication);
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
@@ -229,7 +229,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(result, hasSize(endExclusive));
     }
 
-    public DoiRequest getDoiRequest(Publication publishedPublication) {
+    public DoiRequest getDoiRequest(Publication publishedPublication) throws NotFoundException {
         return doiRequestService
             .getDoiRequestByResourceIdentifier(
                 createUserInstance(publishedPublication),
