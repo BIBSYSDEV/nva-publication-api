@@ -1,17 +1,15 @@
 package no.unit.nva.doi.event.producer;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
-import no.unit.nva.events.handlers.EventHandler;
+import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.doi.PublicationMapper;
-import no.unit.nva.publication.doi.dto.Publication;
-import no.unit.nva.publication.doi.dto.PublicationHolder;
-import no.unit.nva.publication.doi.dto.PublicationMapping;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,84 +18,72 @@ import org.slf4j.LoggerFactory;
  * `doi.publication`.
  */
 public class DynamoDbFanoutPublicationDtoProducer
-    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, PublicationHolder> {
+    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
     public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
-    public static final PublicationHolder NO_OUTPUT_NO_EVENT = null;
-    public static final String CREATED = "Created";
-    public static final String SKIPPED_CREATING = "Skipped creating";
+    public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
+    private static final String EMPTY_EVENT_TYPE = "empty";
+    public static final PublicationHolder EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
-    private final PublicationMapper publicationMapper;
-
     @JacocoGenerated
     public DynamoDbFanoutPublicationDtoProducer() {
-        this(AppConfig.getNamespace());
-    }
-
-    public DynamoDbFanoutPublicationDtoProducer(String namespace) {
-        super(DynamodbEvent.DynamodbStreamRecord.class);
-        this.publicationMapper = new PublicationMapper(namespace);
+        super(DynamoEntryUpdateEvent.class);
     }
 
     @Override
-    protected PublicationHolder processInput(DynamodbEvent.DynamodbStreamRecord input,
-                                             AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
-                                             Context context) {
-        PublicationHolder result = fromDynamodbStreamRecords(input);
-        //temporary logging until event consumers are built
-        logResults(result);
-        return result;
+    protected PublicationHolder processInputPayload(
+        DynamoEntryUpdateEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+        Context context) {
+
+        logger.info(event.toJsonString());
+        PublicationHolder updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
+        validate(updatedDoiInformationEvent);
+        return updatedDoiInformationEvent;
     }
 
-    private void logResults(PublicationHolder result) {
+    private static PublicationHolder emptyEvent() {
+        return new PublicationHolder(EMPTY_EVENT_TYPE, null);
+    }
 
-        try {
-            String jsonString = JsonUtils.objectMapper.writeValueAsString(result);
-            logger.info("Output is: " + jsonString);
-        } catch (JsonProcessingException e) {
-            logger.info("Could not serialize output");
+    private void validate(PublicationHolder updatedDoiInformationEvent) {
+        if (isInvalid(updatedDoiInformationEvent)) {
+            throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
         }
     }
 
-    private PublicationHolder fromDynamodbStreamRecords(DynamodbEvent.DynamodbStreamRecord record) {
-        var dto = mapToPublicationDto(record);
-        logMappingResults(dto.orElse(null));
-
-        return dto
-            .map(publication -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, publication))
-            .orElse(NO_OUTPUT_NO_EVENT);
+    private boolean isInvalid(PublicationHolder updatedDoiInformationEvent) {
+        return nonNull(updatedDoiInformationEvent.getItem())
+               && isNull(updatedDoiInformationEvent.getItem().getIdentifier());
     }
 
-    private void logMappingResults(Publication dto) {
-        logger.info("{} Publication DTO from DynamodbStreamRecord", dto != null ? CREATED : SKIPPED_CREATING);
-    }
-
-    private Optional<Publication> mapToPublicationDto(DynamodbEvent.DynamodbStreamRecord record) {
-        return Optional.ofNullable(record)
-            .map(publicationMapper::fromDynamodbStreamRecord)
+    private PublicationHolder fromDynamoEntryUpdate(DynamoEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
             .filter(this::shouldPropagateEvent)
-            .map(publicationMapping -> publicationMapping.getNewPublication().orElseThrow());
+            .map(DynamoEntryUpdateEvent::getNewPublication)
+            .map(pub -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, pub))
+            .orElse(EMPTY_EVENT);
     }
 
-    private boolean shouldPropagateEvent(PublicationMapping publicationMapping) {
-        boolean isChange = isEffectiveChange(publicationMapping);
-        boolean publicationHasDoiRequest = publicationHasDoiRequest(publicationMapping);
-
-        return isChange && publicationHasDoiRequest;
-    }
-
-    private boolean publicationHasDoiRequest(PublicationMapping publicationMapping) {
-        return publicationMapping
-            .getNewPublication()
+    private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
+            .map(DynamoEntryUpdateEvent::getNewPublication)
             .map(Publication::getDoiRequest)
             .isPresent();
     }
 
-    private boolean isEffectiveChange(PublicationMapping publicationMapping) {
-        var newPublication = publicationMapping.getNewPublication().orElse(null);
-        var oldPublication = publicationMapping.getOldPublication().orElse(null);
+    private boolean shouldPropagateEvent(DynamoEntryUpdateEvent updateEvent) {
+        boolean publicationHasDoiRequest = publicationHasDoiRequest(updateEvent);
+        boolean isChange = isEffectiveChange(updateEvent);
 
-        if (newPublication != null) {
+        return isChange && publicationHasDoiRequest;
+    }
+
+    private boolean isEffectiveChange(DynamoEntryUpdateEvent updateEvent) {
+        var newPublication = updateEvent.getNewPublication();
+        var oldPublication = updateEvent.getOldPublication();
+
+        if (nonNull(newPublication)) {
             return !newPublication.equals(oldPublication);
         }
         return false;
