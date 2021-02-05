@@ -26,7 +26,7 @@ import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
@@ -56,6 +56,7 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -129,7 +130,17 @@ public class ResourceService {
     }
 
     public Publication updatePublication(Publication publication) {
-        updateResource(Resource.fromPublication(publication));
+        Resource resource = Resource.fromPublication(publication);
+        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getCustomerId());
+
+        TransactWriteItem updateResourceTransactionItem = updateResource(resource);
+        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(userInstance, resource);
+        ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.add(updateResourceTransactionItem);
+        updateDoiRequestTransactionItem.ifPresent(transactionItems::add);
+
+        TransactWriteItemsRequest query = new TransactWriteItemsRequest().withTransactItems(transactionItems);
+        client.transactWriteItems(query);
         return publication;
     }
 
@@ -194,21 +205,45 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    private void updateResource(Resource resourceUpdate) {
+    private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
+        Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
+            .orElse(this::doiRequestNotFound);
+
+        return
+            existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
+                .map(DoiRequestDao::new)
+                .map(ResourceServiceUtils::toDynamoFormat)
+                .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
+                .map(put -> new TransactWriteItem().withPut(put));
+    }
+
+    private Optional<DoiRequest> doiRequestNotFound(Failure<Optional<DoiRequest>> fail) {
+        if (fail.getException() instanceof NotFoundException) {
+            return Optional.empty();
+        }
+        throw new RuntimeException(fail.getException());
+    }
+
+    private Optional<DoiRequest> fetchExistingDoiRequest(UserInstance userinstance, Resource resource)
+        throws NotFoundException {
+        return Optional.of(DoiRequestService.getDoiRequestByResourceIdentifier(userinstance,
+            resource.getIdentifier(), tableName, client));
+    }
+
+    private TransactWriteItem updateResource(Resource resourceUpdate) {
 
         ResourceDao resourceDao = new ResourceDao(resourceUpdate);
 
         Map<String, AttributeValue> primaryKeyConditionAttributeValues =
             primaryKeyEqualityConditionAttributeValues(resourceDao);
 
-        PutItemRequest putItemRequest = new PutItemRequest()
+        Put put = new Put()
             .withItem(toDynamoFormat(resourceDao))
             .withTableName(tableName)
             .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
             .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
             .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
-
-        client.putItem(putItemRequest);
+        return new TransactWriteItem().withPut(put);
     }
 
     private Resource markResourceForDeletion(Resource resource)
@@ -496,8 +531,6 @@ public class ResourceService {
             .map(ResourceDao::getData)
             .orElseThrow();
     }
-
-
 
     private String nowAsString() {
         String jsonString = attempt(() -> objectMapper.writeValueAsString(clockForTimestamps.instant()))

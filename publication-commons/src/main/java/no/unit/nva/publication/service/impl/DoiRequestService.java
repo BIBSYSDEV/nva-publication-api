@@ -16,7 +16,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
-import com.amazonaws.services.kms.model.NotFoundException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,6 +40,7 @@ import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 
@@ -69,6 +69,31 @@ public class DoiRequestService {
         this.identifierProvider = identifierProvider;
     }
 
+    public static DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                               SortableIdentifier resourceIdentifier,
+                                                               String tableName,
+                                                               AmazonDynamoDB client
+    ) throws NotFoundException {
+        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+        QueryResult queryResult = client.query(queryRequest);
+        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()))
+            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
+        return dao.getData();
+    }
+
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+                                                        SortableIdentifier resourceIdentifier)
+        throws NotFoundException {
+        return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
+    }
+
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException, ConflictException {
 
@@ -88,23 +113,6 @@ public class DoiRequestService {
 
         return parseListingDoiRequestsQueryResult(result);
     }
-    
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
-                                                        SortableIdentifier resourceIdentifier) {
-        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
-        QueryResult queryResult = client.query(queryRequest);
-        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
-            .stream()
-            .collect(SingletonCollector.collect()))
-            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
-        DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
-        return dao.getData();
-    }
-
 
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
 
@@ -122,7 +130,6 @@ public class DoiRequestService {
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
         return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
-
 
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
         QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
