@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
@@ -20,12 +21,14 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
 })
-public abstract class Dao<R extends WithIdentifier & RowLevelSecurity>
-    implements WithPrimaryKey,
+public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
+    implements DynamoEntry,
+               WithPrimaryKey,
                WithByTypeCustomerStatusIndex {
 
     public static final String URI_PATH_SEPARATOR = "/";

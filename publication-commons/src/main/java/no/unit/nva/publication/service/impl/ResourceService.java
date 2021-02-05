@@ -90,13 +90,10 @@ public class ResourceService {
     public static final String DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO = "data";
     public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
-
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-
     public static final String RAWTYPES = "rawtypes";
-
+    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;

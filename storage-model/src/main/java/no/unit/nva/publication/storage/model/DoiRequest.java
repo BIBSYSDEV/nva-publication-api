@@ -21,7 +21,7 @@ import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus {
+public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
@@ -182,6 +182,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
         return Objects.nonNull(getStatus()) ? getStatus().toString() : null;
     }
 
+    @Override
     public Publication toPublication() {
 
         no.unit.nva.model.DoiRequest doiRequest = new Builder()

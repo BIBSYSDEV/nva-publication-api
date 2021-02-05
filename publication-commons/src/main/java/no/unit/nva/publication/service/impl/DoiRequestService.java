@@ -88,7 +88,7 @@ public class DoiRequestService {
 
         return parseListingDoiRequestsQueryResult(result);
     }
-
+    
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier) {
         DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
@@ -104,6 +104,7 @@ public class DoiRequestService {
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
     }
+
 
     public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
 
@@ -121,6 +122,7 @@ public class DoiRequestService {
     public List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance) {
         return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
+
 
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
         QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);

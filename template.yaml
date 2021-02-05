@@ -705,7 +705,12 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !Ref EventBusName
-            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
+            Pattern: {
+              "detail-type": [ "dynamodb-stream-event" ],
+              "resources": [
+                  "arn:aws:dynamodb:eu-west-1:884807050265:table/OrestisResources/stream/2021-02-01T12:02:08.358"
+              ]
+            }
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:

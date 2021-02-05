@@ -32,7 +32,7 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
+public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
@@ -113,6 +113,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus {
         return this.toBuilder();
     }
 
+    @Override
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
