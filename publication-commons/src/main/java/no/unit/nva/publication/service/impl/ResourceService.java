@@ -94,10 +94,6 @@ public class ResourceService {
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RAWTYPES = "rawtypes";
-<<<<<<< HEAD
-
-=======
->>>>>>> fe88e9867fecbab7fc29374cb652e26e57cd87ad
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
