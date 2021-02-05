@@ -22,10 +22,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
@@ -234,16 +236,20 @@ public class DoiRequestService {
 
     private DoiRequest createNewDoiRequestEntry(Publication publication) {
         Instant now = clock.instant();
+        String mainTitle = Optional.ofNullable(publication.getEntityDescription())
+            .map(EntityDescription::getMainTitle)
+            .orElse(null);
 
         return DoiRequest.newEntry(
             identifierProvider.get(),
             publication.getIdentifier(),
-            publication.getEntityDescription().getMainTitle(),
+            mainTitle,
             publication.getOwner(),
             publication.getPublisher().getId(),
             DoiRequestStatus.REQUESTED,
             publication.getStatus(),
-            now);
+            now
+        );
     }
 
     private TransactWriteItemsRequest createInsertionTransactionRequest(DoiRequest doiRequest) {
