@@ -679,10 +679,11 @@ Resources:
             EventBusName: !Ref EventBusName
             Pattern:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
-              responsePayload:
-                type: [ "publication.update" ]
-                doiRequest:
-                  type: [ { "exists": true } ] # "exists" works only in leaf nodes.
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  doiRequest:
+                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
 
       EventInvokeConfig:
         DestinationConfig:

@@ -21,8 +21,7 @@ public class UpdateDoiStatusProcess {
     public static final String MODIFIED_DOI_IS_IN_THE_FUTURE = "Modified doi is in the future, bailing!";
     public static final String DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION =
         "DOI does not match DOI in Publication, bad update request, bailing!";
-    public static final String PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID =
-        "Publication Identifier does not look like a id (URI)!";
+
     public static final String FORWARD_SLASH = "/";
     public static final String UPDATED_PUBLICATION_FORMAT =
         "Updated publication %s with doi: %s which was last modified: %s";
@@ -49,7 +48,7 @@ public class UpdateDoiStatusProcess {
         this.request = request.getItem();
 
         try {
-            SortableIdentifier requestedPublicationId = extractPublicationFromRequest();
+            SortableIdentifier requestedPublicationId = request.getItem().getPublicationIdentifier();
             this.publication = publicationService.getPublication(requestedPublicationId);
         } catch (ApiGatewayException e) {
             throw DependencyRemoteNvaApiException.wrap(e);
@@ -93,12 +92,4 @@ public class UpdateDoiStatusProcess {
         }
     }
 
-    private SortableIdentifier extractPublicationFromRequest() {
-        String s = request.getPublicationId().toString();
-        int beginIndex = s.lastIndexOf(FORWARD_SLASH);
-        if (NOT_FOUND == beginIndex) {
-            throw new IllegalArgumentException(PUBLICATION_IDENTIFIER_DOES_NOT_LOOK_LIKE_A_ID);
-        }
-        return new SortableIdentifier(s.substring(++beginIndex));
-    }
 }

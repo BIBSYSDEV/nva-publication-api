@@ -76,7 +76,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
                                               String owner,
                                               URI publisherId,
                                               DoiRequestStatus doiRequestStatus,
-                                              PublicationStatus status,
+                                              PublicationStatus resourceStatus,
                                               Instant createdDate,
                                               Instant modifiedDate) {
         return new DoiRequest(
@@ -86,7 +86,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
             owner,
             publisherId,
             doiRequestStatus,
-            status,
+            resourceStatus,
             createdDate,
             modifiedDate
         );
