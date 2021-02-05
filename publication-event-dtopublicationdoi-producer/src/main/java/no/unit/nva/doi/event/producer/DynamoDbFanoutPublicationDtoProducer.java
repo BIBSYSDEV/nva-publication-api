@@ -16,12 +16,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
- * `doi.publication`.
+ * `publication.doirequest`.
  */
 public class DynamoDbFanoutPublicationDtoProducer
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
-    public static final String TYPE_DTO_DOI_PUBLICATION = "doi.publication";
+    public static final String TYPE_DTO_DOI_PUBLICATION = "publication.doiupdate.request";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
