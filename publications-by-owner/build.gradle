@@ -3,9 +3,10 @@ repositories {
 }
 
 dependencies {
+    //This package is added by SAM template in the runtime environment
     compileOnly project(':publication-commons')
-
     testImplementation project(':publication-commons')
+
     testImplementation project(':publication-testing')
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
