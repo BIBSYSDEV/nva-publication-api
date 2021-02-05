@@ -94,7 +94,6 @@ public class ResourceService {
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RAWTYPES = "rawtypes";
-
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
@@ -297,14 +296,14 @@ public class ResourceService {
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
-        List<TransactWriteItem> transactionItems = crateUpdateTransactionItems(daos, resourceDao);
+        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
         TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
             .withTransactItems(transactionItems);
         client.transactWriteItems(transactWriteItemsRequest);
     }
 
-    private List<TransactWriteItem> crateUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
+    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
         String nowString = nowAsString();
         List<TransactWriteItem> transactionItems = new ArrayList<>();
         transactionItems.add(publishUpdateRequest(resourceDao, nowString));
