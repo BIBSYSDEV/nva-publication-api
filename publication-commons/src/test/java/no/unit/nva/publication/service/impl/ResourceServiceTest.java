@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
@@ -616,14 +617,38 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
         doiRequestService.createDoiRequest(extractUserInstance(emptyPublication), emptyPublication.getIdentifier());
 
+        DoiRequest initialDoiRequest = doiRequestService
+            .getDoiRequestByResourceIdentifier(extractUserInstance(emptyPublication), emptyPublication.getIdentifier());
+
         Publication publicationUpdate = publicationWithAllDoiRequestRelatedFields(emptyPublication);
         resourceService.updatePublication(publicationUpdate);
 
-        DoiRequest doiRequest = doiRequestService.getDoiRequestByResourceIdentifier(
+        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequestByResourceIdentifier(
             extractUserInstance(emptyPublication),
             emptyPublication.getIdentifier());
 
-        assertThat(doiRequest, doesNotHaveEmptyValues());
+        DoiRequest expectedDoiRequest = DoiRequest.builder()
+            .withIdentifier(updatedDoiRequest.getIdentifier())
+            .withResourceIdentifier(emptyPublication.getIdentifier())
+            .withDoi(publicationUpdate.getDoi())
+            .withOwner(emptyPublication.getOwner())
+            .withCreatedDate(initialDoiRequest.getCreatedDate())
+            .withModifiedDate(initialDoiRequest.getModifiedDate())
+            .withCustomerId(emptyPublication.getPublisher().getId())
+            .withStatus(DoiRequestStatus.REQUESTED)
+            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
+            .withResourceStatus(publicationUpdate.getStatus())
+            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
+            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
+            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
+            .withResourcePublicationInstance(
+                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+            .build();
+
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
+        Diff diff = javers.compare(updatedDoiRequest, expectedDoiRequest);
+        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
     @Test
