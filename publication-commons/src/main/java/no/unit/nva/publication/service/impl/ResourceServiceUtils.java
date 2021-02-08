@@ -101,7 +101,8 @@ public final class ResourceServiceUtils {
 
     static <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T data, String tableName) {
 
-        Put put = new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
+        Put put = new Put().withItem(toDynamoFormat(data))
+            .withTableName(tableName)
             .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
             .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);

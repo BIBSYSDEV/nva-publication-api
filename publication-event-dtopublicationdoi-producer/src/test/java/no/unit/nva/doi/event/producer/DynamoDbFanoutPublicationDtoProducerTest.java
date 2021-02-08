@@ -21,7 +21,6 @@ import org.junit.jupiter.api.function.Executable;
 
 class DynamoDbFanoutPublicationDtoProducerTest {
 
-    public static final String DOI_PUBLICATION_TYPE = "doi.publication";
     public static final String EVENT_PUBLICATION_WITH_DOI_IS_UPDATED =
         "resource_update_event_updated_metadata_with_existing_doi.json";
     private static final String RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT =
@@ -68,7 +67,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_NEW_ONLY);
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
+        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_DTO_DOI_PUBLICATION)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -96,7 +95,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual.getType(), is(equalTo(DOI_PUBLICATION_TYPE)));
+        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_DTO_DOI_PUBLICATION)));
         assertThat(actual.getItem(), notNullValue());
     }
 
