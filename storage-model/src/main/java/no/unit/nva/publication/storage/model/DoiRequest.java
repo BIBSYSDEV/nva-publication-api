@@ -12,12 +12,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -79,6 +81,8 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
     private String resourcePublicationYear;
     @JsonProperty
     private URI doi;
+    @JsonProperty
+    private List<Contributor> contributors;
 
     public DoiRequest() {
 
@@ -161,6 +165,7 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
             .withMainTitle(getResourceTitle())
             .withDate(getResourcePublicationDate())
             .withReference(reference)
+            .withContributors(getContributors())
             .build();
 
         Organization customer = new Organization.Builder()

@@ -1,7 +1,9 @@
 package no.unit.nva.publication.storage.model;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
@@ -34,7 +36,15 @@ class DoiRequestUtils {
             .withResourcePublicationInstance(extractPublicationInstance(resource))
             .withResourcePublicationYear(extractPublicationYear(resource))
             .withResourceStatus(resource.getStatus())
-            .withResourceTitle(extractMainTitle(resource));
+            .withResourceTitle(extractMainTitle(resource))
+            .withContributors(extractContributors(resource));
+    }
+
+    private static List<Contributor> extractContributors(Resource resource) {
+        return
+            Optional.ofNullable(resource.getEntityDescription())
+                .map(EntityDescription::getContributors)
+                .orElse(null);
     }
 
     private static PublicationInstance<? extends Pages> extractPublicationInstance(Resource resource) {

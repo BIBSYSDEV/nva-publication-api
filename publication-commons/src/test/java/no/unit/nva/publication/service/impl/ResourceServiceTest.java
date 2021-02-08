@@ -49,6 +49,7 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -227,7 +228,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualOriginalResource, is(equalTo(resource)));
 
         Publication resourceUpdate = updateResourceTitle(resource);
-
         resourceService.updatePublication(resourceUpdate);
         Publication actualUpdatedResource = resourceService.getPublication(resource);
 
@@ -611,39 +611,26 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateResourceUpdatesAllFieldsInDoiRequest()
-        throws ConflictException, BadRequestException, NotFoundException {
+        throws ConflictException, BadRequestException, NotFoundException, MalformedContributorException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication emptyPublication =
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
-        doiRequestService.createDoiRequest(extractUserInstance(emptyPublication), emptyPublication.getIdentifier());
+        UserInstance userInstance = extractUserInstance(emptyPublication);
 
-        DoiRequest initialDoiRequest = doiRequestService
-            .getDoiRequestByResourceIdentifier(extractUserInstance(emptyPublication), emptyPublication.getIdentifier());
+        DoiRequest initialDoiRequest = createDoiRequest(doiRequestService, emptyPublication, userInstance);
 
         Publication publicationUpdate = publicationWithAllDoiRequestRelatedFields(emptyPublication);
         resourceService.updatePublication(publicationUpdate);
 
-        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequestByResourceIdentifier(
-            extractUserInstance(emptyPublication),
-            emptyPublication.getIdentifier());
+        DoiRequest updatedDoiRequest = doiRequestService
+            .getDoiRequestByResourceIdentifier(userInstance, emptyPublication.getIdentifier());
 
-        DoiRequest expectedDoiRequest = DoiRequest.builder()
-            .withIdentifier(updatedDoiRequest.getIdentifier())
-            .withResourceIdentifier(emptyPublication.getIdentifier())
-            .withDoi(publicationUpdate.getDoi())
-            .withOwner(emptyPublication.getOwner())
-            .withCreatedDate(initialDoiRequest.getCreatedDate())
-            .withModifiedDate(initialDoiRequest.getModifiedDate())
-            .withCustomerId(emptyPublication.getPublisher().getId())
-            .withStatus(DoiRequestStatus.REQUESTED)
-            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
-            .withResourceStatus(publicationUpdate.getStatus())
-            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
-            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
-            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
-            .withResourcePublicationInstance(
-                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-            .build();
+        DoiRequest expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
+            emptyPublication,
+            initialDoiRequest,
+            publicationUpdate,
+            updatedDoiRequest
+        );
 
         assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
@@ -667,9 +654,34 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThrows(NotFoundException.class, action);
     }
 
+    private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication emptyPublication,
+                                                                DoiRequest initialDoiRequest,
+                                                                Publication publicationUpdate,
+                                                                DoiRequest updatedDoiRequest) {
+        return DoiRequest.builder()
+            .withIdentifier(updatedDoiRequest.getIdentifier())
+            .withResourceIdentifier(emptyPublication.getIdentifier())
+            .withDoi(publicationUpdate.getDoi())
+            .withOwner(emptyPublication.getOwner())
+            .withCreatedDate(initialDoiRequest.getCreatedDate())
+            .withModifiedDate(initialDoiRequest.getModifiedDate())
+            .withCustomerId(emptyPublication.getPublisher().getId())
+            .withStatus(DoiRequestStatus.REQUESTED)
+            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
+            .withResourceStatus(publicationUpdate.getStatus())
+            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
+            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
+            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
+            .withContributors(publicationUpdate.getEntityDescription().getContributors())
+            .withResourcePublicationInstance(
+                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+            .build();
+    }
+
     private Publication publicationWithAllDoiRequestRelatedFields(Publication emptyPublication) {
         Publication publicationUpdate = PublicationGenerator.generatePublication(emptyPublication.getIdentifier());
         publicationUpdate.setDoi(SOME_DOI);
+
         return publicationUpdate;
     }
 

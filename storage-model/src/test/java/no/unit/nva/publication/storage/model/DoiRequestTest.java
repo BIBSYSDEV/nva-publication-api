@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -13,8 +14,10 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -79,6 +82,7 @@ public class DoiRequestTest {
             .withMonth("5")
             .withDay("22")
             .build();
+        Contributor sampleContributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
         DoiRequest doiRequest = DoiRequest.builder()
             .withIdentifier(DOI_REQUEST_IDENTIFIER)
             .withResourceIdentifier(RESOURCE_IDENTIFIER)
@@ -94,7 +98,7 @@ public class DoiRequestTest {
             .withResourcePublicationYear(SOME_PUBLICATION_YEAR)
             .withDoi(SOME_DOI)
             .withResourcePublicationInstance(new ReportBasic.Builder().build())
-
+            .withContributors(List.of(sampleContributor))
             .build();
 
         assertThat(doiRequest, doesNotHaveEmptyValuesIgnoringClasses(Set.of(PublicationInstance.class)));

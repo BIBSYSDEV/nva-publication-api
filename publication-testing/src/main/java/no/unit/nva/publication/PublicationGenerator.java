@@ -1,19 +1,26 @@
 package no.unit.nva.publication;
 
+import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.License;
+import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.Role;
+import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.pages.Pages;
@@ -65,10 +72,38 @@ public final class PublicationGenerator {
             .build();
     }
 
+    public static Contributor sampleContributor() throws MalformedContributorException {
+        return new Contributor.Builder()
+            .withIdentity(sampleIdentity())
+            .withAffiliations(sampleOrganization())
+            .withEmail("some@email.org")
+            .withSequence(1)
+            .withRole(Role.CREATOR)
+            .build();
+    }
+
     public static Publication generateEmptyPublication() {
         return new Publication.Builder()
             .withOwner(OWNER)
             .withPublisher(samplePublisher())
+            .build();
+    }
+
+    private static List<Organization> sampleOrganization() {
+        Organization organization = new Organization.Builder()
+            .withId(URI.create("https://someOrganziation.example.com"))
+            .withLabels(Map.of("someLabelKey", "someLabelValue"))
+            .build();
+        return List.of(organization);
+    }
+
+    private static Identity sampleIdentity() {
+        return new Identity.Builder()
+            .withName(OWNER)
+            .withId(URI.create("https://someUserId.example.org"))
+            .withArpId("someArpId")
+            .withNameType(NameType.PERSONAL)
+            .withOrcId("someOrcId")
             .build();
     }
 
@@ -90,6 +125,8 @@ public final class PublicationGenerator {
     }
 
     private static EntityDescription createSampleEntityDescription() {
+        Contributor contributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
+
         PublicationInstance<? extends Pages> publicationInstance = new JournalArticle.Builder()
             .withArticleNumber("1")
             .withIssue("2")
@@ -102,6 +139,7 @@ public final class PublicationGenerator {
             .withMainTitle("DynamoDB Local Testing")
             .withDate(new PublicationDate.Builder().withYear("2020").withMonth("2").withDay("31").build())
             .withReference(reference)
+            .withContributors(List.of(contributor))
             .build();
     }
 }
