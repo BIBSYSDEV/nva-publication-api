@@ -1,6 +1,5 @@
 package no.unit.nva.publication.doi.update.dto;
 
-import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
@@ -11,7 +10,6 @@ public class PublicationHolder {
 
     private final String type;
     private final Publication item;
-    private boolean isDoiUpdate;
 
     @Override
     public int hashCode() {
@@ -45,18 +43,5 @@ public class PublicationHolder {
 
     public Publication getItem() {
         return item;
-    }
-
-    @JacocoGenerated
-    public boolean isDoiUpdate() {
-        if (nonNull(item) && nonNull(item.getDoiRequest())) {
-            return item.getModifiedDate().equals(item.getDoiRequest().getModifiedDate());
-        }
-        return false;
-    }
-
-    @JacocoGenerated
-    public void setDoiUpdate(boolean doiUpdate) {
-        isDoiUpdate = doiUpdate;
     }
 }
