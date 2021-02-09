@@ -8,6 +8,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
 public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<DeletePublicationEvent, Void> {
@@ -45,7 +46,11 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
         if (input.hasDoi()) {
             throw new RuntimeException(DELETE_WITH_DOI_ERROR);
         }
-        resourceService.deleteDraftPublication(null, input.getIdentifier());
+        try {
+            resourceService.deleteDraftPublication(null, input.getIdentifier());
+        } catch (BadRequestException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 }

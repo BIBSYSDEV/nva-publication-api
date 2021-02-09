@@ -657,7 +657,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteResourceDeletesDraftResourceWithoutDoi()
+    public void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
         throws ConflictException, BadRequestException {
         Publication publication = createSampleResourceWithoutDoi();
         assertThatIdentifierEntryHasBeenCreated();
@@ -673,8 +673,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteResourceThrowsExceptionWhenResourceHasDoi()
-        throws ConflictException, BadRequestException {
+    public void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi()
+        throws ConflictException {
         Publication publication = createSampleResourceWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
 
@@ -682,16 +682,43 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertDoesNotThrow(fetchResourceAction);
 
         UserInstance userInstance = extractUserInstance(publication);
-        resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
-        assertThrows(NotFoundException.class, fetchResourceAction);
+        Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
+            publication.getIdentifier());
+        assertThrows(TransactionCanceledException.class, deleteAction);
 
-        assertThatIdentifierEntriesHaveBeenDeleted();
+        assertThatTheEntriesHaveNotBeenDeleted();
+    }
+
+    @Test
+    public void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished()
+        throws ApiGatewayException {
+        Publication publication = createSampleResourceWithoutDoi();
+        UserInstance userInstance = extractUserInstance(publication);
+        resourceService.publishPublication(userInstance, publication.getIdentifier());
+        assertThatIdentifierEntryHasBeenCreated();
+
+        Executable fetchResourceAction = () -> resourceService.getPublication(publication);
+        assertDoesNotThrow(fetchResourceAction);
+
+        Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
+            publication.getIdentifier());
+        assertThrows(TransactionCanceledException.class, deleteAction);
+
+        assertThatTheEntriesHaveNotBeenDeleted();
     }
 
     public void assertThatIdentifierEntryHasBeenCreated() {
+        assertThatResourceAndIdentifierEntryExist();
+    }
+
+    public void assertThatResourceAndIdentifierEntryExist() {
         ScanResult result = client.scan(
             new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
         assertThat(result.getCount(), is(equalTo(2)));
+    }
+
+    private void assertThatTheEntriesHaveNotBeenDeleted() {
+        assertThatResourceAndIdentifierEntryExist();
     }
 
     private void assertThatIdentifierEntriesHaveBeenDeleted() {
