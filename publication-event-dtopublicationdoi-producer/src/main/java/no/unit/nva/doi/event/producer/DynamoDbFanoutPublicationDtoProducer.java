@@ -2,8 +2,6 @@ package no.unit.nva.doi.event.producer;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static nva.commons.core.JsonUtils.objectMapper;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -24,13 +22,12 @@ public class DynamoDbFanoutPublicationDtoProducer
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
     public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "publication.doiupdate.newdraftdoirequest";
-    private static final String TYPE_UPDATE_DRAFT_DOI = "publication.doiupdate.updatedraftdoi";
-    public static final String TYPE_RESOURCE_WITH_FINDABLE_DOI_UPDATE = "publication.doiupdate.updatefindabledoi";
+    public static final String TYPE_UPDATE_EXISTING_DOI = "publication.doiupdate.updateexistingdoi";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
+
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
-    public static final String ILLEGA_STATE_WHILE_UPDATING_DOI = "Illegal state while updating doi: ";
 
     @JacocoGenerated
     public DynamoDbFanoutPublicationDtoProducer() {
@@ -73,22 +70,36 @@ public class DynamoDbFanoutPublicationDtoProducer
     }
 
     private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
-        if(isNull(updateEvent.getOldPublication())){
+        if (isFirstDoiRequest(updateEvent)) {
             return TYPE_REQUEST_FOR_NEW_DRAFT_DOI;
+        } else if (isDoiRequestUpdate(updateEvent)) {
+            return TYPE_UPDATE_EXISTING_DOI;
         }
-        if(nonNull(updateEvent.getOldPublication()) && isNull(updateEvent.getNewPublication().getDoi())){
-            return TYPE_UPDATE_DRAFT_DOI;
-        }
-        if(nonNull(updateEvent.getOldPublication())&& nonNull(updateEvent.getNewPublication().getDoi())){
-            return TYPE_RESOURCE_WITH_FINDABLE_DOI_UPDATE;
-        }
-
-        throw handleIllegalState(updateEvent);
+        return null;
     }
 
-    private IllegalStateException handleIllegalState(DynamoEntryUpdateEvent updateEvent) {
-        String json = attempt(() -> objectMapper.writeValueAsString(updateEvent)).orElseThrow();
-        return new IllegalStateException(ILLEGA_STATE_WHILE_UPDATING_DOI + json);
+    private boolean isDoiRequestUpdate(DynamoEntryUpdateEvent updateEvent) {
+        return resourceHasDoiRequest(updateEvent) || resourceHasDoi(updateEvent);
+    }
+
+    private boolean resourceHasDoi(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getNewPublication()) && nonNull(updateEvent.getNewPublication().getDoi());
+    }
+
+    private boolean resourceHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getOldPublication())
+               && nonNull(updateEvent.getNewPublication())
+               && nonNull(updateEvent.getNewPublication().getDoiRequest());
+    }
+
+    private boolean isFirstDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return isNull(updateEvent.getOldPublication())
+               && updateHasDoiRequest(updateEvent)
+               && isNull(updateEvent.getNewPublication().getDoi());
+    }
+
+    private boolean updateHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getNewPublication()) && nonNull(updateEvent.getNewPublication().getDoiRequest());
     }
 
     private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
