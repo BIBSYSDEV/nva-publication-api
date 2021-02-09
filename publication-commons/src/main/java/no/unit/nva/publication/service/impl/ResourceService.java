@@ -11,7 +11,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAtt
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
@@ -435,7 +435,7 @@ public class ResourceService {
             );
         return new QueryRequest()
             .withTableName(tableName)
-            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditions(keyConditions);
     }
 
