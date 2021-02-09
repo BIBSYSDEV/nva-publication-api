@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
@@ -65,6 +66,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -655,10 +658,23 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierReturnsExistingResource() throws ConflictException {
+    public void getResourceByIdentifierReturnsExistingResource() throws ConflictException, NotFoundException {
         Publication resource = createSampleResource();
+
         Publication retrievedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
-        assertDoesNotThrow(retrievedResource,is(equalTo(resource)))
+        assertThat(retrievedResource, is(equalTo(resource)));
+    }
+
+    @Test
+    public void getResourceByIdentifierThrowsNotFoundExceptionWhenResourceDoesNotExist() {
+        TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
+        SortableIdentifier someIdentifier = SortableIdentifier.next();
+        Executable action = () -> resourceService.getPublicationByIdentifier(someIdentifier);
+
+        NotFoundException exception = assertThrows(NotFoundException.class, action);
+        assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
+        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR));
+        assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
 
     private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication emptyPublication,
