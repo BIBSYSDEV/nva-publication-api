@@ -197,6 +197,26 @@ public class ResourceService {
             .toPublication();
     }
 
+    public Publication getPublicationByIdentifier(SortableIdentifier identifier) {
+        Resource  resource = Resource.resourceQueryObject(identifier);
+        ResourceDao resourceDao= new ResourceDao(resource);
+        String keyCondition = "#PK= :PK AND #SK = :SK";
+        Map<String, String> expressionAttributeName =
+            Map.of(
+                "#PK",DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
+                "#SK",DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME
+            );
+        Map<String,AttributeValue> expressionAttributeValues=
+            Map.of(":PK",new AttributeValue())
+
+        QueryRequest queryRequest = new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
+            .withKeyConditionExpression(keyCondition)
+            .withExpressionAttributeNames(expressionAttributeName)
+
+    }
+
     private static List<Resource> queryResultToResourceList(QueryResult result) {
         return result.getItems()
             .stream()

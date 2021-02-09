@@ -654,6 +654,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThrows(NotFoundException.class, action);
     }
 
+    @Test
+    public void getResourceByIdentifierReturnsExistingResource() throws ConflictException {
+        Publication resource = createSampleResource();
+        Publication retrievedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
+        assertDoesNotThrow(retrievedResource,is(equalTo(resource)))
+    }
+
     private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication emptyPublication,
                                                                 DoiRequest initialDoiRequest,
                                                                 Publication publicationUpdate,
