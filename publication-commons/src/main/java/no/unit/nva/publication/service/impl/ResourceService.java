@@ -94,10 +94,12 @@ public class ResourceService {
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RAWTYPES = "rawtypes";
+
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
+    public static final String DOI_FIELD_IN_RESOURCE = "doi";
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -195,6 +197,48 @@ public class ResourceService {
 
         return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
             .toPublication();
+    }
+
+    public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier identifier)
+        throws BadRequestException {
+        Resource queryObject = resourceQueryObject(userInstance, identifier);
+        ResourceDao dao = new ResourceDao(queryObject);
+        List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, identifier);
+        ResourceDao resource = extractResourceDao(daos);
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#doi", DOI_FIELD_IN_RESOURCE
+        );
+        Map<String, AttributeValue> exppresionAttributeValues = Map.of(
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
+        );
+        Delete deleteResource = new Delete().withTableName(tableName)
+            .withKey(dao.primaryKey())
+            .withConditionExpression("  #data.#status <> :publishedStatus AND "
+                                     + "attribute_not_exists(#data.#doi)")
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(exppresionAttributeValues);
+        IdentifierEntry resourceIdentifierEntry = new IdentifierEntry(resource.getIdentifier().toString());
+        Delete deleteResourceIdentifierEntry = new Delete()
+            .withTableName(tableName)
+            .withKey(resourceIdentifierEntry.primaryKey());
+
+        TransactWriteItem deleteResourceItem = new TransactWriteItem().withDelete(deleteResource);
+        TransactWriteItem deleteResourceIdentifierItem = new TransactWriteItem()
+            .withDelete(deleteResourceIdentifierEntry);
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+            .withTransactItems(deleteResourceItem, deleteResourceIdentifierItem);
+
+        client.transactWriteItems(transactWriteItemsRequest);
+
+        //        Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
+        //
+        //        Optional<IdentifierEntry> doiRequestIdentifierEntry =
+        //            doiRequest.map(dr -> new IdentifierEntry(dr.getIdentifier().toString()));
+        //        Optional<UniqueDoiRequestEntry> doiRequestUniqueEntry = doiRequest.map(
+        //            dr -> new UniqueDoiRequestEntry(dr.getResourceIdentifier().toString()));
+
     }
 
     private static List<Resource> queryResultToResourceList(QueryResult result) {
@@ -386,14 +430,14 @@ public class ResourceService {
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
-        } else if (onlyResourceExisits(daos)) {
+        } else if (onlyResourceExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
 
     @SuppressWarnings(RAWTYPES)
-    private boolean onlyResourceExisits(List<Dao> daos) {
+    private boolean onlyResourceExists(List<Dao> daos) {
         return daos.size() == 1;
     }
 
