@@ -245,17 +245,16 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     private DoiRequest expectedDoiRequestForEmptyPublication(Publication emptyPublication,
                                                              DoiRequest actualDoiRequest) {
-        return DoiRequest.unvalidatedEntry(
-            actualDoiRequest.getIdentifier(),
-            emptyPublication.getIdentifier(),
-            null,
-            emptyPublication.getOwner(),
-            emptyPublication.getPublisher().getId(),
-            DoiRequestStatus.REQUESTED,
-            PublicationStatus.DRAFT,
-            DOI_REQUEST_CREATION_TIME,
-            DOI_REQUEST_CREATION_TIME
-        );
+        return DoiRequest.builder()
+            .withIdentifier(actualDoiRequest.getIdentifier())
+            .withResourceIdentifier(emptyPublication.getIdentifier())
+            .withOwner(emptyPublication.getOwner())
+            .withCustomerId(emptyPublication.getPublisher().getId())
+            .withStatus(DoiRequestStatus.REQUESTED)
+            .withResourceStatus(PublicationStatus.DRAFT)
+            .withCreatedDate(DOI_REQUEST_CREATION_TIME)
+            .withModifiedDate(DOI_REQUEST_CREATION_TIME)
+            .build();
     }
 
     private void skipPublicationUpdate() {

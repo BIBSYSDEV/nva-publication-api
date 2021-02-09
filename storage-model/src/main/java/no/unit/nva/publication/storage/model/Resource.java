@@ -137,7 +137,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     @Override
     @JsonIgnore
     public URI getCustomerId() {
-        return this.getPublisher().getId();
+        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
     }
 
     @Override

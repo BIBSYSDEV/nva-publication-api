@@ -9,7 +9,6 @@ import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.MalformedURLException;
-import java.time.Clock;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -58,7 +57,7 @@ public final class DaoUtils {
     }
 
     public static DoiRequestDao doiRequestDao(Resource resource) {
-        return attempt(() -> DoiRequest.fromResource(resource, Clock.systemDefaultZone()))
+        return attempt(() -> DoiRequest.newDoiRequestForResource(resource))
             .map(DoiRequestDao::new)
             .orElseThrow();
     }

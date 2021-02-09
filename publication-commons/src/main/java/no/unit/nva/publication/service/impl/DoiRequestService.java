@@ -17,21 +17,19 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
-import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -242,21 +240,8 @@ public class DoiRequestService {
     }
 
     private DoiRequest createNewDoiRequestEntry(Publication publication) {
-        Instant now = clock.instant();
-        String mainTitle = Optional.ofNullable(publication.getEntityDescription())
-            .map(EntityDescription::getMainTitle)
-            .orElse(null);
-
-        return DoiRequest.newEntry(
-            identifierProvider.get(),
-            publication.getIdentifier(),
-            mainTitle,
-            publication.getOwner(),
-            publication.getPublisher().getId(),
-            DoiRequestStatus.REQUESTED,
-            publication.getStatus(),
-            now
-        );
+        Resource resource = Resource.fromPublication(publication);
+        return DoiRequest.newDoiRequestForResource(identifierProvider.get(), resource, clock.instant());
     }
 
     private TransactWriteItemsRequest createInsertionTransactionRequest(DoiRequest doiRequest) {

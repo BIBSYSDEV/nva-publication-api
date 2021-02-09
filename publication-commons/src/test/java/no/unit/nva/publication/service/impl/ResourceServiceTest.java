@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
@@ -42,11 +43,13 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -84,6 +87,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR = EntityDescription.class.getName()
                                                                               + " does not have a field"
                                                                               + MAIN_TITLE_FIELD;
+    public static final String ANOTHER_TITLE = "anotherTitle";
+    public static final URI SOME_DOI = URI.create("https://some-doi.example.org");
     private static final URI SOME_ORG = URI.create(PublicationGenerator.PUBLISHER_ID);
     public static final UserInstance SAMPLE_USER = new UserInstance(PublicationGenerator.OWNER, SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
@@ -91,10 +96,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
-
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
-    public static final String ANOTHER_TITLE = "anotherTitle";
-
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
@@ -226,7 +228,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualOriginalResource, is(equalTo(resource)));
 
         Publication resourceUpdate = updateResourceTitle(resource);
-
         resourceService.updatePublication(resourceUpdate);
         Publication actualUpdatedResource = resourceService.getPublication(resource);
 
@@ -601,18 +602,40 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         DoiRequest updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
-        DoiRequest expectedDoiRequest = DoiRequest.unvalidatedEntry(
-            originalDoiRequest.getIdentifier(),
-            resource.getIdentifier(),
-            ANOTHER_TITLE,
-            resource.getOwner(),
-            resource.getPublisher().getId(),
-            originalDoiRequest.getStatus(),
-            resource.getStatus(),
-            originalDoiRequest.getCreatedDate(),
-            resource.getModifiedDate()
-        );
+        DoiRequest expectedDoiRequest = originalDoiRequest.copy()
+            .withResourceTitle(ANOTHER_TITLE)
+            .build();
         assertThat(updatedDoiRequest, is(equalTo(expectedDoiRequest)));
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
+    }
+
+    @Test
+    public void updateResourceUpdatesAllFieldsInDoiRequest()
+        throws ConflictException, BadRequestException, NotFoundException, MalformedContributorException {
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        Publication emptyPublication =
+            resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
+        UserInstance userInstance = extractUserInstance(emptyPublication);
+
+        DoiRequest initialDoiRequest = createDoiRequest(doiRequestService, emptyPublication, userInstance);
+
+        Publication publicationUpdate = publicationWithAllDoiRequestRelatedFields(emptyPublication);
+        resourceService.updatePublication(publicationUpdate);
+
+        DoiRequest updatedDoiRequest = doiRequestService
+            .getDoiRequestByResourceIdentifier(userInstance, emptyPublication.getIdentifier());
+
+        DoiRequest expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
+            emptyPublication,
+            initialDoiRequest,
+            publicationUpdate,
+            updatedDoiRequest
+        );
+
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
+        assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
+        Diff diff = javers.compare(updatedDoiRequest, expectedDoiRequest);
+        assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
     @Test
@@ -629,6 +652,37 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
         assertThrows(NotFoundException.class, action);
+    }
+
+    private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication emptyPublication,
+                                                                DoiRequest initialDoiRequest,
+                                                                Publication publicationUpdate,
+                                                                DoiRequest updatedDoiRequest) {
+        return DoiRequest.builder()
+            .withIdentifier(updatedDoiRequest.getIdentifier())
+            .withResourceIdentifier(emptyPublication.getIdentifier())
+            .withDoi(publicationUpdate.getDoi())
+            .withOwner(emptyPublication.getOwner())
+            .withCreatedDate(initialDoiRequest.getCreatedDate())
+            .withModifiedDate(initialDoiRequest.getModifiedDate())
+            .withCustomerId(emptyPublication.getPublisher().getId())
+            .withStatus(DoiRequestStatus.REQUESTED)
+            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
+            .withResourceStatus(publicationUpdate.getStatus())
+            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
+            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
+            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
+            .withContributors(publicationUpdate.getEntityDescription().getContributors())
+            .withResourcePublicationInstance(
+                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+            .build();
+    }
+
+    private Publication publicationWithAllDoiRequestRelatedFields(Publication emptyPublication) {
+        Publication publicationUpdate = PublicationGenerator.generatePublication(emptyPublication.getIdentifier());
+        publicationUpdate.setDoi(SOME_DOI);
+
+        return publicationUpdate;
     }
 
     private DoiRequest createDoiRequest(DoiRequestService doiRequestService, Publication resource,
@@ -734,6 +788,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Publication createSampleResource() throws ConflictException {
         var originalResource = publicationWithIdentifier();
+        originalResource.setDoi(SOME_DOI);
         return resourceService.createPublication(originalResource);
     }
 

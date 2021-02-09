@@ -34,16 +34,12 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
 
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
-        DoiRequest doi = DoiRequest.unvalidatedEntry(
-            doiRequestIdentifier,
-            doiRequestIdentifier,
-            null,
-            owner,
-            publisherId,
-            null,
-            null,
-            null,
-            null);
+        DoiRequest doi = DoiRequest.builder()
+            .withIdentifier(doiRequestIdentifier)
+            .withOwner(owner)
+            .withCustomerId(publisherId)
+            .build();
+
         return new DoiRequestDao(doi);
     }
 
@@ -54,16 +50,11 @@ public class DoiRequestDao extends Dao<DoiRequest>
 
     public static DoiRequestDao queryByResourceIdentifier(UserInstance userInstance,
                                                           SortableIdentifier resourceIdentifier) {
-        DoiRequest doi = DoiRequest.unvalidatedEntry(
-            null,
-            resourceIdentifier,
-            null,
-            userInstance.getUserIdentifier(),
-            userInstance.getOrganizationUri(),
-            null,
-            null,
-            null,
-            null);
+        DoiRequest doi = DoiRequest.builder()
+            .withResourceIdentifier(resourceIdentifier)
+            .withOwner(userInstance.getUserIdentifier())
+            .withCustomerId(userInstance.getOrganizationUri())
+            .build();
         return new DoiRequestDao(doi);
     }
 
