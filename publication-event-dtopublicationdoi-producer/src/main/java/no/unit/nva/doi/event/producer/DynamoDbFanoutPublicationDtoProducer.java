@@ -21,8 +21,10 @@ import org.slf4j.LoggerFactory;
 public class DynamoDbFanoutPublicationDtoProducer
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
-    public static final String TYPE_DTO_DOI_PUBLICATION = "publication.doiupdate.request";
+    public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "publication.doiupdate.newdraftdoirequest";
+    public static final String TYPE_UPDATE_EXISTING_DOI = "publication.doiupdate.updateexistingdoi";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
+
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
@@ -63,8 +65,41 @@ public class DynamoDbFanoutPublicationDtoProducer
         return Optional.of(updateEvent)
             .filter(this::shouldPropagateEvent)
             .map(DynamoEntryUpdateEvent::getNewPublication)
-            .map(pub -> new PublicationHolder(TYPE_DTO_DOI_PUBLICATION, pub))
+            .map(pub -> new PublicationHolder(calculateEventType(updateEvent), pub))
             .orElse(EMPTY_EVENT);
+    }
+
+    private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
+        if (isFirstDoiRequest(updateEvent)) {
+            return TYPE_REQUEST_FOR_NEW_DRAFT_DOI;
+        } else if (isDoiRequestUpdate(updateEvent)) {
+            return TYPE_UPDATE_EXISTING_DOI;
+        }
+        return null;
+    }
+
+    private boolean isDoiRequestUpdate(DynamoEntryUpdateEvent updateEvent) {
+        return resourceHasDoiRequest(updateEvent) || resourceHasDoi(updateEvent);
+    }
+
+    private boolean resourceHasDoi(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getNewPublication()) && nonNull(updateEvent.getNewPublication().getDoi());
+    }
+
+    private boolean resourceHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getOldPublication())
+               && nonNull(updateEvent.getNewPublication())
+               && nonNull(updateEvent.getNewPublication().getDoiRequest());
+    }
+
+    private boolean isFirstDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return isNull(updateEvent.getOldPublication())
+               && updateHasDoiRequest(updateEvent)
+               && isNull(updateEvent.getNewPublication().getDoi());
+    }
+
+    private boolean updateHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+        return nonNull(updateEvent.getNewPublication()) && nonNull(updateEvent.getNewPublication().getDoiRequest());
     }
 
     private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {

@@ -25,7 +25,27 @@
     },
     "responsePayload": {
       "type": "publication.update",
-      "updateType": "INSERT",
+      "updateType": "MODIFY",
+      "oldPublication": {
+        "type": "Publication",
+        "identifier": "017768664574-6236cf35-a0a9-4eaf-84ea-fbcd9d7cf413",
+        "status": "DRAFT",
+        "owner": "og@unit.no",
+        "publisher": {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+        },
+        "doiRequest": {
+          "type": "DoiRequest",
+          "status": "REQUESTED",
+          "modifiedDate": "2021-02-03T14:59:50.160268Z",
+          "createdDate": "2021-02-03T14:59:50.160268Z"
+        },
+        "entityDescription": {
+          "type": "EntityDescription",
+          "mainTitle": "Title01C"
+        }
+      },
       "newPublication": {
         "type": "Publication",
         "identifier": "017768664574-6236cf35-a0a9-4eaf-84ea-fbcd9d7cf413",
@@ -35,6 +55,7 @@
           "type": "Organization",
           "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
         },
+        "doi": "https://10.10000/100/12",
         "doiRequest": {
           "type": "DoiRequest",
           "status": "REQUESTED",
