@@ -29,10 +29,13 @@ import nva.commons.core.JacocoGenerated;
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
     implements DynamoEntry,
                WithPrimaryKey,
-               WithByTypeCustomerStatusIndex {
+               WithByTypeCustomerStatusIndex,
+               WithIdentifier {
 
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
+    public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
+        "Daos cannot set their identifier. They get it from their contained data";
 
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
@@ -97,7 +100,14 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     public abstract URI getCustomerId();
 
     @JsonIgnore
+    @Override
     public abstract SortableIdentifier getIdentifier();
+
+    @Override
+    @JacocoGenerated
+    public final void setIdentifier(SortableIdentifier identifier) {
+        throw new UnsupportedOperationException(UNSUPORTED_SET_IDENTIFIER_ERROR);
+    }
 
     protected String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
         String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);

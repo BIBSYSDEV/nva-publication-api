@@ -41,11 +41,13 @@ import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
@@ -63,6 +65,7 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
@@ -73,7 +76,7 @@ import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService {
 
     public static final String EMPTY_STRING = "";
@@ -96,17 +99,19 @@ public class ResourceService {
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-    public static final String RAWTYPES = "rawtypes";
     public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX = "Could not find resource with "
                                                                                + "identifier: ";
     public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR = RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX
                                                                         + "{}, {} ";
+    public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
+    public static final String DOI_FIELD_IN_RESOURCE = "doi";
+    private static final String RAWTYPES = "rawtypes";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
-
     private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
+
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -206,6 +211,23 @@ public class ResourceService {
             .toPublication();
     }
 
+    public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws BadRequestException {
+        List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+
+        List<TransactWriteItem> deleteResourceTransactionItems = deleteResourceTransactionItems(daos);
+        List<TransactWriteItem> deleteDoiRequestTransactionItems = deleteDoiRequestTransactionItems(daos);
+
+        ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.addAll(deleteResourceTransactionItems);
+        transactionItems.addAll(deleteDoiRequestTransactionItems);
+
+        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
+            .withTransactItems(transactionItems);
+
+        client.transactWriteItems(transactWriteItemsRequest);
+    }
+
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
 
         QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
@@ -236,7 +258,62 @@ public class ResourceService {
     private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
                                                                         SortableIdentifier identifier) {
         logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR, identifier.toString(), fail.getException());
-        return new NotFoundException(identifier.toString());
+        return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier.toString());
+    }
+
+    private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
+        Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
+        if (doiRequest.isPresent()) {
+            return deleteDoiRequestTransactionItems(doiRequest.orElseThrow());
+        }
+        return Collections.emptyList();
+    }
+
+    private List<TransactWriteItem> deleteDoiRequestTransactionItems(DoiRequestDao doiRequestDao) {
+        WithPrimaryKey identifierEntry = IdentifierEntry.create(doiRequestDao);
+        WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
+        return
+            Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry)
+                .map(this::createDeleteEntry)
+                .map(delete -> new TransactWriteItem().withDelete(delete))
+                .collect(Collectors.toList());
+    }
+
+    private Delete createDeleteEntry(WithPrimaryKey entry) {
+        return new Delete()
+            .withTableName(tableName)
+            .withKey(entry.primaryKey());
+    }
+
+    private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
+        throws BadRequestException {
+        ResourceDao resourceDao = extractResourceDao(daos);
+        Delete deleteResource = createDeleteEntry(resourceDao);
+        applyDeleteResourceConditions(deleteResource);
+
+        Delete deleteResourceIdentifierEntry = createDeleteEntry(IdentifierEntry.create(resourceDao));
+
+        TransactWriteItem deleteResourceItem = new TransactWriteItem().withDelete(deleteResource);
+        TransactWriteItem deleteResourceIdentifierItem = new TransactWriteItem()
+            .withDelete(deleteResourceIdentifierEntry);
+
+        return List.of(deleteResourceItem, deleteResourceIdentifierItem);
+    }
+
+    private void applyDeleteResourceConditions(Delete deleteResource) {
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#doi", DOI_FIELD_IN_RESOURCE
+        );
+        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
+        );
+
+        deleteResource.withConditionExpression("  #data.#status <> :publishedStatus AND "
+                                               + "attribute_not_exists(#data.#doi)")
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues);
     }
 
     private QueryRequest createGetByResourceIdentifierQueryRequest(SortableIdentifier identifier) {
@@ -444,14 +521,14 @@ public class ResourceService {
     private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
         if (doiRequestExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
-        } else if (onlyResourceExisits(daos)) {
+        } else if (onlyResourceExists(daos)) {
             return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
         }
         throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
     }
 
     @SuppressWarnings(RAWTYPES)
-    private boolean onlyResourceExisits(List<Dao> daos) {
+    private boolean onlyResourceExists(List<Dao> daos) {
         return daos.size() == 1;
     }
 

@@ -484,7 +484,7 @@ class DynamoDBPublicationServiceTest {
             () -> publicationService.markPublicationForDeletion(publication.getIdentifier(), publication.getOwner()));
     }
 
-    //Done
+
     @Test
     public void canDeleteDraftPublicationWithStatusDraftForDeletion() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
@@ -498,7 +498,7 @@ class DynamoDBPublicationServiceTest {
         assertThat(exception, is(instanceOf(NotFoundException.class)));
     }
 
-    //Done
+    //Not relevant
     @Test
     public void canDeleteDraftPublicationWhenPublicationHasMultipleVersions() throws ApiGatewayException {
         Publication publication = publicationWithIdentifier();
