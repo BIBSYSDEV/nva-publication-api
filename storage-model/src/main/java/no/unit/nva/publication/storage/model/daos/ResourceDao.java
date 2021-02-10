@@ -9,11 +9,14 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
 
 @JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao extends Dao<Resource> implements JoinWithResource {
+public class ResourceDao extends Dao<Resource>
+    implements JoinWithResource,
+               ResourceByIdentifier {
 
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     private Resource data;
