@@ -203,32 +203,11 @@ public class ResourceService {
     }
 
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        Resource resource = resourceQueryObject(identifier);
-        ResourceDao resourceDao = new ResourceDao(resource);
-        String keyCondition = "#PK = :PK AND #SK = :SK";
-        Map<String, String> expressionAttributeName =
-            Map.of(
-                "#PK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
-                "#SK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME
-            );
-        Map<String, AttributeValue> expressionAttributeValues =
-            Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
-                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
-            );
 
-        QueryRequest queryRequest = new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression(keyCondition)
-            .withExpressionAttributeNames(expressionAttributeName)
-            .withExpressionAttributeValues(expressionAttributeValues);
+        QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
 
         QueryResult result = client.query(queryRequest);
-        ResourceDao fetchedDao = result.getItems()
-            .stream()
-            .map(item -> parseAttributeValuesMap(item, ResourceDao.class))
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow(fail -> handleGetResourceByIdentifierError(fail, identifier));
+        ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
 
         return fetchedDao.getData().toPublication();
     }
@@ -241,11 +220,43 @@ public class ResourceService {
             .collect(Collectors.toList());
     }
 
-    private NotFoundException handleGetResourceByIdentifierError(
-        Failure<ResourceDao> fail,
-        SortableIdentifier identifier) {
+    private static ResourceDao queryResultToSingleResource(SortableIdentifier identifier, QueryResult result)
+        throws NotFoundException {
+        return result.getItems()
+            .stream()
+            .map(item -> parseAttributeValuesMap(item, ResourceDao.class))
+            .collect(SingletonCollector.tryCollect())
+            .orElseThrow(fail -> handleGetResourceByIdentifierError(fail, identifier));
+    }
+
+    private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
+                                                                        SortableIdentifier identifier) {
         logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR + identifier.toString(), fail.getException());
         return new NotFoundException(identifier.toString());
+    }
+
+    private QueryRequest createGetByResourceIdentifierQueryRequest(SortableIdentifier identifier) {
+
+        Resource resource = resourceQueryObject(identifier);
+        ResourceDao resourceDao = new ResourceDao(resource);
+
+        String keyCondition = "#PK = :PK AND #SK = :SK";
+        Map<String, String> expressionAttributeName =
+            Map.of(
+                "#PK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
+                "#SK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME
+            );
+        Map<String, AttributeValue> expressionAttributeValues =
+            Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
+                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
+            );
+
+        return new QueryRequest()
+            .withTableName(tableName)
+            .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
+            .withKeyConditionExpression(keyCondition)
+            .withExpressionAttributeNames(expressionAttributeName)
+            .withExpressionAttributeValues(expressionAttributeValues);
     }
 
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
