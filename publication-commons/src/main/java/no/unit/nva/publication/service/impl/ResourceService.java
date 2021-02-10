@@ -1,12 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
-import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -17,10 +14,8 @@ import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
-import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,15 +26,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -57,33 +48,16 @@ import nva.commons.core.attempt.Try;
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
 
-    public static final String EMPTY_STRING = "";
-    public static final String DOUBLE_QUOTES = "\"";
-    public static final String STATUS_FIELD_IN_RESOURCE = "status";
-    public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
-    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = ResourceDao.CONTAINED_DATA_FIELD_NAME;
-    public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
-    public static final String RESOURCE_WITHOUT_MAIN_TITLE_ERROR = "Resource is missing main title: ";
     public static final int MAX_FETCH_ATTEMPTS = 10;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
     public static final String NOT_FOUND_ERROR_MESSAGE = "The resource could not be found";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
-    public static final String DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO = "data";
-    public static final String RESOURCE_STATUS_FIELD_IN_DOI_REQUEST = "resourceStatus";
-    public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
-    public static final String PUBLISH_COMPLETED = "Publication is published.";
-    public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
 
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
-    private static final String RAWTYPES = "rawtypes";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
-    private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
-    private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
+
 
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -99,8 +73,8 @@ public class ResourceService extends ServiceWithTransactions {
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
-        this.updateResourceService = new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps,
-            readResourceService);
+        this.updateResourceService =
+            new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
 
     public ResourceService() {
@@ -125,7 +99,7 @@ public class ResourceService extends ServiceWithTransactions {
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        return publishResource(userInstance, resourceIdentifier);
+        return updateResourceService.publishResource(userInstance, resourceIdentifier);
     }
 
     public Publication markPublicationForDeletion(UserInstance userInstance,
@@ -188,6 +162,11 @@ public class ResourceService extends ServiceWithTransactions {
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
+    }
+
+    @Override
+    protected Clock getClock() {
+        return clockForTimestamps;
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -267,137 +246,6 @@ public class ResourceService extends ServiceWithTransactions {
         return null;
     }
 
-    @SuppressWarnings(RAWTYPES)
-    private PublishPublicationStatusResponse publishResource(UserInstance userInstance,
-                                                             SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
-        ResourceDao resourceDao = extractResourceDao(daos);
-
-        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
-            return publishCompletedStatus();
-        }
-
-        validateForPublishing(resourceDao.getData());
-        setResourceStatusToPublished(daos, resourceDao);
-        return publishingInProgressStatus();
-    }
-
-    private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
-        List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
-
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-            .withTransactItems(transactionItems);
-        client.transactWriteItems(transactWriteItemsRequest);
-    }
-
-    private List<TransactWriteItem> createUpdateTransactionItems(List<Dao> daos, ResourceDao resourceDao) {
-        String nowString = nowAsString();
-        List<TransactWriteItem> transactionItems = new ArrayList<>();
-        transactionItems.add(publishUpdateRequest(resourceDao, nowString));
-        Optional<DoiRequestDao> doiRequestDao = extractDoiRequest(daos);
-        doiRequestDao.ifPresent(dao -> transactionItems.add(updateDoiRequestResourceStatus(dao, nowString)));
-        return transactionItems;
-    }
-
-    private PublishPublicationStatusResponse publishingInProgressStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_IN_PROGRESS, HttpURLConnection.HTTP_ACCEPTED);
-    }
-
-    private PublishPublicationStatusResponse publishCompletedStatus() {
-        return new PublishPublicationStatusResponse(PUBLISH_COMPLETED, HttpURLConnection.HTTP_NO_CONTENT);
-    }
-
-    private TransactWriteItem publishUpdateRequest(ResourceDao dao, String nowString) {
-
-        dao.getData().setStatus(PublicationStatus.PUBLISHED);
-        final String updateExpression = "SET"
-                                        + " #data.#status = :newStatus, "
-                                        + "#data.#modifiedDate = :modifiedDate, "
-                                        + "#data.#publishedDate = :modifiedDate, "
-                                        + "#PK1 = :PK1, "
-                                        + "#SK1 = :SK1 ";
-
-        final String conditionExpression = "#data.#status <> :publishedStatus";
-
-        Map<String, String> expressionNamesMap = Map.of(
-            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
-            "#status", STATUS_FIELD_IN_RESOURCE,
-            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
-            "#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE,
-            "#PK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
-            "#SK1", DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME
-        );
-
-        Map<String, AttributeValue> expressionValuesMap = Map.of(
-            ":newStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":modifiedDate", new AttributeValue(nowString),
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
-            ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
-
-        Update update = new Update()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap);
-        return new TransactWriteItem().withUpdate(update);
-    }
-
-    private TransactWriteItem updateDoiRequestResourceStatus(DoiRequestDao doiRequestDao, String nowString) {
-
-        String updateExpression = "SET "
-                                  + "#data.#resourceStatus = :publishedStatus,"
-                                  + "#data.#modifiedDate = :modifiedDate ";
-        Map<String, String> expressionAttributeNames = Map.of(
-            "#data", DOI_REQUEST_FIELD_IN_DOI_REQUEST_DAO,
-            "#resourceStatus", RESOURCE_STATUS_FIELD_IN_DOI_REQUEST,
-            "#modifiedDate", MODIFIED_DATE_FIELD_IN_DOI_REQUEST
-        );
-        Map<String, AttributeValue> attributeValueMap = Map.of(
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue()),
-            ":modifiedDate", new AttributeValue(nowString)
-        );
-
-        Update update = new Update().withTableName(tableName)
-            .withKey(doiRequestDao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(attributeValueMap);
-
-        return new TransactWriteItem().withUpdate(update);
-    }
-
-    @SuppressWarnings(RAWTYPES)
-    private ResourceDao extractResourceDao(List<Dao> daos) throws BadRequestException {
-        if (doiRequestExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS);
-        } else if (onlyResourceExists(daos)) {
-            return (ResourceDao) daos.get(RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS);
-        }
-        throw new BadRequestException(RESOURCE_NOT_FOUND_MESSAGE);
-    }
-
-    @SuppressWarnings(RAWTYPES)
-    private boolean onlyResourceExists(List<Dao> daos) {
-        return daos.size() == 1;
-    }
-
-    @SuppressWarnings(RAWTYPES)
-    private boolean doiRequestExists(List<Dao> daos) {
-        return daos.size() == 2;
-    }
-
-    @SuppressWarnings(RAWTYPES)
-    private Optional<DoiRequestDao> extractDoiRequest(List<Dao> daos) {
-        if (doiRequestExists(daos)) {
-            return Optional.of((DoiRequestDao) daos.get(DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS));
-        }
-        return Optional.empty();
-    }
 
     private <E extends Exception> ApiGatewayException markForDeletionError(
         Failure<Resource> failure, Resource resource) {
@@ -446,42 +294,7 @@ public class ResourceService extends ServiceWithTransactions {
             .withReturnValues(ReturnValue.ALL_NEW);
     }
 
-    private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        boolean hasNoTitle = Optional.of(resource)
-            .map(Resource::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
-        boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
 
-        if (hasNoTitle) {
-            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (hasNeitherLinkNorFile) {
-            throwErrorWhenPublishingResourceWithoutData(resource);
-        }
-    }
-
-    private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
-        String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-        String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILE_SET_FIELD)).orElseThrow();
-        throw new InvalidPublicationException(List.of(files, linkField));
-    }
-
-    private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
-        throws InvalidPublicationException {
-        throw new
-            InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
-    }
-
-    private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
-        return resource.getClass().getDeclaredField(resourceField).getName();
-    }
-
-    private boolean emptyResourceFiles(Resource resource) {
-        return Optional.ofNullable(resource.getFileSet())
-            .map(FileSet::getFiles)
-            .map(List::isEmpty)
-            .orElse(true);
-    }
 
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
@@ -491,14 +304,6 @@ public class ResourceService extends ServiceWithTransactions {
             .map(ResourceDao::getData)
             .orElseThrow();
     }
-
-    private String nowAsString() {
-        String jsonString = attempt(() -> objectMapper.writeValueAsString(clockForTimestamps.instant()))
-            .orElseThrow();
-        return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
-    }
-
-
 
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
         TransactWriteItem resourceEntry = createTransactionEntryForInsertingResource(resource);

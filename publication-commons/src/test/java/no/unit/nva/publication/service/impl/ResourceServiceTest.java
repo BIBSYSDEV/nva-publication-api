@@ -5,9 +5,9 @@ import static no.unit.nva.publication.PublicationGenerator.publicationWithIdenti
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -52,7 +52,6 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -610,7 +609,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateResourceUpdatesAllFieldsInDoiRequest()
-        throws ConflictException, BadRequestException, NotFoundException, MalformedContributorException {
+        throws ConflictException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication emptyPublication =
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
