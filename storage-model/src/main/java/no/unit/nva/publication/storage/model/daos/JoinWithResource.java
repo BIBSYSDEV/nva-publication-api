@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
@@ -26,7 +26,7 @@ public interface JoinWithResource {
 
     String LAST_PRINTABLE_ASCII_CHAR = "~";
 
-    @JsonProperty(BY_RESOURCE_INDEX_PARTITION_KEY_NAME)
+    @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME)
     default String getByResourcePartitionKey() {
         return
             CUSTOMER_INDEX_FIELD_PREFIX
@@ -38,7 +38,7 @@ public interface JoinWithResource {
             + getResourceIdentifier().toString();
     }
 
-    @JsonProperty(BY_RESOURCE_INDEX_SORT_KEY_NAME)
+    @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByResourceSortKey() {
         return
             this.joinByResourceOrderedType()
@@ -77,8 +77,8 @@ public interface JoinWithResource {
             .withComparisonOperator(ComparisonOperator.BETWEEN);
 
         return Map.of(
-            BY_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
-            BY_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
+            BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
+            BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
         );
     }
 
@@ -108,8 +108,8 @@ public interface JoinWithResource {
             .withComparisonOperator(ComparisonOperator.BEGINS_WITH);
 
         return Map.of(
-            BY_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
-            BY_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
+            BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
+            BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME, sortKeyCondition
         );
     }
 

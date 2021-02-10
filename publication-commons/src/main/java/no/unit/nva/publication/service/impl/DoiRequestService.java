@@ -1,7 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
@@ -75,7 +75,7 @@ public class DoiRequestService {
         DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
-            .withIndexName(BY_RESOURCE_INDEX_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
         Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
