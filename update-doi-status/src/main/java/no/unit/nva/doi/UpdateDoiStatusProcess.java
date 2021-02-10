@@ -96,12 +96,12 @@ public class UpdateDoiStatusProcess {
         if (request.getModifiedDate().isAfter(Instant.now())) {
             throw new IllegalStateException(MODIFIED_DOI_IS_IN_THE_FUTURE);
         }
-        if (publicationHasAlreadyDoiAndIsDifferent()) {
+        if (publicationHasAlreadyDoiAndDoiIsDifferent()) {
             throw new IllegalStateException(DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION);
         }
     }
 
-    private boolean publicationHasAlreadyDoiAndIsDifferent() {
+    private boolean publicationHasAlreadyDoiAndDoiIsDifferent() {
         return
             nonNull(publication.getDoi())
             && request.getDoi().isPresent()
