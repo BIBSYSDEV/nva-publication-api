@@ -4,11 +4,11 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.Clock;
@@ -16,7 +16,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
@@ -24,7 +23,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +63,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
 
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> resourceService.getPublicationByIdentifier(publication.getIdentifier()));
-        String message = DynamoDBPublicationService.PUBLICATION_NOT_FOUND + publication.getIdentifier();
+        String message = ResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
 
@@ -77,8 +75,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
 
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
-        String message = DynamoDBPublicationService.PUBLICATION_NOT_FOUND + identifier;
-        assertThat(exception.getMessage(), equalTo(message));
+        String message = ResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
+        assertThat(exception.getMessage(), containsString(message));
     }
 
     @Test

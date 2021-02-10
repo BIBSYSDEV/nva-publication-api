@@ -20,6 +20,10 @@ public class UniqueDoiRequestEntry extends UniquenessEntry {
         super(identifier);
     }
 
+    public static UniqueDoiRequestEntry create(DoiRequestDao doiRequestDao) {
+        return new UniqueDoiRequestEntry(doiRequestDao.getResourceIdentifier().toString());
+    }
+
     @Override
     protected String getType() {
         return TYPE;

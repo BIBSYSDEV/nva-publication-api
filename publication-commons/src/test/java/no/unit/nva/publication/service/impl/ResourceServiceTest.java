@@ -105,6 +105,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private final Javers javers = JaversBuilder.javers().build();
     private ResourceService resourceService;
     private Clock clock;
+    private DoiRequestService doiRequestService;
 
     @BeforeEach
     public void init() {
@@ -116,6 +117,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .thenReturn(RESOURCE_SECOND_MODIFICATION_TIME)
             .thenReturn(RESOURCE_THIRD_MODIFICATION_TIME);
         resourceService = new ResourceService(client, clock);
+        doiRequestService = new DoiRequestService(client, clock);
     }
 
     @Test
@@ -526,15 +528,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
         throws ApiGatewayException {
         Publication publication = createSampleResourceWithDoi();
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
-        UserInstance userInstance = extractUserInstance(publication);
-        SortableIdentifier doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
-            publication.getIdentifier());
-
+        SortableIdentifier doiRequestIdentifier = createDoiRequest(publication).getIdentifier();
         publishResource(publication);
 
-        DoiRequest actualDoiRequest = doiRequestService.getDoiRequest(
-            userInstance, doiRequestIdentifier);
+        UserInstance userInstance = extractUserInstance(publication);
+        DoiRequest actualDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
 
         assertThat(actualDoiRequest.getResourceStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
@@ -598,12 +596,12 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         throws ConflictException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
-        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
-        DoiRequest originalDoiRequest = createDoiRequest(doiRequestService, resource, userInstance);
+        DoiRequest originalDoiRequest = createDoiRequest(resource);
 
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
 
+        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
         DoiRequest updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
@@ -620,13 +618,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication emptyPublication =
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
-        UserInstance userInstance = extractUserInstance(emptyPublication);
 
-        DoiRequest initialDoiRequest = createDoiRequest(doiRequestService, emptyPublication, userInstance);
+        DoiRequest initialDoiRequest = createDoiRequest(emptyPublication);
 
         Publication publicationUpdate = publicationWithAllDoiRequestRelatedFields(emptyPublication);
         resourceService.updatePublication(publicationUpdate);
 
+        UserInstance userInstance = extractUserInstance(emptyPublication);
         DoiRequest updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, emptyPublication.getIdentifier());
 
@@ -672,7 +670,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
         assertThrows(NotFoundException.class, fetchResourceAction);
 
-        assertThatIdentifierEntriesHaveBeenDeleted();
+        assertThatAllEntriesHaveBeenDeleted();
     }
 
     @Test
@@ -710,6 +708,18 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThatTheEntriesHaveNotBeenDeleted();
     }
 
+    @Test
+    public void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest()
+        throws ConflictException, BadRequestException, NotFoundException {
+        Publication publication = createSampleResourceWithoutDoi();
+        createDoiRequest(publication);
+
+        UserInstance userInstance = extractUserInstance(publication);
+        resourceService.deleteDraftPublication(userInstance, publication.getIdentifier());
+
+        assertThatAllEntriesHaveBeenDeleted();
+    }
+
     public void assertThatIdentifierEntryHasBeenCreated() {
         assertThatResourceAndIdentifierEntryExist();
     }
@@ -718,16 +728,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         ScanResult result = client.scan(
             new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
         assertThat(result.getCount(), is(equalTo(2)));
-    }
-
-    private void assertThatTheEntriesHaveNotBeenDeleted() {
-        assertThatResourceAndIdentifierEntryExist();
-    }
-
-    private void assertThatIdentifierEntriesHaveBeenDeleted() {
-        ScanResult result = client.scan(
-            new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
-        assertThat(result.getCount(), is(equalTo(0)));
     }
 
     @Test
@@ -748,6 +748,16 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
         assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
         assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
+    }
+
+    private void assertThatTheEntriesHaveNotBeenDeleted() {
+        assertThatResourceAndIdentifierEntryExist();
+    }
+
+    private void assertThatAllEntriesHaveBeenDeleted() {
+        ScanResult result = client.scan(
+            new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
+        assertThat(result.getCount(), is(equalTo(0)));
     }
 
     private DoiRequest expectedDoiRequestAfterPublicationUpdate(Publication emptyPublication,
@@ -781,9 +791,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         return publicationUpdate;
     }
 
-    private DoiRequest createDoiRequest(DoiRequestService doiRequestService, Publication resource,
-                                        UserInstance userInstance)
+    private DoiRequest createDoiRequest(Publication resource)
         throws BadRequestException, ConflictException, NotFoundException {
+        UserInstance userInstance = extractUserInstance(resource);
         doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
     }
