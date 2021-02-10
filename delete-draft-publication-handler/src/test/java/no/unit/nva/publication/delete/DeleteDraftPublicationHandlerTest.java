@@ -19,6 +19,7 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -63,7 +64,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
 
         NotFoundException exception = assertThrows(NotFoundException.class,
             () -> resourceService.getPublicationByIdentifier(publication.getIdentifier()));
-        String message = ResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
+        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
 
@@ -75,7 +76,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
 
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
-        String message = ResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
+        String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
         assertThat(exception.getMessage(), containsString(message));
     }
 

@@ -25,7 +25,6 @@ import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 
 public final class ResourceServiceUtils {
 
-    public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
     public static final String PARTITION_KEY_NAME_PLACEHOLDER = "#partitionKey";
     public static final String SORT_KEY_NAME_PLACEHOLDER = "#sortKey";
     public static final String PARTITION_KEY_VALUE_PLACEHOLDER = ":partitionKey";

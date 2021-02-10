@@ -1,18 +1,14 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -21,14 +17,9 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -36,8 +27,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
-import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
-import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -70,11 +59,8 @@ import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService {
@@ -99,29 +85,26 @@ public class ResourceService {
     public static final String MODIFIED_DATE_FIELD_IN_DOI_REQUEST = "modifiedDate";
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
-    public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX = "Could not find resource with "
-                                                                               + "identifier: ";
-    public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR = RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX
-                                                                        + "{}, {} ";
-    public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
+
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     private static final String RAWTYPES = "rawtypes";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
-    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
 
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
+    private final ReadResourceService readResourceService;
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         tableName = RESOURCES_TABLE_NAME;
         this.client = client;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
+        this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
     }
 
     public ResourceService() {
@@ -158,22 +141,11 @@ public class ResourceService {
         return publication;
     }
 
-    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        if (isNull(resourceIdentifier)) {
-            throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
-        }
-        return getResource(userInstance, resourceIdentifier)
-            .toPublication();
-    }
 
-    public Publication getPublication(Publication publication) throws NotFoundException {
-        return getResource(Resource.fromPublication(publication)).toPublication();
-    }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
         throws NotFoundException {
-        Resource existingResource = getResource(oldOwner, identifier);
+        Resource existingResource = readResourceService.getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
         TransactWriteItem insertionAction = createTransactionEntyForInsertingResource(newResource);
@@ -181,21 +153,7 @@ public class ResourceService {
         client.transactWriteItems(request);
     }
 
-    public List<Publication> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey =
-            ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-                userInstance.getUserIdentifier());
-        QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
-        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
-            String.class);
-        Map<String, String> namesMap = querySpec.getNameMap();
-        QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
-        return queryResultToResourceList(result)
-            .stream()
-            .map(Resource::toPublication)
-            .collect(Collectors.toList());
-    }
 
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
@@ -213,7 +171,8 @@ public class ResourceService {
 
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
-        List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+        List<Dao> daos = readResourceService
+            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
 
         List<TransactWriteItem> deleteResourceTransactionItems = deleteResourceTransactionItems(daos);
         List<TransactWriteItem> deleteDoiRequestTransactionItems = deleteDoiRequestTransactionItems(daos);
@@ -228,37 +187,21 @@ public class ResourceService {
         client.transactWriteItems(transactWriteItemsRequest);
     }
 
+    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        return readResourceService.getPublication(userInstance, resourceIdentifier);
+    }
+
+    public Publication getPublication(Publication sampleResource) throws NotFoundException {
+        return readResourceService.getPublication(sampleResource);
+    }
+
+    public List<Publication> getResourcesByOwner(UserInstance sampleUser) {
+        return readResourceService.getResourcesByOwner(sampleUser);
+    }
+
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-
-        QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
-
-        QueryResult result = client.query(queryRequest);
-        ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
-
-        return fetchedDao.getData().toPublication();
-    }
-
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getData)
-            .collect(Collectors.toList());
-    }
-
-    private static ResourceDao queryResultToSingleResource(SortableIdentifier identifier, QueryResult result)
-        throws NotFoundException {
-        return result.getItems()
-            .stream()
-            .map(item -> parseAttributeValuesMap(item, ResourceDao.class))
-            .collect(SingletonCollector.tryCollect())
-            .orElseThrow(fail -> handleGetResourceByIdentifierError(fail, identifier));
-    }
-
-    private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
-                                                                        SortableIdentifier identifier) {
-        logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR, identifier.toString(), fail.getException());
-        return new NotFoundException(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier.toString());
+        return readResourceService.getPublicationByIdentifier(identifier);
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -316,29 +259,7 @@ public class ResourceService {
             .withExpressionAttributeValues(expressionAttributeValues);
     }
 
-    private QueryRequest createGetByResourceIdentifierQueryRequest(SortableIdentifier identifier) {
 
-        Resource resource = resourceQueryObject(identifier);
-        ResourceDao resourceDao = new ResourceDao(resource);
-
-        String keyCondition = "#PK = :PK AND #SK = :SK";
-        Map<String, String> expressionAttributeName =
-            Map.of(
-                "#PK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
-                "#SK", DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME
-            );
-        Map<String, AttributeValue> expressionAttributeValues =
-            Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
-                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
-            );
-
-        return new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME)
-            .withKeyConditionExpression(keyCondition)
-            .withExpressionAttributeNames(expressionAttributeName)
-            .withExpressionAttributeValues(expressionAttributeValues);
-    }
 
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
         Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
@@ -392,7 +313,7 @@ public class ResourceService {
     private Resource fetchEventuallyConsistentResource(Resource newResource) {
         Resource savedResource = null;
         for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedResource == null; times++) {
-            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
+            savedResource = attempt(() -> readResourceService.getResource(newResource)).orElse(fail -> null);
             attempt(this::waitBeforeFetching).orElseThrow();
         }
         return savedResource;
@@ -403,22 +324,13 @@ public class ResourceService {
         return null;
     }
 
-    private Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {
-        return getResource(resourceQueryObject(userInstance, identifier));
-    }
-
-    private Resource getResource(Resource resource) throws NotFoundException {
-        Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
-        GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return fetchedDao.getData();
-    }
 
     @SuppressWarnings(RAWTYPES)
     private PublishPublicationStatusResponse publishResource(UserInstance userInstance,
                                                              SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
-        List<Dao> daos = fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+        List<Dao> daos = readResourceService
+            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
 
         if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
@@ -545,35 +457,6 @@ public class ResourceService {
         return Optional.empty();
     }
 
-    @SuppressWarnings(RAWTYPES)
-    private List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
-                                                                       SortableIdentifier resourceIdentifier) {
-        ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = queryByResourceIndex(queryObject);
-        QueryResult queryResult = client.query(queryRequest);
-        return parseResultSetToDaos(queryResult);
-    }
-
-    @SuppressWarnings(RAWTYPES)
-    private List<Dao> parseResultSetToDaos(QueryResult queryResult) {
-        return queryResult.getItems()
-            .stream()
-            .map(values -> parseAttributeValuesMap(values, Dao.class))
-            .collect(Collectors.toList());
-    }
-
-    private QueryRequest queryByResourceIndex(ResourceDao queryObject) {
-        Map<String, Condition> keyConditions = queryObject
-            .byResource(
-                DoiRequestDao.joinByResourceContainedOrderedType(),
-                ResourceDao.joinByResourceContainedOrderedType()
-            );
-        return new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(keyConditions);
-    }
-
     private <E extends Exception> ApiGatewayException markForDeletionError(
         Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
@@ -673,20 +556,7 @@ public class ResourceService {
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
-    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                     Map<String, String> namesMap) {
-        return client.query(
-            new QueryRequest().withKeyConditionExpression(conditionExpression)
-                .withExpressionAttributeNames(namesMap)
-                .withExpressionAttributeValues(valuesMap)
-                .withTableName(tableName)
-        );
-    }
 
-    private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
-        return new ExpressionSpecBuilder()
-            .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
 
     private TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest putRequest)
         throws ConflictException {
@@ -730,13 +600,4 @@ public class ResourceService {
         return new ConflictException(fail.getException());
     }
 
-    private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
-        GetItemResult result = client.getItem(new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(primaryKey));
-        if (isNull(result.getItem())) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
-        return result;
-    }
 }
