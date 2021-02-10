@@ -1,14 +1,18 @@
 package no.unit.nva.publication.delete;
 
+import static java.util.Objects.nonNull;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
+import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<DeletePublicationEvent, Void> {
@@ -40,17 +44,31 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
 
     @Override
     protected Void processInputPayload(
-            DeletePublicationEvent input,
-            AwsEventBridgeEvent<AwsEventBridgeDetail<DeletePublicationEvent>> event,
-            Context context) {
+        DeletePublicationEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DeletePublicationEvent>> event,
+        Context context) {
         if (input.hasDoi()) {
-            throw new RuntimeException(DELETE_WITH_DOI_ERROR);
+            throwPublicationHasDoiError();
         }
+
         try {
-            resourceService.deleteDraftPublication(null, input.getIdentifier());
-        } catch (BadRequestException e) {
-            e.printStackTrace();
+            UserInstance userInstance = fetchUserInformationForPublication(input);
+            resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
+        } catch (NotFoundException | BadRequestException e) {
+            throw new RuntimeException(e);
         }
         return null;
+    }
+
+    private UserInstance fetchUserInformationForPublication(DeletePublicationEvent input) throws NotFoundException {
+        Publication publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
+        if (nonNull(publication.getDoi())) {
+            throwPublicationHasDoiError();
+        }
+        return new UserInstance(publication.getOwner(),publication.getPublisher().getId());
+    }
+
+    private void throwPublicationHasDoiError() {
+        throw new RuntimeException(DELETE_WITH_DOI_ERROR);
     }
 }

@@ -8,6 +8,9 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CU
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.local.embedded.DynamoDBEmbedded;
@@ -59,12 +62,18 @@ public class ResourcesDynamoDbLocalTest {
         indexes.add(
             newGsi(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME,
                 BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
-                BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
+                BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME
+            )
         );
         indexes.add(
             newGsi(BY_CUSTOMER_RESOURCE_INDEX_NAME,
                 BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
                 BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
+        );
+        indexes.add(
+            newGsi(RESOURCES_BY_IDENTIFIER_INDEX_NAME,
+                RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME,
+                RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME)
         );
         return indexes;
     }
@@ -99,6 +108,8 @@ public class ResourcesDynamoDbLocalTest {
         attributesList.add(newAttribute(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME));
         attributesList.add(newAttribute(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME));
         attributesList.add(newAttribute(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME));
+        attributesList.add(newAttribute(RESOURCES_BY_IDENTIFIER_INDEX_PARTITION_KEY_NAME));
+        attributesList.add(newAttribute(RESOURCES_BY_IDENTIFIER_INDEX_SORT_KEY_NAME));
         AttributeDefinition[] attributesArray = new AttributeDefinition[attributesList.size()];
         attributesList.toArray(attributesArray);
         return attributesArray;

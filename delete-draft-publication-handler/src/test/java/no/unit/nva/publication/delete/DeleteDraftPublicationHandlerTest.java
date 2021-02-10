@@ -11,13 +11,16 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.service.PublicationService;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
+import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
@@ -29,45 +32,26 @@ import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
 
 @EnableRuleMigrationSupport
-public class DeleteDraftPublicationHandlerTest {
+public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String WILDCARD = "*";
     public static final String DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON = "delete_draft_publication_without_doi.json";
     public static final String DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON = "delete_draft_publication_with_doi.json";
-
-    private DeleteDraftPublicationHandler handler;
-    private PublicationService publicationService;
-    private Environment environment;
-    private ByteArrayOutputStream outputStream;
-    private Context context;
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
-
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
+    private DeleteDraftPublicationHandler handler;
+    private ByteArrayOutputStream outputStream;
+    private Context context;
+    private ResourceService resourceService;
 
     @BeforeEach
     public void setUp() {
+        super.init();
         prepareEnvironment();
-        publicationService = new DynamoDBPublicationService(
-            objectMapper,
-            db.getTable(),
-            db.getByPublisherIndex(),
-            db.getByPublishedDateIndex()
-        );
-        handler = new DeleteDraftPublicationHandler(publicationService);
+        resourceService = new ResourceService(client,Clock.systemDefaultZone());
+        handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
-    }
-
-    private void prepareEnvironment() {
-        environment = Mockito.mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV))
-            .thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
-        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
-            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
-        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
-            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHED_DATE_INDEX_NAME);
     }
 
     @Test
@@ -80,7 +64,7 @@ public class DeleteDraftPublicationHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-            () -> publicationService.getPublication(publication.getIdentifier()));
+            () -> resourceService.getPublicationByIdentifier(publication.getIdentifier()));
         String message = DynamoDBPublicationService.PUBLICATION_NOT_FOUND + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
@@ -109,6 +93,17 @@ public class DeleteDraftPublicationHandlerTest {
         assertThat(exception.getMessage(), equalTo(message));
     }
 
+    private void prepareEnvironment() {
+        Environment environment = Mockito.mock(Environment.class);
+        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
+        when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV))
+            .thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
+        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
+        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
+            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHED_DATE_INDEX_NAME);
+    }
+
     private ByteArrayInputStream getInputStreamForEvent(String path, SortableIdentifier identifier) {
         String eventTemplate = streamToString(inputStreamFromResources(path));
         String event = String.format(eventTemplate, identifier);
@@ -119,6 +114,6 @@ public class DeleteDraftPublicationHandlerTest {
     private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
         Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier();
         publicationToCreate.setStatus(status);
-        return publicationService.createPublication(publicationToCreate);
+        return resourceService.createPublication(publicationToCreate);
     }
 }

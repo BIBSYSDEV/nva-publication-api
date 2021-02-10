@@ -74,6 +74,12 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
             resourceIdentifier);
     }
 
+    public static Resource resourceQueryObject(SortableIdentifier resourceIdentifier) {
+        Resource resource = new Resource();
+        resource.setIdentifier(resourceIdentifier);
+        return resource;
+    }
+
     public static Resource emptyResource(String userIdentifier,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
