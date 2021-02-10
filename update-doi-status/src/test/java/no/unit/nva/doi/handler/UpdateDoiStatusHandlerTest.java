@@ -26,6 +26,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -70,7 +71,7 @@ class UpdateDoiStatusHandlerTest {
     void handleRequestThrowsIllegalSateExceptionWhereRequestedDoiModificationTimeIsInTheFuture() {
         var eventInputStream = IoUtils.inputStreamFromResources(BAD_EVENT_WITH_DATE_IN_FUTURE);
 
-        var actualException = assertThrows(IllegalStateException.class,
+        var actualException = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException.getMessage(), is(equalTo("Modified doi is in the future, bailing!")));
     }
@@ -90,8 +91,9 @@ class UpdateDoiStatusHandlerTest {
         var eventInputStream = IoUtils
             .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
 
-        var actualException = assertThrows(IllegalArgumentException.class,
+        IllegalArgumentException actualException = assertThrows(IllegalArgumentException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
+
         assertThat(actualException.getMessage(), is(equalTo(String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
             NULL_OBJECT))));
     }
@@ -106,7 +108,7 @@ class UpdateDoiStatusHandlerTest {
 
         var actualException = assertThrows(DependencyRemoteNvaApiException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
-        assertThat(actualException.getCause(), is(instanceOf(ApiGatewayException.class)));
+        assertThat(actualException, is(instanceOf(DependencyRemoteNvaApiException.class)));
     }
 
     @Test
@@ -125,7 +127,7 @@ class UpdateDoiStatusHandlerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         var actualException = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
-        assertThat(actualException.getMessage(), is(expectedMessage));
+        assertThat(actualException.getMessage(), containsString(expectedMessage));
         assertThat(testAppender.getMessages(), containsString(expectedMessage));
     }
 
@@ -173,7 +175,7 @@ class UpdateDoiStatusHandlerTest {
         )));
     }
 
-    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) {
+    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) throws ConflictException {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
         verify(resourceService).updatePublication(publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();

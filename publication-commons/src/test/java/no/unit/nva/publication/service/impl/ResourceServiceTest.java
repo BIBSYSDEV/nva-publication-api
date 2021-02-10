@@ -75,7 +75,6 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -243,7 +242,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    @DisplayName("resourceUpdate fails when Update changes the primary key (owner-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
@@ -253,7 +251,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    @DisplayName("resourceUpdate fails when Update changes the primary key (organization-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
         throws ConflictException {
         Publication resource = createSampleResourceWithDoi();
@@ -264,7 +261,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    @DisplayName("resourceUpdate fails when Update changes the primary key (primary-key-part)")
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
         throws ConflictException {
         Publication resource = createSampleResourceWithDoi();
@@ -720,11 +716,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThatAllEntriesHaveBeenDeleted();
     }
 
-    public void assertThatIdentifierEntryHasBeenCreated() {
+    private void assertThatIdentifierEntryHasBeenCreated() {
         assertThatResourceAndIdentifierEntryExist();
     }
 
-    public void assertThatResourceAndIdentifierEntryExist() {
+    private void assertThatResourceAndIdentifierEntryExist() {
         ScanResult result = client.scan(
             new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME));
         assertThat(result.getCount(), is(equalTo(2)));
@@ -905,9 +901,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updatePublication(resourceUpdate);
-        TransactionCanceledException exception = assertThrows(TransactionCanceledException.class, action);
-        String message = exception.getMessage();
-        assertThat(message, containsString(TransactionCanceledException.class.getSimpleName()));
+        ConflictException exception = assertThrows(ConflictException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, instanceOf(TransactionCanceledException.class));
     }
 
     private Publication updateResourceTitle(Publication resource) {

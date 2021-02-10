@@ -2,13 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -19,11 +14,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
@@ -47,7 +40,6 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -63,7 +55,7 @@ import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
-public class ResourceService {
+public class ResourceService extends ServiceWithTransactions {
 
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
@@ -98,13 +90,17 @@ public class ResourceService {
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
+    private final UpdateResourceService updateResourceService;
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
+        super();
         tableName = RESOURCES_TABLE_NAME;
         this.client = client;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
+        this.updateResourceService = new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps,
+            readResourceService);
     }
 
     public ResourceService() {
@@ -125,35 +121,6 @@ public class ResourceService {
 
         return fetchEventuallyConsistentResource(newResource).toPublication();
     }
-
-    public Publication updatePublication(Publication publication) {
-        Resource resource = Resource.fromPublication(publication);
-        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getCustomerId());
-
-        TransactWriteItem updateResourceTransactionItem = updateResource(resource);
-        Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(userInstance, resource);
-        ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
-        transactionItems.add(updateResourceTransactionItem);
-        updateDoiRequestTransactionItem.ifPresent(transactionItems::add);
-
-        TransactWriteItemsRequest query = new TransactWriteItemsRequest().withTransactItems(transactionItems);
-        client.transactWriteItems(query);
-        return publication;
-    }
-
-
-
-    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException {
-        Resource existingResource = readResourceService.getResource(oldOwner, identifier);
-        Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = createTransactionEntyForInsertingResource(newResource);
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
-        client.transactWriteItems(request);
-    }
-
-
 
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
@@ -202,6 +169,25 @@ public class ResourceService {
 
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
         return readResourceService.getPublicationByIdentifier(identifier);
+    }
+
+    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
+        throws NotFoundException, ConflictException {
+        updateResourceService.updateOwner(identifier, oldOwner, newOwner);
+    }
+
+    public Publication updatePublication(Publication resourceUpdate) throws ConflictException {
+        return updateResourceService.updatePublication(resourceUpdate);
+    }
+
+    @Override
+    protected String getTableName() {
+        return tableName;
+    }
+
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -259,49 +245,6 @@ public class ResourceService {
             .withExpressionAttributeValues(expressionAttributeValues);
     }
 
-
-
-    private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
-        Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
-            .orElse(this::doiRequestNotFound);
-
-        return
-            existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-                .map(DoiRequestDao::new)
-                .map(ResourceServiceUtils::toDynamoFormat)
-                .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-                .map(put -> new TransactWriteItem().withPut(put));
-    }
-
-    private Optional<DoiRequest> doiRequestNotFound(Failure<Optional<DoiRequest>> fail) {
-        if (fail.getException() instanceof NotFoundException) {
-            return Optional.empty();
-        }
-        throw new RuntimeException(fail.getException());
-    }
-
-    private Optional<DoiRequest> fetchExistingDoiRequest(UserInstance userinstance, Resource resource)
-        throws NotFoundException {
-        return Optional.of(DoiRequestService.getDoiRequestByResourceIdentifier(userinstance,
-            resource.getIdentifier(), tableName, client));
-    }
-
-    private TransactWriteItem updateResource(Resource resourceUpdate) {
-
-        ResourceDao resourceDao = new ResourceDao(resourceUpdate);
-
-        Map<String, AttributeValue> primaryKeyConditionAttributeValues =
-            primaryKeyEqualityConditionAttributeValues(resourceDao);
-
-        Put put = new Put()
-            .withItem(toDynamoFormat(resourceDao))
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
-        return new TransactWriteItem().withPut(put);
-    }
-
     private Resource markResourceForDeletion(Resource resource)
         throws ApiGatewayException {
         ResourceDao dao = new ResourceDao(resource);
@@ -323,7 +266,6 @@ public class ResourceService {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
         return null;
     }
-
 
     @SuppressWarnings(RAWTYPES)
     private PublishPublicationStatusResponse publishResource(UserInstance userInstance,
@@ -558,46 +500,14 @@ public class ResourceService {
 
 
 
-    private TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest putRequest)
-        throws ConflictException {
-        return attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
-    }
-
-    private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
-        return existingResource
-            .copy()
-            .withPublisher(userOrganization(newOwner))
-            .withOwner(newOwner.getUserIdentifier())
-            .withModifiedDate(clockForTimestamps.instant())
-            .build();
-    }
-
-    private <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(Resource resource) {
-        ResourceDao resourceDao = new ResourceDao(resource);
-        return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(tableName).withKey(resourceDao.primaryKey()));
-    }
-
     private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = createTransactionEntyForInsertingResource(resource);
+        TransactWriteItem resourceEntry = createTransactionEntryForInsertingResource(resource);
         TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
-    private TransactWriteItem createTransactionEntyForInsertingResource(Resource resource) {
-        return createTransactionPutEntry(new ResourceDao(resource));
-    }
-
-    private <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T resourceDao) {
-        return ResourceServiceUtils.createTransactionPutEntry(resourceDao, tableName);
-    }
-
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
         return createTransactionPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
-    }
-
-    private ConflictException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
-        return new ConflictException(fail.getException());
     }
 
 }

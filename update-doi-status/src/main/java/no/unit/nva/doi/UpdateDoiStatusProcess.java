@@ -9,6 +9,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
@@ -58,7 +59,7 @@ public class UpdateDoiStatusProcess {
     /**
      * Update DOI no.unit.nva.publication.storage.model.Status.
      */
-    public void updateDoiStatus() {
+    public void updateDoiStatus() throws ConflictException {
 
         publication.setModifiedDate(request.getModifiedDate());
         publication.setDoi(request.getDoi().orElseThrow());
