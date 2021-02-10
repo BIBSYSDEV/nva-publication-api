@@ -21,7 +21,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
      */
     @JacocoGenerated
     public UpdateDoiStatusHandler() {
-        this(defaultDynamoDBPublicationService());
+        this(defaultResourceService());
     }
 
     /**
@@ -43,7 +43,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     }
 
     @JacocoGenerated
-    private static ResourceService defaultDynamoDBPublicationService() {
+    private static ResourceService defaultResourceService() {
         return new ResourceService(
             AmazonDynamoDBClientBuilder.defaultClient(),
             Clock.systemDefaultZone());
