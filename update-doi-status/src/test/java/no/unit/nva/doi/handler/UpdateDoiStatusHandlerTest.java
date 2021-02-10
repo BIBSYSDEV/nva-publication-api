@@ -8,12 +8,10 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,16 +20,16 @@ import java.nio.file.Path;
 import java.time.Instant;
 import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
+import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ApiIoException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -51,18 +49,18 @@ class UpdateDoiStatusHandlerTest {
     private UpdateDoiStatusHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private PublicationService publicationService;
+    private ResourceService resourceService;
     private TestAppender logger;
 
     @BeforeEach
     void setUp() throws ApiGatewayException {
         logger = LogUtils.getTestingAppender(UpdateDoiStatusProcess.class);
-        publicationService = mock(PublicationService.class);
-        handler = new UpdateDoiStatusHandler(publicationService);
+        resourceService = mock(ResourceService.class);
+        handler = new UpdateDoiStatusHandler(resourceService);
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
 
-        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(
             new Publication.Builder()
                 .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
                 .build());
@@ -101,34 +99,38 @@ class UpdateDoiStatusHandlerTest {
     @Test
     void handleRequestThrowsDependencyRemoteNvaApiExceptionWhenPublicationServiceFailsToFetchPublication()
         throws ApiGatewayException {
-        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(ApiIoException.class);
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenThrow(
+            NotFoundException.class);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
 
         var actualException = assertThrows(DependencyRemoteNvaApiException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
-        assertThat(actualException.getCause(), is(Matchers.isA(ApiGatewayException.class)));
+        assertThat(actualException.getCause(), is(instanceOf(ApiGatewayException.class)));
     }
 
     @Test
-    void handleRequestThrowsDependencyRemoteNvaApiExceptionWhenPublicationServiceFailsToUpdatePublication()
-        throws ApiGatewayException, JsonProcessingException {
+    void handleRequestLogsUnexpectedExceptions()
+        throws ApiGatewayException {
+        final TestAppender testAppender = LogUtils.getTestingAppender(EventHandler.class);
         Publication publication = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
-        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
-        when(publicationService.updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES), any(Publication.class)))
-            .thenThrow(ApiIoException.class);
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
+
+        String expectedMessage = "someMessage";
+        RuntimeException expectedException = new RuntimeException(expectedMessage);
+        when(resourceService.updatePublication(any(Publication.class))).thenThrow(expectedException);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
-        var actualException = assertThrows(DependencyRemoteNvaApiException.class,
+        var actualException = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(eventInputStream, outputStream, context));
-        assertThat(actualException.getCause(), is(Matchers.isA(ApiGatewayException.class)));
+        assertThat(actualException.getMessage(), is(expectedMessage));
+        assertThat(testAppender.getMessages(), containsString(expectedMessage));
     }
 
     @Test
-    void handleRequestSuccessfullyWhenPayloadContainsDoiUpdateHolderWithValidFields()
-        throws ApiGatewayException, JsonProcessingException {
+    void handleRequestSuccessfullyWhenPayloadContainsDoiUpdateHolderWithValidFields() throws ApiGatewayException {
         var publication = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
@@ -148,7 +150,7 @@ class UpdateDoiStatusHandlerTest {
 
     @Test
     void handleRequestSuccessfullyThenLogsInformationMessage()
-        throws ApiGatewayException, JsonProcessingException {
+        throws ApiGatewayException {
         var publication = new Builder()
             .withIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)
             .build();
@@ -171,18 +173,16 @@ class UpdateDoiStatusHandlerTest {
         )));
     }
 
-    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) throws ApiGatewayException {
+    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
-        verify(publicationService).updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES),
-            publicationServiceCaptor.capture());
+        verify(resourceService).updatePublication(publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();
         assertThat(actualPublicationUpdate, is(equalTo(expectedPublicationUpdate)));
     }
 
     private void stubSuccessfullDoiStatusUpdate(Publication publication, Publication expectedPublicationUpdate)
         throws ApiGatewayException {
-        when(publicationService.getPublication(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
-        when(publicationService.updatePublication(eq(PUBLICATION_IDENTIFIER_IN_RESOURCES), any(Publication.class)))
-            .thenReturn(expectedPublicationUpdate);
+        when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
+        when(resourceService.updatePublication(any(Publication.class))).thenReturn(expectedPublicationUpdate);
     }
 }
