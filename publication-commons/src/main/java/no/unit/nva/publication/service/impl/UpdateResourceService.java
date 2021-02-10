@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
@@ -26,6 +25,7 @@ import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -35,7 +35,6 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 
@@ -66,7 +65,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.readResourceService = readResourceService;
     }
 
-    public Publication updatePublication(Publication publication) throws ConflictException {
+    public Publication updatePublication(Publication publication) throws TransactionFailedException {
         Resource resource = Resource.fromPublication(publication);
         UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getCustomerId());
 
@@ -83,11 +82,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException, ConflictException {
+        throws NotFoundException, TransactionFailedException {
         Resource existingResource = readResourceService.getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = createTransactionEntryForInsertingResource(newResource);
+        TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
     }
@@ -107,7 +106,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return clockForTimestamps;
     }
 
-    protected Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
+    private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
             .copy()
             .withPublisher(userOrganization(newOwner))
@@ -174,12 +173,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return publishingInProgressStatus();
     }
 
-    private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
+    private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao)
+        throws TransactionFailedException {
         List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-            .withTransactItems(transactionItems);
-        client.transactWriteItems(transactWriteItemsRequest);
+        TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
     @SuppressWarnings(RAWTYPES)

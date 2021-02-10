@@ -1,23 +1,28 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
+import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.attempt.Failure;
 
 public abstract class ServiceWithTransactions {
@@ -38,12 +43,18 @@ public abstract class ServiceWithTransactions {
 
     protected abstract AmazonDynamoDB getClient();
 
-    protected TransactWriteItem createTransactionEntryForInsertingResource(Resource resource) {
-        return createTransactionPutEntry(new ResourceDao(resource));
+    protected static <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T data, String tableName) {
+
+        Put put = new Put()
+            .withItem(toDynamoFormat(data))
+            .withTableName(tableName)
+            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+        return new TransactWriteItem().withPut(put);
     }
 
-    protected <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T resourceDao) {
-        return ResourceServiceUtils.createTransactionPutEntry(resourceDao, getTableName());
+    protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
+        return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
     protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(Resource resource) {
@@ -52,10 +63,8 @@ public abstract class ServiceWithTransactions {
             .withDelete(new Delete().withTableName(getTableName()).withKey(resourceDao.primaryKey()));
     }
 
-    protected TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
-        throws ConflictException {
-        return attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
-            .orElseThrow(this::handleTransactionFailure);
+    protected static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
+        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
 
     @SuppressWarnings(RAWTYPES)
@@ -82,10 +91,20 @@ public abstract class ServiceWithTransactions {
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
+    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dao) {
+        return newPutTransactionItem(dao, getTableName());
+    }
+
+    protected TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
+        throws TransactionFailedException {
+        return attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
+            .orElseThrow(this::handleTransactionFailure);
+    }
+
     protected abstract Clock getClock();
 
-    private ConflictException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
-        return new ConflictException(fail.getException());
+    private TransactionFailedException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
+        return new TransactionFailedException(fail.getException());
     }
 
     @SuppressWarnings(RAWTYPES)

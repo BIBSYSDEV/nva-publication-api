@@ -15,7 +15,6 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +25,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -36,13 +36,11 @@ import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
-import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 
-public class DoiRequestService {
+public class DoiRequestService extends ServiceWithTransactions {
 
     public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
@@ -60,6 +58,7 @@ public class DoiRequestService {
     }
 
     protected DoiRequestService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierProvider) {
+        super();
         this.client = client;
         this.clock = clock;
         this.resourceService = new ResourceService(client, clock);
@@ -93,14 +92,13 @@ public class DoiRequestService {
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException, ConflictException {
+        throws BadRequestException, TransactionFailedException {
 
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
 
-        attempt(() -> client.transactWriteItems(request))
-            .orElseThrow(this::handleFailedTransactionError);
+        sendTransactionWriteRequest(request);
         return doiRequest.getIdentifier();
     }
 
@@ -225,10 +223,6 @@ public class DoiRequestService {
             .collect(Collectors.toList());
     }
 
-    private ConflictException handleFailedTransactionError(Failure<TransactWriteItemsResult> fail) {
-        return new ConflictException(fail.getException());
-    }
-
     private Publication fetchPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException {
         return attempt(() -> resourceService.getPublication(userInstance, resourceIdentifier))
@@ -256,22 +250,33 @@ public class DoiRequestService {
                 doiRequestEntry);
     }
 
+    @Override
+    protected String getTableName() {
+        return tableName;
+    }
+
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
+    }
+
+    @Override
+    protected Clock getClock() {
+        return clock;
+    }
+
     private TransactWriteItem createUniqueDoiRequestEntry(DoiRequest doiRequest) {
         UniqueDoiRequestEntry uniqueDoiRequestEntry = new UniqueDoiRequestEntry(
             doiRequest.getResourceIdentifier().toString());
-        return createTransactionPutEntry(uniqueDoiRequestEntry);
-    }
-
-    private <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T uniqueDoiRequestEntry) {
-        return ResourceServiceUtils.createTransactionPutEntry(uniqueDoiRequestEntry, tableName);
+        return newPutTransactionItem(uniqueDoiRequestEntry);
     }
 
     private TransactWriteItem createDoiRequestInsertionEntry(DoiRequest doiRequest) {
-        return createTransactionPutEntry(new DoiRequestDao(doiRequest));
+        return newPutTransactionItem(new DoiRequestDao(doiRequest));
     }
 
     private TransactWriteItem createUniqueIdentifierEntry(DoiRequest doiRequest) {
         IdentifierEntry identifierEntry = new IdentifierEntry(doiRequest.getIdentifier().toString());
-        return createTransactionPutEntry(identifierEntry);
+        return newPutTransactionItem(identifierEntry);
     }
 }

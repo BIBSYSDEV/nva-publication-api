@@ -9,8 +9,8 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 
@@ -61,7 +61,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
         }
     }
 
-    private Void updateDoi(DoiUpdateHolder input) throws ConflictException {
+    private Void updateDoi(DoiUpdateHolder input) throws TransactionFailedException {
         new UpdateDoiStatusProcess(resourceService, input).updateDoiStatus();
         return null;
     }

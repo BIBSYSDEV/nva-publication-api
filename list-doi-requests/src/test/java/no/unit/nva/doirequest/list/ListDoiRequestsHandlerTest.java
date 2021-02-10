@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -38,7 +39,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
@@ -269,8 +269,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(userInstance, pub.getIdentifier());
     }
 
-    private DoiRequest creteDoiRequest(Publication pub) throws BadRequestException, ConflictException,
-                                                               NotFoundException {
+    private DoiRequest creteDoiRequest(Publication pub)
+        throws BadRequestException, TransactionFailedException, NotFoundException {
         UserInstance userInstance = createUserInstance(pub);
         doiRequestService.createDoiRequest(userInstance, pub.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, pub.getIdentifier());

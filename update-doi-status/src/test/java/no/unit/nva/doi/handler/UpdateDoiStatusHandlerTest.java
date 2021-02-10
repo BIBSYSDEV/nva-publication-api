@@ -24,9 +24,9 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -175,7 +175,8 @@ class UpdateDoiStatusHandlerTest {
         )));
     }
 
-    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate) throws ConflictException {
+    private void verifySuccessfulDoiStatusUpdate(Publication expectedPublicationUpdate)
+        throws TransactionFailedException {
         ArgumentCaptor<Publication> publicationServiceCaptor = ArgumentCaptor.forClass(Publication.class);
         verify(resourceService).updatePublication(publicationServiceCaptor.capture());
         Publication actualPublicationUpdate = publicationServiceCaptor.getValue();

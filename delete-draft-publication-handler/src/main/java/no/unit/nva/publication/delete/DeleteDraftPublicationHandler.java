@@ -9,6 +9,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.DeletePublicationEvent;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -54,7 +55,7 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
         try {
             UserInstance userInstance = fetchUserInformationForPublication(input);
             resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
-        } catch (NotFoundException | BadRequestException e) {
+        } catch (NotFoundException | BadRequestException | TransactionFailedException e) {
             throw new RuntimeException(e);
         }
         return null;

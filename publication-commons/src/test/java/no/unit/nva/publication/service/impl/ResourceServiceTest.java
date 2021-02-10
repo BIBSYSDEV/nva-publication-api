@@ -54,6 +54,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
@@ -64,7 +65,6 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
@@ -119,7 +119,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceCreatesResource() throws NotFoundException, ConflictException {
+    public void createResourceCreatesResource() throws NotFoundException, TransactionFailedException {
 
         Publication resource = publicationWithIdentifier();
         Publication savedResource = resourceService.createPublication(resource);
@@ -135,7 +135,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceThrowsConflictExceptionWhenResourceWithSameIdentifierExists() throws ConflictException {
+    public void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
+        throws TransactionFailedException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication collidingResource = sampleResource.copy()
             .withPublisher(anotherPublisher())
@@ -144,7 +145,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers();
         resourceService.createPublication(sampleResource);
         Executable action = () -> resourceService.createPublication(collidingResource);
-        assertThrows(ConflictException.class, action);
+        assertThrows(TransactionFailedException.class, action);
 
         assertThat(sampleResource.getIdentifier(), is(equalTo(collidingResource.getIdentifier())));
         assertThat(sampleResource.getOwner(), is(not(equalTo(collidingResource.getOwner()))));
@@ -153,7 +154,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
-        throws ConflictException {
+        throws TransactionFailedException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication anotherResource = publicationWithIdentifier();
 
@@ -227,7 +228,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws ConflictException, NotFoundException {
+    public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws TransactionFailedException, NotFoundException {
         Publication resource = createSampleResourceWithDoi();
         Publication actualOriginalResource = resourceService.getPublication(resource);
         assertThat(actualOriginalResource, is(equalTo(resource)));
@@ -241,7 +242,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws ConflictException {
+    public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -251,7 +252,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
-        throws ConflictException {
+        throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -261,7 +262,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
-        throws ConflictException {
+        throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -270,7 +271,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceThrowsConflictExceptionWithInternalCauseWhenCreatingResourceFails() {
+    public void createResourceThrowsTransactionFailedExceptionWithInternalCauseWhenCreatingResourceFails() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
@@ -281,7 +282,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> failingService.createPublication(resource);
-        ConflictException actualException = assertThrows(ConflictException.class, action);
+        TransactionFailedException actualException = assertThrows(TransactionFailedException.class, action);
         Throwable actualCause = actualException.getCause();
         assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
     }
@@ -458,7 +459,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
-        throws ConflictException {
+        throws TransactionFailedException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
         Publication savedResource = resourceService.createPublication(sampleResource);
@@ -473,7 +474,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
-        throws ConflictException, NoSuchFieldException {
+        throws TransactionFailedException, NoSuchFieldException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
         sampleResource.setFileSet(emptyFileSet());
@@ -543,7 +544,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws ConflictException {
+    public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws TransactionFailedException {
         Publication sampleResource = publicationWithoutIdentifier();
         Publication savedResource = resourceService.createPublication(sampleResource);
         assertThat(sampleResource.getIdentifier(), is(equalTo(null)));
@@ -588,7 +589,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateResourceUpdatesLinkedDoiRequestUponUpdate()
-        throws ConflictException, BadRequestException, NotFoundException {
+        throws TransactionFailedException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
         DoiRequest originalDoiRequest = createDoiRequest(resource);
@@ -609,7 +610,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateResourceUpdatesAllFieldsInDoiRequest()
-        throws ConflictException, BadRequestException, NotFoundException {
+        throws TransactionFailedException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication emptyPublication =
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
@@ -638,7 +639,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
-        throws ConflictException {
+        throws TransactionFailedException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
         UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
@@ -654,7 +655,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
-        throws ConflictException, BadRequestException {
+        throws TransactionFailedException, BadRequestException {
         Publication publication = createSampleResourceWithoutDoi();
         assertThatIdentifierEntryHasBeenCreated();
 
@@ -670,7 +671,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi()
-        throws ConflictException {
+        throws TransactionFailedException {
         Publication publication = createSampleResourceWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
 
@@ -680,7 +681,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance userInstance = extractUserInstance(publication);
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
             publication.getIdentifier());
-        assertThrows(TransactionCanceledException.class, deleteAction);
+        assertThrows(TransactionFailedException.class, deleteAction);
 
         assertThatTheEntriesHaveNotBeenDeleted();
     }
@@ -698,14 +699,14 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         Executable deleteAction = () -> resourceService.deleteDraftPublication(userInstance,
             publication.getIdentifier());
-        assertThrows(TransactionCanceledException.class, deleteAction);
+        assertThrows(TransactionFailedException.class, deleteAction);
 
         assertThatTheEntriesHaveNotBeenDeleted();
     }
 
     @Test
     public void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest()
-        throws ConflictException, BadRequestException, NotFoundException {
+        throws TransactionFailedException, BadRequestException, NotFoundException {
         Publication publication = createSampleResourceWithoutDoi();
         createDoiRequest(publication);
 
@@ -726,7 +727,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierReturnsExistingResource() throws ConflictException, NotFoundException {
+    public void getResourceByIdentifierReturnsExistingResource() throws TransactionFailedException, NotFoundException {
         Publication resource = createSampleResourceWithoutDoi();
 
         Publication retrievedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
@@ -787,7 +788,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private DoiRequest createDoiRequest(Publication resource)
-        throws BadRequestException, ConflictException, NotFoundException {
+        throws BadRequestException, TransactionFailedException, NotFoundException {
         UserInstance userInstance = extractUserInstance(resource);
         doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
@@ -887,12 +888,12 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .build();
     }
 
-    private Publication createSampleResourceWithoutDoi() throws ConflictException {
+    private Publication createSampleResourceWithoutDoi() throws TransactionFailedException {
         var originalResource = publicationWithIdentifier();
         return resourceService.createPublication(originalResource);
     }
 
-    private Publication createSampleResourceWithDoi() throws ConflictException {
+    private Publication createSampleResourceWithDoi() throws TransactionFailedException {
         var originalResource = publicationWithIdentifier();
         originalResource.setDoi(SOME_DOI);
         return resourceService.createPublication(originalResource);
@@ -900,7 +901,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private void assertThatUpdateFails(Publication resourceUpdate) {
         Executable action = () -> resourceService.updatePublication(resourceUpdate);
-        ConflictException exception = assertThrows(ConflictException.class, action);
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, action);
         Throwable cause = exception.getCause();
         assertThat(cause, instanceOf(TransactionCanceledException.class));
     }

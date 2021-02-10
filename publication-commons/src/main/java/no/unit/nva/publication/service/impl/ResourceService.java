@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
@@ -28,6 +27,7 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
@@ -40,7 +40,6 @@ import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -57,7 +56,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
 
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
-
 
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -85,7 +83,7 @@ public class ResourceService extends ServiceWithTransactions {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Publication createPublication(Publication inputData) throws ConflictException {
+    public Publication createPublication(Publication inputData) throws TransactionFailedException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
@@ -111,21 +109,13 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException {
+        throws BadRequestException, TransactionFailedException {
         List<Dao> daos = readResourceService
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
 
-        List<TransactWriteItem> deleteResourceTransactionItems = deleteResourceTransactionItems(daos);
-        List<TransactWriteItem> deleteDoiRequestTransactionItems = deleteDoiRequestTransactionItems(daos);
-
-        ArrayList<TransactWriteItem> transactionItems = new ArrayList<>();
-        transactionItems.addAll(deleteResourceTransactionItems);
-        transactionItems.addAll(deleteDoiRequestTransactionItems);
-
-        TransactWriteItemsRequest transactWriteItemsRequest = new TransactWriteItemsRequest()
-            .withTransactItems(transactionItems);
-
-        client.transactWriteItems(transactWriteItemsRequest);
+        List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -146,11 +136,11 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException, ConflictException {
+        throws NotFoundException, TransactionFailedException {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
 
-    public Publication updatePublication(Publication resourceUpdate) throws ConflictException {
+    public Publication updatePublication(Publication resourceUpdate) throws TransactionFailedException {
         return updateResourceService.updatePublication(resourceUpdate);
     }
 
@@ -167,6 +157,20 @@ public class ResourceService extends ServiceWithTransactions {
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
+    }
+
+    private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
+        throws BadRequestException {
+        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.addAll(deleteResourceTransactionItems(daos));
+        transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
+        return transactionItems;
+    }
+
+    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource));
+        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
@@ -218,8 +222,8 @@ public class ResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
         );
 
-        deleteResource.withConditionExpression("  #data.#status <> :publishedStatus AND "
-                                               + "attribute_not_exists(#data.#doi)")
+        deleteResource
+            .withConditionExpression("#data.#status <> :publishedStatus AND attribute_not_exists(#data.#doi)")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
     }
@@ -245,7 +249,6 @@ public class ResourceService extends ServiceWithTransactions {
         Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
         return null;
     }
-
 
     private <E extends Exception> ApiGatewayException markForDeletionError(
         Failure<Resource> failure, Resource resource) {
@@ -294,8 +297,6 @@ public class ResourceService extends ServiceWithTransactions {
             .withReturnValues(ReturnValue.ALL_NEW);
     }
 
-
-
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
         return Try.of(requestResult)
@@ -305,14 +306,7 @@ public class ResourceService extends ServiceWithTransactions {
             .orElseThrow();
     }
 
-    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        TransactWriteItem resourceEntry = createTransactionEntryForInsertingResource(resource);
-        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
-    }
-
     private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return createTransactionPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
     }
-
 }
