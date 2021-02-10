@@ -20,8 +20,8 @@ public interface ResourceByIdentifier {
     SortableIdentifier getIdentifier();
 
     private String entryTypeAndIdentifier() {
-        return DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX +
-               DatabaseConstants.KEY_FIELDS_DELIMITER +
-               getIdentifier().toString();
+        return DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX
+               + DatabaseConstants.KEY_FIELDS_DELIMITER
+               + getIdentifier().toString();
     }
 }

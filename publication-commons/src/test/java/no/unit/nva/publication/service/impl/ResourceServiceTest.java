@@ -3,7 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
-import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR;
+import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
@@ -673,7 +673,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         NotFoundException exception = assertThrows(NotFoundException.class, action);
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
-        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR));
+        assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
         assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
 
