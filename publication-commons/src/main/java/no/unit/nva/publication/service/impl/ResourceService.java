@@ -97,12 +97,16 @@ public class ResourceService {
     public static final String PUBLISH_COMPLETED = "Publication is published.";
     public static final String PUBLISH_IN_PROGRESS = "Publication is being published. This may take a while.";
     public static final String RAWTYPES = "rawtypes";
-    public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR = "Could not find resource with identifier: ";
+    public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX = "Could not find resource with "
+                                                                               + "identifier: ";
+    public static final String RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR = RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX
+                                                                        + "{}, {} ";
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
+
     private static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
-    private final static Logger logger = LoggerFactory.getLogger(ResourceService.class);
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -231,7 +235,7 @@ public class ResourceService {
 
     private static NotFoundException handleGetResourceByIdentifierError(Failure<ResourceDao> fail,
                                                                         SortableIdentifier identifier) {
-        logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR + identifier.toString(), fail.getException());
+        logger.warn(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR, identifier.toString(), fail.getException());
         return new NotFoundException(identifier.toString());
     }
 
