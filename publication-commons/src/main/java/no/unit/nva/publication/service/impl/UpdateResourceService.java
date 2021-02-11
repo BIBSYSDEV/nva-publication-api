@@ -85,7 +85,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         throws NotFoundException, TransactionFailedException {
         Resource existingResource = readResourceService.getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
+        TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
         TransactWriteItem insertionAction = newPutTransactionItem(new ResourceDao(newResource));
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
         sendTransactionWriteRequest(request);
@@ -106,6 +106,22 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return clockForTimestamps;
     }
 
+    PublishPublicationStatusResponse publishResource(UserInstance userInstance,
+                                                     SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        List<Dao> daos = readResourceService
+            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+        ResourceDao resourceDao = extractResourceDao(daos);
+
+        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
+            return publishCompletedStatus();
+        }
+
+        validateForPublishing(resourceDao.getData());
+        setResourceStatusToPublished(daos, resourceDao);
+        return publishingInProgressStatus();
+    }
+
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
             .copy()
@@ -117,17 +133,16 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
         Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
-            .orElse(this::doiRequestNotFound);
+            .orElse(this::handleNotFoundException);
 
-        return
-            existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-                .map(DoiRequestDao::new)
-                .map(ResourceServiceUtils::toDynamoFormat)
-                .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-                .map(put -> new TransactWriteItem().withPut(put));
+        return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
+            .map(DoiRequestDao::new)
+            .map(ResourceServiceUtils::toDynamoFormat)
+            .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
+            .map(put -> new TransactWriteItem().withPut(put));
     }
 
-    private Optional<DoiRequest> doiRequestNotFound(Failure<Optional<DoiRequest>> fail) {
+    private Optional<DoiRequest> handleNotFoundException(Failure<Optional<DoiRequest>> fail) {
         if (fail.getException() instanceof NotFoundException) {
             return Optional.empty();
         }
@@ -155,22 +170,6 @@ public class UpdateResourceService extends ServiceWithTransactions {
             .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         return new TransactWriteItem().withPut(put);
-    }
-
-    PublishPublicationStatusResponse publishResource(UserInstance userInstance,
-                                                     SortableIdentifier resourceIdentifier)
-        throws ApiGatewayException {
-        List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
-        ResourceDao resourceDao = extractResourceDao(daos);
-
-        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
-            return publishCompletedStatus();
-        }
-
-        validateForPublishing(resourceDao.getData());
-        setResourceStatusToPublished(daos, resourceDao);
-        return publishingInProgressStatus();
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao)
@@ -262,17 +261,23 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        boolean hasNoTitle = Optional.of(resource)
+
+        if (resourceHasNoTitle(resource)) {
+            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
+        } else if (resourceHasNeitherLinkNorFile(resource)) {
+            throwErrorWhenPublishingResourceWithoutData(resource);
+        }
+    }
+
+    private boolean resourceHasNeitherLinkNorFile(Resource resource) {
+        return isNull(resource.getLink()) && emptyResourceFiles(resource);
+    }
+
+    private boolean resourceHasNoTitle(Resource resource) {
+        return Optional.of(resource)
             .map(Resource::getEntityDescription)
             .map(EntityDescription::getMainTitle)
             .isEmpty();
-        boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
-
-        if (hasNoTitle) {
-            throwErrorWhenPublishingResourceWithoutMainTitle(resource);
-        } else if (hasNeitherLinkNorFile) {
-            throwErrorWhenPublishingResourceWithoutData(resource);
-        }
     }
 
     private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {

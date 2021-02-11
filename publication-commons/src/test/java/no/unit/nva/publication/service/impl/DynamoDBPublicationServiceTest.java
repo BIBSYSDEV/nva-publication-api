@@ -44,7 +44,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Publication;
@@ -75,12 +74,12 @@ class DynamoDBPublicationServiceTest {
     public static final String BY_PUBLISHER_INDEX_NAME_ENV = "BY_PUBLISHER_INDEX_NAME";
     public static final String INVALID_JSON = "{\"test\" = \"invalid json }";
     public static final String BY_PUBLISHED_PUBLICATIONS_INDEX_NAME = "BY_PUBLISHED_PUBLICATIONS_INDEX_NAME";
-    private static final UUID ID1 = UUID.randomUUID();
-    private static final UUID ID2 = UUID.randomUUID();
+    private static final SortableIdentifier ID1 = SortableIdentifier.next();
+    private static final SortableIdentifier ID2 = SortableIdentifier.next();
     private static final Instant INSTANT1 = Instant.now();
     private static final Instant INSTANT2 = INSTANT1.plusSeconds(100);
     private static final Instant INSTANT3 = INSTANT2.plusSeconds(100);
-    private static final Instant INSTANT4 = INSTANT3.plusSeconds(100);
+
     @Rule
     public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
 
@@ -528,7 +527,7 @@ class DynamoDBPublicationServiceTest {
         return publicationSummaries;
     }
 
-    private PublicationSummary createPublication(UUID id, Instant modifiedDate) {
+    private PublicationSummary createPublication(SortableIdentifier id, Instant modifiedDate) {
         return new PublicationSummary.Builder()
             .withIdentifier(id)
             .withModifiedDate(modifiedDate)

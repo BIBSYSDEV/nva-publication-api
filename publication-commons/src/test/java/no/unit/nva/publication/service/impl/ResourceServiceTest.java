@@ -307,7 +307,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         Set<Publication> userResources = createSamplePublications();
 
-        List<Publication> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
+        List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
 
         assertThat(actualResourcesSet, is(equalTo(userResources)));
@@ -316,7 +316,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
 
-        List<Publication> actualResources = resourceService.getResourcesByOwner(SAMPLE_USER);
+        List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
 
         assertThat(actualResourcesSet, is(equalTo(Collections.emptySet())));
@@ -332,7 +332,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         ResourceService failingResourceService = new ResourceService(client, clock);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> failingResourceService.getResourcesByOwner(SAMPLE_USER));
+            () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
 
         assertThat(exception.getMessage(), is(equalTo(expectedMessage)));
     }
@@ -348,7 +348,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
-            () -> failingResourceService.getResourcesByOwner(SAMPLE_USER));
+            () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
     }
 
     @Test

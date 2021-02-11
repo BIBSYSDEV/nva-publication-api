@@ -9,7 +9,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
@@ -108,6 +107,7 @@ public class ResourceService extends ServiceWithTransactions {
             .toPublication();
     }
 
+    @SuppressWarnings(RAWTYPES)
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException, TransactionFailedException {
         List<Dao> daos = readResourceService
@@ -127,7 +127,7 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getPublication(sampleResource);
     }
 
-    public List<Publication> getResourcesByOwner(UserInstance sampleUser) {
+    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
@@ -159,6 +159,7 @@ public class ResourceService extends ServiceWithTransactions {
         return clockForTimestamps;
     }
 
+    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
         throws BadRequestException {
         List<TransactWriteItem> transactionItems = new ArrayList<>();
@@ -173,6 +174,7 @@ public class ResourceService extends ServiceWithTransactions {
         return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
     }
 
+    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
         Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
         if (doiRequest.isPresent()) {
@@ -186,33 +188,25 @@ public class ResourceService extends ServiceWithTransactions {
         WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
         return
             Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry)
-                .map(this::createDeleteEntry)
-                .map(delete -> new TransactWriteItem().withDelete(delete))
+                .map(this::newDeleteTransactionItem)
+
                 .collect(Collectors.toList());
     }
 
-    private Delete createDeleteEntry(WithPrimaryKey entry) {
-        return new Delete()
-            .withTableName(tableName)
-            .withKey(entry.primaryKey());
-    }
-
+    @SuppressWarnings(RAWTYPES)
     private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
         throws BadRequestException {
         ResourceDao resourceDao = extractResourceDao(daos);
-        Delete deleteResource = createDeleteEntry(resourceDao);
-        applyDeleteResourceConditions(deleteResource);
 
-        Delete deleteResourceIdentifierEntry = createDeleteEntry(IdentifierEntry.create(resourceDao));
+        TransactWriteItem deleteResourceItem = newDeleteTransactionItem(resourceDao);
+        applyDeleteResourceConditions(deleteResourceItem);
 
-        TransactWriteItem deleteResourceItem = new TransactWriteItem().withDelete(deleteResource);
-        TransactWriteItem deleteResourceIdentifierItem = new TransactWriteItem()
-            .withDelete(deleteResourceIdentifierEntry);
+        TransactWriteItem deleteResourceIdentifierItem = newDeleteTransactionItem(IdentifierEntry.create(resourceDao));
 
         return List.of(deleteResourceItem, deleteResourceIdentifierItem);
     }
 
-    private void applyDeleteResourceConditions(Delete deleteResource) {
+    private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
         Map<String, String> expressionAttributeNames = Map.of(
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
             "#status", STATUS_FIELD_IN_RESOURCE,
@@ -222,7 +216,7 @@ public class ResourceService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
         );
 
-        deleteResource
+        deleteResource.getDelete()
             .withConditionExpression("#data.#status <> :publishedStatus AND attribute_not_exists(#data.#doi)")
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues);
@@ -250,8 +244,7 @@ public class ResourceService extends ServiceWithTransactions {
         return null;
     }
 
-    private <E extends Exception> ApiGatewayException markForDeletionError(
-        Failure<Resource> failure, Resource resource) {
+    private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
             return new NotFoundException(NOT_FOUND_ERROR_MESSAGE);
         } else if (failure.getException() instanceof ConditionalCheckFailedException) {

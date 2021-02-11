@@ -54,11 +54,15 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
 
     private RuntimeException handleFailure(Failure<Void> fail) {
         Exception exception = fail.getException();
-        if (exception instanceof RuntimeException) {
+        if (exceptionInstanceOfRuntimeException(exception)) {
             return (RuntimeException) exception;
         } else {
             return new RuntimeException(exception);
         }
+    }
+
+    private boolean exceptionInstanceOfRuntimeException(Exception exception) {
+        return exception instanceof RuntimeException;
     }
 
     private Void updateDoi(DoiUpdateHolder input) throws TransactionFailedException {

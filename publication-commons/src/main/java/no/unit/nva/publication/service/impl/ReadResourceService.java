@@ -80,6 +80,10 @@ public class ReadResourceService {
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
+        return queryResultToListOfPublications(result);
+    }
+
+    private List<Publication> queryResultToListOfPublications(QueryResult result) {
         return queryResultToResourceList(result)
             .stream()
             .map(Resource::toPublication)
