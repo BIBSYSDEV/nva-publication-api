@@ -45,7 +45,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         String user = requestInfo.getFeideId().orElse(null);
         UserInstance userInstance = new UserInstance(user, customerId);
         SortableIdentifier doiRequestIdentifier = createDoiRequest(input, userInstance);
-        setAdditionalHeadersSupplier(() -> additionalHeaders(doiRequestIdentifier));
+        addAdditionalHeaders(() -> additionalHeaders(doiRequestIdentifier));
         return null;
     }
 
