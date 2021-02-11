@@ -300,6 +300,24 @@ Resources:
                 responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
+          /update-doi-request/{publicationIdentifier}:
+            post:
+              summary: Initiate a Update DOI Request process
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: path
+                  name: publicationIdentifier
+                  description: Publication Identifier (uuid)
+                  required: true
+                  schema:
+                    type: string
+                    format: uuid
+              requestBody:
+                content:
+                  application/json:
+                    schema:
+                      $ref: '#/components/schemas/UpdateDoiRequest'
         definitions:
           Publication:
             type: object
@@ -328,6 +346,24 @@ Resources:
               message:
                 type: string
                 description: Optional message to Curator
+          UpdateDoiRequest:
+            type: object
+            properties:
+              doiRequestStatus:
+                $ref: '#/components/schemas/DoiRequestStatus'
+            description: Initiate a Update DOI request process
+            DoiRequestMessageDto:
+              type: object
+              properties:
+                message:
+                  type: string
+          DoiRequestStatus:
+            description: Enum values for valid doiRequestStatus
+            type: string
+            enum:
+              - REQUESTED
+              - APPROVED
+              - REJECTED
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
