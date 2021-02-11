@@ -1,6 +1,6 @@
 package no.unit.nva.publication.publish;
 
-import static no.unit.nva.publication.service.impl.DynamoDBPublicationService.PUBLISH_IN_PROGRESS;
+import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static nva.commons.apigateway.ApiGatewayHandler.CONTENT_TYPE;
 import static nva.commons.apigateway.HttpHeaders.LOCATION;
