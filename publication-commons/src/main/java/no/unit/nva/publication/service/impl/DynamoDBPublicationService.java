@@ -261,11 +261,13 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
-    private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
+    private static Collector<PublicationSummary, ?, Map<SortableIdentifier, List<PublicationSummary>>>
+    groupByIdentifer() {
         return Collectors.groupingBy(PublicationSummary::getIdentifier);
     }
 
-    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
+    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<SortableIdentifier,
+        List<PublicationSummary>> group) {
         List<PublicationSummary> publications = group.getValue();
         Optional<PublicationSummary> mostRecent = publications.stream()
             .max(Comparator.comparing(

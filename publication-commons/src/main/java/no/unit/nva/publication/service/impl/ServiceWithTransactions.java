@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
-import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
@@ -39,10 +38,6 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
 
-    protected abstract String getTableName();
-
-    protected abstract AmazonDynamoDB getClient();
-
     protected static <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T data, String tableName) {
 
         Put put = new Put()
@@ -57,14 +52,17 @@ public abstract class ServiceWithTransactions {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
 
-    protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(Resource resource) {
-        ResourceDao resourceDao = new ResourceDao(resource);
-        return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(getTableName()).withKey(resourceDao.primaryKey()));
-    }
-
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
+    }
+
+    protected abstract String getTableName();
+
+    protected abstract AmazonDynamoDB getClient();
+
+    protected <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(T dynamoEntry) {
+        return new TransactWriteItem()
+            .withDelete(new Delete().withTableName(getTableName()).withKey(dynamoEntry.primaryKey()));
     }
 
     @SuppressWarnings(RAWTYPES)
@@ -95,9 +93,9 @@ public abstract class ServiceWithTransactions {
         return newPutTransactionItem(dao, getTableName());
     }
 
-    protected TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
+    protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
         throws TransactionFailedException {
-        return attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
+        attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
             .orElseThrow(this::handleTransactionFailure);
     }
 
