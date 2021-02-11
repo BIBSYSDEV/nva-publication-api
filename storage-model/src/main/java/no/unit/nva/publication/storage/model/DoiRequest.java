@@ -42,14 +42,11 @@ public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithS
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
+    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String TYPE = DoiRequest.class.getSimpleName();
 
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
 
-    public static final String DOI_REQUEST_STATUS_FIELD_INFO = "DoiRequest.status";
-    public static final String DOI_REQUEST_MODIFIED_DATE_FIELD_INFO = "DoiRequest.modifiedDate";
-
-    public static final String PUBLICATION_DATE_YEAR_FIELD_INFO = "PublicationDate.year";
     public static final SortableIdentifier NOT_IMPORTANT = null;
 
     @JsonProperty

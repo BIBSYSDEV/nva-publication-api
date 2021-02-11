@@ -1,9 +1,13 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.DoiRequestDao.queryObject;
 import static nva.commons.core.attempt.Try.attempt;
@@ -13,8 +17,11 @@ import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,12 +46,16 @@ import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
+import nva.commons.core.attempt.Try;
 
 public class DoiRequestService extends ServiceWithTransactions {
 
-    public static final String DOI_REQUEST_NOT_FOUND = "Could not find a Doi Request for Resource: ";
+    public static final String DOI_REQUEST_WAS_NOT_FOUND_ERROR = "DoiRequest was not found";
+    public static final String DOI_REQUEST_NOT_FOUND_FOR_RESOURCE = "Could not find a Doi Request for Resource: ";
+
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
+
     private final AmazonDynamoDB client;
     private final Clock clock;
     private final ResourceService resourceService;
@@ -77,10 +88,9 @@ public class DoiRequestService extends ServiceWithTransactions {
             .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
-        Map<String, AttributeValue> item = attempt(() -> queryResult.getItems()
-            .stream()
-            .collect(SingletonCollector.collect()))
-            .orElseThrow(fail -> new NotFoundException(DOI_REQUEST_NOT_FOUND + resourceIdentifier.toString()));
+
+        Map<String, AttributeValue> item = parseQueryResultExpectingSingleItem(queryResult)
+            .orElseThrow(fail -> handleFetchDoiRequestByResoureError(resourceIdentifier));
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
     }
@@ -110,15 +120,15 @@ public class DoiRequestService extends ServiceWithTransactions {
         return parseListingDoiRequestsQueryResult(result);
     }
 
-    public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier identifier) {
+    public DoiRequest getDoiRequest(UserInstance userInstance, SortableIdentifier doiRequestIdentifier)
+        throws NotFoundException {
 
-        DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(), userInstance.getUserIdentifier(),
-            identifier);
+        DoiRequestDao queryObject = queryObject(userInstance.getOrganizationUri(),
+            userInstance.getUserIdentifier(), doiRequestIdentifier);
         GetItemRequest getItemRequest = new GetItemRequest()
             .withTableName(RESOURCES_TABLE_NAME)
             .withKey(queryObject.primaryKey());
-        GetItemResult result = client.getItem(getItemRequest);
-        Map<String, AttributeValue> item = result.getItem();
+        Map<String, AttributeValue> item = executeGetRequest(getItemRequest);
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
     }
@@ -127,9 +137,106 @@ public class DoiRequestService extends ServiceWithTransactions {
         return listDoiRequestsForUser(userInstance, DEFAULT_QUERY_RESULT_SIZE);
     }
 
+    public DoiRequest updateDoiRequest(UserInstance userInstance,
+                                       SortableIdentifier resourceIdentifier,
+                                       DoiRequestStatus status) throws NotFoundException {
+
+        UpdateItemRequest updateItemRequest =
+            createRequestForUpdatingDoiRequest(userInstance, resourceIdentifier, status);
+
+        UpdateItemResult item = client.updateItem(updateItemRequest);
+        DoiRequestDao updatedEntry = parseAttributeValuesMap(item.getAttributes(), DoiRequestDao.class);
+        return updatedEntry.getData();
+    }
+
+    @Override
+    protected String getTableName() {
+        return tableName;
+    }
+
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
+    }
+
     protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
         QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
         return performQueryWithPotentiallyManyResults(query);
+    }
+
+    @Override
+    protected Clock getClock() {
+        return clock;
+    }
+
+    private static NotFoundException handleFetchDoiRequestByResoureError(SortableIdentifier resourceIdentifier) {
+        return new NotFoundException(DOI_REQUEST_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
+    }
+
+    private static Try<Map<String, AttributeValue>> parseQueryResultExpectingSingleItem(QueryResult queryResult) {
+        return attempt(() -> queryResult.getItems()
+            .stream()
+            .collect(SingletonCollector.collect()));
+    }
+
+    private UpdateItemRequest createRequestForUpdatingDoiRequest(UserInstance userInstance,
+                                                                 SortableIdentifier resourceIdentifier,
+                                                                 DoiRequestStatus status) throws NotFoundException {
+        String now = nowAsString();
+        DoiRequestDao dao = createUpdatedDoiRequestDao(userInstance, resourceIdentifier, status);
+        String updateExpression = "SET"
+                                  + "#data.#status = :status, "
+                                  + "#data.#modifiedDate = :modifiedDate,"
+                                  + "#PK1 = :PK1 ,"
+                                  + "#SK1 = :SK1 ,"
+                                  + "#PK2 = :PK2 ,"
+                                  + "#SK2 = :SK2 ";
+
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", DoiRequestDao.CONTAINED_DATA_FIELD_NAME,
+            "#status", DoiRequest.STATUS_FIELD,
+            "#modifiedDate", DoiRequest.MODIFIED_DATE_FIELD,
+            "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
+            "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
+            "#PK2", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
+            "#SK2", BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME
+        );
+
+        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+            ":status", new AttributeValue(dao.getData().getStatus().name()),
+            ":modifiedDate", new AttributeValue(now),
+            ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
+            ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()),
+            ":PK2", new AttributeValue(dao.getByResourcePartitionKey()),
+            ":SK2", new AttributeValue(dao.getByResourceSortKey())
+        );
+        UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+            .withTableName(tableName)
+            .withKey(dao.primaryKey())
+            .withUpdateExpression(updateExpression)
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues)
+            .withReturnValues(ReturnValue.ALL_NEW);
+        return updateItemRequest;
+    }
+
+    private DoiRequestDao createUpdatedDoiRequestDao(UserInstance userInstance, SortableIdentifier resourceIdentifier,
+                                                     DoiRequestStatus status) throws NotFoundException {
+        DoiRequest doiRequest = getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier);
+        DoiRequestStatus existingStatus = doiRequest.getStatus();
+        doiRequest.setStatus(existingStatus.changeStatus(status));
+        DoiRequestDao dao = new DoiRequestDao(doiRequest);
+        return dao;
+    }
+
+    private Map<String, AttributeValue> executeGetRequest(GetItemRequest getItemRequest)
+        throws NotFoundException {
+        GetItemResult result = client.getItem(getItemRequest);
+        Map<String, AttributeValue> item = result.getItem();
+        if (isNull(item) || item.isEmpty()) {
+            throw new NotFoundException(DOI_REQUEST_WAS_NOT_FOUND_ERROR);
+        }
+        return item;
     }
 
     private List<DoiRequest> performQueryWithPotentiallyManyResults(QueryRequest query) {
@@ -248,21 +355,6 @@ public class DoiRequestService extends ServiceWithTransactions {
                 identifierEntry,
                 uniqueDoiRequestEntry,
                 doiRequestEntry);
-    }
-
-    @Override
-    protected String getTableName() {
-        return tableName;
-    }
-
-    @Override
-    protected AmazonDynamoDB getClient() {
-        return client;
-    }
-
-    @Override
-    protected Clock getClock() {
-        return clock;
     }
 
     private TransactWriteItem createUniqueDoiRequestEntry(DoiRequest doiRequest) {
