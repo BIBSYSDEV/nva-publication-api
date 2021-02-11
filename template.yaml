@@ -38,14 +38,6 @@ Parameters:
     Type: String
     Description: Reference to table containing publications
     Default: nva_publications
-  PublicationsByOwnerIndexName:
-    Type: String
-    Description: Reference to index containing publications by owner
-    Default: ByPublisher
-  PublishedPublicationsIndexName:
-    Type: String
-    Description: Reference to index containing published publications
-    Default: ByStatePublishedDate
   DynamoDBStreamArn:
     Type: String
     Description: Amazon DynamoDB Stream ARN.
@@ -576,8 +568,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref OrestisResources
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref OrestisResources
@@ -602,8 +592,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -627,8 +615,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -876,8 +862,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -999,8 +983,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
