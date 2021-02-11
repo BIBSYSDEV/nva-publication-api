@@ -92,7 +92,7 @@ Resources:
         swagger: '2.0'
         info:
           title: NVA Publication API
-          version: '1.0'
+          version: 1.0.0
         paths:
           /:
             post:
@@ -102,7 +102,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: body
                   name: customer
@@ -112,7 +112,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}:live/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -147,7 +147,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -162,7 +162,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
@@ -178,7 +178,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaModifyPublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -193,7 +193,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
@@ -204,7 +204,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -220,18 +220,18 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
                 '200':
                   description: OK
                   schema:
-                    type: list
+                    type: array
                     items:
                       $ref: '#/definitions/Publication'
           /{identifier}/publish:
@@ -249,22 +249,22 @@ Resources:
                   required: true
                   description: UUID identifier of the Publication to publish.
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublishPublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
                 '202':
                   description: Publishing in progress
                   schema:
-                    $ref: '#/definitions/PublishPublicationStatus'
+                    $ref: '#/definitions/PublicationPublishStatus'
                 '204':
                   description: Publish completed
                   schema:
-                    $ref: '#/definitions/PublishPublicationStatus'
+                    $ref: '#/definitions/PublicationPublishStatus'
                 '400':
                   description: Bad Request
                   schema:
@@ -278,6 +278,41 @@ Resources:
                   schema:
                     $ref: '#/definitions/Problem'
           /doirequest:
+            get:
+              summary: Find DOI Requests By Role
+              parameters:
+                - in: query
+                  name: role
+                  description: The role used to find DOI requests for.
+                  type: string
+              security:
+                - CognitoUserPool: [ ]
+              responses:
+                '200':
+                  description: OK
+                  schema:
+                    $ref: '#/definitions/Publication'
+                '400':
+                  description: Bad Request
+                  schema:
+                    $ref: '#/definitions/Problem'
+
+                '404':
+                  description: Not Found
+                  schema:
+                    $ref: '#/definitions/Problem'
+
+                '502':
+                  description: Bad Gateway
+                  schema:
+                    $ref: '#/definitions/Problem'
+
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListDoiRequestsHandler.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
             post:
               summary: Create a DOI request
               consumes:
@@ -310,14 +345,21 @@ Resources:
                   name: publicationIdentifier
                   description: Publication Identifier (uuid)
                   required: true
+                  type: string
+                - in: body
+                  name: updateDoiRequest
+                  description: new status and message
                   schema:
-                    type: string
-                    format: uuid
-              requestBody:
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/UpdateDoiRequest'
+                    $ref: '#/definitions/UpdateDoiRequest'
+              responses:
+                '202':
+                  description: "Accepted"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateDoiRequestHandler.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
         definitions:
           Publication:
             type: object
@@ -350,13 +392,13 @@ Resources:
             type: object
             properties:
               doiRequestStatus:
-                $ref: '#/components/schemas/DoiRequestStatus'
+                $ref: '#/definitions/DoiRequestStatus'
             description: Initiate a Update DOI request process
-            DoiRequestMessageDto:
-              type: object
-              properties:
-                message:
-                  type: string
+          DoiRequestMessageDto:
+            type: object
+            properties:
+              message:
+                type: string
           DoiRequestStatus:
             description: Enum values for valid doiRequestStatus
             type: string
@@ -598,6 +640,58 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+
+  ListDoiRequestsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: list-doi-requests
+      Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
+      MemorySize: 768
+      Timeout: 600
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /doirequest
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdateDoiRequestHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: update-doi-reqest
+      Handler: no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler::handleRequest
+      MemorySize: 768
+      Timeout: 600
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /doirequest
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -804,6 +898,9 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+
+
+
 
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
