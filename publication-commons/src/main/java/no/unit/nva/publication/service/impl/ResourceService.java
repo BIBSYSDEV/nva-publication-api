@@ -263,7 +263,7 @@ public class ResourceService {
 
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
         Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
-            .orElse(this::doiRequestNotFound);
+            .orElse(this::handleNotFoundException);
 
         return
             existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
@@ -273,11 +273,15 @@ public class ResourceService {
                 .map(put -> new TransactWriteItem().withPut(put));
     }
 
-    private Optional<DoiRequest> doiRequestNotFound(Failure<Optional<DoiRequest>> fail) {
-        if (fail.getException() instanceof NotFoundException) {
+    private Optional<DoiRequest> handleNotFoundException(Failure<Optional<DoiRequest>> fail) {
+        if (exceptionIsNotFoundException(fail)) {
             return Optional.empty();
         }
         throw new RuntimeException(fail.getException());
+    }
+
+    private boolean exceptionIsNotFoundException(Failure<Optional<DoiRequest>> fail) {
+        return fail.getException() instanceof NotFoundException;
     }
 
     private Optional<DoiRequest> fetchExistingDoiRequest(UserInstance userinstance, Resource resource)
@@ -333,13 +337,17 @@ public class ResourceService {
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
 
-        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
+        if (resourceIsPublished(resourceDao.getData())) {
             return publishCompletedStatus();
         }
 
         validateForPublishing(resourceDao.getData());
         setResourceStatusToPublished(daos, resourceDao);
         return publishingInProgressStatus();
+    }
+
+    private boolean resourceIsPublished(Resource resource) {
+        return PublicationStatus.PUBLISHED.equals(resource.getStatus());
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao) {
