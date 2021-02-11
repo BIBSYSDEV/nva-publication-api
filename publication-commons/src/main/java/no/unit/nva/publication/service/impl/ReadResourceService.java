@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceService.EMPTY_RESOURCE_IDENTIFIER_ERROR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
+import static no.unit.nva.publication.service.impl.ServiceWithTransactions.RAWTYPES;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
@@ -45,7 +46,7 @@ public class ReadResourceService {
     public static final String PUBLICATION_NOT_FOUND_CLIENT_MESSAGE = "Publication not found: ";
 
     public static final String RESOURCE_NOT_FOUND_MESSAGE = "Could not find resource";
-    public static final String RAWTYPES = "rawtypes";
+
     private static final Logger logger = LoggerFactory.getLogger(ReadResourceService.class);
 
     private final AmazonDynamoDB client;
@@ -70,15 +71,22 @@ public class ReadResourceService {
     }
 
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey =
-            ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-                userInstance.getUserIdentifier());
+        String partitionKey = constructPrimaryPartitionKey(userInstance);
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
             String.class);
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
+        return queryResultToListOfPublications(result);
+    }
+
+    private String constructPrimaryPartitionKey(UserInstance userInstance) {
+        return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+            userInstance.getUserIdentifier());
+    }
+
+    private List<Publication> queryResultToListOfPublications(QueryResult result) {
         return queryResultToResourceList(result)
             .stream()
             .map(Resource::toPublication)

@@ -8,6 +8,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.service.impl.exceptions.InternalServerErrorException;
@@ -15,7 +16,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.Environment;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         String user = requestInfo.getFeideId().orElse(null);
         UserInstance userInstance = new UserInstance(user, customerId);
         SortableIdentifier doiRequestIdentifier = createDoiRequest(input, userInstance);
-        setAdditionalHeadersSupplier(() -> additionalHeaders(doiRequestIdentifier));
+        addAdditionalHeaders(() -> additionalHeaders(doiRequestIdentifier));
         return null;
     }
 
@@ -63,7 +63,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
 
     private ApiGatewayException handleError(Failure<SortableIdentifier> fail) {
         Exception exception = fail.getException();
-        if (exception instanceof ConflictException) {
+        if (exception instanceof TransactionFailedException) {
             return new BadRequestException(DOI_ALREADY_EXISTS_ERROR);
         } else if (exception instanceof ApiGatewayException) {
             return (ApiGatewayException) fail.getException();

@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -222,8 +221,9 @@ public class DynamoDBPublicationService implements PublicationService {
 
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
         List<PublicationSummary> publications) {
+
         return publications.stream()
-            .collect(groupByIdentifer())
+            .collect(Collectors.groupingBy(PublicationSummary::getIdentifier))
             .entrySet()
             .parallelStream()
             .flatMap(DynamoDBPublicationService::pickNewestVersion)
@@ -261,11 +261,8 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
-    private static Collector<PublicationSummary, ?, Map<UUID, List<PublicationSummary>>> groupByIdentifer() {
-        return Collectors.groupingBy(PublicationSummary::getIdentifier);
-    }
-
-    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<UUID, List<PublicationSummary>> group) {
+    private static Stream<PublicationSummary> pickNewestVersion(Map.Entry<SortableIdentifier,
+        List<PublicationSummary>> group) {
         List<PublicationSummary> publications = group.getValue();
         Optional<PublicationSummary> mostRecent = publications.stream()
             .max(Comparator.comparing(

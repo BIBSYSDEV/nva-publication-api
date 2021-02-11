@@ -8,6 +8,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
@@ -24,10 +25,8 @@ public class UpdateDoiStatusProcess {
     public static final String DOI_DOES_NOT_MATCH_DOI_IN_PUBLICATION =
         "DOI does not match DOI in Publication, bad update request, bailing!";
 
-    public static final String FORWARD_SLASH = "/";
     public static final String UPDATED_PUBLICATION_FORMAT =
         "Updated publication %s with doi: %s which was last modified: %s";
-    public static final int NOT_FOUND = -1;
     public static final Object NO_REQUEST_PAYLOAD = null;
     private static final Logger logger = LoggerFactory.getLogger(UpdateDoiStatusProcess.class);
     private final ResourceService resourceService;
@@ -58,7 +57,7 @@ public class UpdateDoiStatusProcess {
     /**
      * Update DOI no.unit.nva.publication.storage.model.Status.
      */
-    public void updateDoiStatus() {
+    public void updateDoiStatus() throws TransactionFailedException {
 
         publication.setModifiedDate(request.getModifiedDate());
         publication.setDoi(request.getDoi().orElseThrow());

@@ -8,19 +8,13 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.net.URI;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 
 public final class ResourceServiceUtils {
@@ -59,7 +53,7 @@ public final class ResourceServiceUtils {
         }
     }
 
-    static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(ResourceDao resourceDao) {
+    static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(WithPrimaryKey resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
             SORT_KEY_VALUE_PLACEHOLDER, new AttributeValue(resourceDao.getPrimaryKeySortKey()));
@@ -71,14 +65,6 @@ public final class ResourceServiceUtils {
 
     static Organization userOrganization(UserInstance user) {
         return newOrganization(user.getOrganizationUri());
-    }
-
-    static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
-        return newTransactWriteItemsRequest(Arrays.asList(transaction));
-    }
-
-    static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
-        return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
@@ -98,15 +84,7 @@ public final class ResourceServiceUtils {
         }
     }
 
-    static <T extends WithPrimaryKey> TransactWriteItem createTransactionPutEntry(T data, String tableName) {
 
-        Put put = new Put()
-            .withItem(toDynamoFormat(data))
-            .withTableName(tableName)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
-        return new TransactWriteItem().withPut(put);
-    }
 
     private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {
         return Map.of(

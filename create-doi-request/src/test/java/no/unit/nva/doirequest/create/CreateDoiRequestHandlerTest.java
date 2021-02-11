@@ -23,6 +23,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.InvalidPublicationException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -31,7 +32,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.HttpHeaders;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
@@ -70,7 +70,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
-        throws ConflictException, IOException {
+        throws TransactionFailedException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, publication.getOwner());
@@ -85,7 +85,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
-        throws ConflictException, NotFoundException, InvalidPublicationException, IOException {
+        throws TransactionFailedException, NotFoundException, InvalidPublicationException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
@@ -110,7 +110,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestBadRequestErrorWenDoiRequestAlreadyExists()
-        throws ConflictException, IOException {
+        throws TransactionFailedException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, publication.getOwner());
@@ -142,9 +142,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier) {
         UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
 
-        DoiRequest doiRequest = doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
+        return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
             doiRequestIdentifier));
-        return doiRequest;
     }
 
     private String extractLocationHeader(GatewayResponse<Void> response) {
@@ -162,7 +161,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
     }
 
-    private Publication createPublication() throws ConflictException {
+    private Publication createPublication() throws TransactionFailedException {
         return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
     }
 }

@@ -1,5 +1,6 @@
 package no.unit.nva.doi.handler;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
@@ -8,8 +9,10 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Failure;
 
 public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<DoiUpdateHolder, Void> {
 
@@ -38,7 +41,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     protected Void processInputPayload(DoiUpdateHolder input,
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<DoiUpdateHolder>> event,
                                        Context context) {
-        new UpdateDoiStatusProcess(resourceService, input).updateDoiStatus();
+        attempt(() -> updateDoi(input)).orElseThrow(this::handleFailure);
         return SUCCESSESFULLY_HANDLED_EVENT;
     }
 
@@ -47,5 +50,23 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
         return new ResourceService(
             AmazonDynamoDBClientBuilder.defaultClient(),
             Clock.systemDefaultZone());
+    }
+
+    private RuntimeException handleFailure(Failure<Void> fail) {
+        Exception exception = fail.getException();
+        if (exceptionInstanceOfRuntimeException(exception)) {
+            return (RuntimeException) exception;
+        } else {
+            return new RuntimeException(exception);
+        }
+    }
+
+    private boolean exceptionInstanceOfRuntimeException(Exception exception) {
+        return exception instanceof RuntimeException;
+    }
+
+    private Void updateDoi(DoiUpdateHolder input) throws TransactionFailedException {
+        new UpdateDoiStatusProcess(resourceService, input).updateDoiStatus();
+        return null;
     }
 }

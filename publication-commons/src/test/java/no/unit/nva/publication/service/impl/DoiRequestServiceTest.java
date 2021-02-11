@@ -30,12 +30,12 @@ import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,7 +86,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
-        throws ConflictException, BadRequestException, NotFoundException {
+        throws TransactionFailedException, BadRequestException, NotFoundException, TransactionFailedException {
         Publication emptyPublication = emptyPublication();
         UserInstance userInstance = createUserInstance(emptyPublication);
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
@@ -118,14 +118,14 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsConflictExceptionWhenDoiRequestAlreadyExists()
+    public void createDoiRequestThrowsTransactionFailedExceptionWhenDoiRequestAlreadyExists()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication();
 
         createDoiRequest(publication);
 
         Executable action = () -> createDoiRequest(publication);
-        ConflictException exception = assertThrows(ConflictException.class, action);
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, action);
 
         assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
     }
@@ -145,11 +145,11 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         Executable action = () -> doiRequestServiceProducingDuplicates.createDoiRequest(userInstance,
             publication.getIdentifier());
         assertDoesNotThrow(action);
-        assertThrows(ConflictException.class, action);
+        assertThrows(TransactionFailedException.class, action);
     }
 
     @Test
-    public void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws ConflictException {
+    public void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws TransactionFailedException {
         Publication publication = createPublication();
         UserInstance userInstance = createUserInstance(publication);
         Executable action = () -> doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
@@ -261,7 +261,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         mockClock.instant();
     }
 
-    private Publication emptyPublication() throws ConflictException {
+    private Publication emptyPublication() throws TransactionFailedException {
         Organization publisher = new Builder().withId(SOME_PUBLISHER).build();
         Publication publication = new Publication.Builder()
             .withOwner(SOME_USER)
@@ -283,13 +283,13 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private void createDoiRequest(Publication publishedPublication)
-        throws BadRequestException, ConflictException {
+        throws BadRequestException, TransactionFailedException {
         doiRequestService.createDoiRequest(
             createUserInstance(publishedPublication), publishedPublication.getIdentifier());
     }
 
     private void createDoiRequest(Publication publication, String owner)
-        throws BadRequestException, ConflictException {
+        throws BadRequestException, TransactionFailedException {
         UserInstance userInstance = new UserInstance(owner, publication.getPublisher().getId());
         doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
     }
@@ -298,7 +298,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
 
-    private Publication createPublication() throws ConflictException {
+    private Publication createPublication() throws TransactionFailedException {
         Publication publication = PublicationGenerator.publicationWithoutIdentifier();
         return resourceService.createPublication(publication);
     }
