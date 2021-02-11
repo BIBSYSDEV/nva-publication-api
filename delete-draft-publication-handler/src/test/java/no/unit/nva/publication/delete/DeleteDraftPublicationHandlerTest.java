@@ -1,13 +1,11 @@
 package no.unit.nva.publication.delete;
 
-import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -18,12 +16,10 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,7 +42,6 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
     @BeforeEach
     public void setUp() {
         super.init();
-        prepareEnvironment();
         resourceService = new ResourceService(client,Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
@@ -90,17 +85,6 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
             () -> handler.handleRequest(inputStream, outputStream, context));
         String message = DeleteDraftPublicationHandler.DELETE_WITH_DOI_ERROR;
         assertThat(exception.getMessage(), equalTo(message));
-    }
-
-    private void prepareEnvironment() {
-        Environment environment = Mockito.mock(Environment.class);
-        when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        when(environment.readEnv(DynamoDBPublicationService.TABLE_NAME_ENV))
-            .thenReturn(PublicationsDynamoDBLocal.NVA_RESOURCES_TABLE_NAME);
-        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHER_INDEX_NAME_ENV))
-            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHER_INDEX_NAME);
-        when(environment.readEnv(DynamoDBPublicationService.BY_PUBLISHED_PUBLICATIONS_INDEX_NAME))
-            .thenReturn(PublicationsDynamoDBLocal.BY_PUBLISHED_DATE_INDEX_NAME);
     }
 
     private ByteArrayInputStream getInputStreamForEvent(String path, SortableIdentifier identifier) {
