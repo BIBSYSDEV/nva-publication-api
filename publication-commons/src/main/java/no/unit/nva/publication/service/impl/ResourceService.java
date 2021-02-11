@@ -259,8 +259,6 @@ public class ResourceService {
             .withExpressionAttributeValues(expressionAttributeValues);
     }
 
-
-
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
         Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
             .orElse(this::handleNotFoundException);
