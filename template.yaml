@@ -671,7 +671,7 @@ Resources:
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
-      CodeUri: update-doi-reqest
+      CodeUri: update-doi-request
       Handler: no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler::handleRequest
       MemorySize: 768
       Timeout: 600
@@ -687,8 +687,8 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /doirequest
-            Method: get
+            Path: /update-doi-request/{publicationIdentifier}
+            Method: post
             RestApiId: !Ref NvaPublicationApi
 
 

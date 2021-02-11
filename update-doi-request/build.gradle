@@ -9,7 +9,7 @@ dependencies {
     compileOnly project(":storage-model")
     testImplementation project(":storage-model")
 
-    compileOnly project(":publication-commons")
+    implementation project(":publication-commons")
     testImplementation project(":publication-commons")
 
     implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
