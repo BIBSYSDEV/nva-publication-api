@@ -113,13 +113,17 @@ public class UpdateResourceService extends ServiceWithTransactions {
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
 
-        if (PublicationStatus.PUBLISHED.equals(resourceDao.getData().getStatus())) {
+        if (resourceIsPublished(resourceDao.getData())) {
             return publishCompletedStatus();
         }
 
         validateForPublishing(resourceDao.getData());
         setResourceStatusToPublished(daos, resourceDao);
         return publishingInProgressStatus();
+    }
+
+    private boolean resourceIsPublished(Resource resource) {
+        return PublicationStatus.PUBLISHED.equals(resource.getStatus());
     }
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
@@ -143,10 +147,14 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private Optional<DoiRequest> handleNotFoundException(Failure<Optional<DoiRequest>> fail) {
-        if (fail.getException() instanceof NotFoundException) {
+        if (errorIsNotFoundException(fail)) {
             return Optional.empty();
         }
         throw new RuntimeException(fail.getException());
+    }
+
+    private boolean errorIsNotFoundException(Failure<Optional<DoiRequest>> fail) {
+        return fail.getException() instanceof NotFoundException;
     }
 
     private Optional<DoiRequest> fetchExistingDoiRequest(UserInstance userinstance, Resource resource)
