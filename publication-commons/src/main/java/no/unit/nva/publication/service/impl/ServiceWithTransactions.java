@@ -38,6 +38,10 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
 
+    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dao) {
+        return newPutTransactionItem(dao, getTableName());
+    }
+
     protected static <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T data, String tableName) {
 
         Put put = new Put()
@@ -89,9 +93,6 @@ public abstract class ServiceWithTransactions {
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
-    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dao) {
-        return newPutTransactionItem(dao, getTableName());
-    }
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
         throws TransactionFailedException {
