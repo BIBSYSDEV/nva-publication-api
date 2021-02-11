@@ -71,9 +71,7 @@ public class ReadResourceService {
     }
 
     public List<Publication> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey =
-            ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-                userInstance.getUserIdentifier());
+        String partitionKey = constructPrimaryPartitionKey(userInstance);
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
             String.class);
@@ -81,6 +79,11 @@ public class ReadResourceService {
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
         return queryResultToListOfPublications(result);
+    }
+
+    private String constructPrimaryPartitionKey(UserInstance userInstance) {
+        return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
+            userInstance.getUserIdentifier());
     }
 
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
