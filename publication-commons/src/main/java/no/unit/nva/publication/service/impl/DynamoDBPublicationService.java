@@ -223,7 +223,7 @@ public class DynamoDBPublicationService implements PublicationService {
     protected static List<PublicationSummary> filterOutOlderVersionsOfPublications(
         List<PublicationSummary> publications) {
         return publications.stream()
-            .collect(groupByIdentifer())
+            .collect(groupByIdentifier())
             .entrySet()
             .parallelStream()
             .flatMap(DynamoDBPublicationService::pickNewestVersion)
@@ -261,8 +261,8 @@ public class DynamoDBPublicationService implements PublicationService {
         }
     }
 
-    private static Collector<PublicationSummary, ?, Map<SortableIdentifier, List<PublicationSummary>>>
-    groupByIdentifer() {
+    private static Collector<PublicationSummary, ?, Map<SortableIdentifier, List<PublicationSummary>>> groupByIdentifier() {
+        
         return Collectors.groupingBy(PublicationSummary::getIdentifier);
     }
 
