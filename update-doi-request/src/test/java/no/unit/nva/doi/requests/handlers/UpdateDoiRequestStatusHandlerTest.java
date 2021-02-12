@@ -1,9 +1,11 @@
 package no.unit.nva.doi.requests.handlers;
 
 import static no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
+import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -33,6 +35,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTest {
 
@@ -91,6 +94,18 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
+    @Test
+    public void handlerReturnsBadRequestWhenPublicationIsDraft()
+        throws ApiGatewayException, IOException {
+        Publication publication = createDraftPublicationAndDoiRequest();
+        var request = createAuthorizedRestRequest(publication);
+        handler.handleRequest(request, outputStream, context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var problem = response.getBodyObject(Problem.class);
+        assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(anyString())).thenReturn("*");
@@ -139,10 +154,15 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
     }
 
     private Publication createPublishedPublicationAndDoiRequest() throws ApiGatewayException {
+        Publication publication = createDraftPublicationAndDoiRequest();
+        resourceService.publishPublication(createUserInstance(publication), publication.getIdentifier());
+        return publication;
+    }
+
+    private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
         Publication publication = resourceService.createPublication(
             PublicationGenerator.publicationWithoutIdentifier());
         UserInstance userInstance = createUserInstance(publication);
-        resourceService.publishPublication(userInstance, publication.getIdentifier());
         doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
         return publication;
     }

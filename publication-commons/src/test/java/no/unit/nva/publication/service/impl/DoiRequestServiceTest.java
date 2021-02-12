@@ -176,8 +176,8 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(doiRequests, not(hasItem(unexpectedDoiRequest)));
     }
 
-    public UserInstance createSampleCurator(Publication publishedPublication) {
-        return new UserInstance(SOME_CURATOR, publishedPublication.getPublisher().getId());
+    public UserInstance createSampleCurator(Publication publication) {
+        return new UserInstance(SOME_CURATOR, publication.getPublisher().getId());
     }
 
     @Test
@@ -235,8 +235,8 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
-        throws TransactionFailedException, BadRequestException, NotFoundException {
-        var publication = createPublication();
+        throws ApiGatewayException {
+        var publication = createPublishedPublication();
         UserInstance userInstance = createUserInstance(publication);
         SortableIdentifier doiRequestIdentifier = doiRequestService
             .createDoiRequest(userInstance, publication.getIdentifier());
@@ -288,6 +288,18 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance someUser = new UserInstance(SOME_USER, SOME_PUBLISHER);
         Executable action = () -> doiRequestService.getDoiRequest(someUser, SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
+    }
+
+    @Test
+    public void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
+        throws TransactionFailedException, BadRequestException {
+        Publication publication = createPublication();
+        createDoiRequest(publication);
+        UserInstance sampleCurator = createSampleCurator(publication);
+        Executable action =
+            () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
+                DoiRequestStatus.APPROVED);
+        assertThrows(BadRequestException.class, action);
     }
 
     private void assertThatDoiRequestHasBeenRemovedFromCuratorsView(UserInstance sampleCurator,
@@ -362,10 +374,10 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         return publication;
     }
 
-    private void createDoiRequest(Publication publishedPublication)
+    private void createDoiRequest(Publication publication)
         throws BadRequestException, TransactionFailedException {
         doiRequestService.createDoiRequest(
-            createUserInstance(publishedPublication), publishedPublication.getIdentifier());
+            createUserInstance(publication), publication.getIdentifier());
     }
 
     private void createDoiRequest(Publication publication, String owner)

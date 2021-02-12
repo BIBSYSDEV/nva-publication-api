@@ -13,6 +13,7 @@ import static no.unit.nva.publication.storage.model.daos.DoiRequestDao.queryObje
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -32,6 +33,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
@@ -43,6 +45,7 @@ import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithByTypeCustomerStatusIndex;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
@@ -55,6 +58,9 @@ public class DoiRequestService extends ServiceWithTransactions {
 
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
+    public static final String UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE =
+        "Could not update doi request status. Updating Doi request status for "
+        + "not published resources is not possible";
 
     private final AmazonDynamoDB client;
     private final Clock clock;
@@ -139,14 +145,27 @@ public class DoiRequestService extends ServiceWithTransactions {
 
     public DoiRequest updateDoiRequest(UserInstance userInstance,
                                        SortableIdentifier resourceIdentifier,
-                                       DoiRequestStatus status) throws NotFoundException {
+                                       DoiRequestStatus status) throws ApiGatewayException {
 
         UpdateItemRequest updateItemRequest =
             createRequestForUpdatingDoiRequest(userInstance, resourceIdentifier, status);
 
-        UpdateItemResult item = client.updateItem(updateItemRequest);
+        UpdateItemResult item = attempt(() -> client.updateItem(updateItemRequest))
+            .orElseThrow(this::handleUpdateDoiRequestFailure);
         DoiRequestDao updatedEntry = parseAttributeValuesMap(item.getAttributes(), DoiRequestDao.class);
         return updatedEntry.getData();
+    }
+
+    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
+        QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
+        return performQueryWithPotentiallyManyResults(query);
+    }
+
+    private ApiGatewayException handleUpdateDoiRequestFailure(Failure<UpdateItemResult> fail) {
+        if (updateConditionFailed(fail.getException())) {
+            return new BadRequestException(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE);
+        }
+        return new DynamoDBException(fail.getException());
     }
 
     @Override
@@ -159,14 +178,13 @@ public class DoiRequestService extends ServiceWithTransactions {
         return client;
     }
 
-    protected List<DoiRequest> listDoiRequestsForUser(UserInstance userInstance, int maxResultSize) {
-        QueryRequest query = listDoiRequestForUserQuery(userInstance, maxResultSize);
-        return performQueryWithPotentiallyManyResults(query);
-    }
-
     @Override
     protected Clock getClock() {
         return clock;
+    }
+
+    private boolean updateConditionFailed(Exception error) {
+        return error instanceof ConditionalCheckFailedException;
     }
 
     private static NotFoundException handleFetchDoiRequestByResoureError(SortableIdentifier resourceIdentifier) {
@@ -192,32 +210,37 @@ public class DoiRequestService extends ServiceWithTransactions {
                                   + "#PK2 = :PK2 ,"
                                   + "#SK2 = :SK2 ";
 
+        String conditionExpression = "#data.#resourceStatus = :publishedStatus";
+
         Map<String, String> expressionAttributeNames = Map.of(
             "#data", DoiRequestDao.CONTAINED_DATA_FIELD_NAME,
             "#status", DoiRequest.STATUS_FIELD,
             "#modifiedDate", DoiRequest.MODIFIED_DATE_FIELD,
+            "#resourceStatus", DoiRequest.RESOURCE_STATUS_FIELD,
             "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
             "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
             "#PK2", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
             "#SK2", BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME
+
         );
 
         Map<String, AttributeValue> expressionAttributeValues = Map.of(
             ":status", new AttributeValue(dao.getData().getStatus().name()),
             ":modifiedDate", new AttributeValue(now),
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString()),
             ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()),
             ":PK2", new AttributeValue(dao.getByResourcePartitionKey()),
             ":SK2", new AttributeValue(dao.getByResourceSortKey())
         );
-        UpdateItemRequest updateItemRequest = new UpdateItemRequest()
+        return new UpdateItemRequest()
             .withTableName(tableName)
             .withKey(dao.primaryKey())
             .withUpdateExpression(updateExpression)
+            .withConditionExpression(conditionExpression)
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionAttributeValues)
             .withReturnValues(ReturnValue.ALL_NEW);
-        return updateItemRequest;
     }
 
     private DoiRequestDao createUpdatedDoiRequestDao(UserInstance userInstance, SortableIdentifier resourceIdentifier,

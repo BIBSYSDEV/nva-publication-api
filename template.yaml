@@ -408,6 +408,10 @@ Resources:
               type: cognito_user_pools
               providerARNs:
                 - !Ref CognitoAuthorizerArn
+
+
+
+
   NvaPublicationCommonsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
