@@ -106,17 +106,16 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return clockForTimestamps;
     }
 
-    PublishPublicationStatusResponse publishResource(UserInstance userInstance,
-                                                     SortableIdentifier resourceIdentifier)
+    PublishPublicationStatusResponse publishResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
-
+    
         if (resourceIsPublished(resourceDao.getData())) {
             return publishCompletedStatus();
         }
-
+    
         validateForPublishing(resourceDao.getData());
         setResourceStatusToPublished(daos, resourceDao);
         return publishingInProgressStatus();

@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.service.impl.exceptions.EmptyValueMapException;
+import no.unit.nva.publication.exception.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 

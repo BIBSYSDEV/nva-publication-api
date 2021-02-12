@@ -150,7 +150,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(originalResource, is(equalTo(retrievedResource)));
     }
 
-    @ParameterizedTest(name = "dan can be retrieved by the ByTypePublisherStatus index: {0}")
+    @ParameterizedTest(name = "dao can be retrieved by the ByTypePublisherStatus index: {0}")
     @MethodSource("instanceProvider")
     public void daoCanBeRetrievedByTypePublisherStatusIndex(Dao<?> originalDao) {
         client.putItem(toPutItemRequest(originalDao));

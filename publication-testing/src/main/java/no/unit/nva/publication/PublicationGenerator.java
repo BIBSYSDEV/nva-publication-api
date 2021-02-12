@@ -27,26 +27,27 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public final class PublicationGenerator {
-
+    
     public static final String OWNER = "owner@example.org";
     public static final String PUBLISHER_ID = "http://example.org/123";
-
+    
     @JacocoGenerated
     private PublicationGenerator() {
-
+    
     }
-
+    
     @JacocoGenerated
     public static Publication publicationWithIdentifier() {
         return generatePublication(SortableIdentifier.next());
     }
-
+    
     @JacocoGenerated
     public static Publication publicationWithoutIdentifier() {
         return generatePublication(null);
     }
-
+    
     /**
      * Generate a minimal Publication for testing.
      *
@@ -55,91 +56,92 @@ public final class PublicationGenerator {
      */
     @JacocoGenerated
     public static Publication generatePublication(SortableIdentifier identifier) {
-
+        
         EntityDescription entityDescription = createSampleEntityDescription();
-
+        
         Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
-
+        
         return new Publication.Builder()
-            .withIdentifier(identifier)
-            .withCreatedDate(oneMinuteInThePast)
-            .withModifiedDate(oneMinuteInThePast)
-            .withOwner(OWNER)
-            .withStatus(PublicationStatus.DRAFT)
-            .withPublisher(samplePublisher())
-            .withEntityDescription(entityDescription)
-            .withFileSet(sampleFileSet())
-            .build();
+                   .withIdentifier(identifier)
+                   .withCreatedDate(oneMinuteInThePast)
+                   .withModifiedDate(oneMinuteInThePast)
+                   .withOwner(OWNER)
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withPublisher(samplePublisher())
+                   .withEntityDescription(entityDescription)
+                   .withFileSet(sampleFileSet())
+                   .build();
     }
-
+    
     public static Contributor sampleContributor() throws MalformedContributorException {
         return new Contributor.Builder()
-            .withIdentity(sampleIdentity())
-            .withAffiliations(sampleOrganization())
-            .withEmail("some@email.org")
-            .withSequence(1)
-            .withRole(Role.CREATOR)
-            .build();
+                   .withIdentity(sampleIdentity())
+                   .withAffiliations(sampleOrganization())
+                   .withEmail("some@email.org")
+                   .withSequence(1)
+                   .withRole(Role.CREATOR)
+                   .build();
     }
-
+    
+    @JacocoGenerated
     public static Publication generateEmptyPublication() {
         return new Publication.Builder()
-            .withOwner(OWNER)
-            .withPublisher(samplePublisher())
-            .build();
+                   .withOwner(OWNER)
+                   .withPublisher(samplePublisher())
+                   .build();
     }
-
+    
     private static List<Organization> sampleOrganization() {
         Organization organization = new Organization.Builder()
-            .withId(URI.create("https://someOrganziation.example.com"))
-            .withLabels(Map.of("someLabelKey", "someLabelValue"))
-            .build();
+                                        .withId(URI.create("https://someOrganziation.example.com"))
+                                        .withLabels(Map.of("someLabelKey", "someLabelValue"))
+                                        .build();
         return List.of(organization);
     }
-
+    
     private static Identity sampleIdentity() {
         return new Identity.Builder()
-            .withName(OWNER)
-            .withId(URI.create("https://someUserId.example.org"))
-            .withArpId("someArpId")
-            .withNameType(NameType.PERSONAL)
-            .withOrcId("someOrcId")
-            .build();
+                   .withName(OWNER)
+                   .withId(URI.create("https://someUserId.example.org"))
+                   .withArpId("someArpId")
+                   .withNameType(NameType.PERSONAL)
+                   .withOrcId("someOrcId")
+                   .build();
     }
-
+    
     private static Organization samplePublisher() {
         return new Organization.Builder()
-            .withId(URI.create(PUBLISHER_ID))
-            .build();
+                   .withId(URI.create(PUBLISHER_ID))
+                   .build();
     }
-
+    
     private static FileSet sampleFileSet() {
         return new FileSet.Builder()
-            .withFiles(List.of(new File.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withLicense(new License.Builder()
-                    .withIdentifier("licenseId")
-                    .build())
-                .build()))
-            .build();
+                   .withFiles(List.of(new File.Builder()
+                                          .withIdentifier(UUID.randomUUID())
+                                          .withLicense(new License.Builder()
+                                                           .withIdentifier("licenseId")
+                                                           .build())
+                                          .build()))
+                   .build();
     }
-
+    
     private static EntityDescription createSampleEntityDescription() {
         Contributor contributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
-
+        
         PublicationInstance<? extends Pages> publicationInstance = new JournalArticle.Builder()
-            .withArticleNumber("1")
-            .withIssue("2")
-            .withVolume("Volume 1")
-            .withPages(new Range("beginRange", "endRange"))
-            .build();
+                                                                       .withArticleNumber("1")
+                                                                       .withIssue("2")
+                                                                       .withVolume("Volume 1")
+                                                                       .withPages(new Range("beginRange", "endRange"))
+                                                                       .build();
         Reference reference = new Reference.Builder().withPublicationInstance(publicationInstance).build();
-
+        
         return new EntityDescription.Builder()
-            .withMainTitle("DynamoDB Local Testing")
-            .withDate(new PublicationDate.Builder().withYear("2020").withMonth("2").withDay("31").build())
-            .withReference(reference)
-            .withContributors(List.of(contributor))
-            .build();
+                   .withMainTitle("DynamoDB Local Testing")
+                   .withDate(new PublicationDate.Builder().withYear("2020").withMonth("2").withDay("31").build())
+                   .withReference(reference)
+                   .withContributors(List.of(contributor))
+                   .build();
     }
 }

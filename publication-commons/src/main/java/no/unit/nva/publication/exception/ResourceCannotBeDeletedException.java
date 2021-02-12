@@ -1,4 +1,4 @@
-package no.unit.nva.publication.service.impl.exceptions;
+package no.unit.nva.publication.exception;
 
 import java.net.HttpURLConnection;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

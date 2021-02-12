@@ -4,7 +4,7 @@ import static java.lang.Integer.parseInt;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.exception.InputException;
+import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -47,7 +47,7 @@ public final class RequestUtil {
             logger.info("Requesting publication metadata for ID:" + identifier);
             return new SortableIdentifier(identifier);
         } catch (Exception e) {
-            throw new InputException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
+            throw new BadRequestException(IDENTIFIER_IS_NOT_A_VALID_UUID + identifier, e);
         }
     }
 
@@ -63,7 +63,7 @@ public final class RequestUtil {
         if (!jsonNode.isMissingNode()) {
             return URI.create(jsonNode.textValue());
         }
-        throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID, null);
+        throw new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID, null);
     }
 
     /**
@@ -78,7 +78,7 @@ public final class RequestUtil {
         if (!jsonNode.isMissingNode()) {
             return jsonNode.textValue();
         }
-        throw new InputException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_FEIDE_ID, null);
+        throw new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_FEIDE_ID, null);
     }
 
     /**
@@ -99,14 +99,14 @@ public final class RequestUtil {
                 if (pageSize > 0) {
                     return  pageSize;
                 } else {
-                    throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
+                    throw new BadRequestException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
                 }
             } else {
                 logger.debug(USING_DEFAULT_VALUE + DEFAULT_PAGESIZE);
                 return DEFAULT_PAGESIZE;
             }
         } catch (Exception e) {
-            throw new InputException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
+            throw new BadRequestException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
         }
     }
 

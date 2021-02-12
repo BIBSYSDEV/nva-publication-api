@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,7 +25,7 @@ public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
     }
 
     public UniquenessEntry(String identifier) {
-        this.partitionKey = getType() + identifier;
+        this.partitionKey = getType() + KEY_FIELDS_DELIMITER + identifier;
         this.sortKey = partitionKey;
     }
 

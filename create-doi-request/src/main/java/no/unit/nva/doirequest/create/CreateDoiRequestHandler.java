@@ -8,15 +8,16 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.exception.InternalErrorException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
-import no.unit.nva.publication.service.impl.exceptions.InternalServerErrorException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,8 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     public static final String DOI_ALREADY_EXISTS_ERROR = "A Doi request already exists";
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateDoiRequestHandler.class);
     private final DoiRequestService doiRequestService;
-
+    
+    @JacocoGenerated
     public CreateDoiRequestHandler() {
         this(new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
                 Clock.systemDefaultZone()),
@@ -68,7 +70,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         } else if (exception instanceof ApiGatewayException) {
             return (ApiGatewayException) fail.getException();
         } else {
-            return new InternalServerErrorException(fail.getException());
+            return new InternalErrorException(fail.getException());
         }
     }
 

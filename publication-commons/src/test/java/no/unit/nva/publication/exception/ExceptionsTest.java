@@ -27,13 +27,7 @@ public class ExceptionsTest {
         ApiGatewayException exception = new NoResponseException(MESSAGE, new RuntimeException());
         Assertions.assertEquals(HttpStatus.SC_SERVICE_UNAVAILABLE, exception.getStatusCode());
     }
-
-    @Test
-    public void inputExceptionHasStatusCode() {
-        ApiGatewayException exception = new InputException(MESSAGE, new RuntimeException());
-        Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatusCode());
-    }
-
+    
     @Test
     public void notFoundExceptionHasStatusCode() {
         ApiGatewayException exception = new NotFoundException(MESSAGE);
