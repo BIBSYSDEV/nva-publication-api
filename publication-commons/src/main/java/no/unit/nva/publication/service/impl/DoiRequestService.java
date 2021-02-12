@@ -201,6 +201,7 @@ public class DoiRequestService extends ServiceWithTransactions {
                                                                  SortableIdentifier resourceIdentifier,
                                                                  DoiRequestStatus status) throws NotFoundException {
         String now = nowAsString();
+
         DoiRequestDao dao = createUpdatedDoiRequestDao(userInstance, resourceIdentifier, status);
         String updateExpression = "SET"
                                   + "#data.#status = :status, "
@@ -248,8 +249,7 @@ public class DoiRequestService extends ServiceWithTransactions {
         DoiRequest doiRequest = getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier);
         DoiRequestStatus existingStatus = doiRequest.getStatus();
         doiRequest.setStatus(existingStatus.changeStatus(status));
-        DoiRequestDao dao = new DoiRequestDao(doiRequest);
-        return dao;
+        return new DoiRequestDao(doiRequest);
     }
 
     private Map<String, AttributeValue> executeGetRequest(GetItemRequest getItemRequest)
