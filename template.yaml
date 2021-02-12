@@ -964,13 +964,13 @@ Resources:
                 Action:
                   - dynamodb:Query
                   - dynamodb:GetItem
-                  - dynamodb:Query
                   - dynamodb:BatchGetItem
                   - dynamodb:DescribeTable
                   - dynamodb:UpdateItem
                   - dynamodb:PutItem
                 Resource:
                   - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
 
   UpdateDoiStatusHandlerFunction:
     Type: AWS::Serverless::Function
