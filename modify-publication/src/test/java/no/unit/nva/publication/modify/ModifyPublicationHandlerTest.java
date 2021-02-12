@@ -60,16 +60,10 @@ import org.zalando.problem.Problem;
 public class ModifyPublicationHandlerTest {
     
     public static final String IDENTIFIER = "identifier";
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE = objectMapper
-                                                                                                .getTypeFactory()
-                                                                                                .constructParametricType(
-                                                                                                    GatewayResponse.class,
-                                                                                                    PublicationResponse.class);
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE = objectMapper
-                                                                                   .getTypeFactory()
-                                                                                   .constructParametricType(
-                                                                                       GatewayResponse.class,
-                                                                                       Problem.class);
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE =
+        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
+        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
     public static final String OWNER = "owner";
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
@@ -145,7 +139,8 @@ public class ModifyPublicationHandlerTest {
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         serviceFailsOnModifyRequestWithRuntimeError();
-        var event = generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
+        var event =
+            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
         modifyPublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
@@ -159,8 +154,8 @@ public class ModifyPublicationHandlerTest {
         throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationServiceThrowsException();
-        var event = generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier())
-                        .build();
+        var event =
+            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
         modifyPublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
