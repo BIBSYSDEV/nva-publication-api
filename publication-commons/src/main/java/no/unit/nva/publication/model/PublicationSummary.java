@@ -1,8 +1,6 @@
 package no.unit.nva.publication.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -12,9 +10,7 @@ import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 public class PublicationSummary {
-
-    public static final String MAIN_TITLE = "mainTitle";
-
+    
     private SortableIdentifier identifier;
     private String mainTitle;
     private String owner;
@@ -129,13 +125,7 @@ public class PublicationSummary {
             .map(EntityDescription::getMainTitle)
             .orElse(null);
     }
-
-    @JsonProperty(value = "entityDescription", access = JsonProperty.Access.WRITE_ONLY)
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void unpackNested(Map<String, Object> entityDescription) {
-        this.mainTitle = (String) entityDescription.get(MAIN_TITLE);
-    }
-
+    
     public static final class Builder {
 
         private SortableIdentifier identifier;

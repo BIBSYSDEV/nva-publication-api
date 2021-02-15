@@ -30,7 +30,7 @@ public class ExceptionsTest {
 
     @Test
     public void inputExceptionHasStatusCode() {
-        ApiGatewayException exception = new InputException(MESSAGE, new RuntimeException());
+        ApiGatewayException exception = new BadRequestException(MESSAGE, new RuntimeException());
         Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, exception.getStatusCode());
     }
 
