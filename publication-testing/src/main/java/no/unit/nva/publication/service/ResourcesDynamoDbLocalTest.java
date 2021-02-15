@@ -26,37 +26,39 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
+@JacocoGenerated
 public class ResourcesDynamoDbLocalTest {
-
+    
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected AmazonDynamoDB client;
-
+    
     public ResourcesDynamoDbLocalTest() {
-
+    
     }
-
+    
     public void init() {
         client = DynamoDBEmbedded.create().amazonDynamoDB();
         CreateTableRequest request = createTableRequest();
         client.createTable(request);
     }
-
+    
     @AfterEach
     public void shutdown() {
         client.shutdown();
     }
-
+    
     private CreateTableRequest createTableRequest() {
         return new CreateTableRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withAttributeDefinitions(attributeDefinitions())
-            .withKeySchema(primaryKeySchema())
-            .withGlobalSecondaryIndexes(globalSecondaryIndexes())
-            .withBillingMode(BillingMode.PAY_PER_REQUEST);
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withAttributeDefinitions(attributeDefinitions())
+                   .withKeySchema(primaryKeySchema())
+                   .withGlobalSecondaryIndexes(globalSecondaryIndexes())
+                   .withBillingMode(BillingMode.PAY_PER_REQUEST);
     }
-
+    
     private Collection<GlobalSecondaryIndex> globalSecondaryIndexes() {
         List<GlobalSecondaryIndex> indexes = new ArrayList<>();
         indexes.add(
@@ -77,29 +79,29 @@ public class ResourcesDynamoDbLocalTest {
         );
         return indexes;
     }
-
+    
     private GlobalSecondaryIndex newGsi(String indexName, String partitionKeyName, String sortKeyName) {
         return new GlobalSecondaryIndex()
-            .withIndexName(indexName)
-            .withKeySchema(keySchema(partitionKeyName, sortKeyName))
-            .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
+                   .withIndexName(indexName)
+                   .withKeySchema(keySchema(partitionKeyName, sortKeyName))
+                   .withProjection(new Projection().withProjectionType(ProjectionType.ALL));
     }
-
+    
     private Collection<KeySchemaElement> primaryKeySchema() {
         return keySchema(PRIMARY_KEY_PARTITION_KEY_NAME, PRIMARY_KEY_SORT_KEY_NAME);
     }
-
+    
     private Collection<KeySchemaElement> keySchema(String hashKey, String rangeKey) {
         List<KeySchemaElement> primaryKey = new ArrayList<>();
         primaryKey.add(newKeyElement(hashKey, KeyType.HASH));
         primaryKey.add(newKeyElement(rangeKey, KeyType.RANGE));
         return primaryKey;
     }
-
+    
     private KeySchemaElement newKeyElement(String primaryKeySortKeyName, KeyType range) {
         return new KeySchemaElement().withAttributeName(primaryKeySortKeyName).withKeyType(range);
     }
-
+    
     private AttributeDefinition[] attributeDefinitions() {
         List<AttributeDefinition> attributesList = new ArrayList<>();
         attributesList.add(newAttribute(PRIMARY_KEY_PARTITION_KEY_NAME));
@@ -114,10 +116,10 @@ public class ResourcesDynamoDbLocalTest {
         attributesList.toArray(attributesArray);
         return attributesArray;
     }
-
+    
     private AttributeDefinition newAttribute(String keyName) {
         return new AttributeDefinition()
-            .withAttributeName(keyName)
-            .withAttributeType(STRING_TYPE);
+                   .withAttributeName(keyName)
+                   .withAttributeType(STRING_TYPE);
     }
 }

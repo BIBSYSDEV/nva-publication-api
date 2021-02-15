@@ -38,26 +38,25 @@ public class DoiRequestDao extends Dao<DoiRequest>
             .withIdentifier(doiRequestIdentifier)
             .withOwner(owner)
             .withCustomerId(publisherId)
-            .build();
-
+                             .build();
+    
         return new DoiRequestDao(doi);
     }
-
+    
     public static DoiRequestDao queryObject(URI publisherId, String owner) {
-        return queryObject(publisherId,owner,null);
+        return queryObject(publisherId, owner, null);
     }
-
-
-    public static DoiRequestDao queryByResourceIdentifier(UserInstance userInstance,
-                                                          SortableIdentifier resourceIdentifier) {
+    
+    public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance userInstance,
+                                                                     SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
-            .withResourceIdentifier(resourceIdentifier)
-            .withOwner(userInstance.getUserIdentifier())
-            .withCustomerId(userInstance.getOrganizationUri())
-            .build();
+                             .withResourceIdentifier(resourceIdentifier)
+                             .withOwner(userInstance.getUserIdentifier())
+                             .withCustomerId(userInstance.getOrganizationUri())
+                             .build();
         return new DoiRequestDao(doi);
     }
-
+    
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
         return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + DoiRequest.getType();
@@ -108,13 +107,15 @@ public class DoiRequestDao extends Dao<DoiRequest>
     public SortableIdentifier getResourceIdentifier() {
         return data.getResourceIdentifier();
     }
-
+    
     @Override
+    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getData());
     }
-
+    
     @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -125,8 +126,9 @@ public class DoiRequestDao extends Dao<DoiRequest>
         DoiRequestDao that = (DoiRequestDao) o;
         return Objects.equals(getData(), that.getData());
     }
-
+    
     @Override
+    @JacocoGenerated
     public String toString() {
         return toJsonString();
     }

@@ -7,15 +7,17 @@ import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 
 public class PublicationHolder {
-
+    
     private final String type;
     private final Publication item;
-
+    
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getType(), getItem());
     }
-
+    
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -27,7 +29,7 @@ public class PublicationHolder {
         PublicationHolder that = (PublicationHolder) o;
         return Objects.equals(getType(), that.getType()) && Objects.equals(getItem(), that.getItem());
     }
-
+    
     @JacocoGenerated
     @JsonCreator
     public PublicationHolder(
@@ -36,11 +38,13 @@ public class PublicationHolder {
         this.type = type;
         this.item = publication;
     }
-
+    
+    @JacocoGenerated
     public String getType() {
         return type;
     }
-
+    
+    @JacocoGenerated
     public Publication getItem() {
         return item;
     }

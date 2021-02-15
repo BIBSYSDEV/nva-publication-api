@@ -10,11 +10,10 @@ import java.time.Clock;
 import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -41,7 +40,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     
     @JacocoGenerated
     public UpdateDoiRequestStatusHandler() {
-        this(defaultEnvironment(), defaultResource());
+        this(defaultEnvironment(), defaultService());
     }
     
     public UpdateDoiRequestStatusHandler(Environment environment,
@@ -79,7 +78,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         return HttpStatus.SC_ACCEPTED;
     }
     
-    private static DoiRequestService defaultResource() {
+    @JacocoGenerated
+    private static DoiRequestService defaultService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
     
@@ -97,14 +97,9 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private boolean userIsNotAuthorized(RequestInfo requestInfo) {
         return
             !(
-                userHasAccessRight(requestInfo, APPROVE_DOI_REQUEST)
-                && userHasAccessRight(requestInfo, REJECT_DOI_REQUEST)
+                requestInfo.userHasAccessRight(APPROVE_DOI_REQUEST.toString())
+                && requestInfo.userHasAccessRight(REJECT_DOI_REQUEST.toString())
             );
-    }
-    
-    //TODO: replace with nva-commons method RequestInfo::userHasAccessRight when available.
-    private boolean userHasAccessRight(RequestInfo requestInfo, AccessRight approveDoiRequest) {
-        return requestInfo.getAccessRights().contains(approveDoiRequest.toString());
     }
     
     private UserInstance createUserInstance(RequestInfo requestInfo) {

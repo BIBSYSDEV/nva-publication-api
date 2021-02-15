@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -57,27 +58,25 @@ import org.zalando.problem.Problem;
 
 @EnableRuleMigrationSupport
 public class ModifyPublicationHandlerTest {
-
+    
     public static final String IDENTIFIER = "identifier";
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE = objectMapper
-        .getTypeFactory()
-        .constructParametricType(GatewayResponse.class, PublicationResponse.class);
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE = objectMapper
-        .getTypeFactory()
-        .constructParametricType(GatewayResponse.class, Problem.class);
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE =
+        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
+        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
     public static final String OWNER = "owner";
     public static final URI ANY_URI = URI.create("http://example.org/publisher/1");
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
-
+    
     private ResourceService publicationService;
     private Context context;
-
+    
     private ByteArrayOutputStream output;
     private ModifyPublicationHandler modifyPublicationHandler;
-
+    
     private Publication publication;
-
+    
     /**
      * Set up environment.
      */
@@ -85,30 +84,30 @@ public class ModifyPublicationHandlerTest {
     public void setUp() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-
+    
         publicationService = mock(ResourceService.class);
         context = mock(Context.class);
-
+    
         output = new ByteArrayOutputStream();
         modifyPublicationHandler =
             new ModifyPublicationHandler(publicationService, environment);
         publication = createPublication();
     }
-
+    
     @Test
     @DisplayName("handler returns OK Response on ReportBasic input")
     public void handlerReturnsOkResponseOnReportBasicInput() throws IOException, ApiGatewayException {
         Path reportBasic = Path.of("ReportBasicTest.json");
         Publication modifiedPublication = objectMapper
-            .readValue(IoUtils.stringFromResources(reportBasic), Publication.class);
+                                              .readValue(IoUtils.stringFromResources(reportBasic), Publication.class);
         serviceSucceedsAndReturnsModifiedPublication(modifiedPublication);
         InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
-            modifiedPublication.getIdentifier());
+            modifiedPublication.getIdentifier()).build();
         modifyPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
     }
-
+    
     @Test
     @DisplayName("handler Returns OK Response On Valid Input")
     public void handlerReturnsOKResponseOnValidInput() throws IOException, ApiGatewayException {
@@ -116,7 +115,7 @@ public class ModifyPublicationHandlerTest {
         Publication modifiedPublication = clonePublicationAndUpdateStatus(expectedStatus);
         serviceSucceedsAndReturnsModifiedPublication(modifiedPublication);
         InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
-            modifiedPublication.getIdentifier());
+            modifiedPublication.getIdentifier()).build();
         modifyPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
@@ -124,61 +123,79 @@ public class ModifyPublicationHandlerTest {
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
         assertThat(getGatewayResponseBodyStatus(gatewayResponse), is(equalTo(expectedStatus)));
     }
-
+    
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
-        modifyPublicationHandler.handleRequest(generateInputStreamMissingPathParameters(), output, context);
+        InputStream event = generateInputStreamMissingPathParameters().build();
+        modifyPublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
     }
-
+    
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         serviceFailsOnModifyRequestWithRuntimeError();
-        modifyPublicationHandler.handleRequest(
-            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()), output, context);
+        var event =
+            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
+        modifyPublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
     }
-
+    
     @Test
     @DisplayName("handler logs error details on unexpected exception")
     public void handlerLogsErrorDetailsOnUnexpectedException()
         throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationServiceThrowsException();
-        modifyPublicationHandler.handleRequest(generateInputStreamWithValidBodyAndHeadersAndPathParameters(
-            publication.getIdentifier()), output, context);
+        var event =
+            generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
+        modifyPublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
-
+    
+    @Test
+    public void handlerReturnsBadRequestWhenIdentifierInPathDiffersFromIdentifierInBody() throws IOException {
+        SortableIdentifier someIdentifier = SortableIdentifier.next();
+        SortableIdentifier someOtherIdentifier = SortableIdentifier.next();
+        
+        var event = generateInputStreamWithValidBodyAndHeadersAndPathParameters(someIdentifier)
+                        .withPathParameters(Map.of(IDENTIFIER, someOtherIdentifier.toString()))
+                        .build();
+        
+        modifyPublicationHandler.handleRequest(event, output, context);
+        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        Problem problem = gatewayResponse.getBodyObject(Problem.class);
+        assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+        assertThat(problem.getDetail(), containsString(ModifyPublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
+    }
+    
     @Test
     @DisplayName("Handler returns NotFound response when resource does not exist")
     void handlerReturnsNotFoundResponseWhenResourceDoesNotExist() throws IOException, ApiGatewayException {
         SortableIdentifier identifier = SortableIdentifier.next();
         String expectedDetail = serviceFailsOnGetRequestWithNotFoundError(identifier);
+        var event =
+            generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier).build();
         modifyPublicationHandler.handleRequest(
-            generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier),
-            output,
-            context
-        );
+            event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), is(equalTo(expectedDetail)));
     }
-
+    
     private TestAppender createAppenderForLogMonitoring() {
         return LogUtils.getTestingAppender(ModifyPublicationHandler.class);
     }
-
+    
     private void publicationServiceThrowsException() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
         when(publicationService.updatePublication(any(Publication.class)))
@@ -186,96 +203,95 @@ public class ModifyPublicationHandlerTest {
                 throw new RuntimeException(ModifyPublicationHandlerTest.SOME_MESSAGE);
             });
     }
-
+    
     private void serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
         when(publicationService.updatePublication(any(Publication.class)))
             .thenThrow(RuntimeException.class);
     }
-
+    
     private String serviceFailsOnGetRequestWithNotFoundError(SortableIdentifier identifier) throws ApiGatewayException {
         String expectedDetail = String.format(RESOURCE_NOT_FOUND_ERROR_TEMPLATE, identifier.toString());
         when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
             .thenThrow(new NotFoundException(expectedDetail));
         return expectedDetail;
     }
-
+    
     private void serviceSucceedsOnGetRequest(Publication publication) throws ApiGatewayException {
         when(publicationService.getPublication(any(UserInstance.class), any(SortableIdentifier.class)))
             .thenReturn(publication);
     }
-
+    
     private void serviceSucceedsAndReturnsModifiedPublication(Publication modifiedPublication)
         throws ApiGatewayException {
         serviceSucceedsOnGetRequest(publication);
         when(publicationService.updatePublication(any(Publication.class)))
             .thenReturn(modifiedPublication);
     }
-
-    private InputStream generateInputStreamWithValidBodyAndHeadersAndPathParameters(SortableIdentifier identifier)
+    
+    private HandlerRequestBuilder<Publication> generateInputStreamWithValidBodyAndHeadersAndPathParameters(
+        SortableIdentifier identifier)
         throws IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
-            .withBody(createPublication(identifier))
-            .withHeaders(generateHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
-            .build();
+                   .withBody(createPublication(identifier))
+                   .withHeaders(generateHeaders())
+                   .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()));
     }
-
-    private InputStream generateInputStreamMissingPathParameters() throws IOException {
+    
+    private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
-            .withBody(createPublication())
-            .withHeaders(generateHeaders())
-            .build();
+                   .withBody(createPublication())
+                   .withHeaders(generateHeaders());
     }
-
+    
     private Map<String, String> generateHeaders() {
         Map<String, String> headers = new ConcurrentHashMap<>();
         headers.put(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         return headers;
     }
-
+    
     private Publication createPublication() {
         return createPublication(SortableIdentifier.next());
     }
-
+    
     private Publication createPublication(SortableIdentifier identifier) {
         return new Publication.Builder()
-            .withIdentifier(identifier)
-            .withModifiedDate(Instant.now())
-            .withOwner(OWNER)
-            .withPublisher(new Organization.Builder()
-                .withId(ANY_URI)
-                .build()
-            )
-            .build();
+                   .withIdentifier(identifier)
+                   .withModifiedDate(Instant.now())
+                   .withOwner(OWNER)
+                   .withPublisher(new Organization.Builder()
+                                      .withId(ANY_URI)
+                                      .build()
+                   )
+                   .build();
     }
-
+    
     private Publication clonePublicationAndUpdateStatus(PublicationStatus status) throws
                                                                                   JsonProcessingException {
         Publication modifiedPublication = clonePublication(publication);
         modifiedPublication.setStatus(status);
         return modifiedPublication;
     }
-
+    
     private Publication clonePublication(Publication publication) throws JsonProcessingException {
         String that = objectMapper.writeValueAsString(publication);
         return objectMapper.readValue(that, Publication.class);
     }
-
+    
     private GatewayResponse<PublicationResponse> toGatewayResponse() throws JsonProcessingException {
         return objectMapper.readValue(output.toString(),
             PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE);
     }
-
+    
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {
         return objectMapper.readValue(output.toString(),
             PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
     }
-
+    
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {
         return gatewayResponse.getBodyObject(Problem.class).getDetail();
     }
-
+    
     private PublicationStatus getGatewayResponseBodyStatus(GatewayResponse<PublicationResponse> gatewayResponse)
         throws JsonProcessingException {
         return gatewayResponse.getBodyObject(PublicationResponse.class).getStatus();

@@ -2,7 +2,7 @@ package no.unit.nva.doi.requests.handlers;
 
 import java.util.Optional;
 import no.unit.nva.model.DoiRequestStatus;
-import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
+import no.unit.nva.publication.exception.BadRequestException;
 import nva.commons.core.JacocoGenerated;
 
 public class ApiUpdateDoiRequest {
