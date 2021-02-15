@@ -14,9 +14,9 @@ public class ResourceDaoTest {
     
     public static final String SAMPLE_USER = "some@owner";
     public static final SortableIdentifier SAMPLE_IDENTIFIER = SortableIdentifier.next();
-    public static final UserInstance SAMPLE_USER_INSTANCE = new UserInstance(SAMPLE_USER, SAMPLE_PUBLISHER);
-    private static final String PUBLISHER_IDENTIFIER = "publisherIdentifier";
+    public static final String PUBLISHER_IDENTIFIER = "publisherIdentifier";
     public static final URI SAMPLE_PUBLISHER = URI.create("https://some.example.org/" + PUBLISHER_IDENTIFIER);
+    public static final UserInstance SAMPLE_USER_INSTANCE = new UserInstance(SAMPLE_USER, SAMPLE_PUBLISHER);
     
     @Test
     public void queryObjectReturnsObjectWithNonNullPrimaryPartitionKey() {
