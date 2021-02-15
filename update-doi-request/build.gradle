@@ -1,0 +1,46 @@
+repositories {
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
+dependencies {
+
+    // compileOnly because under current deployment model, these dependencies are included
+    // in the publication-commons layer.
+    compileOnly project(":storage-model")
+    testImplementation project(":storage-model")
+
+    implementation project(":publication-commons")
+    testImplementation project(":publication-commons")
+
+    implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    implementation group:'com.github.BIBSYSDEV.nva-user-access-service', name:'user-access-rights', version:'0.3.0'
+
+    testImplementation project (':publication-testing')
+
+    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
+
+
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-sts', version: project.ext.awsSdkVersion
+
+
+}
+// necessary tasks for making localDynamoDb to work
+configurations.testImplementation.canBeResolved = true
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/dynamodb-local'
+}

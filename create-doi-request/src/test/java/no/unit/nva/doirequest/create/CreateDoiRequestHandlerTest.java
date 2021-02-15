@@ -22,7 +22,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -70,7 +69,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
-        throws TransactionFailedException, IOException {
+        throws TransactionFailedException, IOException, NotFoundException {
         Publication publication = createPublication();
 
         sendRequest(publication, publication.getOwner());
@@ -85,7 +84,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
-        throws TransactionFailedException, NotFoundException, InvalidPublicationException, IOException {
+        throws TransactionFailedException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
@@ -139,7 +138,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
             .build();
     }
 
-    private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier) {
+    private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier)
+        throws NotFoundException {
         UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
 
         return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(

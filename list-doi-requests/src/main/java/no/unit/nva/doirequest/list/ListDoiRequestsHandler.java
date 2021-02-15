@@ -1,8 +1,10 @@
 package no.unit.nva.doirequest.list;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -13,6 +15,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +24,14 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     public static final String ROLE_QUERY_PARAMETER = "role";
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
-    private static final Logger LOGGER = LoggerFactory.getLogger(ListDoiRequestsHandler.class);
     public static final String EMPTY_STRING = "";
+    private static final Logger LOGGER = LoggerFactory.getLogger(ListDoiRequestsHandler.class);
     private final DoiRequestService doiRequestService;
+
+    @JacocoGenerated
+    public ListDoiRequestsHandler() {
+        this(new Environment(), defaultRequestService());
+    }
 
     public ListDoiRequestsHandler(Environment environment,
                                   DoiRequestService doiRequestService) {
@@ -46,6 +54,15 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         return new Publication[0];
     }
 
+    @Override
+    protected Integer getSuccessStatusCode(Void input, Publication[] output) {
+        return HttpURLConnection.HTTP_OK;
+    }
+
+    private static DoiRequestService defaultRequestService() {
+        return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+    }
+
     private boolean userIsACreator(String requestedRole, String userRolesCsv) {
         return userHasRequestedRole(requestedRole, userRolesCsv, CREATOR_ROLE);
     }
@@ -63,11 +80,6 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         String userRolesUpperCased = userRolesCsv.toUpperCase(Locale.getDefault());
         String requestedRole = role.toUpperCase(Locale.getDefault());
         return userRolesUpperCased.contains(requestedRole);
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(Void input, Publication[] output) {
-        return HttpURLConnection.HTTP_OK;
     }
 
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {

@@ -86,7 +86,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
-        throws TransactionFailedException, BadRequestException, NotFoundException, TransactionFailedException {
+        throws BadRequestException, NotFoundException, TransactionFailedException {
         Publication emptyPublication = emptyPublication();
         UserInstance userInstance = createUserInstance(emptyPublication);
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
@@ -166,7 +166,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         createDoiRequest(publishedPublication);
         createDoiRequest(draftPublication);
 
-        UserInstance curator = new UserInstance(SOME_CURATOR, publishedPublication.getPublisher().getId());
+        UserInstance curator = createSampleCurator(publishedPublication);
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(curator);
 
         DoiRequest expectedDoiRequest = getDoiRequest(publishedPublication);
@@ -174,6 +174,10 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
         assertThat(doiRequests, hasItem(expectedDoiRequest));
         assertThat(doiRequests, not(hasItem(unexpectedDoiRequest)));
+    }
+
+    public UserInstance createSampleCurator(Publication publication) {
+        return new UserInstance(SOME_CURATOR, publication.getPublisher().getId());
     }
 
     @Test
@@ -188,7 +192,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
             doiRequestService.listDoiRequestsForPublishedPublications(irrelevantUser);
         assertThat(resultForIrrelevantUser, is(emptyCollectionOf(DoiRequest.class)));
 
-        UserInstance relevantUser = new UserInstance(SOME_CURATOR, publishedPublication.getPublisher().getId());
+        UserInstance relevantUser = createSampleCurator(publishedPublication);
         List<DoiRequest> resultForRelevantUser =
             doiRequestService.listDoiRequestsForPublishedPublications(relevantUser);
 
@@ -229,7 +233,95 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(result, hasSize(endExclusive));
     }
 
-    public DoiRequest getDoiRequest(Publication publishedPublication) throws NotFoundException {
+    @Test
+    public void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
+        throws ApiGatewayException {
+        var publication = createPublishedPublication();
+        UserInstance userInstance = createUserInstance(publication);
+        SortableIdentifier doiRequestIdentifier = doiRequestService
+            .createDoiRequest(userInstance, publication.getIdentifier());
+
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewDoiRequestStatus);
+
+        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        assertThat(updatedDoiRequest.getStatus(), is(equalTo(expectedNewDoiRequestStatus)));
+    }
+
+    @Test
+    public void updateDoiRequestUpdatesModifiedDateOfDoiRequest()
+        throws ApiGatewayException {
+        Publication publication = createPublication();
+        UserInstance userInstance = createUserInstance(publication);
+        resourceService.publishPublication(userInstance, publication.getIdentifier());
+        SortableIdentifier doiRequestIdentifier = doiRequestService
+            .createDoiRequest(userInstance, publication.getIdentifier());
+
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        doiRequestService.updateDoiRequest(userInstance, publication.getIdentifier(), expectedNewDoiRequestStatus);
+
+        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
+    }
+
+    @Test
+    public void updateDoiRequestUpdatesStatusIndexForDoiRequest()
+        throws ApiGatewayException {
+        var publication = createPublication();
+        UserInstance someUser = createUserInstance(publication);
+        resourceService.publishPublication(someUser, publication.getIdentifier());
+        SortableIdentifier doiRequestIdentifier =
+            doiRequestService.createDoiRequest(someUser, publication.getIdentifier());
+
+        UserInstance sampleCurator = createSampleCurator(publication);
+
+        assertThatDoiRequestIsIncludedInTheCuratorView(sampleCurator, doiRequestIdentifier);
+
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        doiRequestService.updateDoiRequest(someUser, publication.getIdentifier(), expectedNewDoiRequestStatus);
+
+        assertThatDoiRequestHasBeenRemovedFromCuratorsView(sampleCurator, doiRequestIdentifier);
+    }
+
+    @Test
+    public void getDoiRequestThrowsNotFoundExceptionWhenDoiRequestWasNotFound() {
+        UserInstance someUser = new UserInstance(SOME_USER, SOME_PUBLISHER);
+        Executable action = () -> doiRequestService.getDoiRequest(someUser, SortableIdentifier.next());
+        assertThrows(NotFoundException.class, action);
+    }
+
+    @Test
+    public void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
+        throws TransactionFailedException, BadRequestException {
+        Publication publication = createPublication();
+        createDoiRequest(publication);
+        UserInstance sampleCurator = createSampleCurator(publication);
+        Executable action =
+            () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
+                DoiRequestStatus.APPROVED);
+        assertThrows(BadRequestException.class, action);
+    }
+
+    private void assertThatDoiRequestHasBeenRemovedFromCuratorsView(UserInstance sampleCurator,
+                                                                    SortableIdentifier doiRequestIdentifier) {
+        List<SortableIdentifier> updatedDoiRequestList = createDoiRequestListForCurator(sampleCurator);
+
+        assertThat(updatedDoiRequestList, not(hasItem(doiRequestIdentifier)));
+    }
+
+    private List<SortableIdentifier> createDoiRequestListForCurator(UserInstance sampleCurator) {
+        return doiRequestService
+            .listDoiRequestsForPublishedPublications(sampleCurator)
+            .stream().map(DoiRequest::getIdentifier).collect(Collectors.toList());
+    }
+
+    private void assertThatDoiRequestIsIncludedInTheCuratorView(UserInstance sampleCurator,
+                                                                SortableIdentifier doiRequestIdentifier) {
+        List<SortableIdentifier> doiRequestsList = createDoiRequestListForCurator(sampleCurator);
+        assertThat(doiRequestsList, hasItem(doiRequestIdentifier));
+    }
+
+    private DoiRequest getDoiRequest(Publication publishedPublication) throws NotFoundException {
         return doiRequestService
             .getDoiRequestByResourceIdentifier(
                 createUserInstance(publishedPublication),
@@ -237,7 +329,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
             );
     }
 
-    public void publishPublication(Publication publishedPublication) throws ApiGatewayException {
+    private void publishPublication(Publication publishedPublication) throws ApiGatewayException {
         resourceService.publishPublication(
             createUserInstance(publishedPublication),
             publishedPublication.getIdentifier());
@@ -282,10 +374,10 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         return publication;
     }
 
-    private void createDoiRequest(Publication publishedPublication)
+    private void createDoiRequest(Publication publication)
         throws BadRequestException, TransactionFailedException {
         doiRequestService.createDoiRequest(
-            createUserInstance(publishedPublication), publishedPublication.getIdentifier());
+            createUserInstance(publication), publication.getIdentifier());
     }
 
     private void createDoiRequest(Publication publication, String owner)
