@@ -20,8 +20,8 @@ class DoiRequestDaoTest {
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     
     @Test
-    public void queryByCustomerAndResourceIdentifierReturnsQueryObjectWithPartitionKeyContainingPublisherAndResourceId() {
-        
+    public void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
+    
         DoiRequestDao queryObject =
             DoiRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
         String expectedPartitionKey = CUSTOMER_INDEX_FIELD_PREFIX
