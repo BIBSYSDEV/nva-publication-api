@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
@@ -38,7 +39,7 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTest {
-
+    
     public static final String SOME_CURATOR = "some@curator.org";
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
@@ -49,7 +50,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
     private ResourceService resourceService;
     private ByteArrayOutputStream outputStream;
     private Context context;
-
+    
     @BeforeEach
     public void initialize() {
         super.init();
@@ -60,40 +61,40 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
         doiRequestService = new DoiRequestService(client, clock);
-
+        
         handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
         resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
-
+    
     @Test
     public void handleRequestUpdatesDoiStatusOfDoiRequestInDatabase()
         throws ApiGatewayException, IOException {
         Publication publication = createPublishedPublicationAndDoiRequest();
-
+        
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-
+        
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
-
+        
         DoiRequest updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
         assertThat(updatedDoiRequest.getStatus(), is(equalTo(DoiRequestStatus.APPROVED)));
     }
-
+    
     @Test
     public void handleReturnsForbiddenWhenUserDoesNotHaveApproveOrRejectAccessRights()
         throws ApiGatewayException, IOException {
         Publication publication = createPublishedPublicationAndDoiRequest();
-
+        
         var request = createUnauthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-
+        
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
-
+    
     @Test
     public void handlerReturnsBadRequestWhenPublicationIsDraft()
         throws ApiGatewayException, IOException {
@@ -105,60 +106,73 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
         assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
-
+    
+    @Test
+    public void handlerReturnsBadRequestForNonExistingPublicationdIdentifier()
+        throws ApiGatewayException, IOException {
+        Publication publication = createDraftPublicationAndDoiRequest();
+        publication.setIdentifier(SortableIdentifier.next());
+        var request = createAuthorizedRestRequest(publication);
+        handler.handleRequest(request, outputStream, context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var problem = response.getBodyObject(Problem.class);
+        assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
+    }
+    
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(anyString())).thenReturn("*");
         return environment;
     }
-
+    
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
         return doiRequestService
-            .getDoiRequestByResourceIdentifier(createUserInstance(publication), publication.getIdentifier());
+                   .getDoiRequestByResourceIdentifier(createUserInstance(publication), publication.getIdentifier());
     }
-
+    
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
         ApiUpdateDoiRequest body = createApproveRequest();
         Map<String, String> pathParameters = createPathParameters(publication);
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(JsonUtils.objectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(SOME_CURATOR)
-            .withAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
-            .withAccessRight(AccessRight.REJECT_DOI_REQUEST.toString())
-            .withPathParameters(pathParameters)
-            .withBody(body)
-            .build();
+                   .withCustomerId(publication.getPublisher().getId().toString())
+                   .withFeideId(SOME_CURATOR)
+                   .withAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
+                   .withAccessRight(AccessRight.REJECT_DOI_REQUEST.toString())
+                   .withPathParameters(pathParameters)
+                   .withBody(body)
+                   .build();
     }
-
+    
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
         ApiUpdateDoiRequest body = createApproveRequest();
         Map<String, String> pathParameters = createPathParameters(publication);
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(JsonUtils.objectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(SOME_CURATOR)
-            .withPathParameters(pathParameters)
-            .withBody(body)
-            .build();
+                   .withCustomerId(publication.getPublisher().getId().toString())
+                   .withFeideId(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withBody(body)
+                   .build();
     }
-
+    
     private Map<String, String> createPathParameters(Publication publication) {
         return Map.of(
             API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()
         );
     }
-
+    
     private ApiUpdateDoiRequest createApproveRequest() {
         ApiUpdateDoiRequest body = new ApiUpdateDoiRequest();
         body.setDoiRequestStatus(DoiRequestStatus.APPROVED);
         return body;
     }
-
+    
     private Publication createPublishedPublicationAndDoiRequest() throws ApiGatewayException {
         Publication publication = createDraftPublicationAndDoiRequest();
         resourceService.publishPublication(createUserInstance(publication), publication.getIdentifier());
         return publication;
     }
-
+    
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
         Publication publication = resourceService.createPublication(
             PublicationGenerator.publicationWithoutIdentifier());
@@ -166,7 +180,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
         doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
         return publication;
     }
-
+    
     private UserInstance createUserInstance(Publication publication) {
         return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
