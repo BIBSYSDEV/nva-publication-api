@@ -17,6 +17,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,8 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     public static final String DOI_ALREADY_EXISTS_ERROR = "A Doi request already exists";
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateDoiRequestHandler.class);
     private final DoiRequestService doiRequestService;
-
+    
+    @JacocoGenerated
     public CreateDoiRequestHandler() {
         this(new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
                 Clock.systemDefaultZone()),
