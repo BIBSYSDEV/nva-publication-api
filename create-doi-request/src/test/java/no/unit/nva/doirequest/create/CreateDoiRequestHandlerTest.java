@@ -115,7 +115,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         sendRequest(publication, publication.getOwner());
 
         outputStream = new ByteArrayOutputStream();
-
+    
         sendRequest(publication, publication.getOwner());
 
         GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
@@ -131,7 +131,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         throws com.fasterxml.jackson.core.JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), null);
         return new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
+    
+                   .withCustomerId(publication.getPublisher().getId().toString())
             .withFeideId(user)
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
             .withBody(request)

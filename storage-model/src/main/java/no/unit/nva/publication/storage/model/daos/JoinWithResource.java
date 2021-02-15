@@ -27,7 +27,7 @@ public interface JoinWithResource {
     String LAST_PRINTABLE_ASCII_CHAR = "~";
 
     @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME)
-    default String getByResourcePartitionKey() {
+    default String getByCustomerAndResourcePartitionKey() {
         return
             CUSTOMER_INDEX_FIELD_PREFIX
             + KEY_FIELDS_DELIMITER
@@ -37,9 +37,9 @@ public interface JoinWithResource {
             + KEY_FIELDS_DELIMITER
             + getResourceIdentifier().toString();
     }
-
+    
     @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
-    default String getByResourceSortKey() {
+    default String getByCustomerAndResourceSortKey() {
         return
             this.joinByResourceOrderedType()
             + KEY_FIELDS_DELIMITER
@@ -68,7 +68,8 @@ public interface JoinWithResource {
     default Map<String, Condition> byResource(String greaterOrEqual,
                                               String lessOrEqual) {
         Condition partitionKeyCondition = new Condition()
-            .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
+                                              .withAttributeValueList(
+                                                  new AttributeValue(getByCustomerAndResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);
 
         Condition sortKeyCondition = new Condition()
@@ -100,7 +101,8 @@ public interface JoinWithResource {
      */
     default Map<String, Condition> byResource(String selectedType) {
         Condition partitionKeyCondition = new Condition()
-            .withAttributeValueList(new AttributeValue(getByResourcePartitionKey()))
+                                              .withAttributeValueList(
+                                                  new AttributeValue(getByCustomerAndResourcePartitionKey()))
             .withComparisonOperator(ComparisonOperator.EQ);
 
         Condition sortKeyCondition = new Condition()
