@@ -40,7 +40,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     
     @JacocoGenerated
     public UpdateDoiRequestStatusHandler() {
-        this(defaultEnvironment(), defaultResource());
+        this(defaultEnvironment(), defaultService());
     }
     
     public UpdateDoiRequestStatusHandler(Environment environment,
@@ -78,7 +78,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         return HttpStatus.SC_ACCEPTED;
     }
     
-    private static DoiRequestService defaultResource() {
+    @JacocoGenerated
+    private static DoiRequestService defaultService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
     
