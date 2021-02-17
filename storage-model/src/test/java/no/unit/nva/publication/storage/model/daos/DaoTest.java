@@ -19,6 +19,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.text.IsEmptyString.emptyString;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
@@ -26,6 +27,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.MalformedURLException;
+import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -156,21 +158,47 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         client.putItem(toPutItemRequest(originalDao));
         QueryResult queryResult = client.query(queryByTypeCustomerStatusIndex(originalDao));
         Dao<?> retrievedDao = queryResult.getItems()
-            .stream()
-            .map(map -> parseAttributeValuesMap(map, originalDao.getClass()))
-            .collect(SingletonCollector.collect());
+                                  .stream()
+                                  .map(map -> parseAttributeValuesMap(map, originalDao.getClass()))
+                                  .collect(SingletonCollector.collect());
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
-
+    
+    @ParameterizedTest
+    @MethodSource("instanceProvider")
+    public void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao<?> originalDao) {
+        
+        Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
+        client.putItem(RESOURCES_TABLE_NAME, dynamoMap);
+        Map<String, AttributeValue> savedMap = client
+                                                   .getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey())
+                                                   .getItem();
+        assertThat(dynamoMap, is(equalTo(savedMap)));
+        
+        Dao<?> retrievedDao = Dao.parseAttributeValuesMap(savedMap, originalDao.getClass());
+        assertThat(retrievedDao, doesNotHaveEmptyValues());
+        assertThat(retrievedDao, is(equalTo(originalDao)));
+    }
+    
+    @ParameterizedTest
+    @MethodSource("instanceProvider")
+    public void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation(Dao<?> originalDao) {
+        
+        assertThat(originalDao, doesNotHaveEmptyValues());
+        Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
+        Dao<?> parsedDao = Dao.parseAttributeValuesMap(dynamoMap, originalDao.getClass());
+        assertThat(parsedDao, is(equalTo(originalDao)));
+    }
+    
     private static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
         return DaoUtils.instanceProvider();
     }
-
+    
     private QueryRequest queryByTypeCustomerStatusIndex(Dao<?> originalResource) {
         return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-            .withKeyConditions(originalResource.byTypeCustomerStatusKey());
+                   .withTableName(RESOURCES_TABLE_NAME)
+                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+                   .withKeyConditions(originalResource.byTypeCustomerStatusKey());
     }
 
     private JsonNode serializeInstance(Dao<?> daoInstance) throws JsonProcessingException {

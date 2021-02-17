@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.exception.EmptyValueMapException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
+import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 
 public final class ResourceServiceUtils {
 
@@ -29,21 +29,25 @@ public final class ResourceServiceUtils {
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
         + " AND "
         + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
-
+    
     public static final Map<String, String> PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES =
         primaryKeyEqualityConditionAttributeNames();
-
+    
     public static final String KEY_NOT_EXISTS_CONDITION = keyNotExistsCondition();
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
-
+    
     private ResourceServiceUtils() {
     }
-
+    
+    //Use methods found in Dao
+    @Deprecated
     static <T> Map<String, AttributeValue> toDynamoFormat(T element) {
         Item item = attempt(() -> Item.fromJSON(objectMapper.writeValueAsString(element))).orElseThrow();
         return ItemUtils.toAttributeValues(item);
     }
-
+    
+    //Use methods found in Dao
+    @Deprecated
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
             Item item = ItemUtils.toItem(valuesMap);
@@ -52,7 +56,7 @@ public final class ResourceServiceUtils {
             throw new EmptyValueMapException();
         }
     }
-
+    
     static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(WithPrimaryKey resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
