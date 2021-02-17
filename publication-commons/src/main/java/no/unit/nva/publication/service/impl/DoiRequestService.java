@@ -88,11 +88,13 @@ public class DoiRequestService extends ServiceWithTransactions {
                                                                String tableName,
                                                                AmazonDynamoDB client
     ) throws NotFoundException {
-        DoiRequestDao queryObject = DoiRequestDao.queryByResourceIdentifier(userInstance, resourceIdentifier);
+        DoiRequestDao queryObject = DoiRequestDao.queryByCustomerAndResourceIdentifier(userInstance,
+            resourceIdentifier);
         QueryRequest queryRequest = new QueryRequest()
-            .withTableName(tableName)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+                                        .withTableName(tableName)
+                                        .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                                        .withKeyConditions(
+                                            queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
 
         Map<String, AttributeValue> item = parseQueryResultExpectingSingleItem(queryResult)
@@ -231,8 +233,8 @@ public class DoiRequestService extends ServiceWithTransactions {
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString()),
             ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()),
-            ":PK2", new AttributeValue(dao.getByResourcePartitionKey()),
-            ":SK2", new AttributeValue(dao.getByResourceSortKey())
+            ":PK2", new AttributeValue(dao.getByCustomerAndResourcePartitionKey()),
+            ":SK2", new AttributeValue(dao.getByCustomerAndResourceSortKey())
         );
         return new UpdateItemRequest()
             .withTableName(tableName)
