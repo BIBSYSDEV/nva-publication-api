@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -45,7 +46,7 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
         return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
                    .map(GetItemResult::getItem)
-                   .map(item -> MessageDao.parseAttributeValuesMap(item, MessageDao.class))
+                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
                    .map(MessageDao::getData)
                    .orElseThrow();
     }

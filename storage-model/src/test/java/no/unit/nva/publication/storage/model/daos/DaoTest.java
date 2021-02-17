@@ -10,8 +10,8 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.storage.model.daos.DaoUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -174,8 +174,8 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
                                                    .getItem(RESOURCES_TABLE_NAME, originalDao.primaryKey())
                                                    .getItem();
         assertThat(dynamoMap, is(equalTo(savedMap)));
-        
-        Dao<?> retrievedDao = Dao.parseAttributeValuesMap(savedMap, originalDao.getClass());
+    
+        Dao<?> retrievedDao = parseAttributeValuesMap(savedMap, originalDao.getClass());
         assertThat(retrievedDao, doesNotHaveEmptyValues());
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
@@ -186,7 +186,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         
         assertThat(originalDao, doesNotHaveEmptyValues());
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
-        Dao<?> parsedDao = Dao.parseAttributeValuesMap(dynamoMap, originalDao.getClass());
+        Dao<?> parsedDao = parseAttributeValuesMap(dynamoMap, originalDao.getClass());
         assertThat(parsedDao, is(equalTo(originalDao)));
     }
     

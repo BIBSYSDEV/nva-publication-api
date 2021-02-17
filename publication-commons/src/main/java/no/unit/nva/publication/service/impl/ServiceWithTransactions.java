@@ -3,7 +3,6 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -20,6 +19,7 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
+import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.core.attempt.Failure;
@@ -38,28 +38,28 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
-    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
-        return newPutTransactionItem(dynamoEntry, getTableName());
-    }
-    
-    protected static <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T data, String tableName) {
+    protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
         
         Put put = new Put()
-                      .withItem(toDynamoFormat(data))
+                      .withItem(data.toDynamoFormat())
                       .withTableName(tableName)
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
-
+    
+    protected <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
+        return newPutTransactionItem(dynamoEntry, getTableName());
+    }
+    
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
-
+    
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
-
+    
     protected abstract String getTableName();
 
     protected abstract AmazonDynamoDB getClient();

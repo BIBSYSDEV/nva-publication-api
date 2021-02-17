@@ -9,6 +9,7 @@ import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -853,7 +854,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     
     private Optional<ResourceDao> parseResult(QueryResult result) {
         return result.getItems().stream()
-                   .map(map -> ResourceServiceUtils.parseAttributeValuesMap(map, ResourceDao.class))
+                   .map(map -> parseAttributeValuesMap(map, ResourceDao.class))
                    .findAny();
     }
     

@@ -1,12 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import static nva.commons.core.JsonUtils.objectMapper;
-import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.net.URI;
 import java.util.Map;
@@ -15,7 +10,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
-import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 
 public final class ResourceServiceUtils {
 
@@ -39,23 +33,6 @@ public final class ResourceServiceUtils {
     private ResourceServiceUtils() {
     }
     
-    //Use methods found in Dao
-    @Deprecated
-    static <T> Map<String, AttributeValue> toDynamoFormat(T element) {
-        Item item = attempt(() -> Item.fromJSON(objectMapper.writeValueAsString(element))).orElseThrow();
-        return ItemUtils.toAttributeValues(item);
-    }
-    
-    //Use methods found in Dao
-    @Deprecated
-    static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
-        if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
-            Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
-        } else {
-            throw new EmptyValueMapException();
-        }
-    }
     
     static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(WithPrimaryKey resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,

@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -140,8 +139,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
             .orElse(this::handleNotFoundException);
 
         return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-            .map(DoiRequestDao::new)
-            .map(ResourceServiceUtils::toDynamoFormat)
+                   .map(DoiRequestDao::new)
+                   .map(DoiRequestDao::toDynamoFormat)
             .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
             .map(put -> new TransactWriteItem().withPut(put));
     }
@@ -171,7 +170,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
             primaryKeyEqualityConditionAttributeValues(resourceDao);
 
         Put put = new Put()
-            .withItem(toDynamoFormat(resourceDao))
+                      .withItem(resourceDao.toDynamoFormat())
             .withTableName(tableName)
             .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
             .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
