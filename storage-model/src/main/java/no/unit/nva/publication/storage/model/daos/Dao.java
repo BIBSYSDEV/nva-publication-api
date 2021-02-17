@@ -25,6 +25,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
+    @JsonSubTypes.Type(name = "Message", value = MessageDao.class),
 })
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
     implements DynamoEntry,

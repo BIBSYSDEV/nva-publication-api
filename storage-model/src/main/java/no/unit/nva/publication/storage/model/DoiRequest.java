@@ -39,7 +39,12 @@ import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public final class DoiRequest implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
+public final class DoiRequest
+    implements WithIdentifier,
+               RowLevelSecurity,
+               WithStatus,
+               ResourceUpdate,
+               ConnectedToResource {
     
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
