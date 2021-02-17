@@ -54,10 +54,10 @@ import nva.commons.core.attempt.Try;
 public class DoiRequestService extends ServiceWithTransactions {
     
     public static final String DOI_REQUEST_WAS_NOT_FOUND_ERROR = "DoiRequest was not found";
-    public static final String DOI_REQUEST_NOT_FOUND_FOR_RESOURCE = "Could not find a Doi Request for Resource: ";
+    public static final String DOI_REQUEST_NOT_FOUND_FOR_RESOURCE = "Could not find a DOI Request for Resource: ";
     public static final String UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE =
-        "Could not update doi request status. Updating Doi request status for "
-        + "not published resources is not possible";
+        "Could not update DOI request status. Updating DOI request status for "
+        + "unpublished resources is not possible";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
     private final AmazonDynamoDB client;

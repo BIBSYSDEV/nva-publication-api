@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 
 public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
 
-    public static final String DOI_ALREADY_EXISTS_ERROR = "A Doi request already exists";
+    public static final String DOI_ALREADY_EXISTS_ERROR = "A DOI request already exists";
     private static final Logger LOGGER = LoggerFactory.getLogger(CreateDoiRequestHandler.class);
     private final DoiRequestService doiRequestService;
     
