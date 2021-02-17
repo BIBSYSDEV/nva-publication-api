@@ -58,7 +58,8 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     protected Integer getSuccessStatusCode(Void input, Void output) {
         return HttpStatus.SC_ACCEPTED;
     }
-
+    
+    @JacocoGenerated
     private static ResourceService defaultService() {
         return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }

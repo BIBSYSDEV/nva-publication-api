@@ -58,7 +58,8 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     protected Integer getSuccessStatusCode(Void input, Publication[] output) {
         return HttpURLConnection.HTTP_OK;
     }
-
+    
+    @JacocoGenerated
     private static DoiRequestService defaultRequestService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
     }
