@@ -73,26 +73,29 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource() throws TransactionFailedException {
         var insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
-        
+
         UserInstance userInstance = extractUserInstance(insertedPublication);
         ResourceMessages resourceMessages =
             messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
+
+        Message[] expectedMessages = listToArray(insertedMessages);
+        assertThat(resourceMessages.getMessages(), contains(expectedMessages));
+    }
+
+    private Message[] listToArray(List<Message> insertedMessages) {
         Message[] insertedMessagesArray = new Message[insertedMessages.size()];
         insertedMessages.toArray(insertedMessagesArray);
-        Publication actualPublication = resourceMessages.getResource().toPublication();
-        
-        assertThat(actualPublication, is(equalTo(insertedPublication)));
-        assertThat(resourceMessages.getMessages(), contains(insertedMessagesArray));
+        return insertedMessagesArray;
     }
-    
+
     private UserInstance extractUserInstance(Publication publication) {
         return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
-    
+
     private Publication createSamplePublication() throws TransactionFailedException {
         return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
     }
-    
+
     private List<Message> insertSampleMessages(Publication publication) {
         UserInstance publicationOwner = extractUserInstance(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
