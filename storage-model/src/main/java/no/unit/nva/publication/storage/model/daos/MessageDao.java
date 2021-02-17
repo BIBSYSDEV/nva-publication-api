@@ -7,6 +7,7 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
@@ -27,7 +28,7 @@ public class MessageDao extends Dao<Message>
         super();
         this.data = message;
     }
-    
+
     public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
         Message message = Message.builder()
                               .withOwner(owner.getUserIdentifier())
@@ -36,12 +37,21 @@ public class MessageDao extends Dao<Message>
                               .build();
         return new MessageDao(message);
     }
-    
+
+    public static MessageDao listMessagesForCustomerAndStatus(URI customerId, MessageStatus messageStatus) {
+
+        Message message = Message.builder()
+                              .withCustomerId(customerId)
+                              .withStatus(messageStatus)
+                              .build();
+        return new MessageDao(message);
+    }
+
     @Override
     public Message getData() {
         return data;
     }
-    
+
     @Override
     public void setData(Message data) {
         this.data = data;

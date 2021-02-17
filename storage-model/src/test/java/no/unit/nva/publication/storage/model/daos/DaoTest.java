@@ -198,7 +198,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                   .withKeyConditions(originalResource.byTypeCustomerStatusKey());
+                   .withKeyConditions(originalResource.fetchEntryByTypeCustomerStatusKey());
     }
 
     private JsonNode serializeInstance(Dao<?> daoInstance) throws JsonProcessingException {

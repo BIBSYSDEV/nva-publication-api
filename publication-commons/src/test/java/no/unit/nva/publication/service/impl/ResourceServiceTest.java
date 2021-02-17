@@ -848,7 +848,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         return client.query(new QueryRequest()
                                 .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
                                 .withIndexName(DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                                .withKeyConditions(resourceDao.byTypeCustomerStatusKey())
+                                .withKeyConditions(resourceDao.fetchEntryByTypeCustomerStatusKey())
         );
     }
     
