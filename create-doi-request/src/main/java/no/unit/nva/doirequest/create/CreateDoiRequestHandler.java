@@ -8,10 +8,10 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.exception.InternalErrorException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.exceptions.BadRequestException;
-import no.unit.nva.publication.service.impl.exceptions.InternalServerErrorException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -70,7 +70,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         } else if (exception instanceof ApiGatewayException) {
             return (ApiGatewayException) fail.getException();
         } else {
-            return new InternalServerErrorException(fail.getException());
+            return new InternalErrorException(fail.getException());
         }
     }
 

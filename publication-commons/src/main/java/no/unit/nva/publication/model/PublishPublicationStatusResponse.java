@@ -7,20 +7,22 @@ public class PublishPublicationStatusResponse {
 
     private final String message;
     private final Integer statusCode;
-
+    
     public PublishPublicationStatusResponse(String message, Integer statusCode) {
         this.message = message;
         this.statusCode = statusCode;
     }
-
+    
+    @JacocoGenerated
     public String getMessage() {
         return message;
     }
-
+    
+    @JacocoGenerated
     public Integer getStatusCode() {
         return statusCode;
     }
-
+    
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
