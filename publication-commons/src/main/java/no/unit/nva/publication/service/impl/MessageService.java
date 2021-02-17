@@ -143,7 +143,6 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     //TODO: check if these methods can be re-used by other services
-
     private <T> List<T> executeQuery(QueryRequest queryRequest, Class<T> daoClass) {
         QueryResult result = client.query(queryRequest);
         return extractDaos(result, daoClass);
