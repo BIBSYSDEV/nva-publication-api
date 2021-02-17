@@ -1,17 +1,22 @@
 package no.unit.nva.publication.service.impl;
 
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -22,8 +27,10 @@ import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     
@@ -52,7 +59,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
     
     @Test
-    public void createMessageStoresNewMessageInDatabase() {
+    public void createMessageStoresNewMessageInDatabase() throws TransactionFailedException {
         SortableIdentifier messageIdentifier = createSampleMessage();
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
@@ -61,7 +68,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
     
     @Test
-    public void getMessageByKeyReturnsStoredMessage() {
+    public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
+        messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+        
+        SortableIdentifier messageIdentifier = createSampleMessage();
+        assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
+        Executable action = this::createSampleMessage;
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, action);
+        assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
+    }
+    
+    @Test
+    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
         SortableIdentifier messageIdentifier = createSampleMessage();
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
@@ -70,7 +88,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
     
     @Test
-    public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource() throws TransactionFailedException {
+    public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
+        throws TransactionFailedException {
         var insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
         
@@ -85,6 +104,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(resourceMessages.getMessages(), contains(insertedMessagesArray));
     }
     
+    private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
+        return () -> SOME_IDENTIFIER;
+    }
+    
     private UserInstance extractUserInstance(Publication publication) {
         return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
@@ -96,21 +119,23 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     private List<Message> insertSampleMessages(Publication publication) {
         UserInstance publicationOwner = extractUserInstance(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
-                   .map(i -> createMessage(publication))
+                   .map(i -> FAKER.lorem().sentence())
+                   .map(attempt(message -> createSampleMessage(publication, message)))
+                   .map(Try::orElseThrow)
                    .map(identifier -> messageService.getMessage(publicationOwner, identifier))
                    .collect(Collectors.toList());
     }
     
-    private SortableIdentifier createMessage(Publication publication) {
+    private SortableIdentifier createSampleMessage(Publication publication, String message)
+        throws TransactionFailedException {
         UserInstance publicationOwner = extractUserInstance(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(),
-            FAKER.lorem().sentence());
+        return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(), message);
     }
     
-    private SortableIdentifier createMessage() {
+    private SortableIdentifier createSampleMessage() throws TransactionFailedException {
         return messageService.createMessage(SAMPLE_SENDER_USER_INSTANCE, SAMPLE_OWNER_INSTANCE,
-            MessageServiceTest.SOME_IDENTIFIER, FAKER.lorem().sentence());
+            MessageServiceTest.SOME_IDENTIFIER, MESSAGE_TEXT);
     }
     
     private Clock mockClock() {
@@ -120,10 +145,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
             .thenReturn(SECOND_MESSAGE_CREATION_TIME)
             .thenReturn(THIRD_MESSAGE_CREATION_TIME);
         return clock;
-    }
-    
-    private SortableIdentifier createSampleMessage() {
-        return createMessage();
     }
     
     private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier) {

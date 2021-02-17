@@ -67,7 +67,6 @@ public class Message implements WithIdentifier,
                                         Clock clock) {
         return Message.builder()
                    .withStatus(MessageStatus.UNREAD)
-                   .withIdentifier(SortableIdentifier.next())
                    .withResourceIdentifier(resourceIdentifier)
                    .withText(messageText)
                    .withSender(sender.getUserIdentifier())

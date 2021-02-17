@@ -1,6 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ public class MessageTest {
     public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Clock CLOCK = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
     private static final UserInstance SAMPLE_SENDER = sampleSender();
+    public static final String MESSAGE_IDENTIFIER_FIELD = "identifier";
     
     @Test
     public void statusStringReturnsStringRepresentationOfStatus() {
@@ -56,10 +58,10 @@ public class MessageTest {
     }
     
     @Test
-    public void simpleMessageReturnsMessageWithAllFieldsFieldIn() {
+    public void simpleMessageReturnsMessageWithAllFieldsFieldInExceptForIdentifier() {
         SortableIdentifier resourceIdentifier = SortableIdentifier.next();
         Message message = Message.simpleMessage(SAMPLE_SENDER, SAMPLE_OWNER, resourceIdentifier, SOME_MESSAGE, CLOCK);
-        assertThat(message, doesNotHaveEmptyValues());
+        assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
     }
     
     private static UserInstance sampleSender() {

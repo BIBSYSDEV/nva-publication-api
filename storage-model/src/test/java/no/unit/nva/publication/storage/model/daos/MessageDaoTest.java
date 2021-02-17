@@ -53,6 +53,7 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
     private Message insertSampleMessageInDatabase() {
         Message message =
             Message.simpleMessage(SAMPLE_SENDER, SAMPLE_OWNER, SAMPLE_RESOURCE_IDENTIFIER, SAMPLE_TEXT, CLOCK);
+        message.setIdentifier(SortableIdentifier.next());
         MessageDao dao = new MessageDao(message);
         client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());
         return message;

@@ -29,7 +29,7 @@ public abstract class ServiceWithTransactions {
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
     public static final String RAWTYPES = "rawtypes";
-
+    
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = ResourceDao.CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
@@ -37,18 +37,18 @@ public abstract class ServiceWithTransactions {
     public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
-
-    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dao) {
-        return newPutTransactionItem(dao, getTableName());
+    
+    protected <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
+        return newPutTransactionItem(dynamoEntry, getTableName());
     }
-
+    
     protected static <T extends WithPrimaryKey> TransactWriteItem newPutTransactionItem(T data, String tableName) {
-
+        
         Put put = new Put()
-            .withItem(toDynamoFormat(data))
-            .withTableName(tableName)
-            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+                      .withItem(toDynamoFormat(data))
+                      .withTableName(tableName)
+                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
 
