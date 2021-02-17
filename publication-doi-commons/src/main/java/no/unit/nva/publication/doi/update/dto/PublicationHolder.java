@@ -11,11 +11,22 @@ public class PublicationHolder {
     private final String type;
     private final Publication item;
 
+    @JacocoGenerated
+    @JsonCreator
+    public PublicationHolder(
+        @JsonProperty("type") String type,
+        @JsonProperty("item") Publication publication) {
+        this.type = type;
+        this.item = publication;
+    }
+
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getType(), getItem());
     }
 
+    @JacocoGenerated
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -29,18 +40,11 @@ public class PublicationHolder {
     }
 
     @JacocoGenerated
-    @JsonCreator
-    public PublicationHolder(
-        @JsonProperty("type") String type,
-        @JsonProperty("item") Publication publication) {
-        this.type = type;
-        this.item = publication;
-    }
-
     public String getType() {
         return type;
     }
 
+    @JacocoGenerated
     public Publication getItem() {
         return item;
     }

@@ -19,7 +19,6 @@ import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.PublicationsDynamoDBLocal;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -30,7 +29,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
@@ -54,9 +52,6 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
-
-    @Rule
-    public PublicationsDynamoDBLocal db = new PublicationsDynamoDBLocal();
 
     @BeforeEach
     public void setUp() {
