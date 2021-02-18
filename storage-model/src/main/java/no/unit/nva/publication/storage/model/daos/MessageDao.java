@@ -7,6 +7,7 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(MessageDao.TYPE)
@@ -25,6 +26,15 @@ public class MessageDao extends Dao<Message>
     public MessageDao(Message message) {
         super();
         this.data = message;
+    }
+    
+    public static MessageDao queryObject(UserInstance owner, SortableIdentifier identifier) {
+        Message message = Message.builder()
+                              .withOwner(owner.getUserIdentifier())
+                              .withCustomerId(owner.getOrganizationUri())
+                              .withIdentifier(identifier)
+                              .build();
+        return new MessageDao(message);
     }
     
     @Override
@@ -76,9 +86,13 @@ public class MessageDao extends Dao<Message>
         return Objects.equals(getData(), that.getData());
     }
     
+    public static String joinByResourceOrderedContainedType() {
+        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + TYPE;
+    }
+    
     @Override
     public String joinByResourceOrderedType() {
-        return JOIN_BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + getType();
+        return joinByResourceOrderedContainedType();
     }
     
     @Override

@@ -10,9 +10,10 @@ dependencies {
     compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
+
+
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
     testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
-
-
     testImplementation project (":publication-testing")
 
 

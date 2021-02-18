@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -35,6 +37,7 @@ public class Message implements WithIdentifier,
     private boolean isDoiRequestRelated;
     private SortableIdentifier resourceIdentifier;
     private String text;
+    private Instant createdTime;
     
     @JacocoGenerated
     public Message() {
@@ -55,5 +58,23 @@ public class Message implements WithIdentifier,
     @JacocoGenerated
     public String toString() {
         return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
+    }
+    
+    public static Message simpleMessage(UserInstance sender,
+                                        UserInstance resourceOwner,
+                                        SortableIdentifier resourceIdentifier,
+                                        String messageText,
+                                        Clock clock) {
+        return Message.builder()
+                   .withStatus(MessageStatus.UNREAD)
+                   .withIdentifier(SortableIdentifier.next())
+                   .withResourceIdentifier(resourceIdentifier)
+                   .withText(messageText)
+                   .withSender(sender.getUserIdentifier())
+                   .withOwner(resourceOwner.getUserIdentifier())
+                   .withCustomerId(sender.getOrganizationUri())
+                   .withIsDoiRequestRelated(false)
+                   .withCreatedTime(clock.instant())
+                   .build();
     }
 }

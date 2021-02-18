@@ -12,6 +12,7 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -89,6 +90,7 @@ public final class DaoUtils {
                               .withCustomerId(SOME_CUSTOMER_ID)
                               .withIsDoiRequestRelated(true)
                               .withText(SOME_TEXT)
+                              .withCreatedTime(Instant.now())
                               .build();
         assertThat(message, doesNotHaveEmptyValues());
         return new MessageDao(message);

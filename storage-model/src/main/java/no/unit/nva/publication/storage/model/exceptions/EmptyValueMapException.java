@@ -1,4 +1,4 @@
-package no.unit.nva.publication.exception;
+package no.unit.nva.publication.storage.model.exceptions;
 
 public class EmptyValueMapException extends RuntimeException {
     
