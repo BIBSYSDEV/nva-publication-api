@@ -1,6 +1,7 @@
 package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,7 +22,6 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -73,7 +73,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
 
-    @ParameterizedTest(name = "handler returns bad request when CreateRequest contains \"{0}\"")
+    @ParameterizedTest(name = "handler returns bad request when CreateRequest contains message: \"{0}\"")
     @NullAndEmptySource
     public void handlerReturnsBadRequestWhenCreateRequestContainsNoText(String emptyMessage)
         throws IOException {
@@ -99,7 +99,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(invalidIdentifier.toString()));
-        assertThat(problem.getDetail(), containsString(ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
+        assertThat(problem.getDetail(), containsString(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
     }
 
     private String extractLocationFromHttpHeaders() throws JsonProcessingException {
