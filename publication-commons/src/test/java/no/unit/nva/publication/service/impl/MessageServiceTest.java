@@ -26,23 +26,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
-    
+
     public static final Faker FAKER = new Faker();
     public static final URI SOME_ORG = URI.create("https://example.org/1234");
     public static final String SOME_SENDER = "some@user";
     public static final UserInstance SAMPLE_SENDER_USER_INSTANCE = new UserInstance(SOME_SENDER, SOME_ORG);
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
-    public static final String MESSAGE_TEXT = "message text";
     public static final String SOME_OWNER = "some@owner";
     public static final UserInstance SAMPLE_OWNER_INSTANCE = new UserInstance(SOME_OWNER, SOME_ORG);
     public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Instant SECOND_MESSAGE_CREATION_TIME = MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant THIRD_MESSAGE_CREATION_TIME = SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final int NUMBER_OF_SAMPLE_MESSAGES = 3;
-    
+
     private MessageService messageService;
     private ResourceService resourceService;
-    
+
     @BeforeEach
     public void initialize() {
         super.init();
@@ -50,25 +49,31 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
-    
+
     @Test
     public void createMessageStoresNewMessageInDatabase() {
-        SortableIdentifier messageIdentifier = createSampleMessage();
+        String expectedMessageText = randomString();
+        SortableIdentifier messageIdentifier = createMessage(expectedMessageText);
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
-        
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMessageText);
+
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
-    
+
+    public String randomString() {
+        return FAKER.lorem().sentence();
+    }
+
     @Test
     public void getMessageByKeyReturnsStoredMessage() {
-        SortableIdentifier messageIdentifier = createSampleMessage();
+        String expectedMeesageText = randomString();
+        SortableIdentifier messageIdentifier = createMessage(expectedMeesageText);
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
-        
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMeesageText);
+
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
-    
+
     @Test
     public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource() throws TransactionFailedException {
         var insertedPublication = createSamplePublication();
@@ -103,19 +108,19 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .map(identifier -> messageService.getMessage(publicationOwner, identifier))
                    .collect(Collectors.toList());
     }
-    
+
     private SortableIdentifier createMessage(Publication publication) {
         UserInstance publicationOwner = extractUserInstance(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(),
-            FAKER.lorem().sentence());
+            randomString());
     }
-    
-    private SortableIdentifier createMessage() {
+
+    private SortableIdentifier createMessage(String text) {
         return messageService.createMessage(SAMPLE_SENDER_USER_INSTANCE, SAMPLE_OWNER_INSTANCE,
-            MessageServiceTest.SOME_IDENTIFIER, FAKER.lorem().sentence());
+            MessageServiceTest.SOME_IDENTIFIER, text);
     }
-    
+
     private Clock mockClock() {
         Clock clock = mock(Clock.class);
         when(clock.instant())
@@ -124,12 +129,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
             .thenReturn(THIRD_MESSAGE_CREATION_TIME);
         return clock;
     }
-    
-    private SortableIdentifier createSampleMessage() {
-        return createMessage();
-    }
-    
-    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier) {
+
+    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier, String text) {
         return Message.builder()
                    .withCreatedTime(MESSAGE_CREATION_TIME)
                    .withIdentifier(savedMessageIdentifier)
@@ -138,7 +139,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .withOwner(SOME_OWNER)
                    .withSender(SOME_SENDER)
                    .withStatus(MessageStatus.UNREAD)
-                   .withText(MESSAGE_TEXT)
+                   .withText(text)
                    .build();
     }
 }
