@@ -47,6 +47,14 @@ public class MessageDao extends Dao<Message>
         return new MessageDao(message);
     }
 
+    public static MessageDao listMessagesAndResourcesForUser(UserInstance owner) {
+        Message message = Message.builder()
+                              .withCustomerId(owner.getOrganizationUri())
+                              .withOwner(owner.getUserIdentifier())
+                              .build();
+        return new MessageDao(message);
+    }
+
     @Override
     public Message getData() {
         return data;

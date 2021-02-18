@@ -100,6 +100,10 @@ public class MessageService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
+    public List<ResourceMessages> listMessagesForUser(UserInstance owner) {
+        MessageDao queryObject = MessageDao.listMessagesAndResourcesForUser(owner);
+    }
+
     @Override
     protected String getTableName() {
         return tableName;
