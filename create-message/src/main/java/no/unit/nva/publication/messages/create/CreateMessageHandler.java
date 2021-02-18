@@ -9,6 +9,9 @@ import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.exception.InvalidInputException;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -16,7 +19,9 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +31,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     private final MessageService messageService;
     private final ResourceService resourceService;
 
+    @JacocoGenerated
     public CreateMessageHandler() {
         this(defaultClient(), new Environment());
     }
@@ -47,15 +53,20 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         throws ApiGatewayException {
         UserInstance sender = createSender(requestInfo);
 
-        Publication publication = resourceService.getPublicationByIdentifier(input.getPublicationIdentifier());
+        Publication publication = fetchExistingPublication(input);
         UserInstance owner = extractOwner(publication);
 
         SortableIdentifier messageIdentifier =
-            messageService.createMessage(sender, owner, publication.getIdentifier(), input.getMessage());
+            sendMessage(input, sender, publication, owner);
 
         addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
 
         return null;
+    }
+
+    @JacocoGenerated
+    private static AmazonDynamoDB defaultClient() {
+        return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
     @Override
@@ -71,8 +82,25 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return new MessageService(client, Clock.systemDefaultZone());
     }
 
-    private static AmazonDynamoDB defaultClient() {
-        return AmazonDynamoDBClientBuilder.defaultClient();
+    private Publication fetchExistingPublication(CreateMessageRequest input) throws BadRequestException {
+        try {
+            return resourceService.getPublicationByIdentifier(input.getPublicationIdentifier());
+        } catch (NotFoundException e) {
+            throw new BadRequestException(e.getMessage(), e);
+        }
+    }
+
+    private SortableIdentifier sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication,
+                                           UserInstance owner) throws TransactionFailedException, BadRequestException {
+        try {
+            return messageService.createMessage(sender, owner, publication.getIdentifier(), input.getMessage());
+        } catch (InvalidInputException exception) {
+            throw handleBadRequests(exception);
+        }
+    }
+
+    private BadRequestException handleBadRequests(InvalidInputException exception) {
+        return new BadRequestException(exception.getMessage(), exception);
     }
 
     private UserInstance createSender(RequestInfo requestInfo) {

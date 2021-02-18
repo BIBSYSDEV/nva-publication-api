@@ -1,8 +1,10 @@
 package no.unit.nva.publication.messages.create;
 
+import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -19,6 +21,7 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -29,6 +32,9 @@ import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.zalando.problem.Problem;
 
 public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
@@ -41,9 +47,10 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     private CreateMessageHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
+    private Publication samplePublication;
 
     @BeforeEach
-    public void init() {
+    public void initialize() throws TransactionFailedException {
         super.init();
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
@@ -51,38 +58,65 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         when(environment.readEnv(anyString())).thenReturn(ALLOW_ALL_ORIGIN);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
+        samplePublication = createSamplePublication();
     }
 
     @Test
     public void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
-        throws IOException, TransactionFailedException {
-        Publication samplePublication = createSamplePublication();
-        CreateMessageRequest requestBody = createSampleMessage(samplePublication);
+        throws IOException {
+        CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
 
-        input = createInput(samplePublication, requestBody);
+        input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
         String messageIdentifier = extractLocationFromHttpHeaders();
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageIdentifier);
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
 
+    @ParameterizedTest(name = "handler returns bad request when CreateRequest contains \"{0}\"")
+    @NullAndEmptySource
+    public void handlerReturnsBadRequestWhenCreateRequestContainsNoText(String emptyMessage)
+        throws IOException {
+        var requestBody = createSampleMessage(samplePublication, emptyMessage);
+        input = createInput(requestBody);
+        handler.handleRequest(input, output, CONTEXT);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(output);
+        Problem problem = response.getBodyObject(Problem.class);
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+        assertThat(problem.getDetail(), containsString(MessageService.EMPTY_MESSAGE_ERROR));
+    }
+
+    @Test
+    public void handlerReturnsBadRequestWhenCreateRequestContainsNonExistentPublicationIdentifier()
+        throws IOException {
+        SortableIdentifier invalidIdentifier = SortableIdentifier.next();
+        var requestBody = createSampleMessage(invalidIdentifier, randomString());
+        input = createInput(requestBody);
+        handler.handleRequest(input, output, CONTEXT);
+
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(output);
+        var problem = response.getBodyObject(Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+        assertThat(problem.getDetail(), containsString(invalidIdentifier.toString()));
+        assertThat(problem.getDetail(), containsString(ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
+    }
+
     private String extractLocationFromHttpHeaders() throws JsonProcessingException {
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output);
-        String messageIdentifier = response.getHeaders().get(HttpHeaders.LOCATION);
-        return messageIdentifier;
+        return response.getHeaders().get(HttpHeaders.LOCATION);
     }
 
     private Message fetchMessageDirectlyFromDb(Publication samplePublication, String messageIdentifier) {
         UserInstance owner = extractOwner(samplePublication);
-        Message message = messageService.getMessage(owner, new SortableIdentifier(messageIdentifier));
-        return message;
+        return messageService.getMessage(owner, new SortableIdentifier(messageIdentifier));
     }
 
     private UserInstance extractOwner(Publication samplePublication) {
         return new UserInstance(samplePublication.getOwner(), samplePublication.getPublisher().getId());
     }
 
-    private InputStream createInput(Publication samplePublication, CreateMessageRequest requestBody)
+    private InputStream createInput(CreateMessageRequest requestBody)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.objectMapper)
                    .withBody(requestBody)
@@ -91,10 +125,14 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
                    .build();
     }
 
-    private CreateMessageRequest createSampleMessage(Publication savedPublication) {
+    private CreateMessageRequest createSampleMessage(Publication savedPublication, String message) {
+        return createSampleMessage(savedPublication.getIdentifier(), message);
+    }
+
+    private CreateMessageRequest createSampleMessage(SortableIdentifier identifier, String message) {
         CreateMessageRequest requestBody = new CreateMessageRequest();
-        requestBody.setMessage(randomString());
-        requestBody.setPublicationIdentifier(savedPublication.getIdentifier());
+        requestBody.setMessage(message);
+        requestBody.setPublicationIdentifier(identifier);
         return requestBody;
     }
 
