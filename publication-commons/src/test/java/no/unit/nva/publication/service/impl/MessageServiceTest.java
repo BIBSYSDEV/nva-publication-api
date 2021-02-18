@@ -66,10 +66,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void getMessageByKeyReturnsStoredMessage() {
-        String expectedMeesageText = randomString();
-        SortableIdentifier messageIdentifier = createMessage(expectedMeesageText);
+        String expectedMessageText = randomString();
+        SortableIdentifier messageIdentifier = createMessage(expectedMessageText);
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMeesageText);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMessageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
