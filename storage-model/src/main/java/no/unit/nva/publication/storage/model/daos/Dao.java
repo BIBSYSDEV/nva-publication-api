@@ -146,16 +146,20 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     private String customerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }
-    
+
     public static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
-        if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
+        if (mapIsNotEmpty(valuesMap)) {
             Item item = ItemUtils.toItem(valuesMap);
             return attempt(() -> objectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
         } else {
             throw new EmptyValueMapException();
         }
     }
-    
+
+    private static boolean mapIsNotEmpty(Map<String, AttributeValue> valuesMap) {
+        return nonNull(valuesMap) && !valuesMap.isEmpty();
+    }
+
     public Map<String, AttributeValue> toDynamoFormat() {
         Item item = attempt(() -> Item.fromJSON(objectMapper.writeValueAsString(this))).orElseThrow();
         return ItemUtils.toAttributeValues(item);
