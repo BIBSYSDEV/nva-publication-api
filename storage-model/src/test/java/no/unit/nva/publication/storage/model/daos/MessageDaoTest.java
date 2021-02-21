@@ -11,6 +11,9 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
@@ -37,6 +40,7 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void queryObjectCreatesObjectForRetrievingMessageByPrimaryKey() {
+
         Message message = insertSampleMessageInDatabase();
         MessageDao queryObject = MessageDao.queryObject(SAMPLE_OWNER, message.getIdentifier());
         Message retrievedMessage = fetchMessageFromDatabase(queryObject);
@@ -53,6 +57,13 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(queryObject.getData().getStatus(), is(equalTo(expectedMessageStatus)));
     }
 
+    @Test
+    public void listMessagesAndResourcesForUserReturnsDaoWithOwnerAndPublisher() {
+        MessageDao actualMessage = MessageDao.listMessagesAndResourcesForUser(SAMPLE_OWNER);
+        assertThat(actualMessage.getOwner(), is(equalTo(SAMPLE_OWNER.getUserIdentifier())));
+        assertThat(actualMessage.getCustomerId(), is(equalTo(SAMPLE_OWNER.getOrganizationUri())));
+    }
+
     private Message fetchMessageFromDatabase(MessageDao queryObject) {
         return attempt(() -> client.getItem(RESOURCES_TABLE_NAME, queryObject.primaryKey()))
                    .map(GetItemResult::getItem)
@@ -62,8 +73,14 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Message insertSampleMessageInDatabase() {
+        Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
+        Publication publication = new Publication.Builder()
+                                      .withOwner(SAMPLE_OWNER.getUserIdentifier())
+                                      .withIdentifier(SAMPLE_RESOURCE_IDENTIFIER)
+                                      .withPublisher(publisher)
+                                      .build();
         Message message =
-            Message.simpleMessage(SAMPLE_SENDER, SAMPLE_OWNER, SAMPLE_RESOURCE_IDENTIFIER, SAMPLE_TEXT, CLOCK);
+            Message.simpleMessage(SAMPLE_SENDER, publication, SAMPLE_TEXT, CLOCK);
         message.setIdentifier(SortableIdentifier.next());
         MessageDao dao = new MessageDao(message);
         client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());

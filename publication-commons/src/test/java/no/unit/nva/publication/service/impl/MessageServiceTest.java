@@ -1,15 +1,15 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Clock;
@@ -21,15 +21,20 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.attempt.Try;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -39,17 +44,17 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final Faker FAKER = new Faker();
     public static final URI SOME_ORG = URI.create("https://example.org/1234");
     public static final String SOME_SENDER = "some@user";
-    public static final UserInstance SAMPLE_SENDER_USER_INSTANCE = new UserInstance(SOME_SENDER, SOME_ORG);
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
-    public static final String MESSAGE_TEXT = "message text";
     public static final String SOME_OWNER = "some@owner";
     public static final UserInstance SAMPLE_OWNER_INSTANCE = new UserInstance(SOME_OWNER, SOME_ORG);
-    public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
+    public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
+    public static final Instant MESSAGE_CREATION_TIME = PUBLICATION_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant SECOND_MESSAGE_CREATION_TIME = MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant THIRD_MESSAGE_CREATION_TIME = SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final int NUMBER_OF_SAMPLE_MESSAGES = 3;
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
+    public static final Javers JAVERS = JaversBuilder.javers().build();
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -64,31 +69,14 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createMessageStoresNewMessageInDatabase() throws TransactionFailedException {
-        SortableIdentifier messageIdentifier = createSampleMessage();
-        Message savedMessage = fetchMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-
-    @Test
-    public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
-        messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
-
-        SortableIdentifier messageIdentifier = createSampleMessage();
-        assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
-        Executable action = this::createSampleMessage;
-        TransactionFailedException exception = assertThrows(TransactionFailedException.class, action);
-        assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
-    }
-
-    @Test
-    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
-        SortableIdentifier messageIdentifier = createSampleMessage();
-        Message savedMessage = fetchMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier());
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
+        Publication publication = createSamplePublication();
+        UserInstance owner = extractOwner(publication);
+        String messageText = randomString();
+        SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(owner, messageIdentifier);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+        String difference = difference(savedMessage, expectedMessage);
+        assertThat(difference, savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -97,15 +85,45 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
-        UserInstance userInstance = extractUserInstance(insertedPublication);
+        UserInstance userInstance = extractOwner(insertedPublication);
         ResourceMessages resourceMessages =
             messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
-        Message[] insertedMessagesArray = new Message[insertedMessages.size()];
-        insertedMessages.toArray(insertedMessagesArray);
-        Publication actualPublication = resourceMessages.getResource().toPublication();
 
-        assertThat(actualPublication, is(equalTo(insertedPublication)));
-        assertThat(resourceMessages.getMessages(), contains(insertedMessagesArray));
+        Publication actualPublication = resourceMessages.getPublication();
+
+        Publication expectedPublication = constructExpectedPublication(insertedPublication);
+        Diff diff = JAVERS.compare(actualPublication, expectedPublication);
+        assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
+        MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
+        assertThat(resourceMessages.getMessages(), containsInAnyOrder(expectedMessages));
+    }
+
+    @Test
+    public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
+        messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+        Publication publication = createSamplePublication();
+        SortableIdentifier messageIdentifier = createSampleMessage(publication, randomString());
+        assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
+        Executable action = () -> createSampleMessage(publication, randomString());
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getCause(), is(instanceOf(TransactionFailedException.class)));
+    }
+
+    @Test
+    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
+        Publication publication = createSamplePublication();
+        String messageText = randomString();
+        SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
+    }
+
+    private <T> String difference(T savedMessage, T expectedMessage) {
+        Javers javers = JaversBuilder.javers().build();
+        Diff diff = javers.compare(savedMessage, expectedMessage);
+        return diff.prettyPrint();
     }
 
     @Test
@@ -129,14 +147,55 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> actualMessages =
             messageService.listMessages(customerId, MessageStatus.UNREAD);
 
-        var expectedMessages = allMessagesOfAllCustomers.stream()
-                                   .filter(message -> message.getCustomerId().equals(customerId))
-                                   .collect(Collectors.toList());
+        List<Message> expectedMessages = allMessagesOfAllCustomers.stream()
+                                             .filter(message -> message.getCustomerId().equals(customerId))
+                                             .collect(Collectors.toList());
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
     }
 
-    public String randomString() {
+    @Test
+    public void listMessagesForUserReturnsAllMessagesConnectedToUser() throws TransactionFailedException {
+        Publication publication1 = createSamplePublication();
+        Publication publication2 = createSamplePublication();
+
+        List<Message> messagesForPublication1 = insertSampleMessages(publication1);
+        List<Message> messagesForPublication2 = insertSampleMessages(publication2);
+
+        List<ResourceMessages> actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
+
+        List<ResourceMessages> expectedMessages = List.of(
+            ResourceMessages.fromMessageList(messagesForPublication1),
+            ResourceMessages.fromMessageList(messagesForPublication2)
+        );
+
+        assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
+        List<MessageDto> messages = insertedMessages.stream()
+                                        .map(MessageDto::fromMessage)
+                                        .collect(Collectors.toList());
+        MessageDto[] messagesArray = new MessageDto[messages.size()];
+        messages.toArray(messagesArray);
+        return messagesArray;
+    }
+
+    private Publication constructExpectedPublication(Publication insertedPublication) {
+        EntityDescription entityDescription =
+            new EntityDescription.Builder()
+                .withMainTitle(insertedPublication.getEntityDescription().getMainTitle())
+                .build();
+
+        return new Publication.Builder()
+                   .withIdentifier(insertedPublication.getIdentifier())
+                   .withOwner(insertedPublication.getOwner())
+                   .withPublisher(insertedPublication.getPublisher())
+                   .withEntityDescription(entityDescription)
+                   .build();
+    }
+
+    private String randomString() {
         return FAKER.lorem().sentence();
     }
 
@@ -157,7 +216,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
         for (Publication createdPublication : createdPublications) {
             var messageIdentifier = createSampleMessage(createdPublication, randomString());
-            var owner = extractUserInstance(createdPublication);
+            var owner = extractOwner(createdPublication);
             var savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
@@ -183,16 +242,12 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return () -> SOME_IDENTIFIER;
     }
 
-    private UserInstance extractUserInstance(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
-    }
-
     private Publication createSamplePublication() throws TransactionFailedException {
         return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
     }
 
     private List<Message> insertSampleMessages(Publication publication) {
-        UserInstance publicationOwner = extractUserInstance(publication);
+        UserInstance publicationOwner = extractOwner(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
                    .map(ignoredValue -> randomString())
                    .map(message -> createSampleMessage(publication, message))
@@ -205,37 +260,39 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private SortableIdentifier createSampleMessage(Publication publication, String message) {
-        UserInstance publicationOwner = extractUserInstance(publication);
+        UserInstance publicationOwner = extractOwner(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return attempt(
-            () -> messageService.createMessage(sender, publicationOwner, publication.getIdentifier(), message))
-                   .orElseThrow();
+        return createMessage(publication, message, sender);
     }
 
-    private SortableIdentifier createSampleMessage() throws TransactionFailedException {
-        return messageService.createMessage(SAMPLE_SENDER_USER_INSTANCE, SAMPLE_OWNER_INSTANCE,
-            MessageServiceTest.SOME_IDENTIFIER, MESSAGE_TEXT);
+    private SortableIdentifier createMessage(Publication publication, String message, UserInstance sender) {
+        return attempt(() -> messageService.createMessage(sender, publication, message)).orElseThrow();
     }
 
     private Clock mockClock() {
         Clock clock = mock(Clock.class);
         when(clock.instant())
+            .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(MESSAGE_CREATION_TIME)
             .thenReturn(SECOND_MESSAGE_CREATION_TIME)
             .thenReturn(THIRD_MESSAGE_CREATION_TIME);
         return clock;
     }
 
-    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier) {
+    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier,
+                                             Publication publication,
+                                             String messageText) {
         return Message.builder()
                    .withCreatedTime(MESSAGE_CREATION_TIME)
                    .withIdentifier(savedMessageIdentifier)
-                   .withResourceIdentifier(SOME_IDENTIFIER)
-                   .withCustomerId(SOME_ORG)
-                   .withOwner(SOME_OWNER)
+                   .withResourceIdentifier(publication.getIdentifier())
+                   .withCustomerId(publication.getPublisher().getId())
+                   .withOwner(publication.getOwner())
                    .withSender(SOME_SENDER)
                    .withStatus(MessageStatus.UNREAD)
-                   .withText(MESSAGE_TEXT)
+                   .withText(messageText)
+                   .withIsDoiRequestRelated(false)
+                   .withResourceTitle(publication.getEntityDescription().getMainTitle())
                    .build();
     }
 }

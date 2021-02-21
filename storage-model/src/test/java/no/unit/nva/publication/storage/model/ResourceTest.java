@@ -65,21 +65,21 @@ public class ResourceTest {
     public static final String SAMPLE_ISSN = "2049-3630";
     public static final URI SOME_HOST = URI.create("https://example.org/");
     public static final String DOI_REQUEST_FIELD = "doiRequest";
-    
+
     public static final DoiRequest EMPTY_DOI_REQUEST = null;
     public static final boolean NON_DEFAULT_BOOLEAN_VALUE = true;
-    
+
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
     private final Javers javers = JaversBuilder.javers().build();
-    private SortableIdentifier sampleIdentifer;
-    
+    private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
+
     @Test
     public void builderContainsAllFields() {
         Resource resource = sampleResource();
         assertThat(resource, doesNotHaveEmptyValues());
     }
-    
+
     @Test
     public void copyContainsAllFields() {
         Resource resource = sampleResource();
@@ -117,24 +117,24 @@ public class ResourceTest {
     
     @Test
     public void emptyResourceReturnsResourceWithTheMinimumNecessaryFieldsNotNull() {
-        
-        Resource emptyResource = Resource.emptyResource(SOME_OWNER, SOME_HOST, sampleIdentifer);
-        assertThat(emptyResource.getIdentifier(), is(equalTo(sampleIdentifer)));
+
+        Resource emptyResource = Resource.emptyResource(SOME_OWNER, SOME_HOST, sampleIdentifier);
+        assertThat(emptyResource.getIdentifier(), is(equalTo(sampleIdentifier)));
         assertThat(emptyResource.getPublisher().getId(), is(equalTo(SOME_HOST)));
         assertThat(emptyResource.getOwner(), is(equalTo(SOME_OWNER)));
     }
     
     @Test
     public void queryObjectReturnsResourceWithIdentifier() {
-        Resource resource = Resource.resourceQueryObject(sampleIdentifer);
-        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifer)));
+        Resource resource = Resource.resourceQueryObject(sampleIdentifier);
+        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
     }
     
     @Test
     public void queryObjectReturnsResourceWithIdentifierAndPublisher() {
         UserInstance userInstance = new UserInstance(SOME_OWNER, SOME_HOST);
-        Resource resource = Resource.resourceQueryObject(userInstance, sampleIdentifer);
-        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifer)));
+        Resource resource = Resource.resourceQueryObject(userInstance, sampleIdentifier);
+        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
         assertThat(resource.getPublisher().getId(), is(equalTo(SOME_HOST)));
         assertThat(resource.getOwner(), is(equalTo(SOME_OWNER)));
     }

@@ -54,24 +54,21 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         UserInstance sender = createSender(requestInfo);
 
         Publication publication = fetchExistingPublication(input);
-        UserInstance owner = extractOwner(publication);
-
-        SortableIdentifier messageIdentifier =
-            sendMessage(input, sender, publication, owner);
+        SortableIdentifier messageIdentifier = sendMessage(input, sender, publication);
 
         addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
 
         return null;
     }
 
-    @JacocoGenerated
-    private static AmazonDynamoDB defaultClient() {
-        return AmazonDynamoDBClientBuilder.defaultClient();
-    }
-
     @Override
     protected Integer getSuccessStatusCode(CreateMessageRequest input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
+    }
+
+    @JacocoGenerated
+    private static AmazonDynamoDB defaultClient() {
+        return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
@@ -90,10 +87,12 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         }
     }
 
-    private SortableIdentifier sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication,
-                                           UserInstance owner) throws TransactionFailedException, BadRequestException {
+    private SortableIdentifier sendMessage(CreateMessageRequest input,
+                                           UserInstance sender,
+                                           Publication publication
+    ) throws TransactionFailedException, BadRequestException {
         try {
-            return messageService.createMessage(sender, owner, publication.getIdentifier(), input.getMessage());
+            return messageService.createMessage(sender, publication, input.getMessage());
         } catch (InvalidInputException exception) {
             throw handleBadRequests(exception);
         }
@@ -111,9 +110,5 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     private Map<String, String> locationHeader(String messageIdentifier) {
         return Map.of(HttpHeaders.LOCATION, messageIdentifier);
-    }
-
-    private UserInstance extractOwner(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
 }

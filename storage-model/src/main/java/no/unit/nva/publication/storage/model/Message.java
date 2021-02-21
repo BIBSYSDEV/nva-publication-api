@@ -7,10 +7,12 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -28,7 +30,7 @@ public class Message implements WithIdentifier,
                                 RowLevelSecurity,
                                 ResourceUpdate,
                                 ConnectedToResource {
-    
+
     private SortableIdentifier identifier;
     private String owner;
     private URI customerId;
@@ -38,42 +40,50 @@ public class Message implements WithIdentifier,
     private SortableIdentifier resourceIdentifier;
     private String text;
     private Instant createdTime;
-    
+    private String resourceTitle;
+
     @JacocoGenerated
     public Message() {
-    
+
     }
-    
+
+    public static Message simpleMessage(UserInstance sender,
+                                        Publication publication,
+                                        String messageText,
+                                        Clock clock) {
+        return Message.builder()
+                   .withStatus(MessageStatus.UNREAD)
+                   .withResourceIdentifier(publication.getIdentifier())
+                   .withCustomerId(sender.getOrganizationUri())
+                   .withText(messageText)
+                   .withSender(sender.getUserIdentifier())
+                   .withOwner(publication.getOwner())
+                   .withResourceTitle(extractTitle(publication))
+                   .withIsDoiRequestRelated(false)
+                   .withCreatedTime(clock.instant())
+                   .build();
+    }
+
     @Override
     public String getStatusString() {
         return status.toString();
     }
-    
+
     @Override
     public Publication toPublication() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     @JacocoGenerated
     public String toString() {
         return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
     }
-    
-    public static Message simpleMessage(UserInstance sender,
-                                        UserInstance resourceOwner,
-                                        SortableIdentifier resourceIdentifier,
-                                        String messageText,
-                                        Clock clock) {
-        return Message.builder()
-                   .withStatus(MessageStatus.UNREAD)
-                   .withResourceIdentifier(resourceIdentifier)
-                   .withText(messageText)
-                   .withSender(sender.getUserIdentifier())
-                   .withOwner(resourceOwner.getUserIdentifier())
-                   .withCustomerId(sender.getOrganizationUri())
-                   .withIsDoiRequestRelated(false)
-                   .withCreatedTime(clock.instant())
-                   .build();
+
+    private static String extractTitle(Publication publication) {
+        return Optional.of(publication)
+                   .map(Publication::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .orElse(null);
     }
 }

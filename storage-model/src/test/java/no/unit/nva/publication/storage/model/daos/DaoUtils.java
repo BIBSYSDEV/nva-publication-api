@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,7 +23,7 @@ import no.unit.nva.publication.storage.model.WithIdentifier;
 import nva.commons.core.attempt.Try;
 
 public final class DaoUtils {
-    
+
     public static final String SOME_OWNER = "some@owner";
     public static final String SOME_USER = "some@user";
     public static final URI SOME_CUSTOMER_ID = URI.create("https://some.example.org/123");
@@ -67,6 +68,7 @@ public final class DaoUtils {
                               .withOwner(SOME_OWNER)
                               .withSender(SOME_USER)
                               .withResourceIdentifier(SortableIdentifier.next())
+                              .withResourceTitle(randomString())
                               .withCustomerId(SOME_CUSTOMER_ID)
                               .withIsDoiRequestRelated(true)
                               .withText(SOME_TEXT)

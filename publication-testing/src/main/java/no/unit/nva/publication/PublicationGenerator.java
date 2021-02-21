@@ -1,6 +1,7 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -29,6 +30,7 @@ import nva.commons.core.JacocoGenerated;
 
 public final class PublicationGenerator {
 
+    private static final Faker FAKER = Faker.instance();
     public static final String OWNER = "owner@example.org";
     public static final String PUBLISHER_ID = "http://example.org/123";
 
@@ -132,14 +134,18 @@ public final class PublicationGenerator {
             .withIssue("2")
             .withVolume("Volume 1")
             .withPages(new Range("beginRange", "endRange"))
-            .build();
+                                                                       .build();
         Reference reference = new Reference.Builder().withPublicationInstance(publicationInstance).build();
 
         return new EntityDescription.Builder()
-            .withMainTitle("DynamoDB Local Testing")
-            .withDate(new PublicationDate.Builder().withYear("2020").withMonth("2").withDay("31").build())
-            .withReference(reference)
-            .withContributors(List.of(contributor))
-            .build();
+                   .withMainTitle(randomString())
+                   .withDate(new PublicationDate.Builder().withYear("2020").withMonth("2").withDay("31").build())
+                   .withReference(reference)
+                   .withContributors(List.of(contributor))
+                   .build();
+    }
+
+    private static String randomString() {
+        return FAKER.lorem().sentence();
     }
 }
