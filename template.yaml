@@ -352,6 +352,30 @@ Resources:
                 responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
+          /messages:
+            post:
+              summary: Create a message.
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: body
+                  name: createMessageReuqest
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateMessageRequest'
+              responses:
+                '201':
+                  description: "Created"
+            get:
+              summary: Get messages for a user.
+              security:
+                - CognitoUserPool: [ ]
+              responses:
+                '200':
+                  description: "OK"
+                  schema:
+                    $ref: '#/definitions/ResourceMessages'
+
         definitions:
           Publication:
             type: object
@@ -398,6 +422,33 @@ Resources:
               - REQUESTED
               - APPROVED
               - REJECTED
+          ResourceMessages:
+            description: Message list for a Publication
+            type: object
+            properties:
+              publication:
+                $ref: '#/definitions/Publication'
+              messages:
+                type: array
+                items:
+                  $ref: '#/definitions/Message'
+          Message:
+            description: Message
+            type: object
+            properties:
+              sender:
+                type: string
+              owner:
+                type: string
+              date:
+                type: string
+          CreateMessageRequest:
+            type: object
+            properties:
+              publicationIdentifier:
+                type: string
+              message:
+                type: string
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
