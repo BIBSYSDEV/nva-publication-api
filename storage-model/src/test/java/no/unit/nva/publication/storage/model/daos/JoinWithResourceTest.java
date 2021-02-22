@@ -3,9 +3,9 @@ package no.unit.nva.publication.storage.model.daos;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.doiRequestDao;
-import static no.unit.nva.publication.storage.model.daos.DaoUtils.parseAttributeValuesMap;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.toPutItemRequest;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -74,19 +74,7 @@ public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
 
         assertThat(retrievedDoiRequestDao, is(equalTo(doiRequestDao)));
     }
-
-    private QueryRequest fetchResourceAndDoiRequest(ResourceDao resourceDao,
-                                                    String greaterOrEqual,
-                                                    String lessOrEqual
-    ) {
-        return new QueryRequest()
-            .withTableName(RESOURCES_TABLE_NAME)
-            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(
-                resourceDao.byResource(greaterOrEqual, lessOrEqual)
-            );
-    }
-
+    
     private QueryRequest fetchResourceAndDoiRequest(ResourceDao resourceDao,
                                                     String selectedType
 

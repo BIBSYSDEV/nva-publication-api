@@ -1,29 +1,22 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
-import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
@@ -145,23 +138,5 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     
     private String customerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
-    }
-
-    public static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
-        if (mapIsNotEmpty(valuesMap)) {
-            Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> objectMapper.readValue(item.toJSON(), daoClass)).orElseThrow();
-        } else {
-            throw new EmptyValueMapException();
-        }
-    }
-
-    private static boolean mapIsNotEmpty(Map<String, AttributeValue> valuesMap) {
-        return nonNull(valuesMap) && !valuesMap.isEmpty();
-    }
-
-    public Map<String, AttributeValue> toDynamoFormat() {
-        Item item = attempt(() -> Item.fromJSON(objectMapper.writeValueAsString(this))).orElseThrow();
-        return ItemUtils.toAttributeValues(item);
     }
 }

@@ -1,19 +1,13 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Instant;
-import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -29,7 +23,6 @@ import nva.commons.core.attempt.Try;
 
 public final class DaoUtils {
     
-    public static final String EMPTY_VALUE_ERROR = "ValueMap was either null or empty";
     public static final String SOME_OWNER = "some@owner";
     public static final String SOME_USER = "some@user";
     public static final URI SOME_CUSTOMER_ID = URI.create("https://some.example.org/123");
@@ -47,19 +40,6 @@ public final class DaoUtils {
             .orElseThrow();
     }
 
-    public static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> dataClass) {
-        if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
-            Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> objectMapper.readValue(item.toJSON(), dataClass)).orElseThrow();
-        } else {
-            throw new RuntimeException(EMPTY_VALUE_ERROR);
-        }
-    }
-
-    public static <T> Map<String, AttributeValue> toDynamoFormat(T element) {
-        Item item = attempt(() -> Item.fromJSON(objectMapper.writeValueAsString(element))).orElseThrow();
-        return ItemUtils.toAttributeValues(item);
-    }
     
     public static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
         ResourceDao resourceDao = sampleResourceDao();
@@ -77,7 +57,7 @@ public final class DaoUtils {
     protected static <R extends WithIdentifier & RowLevelSecurity & ResourceUpdate> PutItemRequest toPutItemRequest(
         Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
-                   .withItem(toDynamoFormat(resource));
+                   .withItem(resource.toDynamoFormat());
     }
     
     private static MessageDao sampleMessageDao() {

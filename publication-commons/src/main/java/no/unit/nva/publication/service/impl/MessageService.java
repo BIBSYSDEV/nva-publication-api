@@ -1,7 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.daos.Dao.parseAttributeValuesMap;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;

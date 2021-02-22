@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.primaryKeyEqualityConditionAttributeValues;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -110,7 +109,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
                                                      SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         List<Dao> daos = readResourceService
-            .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
         ResourceDao resourceDao = extractResourceDao(daos);
 
         if (resourceIsPublished(resourceDao.getData())) {
@@ -128,22 +127,22 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
         return existingResource
-            .copy()
-            .withPublisher(userOrganization(newOwner))
-            .withOwner(newOwner.getUserIdentifier())
-            .withModifiedDate(clockForTimestamps.instant())
-            .build();
+                   .copy()
+                   .withPublisher(userOrganization(newOwner))
+                   .withOwner(newOwner.getUserIdentifier())
+                   .withModifiedDate(clockForTimestamps.instant())
+                   .build();
     }
 
     private Optional<TransactWriteItem> updateDoiRequest(UserInstance userinstance, Resource resource) {
         Optional<DoiRequest> existingDoiRequest = attempt(() -> fetchExistingDoiRequest(userinstance, resource))
-            .orElse(this::handleNotFoundException);
+                                                      .orElse(this::handleNotFoundException);
 
         return existingDoiRequest.map(doiRequest -> doiRequest.update(resource))
-            .map(DoiRequestDao::new)
-            .map(ResourceServiceUtils::toDynamoFormat)
-            .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
-            .map(put -> new TransactWriteItem().withPut(put));
+                   .map(DoiRequestDao::new)
+                   .map(DoiRequestDao::toDynamoFormat)
+                   .map(dynamoEntry -> new Put().withTableName(tableName).withItem(dynamoEntry))
+                   .map(put -> new TransactWriteItem().withPut(put));
     }
 
     private Optional<DoiRequest> handleNotFoundException(Failure<Optional<DoiRequest>> fail) {
@@ -171,11 +170,11 @@ public class UpdateResourceService extends ServiceWithTransactions {
             primaryKeyEqualityConditionAttributeValues(resourceDao);
 
         Put put = new Put()
-            .withItem(toDynamoFormat(resourceDao))
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
-            .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
+                      .withItem(resourceDao.toDynamoFormat())
+                      .withTableName(tableName)
+                      .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
+                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES)
+                      .withExpressionAttributeValues(primaryKeyConditionAttributeValues);
 
         return new TransactWriteItem().withPut(put);
     }
@@ -227,12 +226,12 @@ public class UpdateResourceService extends ServiceWithTransactions {
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()));
 
         Update update = new Update()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap);
+                            .withTableName(tableName)
+                            .withKey(dao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withConditionExpression(conditionExpression)
+                            .withExpressionAttributeNames(expressionNamesMap)
+                            .withExpressionAttributeValues(expressionValuesMap);
         return new TransactWriteItem().withUpdate(update);
     }
 
@@ -252,10 +251,10 @@ public class UpdateResourceService extends ServiceWithTransactions {
         );
 
         Update update = new Update().withTableName(tableName)
-            .withKey(doiRequestDao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(attributeValueMap);
+                            .withKey(doiRequestDao.primaryKey())
+                            .withUpdateExpression(updateExpression)
+                            .withExpressionAttributeNames(expressionAttributeNames)
+                            .withExpressionAttributeValues(attributeValueMap);
 
         return new TransactWriteItem().withUpdate(update);
     }
@@ -283,9 +282,9 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private boolean resourceHasNoTitle(Resource resource) {
         return Optional.of(resource)
-            .map(Resource::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .isEmpty();
+                   .map(Resource::getEntityDescription)
+                   .map(EntityDescription::getMainTitle)
+                   .isEmpty();
     }
 
     private void throwErrorWhenPublishingResourceWithoutData(Resource resource) throws InvalidPublicationException {
@@ -297,7 +296,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     private void throwErrorWhenPublishingResourceWithoutMainTitle(Resource resource)
         throws InvalidPublicationException {
         throw new
-            InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
+                  InvalidPublicationException(RESOURCE_WITHOUT_MAIN_TITLE_ERROR + resource.getIdentifier().toString());
     }
 
     private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
@@ -306,8 +305,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     private boolean emptyResourceFiles(Resource resource) {
         return Optional.ofNullable(resource.getFileSet())
-            .map(FileSet::getFiles)
-            .map(List::isEmpty)
-            .orElse(true);
+                   .map(FileSet::getFiles)
+                   .map(List::isEmpty)
+                   .orElse(true);
     }
 }
