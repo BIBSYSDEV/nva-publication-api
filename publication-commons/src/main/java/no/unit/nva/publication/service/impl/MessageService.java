@@ -29,20 +29,22 @@ import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.core.JacocoGenerated;
 
 public class MessageService extends ServiceWithTransactions {
-    
+
     public static final String RAWTYPES = "rawtypes";
+
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
+
     private final Supplier<SortableIdentifier> identifierSupplier;
-    
+
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
         this(client, clockForTimestamps, defaultIdentifierSupplier());
     }
-    
+
     public MessageService(AmazonDynamoDB client,
                           Clock clockForTimestamps,
                           Supplier<SortableIdentifier> identifierSupplier) {
@@ -52,22 +54,22 @@ public class MessageService extends ServiceWithTransactions {
         this.clockForTimestamps = clockForTimestamps;
         this.identifierSupplier = identifierSupplier;
     }
-    
+
     public SortableIdentifier createMessage(UserInstance sender,
                                             UserInstance owner,
                                             SortableIdentifier resourceIdentifier,
                                             String messageText) throws TransactionFailedException {
         Message message = createNewMessage(sender, owner, resourceIdentifier, messageText);
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
-        
+
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
         TransactWriteItem identifierWriteItem = newPutTransactionItem(identifierEntry);
-        
+
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
         return message.getIdentifier();
     }
-    
+
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
         GetItemRequest getMessageRequest = getMessageByPrimaryKey(queryObject);
@@ -76,7 +78,7 @@ public class MessageService extends ServiceWithTransactions {
         MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
         return result.getData();
     }
-    
+
     @SuppressWarnings(RAWTYPES)
     public ResourceMessages getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
         ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
@@ -84,46 +86,46 @@ public class MessageService extends ServiceWithTransactions {
         List<Dao> resultDaos = executeQuery(queryRequest);
         return messagesWithResource(resultDaos);
     }
-    
+
     @Override
     protected String getTableName() {
         return tableName;
     }
-    
+
     @Override
     protected AmazonDynamoDB getClient() {
         return client;
     }
-    
+
     @JacocoGenerated
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
     }
-    
+
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {
         return SortableIdentifier::next;
     }
-    
+
     private Message createNewMessage(UserInstance sender, UserInstance owner, SortableIdentifier resourceIdentifier,
                                      String messageText) {
         Message message = Message.simpleMessage(sender, owner, resourceIdentifier, messageText, clockForTimestamps);
         message.setIdentifier(identifierSupplier.get());
         return message;
     }
-    
+
     private ResourceMessages messagesWithResource(List<Dao> daos) {
         Resource resource = extractResource(daos);
         List<Message> messages = extractMessages(daos);
         return new ResourceMessages(resource, messages);
     }
-    
+
     @SuppressWarnings(RAWTYPES)
     private List<Dao> executeQuery(QueryRequest queryRequest) {
         QueryResult result = client.query(queryRequest);
         return extractDaos(result);
     }
-    
+
     @SuppressWarnings(RAWTYPES)
     private List<Dao> extractDaos(QueryResult result) {
         return result.getItems()
@@ -131,17 +133,18 @@ public class MessageService extends ServiceWithTransactions {
                    .map(item -> parseAttributeValuesMap(item, Dao.class))
                    .collect(Collectors.toList());
     }
-    
+
     private QueryRequest queryForRetrievingMessagesByResource(ResourceDao queryObject) {
-        Map<String, Condition> keyCondition = queryObject.byResource(
-            ResourceDao.joinByResourceContainedOrderedType(),
-            MessageDao.joinByResourceOrderedContainedType());
+        String searchStartPoint = ResourceDao.joinByResourceContainedOrderedType();
+        String searchEndingPoint = MessageDao.joinByResourceOrderedContainedType();
+        Map<String, Condition> keyCondition = queryObject.byResource(searchStartPoint, searchEndingPoint);
+
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withKeyConditions(keyCondition);
     }
-    
+
     @SuppressWarnings(RAWTYPES)
     private List<Message> extractMessages(List<Dao> daos) {
         return
@@ -151,14 +154,14 @@ public class MessageService extends ServiceWithTransactions {
                 .map(MessageDao::getData)
                 .collect(Collectors.toList());
     }
-    
+
     @SuppressWarnings(RAWTYPES)
     private Resource extractResource(List<Dao> daos) {
         Dao<?> dao = daos.get(MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX);
         ResourceDao resourceDao = (ResourceDao) dao;
         return resourceDao.getData();
     }
-    
+
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
         return new GetItemRequest()
                    .withTableName(tableName)

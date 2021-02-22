@@ -46,16 +46,16 @@ class DoiUpdateDtoTest {
 
     private DoiUpdateDto createDoiUpdateDtoWithDoi() {
         return new Builder()
-            .withDoi(EXAMPLE_DOI)
-            .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
-            .withModifiedDate(EXAMPLE_MODIFIED_DATE)
-            .build();
+                   .withDoi(EXAMPLE_DOI)
+                   .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
+                   .withModifiedDate(EXAMPLE_MODIFIED_DATE)
+                   .build();
     }
 
     private DoiUpdateDto createDoiUpdateDtoWithoutDoi() {
         return new Builder()
-            .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
-            .withModifiedDate(EXAMPLE_MODIFIED_DATE)
-            .build();
+                   .withPublicationId(EXAMPLE_PUBLICATION_IDENTIFIER)
+                   .withModifiedDate(EXAMPLE_MODIFIED_DATE)
+                   .build();
     }
 }
