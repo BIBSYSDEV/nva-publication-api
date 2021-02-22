@@ -1,17 +1,22 @@
 package no.unit.nva.publication.service.impl;
 
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -22,8 +27,10 @@ import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
@@ -51,21 +58,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createMessageStoresNewMessageInDatabase() {
-        String expectedMessageText = randomString();
-        SortableIdentifier messageIdentifier = createMessage(expectedMessageText);
-        Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMessageText);
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-
-    public String randomString() {
-        return FAKER.lorem().sentence();
-    }
-
-    @Test
-    public void getMessageByKeyReturnsStoredMessage() {
+    public void createMessageStoresNewMessageInDatabase() throws TransactionFailedException {
         String expectedMessageText = randomString();
         SortableIdentifier messageIdentifier = createMessage(expectedMessageText);
         Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
@@ -75,7 +68,30 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource() throws TransactionFailedException {
+    public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
+        messageService = serviceProducingDuplicateIdentifiers();
+
+        SortableIdentifier messageIdentifier = this.createMessage(randomString());
+        assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
+
+        Executable expectedFailingActio = () -> createMessage(randomString());
+        TransactionFailedException exception = assertThrows(TransactionFailedException.class, expectedFailingActio);
+        assertThat(exception.getCause(), is(instanceOf(TransactionCanceledException.class)));
+    }
+
+    @Test
+    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
+        String expectedMessageText = randomString();
+        SortableIdentifier messageIdentifier = createMessage(expectedMessageText);
+        Message savedMessage = messageService.getMessage(SAMPLE_OWNER_INSTANCE, messageIdentifier);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), expectedMessageText);
+
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
+    }
+
+    @Test
+    public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
+        throws TransactionFailedException {
         var insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
@@ -87,10 +103,22 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(resourceMessages.getMessages(), contains(expectedMessages));
     }
 
+    private MessageService serviceProducingDuplicateIdentifiers() {
+        return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+    }
+
+    private String randomString() {
+        return FAKER.lorem().sentence();
+    }
+
     private Message[] listToArray(List<Message> insertedMessages) {
         Message[] insertedMessagesArray = new Message[insertedMessages.size()];
         insertedMessages.toArray(insertedMessagesArray);
         return insertedMessagesArray;
+    }
+
+    private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
+        return () -> SOME_IDENTIFIER;
     }
 
     private UserInstance extractUserInstance(Publication publication) {
@@ -104,19 +132,28 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     private List<Message> insertSampleMessages(Publication publication) {
         UserInstance publicationOwner = extractUserInstance(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
-                   .map(i -> createMessage(publication))
+                   .map(i -> FAKER.lorem().sentence())
+                   .map(attempt(message -> createMessage(publication, message)))
+                   .map(Try::orElseThrow)
                    .map(identifier -> messageService.getMessage(publicationOwner, identifier))
                    .collect(Collectors.toList());
     }
 
-    private SortableIdentifier createMessage(Publication publication) {
+    private SortableIdentifier createMessage(Publication publication, String message)
+        throws TransactionFailedException {
+        UserInstance publicationOwner = extractUserInstance(publication);
+        UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
+        return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(), message);
+    }
+
+    private SortableIdentifier createMessage(Publication publication) throws TransactionFailedException {
         UserInstance publicationOwner = extractUserInstance(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(),
             randomString());
     }
 
-    private SortableIdentifier createMessage(String text) {
+    private SortableIdentifier createMessage(String text) throws TransactionFailedException {
         return messageService.createMessage(SAMPLE_SENDER_USER_INSTANCE, SAMPLE_OWNER_INSTANCE,
             MessageServiceTest.SOME_IDENTIFIER, text);
     }
