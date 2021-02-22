@@ -786,7 +786,7 @@ Resources:
           Properties:
             Path: /messages
             Method: post
-            RestApiId: NvaPublicationApi
+            RestApiId: !Ref NvaPublicationApi
 
   NvaListMessagesFunction:
     Type: AWS::Serverless::Function
@@ -809,7 +809,7 @@ Resources:
           Properties:
             Path: /messages
             Method: get
-            RestApiId: NvaPublicationApi
+            RestApiId: !Ref NvaPublicationApi
 
 
   #==========================Event Lambda functions====================================================
