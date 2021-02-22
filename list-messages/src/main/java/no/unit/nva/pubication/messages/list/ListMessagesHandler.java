@@ -12,7 +12,6 @@ import no.unit.nva.publication.service.impl.ResourceMessages;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -21,7 +20,7 @@ import org.slf4j.LoggerFactory;
 public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessages[]> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ListMessagesHandler.class);
-    private MessageService messageService;
+    private final MessageService messageService;
 
     @JacocoGenerated
     public ListMessagesHandler() {
@@ -34,8 +33,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
     }
 
     @Override
-    protected ResourceMessages[] processInput(Void input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+    protected ResourceMessages[] processInput(Void input, RequestInfo requestInfo, Context context) {
         String feideId = requestInfo.getFeideId().orElse(null);
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         UserInstance userInstance = new UserInstance(feideId, customerId);
