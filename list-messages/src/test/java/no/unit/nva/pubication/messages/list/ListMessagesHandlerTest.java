@@ -65,10 +65,10 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        Environment environment = mockEnvironment();
         output = new ByteArrayOutputStream();
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
+        Environment environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
     }
 
