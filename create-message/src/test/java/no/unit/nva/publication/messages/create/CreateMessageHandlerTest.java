@@ -6,7 +6,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -24,8 +23,10 @@ import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.HttpHeaders;
 import nva.commons.core.Environment;
@@ -54,11 +55,20 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         super.init();
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(anyString())).thenReturn(ALLOW_ALL_ORIGIN);
+        Environment environment = setupEnvironment();
+        StorageModelConstants.updateEnvironment(environment);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
+    }
+
+    private Environment setupEnvironment() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME))
+            .thenReturn("localhost");
+
+        return environment;
     }
 
     @Test

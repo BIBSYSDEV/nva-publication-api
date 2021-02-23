@@ -30,7 +30,9 @@ import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
+import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -63,6 +65,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         super.init();
         Clock clock = mockClock();
+        Environment environment = setupEnvironment();
+        StorageModelConstants.updateEnvironment(environment);
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
@@ -74,7 +78,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         String messageText = randomString();
         SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
         Message savedMessage = fetchMessage(owner, messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+        Message expectedMessage =
+            constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+
         String difference = difference(savedMessage, expectedMessage);
         assertThat(difference, savedMessage, is(equalTo(expectedMessage)));
     }
@@ -118,12 +124,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-
-    private <T> String difference(T savedMessage, T expectedMessage) {
-        Javers javers = JaversBuilder.javers().build();
-        Diff diff = javers.compare(savedMessage, expectedMessage);
-        return diff.prettyPrint();
     }
 
     @Test
@@ -170,6 +170,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    private Environment setupEnvironment() {
+        Environment env = mock(Environment.class);
+        when(env.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME))
+            .thenReturn("localhost");
+        return env;
+    }
+
+    private <T> String difference(T savedMessage, T expectedMessage) {
+        Diff diff = JAVERS.compare(savedMessage, expectedMessage);
+        return diff.prettyPrint();
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
@@ -279,20 +291,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return clock;
     }
 
-    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier,
-                                             Publication publication,
+    private Message constructExpectedMessage(SortableIdentifier messageIdentifier, Publication publication,
                                              String messageText) {
-        return Message.builder()
-                   .withCreatedTime(MESSAGE_CREATION_TIME)
-                   .withIdentifier(savedMessageIdentifier)
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withOwner(publication.getOwner())
-                   .withSender(SOME_SENDER)
-                   .withStatus(MessageStatus.UNREAD)
-                   .withText(messageText)
-                   .withIsDoiRequestRelated(false)
-                   .withResourceTitle(publication.getEntityDescription().getMainTitle())
-                   .build();
+        UserInstance sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
+
+        Clock clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
+        return Message.simpleMessage(sender, publication, messageText, messageIdentifier, clock);
     }
 }
