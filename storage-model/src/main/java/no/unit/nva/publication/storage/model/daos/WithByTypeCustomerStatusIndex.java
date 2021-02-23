@@ -43,22 +43,28 @@ public interface WithByTypeCustomerStatusIndex {
      *
      * @return a Map with field-name:Condition pair.
      */
-    default Map<String, Condition> byTypeCustomerStatusKey() {
+    default Map<String, Condition> fetchEntryByTypeCustomerStatusKey() {
         Condition partitionKeyCondition = equalityIndexKeyCondition(getByTypeCustomerStatusPartitionKey());
         Condition sortKeyCondition = equalityIndexKeyCondition(getByTypeCustomerStatusSortKey());
         return
             Map.of(
-                BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME, //key
-                partitionKeyCondition, //value
-                BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,  //key
-                sortKeyCondition //value
+                BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME, partitionKeyCondition,
+                BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME, sortKeyCondition
+            );
+    }
+
+    default Map<String, Condition> fetchEntryCollectionByTypeCustomerStatusKey() {
+        Condition partitionKeyCondition = equalityIndexKeyCondition(getByTypeCustomerStatusPartitionKey());
+        return
+            Map.of(
+                BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME, partitionKeyCondition
             );
     }
 
     private static Condition equalityIndexKeyCondition(String keyValue) {
         return new Condition()
-            .withAttributeValueList(new AttributeValue(keyValue))
-            .withComparisonOperator(ComparisonOperator.EQ);
+                   .withAttributeValueList(new AttributeValue(keyValue))
+                   .withComparisonOperator(ComparisonOperator.EQ);
     }
 
     static String formatByTypeCustomerStatusPartitionKey(String type, String status, URI customerUri) {

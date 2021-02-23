@@ -15,11 +15,13 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -46,6 +48,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final Instant THIRD_MESSAGE_CREATION_TIME = SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final int NUMBER_OF_SAMPLE_MESSAGES = 3;
 
+    public static final String SOME_OTHER_OWNER = "someOther@owner";
+    public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
+    public static final int FIRST_ELEMENT = 0;
+
     private MessageService messageService;
     private ResourceService resourceService;
 
@@ -70,8 +76,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
         messageService = serviceProducingDuplicateIdentifiers();
+        SortableIdentifier messageIdentifier = createMessage(randomString());
 
-        SortableIdentifier messageIdentifier = this.createMessage(randomString());
         assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
 
         Executable expectedFailingActio = () -> createMessage(randomString());
@@ -103,18 +109,89 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(resourceMessages.getMessages(), contains(expectedMessages));
     }
 
-    private MessageService serviceProducingDuplicateIdentifiers() {
-        return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+    @Test
+    public void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() {
+        List<Publication> createdPublications = createPublicationsOfDifferentOwnersInSameOrg();
+        List<Message> savedMessages = createOneMessagePerPublication(createdPublications);
+
+        URI publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
+        List<Message> actualMessages =
+            messageService.listMessages(publisherId, MessageStatus.UNREAD);
+
+        assertThat(actualMessages, is(equalTo(savedMessages)));
     }
 
-    private String randomString() {
+    @Test
+    public void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() {
+        var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
+        var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
+
+        URI customerId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
+        List<Message> actualMessages =
+            messageService.listMessages(customerId, MessageStatus.UNREAD);
+
+        var expectedMessages = allMessagesOfAllCustomers.stream()
+                                   .filter(message -> message.getCustomerId().equals(customerId))
+                                   .collect(Collectors.toList());
+
+        assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    public String randomString() {
         return FAKER.lorem().sentence();
+    }
+
+    private MessageService serviceProducingDuplicateIdentifiers() {
+        return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
     }
 
     private Message[] listToArray(List<Message> insertedMessages) {
         Message[] insertedMessagesArray = new Message[insertedMessages.size()];
         insertedMessages.toArray(insertedMessagesArray);
         return insertedMessagesArray;
+    }
+
+    private List<Publication> createPublicationsOfDifferentOwnersInDifferentOrg() {
+        Publication publicationOfSomeOrg = PublicationGenerator.publicationWithoutIdentifier();
+        Organization someOtherOrg = new Organization.Builder().withId(SOME_OTHER_ORG).build();
+        Publication publicationOfDifferentOrg = publicationOfSomeOrg
+                                                    .copy()
+                                                    .withOwner(SOME_OTHER_OWNER)
+                                                    .withPublisher(someOtherOrg)
+                                                    .build();
+        List<Publication> newPublications = List.of(publicationOfSomeOrg, publicationOfDifferentOrg);
+        return persistPublications(newPublications);
+    }
+
+    private List<Message> createOneMessagePerPublication(List<Publication> createdPublications) {
+        List<Message> savedMessages = new ArrayList<>();
+
+        for (Publication createdPublication : createdPublications) {
+            var messageIdentifier = createMessage(createdPublication, randomString());
+            var owner = extractUserInstance(createdPublication);
+            var savedMessage = fetchMessage(owner, messageIdentifier);
+            savedMessages.add(savedMessage);
+        }
+        return savedMessages;
+    }
+
+    private Message fetchMessage(UserInstance owner, SortableIdentifier messageIdentifier) {
+        return messageService.getMessage(owner, messageIdentifier);
+    }
+
+    private List<Publication> createPublicationsOfDifferentOwnersInSameOrg() {
+        Publication publicationOfSomeOwner = PublicationGenerator.publicationWithoutIdentifier();
+        Publication publicationOfDifferentOwner = PublicationGenerator.publicationWithoutIdentifier()
+                                                      .copy().withOwner(SOME_OTHER_OWNER).build();
+        List<Publication> newPublications = List.of(publicationOfSomeOwner, publicationOfDifferentOwner);
+        return persistPublications(newPublications);
+    }
+
+    private List<Publication> persistPublications(List<Publication> newPublications) {
+        return newPublications.stream()
+                   .map(attempt(pub -> resourceService.createPublication(pub)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
 
     private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
@@ -139,19 +216,14 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private SortableIdentifier createMessage(Publication publication, String message)
-        throws TransactionFailedException {
+    private SortableIdentifier createMessage(Publication publication, String message) {
         UserInstance publicationOwner = extractUserInstance(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(), message);
+        return attempt(
+            () -> messageService.createMessage(sender, publicationOwner, publication.getIdentifier(), message))
+                   .orElseThrow();
     }
 
-    private SortableIdentifier createMessage(Publication publication) throws TransactionFailedException {
-        UserInstance publicationOwner = extractUserInstance(publication);
-        UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return messageService.createMessage(sender, publicationOwner, publication.getIdentifier(),
-            randomString());
-    }
 
     private SortableIdentifier createMessage(String text) throws TransactionFailedException {
         return messageService.createMessage(SAMPLE_SENDER_USER_INSTANCE, SAMPLE_OWNER_INSTANCE,

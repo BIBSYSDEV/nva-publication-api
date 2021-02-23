@@ -1,5 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -11,6 +13,7 @@ import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +21,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -87,6 +90,16 @@ public class MessageService extends ServiceWithTransactions {
         return messagesWithResource(resultDaos);
     }
 
+
+    public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
+        MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
+        QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
+        List<MessageDao> queryResult = executeQuery(queryRequest, MessageDao.class);
+        return queryResult.stream()
+                   .map(MessageDao::getData)
+                   .collect(Collectors.toList());
+    }
+
     @Override
     protected String getTableName() {
         return tableName;
@@ -107,6 +120,14 @@ public class MessageService extends ServiceWithTransactions {
         return SortableIdentifier::next;
     }
 
+
+    private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
+        return new QueryRequest()
+                   .withTableName(tableName)
+                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+                   .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
+    }
+
     private Message createNewMessage(UserInstance sender, UserInstance owner, SortableIdentifier resourceIdentifier,
                                      String messageText) {
         Message message = Message.simpleMessage(sender, owner, resourceIdentifier, messageText, clockForTimestamps);
@@ -122,15 +143,19 @@ public class MessageService extends ServiceWithTransactions {
 
     @SuppressWarnings(RAWTYPES)
     private List<Dao> executeQuery(QueryRequest queryRequest) {
-        QueryResult result = client.query(queryRequest);
-        return extractDaos(result);
+        return executeQuery(queryRequest, Dao.class);
     }
 
-    @SuppressWarnings(RAWTYPES)
-    private List<Dao> extractDaos(QueryResult result) {
+    //TODO: check if these methods can be re-used by other services
+    private <T> List<T> executeQuery(QueryRequest queryRequest, Class<T> daoClass) {
+        QueryResult result = client.query(queryRequest);
+        return extractDaos(result, daoClass);
+    }
+
+    private <T> List<T> extractDaos(QueryResult result, Class<T> daoClass) {
         return result.getItems()
                    .stream()
-                   .map(item -> parseAttributeValuesMap(item, Dao.class))
+                   .map(item -> parseAttributeValuesMap(item, daoClass))
                    .collect(Collectors.toList());
     }
 
@@ -141,7 +166,7 @@ public class MessageService extends ServiceWithTransactions {
 
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
+                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
                    .withKeyConditions(keyCondition);
     }
 
