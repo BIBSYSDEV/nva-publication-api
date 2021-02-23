@@ -56,22 +56,21 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         Publication publication = fetchExistingPublication(input);
         UserInstance owner = extractOwner(publication);
 
-        SortableIdentifier messageIdentifier =
-            sendMessage(input, sender, publication, owner);
+        SortableIdentifier messageIdentifier = sendMessage(input, sender, publication, owner);
 
         addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
 
         return null;
     }
 
-    @JacocoGenerated
-    private static AmazonDynamoDB defaultClient() {
-        return AmazonDynamoDBClientBuilder.defaultClient();
-    }
-
     @Override
     protected Integer getSuccessStatusCode(CreateMessageRequest input, Void output) {
         return HttpURLConnection.HTTP_CREATED;
+    }
+
+    @JacocoGenerated
+    private static AmazonDynamoDB defaultClient() {
+        return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
