@@ -14,6 +14,7 @@ import com.github.javafaker.Faker;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -78,7 +79,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-        String messageIdentifier = extractLocationFromHttpHeaders();
+        URI messageIdentifier = extractLocationFromHttpHeaders();
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageIdentifier);
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
@@ -112,14 +113,15 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(problem.getDetail(), containsString(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
     }
 
-    private String extractLocationFromHttpHeaders() throws JsonProcessingException {
+    private URI extractLocationFromHttpHeaders() throws JsonProcessingException {
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output);
-        return response.getHeaders().get(HttpHeaders.LOCATION);
+        String headerValue = response.getHeaders().get(HttpHeaders.LOCATION);
+        return URI.create(headerValue);
     }
 
-    private Message fetchMessageDirectlyFromDb(Publication samplePublication, String messageIdentifier) {
+    private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) {
         UserInstance owner = extractOwner(samplePublication);
-        return messageService.getMessage(owner, new SortableIdentifier(messageIdentifier));
+        return messageService.getMessage(owner, messageId);
     }
 
     private UserInstance extractOwner(Publication samplePublication) {

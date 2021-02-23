@@ -8,7 +8,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
@@ -58,9 +57,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         UserInstance sender = createSender(requestInfo);
 
         Publication publication = fetchExistingPublication(input);
-        SortableIdentifier messageIdentifier = sendMessage(input, sender, publication);
+        URI messageId = sendMessage(input, sender, publication);
 
-        addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
+        addAdditionalHeaders(() -> locationHeader(messageId.toString()));
 
         return null;
     }
@@ -91,9 +90,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         }
     }
 
-    private SortableIdentifier sendMessage(CreateMessageRequest input,
-                                           UserInstance sender,
-                                           Publication publication
+    private URI sendMessage(CreateMessageRequest input,
+                            UserInstance sender,
+                            Publication publication
     ) throws TransactionFailedException, BadRequestException {
         try {
             return messageService.createMessage(sender, publication, input.getMessage());

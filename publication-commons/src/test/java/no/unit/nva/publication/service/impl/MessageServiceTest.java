@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.service.impl.MessageService.extractIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -76,8 +77,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createSamplePublication();
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
-        SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
-        Message savedMessage = fetchMessage(owner, messageIdentifier);
+        URI messageId = createSampleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(owner, messageId);
         Message expectedMessage =
             constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
 
@@ -108,7 +109,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
         messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
         Publication publication = createSamplePublication();
-        SortableIdentifier messageIdentifier = createSampleMessage(publication, randomString());
+        URI messageIdentifier = createSampleMessage(publication, randomString());
         assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
         Executable action = () -> createSampleMessage(publication, randomString());
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -116,10 +117,33 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
+    public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException {
+        Publication publication = createSamplePublication();
+        String messageText = randomString();
+        URI messageId = createSampleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(extractOwner(publication), messageId);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
+    }
+
+    @Test
     public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
+        URI messageId = createSampleMessage(publication, messageText);
+        SortableIdentifier identifier = extractIdentifier(messageId);
+        Message savedMessage = messageService.getMessage(extractOwner(publication), identifier);
+        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
+    }
+
+    @Test
+    public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException {
+        Publication publication = createSamplePublication();
+        String messageText = randomString();
+        URI messageIdentifier = createSampleMessage(publication, messageText);
         Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
 
@@ -267,17 +291,17 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier) {
-        return messageService.getMessage(publicationOwner, messageIdentifier);
+    private Message fetchMessage(UserInstance publicationOwner, URI messageId) {
+        return messageService.getMessage(publicationOwner, messageId);
     }
 
-    private SortableIdentifier createSampleMessage(Publication publication, String message) {
+    private URI createSampleMessage(Publication publication, String message) {
         UserInstance publicationOwner = extractOwner(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createMessage(publication, message, sender);
     }
 
-    private SortableIdentifier createMessage(Publication publication, String message, UserInstance sender) {
+    private URI createMessage(Publication publication, String message, UserInstance sender) {
         return attempt(() -> messageService.createMessage(sender, publication, message)).orElseThrow();
     }
 
