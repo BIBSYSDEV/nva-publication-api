@@ -1,13 +1,19 @@
 package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 
 public class MessageDto {
 
+    @JsonProperty("id")
+    URI messageId;
+    @JsonProperty("identifier")
+    SortableIdentifier messageIdentifier;
     @JsonProperty("sender")
     private String senderIdentifier;
     @JsonProperty("owner")
@@ -23,7 +29,26 @@ public class MessageDto {
         messageDto.setSenderIdentifier(message.getSender());
         messageDto.setText(message.getText());
         messageDto.setDate(message.getCreatedTime());
+        messageDto.setMessageId(message.getId());
+        messageDto.setMessageIdentifier(message.getIdentifier());
+
         return messageDto;
+    }
+
+    public URI getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(URI messageId) {
+        this.messageId = messageId;
+    }
+
+    public SortableIdentifier getMessageIdentifier() {
+        return messageIdentifier;
+    }
+
+    public void setMessageIdentifier(SortableIdentifier messageIdentifier) {
+        this.messageIdentifier = messageIdentifier;
     }
 
     @JacocoGenerated
@@ -69,7 +94,12 @@ public class MessageDto {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getSenderIdentifier(), getOwnerIdentifier(), getText());
+        return Objects.hash(getMessageId(),
+            getMessageIdentifier(),
+            getSenderIdentifier(),
+            getOwnerIdentifier(),
+            getText(),
+            getDate());
     }
 
     @JacocoGenerated
@@ -82,7 +112,11 @@ public class MessageDto {
             return false;
         }
         MessageDto that = (MessageDto) o;
-        return Objects.equals(getSenderIdentifier(), that.getSenderIdentifier()) && Objects.equals(
-            getOwnerIdentifier(), that.getOwnerIdentifier()) && Objects.equals(getText(), that.getText());
+        return Objects.equals(getMessageId(), that.getMessageId())
+               && Objects.equals(getMessageIdentifier(), that.getMessageIdentifier())
+               && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
+               && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
+               && Objects.equals(getText(), that.getText())
+               && Objects.equals(getDate(), that.getDate());
     }
 }
