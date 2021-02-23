@@ -73,6 +73,17 @@ public class MessageTest {
     }
 
     @Test
+    public void doiRequestMessageReturnsMessageRelatedToResourceAndNotRelatedToDoiRequest() {
+        SortableIdentifier resourceIdentifier = SortableIdentifier.next();
+        Publication publication = samplePublication(resourceIdentifier);
+        SortableIdentifier messageIdentifier = SortableIdentifier.next();
+
+        Message message = Message.doiRequestMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+        assertThat(message.isDoiRequestRelated(), is(equalTo(true)));
+        assertThat(message.getResourceIdentifier(), is(equalTo(resourceIdentifier)));
+    }
+
+    @Test
     public void simpleMessageReturnsMessageRelatedToResourceAndNotRelatedToDoiRequest() {
         SortableIdentifier resourceIdentifier = SortableIdentifier.next();
         Publication publication = samplePublication(resourceIdentifier);

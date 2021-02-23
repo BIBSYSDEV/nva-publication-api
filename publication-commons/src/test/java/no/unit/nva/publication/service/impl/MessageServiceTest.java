@@ -73,17 +73,32 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createMessageStoresNewMessageInDatabase() throws TransactionFailedException {
+    public void createSimpleMessageStoresNewMessageInDatabase() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
-        URI messageId = createSampleMessage(publication, messageText);
+        URI messageId = createSimpleMessage(publication, messageText);
         Message savedMessage = fetchMessage(owner, messageId);
         Message expectedMessage =
-            constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+            constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication, messageText);
 
         String difference = difference(savedMessage, expectedMessage);
         assertThat(difference, savedMessage, is(equalTo(expectedMessage)));
+    }
+
+    @Test
+    public void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
+        throws TransactionFailedException {
+        Publication publication = createSamplePublication();
+        UserInstance owner = extractOwner(publication);
+        String messageText = randomString();
+        URI messageId = createDoiRequestMessage(publication, messageText);
+        Message savedMessage = fetchMessage(owner, messageId);
+        Message expectedMessage = constructExpectedDoiRequestMessage(
+            extractIdentifier(messageId),
+            publication,
+            messageText);
+        assertThat(savedMessage.isDoiRequestRelated(), is(true));
     }
 
     @Test
@@ -106,13 +121,16 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
+    public void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
+        throws TransactionFailedException {
         messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
         Publication publication = createSamplePublication();
-        URI messageId = createSampleMessage(publication, randomString());
+
+        URI messageId = createSimpleMessage(publication, randomString());
         SortableIdentifier actualIdentifier = extractIdentifier(messageId);
         assertThat(actualIdentifier, is(equalTo(SOME_IDENTIFIER)));
-        Executable action = () -> createSampleMessage(publication, randomString());
+
+        Executable action = () -> createSimpleMessage(publication, randomString());
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getCause(), is(instanceOf(TransactionFailedException.class)));
     }
@@ -121,9 +139,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageId = createSampleMessage(publication, messageText);
+        URI messageId = createSimpleMessage(publication, messageText);
         Message savedMessage = fetchMessage(extractOwner(publication), messageId);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+        Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
+            messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
@@ -132,10 +151,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageId = createSampleMessage(publication, messageText);
+        URI messageId = createSimpleMessage(publication, messageText);
         SortableIdentifier identifier = extractIdentifier(messageId);
         Message savedMessage = messageService.getMessage(extractOwner(publication), identifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+        Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
+            messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
@@ -144,9 +164,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageIdentifier = createSampleMessage(publication, messageText);
+        URI messageIdentifier = createSimpleMessage(publication, messageText);
         Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
-        Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
+        Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
+            messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
@@ -252,7 +273,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> savedMessages = new ArrayList<>();
 
         for (Publication createdPublication : createdPublications) {
-            var messageIdentifier = createSampleMessage(createdPublication, randomString());
+            var messageIdentifier = createSimpleMessage(createdPublication, randomString());
             var owner = extractOwner(createdPublication);
             var savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
@@ -287,7 +308,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance publicationOwner = extractOwner(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
                    .map(ignoredValue -> randomString())
-                   .map(message -> createSampleMessage(publication, message))
+                   .map(message -> createSimpleMessage(publication, message))
                    .map(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier))
                    .collect(Collectors.toList());
     }
@@ -296,14 +317,24 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return messageService.getMessage(publicationOwner, messageId);
     }
 
-    private URI createSampleMessage(Publication publication, String message) {
+    private URI createDoiRequestMessage(Publication publication, String message) {
         UserInstance publicationOwner = extractOwner(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return createMessage(publication, message, sender);
+        return createDoiRequestMessage(publication, message, sender);
     }
 
-    private URI createMessage(Publication publication, String message, UserInstance sender) {
-        return attempt(() -> messageService.createMessage(sender, publication, message)).orElseThrow();
+    private URI createDoiRequestMessage(Publication publication, String message, UserInstance sender) {
+        return attempt(() -> messageService.createDoiRequestMessage(sender, publication, message)).orElseThrow();
+    }
+
+    private URI createSimpleMessage(Publication publication, String message) {
+        UserInstance publicationOwner = extractOwner(publication);
+        UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
+        return createSimpleMessage(publication, message, sender);
+    }
+
+    private URI createSimpleMessage(Publication publication, String message, UserInstance sender) {
+        return attempt(() -> messageService.createSimpleMessage(sender, publication, message)).orElseThrow();
     }
 
     private Clock mockClock() {
@@ -316,11 +347,19 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return clock;
     }
 
-    private Message constructExpectedMessage(SortableIdentifier messageIdentifier, Publication publication,
-                                             String messageText) {
+    private Message constructExpectedSimpleMessage(SortableIdentifier messageIdentifier,
+                                                   Publication publication,
+                                                   String messageText) {
         UserInstance sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
-
         Clock clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
         return Message.simpleMessage(sender, publication, messageText, messageIdentifier, clock);
+    }
+
+    private Message constructExpectedDoiRequestMessage(SortableIdentifier messageIdentifier,
+                                                       Publication publication,
+                                                       String messageText) {
+        UserInstance sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
+        Clock clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
+        return Message.doiRequestMessage(sender, publication, messageText, messageIdentifier, clock);
     }
 }

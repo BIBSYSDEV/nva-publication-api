@@ -41,7 +41,7 @@ public class Message implements WithIdentifier,
     private URI customerId;
     private MessageStatus status;
     private String sender;
-    private boolean isDoiRequestRelated;
+    private boolean doiRequestRelated;
     private SortableIdentifier resourceIdentifier;
     private String text;
     private Instant createdTime;
@@ -52,24 +52,23 @@ public class Message implements WithIdentifier,
 
     }
 
+    public static Message doiRequestMessage(UserInstance sender,
+                                            Publication publication,
+                                            String messageText,
+                                            SortableIdentifier messageIdentifier,
+                                            Clock clock) {
+        return buildMessage(sender, publication, messageText, messageIdentifier, clock)
+                   .withDoiRequestRelated(true)
+                   .build();
+    }
+
     public static Message simpleMessage(UserInstance sender,
                                         Publication publication,
                                         String messageText,
                                         SortableIdentifier messageIdentifier,
                                         Clock clock) {
-        return Message.builder()
-                   .withStatus(MessageStatus.UNREAD)
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .withCustomerId(sender.getOrganizationUri())
-                   .withText(messageText)
-                   .withSender(sender.getUserIdentifier())
-                   .withOwner(publication.getOwner())
-                   .withResourceTitle(extractTitle(publication))
-                   .withIsDoiRequestRelated(false)
-                   .withCreatedTime(clock.instant())
-                   .withIdentifier(messageIdentifier)
-                   .withId(messageId(messageIdentifier))
-
+        return buildMessage(sender, publication, messageText, messageIdentifier, clock)
+                   .withDoiRequestRelated(false)
                    .build();
     }
 
@@ -79,6 +78,16 @@ public class Message implements WithIdentifier,
                                         String messageText,
                                         Clock clock) {
         return simpleMessage(sender, publication, messageText, null, clock);
+    }
+
+    public static URI messageId(SortableIdentifier messageIdentifier) {
+        if (nonNull(messageIdentifier)) {
+            String scheme = StorageModelConstants.getInstance().scheme;
+            String host = StorageModelConstants.getInstance().host;
+            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
+            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
+        }
+        return null;
     }
 
     @Override
@@ -97,14 +106,20 @@ public class Message implements WithIdentifier,
         return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
     }
 
-    public static URI messageId(SortableIdentifier messageIdentifier) {
-        if (nonNull(messageIdentifier)) {
-            String scheme = StorageModelConstants.getInstance().scheme;
-            String host = StorageModelConstants.getInstance().host;
-            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
-            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
-        }
-        return null;
+    private static DoiRequestBuilder buildMessage(UserInstance sender, Publication publication,
+                                                  String messageText, SortableIdentifier messageIdentifier,
+                                                  Clock clock) {
+        return Message.builder()
+                   .withStatus(MessageStatus.UNREAD)
+                   .withResourceIdentifier(publication.getIdentifier())
+                   .withCustomerId(sender.getOrganizationUri())
+                   .withText(messageText)
+                   .withSender(sender.getUserIdentifier())
+                   .withOwner(publication.getOwner())
+                   .withResourceTitle(extractTitle(publication))
+                   .withCreatedTime(clock.instant())
+                   .withIdentifier(messageIdentifier)
+                   .withId(messageId(messageIdentifier));
     }
 
     private static URI newUri(String scheme, String host, String messagesPath) throws URISyntaxException {
