@@ -109,8 +109,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void createMessageThrowsExceptionWhenDuplicateIdentifierIsInserted() throws TransactionFailedException {
         messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
         Publication publication = createSamplePublication();
-        URI messageIdentifier = createSampleMessage(publication, randomString());
-        assertThat(messageIdentifier, is(equalTo(SOME_IDENTIFIER)));
+        URI messageId = createSampleMessage(publication, randomString());
+        SortableIdentifier actualIdentifier = extractIdentifier(messageId);
+        assertThat(actualIdentifier, is(equalTo(SOME_IDENTIFIER)));
         Executable action = () -> createSampleMessage(publication, randomString());
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getCause(), is(instanceOf(TransactionFailedException.class)));
