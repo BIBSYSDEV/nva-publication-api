@@ -36,6 +36,7 @@ import nva.commons.core.StringUtils;
 public class MessageService extends ServiceWithTransactions {
 
     public static final String RAWTYPES = "rawtypes";
+
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
@@ -43,6 +44,7 @@ public class MessageService extends ServiceWithTransactions {
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
+
     private final Supplier<SortableIdentifier> identifierSupplier;
 
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
@@ -91,6 +93,7 @@ public class MessageService extends ServiceWithTransactions {
         return messagesWithResource(resultDaos);
     }
 
+
     public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
         QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
@@ -119,6 +122,7 @@ public class MessageService extends ServiceWithTransactions {
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {
         return SortableIdentifier::next;
     }
+
 
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
@@ -166,9 +170,10 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     private QueryRequest queryForRetrievingMessagesByResource(ResourceDao queryObject) {
-        Map<String, Condition> keyCondition = queryObject.byResource(
-            ResourceDao.joinByResourceContainedOrderedType(),
-            MessageDao.joinByResourceOrderedContainedType());
+        String searchStartPoint = ResourceDao.joinByResourceContainedOrderedType();
+        String searchEndingPoint = MessageDao.joinByResourceOrderedContainedType();
+        Map<String, Condition> keyCondition = queryObject.byResource(searchStartPoint, searchEndingPoint);
+
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
