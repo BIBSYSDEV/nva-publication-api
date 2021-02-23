@@ -1,15 +1,23 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceMessages;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -27,16 +35,24 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     public static final String EMPTY_STRING = "";
     private static final Logger LOGGER = LoggerFactory.getLogger(ListDoiRequestsHandler.class);
     private final DoiRequestService doiRequestService;
+    private final MessageService messageService;
 
     @JacocoGenerated
     public ListDoiRequestsHandler() {
-        this(new Environment(), defaultRequestService());
+        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+    }
+
+    @JacocoGenerated
+    private ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
+        this(new Environment(), defaultDoiRequestService(client, clock), defaultMessageService(client, clock));
     }
 
     public ListDoiRequestsHandler(Environment environment,
-                                  DoiRequestService doiRequestService) {
+                                  DoiRequestService doiRequestService,
+                                  MessageService messageService) {
         super(Void.class, environment, LOGGER);
         this.doiRequestService = doiRequestService;
+        this.messageService = messageService;
     }
 
     @Override
@@ -51,17 +67,26 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         } else if (userIsACreator(role, userRoles)) {
             return fetchDoiRequestsForUser(userInstance);
         }
-        return new Publication[0];
+
+        return emptyResult();
     }
 
     @Override
     protected Integer getSuccessStatusCode(Void input, Publication[] output) {
         return HttpURLConnection.HTTP_OK;
     }
-    
+
+    private static MessageService defaultMessageService(AmazonDynamoDB client, Clock clock) {
+        return new MessageService(client, clock);
+    }
+
     @JacocoGenerated
-    private static DoiRequestService defaultRequestService() {
-        return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client, Clock clock) {
+        return new DoiRequestService(client, clock);
+    }
+
+    private Publication[] emptyResult() {
+        return new Publication[0];
     }
 
     private boolean userIsACreator(String requestedRole, String userRolesCsv) {
@@ -85,22 +110,67 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForUser(userInstance);
-        return convertInternalObjectsToDtos(doiRequests);
+        var publicationDtos = convertInternalObjectsToDtos(doiRequests);
+        List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
+        return convertListToArray(enrichedWithMessages);
     }
 
     private Publication[] fetchDoiRequestsForCurator(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
-
-        return convertInternalObjectsToDtos(doiRequests);
+        List<Publication> publicationDtos = convertInternalObjectsToDtos(doiRequests);
+        List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
+        return convertListToArray(enrichedWithMessages);
     }
 
-    private Publication[] convertInternalObjectsToDtos(List<DoiRequest> doiRequests) {
-        List<Publication> dtos = doiRequests.stream()
-            .map(DoiRequest::toPublication)
-            .collect(Collectors.toList());
-        Publication[] result = new Publication[doiRequests.size()];
+    private List<Publication> enrichPublicationDtosWithDoiRequestMessages(List<Publication> dtos) {
+        return dtos.stream()
+                   .map(this::addMessagesToPublicationDto)
+                   .sorted(sortByOldestDoiRequestFirst())
+                   .collect(Collectors.toList());
+    }
 
-        dtos.toArray(result);
-        return result;
+    private Comparator<Publication> sortByOldestDoiRequestFirst() {
+        return Comparator.comparing(p -> p.getDoiRequest().getCreatedDate());
+    }
+
+    private Publication addMessagesToPublicationDto(Publication dto) {
+        Stream<ResourceMessages> messages =
+            messageService.getMessagesForResource(extractOwner(dto), dto.getIdentifier()).stream();
+        List<DoiRequestMessage> doiRequestMessages = transformToLegacyDoiRequestMessagesDto(messages);
+        dto.getDoiRequest().setMessages(doiRequestMessages);
+        return dto;
+    }
+
+    private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(Stream<ResourceMessages> messages) {
+        return messages
+                   .flatMap(resourceMessages -> resourceMessages.getMessages().stream())
+                   .filter(MessageDto::isDoiRequestRelated)
+                   .map(this::toDoiRequestMessage)
+                   .sorted(sortByTimeOldestFirst())
+                   .collect(Collectors.toList());
+    }
+
+    private Comparator<DoiRequestMessage> sortByTimeOldestFirst() {
+        return Comparator.comparing(DoiRequestMessage::getTimestamp);
+    }
+
+    private DoiRequestMessage toDoiRequestMessage(MessageDto message) {
+        return new DoiRequestMessage.Builder()
+                   .withText(message.getText())
+                   .withTimestamp(message.getDate())
+                   .withAuthor(message.getSenderIdentifier())
+                   .build();
+    }
+
+    private Publication[] convertListToArray(List<Publication> dtos) {
+        Publication[] array = new Publication[dtos.size()];
+        dtos.toArray(array);
+        return array;
+    }
+
+    private List<Publication> convertInternalObjectsToDtos(List<DoiRequest> doiRequests) {
+        return doiRequests.stream()
+                   .map(DoiRequest::toPublication)
+                   .collect(Collectors.toList());
     }
 }

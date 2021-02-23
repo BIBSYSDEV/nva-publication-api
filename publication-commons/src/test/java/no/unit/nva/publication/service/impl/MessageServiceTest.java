@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -108,9 +109,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
         UserInstance userInstance = extractOwner(insertedPublication);
-        ResourceMessages resourceMessages =
+        Optional<ResourceMessages> resourceMessagesOpt =
             messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
 
+        assertThat(resourceMessagesOpt.isPresent(), is(true));
+        ResourceMessages resourceMessages = resourceMessagesOpt.orElseThrow();
         Publication actualPublication = resourceMessages.getPublication();
 
         Publication expectedPublication = constructExpectedPublication(insertedPublication);
@@ -210,12 +213,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
         List<ResourceMessages> actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
 
+        ResourceMessages expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
+        ResourceMessages expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
         List<ResourceMessages> expectedMessages = List.of(
-            ResourceMessages.fromMessageList(messagesForPublication1),
-            ResourceMessages.fromMessageList(messagesForPublication2)
+            expectedMessagesForPublication1,
+            expectedMessagesFromPublication2
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    public ResourceMessages constructExpectedMessages(List<Message> messagesForPublication1) {
+        return ResourceMessages.fromMessageList(messagesForPublication1).orElseThrow();
     }
 
     private Environment setupEnvironment() {

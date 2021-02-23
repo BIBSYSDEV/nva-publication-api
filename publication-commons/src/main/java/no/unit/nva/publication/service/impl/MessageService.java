@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -113,7 +114,7 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     @SuppressWarnings(RAWTYPES)
-    public ResourceMessages getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
+    public Optional<ResourceMessages> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
         ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
         QueryRequest queryRequest = queryForRetrievingMessagesByResource(queryObject);
         List<Dao> resultDaos = executeQuery(queryRequest);
@@ -158,10 +159,9 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     private List<ResourceMessages> createResponseObjects(Map<SortableIdentifier, List<Message>> messagesPerResource) {
-        return messagesPerResource
-                   .values()
+        return messagesPerResource.values()
                    .stream()
-                   .map(ResourceMessages::fromMessageList)
+                   .flatMap(messages -> ResourceMessages.fromMessageList(messages).stream())
                    .sorted(Comparator.comparing(resourceMessage -> resourceMessage.getPublication().getIdentifier()))
                    .collect(Collectors.toList());
     }
@@ -219,7 +219,7 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
-    private ResourceMessages messagesWithResource(List<Dao> daos) {
+    private Optional<ResourceMessages> messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
         return ResourceMessages.fromMessageList(messages);
     }

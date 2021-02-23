@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static java.util.Objects.isNull;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
@@ -23,11 +24,11 @@ public class ResourceMessages implements JsonSerializable {
     public ResourceMessages() {
     }
 
-    public static ResourceMessages fromMessageList(List<Message> messages) {
+    public static Optional<ResourceMessages> fromMessageList(List<Message> messages) {
         if (isEmpty(messages)) {
-            throw new IllegalArgumentException(EMPTY_MESSAGE_LIST_ERROR);
+            return Optional.empty();
         }
-        return createNewResourceMessageInstance(messages);
+        return Optional.of(createNewResourceMessageInstance(messages));
     }
 
     public static Publication createPublicationDescription(Message mostRecentMessage) {
