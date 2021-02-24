@@ -38,13 +38,18 @@ public class MessageService extends ServiceWithTransactions {
 
     public static final String RAWTYPES = "rawtypes";
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
+
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
+
     public static final String PATH_SEPARATOR = "/";
+    private static final int OLDEST_MESSAGE = 0;
+
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
+
     private final Supplier<SortableIdentifier> identifierSupplier;
 
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
@@ -103,6 +108,7 @@ public class MessageService extends ServiceWithTransactions {
         return messagesWithResource(resultDaos);
     }
 
+
     public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
         QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
@@ -117,7 +123,7 @@ public class MessageService extends ServiceWithTransactions {
         QueryRequest queryRequest = queryForFetchingAllMessagesForAUser(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         Map<SortableIdentifier, List<Message>> messagesPerResource = groupMessagesByResourceIdentifier(queryResult);
-        return createResponseObjects(messagesPerResource);
+        return createResponseDtos(messagesPerResource);
     }
 
     @Override
@@ -140,13 +146,17 @@ public class MessageService extends ServiceWithTransactions {
         return SortableIdentifier::next;
     }
 
-    private List<ResourceMessages> createResponseObjects(Map<SortableIdentifier, List<Message>> messagesPerResource) {
+    private List<ResourceMessages> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
         return messagesPerResource
                    .values()
                    .stream()
                    .map(ResourceMessages::fromMessageList)
-                   .sorted(Comparator.comparing(resourceMessage -> resourceMessage.getPublication().getIdentifier()))
+                   .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
+    }
+
+    private Comparator<ResourceMessages> sortByOldestMessageCreationDate() {
+        return Comparator.comparing(resourceMessage -> resourceMessage.getMessages().get(OLDEST_MESSAGE).getDate());
     }
 
     private Map<SortableIdentifier, List<Message>> groupMessagesByResourceIdentifier(QueryResult queryResult) {
@@ -162,6 +172,7 @@ public class MessageService extends ServiceWithTransactions {
                    .withTableName(tableName)
                    .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
+
 
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
@@ -186,6 +197,7 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
+    @SuppressWarnings(RAWTYPES)
     private ResourceMessages messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
         return ResourceMessages.fromMessageList(messages);
@@ -210,9 +222,10 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     private QueryRequest queryForRetrievingMessagesByResource(ResourceDao queryObject) {
-        Map<String, Condition> keyCondition = queryObject.byResource(
-            ResourceDao.joinByResourceContainedOrderedType(),
-            MessageDao.joinByResourceOrderedContainedType());
+        String searchStartPoint = ResourceDao.joinByResourceContainedOrderedType();
+        String searchEndingPoint = MessageDao.joinByResourceOrderedContainedType();
+        Map<String, Condition> keyCondition = queryObject.byResource(searchStartPoint, searchEndingPoint);
+
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)

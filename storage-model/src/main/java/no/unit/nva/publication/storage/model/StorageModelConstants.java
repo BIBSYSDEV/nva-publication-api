@@ -25,7 +25,7 @@ public final class StorageModelConstants {
     public final String scheme;
     public final String messagePath;
 
-    public StorageModelConstants(Environment environment) {
+    private StorageModelConstants(Environment environment) {
         host = environment.readEnv(HOST_ENV_VARIABLE_NAME);
         scheme = environment.readEnvOpt(NETWORK_SCHEME_ENV_VARIABLE_NAME).orElse(DEFAULT_SCHEME);
         messagePath = formatPath(readMessagePathEnvVariable(environment));
