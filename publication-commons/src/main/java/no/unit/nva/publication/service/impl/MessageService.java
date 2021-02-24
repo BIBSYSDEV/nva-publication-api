@@ -38,9 +38,11 @@ public class MessageService extends ServiceWithTransactions {
 
     public static final String RAWTYPES = "rawtypes";
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
+    public static final int OLDEST = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
+    private static final int OLDEST_MESSAGE = 0;
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
@@ -107,7 +109,7 @@ public class MessageService extends ServiceWithTransactions {
         QueryRequest queryRequest = queryForFetchingAllMessagesForAUser(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         Map<SortableIdentifier, List<Message>> messagesPerResource = groupMessagesByResourceIdentifier(queryResult);
-        return createResponseObjects(messagesPerResource);
+        return createResponseDtos(messagesPerResource);
     }
 
     @Override
@@ -130,13 +132,17 @@ public class MessageService extends ServiceWithTransactions {
         return SortableIdentifier::next;
     }
 
-    private List<ResourceMessages> createResponseObjects(Map<SortableIdentifier, List<Message>> messagesPerResource) {
+    private List<ResourceMessages> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
         return messagesPerResource
                    .values()
                    .stream()
                    .map(ResourceMessages::fromMessageList)
-                   .sorted(Comparator.comparing(resourceMessage -> resourceMessage.getPublication().getIdentifier()))
+                   .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
+    }
+
+    private Comparator<ResourceMessages> sortByOldestMessageCreationDate() {
+        return Comparator.comparing(resourceMessage -> resourceMessage.getMessages().get(OLDEST_MESSAGE).getDate());
     }
 
     private Map<SortableIdentifier, List<Message>> groupMessagesByResourceIdentifier(QueryResult queryResult) {

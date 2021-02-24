@@ -32,9 +32,6 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.attempt.Try;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -167,11 +164,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, is(equalTo(expectedMessages)));
     }
 
-    private <T> String difference(T savedMessage, T expectedMessage) {
-        Javers javers = JaversBuilder.javers().build();
-        Diff diff = javers.compare(savedMessage, expectedMessage);
-        return diff.prettyPrint();
-    }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
         List<MessageDto> messages = insertedMessages.stream()

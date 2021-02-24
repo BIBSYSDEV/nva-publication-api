@@ -10,13 +10,11 @@ import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.storage.model.Message;
-
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
 public class ResourceMessages implements JsonSerializable {
 
-    public static final int NEWEST_MESSAGE = 0;
     public static final String EMPTY_MESSAGE_LIST_ERROR = "Message list cannot be empty";
     private Publication publication;
     private List<MessageDto> messages;
@@ -88,14 +86,18 @@ public class ResourceMessages implements JsonSerializable {
     }
 
     private static ResourceMessages createNewResourceMessageInstance(List<Message> messages) {
-        messages.sort(ResourceMessages::newestFirst);
-        Message mostRecentMessage = messages.get(NEWEST_MESSAGE);
+        messages.sort(ResourceMessages::oldestFirst);
+        Message mostRecentMessage = newestMessage(messages);
         Publication publication = createPublicationDescription(mostRecentMessage);
         return createResourceMessage(messages, publication);
     }
 
-    private static int newestFirst(Message o1, Message o2) {
-        return o2.getCreatedTime().compareTo(o1.getCreatedTime());
+    private static Message newestMessage(List<Message> messages) {
+        return messages.get(messages.size() - 1);
+    }
+
+    private static int oldestFirst(Message o1, Message o2) {
+        return o1.getCreatedTime().compareTo(o2.getCreatedTime());
     }
 
     private static ResourceMessages createResourceMessage(List<Message> messages, Publication publication) {
