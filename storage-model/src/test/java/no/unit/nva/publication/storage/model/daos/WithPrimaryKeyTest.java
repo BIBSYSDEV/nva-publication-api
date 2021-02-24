@@ -41,8 +41,7 @@ public class WithPrimaryKeyTest extends ResourcesDynamoDbLocalTest {
         WithPrimaryKey queryObject = (WithPrimaryKey) daos.get(0);
 
         var result = performQuery(queryObject);
-        Object[] expectedItems = new Object[daos.size()];
-        daos.toArray(expectedItems);
+        var expectedItems = daos.toArray(Object[]::new);
         assertThat(result, containsInAnyOrder(expectedItems));
     }
 

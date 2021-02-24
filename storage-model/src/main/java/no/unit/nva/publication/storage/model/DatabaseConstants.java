@@ -63,11 +63,14 @@ public final class DatabaseConstants {
     }
 
     private static String defaultValue() {
+        logWarning();
+        return DEFAULT_RESOURCES_TABLE_NAME;
+    }
+
+    private static void logWarning() {
         logger.warn(ENVIRONMENT_VARIABLE_NOT_SET_WARNING,
             RESOURCES_TABLE_NAME_ENV_VARIABLE,
             DEFAULT_RESOURCES_TABLE_NAME
         );
-
-        return DEFAULT_RESOURCES_TABLE_NAME;
     }
 }
