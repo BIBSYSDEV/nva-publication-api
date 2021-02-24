@@ -54,7 +54,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
-    public static final int ONLY_MESSAGE = 0;
+    public static final int SINGLE_MESSAGE = 0;
     public static final String ALLOW_ALL_ORIGINS = "*";
     public static final String SOME_VALID_HOST = "localhost";
     private CreateDoiRequestHandler handler;
@@ -145,7 +145,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
         ResourceMessages resourceMessages = getMessagesForResource(publication);
-        MessageDto savedMessage = resourceMessages.getMessages().get(ONLY_MESSAGE);
+        MessageDto savedMessage = resourceMessages.getMessages().get(SINGLE_MESSAGE);
 
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.isDoiRequestRelated(), is(equalTo(true)));
