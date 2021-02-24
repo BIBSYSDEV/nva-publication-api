@@ -96,8 +96,8 @@ public class ResourceMessages implements JsonSerializable {
         return messages.get(messages.size() - 1);
     }
 
-    private static int oldestFirst(Message o1, Message o2) {
-        return o1.getCreatedTime().compareTo(o2.getCreatedTime());
+    private static int oldestFirst(Message left, Message right) {
+        return left.getCreatedTime().compareTo(right.getCreatedTime());
     }
 
     private static ResourceMessages createResourceMessage(List<Message> messages, Publication publication) {
@@ -111,14 +111,14 @@ public class ResourceMessages implements JsonSerializable {
         return messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
     }
 
-    private static EntityDescription constructEntityDescription(String resourceTitleInMostRecentMessage) {
+    private static EntityDescription constructEntityDescription(String title) {
         return new EntityDescription.Builder()
-                   .withMainTitle(resourceTitleInMostRecentMessage)
+                   .withMainTitle(title)
                    .build();
     }
 
-    private static Organization constructPublisher(Message mostRecentMessage) {
-        return new Builder().withId(mostRecentMessage.getCustomerId()).build();
+    private static Organization constructPublisher(Message message) {
+        return new Builder().withId(message.getCustomerId()).build();
     }
 
     private static boolean isEmpty(List<Message> messages) {
