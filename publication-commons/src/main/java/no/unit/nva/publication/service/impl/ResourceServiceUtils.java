@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 
@@ -23,17 +24,16 @@ public final class ResourceServiceUtils {
         PARTITION_KEY_NAME_PLACEHOLDER + " = " + PARTITION_KEY_VALUE_PLACEHOLDER
         + " AND "
         + SORT_KEY_NAME_PLACEHOLDER + " = " + SORT_KEY_VALUE_PLACEHOLDER;
-    
+
     public static final Map<String, String> PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES =
         primaryKeyEqualityConditionAttributeNames();
-    
+
     public static final String KEY_NOT_EXISTS_CONDITION = keyNotExistsCondition();
     public static final String UNSUPPORTED_KEY_TYPE_EXCEPTION = "Currently only String values are supported";
-    
+
     private ResourceServiceUtils() {
     }
-    
-    
+
     static Map<String, AttributeValue> primaryKeyEqualityConditionAttributeValues(WithPrimaryKey resourceDao) {
         return Map.of(PARTITION_KEY_VALUE_PLACEHOLDER,
             new AttributeValue(resourceDao.getPrimaryKeyPartitionKey()),
@@ -48,24 +48,28 @@ public final class ResourceServiceUtils {
         return newOrganization(user.getOrganizationUri());
     }
 
+    public static UserInstance extractOwner(Publication publication) {
+        String owner = publication.getOwner();
+        URI customerId = publication.getPublisher().getId();
+        return new UserInstance(owner, customerId);
+    }
+
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,
                                                                                 Class<T> valueClass) {
         if (String.class.equals(valueClass)) {
             return valuesMap
-                .entrySet()
-                .stream()
-                .collect(
-                    Collectors.toMap(
-                        Entry::getKey,
-                        mapEntry -> new AttributeValue((String) mapEntry.getValue())
-                    )
-                );
+                       .entrySet()
+                       .stream()
+                       .collect(
+                           Collectors.toMap(
+                               Entry::getKey,
+                               mapEntry -> new AttributeValue((String) mapEntry.getValue())
+                           )
+                       );
         } else {
             throw new UnsupportedOperationException(UNSUPPORTED_KEY_TYPE_EXCEPTION);
         }
     }
-
-
 
     private static Map<String, String> primaryKeyEqualityConditionAttributeNames() {
         return Map.of(

@@ -1,0 +1,35 @@
+repositories {
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
+dependencies {
+
+    implementation project(":publication-commons")
+    implementation project(":storage-model")
+
+    implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+
+    testImplementation project(":publication-testing")
+
+    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
+}
+
+configurations.testImplementation.canBeResolved = true
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/dynamodb-local'
+}

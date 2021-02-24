@@ -52,9 +52,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         Publication publication = fetchExistingPublication(input);
-        UserInstance owner = extractOwner(publication);
         UserInstance sender = createSender(requestInfo);
-        SortableIdentifier messageIdentifier = sendMessage(input, sender, publication, owner);
+        SortableIdentifier messageIdentifier = sendMessage(input, sender, publication);
+
 
         addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
 
@@ -87,10 +87,12 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         }
     }
 
-    private SortableIdentifier sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication,
-                                           UserInstance owner) throws TransactionFailedException, BadRequestException {
+    private SortableIdentifier sendMessage(CreateMessageRequest input,
+                                           UserInstance sender,
+                                           Publication publication
+    ) throws TransactionFailedException, BadRequestException {
         try {
-            return messageService.createMessage(sender, owner, publication.getIdentifier(), input.getMessage());
+            return messageService.createMessage(sender, publication, input.getMessage());
         } catch (InvalidInputException exception) {
             throw handleBadRequests(exception);
         }
@@ -108,9 +110,5 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     private Map<String, String> locationHeader(String messageIdentifier) {
         return Map.of(HttpHeaders.LOCATION, messageIdentifier);
-    }
-
-    private UserInstance extractOwner(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
 }
