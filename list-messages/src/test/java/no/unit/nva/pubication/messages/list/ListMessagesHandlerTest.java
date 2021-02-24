@@ -55,6 +55,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final int FIRST = 0;
     public static final int FIRST_ELEMENT = FIRST;
     private static final int NUMBER_OF_PUBLICATIONS = 2;
+    public static final String ALLOW_EVERYTHING = "*";
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
@@ -252,7 +253,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Environment mockEnvironment() {
         var env = mock(Environment.class);
-        when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_EVERYTHING);
         return env;
     }
 

@@ -52,7 +52,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
     public static final int FIRST_ELEMENT = 0;
-    public static final String LOCALHOST = "localhost";
+    public static final String SOME_VALID_HOST = "localhost";
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -173,7 +173,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Environment setupEnvironment() {
         Environment env = mock(Environment.class);
-        when(env.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(LOCALHOST);
+        when(env.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
         return env;
     }
 
