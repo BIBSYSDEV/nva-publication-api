@@ -49,7 +49,6 @@ public class ResourceService extends ServiceWithTransactions {
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
-    public static final String NOT_FOUND_ERROR_MESSAGE = "The resource could not be found";
     public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
     
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
@@ -247,7 +246,7 @@ public class ResourceService extends ServiceWithTransactions {
     
     private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
         if (primaryKeyConditionFailed(failure.getException())) {
-            return new NotFoundException(NOT_FOUND_ERROR_MESSAGE);
+            return new NotFoundException(ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE);
         } else if (failure.getException() instanceof ConditionalCheckFailedException) {
             return new BadRequestException(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE
                                            + resource.getIdentifier().toString());

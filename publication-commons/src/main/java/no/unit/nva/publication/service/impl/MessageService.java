@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
@@ -30,6 +31,7 @@ import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.MessageDao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
 
@@ -38,6 +40,7 @@ public class MessageService extends ServiceWithTransactions {
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
+    public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
@@ -130,9 +133,16 @@ public class MessageService extends ServiceWithTransactions {
 
     private Message createNewMessage(UserInstance sender, UserInstance owner, SortableIdentifier resourceIdentifier,
                                      String messageText) {
+        requireMessageIsNotBlank(messageText);
         Message message = Message.simpleMessage(sender, owner, resourceIdentifier, messageText, clockForTimestamps);
         message.setIdentifier(identifierSupplier.get());
         return message;
+    }
+
+    private void requireMessageIsNotBlank(String messageText) {
+        if (StringUtils.isBlank(messageText)) {
+            throw new InvalidInputException(EMPTY_MESSAGE_ERROR);
+        }
     }
 
     private ResourceMessages messagesWithResource(List<Dao> daos) {
