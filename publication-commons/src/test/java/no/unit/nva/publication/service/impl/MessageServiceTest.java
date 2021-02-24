@@ -4,7 +4,6 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractO
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -43,11 +42,8 @@ import org.junit.jupiter.api.function.Executable;
 public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final Faker FAKER = new Faker();
-    public static final URI SOME_ORG = URI.create("https://example.org/1234");
     public static final String SOME_SENDER = "some@user";
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
-    public static final String SOME_OWNER = "some@owner";
-    public static final UserInstance SAMPLE_OWNER_INSTANCE = new UserInstance(SOME_OWNER, SOME_ORG);
     public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Instant MESSAGE_CREATION_TIME = PUBLICATION_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant SECOND_MESSAGE_CREATION_TIME = MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
@@ -56,7 +52,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
-    public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final int FIRST_ELEMENT = 0;
 
     private MessageService messageService;
@@ -78,8 +73,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
         Message savedMessage = fetchMessage(owner, messageIdentifier);
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
-        String difference = difference(savedMessage, expectedMessage);
-        assertThat(difference, savedMessage, is(equalTo(expectedMessage)));
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -208,12 +202,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     private MessageService serviceProducingDuplicateIdentifiers() {
         return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
-    }
-
-    private Message[] listToArray(List<Message> insertedMessages) {
-        Message[] insertedMessagesArray = new Message[insertedMessages.size()];
-        insertedMessages.toArray(insertedMessagesArray);
-        return insertedMessagesArray;
     }
 
     private List<Publication> createPublicationsOfDifferentOwnersInDifferentOrg() {
