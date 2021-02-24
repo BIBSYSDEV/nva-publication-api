@@ -51,11 +51,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        UserInstance sender = createSender(requestInfo);
-
         Publication publication = fetchExistingPublication(input);
         UserInstance owner = extractOwner(publication);
-
+        UserInstance sender = createSender(requestInfo);
         SortableIdentifier messageIdentifier = sendMessage(input, sender, publication, owner);
 
         addAdditionalHeaders(() -> locationHeader(messageIdentifier.toString()));
