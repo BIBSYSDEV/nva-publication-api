@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -258,8 +257,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Message createMessage(Publication publication, UserInstance sender) throws TransactionFailedException {
-        SortableIdentifier messageIdentifier = messageService.createMessage(sender, publication, randomString());
-        return messageService.getMessage(extractOwner(publication), messageIdentifier);
+        URI messageId = messageService.createMessage(sender, publication, randomString());
+        return messageService.getMessage(extractOwner(publication), messageId);
     }
 
     private String randomString() {

@@ -38,11 +38,14 @@ public class MessageService extends ServiceWithTransactions {
 
     public static final String RAWTYPES = "rawtypes";
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
-    public static final int OLDEST = 0;
+
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
+
+    public static final String PATH_SEPARATOR = "/";
     private static final int OLDEST_MESSAGE = 0;
+
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
@@ -63,9 +66,15 @@ public class MessageService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
     }
 
-    public SortableIdentifier createMessage(UserInstance sender,
-                                            Publication publication,
-                                            String messageText) throws TransactionFailedException {
+    //TODO replace extraction SortableIdentifier.fromUri() when nva-commons it at version 1.1.1.
+    public static SortableIdentifier extractIdentifier(URI uri) {
+        String[] path = uri.getPath().split(PATH_SEPARATOR);
+        return new SortableIdentifier(path[path.length - 1]);
+    }
+
+    public URI createMessage(UserInstance sender,
+                             Publication publication,
+                             String messageText) throws TransactionFailedException {
         Message message = createNewMessage(sender, publication, messageText);
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
@@ -74,7 +83,12 @@ public class MessageService extends ServiceWithTransactions {
 
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
-        return message.getIdentifier();
+        return message.getId();
+    }
+
+    public Message getMessage(UserInstance owner, URI messageId) {
+        SortableIdentifier identifier = extractIdentifier(messageId);
+        return getMessage(owner, identifier);
     }
 
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) {
