@@ -105,8 +105,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
         List<Publication> publications = createSamplePublications();
-        List<Message> messages = insertSampleMessages(publications);
-        List<Message> moreMessages = insertSampleMessages(publications);
+        List<Message> messages = insertOneMessagePerPublication(publications);
+        List<Message> moreMessages = insertOneMessagePerPublication(publications);
         List<Message> allMessages = new ArrayList<>();
         allMessages.addAll(messages);
         allMessages.addAll(moreMessages);
@@ -224,10 +224,10 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private List<Message> insetSampleMessages() {
         List<Publication> publications = createSamplePublications();
-        return insertSampleMessages(publications);
+        return insertOneMessagePerPublication(publications);
     }
 
-    private List<Message> insertSampleMessages(List<Publication> publications) {
+    private List<Message> insertOneMessagePerPublication(List<Publication> publications) {
         Publication samplePublication = publications.get(FIRST_ELEMENT);
         UserInstance sender = new UserInstance(SOME_OTHER_USER, samplePublication.getPublisher().getId());
 
