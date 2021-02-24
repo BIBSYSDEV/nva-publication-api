@@ -64,14 +64,18 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     @Override
     protected Void processInput(CreateDoiRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String user = requestInfo.getFeideId().orElse(null);
-        UserInstance owner = new UserInstance(user, customerId);
+        UserInstance owner = extractUserInstance(requestInfo);
         Publication publication = fetchPublication(input, owner);
         SortableIdentifier doiRequestIdentifier = createDoiRequest(publication);
         sendMessage(input, owner, publication);
         addAdditionalHeaders(() -> additionalHeaders(doiRequestIdentifier));
         return null;
+    }
+
+    private UserInstance extractUserInstance(RequestInfo requestInfo) {
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        String user = requestInfo.getFeideId().orElse(null);
+        return new UserInstance(user, customerId);
     }
 
     @Override

@@ -54,6 +54,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
+    public static final int ONLY_MESSAGE = 0;
+    public static final String ALLOW_ALL_ORIGINS = "*";
+    public static final String SOME_VALID_HOST = "localhost";
     private CreateDoiRequestHandler handler;
     private ResourceService resourceService;
     private Clock mockClock;
@@ -137,16 +140,20 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     public void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
         throws TransactionFailedException, IOException {
         Publication publication = createPublication();
-
         String expectedMessageText = randomString();
+
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
-        ResourceMessages resourceMessages = messageService.getMessagesForResource(extractOwner(publication),
-            publication.getIdentifier());
-        MessageDto savedMessage = resourceMessages.getMessages().get(0);
+        ResourceMessages resourceMessages = getMessagesForResource(publication);
+        MessageDto savedMessage = resourceMessages.getMessages().get(ONLY_MESSAGE);
 
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.isDoiRequestRelated(), is(equalTo(true)));
+    }
+
+    private ResourceMessages getMessagesForResource(Publication publication) {
+        return messageService.getMessagesForResource(extractOwner(publication),
+            publication.getIdentifier());
     }
 
     public void sendRequest(Publication publication, String owner, String message) throws IOException {
@@ -164,8 +171,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn("localhost");
+        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGINS);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
         return environment;
     }
 
