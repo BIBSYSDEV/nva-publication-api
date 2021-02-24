@@ -76,6 +76,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         return HttpURLConnection.HTTP_OK;
     }
 
+    @JacocoGenerated
     private static MessageService defaultMessageService(AmazonDynamoDB client, Clock clock) {
         return new MessageService(client, clock);
     }

@@ -13,7 +13,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -120,7 +119,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         List<Publication> publications = publishedPublicationsOfDifferentPublisher();
         List<DoiRequest> createdDoiRequests = createDoiRequests(publications);
 
-        URI curatorsCustomer = publications.get(0).getPublisher().getId();
+        URI curatorsCustomer = publications.get(FIRST_ELEMENT).getPublisher().getId();
 
         InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, CURATOR_ROLE);
 
@@ -201,26 +200,38 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
-        UserInstance commonOwnerOfPublications = extractOwner(publications.get(FIRST_ELEMENT));
-        var doiRequestMessages = creteDoiRequestMessagesForPublications(publications);
+        final var doiRequestMessages = creteDoiRequestMessagesForPublications(publications);
 
-        URI customerId = commonOwnerOfPublications.getOrganizationUri();
-        String ownerIdentifier = commonOwnerOfPublications.getUserIdentifier();
-        InputStream input = createRequest(customerId, ownerIdentifier, CREATOR_ROLE);
-        handler.handleRequest(input, outputStream, context);
-        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+        URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
+        String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
+        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
 
-        Publication[] doiRequestDtos = response.getBodyObject(Publication[].class);
-        List<String> actualMessages = extractMessageTexts(doiRequestDtos);
-
-        var expectedMessages = extractExpectedMessageTexts(doiRequestMessages);
-
+        String[] expectedMessages = extractExpectedMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
     @Test
-    public void listDoiRequestsForCuratorReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest() {
-        fail();
+    public void listDoiRequestsForCuratorReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
+        throws ApiGatewayException, IOException {
+        var publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
+        createDoiRequests(publications);
+        final var doiRequestMessages = creteDoiRequestMessagesForPublications(publications);
+
+        URI commonPublisherId = publications.get(0).getPublisher().getId();
+        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
+
+        String[] expectedMessages = extractExpectedMessageTexts(doiRequestMessages);
+        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
+    }
+
+    public List<String> sendRequestAndReadMessages(String userIdentifier, URI commonPublisherId, String curatorRole)
+        throws IOException {
+        InputStream input = createRequest(commonPublisherId, userIdentifier, curatorRole);
+        handler.handleRequest(input, outputStream, context);
+        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+
+        Publication[] doiRequestDtos = response.getBodyObject(Publication[].class);
+        return extractMessageTexts(doiRequestDtos);
     }
 
     private String[] extractExpectedMessageTexts(List<MessageDto> doiRequestMessages) {
