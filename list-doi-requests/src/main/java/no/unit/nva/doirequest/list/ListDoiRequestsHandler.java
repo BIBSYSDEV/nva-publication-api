@@ -43,7 +43,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     }
 
     @JacocoGenerated
-    private ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
+    public ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
         this(new Environment(), defaultDoiRequestService(client, clock), defaultMessageService(client, clock));
     }
 
