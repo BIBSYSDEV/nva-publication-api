@@ -17,7 +17,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -135,14 +135,14 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     }
 
     private Publication addMessagesToPublicationDto(Publication dto) {
-        Stream<ResourceMessages> messages =
+        Stream<ResourceConversation> messages =
             messageService.getMessagesForResource(extractOwner(dto), dto.getIdentifier()).stream();
         List<DoiRequestMessage> doiRequestMessages = transformToLegacyDoiRequestMessagesDto(messages);
         dto.getDoiRequest().setMessages(doiRequestMessages);
         return dto;
     }
 
-    private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(Stream<ResourceMessages> messages) {
+    private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(Stream<ResourceConversation> messages) {
         return messages
                    .flatMap(resourceMessages -> resourceMessages.getMessages().stream())
                    .filter(MessageDto::isDoiRequestRelated)

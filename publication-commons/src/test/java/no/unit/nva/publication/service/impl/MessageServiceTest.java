@@ -110,18 +110,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
         UserInstance userInstance = extractOwner(insertedPublication);
-        Optional<ResourceMessages> resourceMessagesOpt =
+        Optional<ResourceConversation> resourceMessagesOpt =
             messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
 
         assertThat(resourceMessagesOpt.isPresent(), is(true));
-        ResourceMessages resourceMessages = resourceMessagesOpt.orElseThrow();
-        Publication actualPublication = resourceMessages.getPublication();
+        ResourceConversation resourceConversation = resourceMessagesOpt.orElseThrow();
+        Publication actualPublication = resourceConversation.getPublication();
 
         Publication expectedPublication = constructExpectedPublication(insertedPublication);
         Diff diff = JAVERS.compare(actualPublication, expectedPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
         MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
-        assertThat(resourceMessages.getMessages(), containsInAnyOrder(expectedMessages));
+        assertThat(resourceConversation.getMessages(), containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -213,11 +213,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> messagesForPublication1 = insertSampleMessages(publication1);
         List<Message> messagesForPublication2 = insertSampleMessages(publication2);
 
-        List<ResourceMessages> actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
+        List<ResourceConversation> actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
 
-        ResourceMessages expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
-        ResourceMessages expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
-        List<ResourceMessages> expectedMessages = List.of(
+        ResourceConversation expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
+        ResourceConversation expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
+        List<ResourceConversation> expectedMessages = List.of(
             expectedMessagesForPublication1,
             expectedMessagesFromPublication2
         );
@@ -225,8 +225,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, is(equalTo(expectedMessages)));
     }
 
-    public ResourceMessages constructExpectedMessages(List<Message> messagesForPublication1) {
-        return ResourceMessages.fromMessageList(messagesForPublication1).orElseThrow();
+    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication1) {
+        return ResourceConversation.fromMessageList(messagesForPublication1).orElseThrow();
     }
 
     private Environment setupEnvironment() {

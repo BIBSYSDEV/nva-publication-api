@@ -28,7 +28,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -91,8 +91,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceMessages[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceMessages[] responseObjects = response.getBodyObject(ResourceMessages[].class);
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
 
@@ -104,14 +104,14 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private void assertThatResourceDescriptionContainsResourceDescriptionsWithIdentifierAndTitle(
-        List<Message> savedMessages, ResourceMessages[] responseObjects) {
+        List<Message> savedMessages, ResourceConversation[] responseObjects) {
         List<Publication> actualPublicationDescriptions = extractPublicationDescriptionFromResponse(responseObjects);
         Publication[] expectedPublicationDescriptions = constructExpectedPublicationDescriptions(savedMessages);
         assertThat(actualPublicationDescriptions, containsInAnyOrder(expectedPublicationDescriptions));
     }
 
     private void assertThatResponseContainsAllExpectedMessages(List<Message> savedMessages,
-                                                               ResourceMessages[] responseObjects) {
+                                                               ResourceConversation[] responseObjects) {
         List<MessageDto> actualMessages = extractAllMessagesFromResponse(responseObjects);
         MessageDto[] expectedMessages = constructExpectedMessages(savedMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
@@ -129,9 +129,9 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return new UserInstance(message.getOwner(), message.getCustomerId());
     }
 
-    private List<Publication> extractPublicationDescriptionFromResponse(ResourceMessages[] responseObjects) {
+    private List<Publication> extractPublicationDescriptionFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
-                   .map(ResourceMessages::getPublication)
+                   .map(ResourceConversation::getPublication)
                    .collect(Collectors.toList());
     }
 
@@ -145,7 +145,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return expectedPublicationDescriptionsArray;
     }
 
-    private List<MessageDto> extractAllMessagesFromResponse(ResourceMessages[] responseObjects) {
+    private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects).flatMap(r -> r.getMessages().stream()).collect(
             Collectors.toList());
     }
@@ -159,7 +159,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Publication createPublicationDescription(Message message) {
-        return ResourceMessages.createPublicationDescription(message);
+        return ResourceConversation.createPublicationDescription(message);
     }
 
     private List<Message> insetSampleMessages() {
