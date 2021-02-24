@@ -44,6 +44,7 @@ public class MessageService extends ServiceWithTransactions {
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
+
     private final Supplier<SortableIdentifier> identifierSupplier;
 
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
@@ -90,6 +91,7 @@ public class MessageService extends ServiceWithTransactions {
         List<Dao> resultDaos = executeQuery(queryRequest);
         return messagesWithResource(resultDaos);
     }
+
 
     public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
@@ -151,6 +153,7 @@ public class MessageService extends ServiceWithTransactions {
                    .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
 
+
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
                    .withTableName(tableName)
@@ -171,6 +174,7 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
+    @SuppressWarnings(RAWTYPES)
     private ResourceMessages messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
         return ResourceMessages.fromMessageList(messages);
@@ -195,9 +199,10 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     private QueryRequest queryForRetrievingMessagesByResource(ResourceDao queryObject) {
-        Map<String, Condition> keyCondition = queryObject.byResource(
-            ResourceDao.joinByResourceContainedOrderedType(),
-            MessageDao.joinByResourceOrderedContainedType());
+        String searchStartPoint = ResourceDao.joinByResourceContainedOrderedType();
+        String searchEndingPoint = MessageDao.joinByResourceOrderedContainedType();
+        Map<String, Condition> keyCondition = queryObject.byResource(searchStartPoint, searchEndingPoint);
+
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)

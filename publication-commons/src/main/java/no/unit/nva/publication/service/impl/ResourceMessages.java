@@ -10,6 +10,7 @@ import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.storage.model.Message;
+
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
@@ -43,6 +44,14 @@ public class ResourceMessages implements JsonSerializable {
                    .build();
     }
 
+    public List<MessageDto> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<MessageDto> messages) {
+        this.messages = messages;
+    }
+
     public Publication getPublication() {
         return publication;
     }
@@ -51,13 +60,6 @@ public class ResourceMessages implements JsonSerializable {
         this.publication = publication;
     }
 
-    public List<MessageDto> getMessages() {
-        return messages;
-    }
-
-    public void setMessages(List<MessageDto> messages) {
-        this.messages = messages;
-    }
 
     @JacocoGenerated
     @Override
