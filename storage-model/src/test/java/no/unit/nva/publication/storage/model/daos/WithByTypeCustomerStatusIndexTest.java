@@ -9,13 +9,18 @@ import static org.hamcrest.collection.IsMapContaining.hasKey;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.Condition;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.WithStatus;
+import nva.commons.core.Environment;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,6 +31,12 @@ public class WithByTypeCustomerStatusIndexTest {
     public static final String SAMPLE_STATUS = "sampleStatus";
     public static final String SAMPLE_CUSTOMER_IDENTIFIER = "123";
     public static final URI SAMPLE_CUSTOMER_ID = URI.create("https://example.org/" + SAMPLE_CUSTOMER_IDENTIFIER);
+
+    @BeforeEach
+    public void init() {
+        Environment environment = setupEnvironment();
+        StorageModelConstants.updateEnvironment(environment);
+    }
 
     @Test
     public void formatByTypeCustomerStatusPartitionKeyReturnsKeyEnablingSearchByCustomerAndStatus() {
@@ -56,6 +67,12 @@ public class WithByTypeCustomerStatusIndexTest {
 
     private static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
         return DaoUtils.instanceProvider();
+    }
+
+    private Environment setupEnvironment() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn("localhost");
+        return environment;
     }
 
     private String constructExpectedPartitionKeyFormat(Dao<?> dao) {

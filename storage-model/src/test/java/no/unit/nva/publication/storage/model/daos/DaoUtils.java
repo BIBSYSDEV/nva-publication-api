@@ -62,9 +62,11 @@ public final class DaoUtils {
     }
     
     private static MessageDao sampleMessageDao() {
+        SortableIdentifier identifier = SortableIdentifier.next();
         Message message = Message.builder()
                               .withStatus(MessageStatus.UNREAD)
-                              .withIdentifier(SortableIdentifier.next())
+                              .withIdentifier(identifier)
+                              .withId(Message.messageId(identifier))
                               .withOwner(SOME_OWNER)
                               .withSender(SOME_USER)
                               .withResourceIdentifier(SortableIdentifier.next())

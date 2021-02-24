@@ -169,9 +169,12 @@ public class MessageService extends ServiceWithTransactions {
 
     private Message createNewMessage(UserInstance sender, Publication publication, String messageText) {
         requireMessageIsNotBlank(messageText);
-        Message message = Message.simpleMessage(sender, publication, messageText, clockForTimestamps);
-        message.setIdentifier(identifierSupplier.get());
-        return message;
+        SortableIdentifier messageIdentifier = identifierSupplier.get();
+        return Message.simpleMessage(sender,
+            publication,
+            messageText,
+            messageIdentifier,
+            clockForTimestamps);
     }
 
     private void requireMessageIsNotBlank(String messageText) {

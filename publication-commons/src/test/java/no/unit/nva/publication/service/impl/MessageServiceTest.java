@@ -30,7 +30,9 @@ import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
+import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
     public static final int FIRST_ELEMENT = 0;
+    public static final String SOME_VALID_HOST = "localhost";
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -58,6 +61,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         super.init();
         Clock clock = mockClock();
+        Environment environment = setupEnvironment();
+        StorageModelConstants.updateEnvironment(environment);
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
@@ -68,9 +73,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
         SortableIdentifier messageIdentifier = createSampleMessage(publication, messageText);
+
         Message savedMessage = fetchMessage(owner, messageIdentifier);
         Message expectedMessage = constructExpectedMessage(savedMessage.getIdentifier(), publication, messageText);
         assertThat(savedMessage, is(equalTo(expectedMessage)));
+
     }
 
     @Test
@@ -162,6 +169,12 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    private Environment setupEnvironment() {
+        Environment env = mock(Environment.class);
+        when(env.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
+        return env;
     }
 
 
@@ -278,21 +291,12 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return clock;
     }
 
-    private Message constructExpectedMessage(SortableIdentifier savedMessageIdentifier,
-                                             Publication publication,
+    private Message constructExpectedMessage(SortableIdentifier messageIdentifier, Publication publication,
                                              String messageText) {
+        UserInstance sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
 
-        return Message.builder()
-                   .withCreatedTime(MESSAGE_CREATION_TIME)
-                   .withIdentifier(savedMessageIdentifier)
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .withCustomerId(publication.getPublisher().getId())
-                   .withOwner(publication.getOwner())
-                   .withSender(SOME_SENDER)
-                   .withStatus(MessageStatus.UNREAD)
-                   .withText(messageText)
-                   .withIsDoiRequestRelated(false)
-                   .withResourceTitle(publication.getEntityDescription().getMainTitle())
-                   .build();
+        Clock clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
+        return Message.simpleMessage(sender, publication, messageText, messageIdentifier, clock);
+
     }
 }

@@ -7,7 +7,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsSame.sameInstance;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -35,8 +34,10 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceMessages;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
@@ -54,6 +55,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final int FIRST = 0;
     public static final int FIRST_ELEMENT = FIRST;
     private static final int NUMBER_OF_PUBLICATIONS = 2;
+    public static final String ALLOW_EVERYTHING = "*";
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
@@ -73,6 +75,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
+        StorageModelConstants.updateEnvironment(environment);
         handler = new ListMessagesHandler(environment, messageService);
     }
 
@@ -250,7 +253,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Environment mockEnvironment() {
         var env = mock(Environment.class);
-        when(env.readEnv(anyString())).thenReturn("*");
+        when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_EVERYTHING);
         return env;
     }
 
