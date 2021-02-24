@@ -1,13 +1,10 @@
 package no.unit.nva.publication.storage.model;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.storage.model.StorageModelConstants.PATH_SEPARATOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
@@ -34,9 +31,8 @@ public class Message implements WithIdentifier,
                                 ResourceUpdate,
                                 ConnectedToResource {
 
-    public static final String MESSAGE_PATH = StorageModelConstants.getInstance().messagePath;
+
     private SortableIdentifier identifier;
-    private URI id;
     private String owner;
     private URI customerId;
     private MessageStatus status;
@@ -80,16 +76,6 @@ public class Message implements WithIdentifier,
         return simpleMessage(sender, publication, messageText, null, clock);
     }
 
-    public static URI messageId(SortableIdentifier messageIdentifier) {
-        if (nonNull(messageIdentifier)) {
-            String scheme = StorageModelConstants.getInstance().scheme;
-            String host = StorageModelConstants.getInstance().host;
-            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
-            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
-        }
-        return null;
-    }
-
     @Override
     public String getStatusString() {
         return status.toString();
@@ -118,12 +104,7 @@ public class Message implements WithIdentifier,
                    .withOwner(publication.getOwner())
                    .withResourceTitle(extractTitle(publication))
                    .withCreatedTime(clock.instant())
-                   .withIdentifier(messageIdentifier)
-                   .withId(messageId(messageIdentifier));
-    }
-
-    private static URI newUri(String scheme, String host, String messagesPath) throws URISyntaxException {
-        return new URI(scheme, host, messagesPath, StorageModelConstants.URI_EMPTY_FRAGMENT);
+                   .withIdentifier(messageIdentifier);
     }
 
     private static String extractTitle(Publication publication) {

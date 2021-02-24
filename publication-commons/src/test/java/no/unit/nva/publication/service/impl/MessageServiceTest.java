@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.service.impl.MessageService.extractIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,12 +26,12 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
-import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
@@ -59,6 +58,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
     public static final Javers JAVERS = JaversBuilder.javers().build();
+    public static final String SAMPLE_HOST = "https://localhost/messages/";
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -68,7 +68,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         super.init();
         Clock clock = mockClock();
         Environment environment = setupEnvironment();
-        StorageModelConstants.updateEnvironment(environment);
+        ServiceEnvironmentConstants.updateEnvironment(environment);
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
@@ -78,8 +78,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createSamplePublication();
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
-        URI messageId = createSimpleMessage(publication, messageText);
-        Message savedMessage = fetchMessage(owner, messageId);
+        SortableIdentifier messageIdentifier = createSimpleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(owner, messageIdentifier);
         Message expectedMessage =
             constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication, messageText);
 
@@ -93,13 +93,14 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createSamplePublication();
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
-        URI messageId = createDoiRequestMessage(publication, messageText);
-        Message savedMessage = fetchMessage(owner, messageId);
+        SortableIdentifier messageIdentifier = createDoiRequestMessage(publication, messageText);
+        Message savedMessage = fetchMessage(owner, messageIdentifier);
         Message expectedMessage = constructExpectedDoiRequestMessage(
-            extractIdentifier(messageId),
+            messageIdentifier,
             publication,
             messageText);
         assertThat(savedMessage.isDoiRequestRelated(), is(true));
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -129,8 +130,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
         Publication publication = createSamplePublication();
 
-        URI messageId = createSimpleMessage(publication, randomString());
-        SortableIdentifier actualIdentifier = extractIdentifier(messageId);
+        SortableIdentifier actualIdentifier = createSimpleMessage(publication, randomString());
+
         assertThat(actualIdentifier, is(equalTo(SOME_IDENTIFIER)));
 
         Executable action = () -> createSimpleMessage(publication, randomString());
@@ -142,8 +143,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageId = createSimpleMessage(publication, messageText);
-        Message savedMessage = fetchMessage(extractOwner(publication), messageId);
+        var messageIdentifier = createSimpleMessage(publication, messageText);
+        Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
             messageText);
 
@@ -154,9 +155,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageId = createSimpleMessage(publication, messageText);
-        SortableIdentifier identifier = extractIdentifier(messageId);
-        Message savedMessage = messageService.getMessage(extractOwner(publication), identifier);
+        var messageIdentifier = createSimpleMessage(publication, messageText);
+
+        Message savedMessage = messageService.getMessage(extractOwner(publication), messageIdentifier);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
             messageText);
 
@@ -167,8 +168,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        URI messageIdentifier = createSimpleMessage(publication, messageText);
-        Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
+        var messageIdentifier = createSimpleMessage(publication, messageText);
+        URI sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
+        Message savedMessage = fetchMessage(extractOwner(publication), sampleMessageUri);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
             messageText);
 
@@ -229,7 +231,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Environment setupEnvironment() {
         Environment env = mock(Environment.class);
-        when(env.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME))
+        when(env.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
             .thenReturn("localhost");
         return env;
     }
@@ -322,27 +324,31 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .collect(Collectors.toList());
     }
 
+    private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier) {
+        return messageService.getMessage(publicationOwner, messageIdentifier);
+    }
+
     private Message fetchMessage(UserInstance publicationOwner, URI messageId) {
         return messageService.getMessage(publicationOwner, messageId);
     }
 
-    private URI createDoiRequestMessage(Publication publication, String message) {
+    private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
         UserInstance publicationOwner = extractOwner(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createDoiRequestMessage(publication, message, sender);
     }
 
-    private URI createDoiRequestMessage(Publication publication, String message, UserInstance sender) {
+    private SortableIdentifier createDoiRequestMessage(Publication publication, String message, UserInstance sender) {
         return attempt(() -> messageService.createDoiRequestMessage(sender, publication, message)).orElseThrow();
     }
 
-    private URI createSimpleMessage(Publication publication, String message) {
+    private SortableIdentifier createSimpleMessage(Publication publication, String message) {
         UserInstance publicationOwner = extractOwner(publication);
         UserInstance sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createSimpleMessage(publication, message, sender);
     }
 
-    private URI createSimpleMessage(Publication publication, String message, UserInstance sender) {
+    private SortableIdentifier createSimpleMessage(Publication publication, String message, UserInstance sender) {
         return attempt(() -> messageService.createSimpleMessage(sender, publication, message)).orElseThrow();
     }
 

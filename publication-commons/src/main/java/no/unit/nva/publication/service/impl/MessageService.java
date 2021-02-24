@@ -70,19 +70,19 @@ public class MessageService extends ServiceWithTransactions {
 
     @JacocoGenerated
     @Deprecated
-    public URI createMessage(UserInstance sender,
-                             Publication publication,
-                             String messageText) throws TransactionFailedException {
+    public SortableIdentifier createMessage(UserInstance sender,
+                                            Publication publication,
+                                            String messageText) throws TransactionFailedException {
         return createSimpleMessage(sender, publication, messageText);
     }
 
-    public URI createDoiRequestMessage(UserInstance sender, Publication publication, String messageText)
+    public SortableIdentifier createDoiRequestMessage(UserInstance sender, Publication publication, String messageText)
         throws TransactionFailedException {
         Message message = createNewDoiRequestMessage(sender, publication, messageText);
         return writeMessageToDb(message);
     }
 
-    public URI writeMessageToDb(Message message) throws TransactionFailedException {
+    public SortableIdentifier writeMessageToDb(Message message) throws TransactionFailedException {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
@@ -90,10 +90,10 @@ public class MessageService extends ServiceWithTransactions {
 
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
-        return message.getId();
+        return message.getIdentifier();
     }
 
-    public URI createSimpleMessage(UserInstance sender, Publication publication, String messageText)
+    public SortableIdentifier createSimpleMessage(UserInstance sender, Publication publication, String messageText)
         throws TransactionFailedException {
         Message message = createNewSimpleMessage(sender, publication, messageText);
         return writeMessageToDb(message);
