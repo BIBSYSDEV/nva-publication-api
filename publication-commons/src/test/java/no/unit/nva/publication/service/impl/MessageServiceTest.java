@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -97,6 +98,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
             publication,
             messageText);
         assertThat(savedMessage.isDoiRequestRelated(), is(true));
+        assertThat(savedMessage,is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -105,10 +107,12 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
-        UserInstance publicationOwner = extractOwner(insertedPublication);
-        ResourceMessages resourceMessages =
-            messageService.getMessagesForResource(publicationOwner, insertedPublication.getIdentifier());
+        UserInstance userInstance = extractOwner(insertedPublication);
+        Optional<ResourceMessages> resourceMessagesOpt =
+            messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
 
+        assertThat(resourceMessagesOpt.isPresent(), is(true));
+        ResourceMessages resourceMessages = resourceMessagesOpt.orElseThrow();
         Publication actualPublication = resourceMessages.getPublication();
         Publication expectedPublication = constructExpectedPublication(insertedPublication);
         assertThat(actualPublication, is(equalTo(expectedPublication)));
@@ -118,10 +122,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-
     public void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
         throws TransactionFailedException {
-        messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+        messageService = serviceProducingDuplicateIdentifiers();
         Publication publication = createSamplePublication();
 
         URI messageId = createSimpleMessage(publication, randomString());
@@ -209,12 +212,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
         List<ResourceMessages> actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
 
+        ResourceMessages expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
+        ResourceMessages expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
         List<ResourceMessages> expectedMessages = List.of(
-            ResourceMessages.fromMessageList(messagesForPublication1),
-            ResourceMessages.fromMessageList(messagesForPublication2)
+            expectedMessagesForPublication1,
+            expectedMessagesFromPublication2
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    public ResourceMessages constructExpectedMessages(List<Message> messagesForPublication1) {
+        return ResourceMessages.fromMessageList(messagesForPublication1).orElseThrow();
     }
 
     private Environment setupEnvironment() {

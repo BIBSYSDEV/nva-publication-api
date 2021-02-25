@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -118,13 +119,12 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     @SuppressWarnings(RAWTYPES)
-    public ResourceMessages getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
+    public Optional<ResourceMessages> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
         ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
         QueryRequest queryRequest = queryForRetrievingMessagesByResource(queryObject);
         List<Dao> resultDaos = executeQuery(queryRequest);
         return messagesWithResource(resultDaos);
     }
-
 
     public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
@@ -167,7 +167,7 @@ public class MessageService extends ServiceWithTransactions {
         return messagesPerResource
                    .values()
                    .stream()
-                   .map(ResourceMessages::fromMessageList)
+                   .flatMap(messages -> ResourceMessages.fromMessageList(messages).stream())
                    .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
     }
@@ -189,7 +189,6 @@ public class MessageService extends ServiceWithTransactions {
                    .withTableName(tableName)
                    .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
-
 
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
@@ -231,7 +230,7 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     @SuppressWarnings(RAWTYPES)
-    private ResourceMessages messagesWithResource(List<Dao> daos) {
+    private Optional<ResourceMessages> messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
         return ResourceMessages.fromMessageList(messages);
     }

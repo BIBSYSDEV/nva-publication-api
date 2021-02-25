@@ -19,6 +19,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
@@ -144,16 +145,13 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
-        ResourceMessages resourceMessages = getMessagesForResource(publication);
-        MessageDto savedMessage = resourceMessages.getMessages().get(SINGLE_MESSAGE);
 
+        Optional<ResourceMessages> resourceMessages = messageService.getMessagesForResource(extractOwner(publication),
+            publication.getIdentifier());
+
+        MessageDto savedMessage = resourceMessages.orElseThrow().getMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.isDoiRequestRelated(), is(equalTo(true)));
-    }
-
-    private ResourceMessages getMessagesForResource(Publication publication) {
-        return messageService.getMessagesForResource(extractOwner(publication),
-            publication.getIdentifier());
     }
 
     public void sendRequest(Publication publication, String owner, String message) throws IOException {
