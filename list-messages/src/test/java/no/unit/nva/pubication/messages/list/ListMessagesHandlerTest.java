@@ -5,6 +5,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsSame.sameInstance;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -16,7 +18,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -50,6 +54,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final Faker FAKER = Faker.instance();
     public static final int FIRST = 0;
     public static final int FIRST_ELEMENT = FIRST;
+    public static final String ALLOW_EVERYTHING = "*";
     private static final int NUMBER_OF_PUBLICATIONS = 2;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
@@ -96,15 +101,74 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
 
-        assertThatResourceDescriptionContainsResourceDescriptionsWithIdentifierAndTitle(savedMessages, responseObjects);
+        assertThatResourceDescriptionsContainIdentifierAndTitle(savedMessages, responseObjects);
     }
 
-    public Publication createPublication() throws TransactionFailedException {
+    @Test
+    public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
+        throws IOException {
+        List<Publication> publications = createSamplePublications();
+        List<Message> messages = insertOneMessagePerPublication(publications);
+        List<Message> moreMessages = insertOneMessagePerPublication(publications);
+        List<Message> allMessages = new ArrayList<>();
+        allMessages.addAll(messages);
+        allMessages.addAll(moreMessages);
+
+        UserInstance owner = extractPublicationOwner(allMessages.get(0));
+
+        input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
+        handler.handleRequest(input, output, CONTEXT);
+
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
+
+        assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
+        assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
+    }
+
+    private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
+
+        List<ResourceConversation> sorted = Arrays.stream(responseObjects)
+                                            .sorted(this::objectWithOldestMessageFirst)
+                                            .collect(Collectors.toList());
+        List<ResourceConversation> actualResponseObjects = Arrays.asList(responseObjects);
+
+        assertThat(actualResponseObjects, is(equalTo(sorted)));
+        assertThat(actualResponseObjects, is(not(sameInstance(sorted))));
+    }
+
+    private int objectWithOldestMessageFirst(ResourceConversation left, ResourceConversation right) {
+        MessageDto oldestMessageLeft = oldestMessage(left);
+        MessageDto oldestMessageRight = oldestMessage(right);
+        return oldestMessageLeft.getDate().compareTo(oldestMessageRight.getDate());
+    }
+
+    private MessageDto oldestMessage(ResourceConversation left) {
+        return left.getMessages()
+                   .stream()
+                   .sorted(Comparator.comparing(MessageDto::getDate))
+                   .collect(Collectors.toList())
+                   .get(0);
+    }
+
+    private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(ResourceConversation[] responseObjects) {
+        for (ResourceConversation resourceMessages : responseObjects) {
+            var messages = resourceMessages.getMessages();
+            List<MessageDto> sortedMessages = messages.stream()
+                                                  .sorted(Comparator.comparing(MessageDto::getDate))
+                                                  .collect(Collectors.toList());
+            assertThat(messages, is(not(sameInstance(sortedMessages))));
+            assertThat(messages, is(equalTo(sortedMessages)));
+        }
+    }
+
+    private Publication createPublication() throws TransactionFailedException {
         return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
     }
 
-    private void assertThatResourceDescriptionContainsResourceDescriptionsWithIdentifierAndTitle(
-        List<Message> savedMessages, ResourceConversation[] responseObjects) {
+    private void assertThatResourceDescriptionsContainIdentifierAndTitle(List<Message> savedMessages,
+                                                                         ResourceConversation[] responseObjects) {
+
         List<Publication> actualPublicationDescriptions = extractPublicationDescriptionFromResponse(responseObjects);
         Publication[] expectedPublicationDescriptions = constructExpectedPublicationDescriptions(savedMessages);
         assertThat(actualPublicationDescriptions, containsInAnyOrder(expectedPublicationDescriptions));
@@ -164,6 +228,10 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private List<Message> insetSampleMessages() {
         List<Publication> publications = createSamplePublications();
+        return insertOneMessagePerPublication(publications);
+    }
+
+    private List<Message> insertOneMessagePerPublication(List<Publication> publications) {
         Publication samplePublication = publications.get(FIRST_ELEMENT);
         UserInstance sender = new UserInstance(SOME_OTHER_USER, samplePublication.getPublisher().getId());
 
@@ -186,7 +254,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Environment mockEnvironment() {
         var env = mock(Environment.class);
-        when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
+        when(env.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_EVERYTHING);
         return env;
     }
 
