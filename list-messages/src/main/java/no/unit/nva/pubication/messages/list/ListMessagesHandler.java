@@ -34,11 +34,15 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
 
     @Override
     protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context) {
-        String feideId = requestInfo.getFeideId().orElse(null);
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        UserInstance userInstance = new UserInstance(feideId, customerId);
+        UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
         List<ResourceConversation> result = messageService.listMessagesForUser(userInstance);
         return convertListToArray(result);
+    }
+
+    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
+        String feideId = requestInfo.getFeideId().orElse(null);
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        return new UserInstance(feideId, customerId);
     }
 
     @Override
@@ -53,8 +57,6 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     }
 
     private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {
-        ResourceConversation[] resultArray = new ResourceConversation[result.size()];
-        result.toArray(resultArray);
-        return resultArray;
+        return result.toArray(ResourceConversation[]::new);
     }
 }

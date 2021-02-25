@@ -30,9 +30,9 @@ import nva.commons.core.JacocoGenerated;
 
 public final class PublicationGenerator {
 
-    private static final Faker FAKER = Faker.instance();
     public static final String OWNER = "owner@example.org";
     public static final String PUBLISHER_ID = "http://example.org/123";
+    private static final Faker FAKER = Faker.instance();
 
     @JacocoGenerated
     private PublicationGenerator() {
@@ -130,10 +130,10 @@ public final class PublicationGenerator {
         Contributor contributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
 
         PublicationInstance<? extends Pages> publicationInstance = new JournalArticle.Builder()
-            .withArticleNumber("1")
-            .withIssue("2")
-            .withVolume("Volume 1")
-            .withPages(new Range("beginRange", "endRange"))
+                                                                       .withArticleNumber("1")
+                                                                       .withIssue("2")
+                                                                       .withVolume("Volume 1")
+                                                                       .withPages(new Range("beginRange", "endRange"))
                                                                        .build();
         Reference reference = new Reference.Builder().withPublicationInstance(publicationInstance).build();
 

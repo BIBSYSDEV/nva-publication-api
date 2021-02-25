@@ -139,5 +139,4 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     private String customerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }
-    
 }

@@ -1,6 +1,5 @@
 package no.unit.nva.publication.messages.create;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -24,7 +23,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,13 +52,10 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        String json = attempt(() -> JsonUtils.objectMapper.writeValueAsString(input)).orElseThrow();
-        logger.info(json);
+        Publication publication = fetchExistingPublication(input);
         UserInstance sender = createSender(requestInfo);
 
-        Publication publication = fetchExistingPublication(input);
         URI messageId = sendMessage(input, sender, publication);
-
         addAdditionalHeaders(() -> locationHeader(messageId.toString()));
 
         return null;
