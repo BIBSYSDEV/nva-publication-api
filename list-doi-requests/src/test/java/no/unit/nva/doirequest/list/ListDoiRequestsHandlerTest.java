@@ -67,6 +67,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
     private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.com");
+    public static final String ALLOW_ALL_ORIGIN = "*";
+    public static final String SOME_VALID_HOST = "localhost";
     private ListDoiRequestsHandler handler;
     private ResourceService resourceService;
     private Clock mockClock;
@@ -200,7 +202,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
-        final var doiRequestMessages = creteDoiRequestMessagesForPublications(publications);
+        final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
         String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
@@ -215,7 +217,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         throws ApiGatewayException, IOException {
         var publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         createDoiRequests(publications);
-        final var doiRequestMessages = creteDoiRequestMessagesForPublications(publications);
+        final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(0).getPublisher().getId();
         List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
@@ -224,7 +226,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
-    public List<String> sendRequestAndReadMessages(String userIdentifier, URI commonPublisherId, String curatorRole)
+    private List<String> sendRequestAndReadMessages(String userIdentifier, URI commonPublisherId, String curatorRole)
         throws IOException {
         InputStream input = createRequest(commonPublisherId, userIdentifier, curatorRole);
         handler.handleRequest(input, outputStream, context);
@@ -239,9 +241,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                                  .map(MessageDto::getText)
                                  .collect(Collectors.toList());
 
-        String[] textArray = new String[texts.size()];
-        texts.toArray(textArray);
-        return textArray;
+        return texts.toArray(String[]::new);
     }
 
     private List<String> extractMessageTexts(Publication[] doiRequestDtos) {
@@ -254,19 +254,19 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn("localhost");
+        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
         return environment;
     }
 
-    private List<MessageDto> creteDoiRequestMessagesForPublications(List<Publication> publications) {
+    private List<MessageDto> createDoiRequestMessagesForPublications(List<Publication> publications) {
         return publications.stream()
-                   .map(attempt(this::createDoiReqestMessage))
+                   .map(attempt(this::createDoiRequestMessage))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
 
-    private MessageDto createDoiReqestMessage(Publication pub) throws TransactionFailedException {
+    private MessageDto createDoiRequestMessage(Publication pub) throws TransactionFailedException {
         UserInstance owner = extractOwner(pub);
         var messageID = messageService.createDoiRequestMessage(owner, pub, randomString());
         Message message = messageService.getMessage(owner, messageID);
