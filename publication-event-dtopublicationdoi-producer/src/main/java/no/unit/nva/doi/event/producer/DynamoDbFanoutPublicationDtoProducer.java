@@ -8,6 +8,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.JacocoGenerated;
@@ -63,10 +64,10 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     private PublicationHolder fromDynamoEntryUpdate(DynamoEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
-            .filter(this::shouldPropagateEvent)
-            .map(DynamoEntryUpdateEvent::getNewPublication)
-            .map(pub -> new PublicationHolder(calculateEventType(updateEvent), pub))
-            .orElse(EMPTY_EVENT);
+                   .filter(this::shouldPropagateEvent)
+                   .map(DynamoEntryUpdateEvent::getNewPublication)
+                   .map(pub -> new PublicationHolder(calculateEventType(updateEvent), pub))
+                   .orElse(EMPTY_EVENT);
     }
 
     private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
@@ -104,9 +105,9 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
-            .map(DynamoEntryUpdateEvent::getNewPublication)
-            .map(Publication::getDoiRequest)
-            .isPresent();
+                   .map(DynamoEntryUpdateEvent::getNewPublication)
+                   .map(Publication::getDoiRequest)
+                   .isPresent();
     }
 
     private boolean shouldPropagateEvent(DynamoEntryUpdateEvent updateEvent) {
@@ -119,10 +120,19 @@ public class DynamoDbFanoutPublicationDtoProducer
     private boolean isEffectiveChange(DynamoEntryUpdateEvent updateEvent) {
         var newPublication = updateEvent.getNewPublication();
         var oldPublication = updateEvent.getOldPublication();
-
         if (nonNull(newPublication)) {
-            return !newPublication.equals(oldPublication);
+            return newDoiRelatedMetadataDifferFromOld(newPublication, oldPublication);
         }
         return false;
+    }
+
+    private boolean newDoiRelatedMetadataDifferFromOld(Publication newPublication, Publication oldPublication) {
+        DoiRegistrarEntryFields doiInfoNew = DoiRegistrarEntryFields.fromPublication(newPublication);
+        DoiRegistrarEntryFields doiInfoOld = extractInfoFromOldInstace(oldPublication);
+        return !doiInfoNew.equals(doiInfoOld);
+    }
+
+    private DoiRegistrarEntryFields extractInfoFromOldInstace(Publication oldPublication) {
+        return nonNull(oldPublication) ? DoiRegistrarEntryFields.fromPublication(oldPublication) : null;
     }
 }
