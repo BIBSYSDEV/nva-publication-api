@@ -103,11 +103,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
 
-    private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
-        String expectedPath = ServiceEnvironmentConstants.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
-        return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
-    }
-
     @ParameterizedTest(name = "handler returns bad request when CreateRequest contains message: \"{0}\"")
     @NullAndEmptySource
     public void handlerReturnsBadRequestWhenCreateRequestContainsNoText(String emptyMessage)
@@ -148,6 +143,11 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         String actualText = doiRequests[0].getDoiRequest().getMessages().get(0).getText();
 
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
+    }
+
+    private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
+        String expectedPath = ServiceEnvironmentConstants.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
+        return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
     }
 
     private Environment setupEnvironment() {
