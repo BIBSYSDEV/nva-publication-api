@@ -16,7 +16,6 @@ import nva.commons.core.JsonSerializable;
 
 public class ResourceMessages implements JsonSerializable {
 
-    public static final int NEWEST_MESSAGE = 0;
     public static final String EMPTY_MESSAGE_LIST_ERROR = "Message list cannot be empty";
     private Publication publication;
     private List<MessageDto> messages;
@@ -44,6 +43,14 @@ public class ResourceMessages implements JsonSerializable {
                    .build();
     }
 
+    public List<MessageDto> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<MessageDto> messages) {
+        this.messages = messages;
+    }
+
     public Publication getPublication() {
         return publication;
     }
@@ -52,13 +59,6 @@ public class ResourceMessages implements JsonSerializable {
         this.publication = publication;
     }
 
-    public List<MessageDto> getMessages() {
-        return messages;
-    }
-
-    public void setMessages(List<MessageDto> messages) {
-        this.messages = messages;
-    }
 
     @JacocoGenerated
     @Override
@@ -87,14 +87,18 @@ public class ResourceMessages implements JsonSerializable {
     }
 
     private static ResourceMessages createNewResourceMessageInstance(List<Message> messages) {
-        messages.sort(ResourceMessages::newestFirst);
-        Message mostRecentMessage = messages.get(NEWEST_MESSAGE);
+        messages.sort(ResourceMessages::oldestFirst);
+        Message mostRecentMessage = newestMessage(messages);
         Publication publication = createPublicationDescription(mostRecentMessage);
         return createResourceMessage(messages, publication);
     }
 
-    private static int newestFirst(Message o1, Message o2) {
-        return o2.getCreatedTime().compareTo(o1.getCreatedTime());
+    private static Message newestMessage(List<Message> messages) {
+        return messages.get(messages.size() - 1);
+    }
+
+    private static int oldestFirst(Message left, Message right) {
+        return left.getCreatedTime().compareTo(right.getCreatedTime());
     }
 
     private static ResourceMessages createResourceMessage(List<Message> messages, Publication publication) {
@@ -108,14 +112,14 @@ public class ResourceMessages implements JsonSerializable {
         return messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
     }
 
-    private static EntityDescription constructEntityDescription(String resourceTitleInMostRecentMessage) {
+    private static EntityDescription constructEntityDescription(String title) {
         return new EntityDescription.Builder()
-                   .withMainTitle(resourceTitleInMostRecentMessage)
+                   .withMainTitle(title)
                    .build();
     }
 
-    private static Organization constructPublisher(Message mostRecentMessage) {
-        return new Builder().withId(mostRecentMessage.getCustomerId()).build();
+    private static Organization constructPublisher(Message message) {
+        return new Builder().withId(message.getCustomerId()).build();
     }
 
     private static boolean isEmpty(List<Message> messages) {
