@@ -126,7 +126,6 @@ public class MessageService extends ServiceWithTransactions {
         return messagesWithResource(resultDaos);
     }
 
-
     public List<Message> listMessages(URI customerId, MessageStatus messageStatus) {
         MessageDao queryObject = MessageDao.listMessagesForCustomerAndStatus(customerId, messageStatus);
         QueryRequest queryRequest = queryRequestForListingMessagesByCustomerAndStatus(queryObject);
@@ -168,7 +167,7 @@ public class MessageService extends ServiceWithTransactions {
         return messagesPerResource
                    .values()
                    .stream()
-                   .flatMap(messages->ResourceMessages.fromMessageList(messages).stream())
+                   .flatMap(messages -> ResourceMessages.fromMessageList(messages).stream())
                    .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
     }
@@ -190,7 +189,6 @@ public class MessageService extends ServiceWithTransactions {
                    .withTableName(tableName)
                    .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
-
 
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
