@@ -129,8 +129,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
 
         List<ResourceConversation> sorted = Arrays.stream(responseObjects)
-                                            .sorted(this::objectWithOldestMessageFirst)
-                                            .collect(Collectors.toList());
+                                                .sorted(this::objectWithOldestMessageFirst)
+                                                .collect(Collectors.toList());
         List<ResourceConversation> actualResponseObjects = Arrays.asList(responseObjects);
 
         assertThat(actualResponseObjects, is(equalTo(sorted)));
@@ -151,7 +151,9 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
                    .get(0);
     }
 
-    private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(ResourceConversation[] responseObjects) {
+    private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
+        ResourceConversation[] responseObjects) {
+
         for (ResourceConversation resourceMessages : responseObjects) {
             var messages = resourceMessages.getMessages();
             List<MessageDto> sortedMessages = messages.stream()
