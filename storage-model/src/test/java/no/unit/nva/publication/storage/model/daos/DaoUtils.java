@@ -72,7 +72,7 @@ public final class DaoUtils {
                               .withResourceIdentifier(SortableIdentifier.next())
                               .withResourceTitle(randomString())
                               .withCustomerId(SOME_CUSTOMER_ID)
-                              .withIsDoiRequestRelated(true)
+                              .withDoiRequestRelated(true)
                               .withText(SOME_TEXT)
                               .withCreatedTime(Instant.now())
                               .build();

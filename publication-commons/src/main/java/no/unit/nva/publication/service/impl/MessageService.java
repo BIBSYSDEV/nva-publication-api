@@ -39,11 +39,11 @@ public class MessageService extends ServiceWithTransactions {
     public static final String RAWTYPES = "rawtypes";
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
 
+    public static final String PATH_SEPARATOR = "/";
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
 
-    public static final String PATH_SEPARATOR = "/";
     private static final int OLDEST_MESSAGE = 0;
 
     private final AmazonDynamoDB client;
@@ -72,10 +72,21 @@ public class MessageService extends ServiceWithTransactions {
         return new SortableIdentifier(path[path.length - 1]);
     }
 
+    @JacocoGenerated
+    @Deprecated
     public URI createMessage(UserInstance sender,
                              Publication publication,
                              String messageText) throws TransactionFailedException {
-        Message message = createNewMessage(sender, publication, messageText);
+        return createSimpleMessage(sender, publication, messageText);
+    }
+
+    public URI createDoiRequestMessage(UserInstance sender, Publication publication, String messageText)
+        throws TransactionFailedException {
+        Message message = createNewDoiRequestMessage(sender, publication, messageText);
+        return writeMessageToDb(message);
+    }
+
+    public URI writeMessageToDb(Message message) throws TransactionFailedException {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
@@ -84,6 +95,12 @@ public class MessageService extends ServiceWithTransactions {
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
         return message.getId();
+    }
+
+    public URI createSimpleMessage(UserInstance sender, Publication publication, String messageText)
+        throws TransactionFailedException {
+        Message message = createNewSimpleMessage(sender, publication, messageText);
+        return writeMessageToDb(message);
     }
 
     public Message getMessage(UserInstance owner, URI messageId) {
@@ -181,14 +198,30 @@ public class MessageService extends ServiceWithTransactions {
                    .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
     }
 
-    private Message createNewMessage(UserInstance sender, Publication publication, String messageText) {
+    private Message createNewSimpleMessage(UserInstance sender, Publication publication, String messageText
+
+    ) {
         requireMessageIsNotBlank(messageText);
         SortableIdentifier messageIdentifier = identifierSupplier.get();
-        return Message.simpleMessage(sender,
+        return Message.simpleMessage(
+            sender,
             publication,
             messageText,
             messageIdentifier,
-            clockForTimestamps);
+            clockForTimestamps
+        );
+    }
+
+    private Message createNewDoiRequestMessage(UserInstance sender, Publication publication, String messageText) {
+        requireMessageIsNotBlank(messageText);
+        SortableIdentifier messageIdentifier = identifierSupplier.get();
+        return Message.doiRequestMessage(
+            sender,
+            publication,
+            messageText,
+            messageIdentifier,
+            clockForTimestamps
+        );
     }
 
     private void requireMessageIsNotBlank(String messageText) {

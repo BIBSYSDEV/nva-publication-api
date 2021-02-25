@@ -22,6 +22,8 @@ public class MessageDto {
     private String text;
     @JsonProperty("date")
     private Instant date;
+    @JsonProperty("isDoiRequestRelated")
+    private boolean doiRequestRelated;
 
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
@@ -31,22 +33,66 @@ public class MessageDto {
         messageDto.setDate(message.getCreatedTime());
         messageDto.setMessageId(message.getId());
         messageDto.setMessageIdentifier(message.getIdentifier());
-
+        messageDto.setDoiRequestRelated(message.isDoiRequestRelated());
         return messageDto;
     }
 
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getMessageId(),
+            getMessageIdentifier(),
+            getSenderIdentifier(),
+            getOwnerIdentifier(),
+            getText(),
+            getDate(), isDoiRequestRelated());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MessageDto)) {
+            return false;
+        }
+        MessageDto that = (MessageDto) o;
+        return isDoiRequestRelated() == that.isDoiRequestRelated()
+               && Objects.equals(getMessageId(), that.getMessageId())
+               && Objects.equals(getMessageIdentifier(), that.getMessageIdentifier())
+               && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
+               && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
+               && Objects.equals(getText(), that.getText())
+               && Objects.equals(getDate(), that.getDate());
+    }
+
+    @JacocoGenerated
+    public boolean isDoiRequestRelated() {
+        return doiRequestRelated;
+    }
+
+    @JacocoGenerated
+    public void setDoiRequestRelated(boolean doiRequestRelated) {
+        this.doiRequestRelated = doiRequestRelated;
+    }
+
+    @JacocoGenerated
     public URI getMessageId() {
         return messageId;
     }
 
+    @JacocoGenerated
     public void setMessageId(URI messageId) {
         this.messageId = messageId;
     }
 
+    @JacocoGenerated
     public SortableIdentifier getMessageIdentifier() {
         return messageIdentifier;
     }
 
+    @JacocoGenerated
     public void setMessageIdentifier(SortableIdentifier messageIdentifier) {
         this.messageIdentifier = messageIdentifier;
     }
@@ -89,34 +135,5 @@ public class MessageDto {
     @JacocoGenerated
     public void setOwnerIdentifier(String ownerIdentifier) {
         this.ownerIdentifier = ownerIdentifier;
-    }
-
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getMessageId(),
-            getMessageIdentifier(),
-            getSenderIdentifier(),
-            getOwnerIdentifier(),
-            getText(),
-            getDate());
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof MessageDto)) {
-            return false;
-        }
-        MessageDto that = (MessageDto) o;
-        return Objects.equals(getMessageId(), that.getMessageId())
-               && Objects.equals(getMessageIdentifier(), that.getMessageIdentifier())
-               && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
-               && Objects.equals(getOwnerIdentifier(), that.getOwnerIdentifier())
-               && Objects.equals(getText(), that.getText())
-               && Objects.equals(getDate(), that.getDate());
     }
 }
