@@ -23,7 +23,8 @@ public final class ServiceEnvironmentConstants {
     public final String host;
     public final String scheme;
 
-    public ServiceEnvironmentConstants(Environment environment) {
+
+    private ServiceEnvironmentConstants(Environment environment) {
         host = environment.readEnv(HOST_ENV_VARIABLE_NAME);
         scheme = environment.readEnvOpt(NETWORK_SCHEME_ENV_VARIABLE_NAME).orElse(DEFAULT_SCHEME);
     }

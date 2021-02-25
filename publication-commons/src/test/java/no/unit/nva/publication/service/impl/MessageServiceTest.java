@@ -35,9 +35,6 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -45,20 +42,21 @@ import org.junit.jupiter.api.function.Executable;
 public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     public static final Faker FAKER = new Faker();
-    public static final URI SOME_ORG = URI.create("https://example.org/1234");
     public static final String SOME_SENDER = "some@user";
     public static final SortableIdentifier SOME_IDENTIFIER = SortableIdentifier.next();
-    public static final String SOME_OWNER = "some@owner";
-    public static final UserInstance SAMPLE_OWNER_INSTANCE = new UserInstance(SOME_OWNER, SOME_ORG);
     public static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Instant MESSAGE_CREATION_TIME = PUBLICATION_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant SECOND_MESSAGE_CREATION_TIME = MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final Instant THIRD_MESSAGE_CREATION_TIME = SECOND_MESSAGE_CREATION_TIME.plus(Period.ofDays(2));
     public static final int NUMBER_OF_SAMPLE_MESSAGES = 3;
+
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
-    public static final Javers JAVERS = JaversBuilder.javers().build();
+
     public static final String SAMPLE_HOST = "https://localhost/messages/";
+
+    public static final int FIRST_ELEMENT = 0;
+    public static final String SOME_VALID_HOST = "localhost";
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -78,13 +76,14 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         Publication publication = createSamplePublication();
         UserInstance owner = extractOwner(publication);
         String messageText = randomString();
+
         SortableIdentifier messageIdentifier = createSimpleMessage(publication, messageText);
         Message savedMessage = fetchMessage(owner, messageIdentifier);
+
         Message expectedMessage =
             constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication, messageText);
 
-        String difference = difference(savedMessage, expectedMessage);
-        assertThat(difference, savedMessage, is(equalTo(expectedMessage)));
+        assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -100,6 +99,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
             publication,
             messageText);
         assertThat(savedMessage.isDoiRequestRelated(), is(true));
+
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
@@ -116,10 +116,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(resourceMessagesOpt.isPresent(), is(true));
         ResourceMessages resourceMessages = resourceMessagesOpt.orElseThrow();
         Publication actualPublication = resourceMessages.getPublication();
-
         Publication expectedPublication = constructExpectedPublication(insertedPublication);
-        Diff diff = JAVERS.compare(actualPublication, expectedPublication);
-        assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
+        assertThat(actualPublication, is(equalTo(expectedPublication)));
+
         MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
         assertThat(resourceMessages.getMessages(), containsInAnyOrder(expectedMessages));
     }
@@ -127,7 +126,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
         throws TransactionFailedException {
-        messageService = new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+        messageService = serviceProducingDuplicateIdentifiers();
         Publication publication = createSamplePublication();
 
         SortableIdentifier actualIdentifier = createSimpleMessage(publication, randomString());
@@ -153,6 +152,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
+
         Publication publication = createSamplePublication();
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
@@ -182,7 +182,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Publication> createdPublications = createPublicationsOfDifferentOwnersInSameOrg();
         List<Message> savedMessages = createOneMessagePerPublication(createdPublications);
 
-        URI publisherId = createdPublications.get(0).getPublisher().getId();
+        URI publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
         List<Message> actualMessages =
             messageService.listMessages(publisherId, MessageStatus.UNREAD);
 
@@ -194,7 +194,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
         var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
 
-        URI customerId = createdPublications.get(0).getPublisher().getId();
+        URI customerId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
         List<Message> actualMessages =
             messageService.listMessages(customerId, MessageStatus.UNREAD);
 
@@ -232,13 +232,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     private Environment setupEnvironment() {
         Environment env = mock(Environment.class);
         when(env.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
-            .thenReturn("localhost");
+            .thenReturn(SOME_VALID_HOST);
         return env;
-    }
-
-    private <T> String difference(T savedMessage, T expectedMessage) {
-        Diff diff = JAVERS.compare(savedMessage, expectedMessage);
-        return diff.prettyPrint();
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
@@ -268,6 +263,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return FAKER.lorem().sentence();
     }
 
+    private MessageService serviceProducingDuplicateIdentifiers() {
+        return new MessageService(client, mockClock(), duplicateIdentifierSupplier());
+    }
+
     private List<Publication> createPublicationsOfDifferentOwnersInDifferentOrg() {
         Publication publicationOfSomeOrg = PublicationGenerator.publicationWithoutIdentifier();
         Organization someOtherOrg = new Organization.Builder().withId(SOME_OTHER_ORG).build();
@@ -286,6 +285,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         for (Publication createdPublication : createdPublications) {
             var messageIdentifier = createSimpleMessage(createdPublication, randomString());
             var owner = extractOwner(createdPublication);
+
             var savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
