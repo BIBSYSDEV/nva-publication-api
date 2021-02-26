@@ -43,7 +43,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     }
 
     @JacocoGenerated
-    public ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
+    private ListDoiRequestsHandler(AmazonDynamoDB client, Clock clock) {
         this(new Environment(), defaultDoiRequestService(client, clock), defaultMessageService(client, clock));
     }
 
@@ -111,16 +111,18 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForUser(userInstance);
-        var publicationDtos = convertInternalObjectsToDtos(doiRequests);
-        List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
-        return convertListToArray(enrichedWithMessages);
+        return addDoiRequestMessagesToDoiRequests(doiRequests);
     }
 
     private Publication[] fetchDoiRequestsForCurator(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
-        List<Publication> publicationDtos = convertInternalObjectsToDtos(doiRequests);
+        return addDoiRequestMessagesToDoiRequests(doiRequests);
+    }
+
+    private Publication[] addDoiRequestMessagesToDoiRequests(List<DoiRequest> doiRequests) {
+        List<Publication> publicationDtos = convertDoiRequestsToPublicationDtos(doiRequests);
         List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
-        return convertListToArray(enrichedWithMessages);
+        return publicationListToPublicationArray(enrichedWithMessages);
     }
 
     private List<Publication> enrichPublicationDtosWithDoiRequestMessages(List<Publication> dtos) {
@@ -163,13 +165,11 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
                    .build();
     }
 
-    private Publication[] convertListToArray(List<Publication> dtos) {
-        Publication[] array = new Publication[dtos.size()];
-        dtos.toArray(array);
-        return array;
+    private Publication[] publicationListToPublicationArray(List<Publication> dtos) {
+        return dtos.toArray(Publication[]::new);
     }
 
-    private List<Publication> convertInternalObjectsToDtos(List<DoiRequest> doiRequests) {
+    private List<Publication> convertDoiRequestsToPublicationDtos(List<DoiRequest> doiRequests) {
         return doiRequests.stream()
                    .map(DoiRequest::toPublication)
                    .collect(Collectors.toList());
