@@ -114,15 +114,15 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         return addDoiRequestMessagesToDoiRequests(doiRequests);
     }
 
+    private Publication[] fetchDoiRequestsForCurator(UserInstance userInstance) {
+        List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
+        return addDoiRequestMessagesToDoiRequests(doiRequests);
+    }
+
     private Publication[] addDoiRequestMessagesToDoiRequests(List<DoiRequest> doiRequests) {
         List<Publication> publicationDtos = convertDoiRequestsToPublicationDtos(doiRequests);
         List<Publication> enrichedWithMessages = enrichPublicationDtosWithDoiRequestMessages(publicationDtos);
         return publicationListToPublicationArray(enrichedWithMessages);
-    }
-
-    private Publication[] fetchDoiRequestsForCurator(UserInstance userInstance) {
-        List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForPublishedPublications(userInstance);
-        return addDoiRequestMessagesToDoiRequests(doiRequests);
     }
 
     private List<Publication> enrichPublicationDtosWithDoiRequestMessages(List<Publication> dtos) {

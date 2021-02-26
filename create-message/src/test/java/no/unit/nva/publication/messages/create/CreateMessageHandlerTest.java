@@ -14,13 +14,18 @@ import com.github.javafaker.Faker;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
+import java.util.Map;
+import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
@@ -51,25 +56,20 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     private ByteArrayOutputStream output;
     private InputStream input;
     private Publication samplePublication;
+    private Environment environment;
+    private DoiRequestService doiRequestService;
 
     @BeforeEach
     public void initialize() throws TransactionFailedException {
         super.init();
         resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        Environment environment = setupEnvironment();
+        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
+        environment = setupEnvironment();
         StorageModelConstants.updateEnvironment(environment);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
-    }
-
-    private Environment setupEnvironment() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
-
-        return environment;
     }
 
     @Test
@@ -111,6 +111,68 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(invalidIdentifier.toString()));
         assertThat(problem.getDetail(), containsString(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
+    }
+
+    @Test
+    public void handlerCreatesDoiRequestMessageWhenClientMarksMessageAsDoiRequestRelated()
+        throws IOException, BadRequestException, TransactionFailedException {
+        createDoiRequestForSamplePublication();
+        CreateMessageRequest requestBody = createDoiRequestMessage();
+        postDoiRequestMessage(requestBody);
+
+        Publication[] doiRequests = listDoiRequestsAsPublicationOwner();
+        String actualText = extractTextFromOldestMessage(doiRequests[0]);
+
+        assertThat(actualText, is(equalTo(requestBody.getMessage())));
+    }
+
+    public String extractTextFromOldestMessage(Publication doiRequest) {
+        return doiRequest.getDoiRequest().getMessages().get(0).getText();
+    }
+
+    private Environment setupEnvironment() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
+
+        return environment;
+    }
+
+    private Publication[] listDoiRequestsAsPublicationOwner() throws IOException {
+        ListDoiRequestsHandler listDoiRequestsHandler = new ListDoiRequestsHandler(
+            environment, doiRequestService, messageService);
+        InputStream listDoiRequestsRequest = createListDoiRequestsHttpQuery();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        listDoiRequestsHandler.handleRequest(listDoiRequestsRequest, output, CONTEXT);
+        GatewayResponse<Publication[]> listDoiRequestsResponse = GatewayResponse.fromOutputStream(output);
+        return listDoiRequestsResponse.getBodyObject(Publication[].class);
+    }
+
+    private InputStream createListDoiRequestsHttpQuery() throws JsonProcessingException {
+        UserInstance publicationOwner = extractOwner(samplePublication);
+        return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
+                   .withFeideId(publicationOwner.getUserIdentifier())
+                   .withCustomerId(publicationOwner.getOrganizationUri().toString())
+                   .withQueryParameters(Map.of("role", "Creator"))
+                   .withRoles("Creator")
+                   .build();
+    }
+
+    private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
+        input = createInput(requestBody);
+        handler.handleRequest(input, output, CONTEXT);
+        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output);
+        assertThat(response.getStatusCode(), is(HttpURLConnection.HTTP_CREATED));
+    }
+
+    private CreateMessageRequest createDoiRequestMessage() {
+        CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
+        requestBody.setDoiRequestRelated(true);
+        return requestBody;
+    }
+
+    private void createDoiRequestForSamplePublication() throws BadRequestException, TransactionFailedException {
+        doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
 
     private URI extractLocationFromHttpHeaders() throws JsonProcessingException {

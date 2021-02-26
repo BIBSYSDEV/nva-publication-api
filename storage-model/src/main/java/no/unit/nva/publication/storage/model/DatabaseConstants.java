@@ -30,14 +30,16 @@ public final class DatabaseConstants {
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String STATUS_INDEX_FIELD_PREFIX = "Status";
     public static final String RESOURCE_INDEX_FIELD_PREFIX = "Resource";
-
     private static final String OWNER_IDENTIFIER = STRING_PLACEHOLDER;
     private static final String RECORD_TYPE = STRING_PLACEHOLDER;
     private static final String CUSTOMER_IDENTIFIER = STRING_PLACEHOLDER;
     public static final String PRIMARY_KEY_PARTITION_KEY_FORMAT =
         String.join(KEY_FIELDS_DELIMITER, RECORD_TYPE, CUSTOMER_IDENTIFIER, OWNER_IDENTIFIER);
+
     private static final String STATUS = STRING_PLACEHOLDER;
+
     public static final String BY_TYPE_CUSTOMER_STATUS_PK_FORMAT =
+        //Do not refactor to method, declaration order of static variables is important.
         String.join(KEY_FIELDS_DELIMITER,
             RECORD_TYPE,
             CUSTOMER_INDEX_FIELD_PREFIX,
@@ -45,13 +47,14 @@ public final class DatabaseConstants {
             STATUS_INDEX_FIELD_PREFIX,
             STATUS);
     private static final String ENTRY_IDENTIFIER = STRING_PLACEHOLDER;
-    public static final String PRIMARY_KEY_SORT_KEY_FORMAT = String.join(KEY_FIELDS_DELIMITER, RECORD_TYPE,
-        ENTRY_IDENTIFIER);
+
+    public static final String PRIMARY_KEY_SORT_KEY_FORMAT =
+        String.join(KEY_FIELDS_DELIMITER, RECORD_TYPE, ENTRY_IDENTIFIER);
+
     public static final String BY_TYPE_CUSTOMER_STATUS_SK_FORMAT =
         String.join(KEY_FIELDS_DELIMITER, RECORD_TYPE, ENTRY_IDENTIFIER);
 
     private DatabaseConstants() {
-
     }
 
     private static String readTableNameFromEnvironment() {
