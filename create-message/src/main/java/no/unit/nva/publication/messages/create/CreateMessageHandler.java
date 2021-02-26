@@ -97,11 +97,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     private URI trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
         throws TransactionFailedException {
 
-        if (input.isDoiRequestRelated()) {
-            return messageService.createDoiRequestMessage(sender, publication, input.getMessage());
-        } else {
-            return messageService.createSimpleMessage(sender, publication, input.getMessage());
-        }
+        return input.isDoiRequestRelated() ?
+                   messageService.createDoiRequestMessage(sender, publication, input.getMessage())
+                   : messageService.createSimpleMessage(sender, publication, input.getMessage());
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {

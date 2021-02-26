@@ -72,15 +72,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         samplePublication = createSamplePublication();
     }
 
-
-    private Environment setupEnvironment() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
-
-        return environment;
-    }
-
     @Test
     public void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException {
@@ -130,9 +121,21 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         postDoiRequestMessage(requestBody);
 
         Publication[] doiRequests = listDoiRequestsAsPublicationOwner();
-        String actualText = doiRequests[0].getDoiRequest().getMessages().get(0).getText();
+        String actualText = extractTextFromOldestMessage(doiRequests[0]);
 
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
+    }
+
+    public String extractTextFromOldestMessage(Publication doiRequest) {
+        return doiRequest.getDoiRequest().getMessages().get(0).getText();
+    }
+
+    private Environment setupEnvironment() {
+        Environment environment = mock(Environment.class);
+        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
+        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
+
+        return environment;
     }
 
     private Publication[] listDoiRequestsAsPublicationOwner() throws IOException {
