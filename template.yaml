@@ -946,7 +946,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
           API_SCHEME: https
-            API_HOST: !Ref CustomDomain
+          API_HOST: !Ref CustomDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
