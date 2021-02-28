@@ -7,10 +7,12 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -88,18 +90,20 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     private URI sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
         throws TransactionFailedException, BadRequestException {
         try {
-            return trySendMessage(input, sender, publication);
+            var messageIdentifier = trySendMessage(input, sender, publication);
+            return MessageDto.constructMessageId(messageIdentifier);
         } catch (InvalidInputException exception) {
             throw handleBadRequests(exception);
         }
     }
 
-    private URI trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
+    private SortableIdentifier trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
         throws TransactionFailedException {
 
         return input.isDoiRequestRelated() ?
                    messageService.createDoiRequestMessage(sender, publication, input.getMessage())
                    : messageService.createSimpleMessage(sender, publication, input.getMessage());
+
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {

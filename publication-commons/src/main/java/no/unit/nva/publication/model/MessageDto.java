@@ -1,19 +1,25 @@
 package no.unit.nva.publication.model;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.ServiceEnvironmentConstants.MESSAGE_PATH;
+import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 
 public class MessageDto {
 
     @JsonProperty("id")
-    URI messageId;
+    private URI messageId;
     @JsonProperty("identifier")
-    SortableIdentifier messageIdentifier;
+    private SortableIdentifier messageIdentifier;
     @JsonProperty("sender")
     private String senderIdentifier;
     @JsonProperty("owner")
@@ -31,7 +37,7 @@ public class MessageDto {
         messageDto.setSenderIdentifier(message.getSender());
         messageDto.setText(message.getText());
         messageDto.setDate(message.getCreatedTime());
-        messageDto.setMessageId(message.getId());
+        messageDto.setMessageId(constructMessageId(message.getIdentifier()));
         messageDto.setMessageIdentifier(message.getIdentifier());
         messageDto.setDoiRequestRelated(message.isDoiRequestRelated());
         return messageDto;
@@ -135,5 +141,19 @@ public class MessageDto {
     @JacocoGenerated
     public void setOwnerIdentifier(String ownerIdentifier) {
         this.ownerIdentifier = ownerIdentifier;
+    }
+
+    public static URI constructMessageId(SortableIdentifier messageIdentifier) {
+        if (nonNull(messageIdentifier)) {
+            String scheme = ServiceEnvironmentConstants.getInstance().scheme;
+            String host = ServiceEnvironmentConstants.getInstance().host;
+            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
+            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
+        }
+        return null;
+    }
+
+    private static URI newUri(String scheme, String host, String messagesPath) throws URISyntaxException {
+        return new URI(scheme, host, messagesPath, ServiceEnvironmentConstants.URI_EMPTY_FRAGMENT);
     }
 }

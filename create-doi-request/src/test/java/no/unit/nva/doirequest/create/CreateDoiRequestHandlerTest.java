@@ -24,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
+import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -32,7 +33,6 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceMessages;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -76,7 +76,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-        StorageModelConstants.updateEnvironment(environment);
+        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new CreateDoiRequestHandler(resourceService, doiRequestService, messageService, environment);
     }
 
@@ -145,7 +145,6 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
-
         Optional<ResourceMessages> resourceMessages = messageService.getMessagesForResource(extractOwner(publication),
             publication.getIdentifier());
 
@@ -170,7 +169,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGINS);
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
+        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
         return environment;
     }
 

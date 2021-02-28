@@ -1,6 +1,8 @@
 package no.unit.nva.publication.messages.create;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;
+import static no.unit.nva.publication.ServiceEnvironmentConstants.URI_EMPTY_FRAGMENT;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -16,12 +18,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -29,7 +33,6 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -50,6 +53,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final String ALLOW_ALL_ORIGIN = "*";
     public static final String SOME_VALID_HOST = "localhost";
+    public static final String HTTPS = "https";
     private ResourceService resourcesService;
     private MessageService messageService;
     private CreateMessageHandler handler;
@@ -66,7 +70,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         messageService = new MessageService(client, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         environment = setupEnvironment();
-        StorageModelConstants.updateEnvironment(environment);
+        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
@@ -79,8 +83,23 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-        URI messageIdentifier = extractLocationFromHttpHeaders();
-        Message message = fetchMessageDirectlyFromDb(samplePublication, messageIdentifier);
+        URI messageId = extractLocationFromHttpHeaders();
+        Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
+        assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
+    }
+
+    @Test
+    public void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
+        throws IOException, URISyntaxException {
+        CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
+
+        input = createInput(requestBody);
+        handler.handleRequest(input, output, CONTEXT);
+        URI messageId = extractLocationFromHttpHeaders();
+
+        Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
+        URI expectedMessageId = constructExpectedMessageUri(message);
+        assertThat(messageId, is(equalTo(expectedMessageId)));
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
 
@@ -126,15 +145,23 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
     }
 
+
+    private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
+        String expectedPath = ServiceEnvironmentConstants.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
+        return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
+    }
     public String extractTextFromOldestMessage(Publication doiRequest) {
         return doiRequest.getDoiRequest().getMessages().get(0).getText();
+
     }
 
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(StorageModelConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
-
+        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
+            .thenReturn(SOME_VALID_HOST);
+        when(environment.readEnv(ServiceEnvironmentConstants.NETWORK_SCHEME_ENV_VARIABLE_NAME))
+            .thenReturn(HTTPS);
         return environment;
     }
 

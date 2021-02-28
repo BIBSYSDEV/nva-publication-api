@@ -24,8 +24,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -33,7 +35,6 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceMessages;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.StorageModelConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -74,7 +75,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
-        StorageModelConstants.updateEnvironment(environment);
+        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new ListMessagesHandler(environment, messageService);
     }
 
@@ -257,8 +258,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Message createMessage(Publication publication, UserInstance sender) throws TransactionFailedException {
-        URI messageId = messageService.createMessage(sender, publication, randomString());
-        return messageService.getMessage(extractOwner(publication), messageId);
+        SortableIdentifier messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
+        return messageService.getMessage(extractOwner(publication), messageIdentifier);
     }
 
     private String randomString() {

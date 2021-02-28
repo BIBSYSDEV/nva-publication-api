@@ -66,7 +66,6 @@ public final class DaoUtils {
         Message message = Message.builder()
                               .withStatus(MessageStatus.UNREAD)
                               .withIdentifier(identifier)
-                              .withId(Message.messageId(identifier))
                               .withOwner(SOME_OWNER)
                               .withSender(SOME_USER)
                               .withResourceIdentifier(SortableIdentifier.next())
