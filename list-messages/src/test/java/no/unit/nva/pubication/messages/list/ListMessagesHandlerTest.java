@@ -32,7 +32,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -54,8 +54,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final Faker FAKER = Faker.instance();
     public static final int FIRST = 0;
     public static final int FIRST_ELEMENT = FIRST;
-    private static final int NUMBER_OF_PUBLICATIONS = 2;
     public static final String ALLOW_EVERYTHING = "*";
+    private static final int NUMBER_OF_PUBLICATIONS = 2;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
@@ -96,8 +96,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceMessages[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceMessages[] responseObjects = response.getBodyObject(ResourceMessages[].class);
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
 
@@ -119,31 +119,31 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceMessages[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceMessages[] responseObjects = response.getBodyObject(ResourceMessages[].class);
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
         assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
     }
 
-    private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceMessages[] responseObjects) {
+    private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
 
-        List<ResourceMessages> sorted = Arrays.stream(responseObjects)
-                                            .sorted(this::objectWithOldestMessageFirst)
-                                            .collect(Collectors.toList());
-        List<ResourceMessages> actualResponseObjects = Arrays.asList(responseObjects);
+        List<ResourceConversation> sorted = Arrays.stream(responseObjects)
+                                                .sorted(this::objectWithOldestMessageFirst)
+                                                .collect(Collectors.toList());
+        List<ResourceConversation> actualResponseObjects = Arrays.asList(responseObjects);
 
         assertThat(actualResponseObjects, is(equalTo(sorted)));
         assertThat(actualResponseObjects, is(not(sameInstance(sorted))));
     }
 
-    private int objectWithOldestMessageFirst(ResourceMessages left, ResourceMessages right) {
+    private int objectWithOldestMessageFirst(ResourceConversation left, ResourceConversation right) {
         MessageDto oldestMessageLeft = oldestMessage(left);
         MessageDto oldestMessageRight = oldestMessage(right);
         return oldestMessageLeft.getDate().compareTo(oldestMessageRight.getDate());
     }
 
-    private MessageDto oldestMessage(ResourceMessages left) {
+    private MessageDto oldestMessage(ResourceConversation left) {
         return left.getMessages()
                    .stream()
                    .sorted(Comparator.comparing(MessageDto::getDate))
@@ -151,8 +151,10 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
                    .get(0);
     }
 
-    private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(ResourceMessages[] responseObjects) {
-        for (ResourceMessages resourceMessages : responseObjects) {
+    private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
+        ResourceConversation[] responseObjects) {
+
+        for (ResourceConversation resourceMessages : responseObjects) {
             var messages = resourceMessages.getMessages();
             List<MessageDto> sortedMessages = messages.stream()
                                                   .sorted(Comparator.comparing(MessageDto::getDate))
@@ -166,15 +168,16 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
     }
 
-    private void assertThatResourceDescriptionsContainIdentifierAndTitle(
-        List<Message> savedMessages, ResourceMessages[] responseObjects) {
+    private void assertThatResourceDescriptionsContainIdentifierAndTitle(List<Message> savedMessages,
+                                                                         ResourceConversation[] responseObjects) {
+
         List<Publication> actualPublicationDescriptions = extractPublicationDescriptionFromResponse(responseObjects);
         Publication[] expectedPublicationDescriptions = constructExpectedPublicationDescriptions(savedMessages);
         assertThat(actualPublicationDescriptions, containsInAnyOrder(expectedPublicationDescriptions));
     }
 
     private void assertThatResponseContainsAllExpectedMessages(List<Message> savedMessages,
-                                                               ResourceMessages[] responseObjects) {
+                                                               ResourceConversation[] responseObjects) {
         List<MessageDto> actualMessages = extractAllMessagesFromResponse(responseObjects);
         MessageDto[] expectedMessages = constructExpectedMessages(savedMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
@@ -192,9 +195,9 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return new UserInstance(message.getOwner(), message.getCustomerId());
     }
 
-    private List<Publication> extractPublicationDescriptionFromResponse(ResourceMessages[] responseObjects) {
+    private List<Publication> extractPublicationDescriptionFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
-                   .map(ResourceMessages::getPublication)
+                   .map(ResourceConversation::getPublication)
                    .collect(Collectors.toList());
     }
 
@@ -208,7 +211,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return expectedPublicationDescriptionsArray;
     }
 
-    private List<MessageDto> extractAllMessagesFromResponse(ResourceMessages[] responseObjects) {
+    private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects).flatMap(r -> r.getMessages().stream()).collect(
             Collectors.toList());
     }
@@ -222,7 +225,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Publication createPublicationDescription(Message message) {
-        return ResourceMessages.createPublicationDescription(message);
+        return ResourceConversation.createPublicationDescription(message);
     }
 
     private List<Message> insetSampleMessages() {

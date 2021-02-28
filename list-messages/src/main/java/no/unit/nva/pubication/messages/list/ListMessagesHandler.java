@@ -8,7 +8,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -17,7 +17,7 @@ import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessages[]> {
+public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConversation[]> {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(ListMessagesHandler.class);
     private final MessageService messageService;
@@ -33,9 +33,9 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
     }
 
     @Override
-    protected ResourceMessages[] processInput(Void input, RequestInfo requestInfo, Context context) {
+    protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context) {
         UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
-        List<ResourceMessages> result = messageService.listMessagesForUser(userInstance);
+        List<ResourceConversation> result = messageService.listMessagesForUser(userInstance);
         return convertListToArray(result);
     }
 
@@ -46,7 +46,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, ResourceMessages[] output) {
+    protected Integer getSuccessStatusCode(Void input, ResourceConversation[] output) {
         return HttpURLConnection.HTTP_OK;
     }
 
@@ -56,7 +56,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
         return new MessageService(client, Clock.systemDefaultZone());
     }
 
-    private ResourceMessages[] convertListToArray(List<ResourceMessages> result) {
-        return result.toArray(ResourceMessages[]::new);
+    private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {
+        return result.toArray(ResourceConversation[]::new);
     }
 }

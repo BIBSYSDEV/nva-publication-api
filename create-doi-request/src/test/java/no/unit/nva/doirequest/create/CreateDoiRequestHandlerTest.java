@@ -30,7 +30,7 @@ import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -145,7 +145,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
-        Optional<ResourceMessages> resourceMessages = messageService.getMessagesForResource(extractOwner(publication),
+        Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
+            extractOwner(publication),
             publication.getIdentifier());
 
         MessageDto savedMessage = resourceMessages.orElseThrow().getMessages().get(SINGLE_MESSAGE);

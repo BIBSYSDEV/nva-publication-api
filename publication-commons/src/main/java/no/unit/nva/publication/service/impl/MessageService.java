@@ -119,7 +119,7 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     @SuppressWarnings(RAWTYPES)
-    public Optional<ResourceMessages> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
+    public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
         ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
         QueryRequest queryRequest = queryForRetrievingMessagesByResource(queryObject);
         List<Dao> resultDaos = executeQuery(queryRequest);
@@ -135,7 +135,7 @@ public class MessageService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    public List<ResourceMessages> listMessagesForUser(UserInstance owner) {
+    public List<ResourceConversation> listMessagesForUser(UserInstance owner) {
         MessageDao queryObject = MessageDao.listMessagesAndResourcesForUser(owner);
         QueryRequest queryRequest = queryForFetchingAllMessagesForAUser(queryObject);
         QueryResult queryResult = client.query(queryRequest);
@@ -163,16 +163,17 @@ public class MessageService extends ServiceWithTransactions {
         return SortableIdentifier::next;
     }
 
-    private List<ResourceMessages> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
+
+    private List<ResourceConversation> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
         return messagesPerResource
                    .values()
                    .stream()
-                   .flatMap(messages -> ResourceMessages.fromMessageList(messages).stream())
+                   .flatMap(messages -> ResourceConversation.fromMessageList(messages).stream())
                    .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
     }
 
-    private Comparator<ResourceMessages> sortByOldestMessageCreationDate() {
+    private Comparator<ResourceConversation> sortByOldestMessageCreationDate() {
         return Comparator.comparing(resourceMessage -> resourceMessage.getMessages().get(OLDEST_MESSAGE).getDate());
     }
 
@@ -229,10 +230,11 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
+
     @SuppressWarnings(RAWTYPES)
-    private Optional<ResourceMessages> messagesWithResource(List<Dao> daos) {
+    private Optional<ResourceConversation> messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
-        return ResourceMessages.fromMessageList(messages);
+        return ResourceConversation.fromMessageList(messages);
     }
 
     @SuppressWarnings(RAWTYPES)

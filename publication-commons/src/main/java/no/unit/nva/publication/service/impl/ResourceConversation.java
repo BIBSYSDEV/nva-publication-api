@@ -14,16 +14,15 @@ import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-public class ResourceMessages implements JsonSerializable {
+public class ResourceConversation implements JsonSerializable {
 
-    public static final String EMPTY_MESSAGE_LIST_ERROR = "Message list cannot be empty";
     private Publication publication;
     private List<MessageDto> messages;
 
-    public ResourceMessages() {
+    public ResourceConversation() {
     }
 
-    public static Optional<ResourceMessages> fromMessageList(List<Message> messages) {
+    public static Optional<ResourceConversation> fromMessageList(List<Message> messages) {
         if (isEmpty(messages)) {
             return Optional.empty();
         }
@@ -59,7 +58,6 @@ public class ResourceMessages implements JsonSerializable {
         this.publication = publication;
     }
 
-
     @JacocoGenerated
     @Override
     public int hashCode() {
@@ -72,10 +70,10 @@ public class ResourceMessages implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ResourceMessages)) {
+        if (!(o instanceof ResourceConversation)) {
             return false;
         }
-        ResourceMessages that = (ResourceMessages) o;
+        ResourceConversation that = (ResourceConversation) o;
         return Objects.equals(getPublication(), that.getPublication()) && Objects.equals(getMessages(),
             that.getMessages());
     }
@@ -86,9 +84,10 @@ public class ResourceMessages implements JsonSerializable {
         return toJsonString();
     }
 
-    private static ResourceMessages createNewResourceMessageInstance(List<Message> messages) {
-        messages.sort(ResourceMessages::oldestFirst);
+    private static ResourceConversation createNewResourceMessageInstance(List<Message> messages) {
+        messages.sort(ResourceConversation::oldestFirst);
         Message mostRecentMessage = newestMessage(messages);
+
         Publication publication = createPublicationDescription(mostRecentMessage);
         return createResourceMessage(messages, publication);
     }
@@ -101,8 +100,8 @@ public class ResourceMessages implements JsonSerializable {
         return left.getCreatedTime().compareTo(right.getCreatedTime());
     }
 
-    private static ResourceMessages createResourceMessage(List<Message> messages, Publication publication) {
-        ResourceMessages result = new ResourceMessages();
+    private static ResourceConversation createResourceMessage(List<Message> messages, Publication publication) {
+        ResourceConversation result = new ResourceConversation();
         result.setPublication(publication);
         result.setMessages(transformMessages(messages));
         return result;

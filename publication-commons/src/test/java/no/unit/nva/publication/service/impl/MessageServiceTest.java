@@ -109,17 +109,18 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var insertedMessages = insertSampleMessages(insertedPublication);
 
         var userInstance = extractOwner(insertedPublication);
-        var resourceMessagesOpt =
+        var resourceConversationOpt =
             messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
 
-        assertThat(resourceMessagesOpt.isPresent(), is(true));
-        var resourceMessages = resourceMessagesOpt.orElseThrow();
-        var actualPublication = resourceMessages.getPublication();
+        assertThat(resourceConversationOpt.isPresent(), is(true));
+        var resourceConversation = resourceConversationOpt.orElseThrow();
+        var actualPublication = resourceConversation.getPublication();
         var expectedPublication = constructExpectedPublication(insertedPublication);
+
         assertThat(actualPublication, is(equalTo(expectedPublication)));
 
         MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
-        assertThat(resourceMessages.getMessages(), containsInAnyOrder(expectedMessages));
+        assertThat(resourceConversation.getMessages(), containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -211,7 +212,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var messagesForPublication2 = insertSampleMessages(publication2);
 
         var actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
-
         var expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
         var expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
         var expectedMessages = List.of(
@@ -222,8 +222,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, is(equalTo(expectedMessages)));
     }
 
-    public ResourceMessages constructExpectedMessages(List<Message> messagesForPublication1) {
-        return ResourceMessages.fromMessageList(messagesForPublication1).orElseThrow();
+    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication1) {
+        return ResourceConversation.fromMessageList(messagesForPublication1).orElseThrow();
     }
 
     private Environment setupEnvironment() {
