@@ -106,7 +106,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
         throws TransactionFailedException {
-        var insertedPublication = createSamplePublication();
+        Publication insertedPublication = createSamplePublication();
         List<Message> insertedMessages = insertSampleMessages(insertedPublication);
 
         UserInstance userInstance = extractOwner(insertedPublication);
@@ -142,7 +142,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
+        SortableIdentifier messageIdentifier = createSimpleMessage(publication, messageText);
         Message savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
             messageText);
@@ -155,7 +155,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
+        SortableIdentifier messageIdentifier = createSimpleMessage(publication, messageText);
 
         Message savedMessage = messageService.getMessage(extractOwner(publication), messageIdentifier);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
@@ -168,7 +168,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException {
         Publication publication = createSamplePublication();
         String messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
+        SortableIdentifier messageIdentifier = createSimpleMessage(publication, messageText);
         URI sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
         Message savedMessage = fetchMessage(extractOwner(publication), sampleMessageUri);
         Message expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
@@ -191,8 +191,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() {
-        var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
-        var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
+        List<Publication> createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
+        List<Message> allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
 
         URI customerId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
         List<Message> actualMessages =
@@ -283,10 +283,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         List<Message> savedMessages = new ArrayList<>();
 
         for (Publication createdPublication : createdPublications) {
-            var messageIdentifier = createSimpleMessage(createdPublication, randomString());
-            var owner = extractOwner(createdPublication);
-
-            var savedMessage = fetchMessage(owner, messageIdentifier);
+            SortableIdentifier messageIdentifier = createSimpleMessage(createdPublication, randomString());
+            UserInstance owner = extractOwner(createdPublication);
+            Message savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
         return savedMessages;
