@@ -60,8 +60,8 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
+        //TODO: restore correct package when new version has been created.
         implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
-
 //        implementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
         implementation group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
@@ -80,7 +80,9 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform{
+            excludeTags("RemoteTest")
+        }
         failFast = true
         testLogging {
             events 'skipped', 'passed', 'failed'

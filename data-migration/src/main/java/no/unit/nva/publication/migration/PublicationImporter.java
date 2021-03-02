@@ -9,10 +9,13 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.attempt.Try;
 import software.amazon.ion.IonReader;
@@ -37,32 +40,52 @@ public class PublicationImporter {
 
     public List<Publication> getPublications() {
         var content = s3Client.getFiles(dataPath);
-        return mapIonObjectsToPublications(content.stream()).collect(Collectors.toList());
+        var publicationsWithDuplicates = mapIonObjectsToPublications(content.stream())
+                                             .collect(Collectors.toList());
+
+        return removeDuplicates(publicationsWithDuplicates.stream());
     }
 
-    private Stream<Publication> mapIonObjectsToPublications(Stream<String> content) {
-        return content
-                   .map(attempt(this::toJsonObjects))
-                   .map(attempt -> attempt.map(this::transformMultipleJsonObjectsToJsonArrayWithObjects))
-                   .map(Try::orElseThrow)
-                   .map(this::parseJson)
-                   .flatMap(Collection::stream);
+    public List<Resource> createResources(List<Publication> publications) {
+        return publications.stream().map(Resource::fromPublication).collect(Collectors.toList());
     }
 
-    private String transformMultipleJsonObjectsToJsonArrayWithObjects(String jsonObjects) {
-        String arrayElements = makeConscutiveJsonObjectsElementsOfJsonArray(jsonObjects);
-        return addArrayDelimiters(arrayElements);
+    protected static List<Publication> removeDuplicates(Stream<Publication> publicationsWithDuplicates) {
+        Map<SortableIdentifier, List<Publication>> groupedByIdentifier =
+            groupPublicationsByIdentifier(publicationsWithDuplicates);
+        return seleceLatestVersionForEachIdentifier(groupedByIdentifier);
     }
 
-    private String addArrayDelimiters(String arrayElements) {
+    private static List<Publication> seleceLatestVersionForEachIdentifier(
+        Map<SortableIdentifier, List<Publication>> groupedByIdentifier) {
+
+        return groupedByIdentifier.values().stream()
+                   .map(PublicationImporter::selectMostRecentVersion)
+                   .collect(Collectors.toList());
+    }
+
+    private static Map<SortableIdentifier, List<Publication>> groupPublicationsByIdentifier(
+        Stream<Publication> publicationsWithDuplicates) {
+        return publicationsWithDuplicates.collect(Collectors.groupingBy(Publication::getIdentifier));
+    }
+
+    private static Publication selectMostRecentVersion(List<Publication> duplicates) {
+        return duplicates.stream().reduce(PublicationImporter::mostRecent).orElseThrow();
+    }
+
+    private static Publication mostRecent(Publication left, Publication right) {
+        return left.getModifiedDate().isAfter(right.getModifiedDate()) ? left : right;
+    }
+
+    private static String addArrayDelimiters(String arrayElements) {
         return BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
     }
 
-    private String makeConscutiveJsonObjectsElementsOfJsonArray(String jsonObjects) {
+    private static String makeConsecutiveJsonObjectsElementsOfJsonArray(String jsonObjects) {
         return jsonObjects.replaceAll(CONSECUTIVE_JSON_OBJECTS, SUCCESSIVE_ELEMENTS_IN_ARRAY);
     }
 
-    private List<Publication> parseJson(String json) {
+    private static List<Publication> parseJson(String json) {
         JsonNode root = attempt(() -> objectMapper.readTree(json)).orElseThrow();
         if (root.isArray()) {
             ArrayNode rootArray = (ArrayNode) root;
@@ -75,18 +98,31 @@ public class PublicationImporter {
         }
     }
 
-    private String toJsonObjects(String ion) throws IOException {
-
+    private static String toJsonObjects(String ion) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
         try (IonWriter writer = IonTextWriterBuilder.json().build(stringBuilder)) {
             rewrite(ion, writer);
         }
-
         return stringBuilder.toString();
     }
 
-    private void rewrite(String textIon, IonWriter writer) throws IOException {
-        IonReader reader = IonReaderBuilder.standard().build(textIon);
-        writer.writeValues(reader);
+    private static void rewrite(String textIon, IonWriter writer) throws IOException {
+        try (IonReader reader = IonReaderBuilder.standard().build(textIon)) {
+            writer.writeValues(reader);
+        }
+    }
+
+    private Stream<Publication> mapIonObjectsToPublications(Stream<String> content) {
+        return content
+                   .map(attempt(PublicationImporter::toJsonObjects))
+                   .map(attempt -> attempt.map(this::transformMultipleJsonObjectsToJsonArrayWithObjects))
+                   .map(Try::orElseThrow)
+                   .map(PublicationImporter::parseJson)
+                   .flatMap(Collection::stream);
+    }
+
+    private String transformMultipleJsonObjectsToJsonArrayWithObjects(String jsonObjects) {
+        String arrayElements = makeConsecutiveJsonObjectsElementsOfJsonArray(jsonObjects);
+        return addArrayDelimiters(arrayElements);
     }
 }
