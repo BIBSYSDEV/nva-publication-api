@@ -193,7 +193,7 @@ public class ModifyPublicationHandlerTest {
     }
     
     private TestAppender createAppenderForLogMonitoring() {
-        return LogUtils.getTestingAppender(ModifyPublicationHandler.class);
+        return LogUtils.getTestingAppenderForRootLogger();
     }
     
     private void publicationServiceThrowsException() throws ApiGatewayException {

@@ -14,12 +14,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
-    private static final Logger logger = LoggerFactory.getLogger(DeletePublicationHandler.class);
     private final ResourceService resourceService;
 
     /**
@@ -38,7 +35,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
      * @param environment     environment
      */
     public DeletePublicationHandler(ResourceService resourceService, Environment environment) {
-        super(Void.class, environment, logger);
+        super(Void.class, environment);
         this.resourceService = resourceService;
     }
 

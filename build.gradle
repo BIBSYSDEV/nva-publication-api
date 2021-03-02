@@ -25,7 +25,7 @@ allprojects {
         awsSdkVersion = '1.11.871'
         awsSdk2Version = '2.14.16'
         nvaDatamodelVersion= "0.11.6"
-        nvaCommonsVersion = '1.0.4'
+        nvaCommonsVersion = '1.2.0'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
         jacksonVersion = '2.10.2'
@@ -62,8 +62,8 @@ subprojects {
 
         //TODO: restore correct package when new version has been created.
         implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
-//        implementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-        implementation group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
+//        implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+        implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion

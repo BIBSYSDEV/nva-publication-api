@@ -9,7 +9,7 @@ dependencies {
 
     implementation project(":storage-model")
 
-    implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
 
     testImplementation project (':publication-testing')
 

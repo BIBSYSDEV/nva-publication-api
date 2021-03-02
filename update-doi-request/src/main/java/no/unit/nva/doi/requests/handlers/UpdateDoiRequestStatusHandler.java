@@ -45,7 +45,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
 
     public UpdateDoiRequestStatusHandler(Environment environment,
                                          DoiRequestService doiRequestService) {
-        super(ApiUpdateDoiRequest.class, environment, logger);
+        super(ApiUpdateDoiRequest.class, environment);
         this.apiHost = environment.readEnv(API_HOST_ENV_VARIABLE);
         this.apiScheme = environment.readEnv(API_SCHEME_ENV_VARIABLE);
         this.doiRequestService = doiRequestService;

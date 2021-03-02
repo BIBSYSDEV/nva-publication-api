@@ -5,8 +5,8 @@ repositories {
 dependencies {
     api project(":storage-model")
 
-    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
 
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
@@ -34,7 +34,7 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-    testImplementation group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
 }
 

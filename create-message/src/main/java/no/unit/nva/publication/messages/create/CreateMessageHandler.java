@@ -23,12 +23,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(CreateMessageHandler.class);
     private final MessageService messageService;
     private final ResourceService resourceService;
 
@@ -44,7 +41,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     public CreateMessageHandler(Environment environment,
                                 MessageService messageService,
                                 ResourceService resourceService) {
-        super(CreateMessageRequest.class, environment, LOGGER);
+        super(CreateMessageRequest.class, environment);
         this.messageService = messageService;
         this.resourceService = resourceService;
     }

@@ -25,14 +25,11 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest, Void> {
 
     public static final String DOI_ALREADY_EXISTS_ERROR = "A DOI request already exists";
     public static final String USER_IS_NOT_OWNER_ERROR = "User does not own the specific publication";
-    private static final Logger LOGGER = LoggerFactory.getLogger(CreateDoiRequestHandler.class);
     private final DoiRequestService doiRequestService;
     private final MessageService messageService;
     private final ResourceService resourceService;
@@ -55,7 +52,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
                                    DoiRequestService requestService,
                                    MessageService messageService,
                                    Environment environment) {
-        super(CreateDoiRequest.class, environment, LOGGER);
+        super(CreateDoiRequest.class, environment);
         this.resourceService = resourceService;
         this.messageService = messageService;
         this.doiRequestService = requestService;

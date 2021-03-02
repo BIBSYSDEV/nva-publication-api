@@ -14,12 +14,9 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConversation[]> {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ListMessagesHandler.class);
     private final MessageService messageService;
 
     @JacocoGenerated
@@ -28,7 +25,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     }
 
     public ListMessagesHandler(Environment environment, MessageService messageService) {
-        super(Void.class, environment, LOGGER);
+        super(Void.class, environment);
         this.messageService = messageService;
     }
 

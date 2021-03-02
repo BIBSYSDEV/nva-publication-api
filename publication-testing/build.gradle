@@ -8,8 +8,8 @@ dependencies {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
 
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
     api(group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2') {

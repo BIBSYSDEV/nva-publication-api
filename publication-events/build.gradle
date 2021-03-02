@@ -3,7 +3,7 @@ dependencies {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    implementation group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
