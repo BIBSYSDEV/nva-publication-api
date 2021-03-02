@@ -42,32 +42,6 @@ public class DoiRegistrarEntryFields {
         return doiRegistrarEntryFields;
     }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getResourceIdentifier(), getContributors(), getPublicationDate(), getPublisherId(),
-            getTitle(),
-            getPublicationInstance(), getDoi());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof DoiRegistrarEntryFields)) {
-            return false;
-        }
-        DoiRegistrarEntryFields that = (DoiRegistrarEntryFields) o;
-        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && Objects.equals(getContributors(), that.getContributors())
-               && Objects.equals(getPublicationDate(), that.getPublicationDate())
-               && Objects.equals(getPublisherId(), that.getPublisherId())
-               && Objects.equals(getTitle(), that.getTitle())
-               && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
-               && Objects.equals(getDoi(), that.getDoi());
-    }
-
     public URI getDoi() {
         return doi;
     }
@@ -94,6 +68,32 @@ public class DoiRegistrarEntryFields {
 
     public PublicationInstance<?> getPublicationInstance() {
         return publicationInstance;
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getResourceIdentifier(), getContributors(), getPublicationDate(), getPublisherId(),
+            getTitle(),
+            getPublicationInstance(), getDoi());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof DoiRegistrarEntryFields)) {
+            return false;
+        }
+        DoiRegistrarEntryFields that = (DoiRegistrarEntryFields) o;
+        return Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getPublicationDate(), that.getPublicationDate())
+               && Objects.equals(getPublisherId(), that.getPublisherId())
+               && Objects.equals(getTitle(), that.getTitle())
+               && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
+               && Objects.equals(getDoi(), that.getDoi());
     }
 
     private static URI extractPublicationDoi(Publication publication) {
