@@ -7,8 +7,8 @@ import org.slf4j.LoggerFactory;
 
 public final class ServiceEnvironmentConstants {
 
-    public static final String HOST_ENV_VARIABLE_NAME = "HOST";
-    public static final String NETWORK_SCHEME_ENV_VARIABLE_NAME = "SCHEME";
+    public static final String HOST_ENV_VARIABLE_NAME = "API_HOST";
+    public static final String NETWORK_SCHEME_ENV_VARIABLE_NAME = "API_SCHEME";
 
     public static final String URI_EMPTY_FRAGMENT = null;
     public static final String PATH_SEPARATOR = "/";
