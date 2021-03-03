@@ -9,10 +9,13 @@ import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -22,6 +25,8 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.attempt.Try;
@@ -32,27 +37,32 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.ion.system.IonReaderBuilder;
 import software.amazon.ion.system.IonTextWriterBuilder;
 
-public class PublicationImporterTest {
+public class PublicationImporterTest extends ResourcesDynamoDbLocalTest {
 
     private static final String EXISTING_REMOTE_BUCKET_NAME = "orestis-export";
     private static final Path EXISTING_DATA_PATH = Path.of("AWSDynamoDB",
-        "01614600960660-a9739099", "data/");
+        "01614701350715-b7f02d9e", "data/");
     private static final List<Publication> FIRST_PUBLICATIONS_FILE = samplePublications();
     private static final List<Publication> SECOND_PUBLICATIONS_FILE = samplePublications();
     private static final List<Publication> EXPECTED_PUBLICATIONS = constructExpectedPublications();
     private PublicationImporter publicationImporter;
+    private ResourceService resourceService;
 
     @BeforeEach
     public void init() {
-        S3Driver remoteClient = remoteConnection();
-        S3Driver mockClient = new FakeS3Driver();
-        publicationImporter = new PublicationImporter(mockClient, EXISTING_DATA_PATH);
+        super.init();
+        AmazonDynamoDB dynamoClient = super.client;
+        S3Driver remoteS3Client = remoteConnection();
+        S3Driver mockS3client = new FakeS3Driver();
+        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+
+        publicationImporter = new PublicationImporter(mockS3client, EXISTING_DATA_PATH, resourceService);
     }
 
     @Test
     @Tag("RemoteTest")
     public void publicationImporterReturnsListOfPublicationsWhenRemotePathContainsPublications() {
-        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH);
+        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH, resourceService);
         List<Publication> publications = publicationImporter.getPublications();
         assertThat(publications, is(not(empty())));
     }
@@ -60,7 +70,7 @@ public class PublicationImporterTest {
     @Test
     @Tag("RemoteTest")
     public void getPublicationsReturnsOnePublicationInstancePerIdentifier() {
-        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH);
+        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH, resourceService);
         List<Publication> publications = publicationImporter.getPublications();
         Set<SortableIdentifier> identifiers = publications.stream()
                                                   .map(Publication::getIdentifier)
@@ -71,10 +81,22 @@ public class PublicationImporterTest {
     @Test
     @Tag("RemoteTest")
     public void createResourcesReturnsOneResourcePerPublicationInRemoteFolder() {
-        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH);
+        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH, resourceService);
         List<Publication> publications = publicationImporter.getPublications();
         List<Resource> resources = publicationImporter.createResources(publications);
         assertThat(resources.size(), is(equalTo(publications.size())));
+    }
+
+    @Test
+    public void insertPublicationsInsertsPublicationsToDynamoDb() {
+        //        Environment environment = mock(Environment.class);
+        //        when(environment.readEnv(DatabaseConstants.RESOURCES_TABLE_NAME_ENV_VARIABLE))
+        //            .thenReturn("OrestisResources");
+        //
+        //        ServiceEnvironmentConstants.updateEnvironment(environment);
+        publicationImporter = new PublicationImporter(remoteConnection(), EXISTING_DATA_PATH, resourceService);
+        List<Publication> publications = publicationImporter.getPublications();
+        assertDoesNotThrow(() -> publicationImporter.insertPublications(publications));
     }
 
     @Test

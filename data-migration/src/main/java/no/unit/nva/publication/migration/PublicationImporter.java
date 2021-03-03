@@ -1,6 +1,6 @@
 package no.unit.nva.publication.migration;
 
-import static nva.commons.core.JsonUtils.objectMapper;
+import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -15,6 +15,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.attempt.Try;
@@ -30,12 +32,15 @@ public class PublicationImporter {
     public static final String BEGIN_ARRAY_DELIMITER = "[";
     public static final String END_ARRAY_DELIMITER = "]";
     public static final String ION_ITEM = "Item";
+    public static final String PROBLEM_ID = "f0e5922e-eaf0-4211-a70f-f85342f956e0";
     private final S3Driver s3Client;
     private final Path dataPath;
+    private final ResourceService resourceService;
 
-    public PublicationImporter(S3Driver s3Client, Path dataPath) {
+    public PublicationImporter(S3Driver s3Client, Path dataPath, ResourceService resourceService) {
         this.s3Client = s3Client;
         this.dataPath = dataPath;
+        this.resourceService = resourceService;
     }
 
     public List<Publication> getPublications() {
@@ -50,13 +55,20 @@ public class PublicationImporter {
         return publications.stream().map(Resource::fromPublication).collect(Collectors.toList());
     }
 
+    public void insertPublications(List<Publication> publications) {
+        publications.stream()
+            .map(attempt(publication -> insertPublication(resourceService, publication)))
+            .map(Try::orElseThrow)
+            .forEach(PublicationPair::versionsAreEqualOrThrowException);
+    }
+
     protected static List<Publication> removeDuplicates(Stream<Publication> publicationsWithDuplicates) {
         Map<SortableIdentifier, List<Publication>> groupedByIdentifier =
             groupPublicationsByIdentifier(publicationsWithDuplicates);
-        return seleceLatestVersionForEachIdentifier(groupedByIdentifier);
+        return selectLatestVersionForEachIdentifier(groupedByIdentifier);
     }
 
-    private static List<Publication> seleceLatestVersionForEachIdentifier(
+    private static List<Publication> selectLatestVersionForEachIdentifier(
         Map<SortableIdentifier, List<Publication>> groupedByIdentifier) {
 
         return groupedByIdentifier.values().stream()
@@ -86,16 +98,25 @@ public class PublicationImporter {
     }
 
     private static List<Publication> parseJson(String json) {
-        JsonNode root = attempt(() -> objectMapper.readTree(json)).orElseThrow();
+
+        JsonNode root = attempt(() -> objectMapperWithEmpty.readTree(json)).orElseThrow();
         if (root.isArray()) {
             ArrayNode rootArray = (ArrayNode) root;
             return StreamSupport.stream(rootArray.spliterator(), false)
                        .map(jsonNode -> jsonNode.get(ION_ITEM))
-                       .map(item -> objectMapper.convertValue(item, Publication.class))
+                       .map(PublicationImporter::convertToPublication)
                        .collect(Collectors.toList());
         } else {
             return Collections.emptyList();
         }
+    }
+
+    private static Publication convertToPublication(JsonNode item) {
+        if (item.get("identifier").textValue().contains(PROBLEM_ID)) {
+            System.out.println("reading problematic publication");
+        }
+        var result = objectMapperWithEmpty.convertValue(item, Publication.class);
+        return result;
     }
 
     private static String toJsonObjects(String ion) throws IOException {
@@ -110,6 +131,15 @@ public class PublicationImporter {
         try (IonReader reader = IonReaderBuilder.standard().build(textIon)) {
             writer.writeValues(reader);
         }
+    }
+
+    private PublicationPair insertPublication(ResourceService resourceService, Publication publication)
+        throws TransactionFailedException {
+        if (publication.getIdentifier().toString().contains(PROBLEM_ID)) {
+            System.out.println("inserting problematic publication");
+        }
+        Publication savedPublication = resourceService.insertPreexistingPublication(publication);
+        return new PublicationPair(publication, savedPublication);
     }
 
     private Stream<Publication> mapIonObjectsToPublications(Stream<String> content) {

@@ -83,7 +83,7 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationWithPredefinedIdentifier(Publication publication)
+    public Publication insertPreexistingPublication(Publication publication)
         throws TransactionFailedException {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);

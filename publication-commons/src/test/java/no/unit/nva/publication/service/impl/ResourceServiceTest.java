@@ -300,10 +300,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createPublicationWithPredefinedIdentifierStoresPublicationInDatabase()
+    public void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
         throws TransactionFailedException {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
-        Publication savedPublication = resourceService.createPublicationWithPredefinedIdentifier(publication);
+        Publication savedPublication = resourceService.insertPreexistingPublication(publication);
         assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
     }
 
