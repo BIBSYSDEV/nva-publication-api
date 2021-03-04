@@ -39,9 +39,9 @@ public class PublicationImporter {
     }
 
     public List<Publication> getPublications() {
-        var content = s3Client.getFiles(dataPath);
-        var publicationsWithDuplicates = mapIonObjectsToPublications(content.stream())
-                                             .collect(Collectors.toList());
+        List<String> content = s3Client.getFiles(dataPath);
+        List<Publication> publicationsWithDuplicates = mapIonObjectsToPublications(content.stream())
+                                                           .collect(Collectors.toList());
 
         return removeDuplicates(publicationsWithDuplicates.stream());
     }
@@ -53,10 +53,10 @@ public class PublicationImporter {
     protected static List<Publication> removeDuplicates(Stream<Publication> publicationsWithDuplicates) {
         Map<SortableIdentifier, List<Publication>> groupedByIdentifier =
             groupPublicationsByIdentifier(publicationsWithDuplicates);
-        return seleceLatestVersionForEachIdentifier(groupedByIdentifier);
+        return selectLatestVersionForEachIdentifier(groupedByIdentifier);
     }
 
-    private static List<Publication> seleceLatestVersionForEachIdentifier(
+    private static List<Publication> selectLatestVersionForEachIdentifier(
         Map<SortableIdentifier, List<Publication>> groupedByIdentifier) {
 
         return groupedByIdentifier.values().stream()
