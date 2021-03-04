@@ -88,14 +88,17 @@ public class PublicationImporter {
     private static List<Publication> parseJson(String json) {
         JsonNode root = attempt(() -> objectMapper.readTree(json)).orElseThrow();
         if (root.isArray()) {
-            ArrayNode rootArray = (ArrayNode) root;
-            return StreamSupport.stream(rootArray.spliterator(), false)
-                       .map(jsonNode -> jsonNode.get(ION_ITEM))
-                       .map(item -> objectMapper.convertValue(item, Publication.class))
-                       .collect(Collectors.toList());
+            return parseJsonArrayWithIonItems((ArrayNode) root);
         } else {
             return Collections.emptyList();
         }
+    }
+
+    private static List<Publication> parseJsonArrayWithIonItems(ArrayNode root) {
+        return StreamSupport.stream(root.spliterator(), false)
+                   .map(jsonNode -> jsonNode.get(ION_ITEM))
+                   .map(item -> objectMapper.convertValue(item, Publication.class))
+                   .collect(Collectors.toList());
     }
 
     private static String toJsonObjects(String ion) throws IOException {
