@@ -29,11 +29,12 @@ import software.amazon.ion.system.IonTextWriterBuilder;
 class FakeS3Driver extends S3Driver {
 
     public static final Faker FAKER = Faker.instance();
-    public static final URI PUBLISHER_URI = PUBLICATIONS_WITHOUT_DOI_REQUESTS.get(0).getPublisher().getId();
-    private static final boolean WITH_DOI_REQUEST = true;
-    public static final List<Publication> PUBLICATIONS_WITH_DOI_REQUESTS = samplePublications(WITH_DOI_REQUEST);
-    private static final boolean WITHOUT_DOI_REQUEST = false;
+    public static final boolean WITH_DOI_REQUEST = true;
+    public static final boolean WITHOUT_DOI_REQUEST = false;
     public static final List<Publication> PUBLICATIONS_WITHOUT_DOI_REQUESTS = samplePublications(WITHOUT_DOI_REQUEST);
+    public static final URI PUBLISHER_URI = PUBLICATIONS_WITHOUT_DOI_REQUESTS.get(0).getPublisher().getId();
+    public static final List<Publication> PUBLICATIONS_WITH_DOI_REQUESTS = samplePublications(WITH_DOI_REQUEST);
+
     private static final long ONE_YEAR = 365L * 24 * 60 * 60 * 1000;
 
     public FakeS3Driver() {
