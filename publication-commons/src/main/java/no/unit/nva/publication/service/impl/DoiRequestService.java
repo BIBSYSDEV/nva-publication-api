@@ -81,12 +81,12 @@ public class DoiRequestService extends ServiceWithTransactions {
         this.identifierProvider = identifierProvider;
     }
     
-    public static DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+    public static DoiRequest getDoiRequestByResourceIdentifier(UserInstance resourceOwner,
                                                                SortableIdentifier resourceIdentifier,
                                                                String tableName,
                                                                AmazonDynamoDB client
     ) throws NotFoundException {
-        DoiRequestDao queryObject = DoiRequestDao.queryByCustomerAndResourceIdentifier(userInstance,
+        DoiRequestDao queryObject = DoiRequestDao.queryByCustomerAndResourceIdentifier(resourceOwner,
             resourceIdentifier);
         QueryRequest queryRequest = new QueryRequest()
                                         .withTableName(tableName)
@@ -102,10 +102,10 @@ public class DoiRequestService extends ServiceWithTransactions {
         return dao.getData();
     }
 
-    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
+    public DoiRequest getDoiRequestByResourceIdentifier(UserInstance resourceOwner,
                                                         SortableIdentifier resourceIdentifier)
         throws NotFoundException {
-        return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
+        return getDoiRequestByResourceIdentifier(resourceOwner, resourceIdentifier, tableName, client);
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)

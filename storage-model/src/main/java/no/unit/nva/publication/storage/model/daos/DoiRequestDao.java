@@ -47,12 +47,12 @@ public class DoiRequestDao extends Dao<DoiRequest>
         return queryObject(publisherId, owner, null);
     }
     
-    public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance userInstance,
+    public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                      SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
                              .withResourceIdentifier(resourceIdentifier)
-                             .withOwner(userInstance.getUserIdentifier())
-                             .withCustomerId(userInstance.getOrganizationUri())
+                             .withOwner(resourceOwner.getUserIdentifier())
+                             .withCustomerId(resourceOwner.getOrganizationUri())
                              .build();
         return new DoiRequestDao(doi);
     }

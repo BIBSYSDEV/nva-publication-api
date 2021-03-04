@@ -2,13 +2,12 @@ repositories {
     // Repository for running Embedded DynamoDB locally.
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
-repositories {
-    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
-}
+
 dependencies {
 
     implementation project(":storage-model")
     implementation project(":publication-commons")
+
     implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 's3', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
     implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
     implementation group: 'software.amazon.awssdk', name: 's3', version: '2.16.8'
@@ -20,6 +19,10 @@ dependencies {
 
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
+
+    compileOnly (group: 'org.picocontainer', name: 'picocontainer', version: '2.15'){
+        because "PMD complains for org/picocontainer/ComponentFactory"
     }
 
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {

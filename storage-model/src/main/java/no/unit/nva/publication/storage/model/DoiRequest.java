@@ -112,18 +112,29 @@ public final class DoiRequest
                 .withCreatedDate(now)
                 .withDoi(resource.getDoi())
                 .build();
-        
+
         doiRequest.validate();
         return doiRequest;
     }
-    
+
     public static String getType() {
         return DoiRequest.TYPE;
     }
-    
+
+    /**
+     * Creates a DoiRequest from a {@link Publication} object which is currently the de-facto DTO.
+     *
+     * @param publication          a {@link Publication} objcet
+     * @param doiRequestIdentifier the identifier that the new DoiRequest will have
+     * @return a new DoiRequest
+     */
+    public static DoiRequest fromPublication(Publication publication, SortableIdentifier doiRequestIdentifier) {
+        return fromDto(publication, doiRequestIdentifier);
+    }
+
     public static DoiRequest fromDto(Publication publication, SortableIdentifier doiRequestIdentifier) {
         Resource resource = Resource.fromPublication(publication);
-        
+
         return extractDataFromResource(DoiRequest.builder(), resource)
                    .withModifiedDate(extractDoiRequestModifiedDate(publication.getDoiRequest()))
                    .withCreatedDate(extractDoiRequestCreatedDate(publication.getDoiRequest()))

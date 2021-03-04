@@ -39,6 +39,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
@@ -260,7 +261,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return env;
     }
 
-    private Message createMessage(Publication publication, UserInstance sender) throws TransactionFailedException {
+    private Message createMessage(Publication publication, UserInstance sender)
+        throws TransactionFailedException, NotFoundException {
         SortableIdentifier messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
         return messageService.getMessage(extractOwner(publication), messageIdentifier);
     }

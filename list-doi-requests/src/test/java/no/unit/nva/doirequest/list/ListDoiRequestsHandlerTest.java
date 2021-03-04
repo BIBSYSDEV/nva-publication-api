@@ -267,7 +267,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                    .collect(Collectors.toList());
     }
 
-    private MessageDto createDoiRequestMessage(Publication pub) throws TransactionFailedException {
+    private MessageDto createDoiRequestMessage(Publication pub) throws TransactionFailedException, NotFoundException {
         UserInstance owner = extractOwner(pub);
         var messageID = messageService.createDoiRequestMessage(owner, pub, randomString());
         Message message = messageService.getMessage(owner, messageID);

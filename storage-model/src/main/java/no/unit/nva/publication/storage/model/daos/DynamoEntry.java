@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
@@ -21,14 +21,14 @@ public interface DynamoEntry {
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {
             Item item = ItemUtils.toItem(valuesMap);
-            return attempt(() -> objectMapperWithEmpty.readValue(item.toJSON(), daoClass)).orElseThrow();
+            return attempt(() -> objectMapperNoEmpty.readValue(item.toJSON(), daoClass)).orElseThrow();
         } else {
             throw new EmptyValueMapException();
         }
     }
     
     default Map<String, AttributeValue> toDynamoFormat() {
-        Item item = attempt(() -> Item.fromJSON(objectMapperWithEmpty.writeValueAsString(this))).orElseThrow();
+        Item item = attempt(() -> Item.fromJSON(objectMapperNoEmpty.writeValueAsString(this))).orElseThrow();
         return ItemUtils.toAttributeValues(item);
     }
 }
