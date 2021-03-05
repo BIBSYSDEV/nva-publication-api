@@ -87,11 +87,9 @@ public class PublicationImporter {
 
     private static List<Publication> parseJson(String json) {
         JsonNode root = attempt(() -> objectMapper.readTree(json)).orElseThrow();
-        if (root.isArray()) {
-            return parseJsonArrayWithIonItems((ArrayNode) root);
-        } else {
-            return Collections.emptyList();
-        }
+        return (root.isArray())
+                   ? parseJsonArrayWithIonItems((ArrayNode) root)
+                   : Collections.emptyList();
     }
 
     private static List<Publication> parseJsonArrayWithIonItems(ArrayNode root) {
