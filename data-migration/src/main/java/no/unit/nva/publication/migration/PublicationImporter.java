@@ -32,6 +32,7 @@ public class PublicationImporter extends DataImporter {
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
+
     private Publication insertPublication(ResourceService resourceService, Publication publication)
         throws TransactionFailedException {
         resourceService.insertPreexistingPublication(publication);
@@ -51,6 +52,4 @@ public class PublicationImporter extends DataImporter {
     private ResourceUpdate successfulUpdate(Publication oldPublicationVersion, Publication updatedPublication) {
         return ResourceUpdate.createSuccessfulUpdate(RESOURCE_TYPE, oldPublicationVersion, updatedPublication);
     }
-
-
 }
