@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages.create;
+package no.unit.nva.pubication.messages.list;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -100,7 +100,6 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return input.isDoiRequestRelated() ?
                    messageService.createDoiRequestMessage(sender, publication, input.getMessage())
                    : messageService.createSimpleMessage(sender, publication, input.getMessage());
-
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {

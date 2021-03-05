@@ -36,12 +36,6 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         return convertListToArray(result);
     }
 
-    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
-        String feideId = requestInfo.getFeideId().orElse(null);
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        return new UserInstance(feideId, customerId);
-    }
-
     @Override
     protected Integer getSuccessStatusCode(Void input, ResourceConversation[] output) {
         return HttpURLConnection.HTTP_OK;
@@ -51,6 +45,12 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     private static MessageService defaultMessageService() {
         AmazonDynamoDB client = AmazonDynamoDBClientBuilder.defaultClient();
         return new MessageService(client, Clock.systemDefaultZone());
+    }
+
+    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
+        String feideId = requestInfo.getFeideId().orElse(null);
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        return new UserInstance(feideId, customerId);
     }
 
     private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {
