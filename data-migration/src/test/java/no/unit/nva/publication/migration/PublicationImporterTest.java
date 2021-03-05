@@ -44,7 +44,6 @@ public class PublicationImporterTest {
 
     @BeforeEach
     public void init() {
-        S3Driver remoteClient = remoteConnection();
         S3Driver mockClient = new FakeS3Driver();
         publicationImporter = new PublicationImporter(mockClient, EXISTING_DATA_PATH);
     }
@@ -191,7 +190,6 @@ public class PublicationImporterTest {
 
         private String convertJsonToIon(String json) {
             var ionReader = IonReaderBuilder.standard().build(json);
-            var type = ionReader.next();
             ionReader = IonReaderBuilder.standard().build(json);
             var stringWriter = new StringBuilder();
             var ionWriter = IonTextWriterBuilder.standard().build(stringWriter);
