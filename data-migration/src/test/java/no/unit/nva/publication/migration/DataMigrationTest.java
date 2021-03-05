@@ -83,36 +83,15 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
             .forEach(File::delete);
     }
 
+    //TODO: Create a standalone running module: (NP-2297)
     @Test
     @Tag("RemoteTest")
-    public void migrateDataInsertsRemotePublicationsToRemoteDynamoDb() throws IOException {
+    public void performMigration() throws IOException {
         var dataMigration = newDataMigration(remoteS3Client);
         List<ResourceUpdate> update = dataMigration.migrateData();
         assertThat(update, is(not(empty())));
     }
 
-    @Test
-    @Tag("RemoteTest")
-    public void migrateDataInsertsDoiRequestsToRemoteDynamoDb() throws IOException {
-        DataMigration dataMigration = newDataMigration(remoteS3Client);
-        List<ResourceUpdate> update = dataMigration.migrateData();
-        var doiRequestsInDb = fetchAllDoiRequestsDirectlyFromDb(update);
-
-        var successfulDoiUpdates = update.stream()
-                                       .filter(ResourceUpdate::isSuccess)
-                                       .filter(ResourceUpdate::isDoiRequestUpdate)
-                                       .collect(Collectors.toSet());
-
-        assertThat(doiRequestsInDb.size(), is(equalTo(successfulDoiUpdates.size())));
-    }
-
-    @Test
-    @Tag("RemoteTest")
-    public void migrateDataInsertsMessagesFromRemoteS3BucketToDynamoDb() throws IOException {
-        DataMigration dataMigration = newDataMigration(remoteS3Client);
-        List<ResourceUpdate> update = dataMigration.migrateData();
-        assertThat(update, is(not(empty())));
-    }
 
     @Test
     public void migrateDataInsertsPublicationsToDynamoDb() throws IOException {
@@ -120,7 +99,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
         Set<SortableIdentifier> expectedIdentifiers = testDataPublicationUniqueIdentifiers();
 
         List<Publication> savedPublications = fetchPublicationsFromDb(expectedIdentifiers);
-
         Set<SortableIdentifier> savedPublicationsIdentifiers = extractIdentifiers(savedPublications.stream());
 
         assertThat(savedPublicationsIdentifiers, is(equalTo(expectedIdentifiers)));
