@@ -82,17 +82,19 @@ public class DataImporter {
     }
 
     private static List<Publication> parseJson(String json) {
+        ArrayNode root = parseJsonArray(json);
+        return root.isArray() ? parseJsonArrayWithIonItems(root) : Collections.emptyList();
+    }
 
-        JsonNode root = attempt(() -> objectMapperWithEmpty.readTree(json)).orElseThrow();
-        if (root.isArray()) {
-            ArrayNode rootArray = (ArrayNode) root;
-            return StreamSupport.stream(rootArray.spliterator(), false)
-                       .map(jsonNode -> jsonNode.get(ION_ITEM))
-                       .map(DataImporter::convertToPublication)
-                       .collect(Collectors.toList());
-        } else {
-            return Collections.emptyList();
-        }
+    private static ArrayNode parseJsonArray(String json) {
+        return (ArrayNode) attempt(() -> objectMapperWithEmpty.readTree(json)).orElseThrow();
+    }
+
+    private static List<Publication> parseJsonArrayWithIonItems(ArrayNode root) {
+        return StreamSupport.stream(root.spliterator(), false)
+                   .map(jsonNode -> jsonNode.get(ION_ITEM))
+                   .map(DataImporter::convertToPublication)
+                   .collect(Collectors.toList());
     }
 
     private static Publication convertToPublication(JsonNode item) {

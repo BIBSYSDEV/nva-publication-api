@@ -13,8 +13,8 @@ import nva.commons.core.attempt.Try;
 
 public class PublicationImporter extends DataImporter {
 
-    private final ResourceService resourceService;
     public static final String RESOURCE_TYPE = "publications";
+    private final ResourceService resourceService;
 
     public PublicationImporter(S3Driver s3Client, Path dataPath, ResourceService resourceService) {
         super(s3Client, dataPath);
@@ -32,6 +32,11 @@ public class PublicationImporter extends DataImporter {
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
+    private Publication insertPublication(ResourceService resourceService, Publication publication)
+        throws TransactionFailedException {
+        resourceService.insertPreexistingPublication(publication);
+        return publication;
+    }
 
     private ResourceUpdate fetchUpdatedPublication(Publication oldPublicationVersion) {
         return attempt(() -> resourceService.getPublication(oldPublicationVersion))
@@ -47,9 +52,5 @@ public class PublicationImporter extends DataImporter {
         return ResourceUpdate.createSuccessfulUpdate(RESOURCE_TYPE, oldPublicationVersion, updatedPublication);
     }
 
-    private Publication insertPublication(ResourceService resourceService, Publication publication)
-        throws TransactionFailedException {
-        resourceService.insertPreexistingPublication(publication);
-        return publication;
-    }
+
 }
