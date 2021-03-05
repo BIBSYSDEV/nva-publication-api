@@ -1,7 +1,6 @@
 package no.unit.nva.publication.fetch;
 
 import static nva.commons.core.JsonUtils.objectMapper;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +18,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.LoggerFactory;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -46,7 +44,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
      */
     public FetchPublicationHandler(ResourceService resourceService,
                                    Environment environment) {
-        super(Void.class, environment, LoggerFactory.getLogger(FetchPublicationHandler.class));
+        super(Void.class, environment);
         this.resourceService = resourceService;
     }
 
@@ -54,11 +52,6 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
-        String userInstanceString = attempt(() -> objectMapper.writeValueAsString(userInstance)).orElseThrow();
-
-        String requestInfoString = attempt(() -> objectMapper.writeValueAsString(requestInfo)).orElseThrow();
-        logger.info("User instance: " + userInstanceString);
-        logger.info("Request info: " + requestInfoString);
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublication(userInstance, identifier);
         return toJsonNodeWithContext(publication);

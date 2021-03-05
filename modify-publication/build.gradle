@@ -7,7 +7,7 @@ dependencies {
     compileOnly project(':publication-commons')
     testImplementation project(':publication-commons')
 
-    implementation(group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion)
+    implementation(group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion)
 
 
     testImplementation project(':publication-testing')

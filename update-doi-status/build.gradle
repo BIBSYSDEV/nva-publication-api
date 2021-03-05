@@ -8,8 +8,8 @@ dependencies {
     implementation project(":publication-doi-commons")
     testImplementation project(':publication-commons')
 
-    implementation group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-    implementation group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
     testImplementation project(":publication-testing")
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {

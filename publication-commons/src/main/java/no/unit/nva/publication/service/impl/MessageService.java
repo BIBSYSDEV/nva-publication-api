@@ -67,11 +67,7 @@ public class MessageService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
     }
 
-    //TODO replace extraction SortableIdentifier.fromUri() when nva-commons it at version 1.1.1.
-    public static SortableIdentifier extractIdentifier(URI uri) {
-        String[] path = uri.getPath().split(PATH_SEPARATOR);
-        return new SortableIdentifier(path[path.length - 1]);
-    }
+
 
     @JacocoGenerated
     @Deprecated
@@ -105,7 +101,7 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     public Message getMessage(UserInstance owner, URI messageId) {
-        SortableIdentifier identifier = extractIdentifier(messageId);
+        SortableIdentifier identifier = SortableIdentifier.fromUri(messageId);
         return getMessage(owner, identifier);
     }
 

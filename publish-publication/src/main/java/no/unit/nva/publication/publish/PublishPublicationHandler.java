@@ -16,7 +16,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.LoggerFactory;
 
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatusResponse> {
 
@@ -48,7 +47,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
      * @param resourceService publicationService
      */
     public PublishPublicationHandler(Environment environment, ResourceService resourceService) {
-        super(Void.class, environment, LoggerFactory.getLogger(PublishPublicationHandler.class));
+        super(Void.class, environment);
         this.resourceService = resourceService;
         this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
