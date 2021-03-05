@@ -1,5 +1,6 @@
 package no.unit.nva.pubication.messages.list;
 
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -22,6 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -56,18 +60,13 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final int FIRST = 0;
     public static final int FIRST_ELEMENT = FIRST;
     public static final String ALLOW_EVERYTHING = "*";
-    private static final int NUMBER_OF_PUBLICATIONS = 2;
+    public static final String CURATOR_ROLE = "Curator";
+    private static final int NUMBER_OF_PUBLICATIONS = 3;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
     private ResourceService resourceService;
     private MessageService messageService;
-
-    public static UserInstance extractOwner(Publication publication) {
-        String owner = publication.getOwner();
-        URI customerId = publication.getPublisher().getId();
-        return new UserInstance(owner, customerId);
-    }
 
     @BeforeEach
     public void init() {
@@ -109,8 +108,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
         List<Publication> publications = createSamplePublications();
-        List<Message> messages = insertOneMessagePerPublication(publications);
-        List<Message> moreMessages = insertOneMessagePerPublication(publications);
+        List<Message> messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
+        List<Message> moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         List<Message> allMessages = new ArrayList<>();
         allMessages.addAll(messages);
         allMessages.addAll(moreMessages);
@@ -125,6 +124,59 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
         assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
         assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
+    }
+
+    @Test
+    public void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
+        throws IOException {
+        final List<Publication> publications = createSamplePublicationsOfDifferentOwners();
+        final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
+
+        final var expectedResponse = constructExpectedResponse(publications, messages);
+
+        URI orgURI = messages.get(0).getCustomerId();
+        UserInstance curator = someCurator(orgURI);
+
+        input = defaultCuratorRequest(curator.getUserIdentifier(), curator.getOrganizationUri());
+        handler.handleRequest(input, output, CONTEXT);
+
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
+
+        assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
+    }
+
+    private static String randomEmail() {
+        return FAKER.internet().emailAddress();
+    }
+
+    private ResourceConversation[] constructExpectedResponse(List<Publication> publications, List<Message> messages) {
+        List<ResourceConversation> conversations = messages.stream()
+                                                       .collect(Collectors.groupingBy(Message::getResourceIdentifier))
+                                                       .values()
+                                                       .stream()
+                                                       .map(ResourceConversation::fromMessageList)
+                                                       .flatMap(Optional::stream)
+                                                       .collect(Collectors.toList());
+
+        return conversations.toArray(ResourceConversation[]::new);
+    }
+
+    private UserInstance theOwner(Publication publication) {
+        String owner = publication.getOwner();
+        URI customerId = publication.getPublisher().getId();
+        return new UserInstance(owner, customerId);
+    }
+
+    private List<Publication> createSamplePublicationsOfDifferentOwners() {
+        return IntStream.range(0, NUMBER_OF_PUBLICATIONS).boxed()
+                   .map(ignored -> PublicationGenerator.publicationWithoutIdentifier())
+                   .map(this::changeOwner)
+                   .collect(Collectors.toList());
+    }
+
+    private Publication changeOwner(Publication publication) {
+        return publication.copy().withOwner(randomEmail()).build();
     }
 
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
@@ -184,6 +236,16 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
+    private InputStream defaultCuratorRequest(String userIdentifier, URI organizationUri)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
+                   .withFeideId(userIdentifier)
+                   .withCustomerId(organizationUri.toString())
+                   .withRoles(CURATOR_ROLE)
+                   .withQueryParameters(Map.of("role", CURATOR_ROLE))
+                   .build();
+    }
+
     private InputStream defaultUserRequest(String userIdentifier, URI organizationUri)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
@@ -231,19 +293,21 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private List<Message> insetSampleMessages() {
         List<Publication> publications = createSamplePublications();
-        return insertOneMessagePerPublication(publications);
+        return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
 
-    private List<Message> insertOneMessagePerPublication(List<Publication> publications) {
-        Publication samplePublication = publications.get(FIRST_ELEMENT);
-        UserInstance sender = new UserInstance(SOME_OTHER_USER, samplePublication.getPublisher().getId());
-
-        return createSampleMessagesFromPublications(publications, sender);
+    private UserInstance notTheOwner(Publication samplePublication) {
+        return someCurator(samplePublication.getPublisher().getId());
     }
 
-    private List<Message> createSampleMessagesFromPublications(List<Publication> publications, UserInstance sender) {
+    private UserInstance someCurator(URI orgId) {
+        return new UserInstance(SOME_OTHER_USER, orgId);
+    }
+
+    private List<Message> createSampleMessagesFromPublications(List<Publication> publications,
+                                                               Function<Publication, UserInstance> sender) {
         return publications.stream()
-                   .map(attempt(pub -> createMessage(pub, sender)))
+                   .map(attempt(pub -> createMessage(pub, sender.apply(pub))))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
