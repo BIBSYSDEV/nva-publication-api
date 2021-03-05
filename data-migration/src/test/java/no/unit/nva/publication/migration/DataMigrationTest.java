@@ -10,14 +10,12 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -186,26 +184,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
             messageService);
 
         assertThatUpdatesContainExpectedMessages();
-    }
-
-    @Test
-    public void dateMigrationGeneratesByDefaultFilesWithTimestamps()
-        throws IOException, NoSuchFieldException, IllegalAccessException {
-        DataMigration dataMigration = new DataMigration(fakeS3Client,
-            EXISTING_DATA_PATH,
-            resourceService,
-            doiRequestService,
-            messageService
-        );
-        dataMigration.migrateData();
-        Field reportGeneratorField = dataMigration.getClass().getDeclaredField("reportGenerator");
-        reportGeneratorField.setAccessible(true);
-        ReportGenerator reportGenerator = (ReportGenerator) reportGeneratorField.get(dataMigration);
-
-        String defaultDifferencesReportFilename = reportGenerator.getDifferencesReportFile().getName();
-        String defaultFailuresReportFilename = reportGenerator.getFailuresReportFile().getName();
-        assertThat(defaultDifferencesReportFilename, matchesPattern(ISO_TIME_REGEX));
-        assertThat(defaultFailuresReportFilename, matchesPattern(ISO_TIME_REGEX));
     }
 
     private static Set<Publication> constructExpectedPublicationsWithDoiRequests() {

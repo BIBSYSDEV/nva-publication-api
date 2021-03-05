@@ -19,7 +19,6 @@ public class DataMigration {
     private final DoiRequestService doiRequestService;
     private final PublicationImporter publicationImporter;
     private final MessageService messageService;
-    private ReportGenerator reportGenerator;
 
     public DataMigration(S3Driver s3Driver, Path s3DataPath,
                          ResourceService resourceService,
@@ -31,7 +30,6 @@ public class DataMigration {
         this.doiRequestService = doiRequestService;
         this.messageService = messageService;
         this.publicationImporter = new PublicationImporter(s3Driver, s3DataPath, resourceService);
-        this.reportGenerator = new ReportGenerator();
     }
 
     public List<ResourceUpdate> migrateData() throws IOException {
@@ -43,32 +41,14 @@ public class DataMigration {
     @SuppressWarnings("unchecked")
     private List<ResourceUpdate> executeMigration() {
         List<Publication> publications = publicationImporter.getPublications();
-
         List<ResourceUpdate> publicationsUpdateResult = updateResources(publications);
-
         List<ResourceUpdate> doiRequestUpdatesResult = updateDoiRequests(publications);
-
         List<ResourceUpdate> messageUpdateResult = updateMessages();
 
         return mergeUpdateResults(publicationsUpdateResult,
-            doiRequestUpdatesResult,
-            messageUpdateResult
+                                  doiRequestUpdatesResult,
+                                  messageUpdateResult
         );
-    }
-
-    private void generateReport(List<ResourceUpdate> publicationsUpdateResult) throws IOException {
-
-        setupReportGenerator(publicationsUpdateResult);
-        generateReports();
-    }
-
-    private void setupReportGenerator(List<ResourceUpdate> resourceUpdatesResults) {
-        reportGenerator = new ReportGenerator(resourceUpdatesResults);
-    }
-
-    private void generateReports() throws IOException {
-        reportGenerator.writeDifferences();
-        reportGenerator.writeFailures();
     }
 
     private List<ResourceUpdate> updateMessages() {
@@ -94,5 +74,11 @@ public class DataMigration {
                    .stream()
                    .map(ResourceUpdate::compareVersions)
                    .collect(Collectors.toList());
+    }
+
+    private void generateReport(List<ResourceUpdate> publicationsUpdateResult) throws IOException {
+        ReportGenerator reportGenerator = new ReportGenerator(publicationsUpdateResult);
+        reportGenerator.writeDifferences();
+        reportGenerator.writeFailures();
     }
 }

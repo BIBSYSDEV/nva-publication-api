@@ -23,25 +23,12 @@ public class ReportGenerator {
     private static final String DIFFERENCES_FILE_PREFIX = "differences_";
     private final File failuresReportFile;
     private final File differencesReportFile;
-    private List<ResourceUpdate> resourceUpdates;
-
-    public ReportGenerator() {
-        this.failuresReportFile = newFailuresFile(defaultFailuresFile());
-        this.differencesReportFile = newDifferencesFile(defaultDifferencesFile());
-    }
+    private final List<ResourceUpdate> resourceUpdates;
 
     public ReportGenerator(List<ResourceUpdate> resourceUpdates) {
         this.resourceUpdates = resourceUpdates;
         this.failuresReportFile = newFailuresFile(defaultFailuresFile());
         this.differencesReportFile = newDifferencesFile(defaultDifferencesFile());
-    }
-
-    public File getFailuresReportFile() {
-        return failuresReportFile;
-    }
-
-    public File getDifferencesReportFile() {
-        return differencesReportFile;
     }
 
     public String reportFailures() {
