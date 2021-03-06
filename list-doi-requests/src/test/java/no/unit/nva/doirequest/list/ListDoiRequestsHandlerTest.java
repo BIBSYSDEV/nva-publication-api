@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
@@ -86,8 +85,6 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
-
         doiRequestService = new DoiRequestService(client, mockClock);
         messageService = new MessageService(client, mockClock);
         handler = new ListDoiRequestsHandler(environment, doiRequestService, messageService);
@@ -255,8 +252,6 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
-
         return environment;
     }
 

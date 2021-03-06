@@ -1,6 +1,7 @@
 package no.unit.nva.doirequest.create;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -11,7 +12,6 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +25,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -47,8 +46,6 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
-
-    public static final String HTTP_PATH_SEPARATOR = "/";
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
 
@@ -58,7 +55,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
     public static final int SINGLE_MESSAGE = 0;
     public static final String ALLOW_ALL_ORIGINS = "*";
-    public static final String SOME_VALID_HOST = "localhost";
+
     private CreateDoiRequestHandler handler;
     private ResourceService resourceService;
     private Clock mockClock;
@@ -77,7 +74,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
+
         handler = new CreateDoiRequestHandler(resourceService, doiRequestService, messageService, environment);
     }
 
@@ -168,7 +165,6 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGINS);
-        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
         return environment;
     }
 
@@ -193,7 +189,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private String extractLocationHeader(GatewayResponse<Void> response) {
         String locationHeader = response.getHeaders().get(HttpHeaders.LOCATION);
-        String[] headerArray = locationHeader.split(HTTP_PATH_SEPARATOR);
+        String[] headerArray = locationHeader.split(PATH_SEPARATOR);
         return headerArray[headerArray.length - 1];
     }
 

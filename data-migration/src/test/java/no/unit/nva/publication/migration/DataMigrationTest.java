@@ -12,9 +12,7 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +28,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -41,7 +38,6 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,8 +55,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private static final String EXISTING_REMOTE_BUCKET_NAME = "orestis-export";
     private static final Set<Publication> EXPECTED_IMPORTED_PUBLICATIONS_WITH_DOI_REQUESTS =
         constructExpectedPublicationsWithDoiRequests();
-    public static final String SOME_VALID_HOST = "localhost";
-    public static final String SOME_VALID_NETWORK_SCHME = "https";
+
     private ResourceService resourceService;
     private FakeS3Driver fakeS3Client;
     private S3Driver remoteS3Client;
@@ -71,8 +66,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     @BeforeEach
     public void init() {
         super.init();
-        Environment environment = mockEnv();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
+
         AmazonDynamoDB dynamoClient = super.client;
         remoteS3Client = remoteS3Driver();
         fakeS3Client = new FakeS3Driver();
@@ -80,14 +74,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
         doiRequestService = new DoiRequestService(dynamoClient, Clock.systemDefaultZone());
         messageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
         dataMigration = newDataMigration(fakeS3Client);
-    }
-
-    private Environment mockEnv() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME)).thenReturn(SOME_VALID_HOST);
-        when(environment.readEnv(ServiceEnvironmentConstants.NETWORK_SCHEME_ENV_VARIABLE_NAME))
-            .thenReturn(SOME_VALID_NETWORK_SCHME);
-        return environment;
     }
 
     @AfterEach
@@ -273,17 +259,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private Set<SortableIdentifier> testDataPublicationUniqueIdentifiers() {
         return extractIdentifiers(FakeS3Driver.allSamplePublications()
                                       .stream());
-    }
-
-    private Stream<DoiRequest> fetchDoiRequestFromService(ResourceUpdate doiRequest) {
-        var owner = extractOwner(doiRequest.getNewVersion());
-        var publicationIdentifier = doiRequest.getNewVersion().getIdentifier();
-        return attempt(() -> fetchDoiRequestByResourceIdentifier(owner, publicationIdentifier)).stream();
-    }
-
-    private DoiRequest fetchDoiRequestByResourceIdentifier(UserInstance owner, SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        return doiRequestService.getDoiRequestByResourceIdentifier(owner, publicationIdentifier);
     }
 
     private S3Driver remoteS3Driver() {

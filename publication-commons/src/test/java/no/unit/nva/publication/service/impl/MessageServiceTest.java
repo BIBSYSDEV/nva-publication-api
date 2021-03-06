@@ -26,7 +26,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -34,7 +33,6 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +55,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SAMPLE_HOST = "https://localhost/messages/";
 
     public static final int FIRST_ELEMENT = 0;
-    public static final String SOME_VALID_HOST = "localhost";
     public static final int SINGLE_EXPECTED_ELEMENT = 0;
 
     private MessageService messageService;
@@ -67,8 +64,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         super.init();
         Clock clock = mockClock();
-        Environment environment = setupEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
@@ -189,7 +184,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
         var actualConversation = messageService.listMessagesForCurator(publisherId, MessageStatus.UNREAD);
 
-        var expectedConversation = constructExpectedCuratorsMessageView(publisherId,savedMessages);
+        var expectedConversation = constructExpectedCuratorsMessageView(publisherId, savedMessages);
         assertThat(actualConversation, contains(expectedConversation));
     }
 
@@ -241,13 +236,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                    .stream()
                    .filter(message -> message.getCustomerId().equals(customerId))
                    .collect(Collectors.toList());
-    }
-
-    private Environment setupEnvironment() {
-        var env = mock(Environment.class);
-        when(env.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
-            .thenReturn(SOME_VALID_HOST);
-        return env;
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
