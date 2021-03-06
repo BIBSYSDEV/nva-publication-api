@@ -1,10 +1,11 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
@@ -16,17 +17,34 @@ import nva.commons.core.JsonSerializable;
 
 public class ResourceConversation implements JsonSerializable {
 
+    private static final int OLDEST_MESSAGE_INDEX = 0;
     private Publication publication;
     private List<MessageDto> messages;
+    private MessageDto oldestMessage;
 
     public ResourceConversation() {
     }
 
-    public static Optional<ResourceConversation> fromMessageList(List<Message> messages) {
-        if (isEmpty(messages)) {
-            return Optional.empty();
-        }
-        return Optional.of(createNewResourceMessageInstance(messages));
+    public static List<ResourceConversation> fromMessageList(List<Message> messages) {
+        return messages.stream()
+                   .collect(grouByResource())
+                   .values()
+                   .stream()
+                   .map(ResourceConversation::newConversationForResource)
+                   .sorted(ResourceConversation::conversationWithOldestMessageFirst)
+                   .collect(Collectors.toList());
+    }
+
+    private static Collector<Message, ?, Map<SortableIdentifier, List<Message>>> grouByResource() {
+        return Collectors.groupingBy(Message::getResourceIdentifier);
+    }
+
+    public int conversationWithOldestMessageFirst(ResourceConversation that) {
+        return this.getOldestMessage().getDate().compareTo(that.getOldestMessage().getDate());
+    }
+
+    private MessageDto getOldestMessage() {
+        return oldestMessage;
     }
 
     public static Publication createPublicationDescription(Message mostRecentMessage) {
@@ -75,7 +93,7 @@ public class ResourceConversation implements JsonSerializable {
         }
         ResourceConversation that = (ResourceConversation) o;
         return Objects.equals(getPublication(), that.getPublication()) && Objects.equals(getMessages(),
-            that.getMessages());
+                                                                                         that.getMessages());
     }
 
     @JacocoGenerated
@@ -84,10 +102,9 @@ public class ResourceConversation implements JsonSerializable {
         return toJsonString();
     }
 
-    private static ResourceConversation createNewResourceMessageInstance(List<Message> messages) {
-        messages.sort(ResourceConversation::oldestFirst);
+    private static ResourceConversation newConversationForResource(List<Message> messages) {
+        messages.sort(ResourceConversation::oldestMessageForResource);
         Message mostRecentMessage = newestMessage(messages);
-
         Publication publication = createPublicationDescription(mostRecentMessage);
         return createResourceMessage(messages, publication);
     }
@@ -96,16 +113,24 @@ public class ResourceConversation implements JsonSerializable {
         return messages.get(messages.size() - 1);
     }
 
-    private static int oldestFirst(Message left, Message right) {
+    private static int oldestMessageForResource(Message left, Message right) {
         return left.getCreatedTime().compareTo(right.getCreatedTime());
     }
 
     private static ResourceConversation createResourceMessage(List<Message> messages, Publication publication) {
         ResourceConversation result = new ResourceConversation();
         result.setPublication(publication);
-        result.setMessages(transformMessages(messages));
+        List<MessageDto> conversationMessages = transformMessages(messages);
+        result.setMessages(conversationMessages);
+        result.setOldestMessage(conversationMessages.get(OLDEST_MESSAGE_INDEX));
         return result;
     }
+
+    private void setOldestMessage(MessageDto message) {
+        this.oldestMessage = message;
+    }
+
+
 
     private static List<MessageDto> transformMessages(List<Message> messages) {
         return messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
@@ -119,9 +144,5 @@ public class ResourceConversation implements JsonSerializable {
 
     private static Organization constructPublisher(Message message) {
         return new Builder().withId(message.getCustomerId()).build();
-    }
-
-    private static boolean isEmpty(List<Message> messages) {
-        return isNull(messages) || messages.isEmpty();
     }
 }

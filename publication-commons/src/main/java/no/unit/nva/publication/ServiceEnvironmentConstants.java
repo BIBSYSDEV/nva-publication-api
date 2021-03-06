@@ -54,6 +54,7 @@ public final class ServiceEnvironmentConstants {
         }
     }
 
+    @JacocoGenerated
     private static ServiceEnvironmentConstants handleDefaultInstanceFailure(Exception exception) {
         logger.warn(MISSING_ENV_VARIABLE_MESSAGE, exception);
         return null;

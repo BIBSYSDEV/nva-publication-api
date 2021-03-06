@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.util.List;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
+import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -17,6 +18,9 @@ import nva.commons.core.JacocoGenerated;
 
 public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConversation[]> {
 
+    public static final String REQUESTED_ROLE = "role";
+    public static final String EMPTY_STRING = "";
+    public static final String CURATOR_ROLE = "Curator";
     private final MessageService messageService;
 
     @JacocoGenerated
@@ -32,8 +36,19 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     @Override
     protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context) {
         UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
-        List<ResourceConversation> result = messageService.listMessagesForUser(userInstance);
-        return convertListToArray(result);
+        if (userIsCurator(requestInfo)) {
+            var result = messageService.listMessagesForCurator(userInstance.getOrganizationUri(), MessageStatus.UNREAD);
+            return convertListToArray(result);
+        } else {
+            List<ResourceConversation> result = messageService.listMessagesForUser(userInstance);
+            return convertListToArray(result);
+        }
+    }
+
+    private boolean userIsCurator(RequestInfo requestInfo) {
+        String assignedRolesToUser = requestInfo.getAssignedRoles().orElse(EMPTY_STRING);
+        String roleRequestByTheUser = requestInfo.getQueryParameter(REQUESTED_ROLE);
+        return CURATOR_ROLE.equals(roleRequestByTheUser) && assignedRolesToUser.contains(CURATOR_ROLE);
     }
 
     private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {

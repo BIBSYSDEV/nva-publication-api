@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.create;
 
+import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -10,7 +11,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.github.javafaker.Faker;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,7 +51,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
-    public static final Faker FAKER = Faker.instance();
+
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
@@ -163,9 +164,6 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
         sendRequest(publication, owner, null);
     }
 
-    private String randomString() {
-        return FAKER.lorem().sentence();
-    }
 
     private Environment mockEnvironment() {
         Environment environment = mock(Environment.class);

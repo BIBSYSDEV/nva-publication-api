@@ -88,6 +88,9 @@ subprojects {
             events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
+        //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
+        environment "API_HOST", "localhost"
+        environment "API_SCHEME", "https"
     }
 
     jacocoTestReport {
