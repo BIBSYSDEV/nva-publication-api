@@ -12,6 +12,10 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 
+/**
+ * Transforms and moves data from an S3 bucket to a DynamoDb table. It expects the data to be a DynamoDb export is S3 in
+ * AWS-ION format.
+ */
 public class DataMigration {
 
     private final S3Driver s3Driver;
