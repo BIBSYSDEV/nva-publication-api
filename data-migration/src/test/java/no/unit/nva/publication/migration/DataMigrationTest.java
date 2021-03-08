@@ -28,11 +28,12 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
@@ -72,6 +73,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
         messageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
         dataMigration = newDataMigration(fakeS3Client);
     }
+
 
     @AfterEach
     public void deleteReportFiles() {
@@ -195,7 +197,8 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private List<String> extractSavedMessages() {
         return fetchMessagesFromService()
                    .stream()
-                   .map(Message::getText)
+                   .flatMap(resourceConversation -> resourceConversation.getMessages().stream())
+                   .map(MessageDto::getText)
                    .collect(Collectors.toList());
     }
 
@@ -208,10 +211,10 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
                    .collect(Collectors.toList());
     }
 
-    private List<Message> fetchMessagesFromService() {
-        List<Message> unreadMessages = messageService.listMessages(FakeS3Driver.PUBLISHER_URI, MessageStatus.UNREAD);
-        List<Message> readMessages = messageService.listMessages(FakeS3Driver.PUBLISHER_URI, MessageStatus.READ);
-        List<Message> allMessages = new ArrayList<>();
+    private List<ResourceConversation> fetchMessagesFromService() {
+        var unreadMessages = messageService.listMessagesForCurator(FakeS3Driver.PUBLISHER_URI, MessageStatus.UNREAD);
+        var readMessages = messageService.listMessagesForCurator(FakeS3Driver.PUBLISHER_URI, MessageStatus.READ);
+        var allMessages = new ArrayList<ResourceConversation>();
         allMessages.addAll(unreadMessages);
         allMessages.addAll(readMessages);
         return allMessages;
@@ -255,20 +258,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private Set<SortableIdentifier> testDataPublicationUniqueIdentifiers() {
         return extractIdentifiers(FakeS3Driver.allSamplePublications()
                                       .stream());
-    }
-
-    private List<Publication> fetchAllDoiRequestsDirectlyFromDb(List<ResourceUpdate> update) {
-        return update.stream()
-                   .filter(ResourceUpdate::isSuccess)
-                   .flatMap(this::fetchDoiRequestFromService)
-                   .map(DoiRequest::toPublication)
-                   .collect(Collectors.toList());
-    }
-
-    private Stream<DoiRequest> fetchDoiRequestFromService(ResourceUpdate doiRequest) {
-        var owner = extractOwner(doiRequest.getNewVersion());
-        var publicationIdentifier = doiRequest.getNewVersion().getIdentifier();
-        return attempt(() -> fetchDoiRequestByResourceIdentifier(owner, publicationIdentifier)).stream();
     }
 
     private DoiRequest fetchDoiRequestByResourceIdentifier(UserInstance owner, SortableIdentifier publicationIdentifier)

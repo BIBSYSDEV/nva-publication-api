@@ -7,6 +7,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -53,7 +55,7 @@ public final class PublicationGenerator {
      * Generate a minimal Publication for testing.
      *
      * @param identifier Sortable identifier
-     * @return  publication
+     * @return publication
      */
     @JacocoGenerated
     public static Publication generatePublication(SortableIdentifier identifier) {
@@ -63,67 +65,76 @@ public final class PublicationGenerator {
         Instant oneMinuteInThePast = Instant.now().minusSeconds(60L);
 
         return new Publication.Builder()
-            .withIdentifier(identifier)
-            .withCreatedDate(oneMinuteInThePast)
-            .withModifiedDate(oneMinuteInThePast)
-            .withOwner(OWNER)
-            .withStatus(PublicationStatus.DRAFT)
-            .withPublisher(samplePublisher())
-            .withEntityDescription(entityDescription)
-            .withFileSet(sampleFileSet())
-            .build();
+                   .withIdentifier(identifier)
+                   .withCreatedDate(oneMinuteInThePast)
+                   .withModifiedDate(oneMinuteInThePast)
+                   .withOwner(OWNER)
+                   .withStatus(PublicationStatus.DRAFT)
+                   .withPublisher(samplePublisher())
+                   .withEntityDescription(entityDescription)
+                   .withFileSet(sampleFileSet())
+                   .build();
     }
 
     public static Contributor sampleContributor() throws MalformedContributorException {
         return new Contributor.Builder()
-            .withIdentity(sampleIdentity())
-            .withAffiliations(sampleOrganization())
-            .withEmail("some@email.org")
-            .withSequence(1)
-            .withRole(Role.CREATOR)
-            .build();
+                   .withIdentity(sampleIdentity())
+                   .withAffiliations(sampleOrganization())
+                   .withEmail("some@email.org")
+                   .withSequence(1)
+                   .withRole(Role.CREATOR)
+                   .build();
     }
 
     public static Publication generateEmptyPublication() {
         return new Publication.Builder()
-            .withOwner(OWNER)
-            .withPublisher(samplePublisher())
-            .build();
+                   .withOwner(OWNER)
+                   .withPublisher(samplePublisher())
+                   .build();
+    }
+
+    public static List<Publication> samplePublicationsOfDifferentOwners(int numberOfPublications,
+                                                                        boolean withIdentifier) {
+        return IntStream.range(0, numberOfPublications).boxed()
+                   .map(ignored -> PublicationGenerator.publicationWithoutIdentifier())
+                   .map(pub -> addIdentifier(pub,withIdentifier))
+                   .map(PublicationGenerator::changeOwner)
+                   .collect(Collectors.toList());
     }
 
     private static List<Organization> sampleOrganization() {
         Organization organization = new Organization.Builder()
-            .withId(URI.create("https://someOrganziation.example.com"))
-            .withLabels(Map.of("someLabelKey", "someLabelValue"))
-            .build();
+                                        .withId(URI.create("https://someOrganziation.example.com"))
+                                        .withLabels(Map.of("someLabelKey", "someLabelValue"))
+                                        .build();
         return List.of(organization);
     }
 
     private static Identity sampleIdentity() {
         return new Identity.Builder()
-            .withName(OWNER)
-            .withId(URI.create("https://someUserId.example.org"))
-            .withArpId("someArpId")
-            .withNameType(NameType.PERSONAL)
-            .withOrcId("someOrcId")
-            .build();
+                   .withName(OWNER)
+                   .withId(URI.create("https://someUserId.example.org"))
+                   .withArpId("someArpId")
+                   .withNameType(NameType.PERSONAL)
+                   .withOrcId("someOrcId")
+                   .build();
     }
 
     private static Organization samplePublisher() {
         return new Organization.Builder()
-            .withId(URI.create(PUBLISHER_ID))
-            .build();
+                   .withId(URI.create(PUBLISHER_ID))
+                   .build();
     }
 
     private static FileSet sampleFileSet() {
         return new FileSet.Builder()
-            .withFiles(List.of(new File.Builder()
-                .withIdentifier(UUID.randomUUID())
-                .withLicense(new License.Builder()
-                    .withIdentifier("licenseId")
-                    .build())
-                .build()))
-            .build();
+                   .withFiles(List.of(new File.Builder()
+                                          .withIdentifier(UUID.randomUUID())
+                                          .withLicense(new License.Builder()
+                                                           .withIdentifier("licenseId")
+                                                           .build())
+                                          .build()))
+                   .build();
     }
 
     private static EntityDescription createSampleEntityDescription() {
@@ -145,7 +156,22 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    private static String randomString() {
+    private static Publication addIdentifier(Publication pub, boolean addIdentifier) {
+        if (addIdentifier) {
+            pub.setIdentifier(SortableIdentifier.next());
+        }
+        return pub;
+    }
+
+    private static Publication changeOwner(Publication publication) {
+        return publication.copy().withOwner(randomEmail()).build();
+    }
+
+    private static String randomEmail() {
+        return FAKER.internet().emailAddress();
+    }
+
+    public static String randomString() {
         return FAKER.lorem().sentence();
     }
 }

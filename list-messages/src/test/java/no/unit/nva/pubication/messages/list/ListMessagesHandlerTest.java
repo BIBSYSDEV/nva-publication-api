@@ -1,8 +1,10 @@
 package no.unit.nva.pubication.messages.list;
 
+import static no.unit.nva.pubication.messages.list.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -23,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -55,7 +58,12 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_OTHER_USER = "some@otheruser";
     public static final Faker FAKER = Faker.instance();
     public static final String ALLOW_EVERYTHING = "*";
+    public static final String CURATOR_ROLE = "Curator";
+    public static final String ROLE_QUERY_PARAMETER = "role";
+
+    public static final boolean NO_IDENTIFIER = false;
     private static final int NUMBER_OF_PUBLICATIONS = 3;
+    public static final String SOME_OTHER_ROLE = "SomeOtherRole";
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
@@ -119,6 +127,71 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
     }
 
+    @Test
+    public void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
+        throws IOException {
+        List<Publication> publications = createPublicationsOfDifferentOwners();
+        final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
+
+        final ResourceConversation[] expectedResponse = constructExpectedResponse(messages);
+
+        URI orgURI = messages.get(0).getCustomerId();
+        UserInstance curator = someCurator(orgURI);
+
+        input = defaultCuratorRequest(curator.getUserIdentifier(), curator.getOrganizationUri());
+        handler.handleRequest(input, output, CONTEXT);
+
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
+
+        assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
+    }
+
+    @Test
+    public void listMessagesReturnsEmptyListWhenUserIsNeitherCreatorOrCurator()
+        throws IOException {
+        List<Publication> publications = createPublicationsOfDifferentOwners();
+        final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
+
+        URI orgURI = messages.get(0).getCustomerId();
+        UserInstance curator = someCurator(orgURI);
+
+        input = userRequest(curator.getUserIdentifier(), curator.getOrganizationUri(), SOME_OTHER_ROLE);
+        handler.handleRequest(input, output, CONTEXT);
+
+        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
+
+        assertThat(Arrays.asList(body), is(empty()));
+    }
+
+    private List<Publication> createPublicationsOfDifferentOwners() {
+
+        return PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, NO_IDENTIFIER)
+                   .stream()
+                   .map(attempt(p -> resourceService.createPublication(p)))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
+    }
+
+    private ResourceConversation[] constructExpectedResponse(List<Message> messages) {
+        List<ResourceConversation> conversations = messages.stream()
+                                                       .collect(Collectors.groupingBy(Message::getResourceIdentifier))
+                                                       .values()
+                                                       .stream()
+                                                       .map(ResourceConversation::fromMessageList)
+                                                       .flatMap(List::stream)
+                                                       .collect(Collectors.toList());
+
+        return conversations.toArray(ResourceConversation[]::new);
+    }
+
+    private UserInstance theOwner(Publication publication) {
+        String owner = publication.getOwner();
+        URI customerId = publication.getPublisher().getId();
+        return new UserInstance(owner, customerId);
+    }
+
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
 
         List<ResourceConversation> sorted = Arrays.stream(responseObjects)
@@ -176,12 +249,23 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
+    private InputStream defaultCuratorRequest(String userIdentifier, URI organizationUri)
+        throws JsonProcessingException {
+        return userRequest(userIdentifier, organizationUri, CURATOR_ROLE);
+    }
 
     private InputStream defaultUserRequest(String userIdentifier, URI organizationUri)
+        throws JsonProcessingException {
+        return userRequest(userIdentifier, organizationUri, CREATOR_ROLE);
+    }
+
+    private InputStream userRequest(String userIdentifier, URI organizationUri, String requestedRole)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
                    .withFeideId(userIdentifier)
                    .withCustomerId(organizationUri.toString())
+                   .withRoles(requestedRole)
+                   .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole))
                    .build();
     }
 

@@ -3,6 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -54,6 +55,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SAMPLE_HOST = "https://localhost/messages/";
 
     public static final int FIRST_ELEMENT = 0;
+    private static final int SINGLE_EXPECTED_ELEMENT = 0;
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -180,9 +182,10 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var savedMessages = createOneMessagePerPublication(createdPublications);
 
         var publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
-        var actualMessages = messageService.listMessages(publisherId, MessageStatus.UNREAD);
+        var actualConversation = messageService.listMessagesForCurator(publisherId, MessageStatus.UNREAD);
 
-        assertThat(actualMessages, is(equalTo(savedMessages)));
+        var expectedConversation = constructExpectedCuratorsMessageView(publisherId, savedMessages);
+        assertThat(actualConversation, contains(expectedConversation));
     }
 
     @Test
@@ -191,13 +194,11 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
 
         var customerId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
-        var actualMessages = messageService.listMessages(customerId, MessageStatus.UNREAD);
+        var actualConversations = messageService.listMessagesForCurator(customerId, MessageStatus.UNREAD);
 
-        var expectedMessages = allMessagesOfAllCustomers.stream()
-                                   .filter(message -> message.getCustomerId().equals(customerId))
-                                   .collect(Collectors.toList());
+        var expectedConversations = constructExpectedCuratorsMessageView(customerId, allMessagesOfAllCustomers);
 
-        assertThat(actualMessages, is(equalTo(expectedMessages)));
+        assertThat(actualConversations, contains(expectedConversations));
     }
 
     @Test
@@ -219,8 +220,24 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, is(equalTo(expectedMessages)));
     }
 
-    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication1) {
-        return ResourceConversation.fromMessageList(messagesForPublication1).orElseThrow();
+    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
+        return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
+    }
+
+    private ResourceConversation[] constructExpectedCuratorsMessageView(
+        URI customerId,
+        List<Message> allMessagesOfAllOwnersAndCustomers) {
+        var messagesOfSpecifiedCustomer =
+            filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
+        var conversationList = ResourceConversation.fromMessageList(messagesOfSpecifiedCustomer);
+        return conversationList.toArray(new ResourceConversation[0]);
+    }
+
+    private List<Message> filterBasedOnCustomerId(URI customerId, List<Message> allMessagesOfAllOwnersAndCustomers) {
+        return allMessagesOfAllOwnersAndCustomers
+                   .stream()
+                   .filter(message -> message.getCustomerId().equals(customerId))
+                   .collect(Collectors.toList());
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
