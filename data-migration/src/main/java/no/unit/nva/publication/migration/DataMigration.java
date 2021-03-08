@@ -62,6 +62,7 @@ public class DataMigration {
         return messagesImporter.insertMessages(allMessages.stream());
     }
 
+    @SafeVarargs
     private List<ResourceUpdate> mergeUpdateResults(List<ResourceUpdate>... updateResults) {
         return Arrays.stream(updateResults)
                    .flatMap(Collection::stream)
