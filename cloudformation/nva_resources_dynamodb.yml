@@ -6,18 +6,7 @@ Parameters:
     Description: Name to use for table persisting NVA resources.
     Type: String
     Default: nva_resources
-  ResourcesByOwnerIndexName:
-    Type: String
-    Description: Reference to index containing resources by owner
-    Default: ByPublisher
-  ResourcesDoiRequestsByStatusIndexName:
-    Type: String
-    Description: Reference to index containing resources by owner
-    Default: doiRequestsByStatus
-  PublishedResourcesIndexName:
-    Type: String
-    Description: Reference to index containing published resources
-    Default: ByStatePublishedDate
+
 
 Resources:
   NvaResourcesTable:
@@ -26,64 +15,56 @@ Resources:
       TableName: !Ref ResourcesTableName
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: identifier
+        - AttributeName: PK0
           AttributeType: S
-        - AttributeName: modifiedDate
+        - AttributeName: SK0
           AttributeType: S
-        - AttributeName: publisherId
+        - AttributeName: PK1
           AttributeType: S
-        - AttributeName: publisherOwnerDate
+        - AttributeName: SK1
           AttributeType: S
-        - AttributeName: doiRequestStatusDate
+        - AttributeName: PK2
           AttributeType: S
-        - AttributeName: publishedDate
+        - AttributeName: SK2
           AttributeType: S
-        - AttributeName: status
+        - AttributeName: PK3
+          AttributeType: S
+        - AttributeName: SK3
           AttributeType: S
       KeySchema:
-        - AttributeName: identifier
+        - AttributeName: PK0
           KeyType: HASH
-        - AttributeName: modifiedDate
+        - AttributeName: SK0
           KeyType: RANGE
       GlobalSecondaryIndexes:
-        - IndexName: !Ref ResourcesByOwnerIndexName
+        - IndexName: ByTypeCustomerStatus
           KeySchema:
-            - AttributeName: publisherId
+            - AttributeName: PK1
               KeyType: HASH
-            - AttributeName: publisherOwnerDate
-              KeyType: RANGE
-          Projection:
-            NonKeyAttributes:
-              - entityDescription
-              - createdDate
-              - modifiedDate
-              - identifier
-              - status
-            ProjectionType: INCLUDE
-        - IndexName: !Ref ResourcesDoiRequestsByStatusIndexName
-          KeySchema:
-            - AttributeName: publisherId
-              KeyType: HASH
-            - AttributeName: doiRequestStatusDate
+            - AttributeName: SK1
               KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: !Ref PublishedResourcesIndexName
+        - IndexName: ByCustomerResource
           KeySchema:
-            - AttributeName: status
+            - AttributeName: PK2
               KeyType: HASH
-            - AttributeName: publishedDate
+            - AttributeName: SK2
               KeyType: RANGE
           Projection:
-            NonKeyAttributes:
-              - entityDescription
-              - createdDate
-              - modifiedDate
-              - identifier
-              - doiRequest
-            ProjectionType: INCLUDE
+            ProjectionType: ALL
+        - IndexName: ResourcesByIdentifier
+          KeySchema:
+            - AttributeName: PK3
+              KeyType: HASH
+            - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
       StreamSpecification:
-        StreamViewType: NEW_IMAGE
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification: true
+
 
 Outputs:
   NvaResourcesTableName:
