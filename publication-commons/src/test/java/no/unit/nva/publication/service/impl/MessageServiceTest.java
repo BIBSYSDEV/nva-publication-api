@@ -25,14 +25,13 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
-import nva.commons.core.Environment;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +54,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public static final String SAMPLE_HOST = "https://localhost/messages/";
 
     public static final int FIRST_ELEMENT = 0;
-    public static final String SOME_VALID_HOST = "localhost";
 
     private MessageService messageService;
     private ResourceService resourceService;
@@ -64,14 +62,12 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         super.init();
         Clock clock = mockClock();
-        Environment environment = setupEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
     }
 
     @Test
-    public void createSimpleMessageStoresNewMessageInDatabase() throws TransactionFailedException {
+    public void createSimpleMessageStoresNewMessageInDatabase() throws TransactionFailedException, NotFoundException {
         var publication = createSamplePublication();
         var owner = extractOwner(publication);
         var messageText = randomString();
@@ -87,7 +83,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
-        throws TransactionFailedException {
+        throws TransactionFailedException, NotFoundException {
         var publication = createSamplePublication();
         var owner = extractOwner(publication);
         var messageText = randomString();
@@ -139,19 +135,20 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException {
-        var publication = createSamplePublication();
-        var messageText = randomString();
+
+    public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
+        Publication publication = createSamplePublication();
+        String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
         var savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-            messageText);
+                                                             messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
-    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException {
+    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
 
         var publication = createSamplePublication();
         var messageText = randomString();
@@ -159,26 +156,26 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
         var savedMessage = messageService.getMessage(extractOwner(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-            messageText);
+                                                             messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
-    public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException {
-        var publication = createSamplePublication();
-        var messageText = randomString();
+    public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
+        Publication publication = createSamplePublication();
+        String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
         var sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
         var savedMessage = fetchMessage(extractOwner(publication), sampleMessageUri);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-            messageText);
+                                                             messageText);
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
-    public void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() {
+    public void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInSameOrg();
         var savedMessages = createOneMessagePerPublication(createdPublications);
 
@@ -189,7 +186,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() {
+    public void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
         var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
 
@@ -224,13 +221,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication1) {
         return ResourceConversation.fromMessageList(messagesForPublication1).orElseThrow();
-    }
-
-    private Environment setupEnvironment() {
-        var env = mock(Environment.class);
-        when(env.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
-            .thenReturn(SOME_VALID_HOST);
-        return env;
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
@@ -273,7 +263,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return persistPublications(newPublications);
     }
 
-    private List<Message> createOneMessagePerPublication(List<Publication> createdPublications) {
+    private List<Message> createOneMessagePerPublication(List<Publication> createdPublications)
+        throws NotFoundException {
         List<Message> savedMessages = new ArrayList<>();
 
         for (Publication createdPublication : createdPublications) {
@@ -313,15 +304,17 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
                    .map(ignoredValue -> randomString())
                    .map(message -> createSimpleMessage(publication, message))
-                   .map(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier))
+                   .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
+                   .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
 
-    private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier) {
+    private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier)
+        throws NotFoundException {
         return messageService.getMessage(publicationOwner, messageIdentifier);
     }
 
-    private Message fetchMessage(UserInstance publicationOwner, URI messageId) {
+    private Message fetchMessage(UserInstance publicationOwner, URI messageId) throws NotFoundException {
         return messageService.getMessage(publicationOwner, messageId);
     }
 

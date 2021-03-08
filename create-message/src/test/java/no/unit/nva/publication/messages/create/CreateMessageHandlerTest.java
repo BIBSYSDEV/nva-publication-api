@@ -38,6 +38,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.HttpHeaders;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,7 +71,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         messageService = new MessageService(client, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         environment = setupEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
@@ -78,7 +78,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
-        throws IOException {
+        throws IOException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
 
         input = createInput(requestBody);
@@ -90,7 +90,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
-        throws IOException, URISyntaxException {
+        throws IOException, URISyntaxException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
 
         input = createInput(requestBody);
@@ -158,10 +158,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
-            .thenReturn(SOME_VALID_HOST);
-        when(environment.readEnv(ServiceEnvironmentConstants.NETWORK_SCHEME_ENV_VARIABLE_NAME))
-            .thenReturn(HTTPS);
         return environment;
     }
 
@@ -208,7 +204,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         return URI.create(headerValue);
     }
 
-    private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) {
+    private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) throws NotFoundException {
         UserInstance owner = extractOwner(samplePublication);
         return messageService.getMessage(owner, messageId);
     }

@@ -5,18 +5,48 @@ repositories {
 
 dependencies {
 
-    implementation project (":storage-model")
-    implementation project (":publication-commons")
+    implementation project(":storage-model")
+    implementation project(":publication-commons")
+
     implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 's3', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
     implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
     implementation group: 'software.amazon.awssdk', name: 's3', version: '2.16.8'
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
+    implementation(group: 'org.javers', name: 'javers-core', version: '5.14.0') {
+        because "For comparing objects during migration"
+    }
+
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
-    testImplementation project (":publication-testing")
+    compileOnly (group: 'org.picocontainer', name: 'picocontainer', version: '2.15'){
+        because "PMD complains for org/picocontainer/ComponentFactory"
+    }
 
+    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
+        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    }
+
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
+    testImplementation project(":publication-testing")
+}
+
+
+configurations.testImplementation.canBeResolved = true
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/dynamodb-local'
 }

@@ -8,7 +8,6 @@ dependencies {
     api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     api group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
-
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }

@@ -1,5 +1,6 @@
 package no.unit.nva.pubication.messages.list;
 
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -22,12 +23,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -39,6 +40,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
@@ -52,21 +54,13 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final String SOME_OTHER_USER = "some@otheruser";
     public static final Faker FAKER = Faker.instance();
-    public static final int FIRST = 0;
-    public static final int FIRST_ELEMENT = FIRST;
     public static final String ALLOW_EVERYTHING = "*";
-    private static final int NUMBER_OF_PUBLICATIONS = 2;
+    private static final int NUMBER_OF_PUBLICATIONS = 3;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
     private ResourceService resourceService;
     private MessageService messageService;
-
-    public static UserInstance extractOwner(Publication publication) {
-        String owner = publication.getOwner();
-        URI customerId = publication.getPublisher().getId();
-        return new UserInstance(owner, customerId);
-    }
 
     @BeforeEach
     public void init() {
@@ -75,7 +69,6 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new ListMessagesHandler(environment, messageService);
     }
 
@@ -108,8 +101,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
         List<Publication> publications = createSamplePublications();
-        List<Message> messages = insertOneMessagePerPublication(publications);
-        List<Message> moreMessages = insertOneMessagePerPublication(publications);
+        List<Message> messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
+        List<Message> moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         List<Message> allMessages = new ArrayList<>();
         allMessages.addAll(messages);
         allMessages.addAll(moreMessages);
@@ -183,6 +176,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
+
     private InputStream defaultUserRequest(String userIdentifier, URI organizationUri)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
@@ -230,19 +224,21 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private List<Message> insetSampleMessages() {
         List<Publication> publications = createSamplePublications();
-        return insertOneMessagePerPublication(publications);
+        return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
 
-    private List<Message> insertOneMessagePerPublication(List<Publication> publications) {
-        Publication samplePublication = publications.get(FIRST_ELEMENT);
-        UserInstance sender = new UserInstance(SOME_OTHER_USER, samplePublication.getPublisher().getId());
-
-        return createSampleMessagesFromPublications(publications, sender);
+    private UserInstance notTheOwner(Publication samplePublication) {
+        return someCurator(samplePublication.getPublisher().getId());
     }
 
-    private List<Message> createSampleMessagesFromPublications(List<Publication> publications, UserInstance sender) {
+    private UserInstance someCurator(URI orgId) {
+        return new UserInstance(SOME_OTHER_USER, orgId);
+    }
+
+    private List<Message> createSampleMessagesFromPublications(List<Publication> publications,
+                                                               Function<Publication, UserInstance> sender) {
         return publications.stream()
-                   .map(attempt(pub -> createMessage(pub, sender)))
+                   .map(attempt(pub -> createMessage(pub, sender.apply(pub))))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
@@ -260,7 +256,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         return env;
     }
 
-    private Message createMessage(Publication publication, UserInstance sender) throws TransactionFailedException {
+    private Message createMessage(Publication publication, UserInstance sender)
+        throws TransactionFailedException, NotFoundException {
         SortableIdentifier messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
         return messageService.getMessage(extractOwner(publication), messageIdentifier);
     }
