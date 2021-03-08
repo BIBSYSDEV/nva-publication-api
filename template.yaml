@@ -124,8 +124,6 @@ Resources:
                 - application/json
               produces:
                 - application/json
-              security:
-                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
