@@ -88,7 +88,13 @@ subprojects {
             events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
+
+        environment 'API_HOST', 'localhost'
+        environment 'API_SCHEME', 'https'
+
     }
+
+
 
     jacocoTestReport {
         reports {

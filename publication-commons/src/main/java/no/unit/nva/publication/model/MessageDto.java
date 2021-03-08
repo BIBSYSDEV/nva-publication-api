@@ -145,8 +145,8 @@ public class MessageDto {
 
     public static URI constructMessageId(SortableIdentifier messageIdentifier) {
         if (nonNull(messageIdentifier)) {
-            String scheme = ServiceEnvironmentConstants.getInstance().scheme;
-            String host = ServiceEnvironmentConstants.getInstance().host;
+            String scheme = ServiceEnvironmentConstants.API_SCHEME;
+            String host = ServiceEnvironmentConstants.API_HOST;
             String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
             return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
         }
