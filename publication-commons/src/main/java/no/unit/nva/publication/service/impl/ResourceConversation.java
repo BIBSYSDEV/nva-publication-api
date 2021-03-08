@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,6 +16,9 @@ import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
+/**
+ * Contains messages related to a single resource. The messages are sorted by date, oldest first.
+ */
 public class ResourceConversation implements JsonSerializable {
 
     private static final int OLDEST_MESSAGE_INDEX = 0;
@@ -25,7 +29,14 @@ public class ResourceConversation implements JsonSerializable {
     public ResourceConversation() {
     }
 
-    public static List<ResourceConversation> fromMessageList(List<Message> messages) {
+    /**
+     * Returns a list of {@link ResourceConversation} objects by grouping the messages by resource. The {@link
+     * ResourceConversation} with the oldest message is at the top of the list.
+     *
+     * @param messages a collection of messages.
+     * @return a list of {@link ResourceConversation} instnaces with the oldest conversation on top.
+     */
+    public static List<ResourceConversation> fromMessageList(Collection<Message> messages) {
         return messages.stream()
                    .collect(grouByResource())
                    .values()
@@ -129,8 +140,6 @@ public class ResourceConversation implements JsonSerializable {
     private void setOldestMessage(MessageDto message) {
         this.oldestMessage = message;
     }
-
-
 
     private static List<MessageDto> transformMessages(List<Message> messages) {
         return messages.stream().map(MessageDto::fromMessage).collect(Collectors.toList());
