@@ -5,27 +5,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Optional;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonSerializable;
 
 public class DoiUpdateDto implements JsonSerializable {
 
     private final URI doi;
-    private final URI publicationId;
+    private final SortableIdentifier publicationIdentifier;
     private final Instant modifiedDate;
 
     /**
      * Constructor for DoiUpdateDto.
      *
-     * @param doi           doi
-     * @param publicationId publicationId
-     * @param modifiedDate  modifiedDate
+     * @param doi                   doi
+     * @param publicationIdentifier publicationId
+     * @param modifiedDate          modifiedDate
      */
     @JsonCreator
     public DoiUpdateDto(@JsonProperty("doi") URI doi,
-                        @JsonProperty("publicationId") URI publicationId,
+                        @JsonProperty("publicationId") SortableIdentifier publicationIdentifier,
                         @JsonProperty("modifiedDate") Instant modifiedDate) {
         this.doi = doi;
-        this.publicationId = publicationId;
+        this.publicationIdentifier = publicationIdentifier;
         this.modifiedDate = modifiedDate;
     }
 
@@ -38,8 +39,8 @@ public class DoiUpdateDto implements JsonSerializable {
         return Optional.ofNullable(doi);
     }
 
-    public URI getPublicationId() {
-        return publicationId;
+    public SortableIdentifier getPublicationIdentifier() {
+        return publicationIdentifier;
     }
 
     public Instant getModifiedDate() {
@@ -47,13 +48,13 @@ public class DoiUpdateDto implements JsonSerializable {
     }
 
     public boolean hasAllRequiredValuesSet() {
-        return getPublicationId() != null && getModifiedDate() != null;
+        return getPublicationIdentifier() != null && getModifiedDate() != null;
     }
 
     public static class Builder {
 
         private URI doi;
-        private URI publicationId;
+        private SortableIdentifier publicationIdentifier;
         private Instant modifiedDate;
 
         public Builder() {
@@ -64,8 +65,8 @@ public class DoiUpdateDto implements JsonSerializable {
             return this;
         }
 
-        public Builder withPublicationId(URI publicationId) {
-            this.publicationId = publicationId;
+        public Builder withPublicationId(SortableIdentifier publicationIdentifier) {
+            this.publicationIdentifier = publicationIdentifier;
             return this;
         }
 
@@ -75,7 +76,7 @@ public class DoiUpdateDto implements JsonSerializable {
         }
 
         public DoiUpdateDto build() {
-            return new DoiUpdateDto(doi, publicationId, modifiedDate);
+            return new DoiUpdateDto(doi, publicationIdentifier, modifiedDate);
         }
     }
 }

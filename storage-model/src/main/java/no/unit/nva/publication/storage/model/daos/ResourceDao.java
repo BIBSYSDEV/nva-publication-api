@@ -1,112 +1,102 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
-import nva.commons.core.JacocoGenerated;
+import no.unit.nva.publication.storage.model.ResourceByIdentifier;
+import no.unit.nva.publication.storage.model.UserInstance;
 
+@JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ResourceDao implements WithPrimaryKey {
+public class ResourceDao extends Dao<Resource>
+    implements JoinWithResource,
+               ResourceByIdentifier {
 
-    public static final String PATH_SEPARATOR = "/";
-    public static final String ORGANIZATION = Organization.class.getSimpleName();
-    public static final String PUBLICATION_STATUS = PublicationStatus.class.getSimpleName();
-
-    @JsonProperty("resource")
-    private Resource resource;
+    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
+    private Resource data;
 
     public ResourceDao() {
-        resource = new Resource();
+        this(new Resource());
     }
 
     public ResourceDao(Resource resource) {
-        this.resource = resource;
+        super();
+        this.data = resource;
     }
 
-    public Resource getResource() {
-        return resource;
+    public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+        Resource resource = Resource.emptyResource(
+            userInstance.getUserIdentifier(),
+            userInstance.getOrganizationUri(),
+            resourceIdentifier);
+        return new ResourceDao(resource);
     }
 
-    public void setResource(Resource resource) {
-        this.resource = resource;
+    public static String constructPrimaryPartitionKey(URI customerId, String owner) {
+        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
+            orgUriToOrgIdentifier(customerId), owner);
     }
 
-    @Override
-    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
-    public String getPrimaryKeyPartitionKey() {
-        return formatPrimaryPartitionKey(resource.getPublisher().getId(),resource.getOwner());
+    @JsonIgnore
+    public static String joinByResourceContainedOrderedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + Resource.getType();
     }
 
-    @JacocoGenerated
-    public void setPrimaryKeyPartitionKey(String key) {
-        // do nothing
-    }
-
-    @Override
-    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
-    public String getPrimaryKeySortKey() {
-        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT,
-            Resource.TYPE, resource.getIdentifier());
-    }
-
-    @JacocoGenerated
-    public void setPrimaryKeySortKey(String key) {
-        // do nothing
+    @JsonIgnore
+    public static String getContainedType() {
+        return Resource.getType();
     }
 
     @Override
-    public Map<String, AttributeValue> primaryKey() {
-        final Map<String, AttributeValue> map = new ConcurrentHashMap<>();
-        AttributeValue partKeyValue = new AttributeValue(getPrimaryKeyPartitionKey());
-        AttributeValue sortKeyValue = new AttributeValue(getPrimaryKeySortKey());
-        map.put(PRIMARY_KEY_PARTITION_KEY_NAME, partKeyValue);
-        map.put(PRIMARY_KEY_SORT_KEY_NAME, sortKeyValue);
-        return map;
+    public Resource getData() {
+        return data;
     }
 
-    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME)
-    public String getByTypeCustomerStatusPk() {
-        String publisherId = publisherId();
-        String publicationStatus = extractStatus();
-        return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,
-            ORGANIZATION, publisherId,
-            PUBLICATION_STATUS, publicationStatus
-        );
+    @Override
+    public void setData(Resource resource) {
+        this.data = resource;
     }
 
-    public void setByTypeCustomerStatusPk(String byTypeCustomerStatusPk) {
-        // do nothing
+    @Override
+    public String getType() {
+        return Resource.getType();
     }
 
-    @JsonProperty(BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME)
-    public String getByTypeCustomerStatusSk() {
-        return String.format(BY_TYPE_CUSTOMER_STATUS_SK_FORMAT, Resource.TYPE, resource.getIdentifier().toString());
+    @Override
+    public URI getCustomerId() {
+        return data.getPublisher().getId();
     }
 
-    public void setByTypeCustomerStatusSk(String byTypeCustomerStatusSk) {
-        // do nothing
+    @Override
+    public SortableIdentifier getIdentifier() {
+        return data.getIdentifier();
+    }
+
+    @Override
+    protected String getOwner() {
+        return data.getOwner();
+    }
+
+    @Override
+    public String joinByResourceOrderedType() {
+        return joinByResourceContainedOrderedType();
+    }
+
+    @Override
+    @JsonIgnore
+    public SortableIdentifier getResourceIdentifier() {
+        return this.getIdentifier();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getResource());
+        return Objects.hash(getData());
     }
 
     @Override
@@ -118,31 +108,6 @@ public class ResourceDao implements WithPrimaryKey {
             return false;
         }
         ResourceDao that = (ResourceDao) o;
-        return Objects.equals(getResource(), that.getResource());
-    }
-
-    private String extractStatus() {
-        return Optional.of(resource.getStatus())
-            .map(Enum::toString)
-            .map(str -> str.toUpperCase(Locale.ROOT))
-            .orElse(PublicationStatus.DRAFT.toString());
-    }
-
-    private String publisherId() {
-        return orgUriToOrgIdentifier(resource.getPublisher().getId());
-    }
-
-    private static String orgUriToOrgIdentifier(URI uri) {
-        String[] pathParts = uri.getPath().split(PATH_SEPARATOR);
-        return pathParts[pathParts.length - 1];
-    }
-
-    public static String formatPrimaryPartitionKey(URI organizationUri, String userIdentifier) {
-        String organizationIdentifier = orgUriToOrgIdentifier(organizationUri);
-        return formatPrimaryPartitionKey(organizationIdentifier, userIdentifier);
-    }
-
-    private static String formatPrimaryPartitionKey(String publisherId, String owner) {
-        return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE, publisherId, owner);
+        return Objects.equals(getData(), that.getData());
     }
 }

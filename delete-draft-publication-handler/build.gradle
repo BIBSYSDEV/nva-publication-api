@@ -4,12 +4,18 @@ repositories {
 }
 
 dependencies {
-    compileOnly project(':publication-commons')
-    implementation project(":publication-events")
-    implementation group: 'no.unit.nva', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
 
+    //This package is added by SAM template in the runtime environment
+    compileOnly project(':publication-commons')
     testImplementation project(':publication-commons')
+
+    implementation project(":publication-events")
+
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
+
     testImplementation project(":publication-testing")
+
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'

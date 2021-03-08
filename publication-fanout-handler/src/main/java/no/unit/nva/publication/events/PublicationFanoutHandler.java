@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events;
 
 import static no.unit.nva.publication.events.DynamodbStreamRecordPublicationMapper.toPublication;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
@@ -10,15 +11,16 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PublicationFanoutHandler
-        extends EventHandler<DynamodbEvent.DynamodbStreamRecord, PublicationUpdateEvent> {
+    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DynamoEntryUpdateEvent> {
 
-    private static final Logger logger = LoggerFactory.getLogger(PublicationFanoutHandler.class);
     public static final String MAPPING_ERROR = "Error mapping Dynamodb Image to Publication";
     public static final Publication NO_VALUE = null;
+    private static final Logger logger = LoggerFactory.getLogger(PublicationFanoutHandler.class);
 
     @JacocoGenerated
     public PublicationFanoutHandler() {
@@ -26,20 +28,26 @@ public class PublicationFanoutHandler
     }
 
     @Override
-    protected PublicationUpdateEvent processInput(
-            DynamodbEvent.DynamodbStreamRecord input,
-            AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
-            Context context) {
+    protected DynamoEntryUpdateEvent processInput(
+        DynamodbEvent.DynamodbStreamRecord input,
+        AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
+        Context context) {
+        String eventJson = attempt(() -> JsonUtils.objectMapper.writeValueAsString(event)).orElseThrow();
+        logger.info("event:" + eventJson);
         Optional<Publication> oldPublication = getPublication(input.getDynamodb().getOldImage());
         Optional<Publication> newPublication = getPublication(input.getDynamodb().getNewImage());
         String updateType = input.getEventName();
 
-        return new PublicationUpdateEvent(
-                PublicationUpdateEvent.PUBLICATION_UPDATE_TYPE,
-                updateType,
-                oldPublication.orElse(NO_VALUE),
-                newPublication.orElse(NO_VALUE)
+        DynamoEntryUpdateEvent output = new DynamoEntryUpdateEvent(
+            DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE,
+            updateType,
+            oldPublication.orElse(NO_VALUE),
+            newPublication.orElse(NO_VALUE)
         );
+
+        String outputJson = attempt(() -> JsonUtils.objectMapper.writeValueAsString(output)).orElseThrow();
+        logger.info("output" + outputJson);
+        return output;
     }
 
     private Optional<Publication> getPublication(Map<String, AttributeValue> image) {
@@ -47,8 +55,7 @@ public class PublicationFanoutHandler
             return Optional.empty();
         }
         try {
-            var publication = toPublication(image);
-            return Optional.of(publication);
+            return toPublication(image);
         } catch (Exception e) {
             logger.error(MAPPING_ERROR, e);
             throw new RuntimeException(MAPPING_ERROR, e);

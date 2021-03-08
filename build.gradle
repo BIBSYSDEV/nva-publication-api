@@ -6,13 +6,13 @@ plugins {
     id 'base'
     id 'nebula.lint' version '16.15.9'
     id "io.freefair.lombok" version "5.3.0"
+    id "maven"
 }
 
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
 allprojects {
-
     apply plugin: 'base'
     apply plugin: 'jacoco'
 
@@ -31,6 +31,8 @@ allprojects {
         awsSdk2Version = '2.14.16'
         nvaCommonsVersion = '1.0.0'
         nvaDatamodelVersion = 'a3e0cd83d2ede893bd8bb1029381e326a8420749'
+        nvaDatamodelVersion= "0.11.6"
+        nvaCommonsVersion = '1.2.0'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
         jacksonVersion = '2.10.2'
@@ -42,6 +44,7 @@ subprojects {
     apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
+    apply plugin: 'maven'
 
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
@@ -64,14 +67,19 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-        compileOnly group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
+        //TODO: restore correct package when new version has been created.
+        implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
+//        implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+        implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
+
         testImplementation (group: 'org.javers', name: 'javers-core', version: '5.14.0'){
             because "For comparing java objects and detailing the differences in readable way"
         }
@@ -79,12 +87,17 @@ subprojects {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform{
+            excludeTags("RemoteTest")
+        }
         failFast = true
         testLogging {
             events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
+        //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
+        environment "API_HOST", "localhost"
+        environment "API_SCHEME", "https"
     }
 
     jacocoTestReport {
@@ -121,7 +134,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 0.0
+                    minimum = 1.000
                 }
             }
 
@@ -129,10 +142,21 @@ subprojects {
                 limit {
                     counter = 'CLASS'
                     value = 'COVEREDRATIO'
-                    minimum = 0.0
+                    minimum = 1.000
                 }
             }
         }
+    }
+
+
+    // publish submodules
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives sourcesJar
     }
 
 }

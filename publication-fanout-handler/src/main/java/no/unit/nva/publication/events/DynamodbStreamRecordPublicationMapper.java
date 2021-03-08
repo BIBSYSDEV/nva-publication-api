@@ -12,8 +12,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 
@@ -29,15 +33,27 @@ public final class DynamodbStreamRecordPublicationMapper {
      * Map a DynamodbStreamRecordImage to Publication.
      *
      * @param recordImage the record image (old or new)
-     * @return publication
+     * @return a Publication instance if it is a {@link ResourceUpdate}
      * @throws JsonProcessingException JsonProcessingException
      */
-    public static Publication toPublication(Map<String, AttributeValue> recordImage)
-            throws JsonProcessingException {
+    public static Optional<Publication> toPublication(Map<String, AttributeValue> recordImage)
+        throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
-        Publication publication = objectMapper.readValue(item.toJSON(), Publication.class);
-        return publication;
+        DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
+        return Optional.of(dynamoEntry)
+            .filter(entry -> isDao(dynamoEntry))
+            .map(dao -> ((Dao<?>) dao).getData())
+            .filter(DynamodbStreamRecordPublicationMapper::isResourceUpdate)
+            .map(ResourceUpdate::toPublication);
+    }
+
+    private static boolean isDao(DynamoEntry dynamoEntry) {
+        return dynamoEntry instanceof Dao<?>;
+    }
+
+    private static boolean isResourceUpdate(Object data) {
+        return data instanceof ResourceUpdate;
     }
 
     /*These methods are a copy of ItemUtils.toItem. The only difference is that instead of throwing an exception
@@ -48,7 +64,7 @@ public final class DynamodbStreamRecordPublicationMapper {
     }
 
     private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
-            Map<String, AttributeValue> recordImage) throws JsonProcessingException {
+        Map<String, AttributeValue> recordImage) throws JsonProcessingException {
         var jsonString = objectMapper.writeValueAsString(recordImage);
         var javaType = objectMapper.getTypeFactory().constructParametricType(Map.class, String.class,
                 com.amazonaws.services.dynamodbv2.model.AttributeValue.class);

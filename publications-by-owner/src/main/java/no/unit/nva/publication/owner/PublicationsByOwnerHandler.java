@@ -1,33 +1,34 @@
 package no.unit.nva.publication.owner;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.time.Clock;
 import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.PublicationService;
-import no.unit.nva.publication.service.impl.DynamoDBPublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
 
-    private final PublicationService publicationService;
+    private final ResourceService resourceService;
+    private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
 
-    /**
-     * Default constructor for MainHandler.
-     */
+    @JacocoGenerated
     public PublicationsByOwnerHandler() {
-        this(new DynamoDBPublicationService(
+        this(new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
-                objectMapper,
-                new Environment()),
+                Clock.systemDefaultZone()),
             new Environment());
     }
 
@@ -36,10 +37,10 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      *
      * @param environment environment
      */
-    public PublicationsByOwnerHandler(PublicationService publicationService,
+    public PublicationsByOwnerHandler(ResourceService resourceService,
                                       Environment environment) {
-        super(Void.class, environment, LoggerFactory.getLogger(PublicationsByOwnerHandler.class));
-        this.publicationService = publicationService;
+        super(Void.class, environment);
+        this.resourceService = resourceService;
     }
 
     @Override
@@ -48,15 +49,16 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
         String owner = RequestUtil.getOwner(requestInfo);
         URI customerId = RequestUtil.getCustomerId(requestInfo);
-
+        UserInstance userInstance = new UserInstance(owner, customerId);
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
             owner,
             customerId));
 
-        List<PublicationSummary> publicationsByOwner = publicationService.getPublicationsByOwner(
-            owner,
-            customerId
-        );
+        List<PublicationSummary> publicationsByOwner;
+        publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
+            .stream()
+            .map(PublicationSummary::fromPublication)
+            .collect(Collectors.toList());
 
         return new PublicationsByOwnerResponse(publicationsByOwner);
     }

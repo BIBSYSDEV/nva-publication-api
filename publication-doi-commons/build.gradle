@@ -3,6 +3,9 @@ repositories {
 }
 
 dependencies {
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
+
+    api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     api(group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0') {
         because('Contains DynamodbEvent.DynamodbStreamRecord')
     }

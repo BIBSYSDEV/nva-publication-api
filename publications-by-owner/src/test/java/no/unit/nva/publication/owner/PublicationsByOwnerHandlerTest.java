@@ -3,16 +3,13 @@ package no.unit.nva.publication.owner;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static nva.commons.apigateway.HttpHeaders.CONTENT_TYPE;
 import static nva.commons.core.JsonUtils.objectMapper;
-import static org.apache.http.HttpHeaders.CONTENT_TYPE;
-import static org.apache.http.HttpStatus.SC_BAD_GATEWAY;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -21,23 +18,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.exception.ErrorResponseException;
-import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.PublicationService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerUtils;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.HttpHeaders;
 import nva.commons.core.Environment;
-import org.apache.http.HttpHeaders;
 import org.apache.http.entity.ContentType;
 import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +46,7 @@ public class PublicationsByOwnerHandlerTest {
     public static final String VALID_ORG_NUMBER = "NO919477822";
 
     private Environment environment;
-    private PublicationService publicationService;
+    private ResourceService resourceService;
     private Context context;
 
     private OutputStream output;
@@ -64,24 +60,18 @@ public class PublicationsByOwnerHandlerTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        publicationService = mock(PublicationService.class);
+        resourceService = mock(ResourceService.class);
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
         publicationsByOwnerHandler =
-            new PublicationsByOwnerHandler(publicationService, environment);
-    }
-
-    @Test
-    @DisplayName("default Constructor Throws Exception When Envs Are Not Set")
-    public void defaultConstructorThrowsExceptionWhenEnvsAreNotSet() {
-        assertThrows(Exception.class, () -> new PublicationsByOwnerHandler());
+            new PublicationsByOwnerHandler(resourceService, environment);
     }
 
     @Test
     @DisplayName("handler Returns Ok Response On Valid Input")
-    public void handlerReturnsOkResponseOnValidInput() throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
+    public void handlerReturnsOkResponseOnValidInput() throws IOException {
+        when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
             .thenReturn(publicationSummaries());
 
         publicationsByOwnerHandler.handleRequest(
@@ -105,28 +95,13 @@ public class PublicationsByOwnerHandlerTest {
     }
 
     @Test
-    @DisplayName("handler Returns BadGateway Response On Communication Problems")
-    public void handlerReturnsBadGatewayResponseOnCommunicationProblems()
-        throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
-            .thenThrow(ErrorResponseException.class);
-
-        publicationsByOwnerHandler.handleRequest(
-            inputStream(), output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
-        assertEquals(SC_BAD_GATEWAY, gatewayResponse.getStatusCode());
-    }
-
-    @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
     public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
-        throws IOException, ApiGatewayException {
-        when(publicationService.getPublicationsByOwner(anyString(), any(URI.class)))
+        throws IOException {
+        when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
             .thenThrow(NullPointerException.class);
 
-        publicationsByOwnerHandler.handleRequest(
-            inputStream(), output, context);
+        publicationsByOwnerHandler.handleRequest(inputStream(), output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
@@ -144,23 +119,23 @@ public class PublicationsByOwnerHandlerTest {
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
-    private List<PublicationSummary> publicationSummaries() {
-        List<PublicationSummary> publicationSummaries = new ArrayList<>();
-        publicationSummaries.add(new PublicationSummary.Builder()
-            .withIdentifier(UUID.randomUUID())
+    private List<Publication> publicationSummaries() {
+        List<Publication> publicationSummaries = new ArrayList<>();
+        publicationSummaries.add(new Publication.Builder()
+            .withIdentifier(SortableIdentifier.next())
             .withModifiedDate(Instant.now())
             .withCreatedDate(Instant.now())
             .withOwner("junit")
-            .withMainTitle("Some main title")
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Some main title").build())
             .withStatus(DRAFT)
             .build()
         );
-        publicationSummaries.add(new PublicationSummary.Builder()
-            .withIdentifier(UUID.randomUUID())
+        publicationSummaries.add(new Publication.Builder()
+            .withIdentifier(SortableIdentifier.next())
             .withModifiedDate(Instant.now())
             .withCreatedDate(Instant.now())
             .withOwner(OWNER)
-            .withMainTitle("A complete different title")
+            .withEntityDescription(new EntityDescription.Builder().withMainTitle("A complete different title").build())
             .withStatus(DRAFT)
             .build()
         );

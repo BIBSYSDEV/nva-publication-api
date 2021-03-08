@@ -1,56 +1,32 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import no.unit.nva.publication.storage.model.WithIdentifier;
 import nva.commons.core.JacocoGenerated;
 
-public class IdentifierEntry implements WithPrimaryKey {
+@JsonTypeName("IdEntry")
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
+public class IdentifierEntry extends UniquenessEntry {
 
-    public static final String ILLEGAL_ACCESS_PATTERN_ERROR = "IdentifierEntries are not supposed to be altered or "
-        + "deserialized";
-    private static String TYPE = "IdEntry#";
-    private String partitionKey;
-    private String sortKey;
+    private static final String TYPE = "IdEntry";
 
     /*For JSON Jackson*/
     @JacocoGenerated
     public IdentifierEntry() {
-
+        super();
     }
 
     public IdentifierEntry(String identifier) {
-        this.partitionKey = TYPE + identifier;
-        this.sortKey = TYPE + identifier;
+        super(identifier);
+    }
+
+    public static IdentifierEntry create(WithIdentifier withIdentifier) {
+        return new IdentifierEntry(withIdentifier.getIdentifier().toString());
     }
 
     @Override
-    @JsonProperty(PRIMARY_KEY_PARTITION_KEY_NAME)
-    public String getPrimaryKeyPartitionKey() {
-        return partitionKey;
-    }
-
-    public void setPrimaryKeyPartitionKey(String partitionKey) {
-        throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
-    }
-
-    @Override
-    @JsonProperty(PRIMARY_KEY_SORT_KEY_NAME)
-    public String getPrimaryKeySortKey() {
-        return sortKey;
-    }
-
-    @Override
-    public Map<String, AttributeValue> primaryKey() {
-        return Map.of(
-            PRIMARY_KEY_PARTITION_KEY_NAME, new AttributeValue(getPrimaryKeyPartitionKey()),
-            PRIMARY_KEY_SORT_KEY_NAME, new AttributeValue(getPrimaryKeySortKey())
-        );
-    }
-
-    public void setPrimaryKeySortKey(String sortKey) {
-        throw new IllegalStateException(ILLEGAL_ACCESS_PATTERN_ERROR);
+    protected String getType() {
+        return TYPE;
     }
 }

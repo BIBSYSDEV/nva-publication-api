@@ -7,23 +7,22 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
-import no.unit.nva.publication.events.PublicationUpdateEvent;
+import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletePublicationEventProducerHandler
-        extends DestinationsEventBridgeEventHandler<PublicationUpdateEvent, DeletePublicationEvent> {
-
+    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, DeletePublicationEvent> {
 
     @JacocoGenerated
     public DeletePublicationEventProducerHandler() {
-        super(PublicationUpdateEvent.class);
+        super(DynamoEntryUpdateEvent.class);
     }
 
     @Override
     protected DeletePublicationEvent processInputPayload(
-            PublicationUpdateEvent input,
-            AwsEventBridgeEvent<AwsEventBridgeDetail<PublicationUpdateEvent>> event,
-            Context context) {
+        DynamoEntryUpdateEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+        Context context) {
         Publication publication = input.getNewPublication();
         if (isDraftForDeletion(publication)) {
             return toDeletePublicationEvent(publication);

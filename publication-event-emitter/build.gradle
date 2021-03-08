@@ -1,9 +1,0 @@
-dependencies {
-    implementation project(":publication-doi-commons")
-
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0'
-    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-    implementation group: 'software.amazon.awssdk', name: 'sqs', version: project.ext.awsSdk2Version
-}

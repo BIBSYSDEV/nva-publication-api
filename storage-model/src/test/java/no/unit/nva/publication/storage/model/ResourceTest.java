@@ -47,7 +47,7 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.Test;
 
 public class ResourceTest {
-
+    
     public static final URI SAMPLE_ORG_URI = URI.create("https://www.example.com/123");
     public static final Organization SAMPLE_ORG = sampleOrganization();
     public static final URI SAMPLE_DOI = URI.create("http://doi.org/123-456");
@@ -56,15 +56,14 @@ public class ResourceTest {
     public static final URI SOME_LINK = URI.create("https://example.org/somelink");
     public static final Instant EMBARGO_DATE = Instant.parse("2021-01-01T12:00:22.23Z");
     public static final URI SAMPLE_ID = URI.create("https://example.com/some/id");
-
+    
     public static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     public static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
-    public static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     public static final Instant RESOURCE_PUBLISHED_DATE = Instant.parse("2012-04-03T06:12:35.00Z");
     public static final Instant RESOURCE_INDEXED_TIME = Instant.parse("2013-05-03T12:22:22.00Z");
     public static final URI SAMPLE_LANGUAGE = URI.create("https://some.com/language");
     public static final String SAMPLE_ISSN = "2049-3630";
-    public static final String SOME_HOST = "https://example.org/";
+    public static final URI SOME_HOST = URI.create("https://example.org/");
     public static final String DOI_REQUEST_FIELD = "doiRequest";
 
     public static final DoiRequest EMPTY_DOI_REQUEST = null;
@@ -73,6 +72,7 @@ public class ResourceTest {
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
     private final Javers javers = JaversBuilder.javers().build();
+    private final SortableIdentifier sampleIdentifier = SortableIdentifier.next();
 
     @Test
     public void builderContainsAllFields() {
@@ -90,7 +90,7 @@ public class ResourceTest {
         assertThat(copy, is(equalTo(resource)));
         assertThat(resourceJson, is(equalTo(copyJson)));
     }
-
+    
     @Test
     public void toDtoReturnsDtoWithoutLossOfInformation() {
         Resource resource = sampleResource();
@@ -100,175 +100,199 @@ public class ResourceTest {
         Diff diff = javers.compare(resource, fromPublication);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
     }
-
+    
     @Test
     public void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation()
         throws MalformedURLException, InvalidIssnException {
         Publication expected = samplePublication(sampleJournalArticleReference());
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
-
+        
         Publication transformed = Resource.fromPublication(expected).toPublication();
-
+        
         Diff diff = javers.compare(expected, transformed);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
-
+        
         assertThat(transformed, is(equalTo(expected)));
     }
+    
+    @Test
+    public void emptyResourceReturnsResourceWithTheMinimumNecessaryFieldsNotNull() {
 
-    private Publication samplePublication(Reference reference) {
-        return new Publication.Builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withCreatedDate(RESOURCE_CREATION_TIME)
-            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-            .withIndexedDate(RESOURCE_INDEXED_TIME)
-            .withPublishedDate(RESOURCE_PUBLISHED_DATE)
-            .withOwner(SOME_OWNER)
-            .withPublisher(SAMPLE_ORG)
-            .withDoi(SAMPLE_DOI)
-            .withFileSet(sampleFileSet)
-            .withHandle(randomUri())
-            .withStatus(PublicationStatus.PUBLISHED)
-            .withLink(SOME_LINK)
-            .withProjects(sampleProjects)
-            .withDoiRequest(EMPTY_DOI_REQUEST)
-            .withEntityDescription(sampleEntityDescription(reference))
-            .build();
+        Resource emptyResource = Resource.emptyResource(SOME_OWNER, SOME_HOST, sampleIdentifier);
+        assertThat(emptyResource.getIdentifier(), is(equalTo(sampleIdentifier)));
+        assertThat(emptyResource.getPublisher().getId(), is(equalTo(SOME_HOST)));
+        assertThat(emptyResource.getOwner(), is(equalTo(SOME_OWNER)));
     }
-
+    
+    @Test
+    public void queryObjectReturnsResourceWithIdentifier() {
+        Resource resource = Resource.resourceQueryObject(sampleIdentifier);
+        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
+    }
+    
+    @Test
+    public void queryObjectReturnsResourceWithIdentifierAndPublisher() {
+        UserInstance userInstance = new UserInstance(SOME_OWNER, SOME_HOST);
+        Resource resource = Resource.resourceQueryObject(userInstance, sampleIdentifier);
+        assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
+        assertThat(resource.getPublisher().getId(), is(equalTo(SOME_HOST)));
+        assertThat(resource.getOwner(), is(equalTo(SOME_OWNER)));
+    }
+    
+    public Publication samplePublication(Reference reference) {
+        return new Publication.Builder()
+                   .withIdentifier(SortableIdentifier.next())
+                   .withCreatedDate(RESOURCE_CREATION_TIME)
+                   .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+                   .withIndexedDate(RESOURCE_INDEXED_TIME)
+                   .withPublishedDate(RESOURCE_PUBLISHED_DATE)
+                   .withOwner(SOME_OWNER)
+                   .withPublisher(SAMPLE_ORG)
+                   .withDoi(SAMPLE_DOI)
+                   .withFileSet(sampleFileSet)
+                   .withHandle(randomUri())
+                   .withStatus(PublicationStatus.PUBLISHED)
+                   .withLink(SOME_LINK)
+                   .withProjects(sampleProjects)
+                   .withDoiRequest(EMPTY_DOI_REQUEST)
+                   .withEntityDescription(sampleEntityDescription(reference))
+                   .build();
+    }
+    
+    public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
+        return new Reference.Builder()
+                   .withDoi(randomUri())
+                   .withPublishingContext(sampleJournalInstance())
+                   .withPublicationInstance(sampleJournalArticle())
+                   .build();
+    }
+    
     private static Identity sampleIdentity() {
         return new Identity.Builder()
-            .withId(SAMPLE_ID)
-            .withName(randomString())
-            .withArpId(randomString())
-            .withNameType(NameType.PERSONAL)
-            .withOrcId(randomString())
-            .build();
+                   .withId(SAMPLE_ID)
+                   .withName(randomString())
+                   .withArpId(randomString())
+                   .withNameType(NameType.PERSONAL)
+                   .withOrcId(randomString())
+                   .build();
     }
-
+    
     private static Organization sampleOrganization() {
         return new Organization.Builder()
-            .withId(SAMPLE_ORG_URI)
-            .withLabels(Map.of(randomString(), randomString()))
-            .build();
+                   .withId(SAMPLE_ORG_URI)
+                   .withLabels(Map.of(randomString(), randomString()))
+                   .build();
     }
-
+    
     private static String randomString() {
         return UUID.randomUUID().toString();
     }
-
+    
     private EntityDescription sampleEntityDescription(Reference reference) {
         Map<String, String> alternativeTitles = Map.of(randomString(), randomString());
         return new EntityDescription.Builder()
-            .withDate(randomPublicationDate())
-            .withAbstract(randomString())
-            .withDescription(randomString())
-            .withAlternativeTitles(alternativeTitles)
-            .withContributors(sampleContributor())
-            .withLanguage(SAMPLE_LANGUAGE)
-            .withMainTitle(randomString())
-            .withMetadataSource(randomUri())
-            .withNpiSubjectHeading(randomString())
-            .withTags(List.of(randomString()))
-            .withReference(reference)
-            .build();
+                   .withDate(randomPublicationDate())
+                   .withAbstract(randomString())
+                   .withDescription(randomString())
+                   .withAlternativeTitles(alternativeTitles)
+                   .withContributors(sampleContributor())
+                   .withLanguage(SAMPLE_LANGUAGE)
+                   .withMainTitle(randomString())
+                   .withMetadataSource(randomUri())
+                   .withNpiSubjectHeading(randomString())
+                   .withTags(List.of(randomString()))
+                   .withReference(reference)
+                   .build();
     }
-
-    private Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
-        return new Reference.Builder()
-            .withDoi(randomUri())
-            .withPublishingContext(sampleJournalInstance())
-            .withPublicationInstance(sampleJournalArticle())
-            .build();
-    }
-
+    
     private JournalArticle sampleJournalArticle() {
         return new JournalArticle.Builder()
-            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
-            .withArticleNumber(randomString())
-            .withIssue(randomString())
-            .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
-            .withVolume(randomString())
-            .build();
+                   .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
+                   .withArticleNumber(randomString())
+                   .withIssue(randomString())
+                   .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
+                   .withVolume(randomString())
+                   .build();
     }
-
+    
     private Journal sampleJournalInstance() throws InvalidIssnException, MalformedURLException {
         return new Journal.Builder()
-            .withLevel(Level.LEVEL_2)
-            .withOnlineIssn(SAMPLE_ISSN)
-            .withTitle(randomString())
-            .withOpenAccess(NON_DEFAULT_BOOLEAN_VALUE)
-            .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
-            .withPrintIssn(SAMPLE_ISSN)
-            .withUrl(randomUri().toURL())
-            .build();
+                   .withLevel(Level.LEVEL_2)
+                   .withOnlineIssn(SAMPLE_ISSN)
+                   .withTitle(randomString())
+                   .withOpenAccess(NON_DEFAULT_BOOLEAN_VALUE)
+                   .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
+                   .withPrintIssn(SAMPLE_ISSN)
+                   .withUrl(randomUri().toURL())
+                   .build();
     }
-
+    
     private PublicationDate randomPublicationDate() {
         return new PublicationDate.Builder().withDay(randomString())
-            .withMonth(randomString())
-            .withYear(randomString())
-            .build();
+                   .withMonth(randomString())
+                   .withYear(randomString())
+                   .build();
     }
-
+    
     private List<Contributor> sampleContributor() {
         Contributor contributor = attempt(() -> new Contributor.Builder()
-            .withIdentity(sampleIdentity())
-            .withEmail(randomString())
-            .withAffiliations(List.of(SAMPLE_ORG))
-            .withRole(Role.CREATOR)
-            .withSequence(1)
-            .build())
-            .orElseThrow();
+                                                    .withIdentity(sampleIdentity())
+                                                    .withEmail(randomString())
+                                                    .withAffiliations(List.of(SAMPLE_ORG))
+                                                    .withRole(Role.CREATOR)
+                                                    .withSequence(1)
+                                                    .build())
+                                      .orElseThrow();
         return List.of(contributor);
     }
-
+    
     private List<ResearchProject> sampleProjects() {
         Approval approval = new Approval.Builder()
-            .withApprovalStatus(ApprovalStatus.APPLIED)
-            .withApplicationCode(randomString())
-            .withApprovedBy(ApprovalsBody.NMA)
-            .withDate(SAMPLE_APPROVAL_DATE)
-            .build();
-
+                                .withApprovalStatus(ApprovalStatus.APPLIED)
+                                .withApplicationCode(randomString())
+                                .withApprovedBy(ApprovalsBody.NMA)
+                                .withDate(SAMPLE_APPROVAL_DATE)
+                                .build();
+        
         Grant grant = new Grant.Builder()
-            .withId(randomString())
-            .withSource(randomString())
-            .build();
+                          .withId(randomString())
+                          .withSource(randomString())
+                          .build();
         ResearchProject researchProject = new Builder().withId(randomUri())
-            .withApprovals(List.of(approval))
-            .withGrants(List.of(grant))
-            .withName(randomString())
-            .build();
-
+                                              .withApprovals(List.of(approval))
+                                              .withGrants(List.of(grant))
+                                              .withName(randomString())
+                                              .build();
+        
         return List.of(researchProject);
     }
-
+    
     private FileSet sampleFileSet() {
         FileSet files = new FileSet();
         License license = new License.Builder()
-            .withIdentifier(randomString())
-            .withLabels(Map.of(randomString(), randomString()))
-            .withLink(randomUri())
-            .build();
+                              .withIdentifier(randomString())
+                              .withLabels(Map.of(randomString(), randomString()))
+                              .withLink(randomUri())
+                              .build();
         File file = new File.Builder()
-            .withIdentifier(UUID.randomUUID())
-            .withAdministrativeAgreement(NON_DEFAULT_BOOLEAN_VALUE)
-            .withIdentifier(UUID.randomUUID())
-            .withEmbargoDate(EMBARGO_DATE)
-            .withMimeType(randomString())
-            .withSize(100L)
-            .withLicense(license)
-            .withName(randomString())
-            .build();
+                        .withIdentifier(UUID.randomUUID())
+                        .withAdministrativeAgreement(NON_DEFAULT_BOOLEAN_VALUE)
+                        .withIdentifier(UUID.randomUUID())
+                        .withEmbargoDate(EMBARGO_DATE)
+                        .withMimeType(randomString())
+                        .withSize(100L)
+                        .withLicense(license)
+                        .withName(randomString())
+                        .build();
         files.setFiles(List.of(file));
         return files;
     }
-
+    
     private Resource sampleResource() {
         return attempt(() -> Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
-            .orElseThrow();
+                   .orElseThrow();
     }
-
+    
     private URI randomUri() {
         return URI.create(SOME_HOST + UUID.randomUUID().toString());
     }

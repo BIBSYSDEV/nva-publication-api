@@ -1,6 +1,10 @@
 package no.unit.nva.publication.storage.model;
 
+import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
@@ -19,7 +23,7 @@ import no.unit.nva.model.ResearchProject;
 
 //TODO: Remove all Lombok dependencies from the final class.
 
-@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 @Data
 @Builder(
@@ -28,45 +32,62 @@ import no.unit.nva.model.ResearchProject;
     toBuilder = true,
     setterPrefix = "with")
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class Resource implements WithIdentifier {
+public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
     public static final String TYPE = Resource.class.getSimpleName();
 
+    @JsonProperty
     private SortableIdentifier identifier;
+    @JsonProperty
     private PublicationStatus status;
+    @JsonProperty
     private String owner;
+    @JsonProperty
     private Organization publisher;
+    @JsonProperty
     private Instant createdDate;
+    @JsonProperty
     private Instant modifiedDate;
+    @JsonProperty
     private Instant publishedDate;
+    @JsonProperty
     private Instant indexedDate;
+    @JsonProperty
     private URI link;
+    @JsonProperty
     private FileSet fileSet;
+    @JsonProperty
     private List<ResearchProject> projects;
+    @JsonProperty
     private EntityDescription entityDescription;
+    @JsonProperty
     private URI doi;
+    @JsonProperty
     private URI handle;
 
     public Resource() {
 
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
-                                         String resourceIdentifier) {
-        return emptyResource(userIdentifier, organizationId, new SortableIdentifier(resourceIdentifier));
+    public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
+        return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
+            resourceIdentifier);
     }
 
-    public static Resource emptyResource(String userIdentifier, URI organizationId,
+    public static Resource resourceQueryObject(SortableIdentifier resourceIdentifier) {
+        Resource resource = new Resource();
+        resource.setIdentifier(resourceIdentifier);
+        return resource;
+    }
+
+    public static Resource emptyResource(String userIdentifier,
+                                         URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setPublisher(new Organization.Builder().withId(organizationId).build());
         resource.setOwner(userIdentifier);
         resource.setIdentifier(resourceIdentifier);
         return resource;
-    }
-
-    public ResourceBuilder copy() {
-        return this.toBuilder();
     }
 
     public static Resource fromPublication(Publication publication) {
@@ -89,11 +110,21 @@ public class Resource implements WithIdentifier {
             .build();
     }
 
+    @JsonIgnore
+    public static String getType() {
+        return TYPE;
+    }
+
+    public ResourceBuilder copy() {
+        return this.toBuilder();
+    }
+
+    @Override
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
             .withOwner(getOwner())
-            .withStatus(getStatus())
+            .withStatus(this.getStatus())
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
             .withIndexedDate(getIndexedDate())
@@ -107,6 +138,17 @@ public class Resource implements WithIdentifier {
             .withDoi(getDoi())
             .withHandle(getHandle())
             .build();
+    }
+
+    @Override
+    @JsonIgnore
+    public URI getCustomerId() {
+        return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
+    }
+
+    @Override
+    public String getStatusString() {
+        return nonNull(getStatus()) ? getStatus().toString() : null;
     }
 }
 

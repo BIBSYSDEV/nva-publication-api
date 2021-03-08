@@ -5,15 +5,12 @@ repositories {
 dependencies {
     api project(":storage-model")
 
-    api group: 'no.unit.nva', name: 'core', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    api group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    api group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
     api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    api group: 'io.mikael', name: 'urlbuilder', version: '2.0.9'
 
     api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
@@ -34,6 +31,8 @@ dependencies {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+
 }
 
 configurations.testImplementation.canBeResolved = true
