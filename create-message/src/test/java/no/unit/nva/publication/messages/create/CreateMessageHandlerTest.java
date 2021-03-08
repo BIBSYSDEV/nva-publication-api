@@ -145,14 +145,13 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
     }
 
+    public String extractTextFromOldestMessage(Publication doiRequest) {
+        return doiRequest.getDoiRequest().getMessages().get(0).getText();
+    }
 
     private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
         String expectedPath = ServiceEnvironmentConstants.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
         return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
-    }
-    public String extractTextFromOldestMessage(Publication doiRequest) {
-        return doiRequest.getDoiRequest().getMessages().get(0).getText();
-
     }
 
     private Environment setupEnvironment() {
