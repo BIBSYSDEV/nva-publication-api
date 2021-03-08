@@ -103,8 +103,8 @@ public class ResourceConversation implements JsonSerializable {
             return false;
         }
         ResourceConversation that = (ResourceConversation) o;
-        return Objects.equals(getPublication(), that.getPublication()) && Objects.equals(getMessages(),
-                                                                                         that.getMessages());
+        return Objects.equals(getPublication(), that.getPublication())
+               && Objects.equals(getMessages(), that.getMessages());
     }
 
     @JacocoGenerated
