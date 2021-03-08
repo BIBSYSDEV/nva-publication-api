@@ -22,6 +22,10 @@ import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
 import software.amazon.ion.system.IonTextWriterBuilder;
 
+/**
+ * Reads data from an S3 bucket and maps it into POJOs. It expects the data to be a DynamoDb export is S3 in AWS-ION
+ * format.
+ */
 public class DataImporter {
 
     public static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\\{";
