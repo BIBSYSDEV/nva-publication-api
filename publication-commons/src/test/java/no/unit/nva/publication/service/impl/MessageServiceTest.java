@@ -226,7 +226,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
 
     private ResourceConversation[] constructExpectedCuratorsMessageView(URI customerId,
                                                                         List<Message> allMessagesOfAllOwnersAndCustomers) {
-        var messagesOfSpecifiedCustomer = filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
+        var messagesOfSpecifiedCustomer =
+            filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
         var conversationList = ResourceConversation.fromMessageList(messagesOfSpecifiedCustomer);
         return conversationList.toArray(new ResourceConversation[0]);
     }
