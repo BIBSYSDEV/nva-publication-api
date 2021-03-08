@@ -16,11 +16,13 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
 
     private final ResourceService resourceService;
+    private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
 
     @JacocoGenerated
     public PublicationsByOwnerHandler() {
@@ -37,7 +39,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
      */
     public PublicationsByOwnerHandler(ResourceService resourceService,
                                       Environment environment) {
-        super(Void.class, environment, LoggerFactory.getLogger(PublicationsByOwnerHandler.class));
+        super(Void.class, environment);
         this.resourceService = resourceService;
     }
 

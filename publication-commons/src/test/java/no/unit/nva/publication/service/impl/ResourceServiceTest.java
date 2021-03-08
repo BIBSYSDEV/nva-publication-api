@@ -289,16 +289,24 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(expectedCause);
-        
+
         ResourceService failingService = new ResourceService(client, clock);
-        
+
         Publication resource = publicationWithIdentifier();
         Executable action = () -> failingService.createPublication(resource);
         TransactionFailedException actualException = assertThrows(TransactionFailedException.class, action);
         Throwable actualCause = actualException.getCause();
         assertThat(actualCause.getMessage(), is(equalTo(expectedMessage)));
     }
-    
+
+    @Test
+    public void createPublicationWithPredefinedIdentifierStoresPublicationInDatabase()
+        throws TransactionFailedException {
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        Publication savedPublication = resourceService.createPublicationWithPredefinedIdentifier(publication);
+        assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
+    }
+
     @Test
     public void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);

@@ -21,7 +21,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.LoggerFactory;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
@@ -52,7 +51,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
      */
     public CreatePublicationHandler(ResourceService publicationService,
                                     Environment environment) {
-        super(CreatePublicationRequest.class, environment, LoggerFactory.getLogger(CreatePublicationHandler.class));
+        super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
         this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
@@ -77,7 +76,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     private void setLocationHeader(SortableIdentifier identifier) {
-        setAdditionalHeadersSupplier(() -> Map.of(
+        addAdditionalHeaders(() -> Map.of(
             HttpHeaders.LOCATION,
             getLocation(identifier).toString())
         );

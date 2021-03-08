@@ -18,7 +18,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
-import org.slf4j.LoggerFactory;
 
 public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
     
@@ -44,7 +43,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
      */
     public ModifyPublicationHandler(ResourceService resourceService,
                                     Environment environment) {
-        super(UpdatePublicationRequest.class, environment, LoggerFactory.getLogger(ModifyPublicationHandler.class));
+        super(UpdatePublicationRequest.class, environment);
         this.resourceService = resourceService;
     }
 

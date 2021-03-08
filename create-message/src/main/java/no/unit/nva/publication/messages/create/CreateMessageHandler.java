@@ -1,6 +1,5 @@
 package no.unit.nva.publication.messages.create;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -8,10 +7,12 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -22,13 +23,9 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest, Void> {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(CreateMessageHandler.class);
     private final MessageService messageService;
     private final ResourceService resourceService;
 
@@ -44,7 +41,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     public CreateMessageHandler(Environment environment,
                                 MessageService messageService,
                                 ResourceService resourceService) {
-        super(CreateMessageRequest.class, environment, LOGGER);
+        super(CreateMessageRequest.class, environment);
         this.messageService = messageService;
         this.resourceService = resourceService;
     }
@@ -52,13 +49,10 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     @Override
     protected Void processInput(CreateMessageRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        String json = attempt(() -> JsonUtils.objectMapper.writeValueAsString(input)).orElseThrow();
-        logger.info(json);
+        Publication publication = fetchExistingPublication(input);
         UserInstance sender = createSender(requestInfo);
 
-        Publication publication = fetchExistingPublication(input);
         URI messageId = sendMessage(input, sender, publication);
-
         addAdditionalHeaders(() -> locationHeader(messageId.toString()));
 
         return null;
@@ -90,15 +84,23 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         }
     }
 
-    private URI sendMessage(CreateMessageRequest input,
-                            UserInstance sender,
-                            Publication publication
-    ) throws TransactionFailedException, BadRequestException {
+    private URI sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
+        throws TransactionFailedException, BadRequestException {
         try {
-            return messageService.createMessage(sender, publication, input.getMessage());
+            var messageIdentifier = trySendMessage(input, sender, publication);
+            return MessageDto.constructMessageId(messageIdentifier);
         } catch (InvalidInputException exception) {
             throw handleBadRequests(exception);
         }
+    }
+
+    private SortableIdentifier trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
+        throws TransactionFailedException {
+
+        return input.isDoiRequestRelated() ?
+                   messageService.createDoiRequestMessage(sender, publication, input.getMessage())
+                   : messageService.createSimpleMessage(sender, publication, input.getMessage());
+
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {

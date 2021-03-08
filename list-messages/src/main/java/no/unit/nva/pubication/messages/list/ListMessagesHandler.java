@@ -8,18 +8,15 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.List;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceMessages;
+import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessages[]> {
+public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConversation[]> {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(ListMessagesHandler.class);
     private final MessageService messageService;
 
     @JacocoGenerated
@@ -28,21 +25,25 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
     }
 
     public ListMessagesHandler(Environment environment, MessageService messageService) {
-        super(Void.class, environment, LOGGER);
+        super(Void.class, environment);
         this.messageService = messageService;
     }
 
     @Override
-    protected ResourceMessages[] processInput(Void input, RequestInfo requestInfo, Context context) {
-        String feideId = requestInfo.getFeideId().orElse(null);
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        UserInstance userInstance = new UserInstance(feideId, customerId);
-        List<ResourceMessages> result = messageService.listMessagesForUser(userInstance);
+    protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context) {
+        UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
+        List<ResourceConversation> result = messageService.listMessagesForUser(userInstance);
         return convertListToArray(result);
     }
 
+    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
+        String feideId = requestInfo.getFeideId().orElse(null);
+        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        return new UserInstance(feideId, customerId);
+    }
+
     @Override
-    protected Integer getSuccessStatusCode(Void input, ResourceMessages[] output) {
+    protected Integer getSuccessStatusCode(Void input, ResourceConversation[] output) {
         return HttpURLConnection.HTTP_OK;
     }
 
@@ -52,9 +53,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceMessage
         return new MessageService(client, Clock.systemDefaultZone());
     }
 
-    private ResourceMessages[] convertListToArray(List<ResourceMessages> result) {
-        ResourceMessages[] resultArray = new ResourceMessages[result.size()];
-        result.toArray(resultArray);
-        return resultArray;
+    private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {
+        return result.toArray(ResourceConversation[]::new);
     }
 }

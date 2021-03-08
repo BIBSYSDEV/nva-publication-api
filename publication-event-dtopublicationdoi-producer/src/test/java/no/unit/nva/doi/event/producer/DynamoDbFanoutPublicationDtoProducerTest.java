@@ -8,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -19,8 +20,16 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.file.Path;
+import no.unit.nva.events.handlers.EventParser;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
+import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import nva.commons.core.ioutils.IoUtils;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -46,6 +55,10 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST =
         "resource_update_event_publication_without_doi_request.json";
     private static final String PUBLICATION_WITHOUT_IDENTIFIER = "resource_update_event_publication_without_id.json";
+
+    public static final Javers JAVERS = JaversBuilder.javers().build();
+    private static final String EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE =
+        "resource_update_event_old_and_new_present_with_doi_and_different_modified_date.json";
     private DynamoDbFanoutPublicationDtoProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
@@ -134,6 +147,20 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     }
 
     @Test
+    void handlerCreatesNoOutputWhenPublicationUpdateDiffersOnlyInModifiedDate() throws JsonProcessingException {
+        var event =
+            IoUtils.stringFromResources(Path.of(EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE));
+
+        assertThatEventsDifferOnlyInModifiedDate(event);
+
+        var eventInputStream = IoUtils.stringToStream(event);
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
+
+        assertThat(actual, is(equalTo(EMPTY_EVENT)));
+    }
+
+    @Test
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources((RESOURCE_UPDATE_EVENT_OLD_ONLY));
         handler.handleRequest(eventInputStream, outputStream, context);
@@ -160,6 +187,33 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
+    }
+
+    private void assertThatEventsDifferOnlyInModifiedDate(String event) {
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventObject = parseEvent(event);
+
+        Publication newPublication = eventObject.getDetail().getResponsePayload().getNewPublication();
+        Publication oldPublication = eventObject.getDetail().getResponsePayload().getOldPublication();
+
+        assertThat(newPublication, is(not(equalTo(oldPublication))));
+        assertThatNewAndOldDifferOnlyInModifiedDate(newPublication, oldPublication);
+    }
+
+    private void assertThatNewAndOldDifferOnlyInModifiedDate(Publication newPublication, Publication oldPublication) {
+        Publication newFromOld = oldPublication.copy().build();
+        newFromOld.setModifiedDate(newPublication.getModifiedDate());
+        newFromOld.getDoiRequest().setModifiedDate(newPublication.getDoiRequest().getModifiedDate());
+
+        Diff diff = JAVERS.compare(newFromOld, newPublication);
+        assertThat(diff.prettyPrint(), newPublication, is((equalTo(newFromOld))));
+    }
+
+    @SuppressWarnings("unchecked")
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String event) {
+        EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventEventParser =
+            new EventParser<>(event);
+        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
+                   eventEventParser.parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
     }
 
     private boolean hasDoiField(String eventInput) {

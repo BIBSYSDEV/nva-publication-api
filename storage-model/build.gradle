@@ -6,16 +6,14 @@ repositories {
 
 dependencies {
 
-    implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-
+    testImplementation project (":publication-testing")
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
     testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
-    testImplementation project (":publication-testing")
-
 
     testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'

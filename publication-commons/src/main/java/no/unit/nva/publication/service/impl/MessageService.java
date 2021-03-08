@@ -18,6 +18,7 @@ import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -38,13 +39,18 @@ public class MessageService extends ServiceWithTransactions {
 
     public static final String RAWTYPES = "rawtypes";
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
+
+    public static final String PATH_SEPARATOR = "/";
     private static final int MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX = 0;
     private static final int MESSAGES_BY_RESOURCE_RESULT_FIRST_MESSAGE_INDEX =
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
-    public static final String PATH_SEPARATOR = "/";
+
+    private static final int OLDEST_MESSAGE = 0;
+
     private final AmazonDynamoDB client;
     private final String tableName;
     private final Clock clockForTimestamps;
+
     private final Supplier<SortableIdentifier> identifierSupplier;
 
     public MessageService(AmazonDynamoDB client, Clock clockForTimestamps) {
@@ -61,16 +67,23 @@ public class MessageService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
     }
 
-    //TODO replace extraction SortableIdentifier.fromUri() when nva-commons it at version 1.1.1.
-    public static SortableIdentifier extractIdentifier(URI uri) {
-        String[] path = uri.getPath().split(PATH_SEPARATOR);
-        return new SortableIdentifier(path[path.length - 1]);
+
+
+    @JacocoGenerated
+    @Deprecated
+    public SortableIdentifier createMessage(UserInstance sender,
+                                            Publication publication,
+                                            String messageText) throws TransactionFailedException {
+        return createSimpleMessage(sender, publication, messageText);
     }
 
-    public URI createMessage(UserInstance sender,
-                             Publication publication,
-                             String messageText) throws TransactionFailedException {
-        Message message = createNewMessage(sender, publication, messageText);
+    public SortableIdentifier createDoiRequestMessage(UserInstance sender, Publication publication, String messageText)
+        throws TransactionFailedException {
+        Message message = createNewDoiRequestMessage(sender, publication, messageText);
+        return writeMessageToDb(message);
+    }
+
+    public SortableIdentifier writeMessageToDb(Message message) throws TransactionFailedException {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
@@ -78,11 +91,17 @@ public class MessageService extends ServiceWithTransactions {
 
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
-        return message.getId();
+        return message.getIdentifier();
+    }
+
+    public SortableIdentifier createSimpleMessage(UserInstance sender, Publication publication, String messageText)
+        throws TransactionFailedException {
+        Message message = createNewSimpleMessage(sender, publication, messageText);
+        return writeMessageToDb(message);
     }
 
     public Message getMessage(UserInstance owner, URI messageId) {
-        SortableIdentifier identifier = extractIdentifier(messageId);
+        SortableIdentifier identifier = SortableIdentifier.fromUri(messageId);
         return getMessage(owner, identifier);
     }
 
@@ -96,7 +115,7 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     @SuppressWarnings(RAWTYPES)
-    public ResourceMessages getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
+    public Optional<ResourceConversation> getMessagesForResource(UserInstance user, SortableIdentifier identifier) {
         ResourceDao queryObject = ResourceDao.queryObject(user, identifier);
         QueryRequest queryRequest = queryForRetrievingMessagesByResource(queryObject);
         List<Dao> resultDaos = executeQuery(queryRequest);
@@ -112,12 +131,12 @@ public class MessageService extends ServiceWithTransactions {
                    .collect(Collectors.toList());
     }
 
-    public List<ResourceMessages> listMessagesForUser(UserInstance owner) {
+    public List<ResourceConversation> listMessagesForUser(UserInstance owner) {
         MessageDao queryObject = MessageDao.listMessagesAndResourcesForUser(owner);
         QueryRequest queryRequest = queryForFetchingAllMessagesForAUser(queryObject);
         QueryResult queryResult = client.query(queryRequest);
         Map<SortableIdentifier, List<Message>> messagesPerResource = groupMessagesByResourceIdentifier(queryResult);
-        return createResponseObjects(messagesPerResource);
+        return createResponseDtos(messagesPerResource);
     }
 
     @Override
@@ -140,13 +159,18 @@ public class MessageService extends ServiceWithTransactions {
         return SortableIdentifier::next;
     }
 
-    private List<ResourceMessages> createResponseObjects(Map<SortableIdentifier, List<Message>> messagesPerResource) {
+
+    private List<ResourceConversation> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
         return messagesPerResource
                    .values()
                    .stream()
-                   .map(ResourceMessages::fromMessageList)
-                   .sorted(Comparator.comparing(resourceMessage -> resourceMessage.getPublication().getIdentifier()))
+                   .flatMap(messages -> ResourceConversation.fromMessageList(messages).stream())
+                   .sorted(sortByOldestMessageCreationDate())
                    .collect(Collectors.toList());
+    }
+
+    private Comparator<ResourceConversation> sortByOldestMessageCreationDate() {
+        return Comparator.comparing(resourceMessage -> resourceMessage.getMessages().get(OLDEST_MESSAGE).getDate());
     }
 
     private Map<SortableIdentifier, List<Message>> groupMessagesByResourceIdentifier(QueryResult queryResult) {
@@ -170,14 +194,30 @@ public class MessageService extends ServiceWithTransactions {
                    .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
     }
 
-    private Message createNewMessage(UserInstance sender, Publication publication, String messageText) {
+    private Message createNewSimpleMessage(UserInstance sender, Publication publication, String messageText
+
+    ) {
         requireMessageIsNotBlank(messageText);
         SortableIdentifier messageIdentifier = identifierSupplier.get();
-        return Message.simpleMessage(sender,
+        return Message.simpleMessage(
+            sender,
             publication,
             messageText,
             messageIdentifier,
-            clockForTimestamps);
+            clockForTimestamps
+        );
+    }
+
+    private Message createNewDoiRequestMessage(UserInstance sender, Publication publication, String messageText) {
+        requireMessageIsNotBlank(messageText);
+        SortableIdentifier messageIdentifier = identifierSupplier.get();
+        return Message.doiRequestMessage(
+            sender,
+            publication,
+            messageText,
+            messageIdentifier,
+            clockForTimestamps
+        );
     }
 
     private void requireMessageIsNotBlank(String messageText) {
@@ -186,9 +226,11 @@ public class MessageService extends ServiceWithTransactions {
         }
     }
 
-    private ResourceMessages messagesWithResource(List<Dao> daos) {
+
+    @SuppressWarnings(RAWTYPES)
+    private Optional<ResourceConversation> messagesWithResource(List<Dao> daos) {
         List<Message> messages = extractMessages(daos);
-        return ResourceMessages.fromMessageList(messages);
+        return ResourceConversation.fromMessageList(messages);
     }
 
     @SuppressWarnings(RAWTYPES)
@@ -210,9 +252,10 @@ public class MessageService extends ServiceWithTransactions {
     }
 
     private QueryRequest queryForRetrievingMessagesByResource(ResourceDao queryObject) {
-        Map<String, Condition> keyCondition = queryObject.byResource(
-            ResourceDao.joinByResourceContainedOrderedType(),
-            MessageDao.joinByResourceOrderedContainedType());
+        String searchStartPoint = ResourceDao.joinByResourceContainedOrderedType();
+        String searchEndingPoint = MessageDao.joinByResourceOrderedContainedType();
+        Map<String, Condition> keyCondition = queryObject.byResource(searchStartPoint, searchEndingPoint);
+
         return new QueryRequest()
                    .withTableName(RESOURCES_TABLE_NAME)
                    .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)

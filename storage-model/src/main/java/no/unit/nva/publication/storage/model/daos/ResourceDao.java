@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -7,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -45,7 +45,7 @@ public class ResourceDao extends Dao<Resource>
 
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + Resource.getType();
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + Resource.getType();
     }
 
     @JsonIgnore

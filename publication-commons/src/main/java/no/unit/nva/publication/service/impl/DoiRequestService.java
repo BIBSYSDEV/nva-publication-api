@@ -101,27 +101,29 @@ public class DoiRequestService extends ServiceWithTransactions {
         DoiRequestDao dao = parseAttributeValuesMap(item, DoiRequestDao.class);
         return dao.getData();
     }
-    
+
     public DoiRequest getDoiRequestByResourceIdentifier(UserInstance userInstance,
                                                         SortableIdentifier resourceIdentifier)
         throws NotFoundException {
         return getDoiRequestByResourceIdentifier(userInstance, resourceIdentifier, tableName, client);
     }
-    
+
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws BadRequestException, TransactionFailedException {
-        
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
+        return createDoiRequest(publication);
+    }
+
+    public SortableIdentifier createDoiRequest(Publication publication) throws TransactionFailedException {
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
-        
         sendTransactionWriteRequest(request);
         return doiRequest.getIdentifier();
     }
-    
+
     public List<DoiRequest> listDoiRequestsForPublishedPublications(UserInstance userInstance) {
         QueryRequest query = queryForListingDoiRequestsForPublishedResourcesByCustomer(userInstance);
-        
+
         QueryResult result = client.query(query);
         
         return parseListingDoiRequestsQueryResult(result);

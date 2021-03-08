@@ -71,22 +71,32 @@ public class ResourceService extends ServiceWithTransactions {
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
-    
+
     public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
-    
+
     public Publication createPublication(Publication inputData) throws TransactionFailedException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
+        return insertResource(newResource);
+    }
+
+    public Publication createPublicationWithPredefinedIdentifier(Publication publication)
+        throws TransactionFailedException {
+        Resource resource = Resource.fromPublication(publication);
+        return insertResource(resource);
+    }
+
+    private Publication insertResource(Resource newResource) throws TransactionFailedException {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
-        
+
         return fetchSavedResource(newResource);
     }
-    
+
     public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
                                                                SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {

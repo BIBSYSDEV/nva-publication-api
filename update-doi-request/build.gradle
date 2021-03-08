@@ -12,8 +12,8 @@ dependencies {
     implementation project(":publication-commons")
     testImplementation project(":publication-commons")
 
-    implementation group: 'no.unit.nva', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'no.unit.nva', name: 'logutils', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     implementation group:'com.github.BIBSYSDEV.nva-user-access-service', name:'user-access-rights', version:'0.3.0'
 
     testImplementation project (':publication-testing')

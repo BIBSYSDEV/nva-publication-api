@@ -63,9 +63,6 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
-  OrestisResources:
-    Type: String
-    Default: 'OrestisResources'
 
 Resources:
 
@@ -506,7 +503,7 @@ Resources:
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
@@ -554,7 +551,7 @@ Resources:
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
@@ -581,10 +578,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref OrestisResources
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
@@ -628,10 +627,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref OrestisResources
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
+            TableName: !Ref PublicationsTableName
       Events:
         PutEvent:
           Type: Api
@@ -653,6 +654,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -676,6 +679,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -701,6 +706,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -728,6 +736,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
+          TABLE_NAME: !Ref PublicationsTableName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -754,6 +763,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -777,6 +787,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -800,6 +813,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -929,6 +945,8 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1000,6 +1018,8 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
