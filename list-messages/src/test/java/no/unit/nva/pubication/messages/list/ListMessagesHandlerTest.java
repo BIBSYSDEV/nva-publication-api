@@ -55,7 +55,6 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final Context CONTEXT = mock(Context.class);
     public static final String SOME_OTHER_USER = "some@otheruser";
     public static final Faker FAKER = Faker.instance();
-    public static final int FIRST = 0;
     public static final String ALLOW_EVERYTHING = "*";
     public static final String CURATOR_ROLE = "Curator";
     public static final String ROLE_QUERY_PARAMETER = "role";
@@ -131,7 +130,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         List<Publication> publications = createPublicationsOfDifferentOwners();
         final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
 
-        final var expectedResponse = constructExpectedResponse(messages);
+        final ResourceConversation[] expectedResponse = constructExpectedResponse(messages);
 
         URI orgURI = messages.get(0).getCustomerId();
         UserInstance curator = someCurator(orgURI);
@@ -143,10 +142,6 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
 
         assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
-    }
-
-    private static String randomEmail() {
-        return FAKER.internet().emailAddress();
     }
 
     private List<Publication> createPublicationsOfDifferentOwners() {

@@ -55,8 +55,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private static final String EXISTING_REMOTE_BUCKET_NAME = "orestis-export";
     private static final Set<Publication> EXPECTED_IMPORTED_PUBLICATIONS_WITH_DOI_REQUESTS =
         constructExpectedPublicationsWithDoiRequests();
-    public static final String SOME_VALID_HOST = "localhost";
-    public static final String SOME_VALID_NETWORK_SCHME = "https";
     private ResourceService resourceService;
     private FakeS3Driver fakeS3Client;
     private S3Driver remoteS3Client;
