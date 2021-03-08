@@ -71,7 +71,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         messageService = new MessageService(client, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         environment = setupEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
@@ -159,10 +158,6 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
-        when(environment.readEnv(ServiceEnvironmentConstants.HOST_ENV_VARIABLE_NAME))
-            .thenReturn(SOME_VALID_HOST);
-        when(environment.readEnv(ServiceEnvironmentConstants.NETWORK_SCHEME_ENV_VARIABLE_NAME))
-            .thenReturn(HTTPS);
         return environment;
     }
 

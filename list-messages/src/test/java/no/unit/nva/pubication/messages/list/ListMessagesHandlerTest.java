@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -76,7 +75,6 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
-        ServiceEnvironmentConstants.updateEnvironment(environment);
         handler = new ListMessagesHandler(environment, messageService);
     }
 

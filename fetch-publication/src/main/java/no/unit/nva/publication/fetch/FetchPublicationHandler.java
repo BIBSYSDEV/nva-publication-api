@@ -11,7 +11,6 @@ import no.unit.nva.model.util.ContextUtil;
 import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -51,9 +50,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     @Override
     protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        Publication publication = resourceService.getPublication(userInstance, identifier);
+        Publication publication = resourceService.getPublicationByIdentifier(identifier);
         return toJsonNodeWithContext(publication);
     }
 
