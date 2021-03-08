@@ -184,7 +184,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         var publisherId = createdPublications.get(FIRST_ELEMENT).getPublisher().getId();
         var actualConversation = messageService.listMessagesForCurator(publisherId, MessageStatus.UNREAD);
 
-        var expectedConversation = constructExpectedCuratorsMessageView(publisherId,savedMessages);
+        var expectedConversation = constructExpectedCuratorsMessageView(publisherId, savedMessages);
         assertThat(actualConversation, contains(expectedConversation));
     }
 
@@ -224,8 +224,9 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
     }
 
-    private ResourceConversation[] constructExpectedCuratorsMessageView(URI customerId,
-                                                                        List<Message> allMessagesOfAllOwnersAndCustomers) {
+    private ResourceConversation[] constructExpectedCuratorsMessageView(
+        URI customerId,
+        List<Message> allMessagesOfAllOwnersAndCustomers) {
         var messagesOfSpecifiedCustomer =
             filterBasedOnCustomerId(customerId, allMessagesOfAllOwnersAndCustomers);
         var conversationList = ResourceConversation.fromMessageList(messagesOfSpecifiedCustomer);
