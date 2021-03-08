@@ -63,7 +63,8 @@ Resources:
             ProjectionType: ALL
       StreamSpecification:
         StreamViewType: NEW_AND_OLD_IMAGES
-      PointInTimeRecoverySpecification: true
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
 
 Outputs:
