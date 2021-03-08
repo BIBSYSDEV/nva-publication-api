@@ -6,8 +6,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.github.javafaker.Faker;
 import java.time.Clock;
 import java.util.ArrayList;
@@ -17,12 +15,8 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.storage.model.Message;
-import nva.commons.core.Environment;
-import org.hamcrest.core.Is;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ResourceConversationTest {
@@ -36,7 +30,7 @@ class ResourceConversationTest {
     public void returnsListOfResourceConversationsForEachMentionedResource() {
         var publications =
             PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, WITH_IDENTIFIER);
-        ArrayList<Message> allMessages = twoMessagesPerPublication(publications);
+        var allMessages = twoMessagesPerPublication(publications);
 
         List<ResourceConversation> conversations = ResourceConversation.fromMessageList(allMessages);
         MessageDto oldestMessage = conversations.get(0).getMessages().get(0);
