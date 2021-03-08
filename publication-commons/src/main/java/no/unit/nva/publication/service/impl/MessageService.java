@@ -32,6 +32,7 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.MessageDao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
@@ -46,6 +47,7 @@ public class MessageService extends ServiceWithTransactions {
         MESSAGES_BY_RESOURCE_RESULT_RESOURCE_INDEX + 1;
 
     private static final int OLDEST_MESSAGE = 0;
+    public static final String MESSAGE_NOT_FOUND_ERROR = "Could not find message with identifier:";
 
     private final AmazonDynamoDB client;
     private final String tableName;
@@ -66,8 +68,6 @@ public class MessageService extends ServiceWithTransactions {
         this.clockForTimestamps = clockForTimestamps;
         this.identifierSupplier = identifierSupplier;
     }
-
-
 
     @JacocoGenerated
     @Deprecated
@@ -100,18 +100,29 @@ public class MessageService extends ServiceWithTransactions {
         return writeMessageToDb(message);
     }
 
-    public Message getMessage(UserInstance owner, URI messageId) {
+    public Message getMessage(UserInstance owner, URI messageId) throws NotFoundException {
         SortableIdentifier identifier = SortableIdentifier.fromUri(messageId);
         return getMessage(owner, identifier);
     }
 
-    public Message getMessage(UserInstance owner, SortableIdentifier identifier) {
+    public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
         MessageDao queryObject = MessageDao.queryObject(owner, identifier);
+        Map<String, AttributeValue> item = fetchMessage(queryObject);
+
+        MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
+        return result.getData();
+    }
+
+    private Map<String, AttributeValue> fetchMessage(MessageDao queryObject) throws NotFoundException {
+
         GetItemRequest getMessageRequest = getMessageByPrimaryKey(queryObject);
         GetItemResult queryResult = client.getItem(getMessageRequest);
         Map<String, AttributeValue> item = queryResult.getItem();
-        MessageDao result = parseAttributeValuesMap(item, MessageDao.class);
-        return result.getData();
+
+        if (item.isEmpty()) {
+            throw new NotFoundException(MESSAGE_NOT_FOUND_ERROR + queryObject.getIdentifier().toString());
+        }
+        return item;
     }
 
     @SuppressWarnings(RAWTYPES)
@@ -158,7 +169,6 @@ public class MessageService extends ServiceWithTransactions {
     private static Supplier<SortableIdentifier> defaultIdentifierSupplier() {
         return SortableIdentifier::next;
     }
-
 
     private List<ResourceConversation> createResponseDtos(Map<SortableIdentifier, List<Message>> messagesPerResource) {
         return messagesPerResource
@@ -225,7 +235,6 @@ public class MessageService extends ServiceWithTransactions {
             throw new InvalidInputException(EMPTY_MESSAGE_ERROR);
         }
     }
-
 
     @SuppressWarnings(RAWTYPES)
     private Optional<ResourceConversation> messagesWithResource(List<Dao> daos) {

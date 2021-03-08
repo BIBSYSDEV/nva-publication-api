@@ -1,127 +1,55 @@
 package no.unit.nva.publication.migration;
 
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.attempt.Try;
-import software.amazon.ion.IonReader;
-import software.amazon.ion.IonWriter;
-import software.amazon.ion.system.IonReaderBuilder;
-import software.amazon.ion.system.IonTextWriterBuilder;
 
-public class PublicationImporter {
+public class PublicationImporter extends DataImporter {
 
-    public static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\\{";
-    public static final String SUCCESSIVE_ELEMENTS_IN_ARRAY = "},{";
-    public static final String BEGIN_ARRAY_DELIMITER = "[";
-    public static final String END_ARRAY_DELIMITER = "]";
-    public static final String ION_ITEM = "Item";
-    private final S3Driver s3Client;
-    private final Path dataPath;
+    public static final String RESOURCE_TYPE = "publications";
+    private final ResourceService resourceService;
 
-    public PublicationImporter(S3Driver s3Client, Path dataPath) {
-        this.s3Client = s3Client;
-        this.dataPath = dataPath;
-    }
-
-    public List<Publication> getPublications() {
-        List<String> content = s3Client.getFiles(dataPath);
-        List<Publication> publicationsWithDuplicates = mapIonObjectsToPublications(content.stream())
-                                                           .collect(Collectors.toList());
-
-        return removeDuplicates(publicationsWithDuplicates.stream());
+    public PublicationImporter(S3Driver s3Client, Path dataPath, ResourceService resourceService) {
+        super(s3Client, dataPath);
+        this.resourceService = resourceService;
     }
 
     public List<Resource> createResources(List<Publication> publications) {
         return publications.stream().map(Resource::fromPublication).collect(Collectors.toList());
     }
 
-    protected static List<Publication> removeDuplicates(Stream<Publication> publicationsWithDuplicates) {
-        Map<SortableIdentifier, List<Publication>> groupedByIdentifier =
-            groupPublicationsByIdentifier(publicationsWithDuplicates);
-        return selectLatestVersionForEachIdentifier(groupedByIdentifier);
-    }
-
-    private static List<Publication> selectLatestVersionForEachIdentifier(
-        Map<SortableIdentifier, List<Publication>> groupedByIdentifier) {
-
-        return groupedByIdentifier.values().stream()
-                   .map(PublicationImporter::selectMostRecentVersion)
-                   .collect(Collectors.toList());
-    }
-
-    private static Map<SortableIdentifier, List<Publication>> groupPublicationsByIdentifier(
-        Stream<Publication> publicationsWithDuplicates) {
-        return publicationsWithDuplicates.collect(Collectors.groupingBy(Publication::getIdentifier));
-    }
-
-    private static Publication selectMostRecentVersion(List<Publication> duplicates) {
-        return duplicates.stream().reduce(PublicationImporter::mostRecent).orElseThrow();
-    }
-
-    private static Publication mostRecent(Publication left, Publication right) {
-        return left.getModifiedDate().isAfter(right.getModifiedDate()) ? left : right;
-    }
-
-    private static String addArrayDelimiters(String arrayElements) {
-        return BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
-    }
-
-    private static String makeConsecutiveJsonObjectsElementsOfJsonArray(String jsonObjects) {
-        return jsonObjects.replaceAll(CONSECUTIVE_JSON_OBJECTS, SUCCESSIVE_ELEMENTS_IN_ARRAY);
-    }
-
-    private static List<Publication> parseJson(String json) {
-        JsonNode root = attempt(() -> objectMapper.readTree(json)).orElseThrow();
-        return root.isArray() ? parseJsonArrayWithIonItems((ArrayNode) root) : Collections.emptyList();
-    }
-
-    private static List<Publication> parseJsonArrayWithIonItems(ArrayNode root) {
-        return StreamSupport.stream(root.spliterator(), false)
-                   .map(jsonNode -> jsonNode.get(ION_ITEM))
-                   .map(item -> objectMapper.convertValue(item, Publication.class))
-                   .collect(Collectors.toList());
-    }
-
-    private static String toJsonObjects(String ion) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        try (IonWriter writer = IonTextWriterBuilder.json().build(stringBuilder)) {
-            rewrite(ion, writer);
-        }
-        return stringBuilder.toString();
-    }
-
-    private static void rewrite(String textIon, IonWriter writer) throws IOException {
-        try (IonReader reader = IonReaderBuilder.standard().build(textIon)) {
-            writer.writeValues(reader);
-        }
-    }
-
-    private Stream<Publication> mapIonObjectsToPublications(Stream<String> content) {
-        return content
-                   .map(attempt(PublicationImporter::toJsonObjects))
-                   .map(attempt -> attempt.map(this::transformMultipleJsonObjectsToJsonArrayWithObjects))
+    public List<ResourceUpdate> insertPublications(List<Publication> publications) {
+        return publications.stream()
+                   .map(attempt(publication -> insertPublication(resourceService, publication)))
+                   .map(attempt -> attempt.map(this::fetchUpdatedPublication))
                    .map(Try::orElseThrow)
-                   .map(PublicationImporter::parseJson)
-                   .flatMap(Collection::stream);
+                   .collect(Collectors.toList());
     }
 
-    private String transformMultipleJsonObjectsToJsonArrayWithObjects(String jsonObjects) {
-        String arrayElements = makeConsecutiveJsonObjectsElementsOfJsonArray(jsonObjects);
-        return addArrayDelimiters(arrayElements);
+    private Publication insertPublication(ResourceService resourceService, Publication publication)
+        throws TransactionFailedException {
+        resourceService.insertPreexistingPublication(publication);
+        return publication;
+    }
+
+    private ResourceUpdate fetchUpdatedPublication(Publication oldPublicationVersion) {
+        return attempt(() -> resourceService.getPublication(oldPublicationVersion))
+                   .map(updatedPublication -> successfulUpdate(oldPublicationVersion, updatedPublication))
+                   .orElse(fail -> failedUpdate(oldPublicationVersion, fail.getException()));
+    }
+
+    private ResourceUpdate failedUpdate(Publication oldPublicationVersion, Exception exception) {
+        return ResourceUpdate.createFailedUpdate(RESOURCE_TYPE, oldPublicationVersion, exception);
+    }
+
+    private ResourceUpdate successfulUpdate(Publication oldPublicationVersion, Publication updatedPublication) {
+        return ResourceUpdate.createSuccessfulUpdate(RESOURCE_TYPE, oldPublicationVersion, updatedPublication);
     }
 }
