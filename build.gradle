@@ -31,7 +31,7 @@ allprojects {
         awsSdk2Version = '2.14.16'
         nvaDatamodelVersion = 'a3e0cd83d2ede893bd8bb1029381e326a8420749'
         nvaDatamodelVersion= "0.11.6"
-        nvaCommonsVersion = '1.2.3'
+        nvaCommonsVersion = '1.2.5'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
         jacksonVersion = '2.10.2'
@@ -66,9 +66,8 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-        //TODO: restore correct package when new version has been created.
-        implementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: '3decdcea0032394b1e0cb1165c791b4c310ba638'
-//        implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+
+        implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
         implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
 
