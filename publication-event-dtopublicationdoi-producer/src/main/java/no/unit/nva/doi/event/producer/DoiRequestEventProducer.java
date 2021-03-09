@@ -7,6 +7,8 @@ import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.DoiRequest;
+import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
@@ -19,7 +21,7 @@ import org.slf4j.LoggerFactory;
  * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
  * `publication.doirequest`.
  */
-public class DynamoDbFanoutPublicationDtoProducer
+public class DoiRequestEventProducer
     extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
     public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "publication.doiupdate.newdraftdoirequest";
@@ -28,10 +30,10 @@ public class DynamoDbFanoutPublicationDtoProducer
 
     private static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
-    private static final Logger logger = LoggerFactory.getLogger(DynamoDbFanoutPublicationDtoProducer.class);
+    private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
 
     @JacocoGenerated
-    public DynamoDbFanoutPublicationDtoProducer() {
+    public DoiRequestEventProducer() {
         super(DynamoEntryUpdateEvent.class);
     }
 
@@ -121,18 +123,42 @@ public class DynamoDbFanoutPublicationDtoProducer
         var newPublication = updateEvent.getNewPublication();
         var oldPublication = updateEvent.getOldPublication();
         if (nonNull(newPublication)) {
-            return newDoiRelatedMetadataDifferFromOld(newPublication, oldPublication);
+            return
+                doiRequestGotApproved(updateEvent)
+                || newDoiRelatedMetadataDifferFromOld(newPublication, oldPublication);
         }
         return false;
     }
 
+    private boolean doiRequestGotApproved(DynamoEntryUpdateEvent updateEvent) {
+        DoiRequestStatus oldStatus = extractOldPublicationStatus(updateEvent);
+        DoiRequestStatus newStatus = extractNewPublicationStatus(updateEvent);
+        return DoiRequestStatus.REQUESTED.equals(oldStatus) && DoiRequestStatus.APPROVED.equals(newStatus);
+    }
+
+    private DoiRequestStatus extractNewPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
+                   .map(DynamoEntryUpdateEvent::getNewPublication)
+                   .map(Publication::getDoiRequest)
+                   .map(DoiRequest::getStatus)
+                   .orElse(null);
+    }
+
+    private DoiRequestStatus extractOldPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
+        return Optional.of(updateEvent)
+                   .map(DynamoEntryUpdateEvent::getOldPublication)
+                   .map(Publication::getDoiRequest)
+                   .map(DoiRequest::getStatus)
+                   .orElse(DoiRequestStatus.REQUESTED);
+    }
+
     private boolean newDoiRelatedMetadataDifferFromOld(Publication newPublication, Publication oldPublication) {
         DoiRegistrarEntryFields doiInfoNew = DoiRegistrarEntryFields.fromPublication(newPublication);
-        DoiRegistrarEntryFields doiInfoOld = extractInfoFromOldInstace(oldPublication);
+        DoiRegistrarEntryFields doiInfoOld = extractInfoFromOldInstance(oldPublication);
         return !doiInfoNew.equals(doiInfoOld);
     }
 
-    private DoiRegistrarEntryFields extractInfoFromOldInstace(Publication oldPublication) {
+    private DoiRegistrarEntryFields extractInfoFromOldInstance(Publication oldPublication) {
         return nonNull(oldPublication) ? DoiRegistrarEntryFields.fromPublication(oldPublication) : null;
     }
 }

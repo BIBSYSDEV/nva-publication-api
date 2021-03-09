@@ -857,13 +857,13 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
-  DynamoDbFanoutPublicationDtoProducer:
+  DoiRequestEventProducer:
     Type: AWS::Serverless::Function
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-dtopublicationdoi-producer
-      Handler: no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer::handleRequest
+      Handler: no.unit.nva.doi.event.producer.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -894,7 +894,7 @@ Resources:
             Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
+            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
 
 
   PublicationFanoutHandler:
@@ -1048,7 +1048,7 @@ Resources:
     Type: "AWS::SQS::Queue"
   DeleteDraftPublicationHandlerDLQ:
     Type: "AWS::SQS::Queue"
-  DynamoDbFanoutPublicationDtoProducerDLQ:
+  DoiRequestEventProducerDLQ:
     Type: "AWS::SQS::Queue"
 
 

@@ -1,7 +1,7 @@
 package no.unit.nva.doi.event.producer;
 
-import static no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer.EMPTY_EVENT;
-import static no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer.NO_RESOURCE_IDENTIFIER_ERROR;
+import static no.unit.nva.doi.event.producer.DoiRequestEventProducer.EMPTY_EVENT;
+import static no.unit.nva.doi.event.producer.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,7 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-class DynamoDbFanoutPublicationDtoProducerTest {
+class DoiRequestEventProducerTest {
 
     public static final String EVENT_PUBLICATION_WITH_DOI_IS_UPDATED =
         "resource_update_event_updated_metadata_with_existing_doi.json";
@@ -55,11 +55,13 @@ class DynamoDbFanoutPublicationDtoProducerTest {
     private static final String PUBLICATION_WITHOUT_DOI_REQUEST =
         "resource_update_event_publication_without_doi_request.json";
     private static final String PUBLICATION_WITHOUT_IDENTIFIER = "resource_update_event_publication_without_id.json";
+    private static final String RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED =
+        "resource_update_event_doi_request_approved_for_publishe_publication.json";
 
     public static final Javers JAVERS = JaversBuilder.javers().build();
     private static final String EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE =
         "resource_update_event_old_and_new_present_with_doi_and_different_modified_date.json";
-    private DynamoDbFanoutPublicationDtoProducer handler;
+    private DoiRequestEventProducer handler;
     private Context context;
     private ByteArrayOutputStream outputStream;
 
@@ -68,7 +70,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
      */
     @BeforeEach
     public void setUp() {
-        handler = new DynamoDbFanoutPublicationDtoProducer();
+        handler = new DoiRequestEventProducer();
         context = mock(Context.class);
         outputStream = new ByteArrayOutputStream();
     }
@@ -97,7 +99,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_REQUEST_FOR_NEW_DRAFT_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_REQUEST_FOR_NEW_DRAFT_DOI)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -108,7 +110,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -120,7 +122,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -132,7 +134,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -176,7 +178,7 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(),
-            is(equalTo(DynamoDbFanoutPublicationDtoProducer.TYPE_UPDATE_EXISTING_DOI)));
+                   is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -187,6 +189,16 @@ class DynamoDbFanoutPublicationDtoProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
+    }
+
+    @Test
+    void handlerCreatesEventWhenDoiRequestIsApprovedForPublishedPublication() throws JsonProcessingException {
+        var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED);
+        handler.handleRequest(eventInputStream, outputStream, context);
+        PublicationHolder actual = outputToPublicationHolder(outputStream);
+
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getItem(), notNullValue());
     }
 
     private void assertThatEventsDifferOnlyInModifiedDate(String event) {
