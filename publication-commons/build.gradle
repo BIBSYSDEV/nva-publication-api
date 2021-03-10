@@ -21,7 +21,7 @@ dependencies {
 
     api group: 'org.zalando', name: 'problem', version: '0.23.0'
     api group: 'org.zalando', name: 'jackson-datatype-problem', version: '0.23.0'
-    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.0'
+    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
     api group: 'com.amazonaws', name: 'aws-java-sdk-core', version: '1.11.933'
     api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
     api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
