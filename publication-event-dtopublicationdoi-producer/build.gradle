@@ -4,12 +4,11 @@ dependencies {
 
     implementation project(':publication-events')
     implementation project(':publication-doi-commons')
+
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
-
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: '1.2.1'
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: project.ext.nvaAwsLambdaJavaEvents
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
 
     compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
