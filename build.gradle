@@ -38,6 +38,7 @@ allprojects {
         jacksonVersion = '2.10.2'
         nvaAwsLambdaJavaEvents = '3.2.0'
         zalandoProblemVersion = '0.25.0'
+        dynamoDbLocalVersion = '1.15.0'
     }
 }
 
