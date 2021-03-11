@@ -118,7 +118,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
 
         MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
-        assertThat(resourceConversation.getMessages(), containsInAnyOrder(expectedMessages));
+        assertThat(resourceConversation.allMessages(), containsInAnyOrder(expectedMessages));
     }
 
     @Test

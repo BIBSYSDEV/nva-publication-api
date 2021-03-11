@@ -147,7 +147,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
             extractOwner(publication),
             publication.getIdentifier());
 
-        MessageDto savedMessage = resourceMessages.orElseThrow().getMessages().get(SINGLE_MESSAGE);
+        MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
         assertThat(savedMessage.isDoiRequestRelated(), is(equalTo(true)));
     }

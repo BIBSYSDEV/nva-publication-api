@@ -143,8 +143,8 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(Stream<ResourceConversation> messages) {
         return messages
-                   .flatMap(resourceMessages -> resourceMessages.getMessages().stream())
-                   .filter(MessageDto::isDoiRequestRelated)
+                   .map(ResourceConversation::getDoiRequestMessages)
+                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
                    .map(this::toDoiRequestMessage)
                    .sorted(sortByTimeOldestFirst())
                    .collect(Collectors.toList());

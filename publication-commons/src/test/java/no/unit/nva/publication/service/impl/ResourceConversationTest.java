@@ -33,7 +33,7 @@ class ResourceConversationTest {
         var allMessages = twoMessagesPerPublication(publications);
 
         List<ResourceConversation> conversations = ResourceConversation.fromMessageList(allMessages);
-        MessageDto oldestMessage = conversations.get(0).getMessages().get(0);
+        MessageDto oldestMessage = conversations.get(0).getOldestMessage();
         var expectedOldestMessage = allMessages
                                         .stream()
                                         .min(Comparator.comparing(Message::getCreatedTime))
