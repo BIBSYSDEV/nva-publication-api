@@ -10,7 +10,7 @@ dependencies {
 
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'software.amazon.awssdk', name: 's3', version: '2.16.8'
+    implementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
     implementation(group: 'org.javers', name: 'javers-core', version: '5.14.0') {
