@@ -71,7 +71,7 @@ public class MessageTest {
         Publication publication = samplePublication(resourceIdentifier);
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
 
-        Message message = Message.simpleMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+        Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
         assertThat(message.isDoiRequestRelated(), is(equalTo(false)));
         assertThat(message.getResourceIdentifier(), is(equalTo(resourceIdentifier)));
     }
@@ -81,7 +81,7 @@ public class MessageTest {
         SortableIdentifier resourceIdentifier = SortableIdentifier.next();
         Publication publication = samplePublication(resourceIdentifier);
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
-        Message message = Message.simpleMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+        Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
         assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
     }
 

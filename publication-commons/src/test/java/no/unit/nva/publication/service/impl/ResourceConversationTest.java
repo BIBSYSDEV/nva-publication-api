@@ -58,11 +58,11 @@ class ResourceConversationTest {
 
     private Message createMessage(Publication publication) {
         waitForAvoidingSameTimeStampInMessages();
-        return Message.simpleMessage(extractOwner(publication),
-                                     publication,
-                                     randomString(),
-                                     SortableIdentifier.next(),
-                                     Clock.systemDefaultZone());
+        return Message.supportMessage(extractOwner(publication),
+                                      publication,
+                                      randomString(),
+                                      SortableIdentifier.next(),
+                                      Clock.systemDefaultZone());
     }
 
     private void waitForAvoidingSameTimeStampInMessages() {
