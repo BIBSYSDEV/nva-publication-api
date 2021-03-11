@@ -15,7 +15,7 @@ dependencies {
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
     testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
 
-    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
