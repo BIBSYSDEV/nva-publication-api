@@ -12,14 +12,22 @@ dependencies {
     testImplementation project(":publication-commons")
 
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+
+    compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    }
+    testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
+
+    //compileOnly because because the runtime dependencies are included in commons.
+    compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
+    compileOnly "com.amazonaws:aws-java-sdk-dynamodb:1.11.871"
+    compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
+    compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
+
 
     testImplementation project (':publication-testing')
 
-    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion) {
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
 
 }
 

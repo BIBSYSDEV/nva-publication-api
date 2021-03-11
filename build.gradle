@@ -22,7 +22,7 @@ allprojects {
     }
 
     repositories {
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
         maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
@@ -30,7 +30,7 @@ allprojects {
     project.ext {
         awsSdkVersion = '1.11.972'
         awsSdk2Version = '2.16.16'
-        nvaDatamodelVersion = 'a3e0cd83d2ede893bd8bb1029381e326a8420749'
+        nvaDatamodelVersion = '1c1c6aaec0c56b25b1eeca6ee08dedf873cfa801'
         nvaDatamodelVersion= "0.11.6"
         nvaCommonsVersion = '1.2.5'
         nvaTestUtilsVersion = "0.1.18"
@@ -39,6 +39,7 @@ allprojects {
         nvaAwsLambdaJavaEvents = '3.2.0'
         zalandoProblemVersion = '0.25.0'
         dynamoDbLocalVersion = '1.15.0'
+        awsLambdaCore = '1.2.1'
     }
 }
 
@@ -77,10 +78,12 @@ subprojects {
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
+        testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '2.2'
         testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
 
         testImplementation (group: 'org.javers', name: 'javers-core', version: '5.14.0'){
             because "For comparing java objects and detailing the differences in readable way"
