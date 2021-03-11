@@ -8,6 +8,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractO
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.collection.IsEmptyCollection.emptyCollectionOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -61,12 +62,12 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final String SOME_INVALID_ROLE = "SomeInvalidRole";
     public static final Faker FAKER = Faker.instance();
     public static final int FIRST_ELEMENT = 0;
+    public static final String ALLOW_ALL_ORIGIN = "*";
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
     private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.com");
-    public static final String ALLOW_ALL_ORIGIN = "*";
     private ListDoiRequestsHandler handler;
     private ResourceService resourceService;
     private Clock mockClock;
@@ -127,10 +128,12 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         List<Publication> actualResponse = parseResponse();
 
         Publication expectedResponse = filterDoiRequests(createdDoiRequests,
-            doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer, doiRequest));
+                                                         doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer,
+                                                                                                   doiRequest));
 
         Publication unexpectedDoiResponse = filterDoiRequests(createdDoiRequests,
-            doiRequest -> !doiRequestBelongsToCustomer(curatorsCustomer, doiRequest));
+                                                              doiRequest -> !doiRequestBelongsToCustomer(
+                                                                  curatorsCustomer, doiRequest));
 
         assertThat(actualResponse, hasItem(expectedResponse));
         assertThat(actualResponse, not(hasItem(unexpectedDoiResponse)));
@@ -170,7 +173,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         handler.handleRequest(request, outputStream, context);
 
         Publication expectedDoiRequest = filterDoiRequests(doiRequests,
-            doi -> doi.getOwner().equals(userInstance.getUserIdentifier()));
+                                                           doi -> doi.getOwner()
+                                                                      .equals(userInstance.getUserIdentifier()));
 
         List<Publication> responseBody = parseResponse();
 
@@ -205,7 +209,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
         List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
 
-        String[] expectedMessages = extractExpectedMessageTexts(doiRequestMessages);
+        String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
@@ -219,8 +223,49 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         URI commonPublisherId = publications.get(0).getPublisher().getId();
         List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
 
-        String[] expectedMessages = extractExpectedMessageTexts(doiRequestMessages);
+        String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
+    }
+
+    @Test
+    public void listDoiRequestsForUserReturnsDtosContainingOnlyDoiRequestsMessagesAndNotOtherTypeOfMessages()
+        throws ApiGatewayException, IOException {
+        final var publications = createPublishedPublicationsOfSameOwner();
+        final var publicationsOwner = extractOwner(publications.get(0));
+        final var publicationsOwnerIdentifier = publicationsOwner.getUserIdentifier();
+        final var commonPublisherId = publicationsOwner.getOrganizationUri();
+
+        createDoiRequests(publications);
+        final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
+        final var otherMessages = createSupportMessagesForPublications(publications);
+
+        var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId, CREATOR_ROLE);
+
+        var expectedMessages = extractMessageTexts(doiRequestMessages);
+        var notExpectedMessages = extractMessageTexts(otherMessages);
+
+        assertThat(actualMessages, hasItems(expectedMessages));
+        assertThatActualMessagesDoNotContainAnyOf(actualMessages, notExpectedMessages);
+    }
+
+    private void assertThatActualMessagesDoNotContainAnyOf(List<String> actualMessages, String[] notExpectedMessages) {
+        for (String notExpectedMessage : notExpectedMessages) {
+            assertThat(actualMessages, not(hasItem(notExpectedMessage)));
+        }
+    }
+
+    private List<MessageDto> createSupportMessagesForPublications(List<Publication> publications) {
+        return publications.stream()
+                   .map(attempt(this::createSupportMessage))
+                   .map(attempt -> attempt.map(MessageDto::fromMessage))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
+    }
+
+    private Message createSupportMessage(Publication pub) throws TransactionFailedException, NotFoundException {
+        UserInstance owner = extractOwner(pub);
+        var messageIdentifier = messageService.createSimpleMessage(owner, pub, randomString());
+        return messageService.getMessage(owner, messageIdentifier);
     }
 
     private List<String> sendRequestAndReadMessages(String userIdentifier, URI commonPublisherId, String curatorRole)
@@ -233,10 +278,10 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         return extractMessageTexts(doiRequestDtos);
     }
 
-    private String[] extractExpectedMessageTexts(List<MessageDto> doiRequestMessages) {
-        List<String> texts = doiRequestMessages.stream()
-                                 .map(MessageDto::getText)
-                                 .collect(Collectors.toList());
+    private String[] extractMessageTexts(List<MessageDto> doiRequestMessages) {
+        var texts = doiRequestMessages.stream()
+                        .map(MessageDto::getText)
+                        .collect(Collectors.toList());
 
         return texts.toArray(String[]::new);
     }
