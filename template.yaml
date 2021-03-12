@@ -532,7 +532,7 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
-  NvaCreateDoiRequetFucntion:
+  NvaCreateDoiRequestFucntion:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-doi-request
