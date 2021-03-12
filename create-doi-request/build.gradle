@@ -20,7 +20,7 @@ dependencies {
 
     //compileOnly because because the runtime dependencies are included in commons.
     compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
-    compileOnly "com.amazonaws:aws-java-sdk-dynamodb:1.11.871"
+    compileOnly group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
     compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
 
