@@ -9,7 +9,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.storage.model.DoiRequest.DoiRequestBuilder;
 
 public final class DoiRequestUtils {
     
