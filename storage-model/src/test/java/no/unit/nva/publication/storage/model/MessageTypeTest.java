@@ -11,9 +11,9 @@ public class MessageTypeTest {
 
     @Test
     void parseValueReturnsMessageTypeIgnoringInputCase() {
-        var messageTypeString = "DoIReQuESt";
+        var messageTypeInVaryingCase = "DoIReQuESt";
         var expectedMessageType = MessageType.DOI_REQUEST;
-        var actualMessageType = MessageType.parse(messageTypeString);
+        var actualMessageType = MessageType.parse(messageTypeInVaryingCase);
         assertThat(actualMessageType, is(equalTo(expectedMessageType)));
     }
 
