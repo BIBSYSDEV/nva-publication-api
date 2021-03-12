@@ -8,12 +8,14 @@ import java.util.stream.Collectors;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
+import nva.commons.core.JacocoGenerated;
 
 public class MessageCollection {
 
     private List<MessageDto> messages;
     private MessageType messageType;
 
+    @JacocoGenerated
     public MessageCollection() {
 
     }
@@ -36,22 +38,27 @@ public class MessageCollection {
         return new MessageCollection(messageType, Collections.emptyList());
     }
 
+    @JacocoGenerated
     public List<MessageDto> getMessages() {
         return messages;
     }
 
+    @JacocoGenerated
     public void setMessages(List<MessageDto> messages) {
         this.messages = messages;
     }
 
+    @JacocoGenerated
     public MessageType getMessageType() {
         return messageType;
     }
 
+    @JacocoGenerated
     public void setMessageType(MessageType messageType) {
         this.messageType = messageType;
     }
 
+    @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getMessages(), getMessageType());

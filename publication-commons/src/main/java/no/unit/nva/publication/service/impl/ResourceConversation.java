@@ -116,12 +116,13 @@ public class ResourceConversation implements JsonSerializable {
         this.oldestMessage = message;
     }
 
-    public MessageCollection getDoiRequestMessages() {
-        return this.getMessageCollections()
-                   .stream()
-                   .filter(messageCollection -> MessageType.DOI_REQUEST.equals(messageCollection.getMessageType()))
-                   .findFirst()
-                   .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
+    public MessageCollection getMessagesOfType(MessageType messageType) {
+        return
+            this.getMessageCollections()
+                .stream()
+                .filter(messageCollection -> Objects.equals(messageType, messageCollection.getMessageType()))
+                .findFirst()
+                .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
     }
 
     public List<MessageDto> allMessages() {

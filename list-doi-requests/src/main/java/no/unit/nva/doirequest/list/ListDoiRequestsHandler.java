@@ -19,6 +19,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -141,9 +142,10 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         return dto;
     }
 
-    private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(Stream<ResourceConversation> messages) {
-        return messages
-                   .map(ResourceConversation::getDoiRequestMessages)
+    private List<DoiRequestMessage> transformToLegacyDoiRequestMessagesDto(
+        Stream<ResourceConversation> resourceConversations) {
+        return resourceConversations
+                   .map(conversations -> conversations.getMessagesOfType(MessageType.DOI_REQUEST))
                    .flatMap(messageCollection -> messageCollection.getMessages().stream())
                    .map(this::toDoiRequestMessage)
                    .sorted(sortByTimeOldestFirst())

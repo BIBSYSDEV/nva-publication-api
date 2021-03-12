@@ -13,8 +13,9 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.ServiceEnvironmentConstants;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 
-public class MessageDto {
+public class MessageDto implements JsonSerializable {
 
     @JsonProperty("id")
     private URI messageId;
@@ -28,8 +29,8 @@ public class MessageDto {
     private String text;
     @JsonProperty("date")
     private Instant date;
-    @JsonProperty("isDoiRequestRelated")
-    private boolean doiRequestRelated;
+    @JsonProperty("messageType")
+    private String messageType;
 
     public static MessageDto fromMessage(Message message) {
         MessageDto messageDto = new MessageDto();
@@ -39,19 +40,40 @@ public class MessageDto {
         messageDto.setDate(message.getCreatedTime());
         messageDto.setMessageId(constructMessageId(message.getIdentifier()));
         messageDto.setMessageIdentifier(message.getIdentifier());
-        messageDto.setDoiRequestRelated(message.isDoiRequestRelated());
+        messageDto.setMessageType(message.getMessageType().toString());
         return messageDto;
+    }
+
+    public static URI constructMessageId(SortableIdentifier messageIdentifier) {
+        if (nonNull(messageIdentifier)) {
+            String scheme = ServiceEnvironmentConstants.API_SCHEME;
+            String host = ServiceEnvironmentConstants.API_HOST;
+            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
+            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
+        }
+        return null;
+    }
+
+    @JacocoGenerated
+    public String getMessageType() {
+        return messageType;
+    }
+
+    @JacocoGenerated
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getMessageId(),
-            getMessageIdentifier(),
-            getSenderIdentifier(),
-            getOwnerIdentifier(),
-            getText(),
-            getDate(), isDoiRequestRelated());
+                            getMessageIdentifier(),
+                            getSenderIdentifier(),
+                            getOwnerIdentifier(),
+                            getText(),
+                            getDate(),
+                            getMessageType());
     }
 
     @JacocoGenerated
@@ -64,7 +86,7 @@ public class MessageDto {
             return false;
         }
         MessageDto that = (MessageDto) o;
-        return isDoiRequestRelated() == that.isDoiRequestRelated()
+        return Objects.equals(getMessageType(), that.getMessageType())
                && Objects.equals(getMessageId(), that.getMessageId())
                && Objects.equals(getMessageIdentifier(), that.getMessageIdentifier())
                && Objects.equals(getSenderIdentifier(), that.getSenderIdentifier())
@@ -73,14 +95,10 @@ public class MessageDto {
                && Objects.equals(getDate(), that.getDate());
     }
 
+    @Override
     @JacocoGenerated
-    public boolean isDoiRequestRelated() {
-        return doiRequestRelated;
-    }
-
-    @JacocoGenerated
-    public void setDoiRequestRelated(boolean doiRequestRelated) {
-        this.doiRequestRelated = doiRequestRelated;
+    public String toString() {
+        return toJsonString();
     }
 
     @JacocoGenerated
@@ -141,16 +159,6 @@ public class MessageDto {
     @JacocoGenerated
     public void setOwnerIdentifier(String ownerIdentifier) {
         this.ownerIdentifier = ownerIdentifier;
-    }
-
-    public static URI constructMessageId(SortableIdentifier messageIdentifier) {
-        if (nonNull(messageIdentifier)) {
-            String scheme = ServiceEnvironmentConstants.API_SCHEME;
-            String host = ServiceEnvironmentConstants.API_HOST;
-            String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
-            return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
-        }
-        return null;
     }
 
     private static URI newUri(String scheme, String host, String messagesPath) throws URISyntaxException {

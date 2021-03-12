@@ -1,5 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
+import nva.commons.core.JacocoGenerated;
+
 public enum MessageType {
     SUPPORT("Support"),
     DOI_REQUEST("DoiRequest");
@@ -23,5 +25,11 @@ public enum MessageType {
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    @JacocoGenerated
+    public String toString() {
+        return getValue();
     }
 }
