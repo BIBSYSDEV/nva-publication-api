@@ -62,7 +62,7 @@ class ResourceConversationTest {
 
         var actualMessages = resourceConversation
                                  .get(SINGLE_OBJECT)
-                                 .getMessagesOfType(MessageType.DOI_REQUEST)
+                                 .getMessageCollectionOfType(MessageType.DOI_REQUEST)
                                  .getMessages();
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));

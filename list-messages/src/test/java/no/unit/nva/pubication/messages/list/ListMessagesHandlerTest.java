@@ -222,17 +222,26 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
         ResourceConversation[] responseObjects) {
 
-        for (ResourceConversation resourceConversation : responseObjects) {
-            for (MessageCollection messageCollection : resourceConversation.getMessageCollections()) {
-                var messages = messageCollection.getMessages();
-                List<MessageDto> sortedMessages = messages.stream()
-                                                      .sorted(Comparator.comparing(MessageDto::getDate))
-                                                      .collect(Collectors.toList());
-
-                assertThat(messages, is(not(sameInstance(sortedMessages))));
-                assertThat(messages, is(equalTo(sortedMessages)));
-            }
+        for (ResourceConversation responseObject : responseObjects) {
+            assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(responseObject);
         }
+    }
+
+    private void assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(
+        ResourceConversation resourceConversation) {
+        for (MessageCollection messageCollection : resourceConversation.getMessageCollections()) {
+            assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(messageCollection);
+        }
+    }
+
+    private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
+        var messages = messageCollection.getMessages();
+        List<MessageDto> sortedMessages = messages.stream()
+                                              .sorted(Comparator.comparing(MessageDto::getDate))
+                                              .collect(Collectors.toList());
+
+        assertThat(messages, is(not(sameInstance(sortedMessages))));
+        assertThat(messages, is(equalTo(sortedMessages)));
     }
 
     private Publication createPublication() throws TransactionFailedException {

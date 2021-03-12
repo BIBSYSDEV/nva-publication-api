@@ -17,6 +17,7 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.SingletonCollector;
 
 /**
  * Contains messages related to a single resource. The messages are sorted by date, oldest first.
@@ -116,13 +117,12 @@ public class ResourceConversation implements JsonSerializable {
         this.oldestMessage = message;
     }
 
-    public MessageCollection getMessagesOfType(MessageType messageType) {
+    public MessageCollection getMessageCollectionOfType(MessageType messageType) {
         return
             this.getMessageCollections()
                 .stream()
                 .filter(messageCollection -> Objects.equals(messageType, messageCollection.getMessageType()))
-                .findFirst()
-                .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
+                .collect(SingletonCollector.collectOrElse(MessageCollection.empty(messageType)));
     }
 
     public List<MessageDto> allMessages() {
