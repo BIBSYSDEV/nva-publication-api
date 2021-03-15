@@ -318,7 +318,7 @@ Resources:
                   description: "Created"
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateDoiRequetFucntion.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateDoiRequestFunction.Arn}/invocations
                 responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
@@ -532,7 +532,7 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
-  NvaCreateDoiRequetFucntion:
+  NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: create-doi-request
