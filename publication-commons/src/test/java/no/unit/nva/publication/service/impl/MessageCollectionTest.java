@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 
 class MessageCollectionTest {
 
-    public static final String MESSGE_TYPE_FIELD = "messageType";
+    private static final String MESSAGE_TYPE_FIELD = "messageType";
 
     @Test
     public void emptyReturnsAnEmptyMessageCollection() {
@@ -26,7 +26,7 @@ class MessageCollectionTest {
         String jsonString = JsonUtils.objectMapper.writeValueAsString(emptyCollection);
         ObjectNode json = (ObjectNode) JsonUtils.objectMapper.readTree(jsonString);
 
-        String messageTypeValue = json.get(MESSGE_TYPE_FIELD).textValue();
+        String messageTypeValue = json.get(MESSAGE_TYPE_FIELD).textValue();
         assertThat(messageTypeValue, is(equalTo(MessageType.SUPPORT.getValue())));
     }
 }
