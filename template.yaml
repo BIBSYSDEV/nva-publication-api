@@ -449,6 +449,11 @@ Resources:
                 type: string
               date:
                 type: string
+              messageType:
+                type: string
+                enum:
+                  - DoiRequest
+                  - Support
           CreateMessageRequest:
             type: object
             properties:
