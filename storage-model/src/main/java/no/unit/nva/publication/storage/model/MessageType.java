@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
+import java.util.Arrays;
 import nva.commons.core.JacocoGenerated;
 
 public enum MessageType {
@@ -15,12 +16,10 @@ public enum MessageType {
     }
 
     public static MessageType parse(String value) {
-        for (MessageType messageType : MessageType.values()) {
-            if (messageType.getValue().equalsIgnoreCase(value)) {
-                return messageType;
-            }
-        }
-        throw new IllegalArgumentException(INVALID_MESSAGE_TYPE_ERROR + value);
+        return Arrays.stream(MessageType.values())
+                   .filter(messageType -> messageType.getValue().equals(value))
+                   .findFirst()
+                   .orElseThrow(() -> handleParsingError(value));
     }
 
     public String getValue() {
@@ -31,5 +30,9 @@ public enum MessageType {
     @JacocoGenerated
     public String toString() {
         return getValue();
+    }
+
+    private static IllegalArgumentException handleParsingError(String value) {
+        return new IllegalArgumentException(INVALID_MESSAGE_TYPE_ERROR + value);
     }
 }
