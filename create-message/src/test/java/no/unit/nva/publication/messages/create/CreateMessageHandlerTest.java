@@ -147,7 +147,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void handlerCreatesSupportMessageWhenClientDoesNotMarkMessage()
+    public void handlerCreatesSupportMessageWhenClientDoesNotProvideMessageType()
         throws IOException, NotFoundException {
         CreateMessageRequest request = createSampleMessage(samplePublication, randomString());
         request.setMessageType(null);
