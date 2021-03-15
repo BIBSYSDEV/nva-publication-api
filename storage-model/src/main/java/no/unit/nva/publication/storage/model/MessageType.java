@@ -17,7 +17,7 @@ public enum MessageType {
 
     public static MessageType parse(String value) {
         return Arrays.stream(MessageType.values())
-                   .filter(messageType -> messageType.getValue().equals(value))
+                   .filter(messageType -> messageType.getValue().equalsIgnoreCase(value))
                    .findFirst()
                    .orElseThrow(() -> handleParsingError(value));
     }
