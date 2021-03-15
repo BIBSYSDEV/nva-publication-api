@@ -4,16 +4,16 @@ import no.unit.nva.identifiers.SortableIdentifier;
 
 public class CreateMessageRequest {
 
-    private boolean doiRequestRelated;
     private String message;
     private SortableIdentifier publicationIdentifier;
+    private String messageType;
 
-    public boolean isDoiRequestRelated() {
-        return doiRequestRelated;
+    public String getMessageType() {
+        return messageType;
     }
 
-    public void setDoiRequestRelated(boolean doiRequestRelated) {
-        this.doiRequestRelated = doiRequestRelated;
+    public void setMessageType(String messageType) {
+        this.messageType = messageType;
     }
 
     public SortableIdentifier getPublicationIdentifier() {

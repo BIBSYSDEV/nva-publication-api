@@ -33,6 +33,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -145,6 +146,21 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
     }
 
+    @Test
+    public void handlerCreatesSupportMessageWhenClientDoesNotMarkMessage()
+        throws IOException, NotFoundException {
+        CreateMessageRequest request = createSampleMessage(samplePublication, randomString());
+        request.setMessageType(null);
+
+        input = createInput(request);
+        handler.handleRequest(input, output, CONTEXT);
+
+        URI messageId = extractLocationFromHttpHeaders();
+        Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
+        assertThat(message.getText(), is(equalTo(request.getMessage())));
+        assertThat(message.getMessageType(), is(equalTo(MessageType.SUPPORT)));
+    }
+
     public String extractTextFromOldestMessage(Publication doiRequest) {
         return doiRequest.getDoiRequest().getMessages().get(0).getText();
     }
@@ -189,7 +205,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private CreateMessageRequest createDoiRequestMessage() {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-        requestBody.setDoiRequestRelated(true);
+        requestBody.setMessageType(MessageType.DOI_REQUEST.toString());
         return requestBody;
     }
 
@@ -229,6 +245,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
         CreateMessageRequest requestBody = new CreateMessageRequest();
         requestBody.setMessage(message);
         requestBody.setPublicationIdentifier(identifier);
+        requestBody.setMessageType(MessageType.SUPPORT.toString());
         return requestBody;
     }
 

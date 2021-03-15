@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
@@ -15,6 +16,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.HttpHeaders;
@@ -96,10 +98,16 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     private SortableIdentifier trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
         throws TransactionFailedException {
-
-        return input.isDoiRequestRelated()
+        MessageType messageType = parseMessageType(input);
+        return MessageType.DOI_REQUEST.equals(messageType)
                    ? messageService.createDoiRequestMessage(sender, publication, input.getMessage())
                    : messageService.createSimpleMessage(sender, publication, input.getMessage());
+    }
+
+    private MessageType parseMessageType(CreateMessageRequest input) {
+        return Optional.ofNullable(input.getMessageType())
+                   .map(MessageType::parse)
+                   .orElse(MessageType.SUPPORT);
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {
