@@ -68,7 +68,7 @@ class ResourceConversationTest {
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
     }
 
-    private Message doiRequestMessage(no.unit.nva.model.Publication publication) {
+    private Message doiRequestMessage(Publication publication) {
         return Message.doiRequestMessage(SOME_USER,
                                          publication,
                                          randomString(),
@@ -76,7 +76,7 @@ class ResourceConversationTest {
                                          Clock.systemDefaultZone());
     }
 
-    private Message supportMessage(no.unit.nva.model.Publication publication) {
+    private Message supportMessage(Publication publication) {
         return Message.supportMessage(SOME_USER,
                                       publication,
                                       randomString(),
