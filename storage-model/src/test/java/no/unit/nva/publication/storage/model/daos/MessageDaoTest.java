@@ -80,7 +80,7 @@ public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
                                       .withPublisher(publisher)
                                       .build();
         Message message =
-            Message.simpleMessage(SAMPLE_SENDER, publication, SAMPLE_TEXT, CLOCK);
+            Message.supportMessage(SAMPLE_SENDER, publication, SAMPLE_TEXT, CLOCK);
         message.setIdentifier(SortableIdentifier.next());
         MessageDao dao = new MessageDao(message);
         client.putItem(RESOURCES_TABLE_NAME, dao.toDynamoFormat());

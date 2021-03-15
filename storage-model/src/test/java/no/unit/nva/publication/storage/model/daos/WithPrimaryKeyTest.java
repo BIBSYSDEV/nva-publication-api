@@ -64,7 +64,7 @@ public class WithPrimaryKeyTest extends ResourcesDynamoDbLocalTest {
 
     private static Message randomMessage(ResourceDao res) {
         UserInstance sampleSender = createSampleUser(res);
-        Message message = Message.simpleMessage(sampleSender, res.getData().toPublication(), randomString(), CLOCK);
+        Message message = Message.supportMessage(sampleSender, res.getData().toPublication(), randomString(), CLOCK);
         message.setIdentifier(SortableIdentifier.next());
         return message;
     }

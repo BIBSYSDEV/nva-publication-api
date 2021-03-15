@@ -35,6 +35,7 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.MessageCollection;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -62,8 +63,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final String ROLE_QUERY_PARAMETER = "role";
 
     public static final boolean NO_IDENTIFIER = false;
-    private static final int NUMBER_OF_PUBLICATIONS = 3;
     public static final String SOME_OTHER_ROLE = "SomeOtherRole";
+    private static final int NUMBER_OF_PUBLICATIONS = 3;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
     private InputStream input;
@@ -210,8 +211,9 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private MessageDto oldestMessage(ResourceConversation left) {
-        return left.getMessages()
+        return left.getMessageCollections()
                    .stream()
+                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
                    .sorted(Comparator.comparing(MessageDto::getDate))
                    .collect(Collectors.toList())
                    .get(0);
@@ -220,14 +222,26 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
         ResourceConversation[] responseObjects) {
 
-        for (ResourceConversation resourceMessages : responseObjects) {
-            var messages = resourceMessages.getMessages();
-            List<MessageDto> sortedMessages = messages.stream()
-                                                  .sorted(Comparator.comparing(MessageDto::getDate))
-                                                  .collect(Collectors.toList());
-            assertThat(messages, is(not(sameInstance(sortedMessages))));
-            assertThat(messages, is(equalTo(sortedMessages)));
+        for (ResourceConversation responseObject : responseObjects) {
+            assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(responseObject);
         }
+    }
+
+    private void assertThatMessagesInEachResourceConversationAreOrderedWithOldestFirst(
+        ResourceConversation resourceConversation) {
+        for (MessageCollection messageCollection : resourceConversation.getMessageCollections()) {
+            assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(messageCollection);
+        }
+    }
+
+    private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
+        var messages = messageCollection.getMessages();
+        List<MessageDto> sortedMessages = messages.stream()
+                                              .sorted(Comparator.comparing(MessageDto::getDate))
+                                              .collect(Collectors.toList());
+
+        assertThat(messages, is(not(sameInstance(sortedMessages))));
+        assertThat(messages, is(equalTo(sortedMessages)));
     }
 
     private Publication createPublication() throws TransactionFailedException {
@@ -290,8 +304,10 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
-        return Arrays.stream(responseObjects).flatMap(r -> r.getMessages().stream()).collect(
-            Collectors.toList());
+        return Arrays.stream(responseObjects)
+                   .flatMap(responseObject -> responseObject.getMessageCollections().stream())
+                   .flatMap(messageCollections -> messageCollections.getMessages().stream())
+                   .collect(Collectors.toList());
     }
 
     private MessageDto[] constructExpectedMessages(List<Message> savedMessages) {

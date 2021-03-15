@@ -118,7 +118,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(actualPublication, is(equalTo(expectedPublication)));
 
         MessageDto[] expectedMessages = constructExpectedMessagesDtos(insertedMessages);
-        assertThat(resourceConversation.getMessages(), containsInAnyOrder(expectedMessages));
+        assertThat(resourceConversation.allMessages(), containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -370,7 +370,7 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
                                                    String messageText) {
         var sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-        return Message.simpleMessage(sender, publication, messageText, messageIdentifier, clock);
+        return Message.supportMessage(sender, publication, messageText, messageIdentifier, clock);
     }
 
     private Message constructExpectedDoiRequestMessage(SortableIdentifier messageIdentifier,

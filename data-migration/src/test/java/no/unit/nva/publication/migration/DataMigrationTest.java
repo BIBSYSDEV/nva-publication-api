@@ -197,7 +197,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private List<String> extractSavedMessages() {
         return fetchMessagesFromService()
                    .stream()
-                   .flatMap(resourceConversation -> resourceConversation.getMessages().stream())
+                   .flatMap(resourceConversation -> resourceConversation.allMessages().stream())
                    .map(MessageDto::getText)
                    .collect(Collectors.toList());
     }

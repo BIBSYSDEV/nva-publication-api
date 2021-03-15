@@ -37,6 +37,7 @@ public class MessageBuilder {
         return this;
     }
 
+    @Deprecated
     public MessageBuilder withDoiRequestRelated(boolean doiRequestRelated) {
         message.setDoiRequestRelated(doiRequestRelated);
         return this;
@@ -59,6 +60,11 @@ public class MessageBuilder {
 
     public MessageBuilder withResourceTitle(String resourceTitle) {
         message.setResourceTitle(resourceTitle);
+        return this;
+    }
+
+    public MessageBuilder withMessageType(MessageType messageType) {
+        message.setMessageType(messageType);
         return this;
     }
 

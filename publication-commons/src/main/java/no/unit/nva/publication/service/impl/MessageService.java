@@ -179,7 +179,7 @@ public class MessageService extends ServiceWithTransactions {
     ) {
         requireMessageIsNotBlank(messageText);
         SortableIdentifier messageIdentifier = identifierSupplier.get();
-        return Message.simpleMessage(
+        return Message.supportMessage(
             sender,
             publication,
             messageText,

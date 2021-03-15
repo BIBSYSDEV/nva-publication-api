@@ -32,6 +32,7 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -147,9 +148,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
             extractOwner(publication),
             publication.getIdentifier());
 
-        MessageDto savedMessage = resourceMessages.orElseThrow().getMessages().get(SINGLE_MESSAGE);
+        MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
         assertThat(savedMessage.getText(), is(equalTo(expectedMessageText)));
-        assertThat(savedMessage.isDoiRequestRelated(), is(equalTo(true)));
+        assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST.toString())));
     }
 
     public void sendRequest(Publication publication, String owner, String message) throws IOException {
