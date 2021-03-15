@@ -461,6 +461,11 @@ Resources:
                 type: string
               message:
                 type: string
+              messageType:
+                type: string
+                enum:
+                  - DoiRequest
+                  - Support
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
