@@ -29,24 +29,27 @@ Parameters:
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
   CustomDomain:
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Custom API to connect this lambda to
+    Default: CustomDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+    Default: publication
   PublicationsTableName:
     Type: String
     Description: Reference to table containing publications
-    Default: nva_publications
+    Default: nva_resources
   DynamoDBStreamArn:
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Amazon DynamoDB Stream ARN.
+    Default: PublicationsTableStreamArn
   EventBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: nvaEventBusName
+    Default: EventBusName
   EventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: nvaEventBusArn
+    Default: EventBusArn
   MaxConcurrency:
     Type: Number
     Default: 100
