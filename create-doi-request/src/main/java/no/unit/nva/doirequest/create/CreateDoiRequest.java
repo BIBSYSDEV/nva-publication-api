@@ -7,7 +7,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 
 public class CreateDoiRequest {
 
-    @JsonAlias("identifier")
+    @JsonAlias({"identifier", "publicationId"})
     private final SortableIdentifier resourceIdentifier;
     @JsonProperty("message")
     private final String message;
