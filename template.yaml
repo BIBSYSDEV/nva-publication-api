@@ -1088,6 +1088,20 @@ Resources:
                   - logs:PutLogEvents
                   - lambda:InvokeFunction
                 Resource: "*"
+      - PolicyName: Events
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - events:PutEvents
+              Resource: !Ref EventBusArn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+              Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
         - PolicyName: DynamoDbAccess
           PolicyDocument:
             Version: '2012-10-17'
