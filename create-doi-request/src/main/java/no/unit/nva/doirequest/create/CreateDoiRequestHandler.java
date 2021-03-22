@@ -4,6 +4,9 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
@@ -56,6 +59,11 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         this.resourceService = resourceService;
         this.messageService = messageService;
         this.doiRequestService = requestService;
+    }
+
+    @Override
+    public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        super.handleRequest(input, output, context);
     }
 
     @Override
