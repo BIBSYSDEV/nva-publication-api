@@ -1262,22 +1262,3 @@ Resources:
       DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
-
-Outputs:
-  NvaResourcesTableName:
-    Description: NVA resources table name.
-    Value: !Sub nva-resources-${AWS::StackName}
-    Export:
-      Name: NvaResourcesTableName
-
-  NvaResourcesTableArn:
-    Description: NVA resources table ARN.
-    Value: !GetAtt NvaResourcesTable.Arn
-    Export:
-      Name: NvaResourcesTableArn
-
-  NvaResourcesTableStreamArn:
-    Description: NVA resources table stream ARN.
-    Value: !GetAtt NvaResourcesTable.StreamArn
-    Export:
-      Name: NvaResourcesTableStreamArn
