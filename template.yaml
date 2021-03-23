@@ -1167,8 +1167,8 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:DeleteItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName} ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName}, "/index/","*" ] ]
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -1216,8 +1216,8 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:PutItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName} ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName}, "/index/","*" ] ]
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
+                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
   LambdaRole:
     Type: AWS::IAM::Role
