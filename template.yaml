@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   AWS
 
-  Sample SAM Template for AWS
+  SAM Template for NVA Publication Service
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -36,14 +36,6 @@ Parameters:
     Type: String
     Description: Base path mapping in CustomDomain
     Default: publication
-  PublicationsTableName:
-    Type: String
-    Description: Reference to table containing publications
-    Default: nva_resources
-  DynamoDBStreamArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: Amazon DynamoDB Stream ARN.
-    Default: PublicationsTableStreamArn
   EventBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: EventBusName
@@ -1203,6 +1195,65 @@ Resources:
                   - sqs:DeleteMessage
                 Resource: "*"
 
+  #===========================DynamoDB Table========================================================
+  NvaResourcesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub nva-resources-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK0
+          AttributeType: S
+        - AttributeName: SK0
+          AttributeType: S
+        - AttributeName: PK1
+          AttributeType: S
+        - AttributeName: SK1
+          AttributeType: S
+        - AttributeName: PK2
+          AttributeType: S
+        - AttributeName: SK2
+          AttributeType: S
+        - AttributeName: PK3
+          AttributeType: S
+        - AttributeName: SK3
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK0
+          KeyType: HASH
+        - AttributeName: SK0
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByTypeCustomerStatus
+          KeySchema:
+            - AttributeName: PK1
+              KeyType: HASH
+            - AttributeName: SK1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ByCustomerResource
+          KeySchema:
+            - AttributeName: PK2
+              KeyType: HASH
+            - AttributeName: SK2
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourcesByIdentifier
+          KeySchema:
+            - AttributeName: PK3
+              KeyType: HASH
+            - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
@@ -1211,3 +1262,22 @@ Resources:
       DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
+Outputs:
+  NvaResourcesTableName:
+    Description: NVA resources table name.
+    Value: !GetAtt NvaResourcesTable.Name
+    Export:
+      Name: NvaResourcesTableName
+
+  NvaResourcesTableArn:
+    Description: NVA resources table ARN.
+    Value: !GetAtt NvaResourcesTable.Arn
+    Export:
+      Name: NvaResourcesTableArn
+
+  NvaResourcesTableStreamArn:
+    Description: NVA resources table stream ARN.
+    Value: !GetAtt NvaResourcesTable.StreamArn
+    Export:
+      Name: NvaResourcesTableStreamArn
