@@ -64,6 +64,65 @@ Resources:
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
 
+  #===========================DynamoDB Table========================================================
+  NvaResourcesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    Properties:
+      TableName: !Sub nva-resources-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK0
+          AttributeType: S
+        - AttributeName: SK0
+          AttributeType: S
+        - AttributeName: PK1
+          AttributeType: S
+        - AttributeName: SK1
+          AttributeType: S
+        - AttributeName: PK2
+          AttributeType: S
+        - AttributeName: SK2
+          AttributeType: S
+        - AttributeName: PK3
+          AttributeType: S
+        - AttributeName: SK3
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK0
+          KeyType: HASH
+        - AttributeName: SK0
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByTypeCustomerStatus
+          KeySchema:
+            - AttributeName: PK1
+              KeyType: HASH
+            - AttributeName: SK1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ByCustomerResource
+          KeySchema:
+            - AttributeName: PK2
+              KeyType: HASH
+            - AttributeName: SK2
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourcesByIdentifier
+          KeySchema:
+            - AttributeName: PK3
+              KeyType: HASH
+            - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
   NvaPublicationApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -501,12 +560,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -549,12 +608,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -581,12 +640,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -630,12 +689,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         PutEvent:
           Type: Api
@@ -656,12 +715,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         PutEvent:
           Type: Api
@@ -681,12 +740,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -709,12 +768,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -739,10 +798,10 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -766,10 +825,10 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         GetEvent:
           Type: Api
@@ -790,12 +849,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         ApiEvent:
           Type: Api
@@ -816,12 +875,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+            TableName: !GetAtt NvaResourcesTable.Name
       Events:
         ApiEvent:
           Type: Api
@@ -945,7 +1004,7 @@ Resources:
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
@@ -1018,7 +1077,7 @@ Resources:
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !GetAtt NvaResourcesTable.Name
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1108,8 +1167,8 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:DeleteItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.Name ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.Name, "/index/","*" ] ]
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -1157,8 +1216,8 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:PutItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.Name ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.Name, "/index/","*" ] ]
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -1194,65 +1253,6 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                 Resource: "*"
-
-  #===========================DynamoDB Table========================================================
-  NvaResourcesTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    Properties:
-      TableName: !Sub nva-resources-${AWS::StackName}
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: PK0
-          AttributeType: S
-        - AttributeName: SK0
-          AttributeType: S
-        - AttributeName: PK1
-          AttributeType: S
-        - AttributeName: SK1
-          AttributeType: S
-        - AttributeName: PK2
-          AttributeType: S
-        - AttributeName: SK2
-          AttributeType: S
-        - AttributeName: PK3
-          AttributeType: S
-        - AttributeName: SK3
-          AttributeType: S
-      KeySchema:
-        - AttributeName: PK0
-          KeyType: HASH
-        - AttributeName: SK0
-          KeyType: RANGE
-      GlobalSecondaryIndexes:
-        - IndexName: ByTypeCustomerStatus
-          KeySchema:
-            - AttributeName: PK1
-              KeyType: HASH
-            - AttributeName: SK1
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: ByCustomerResource
-          KeySchema:
-            - AttributeName: PK2
-              KeyType: HASH
-            - AttributeName: SK2
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: ResourcesByIdentifier
-          KeySchema:
-            - AttributeName: PK3
-              KeyType: HASH
-            - AttributeName: SK3
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      StreamSpecification:
-        StreamViewType: NEW_AND_OLD_IMAGES
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
 
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
