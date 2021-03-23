@@ -560,12 +560,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -608,12 +608,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -640,12 +640,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -689,12 +689,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         PutEvent:
           Type: Api
@@ -715,12 +715,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         PutEvent:
           Type: Api
@@ -740,12 +740,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -768,12 +768,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -798,10 +798,10 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -825,10 +825,10 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         GetEvent:
           Type: Api
@@ -849,12 +849,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         ApiEvent:
           Type: Api
@@ -875,12 +875,12 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !GetAtt NvaResourcesTable.TableName
+            TableName: !Sub nva-resources-${AWS::StackName}
       Events:
         ApiEvent:
           Type: Api
@@ -1004,7 +1004,7 @@ Resources:
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
@@ -1077,7 +1077,7 @@ Resources:
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !GetAtt NvaResourcesTable.TableName
+          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1167,8 +1167,8 @@ Resources:
                   - dynamodb:PutItem
                   - dynamodb:DeleteItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.TableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.TableName, "/index/","*" ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName} ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName}, "/index/","*" ] ]
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -1216,8 +1216,8 @@ Resources:
                   - dynamodb:UpdateItem
                   - dynamodb:PutItem
                 Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.TableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!GetAtt NvaResourcesTable.TableName, "/index/","*" ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName} ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Sub nva-resources-${AWS::StackName}, "/index/","*" ] ]
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -1266,7 +1266,7 @@ Resources:
 Outputs:
   NvaResourcesTableName:
     Description: NVA resources table name.
-    Value: !GetAtt NvaResourcesTable.TableName
+    Value: !Sub nva-resources-${AWS::StackName}
     Export:
       Name: NvaResourcesTableName
 
