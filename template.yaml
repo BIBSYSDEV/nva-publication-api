@@ -979,7 +979,7 @@ Resources:
             Pattern: {
               "detail-type": [ "dynamodb-stream-event" ],
               "resources": [
-                !Ref DynamoDBStreamArn
+                !GetAtt NvaResourcesTable.StreamArn
               ]
             }
       EventInvokeConfig:
@@ -1059,7 +1059,7 @@ Resources:
         FanoutSource:
           Type: DynamoDB
           Properties:
-            Stream: !Ref DynamoDBStreamArn
+            Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
