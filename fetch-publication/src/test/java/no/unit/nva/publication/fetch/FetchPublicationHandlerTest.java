@@ -2,6 +2,7 @@ package no.unit.nva.publication.fetch;
 
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.HttpHeaders.CONTENT_TYPE;
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -10,8 +11,10 @@ import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,12 +32,16 @@ import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -64,6 +71,7 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private ByteArrayOutputStream output;
     private FetchPublicationHandler fetchPublicationHandler;
     private Environment environment;
+    private DoiRequestService doiRequestService;
 
     /**
      * Set up environment.
@@ -75,9 +83,10 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
-        fetchPublicationHandler = new FetchPublicationHandler(publicationService, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(publicationService, doiRequestService, environment);
     }
 
     @Test
@@ -144,7 +153,7 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
             .when(serviceThrowingException)
             .getPublicationByIdentifier(any(SortableIdentifier.class));
 
-        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, environment);
+        fetchPublicationHandler = new FetchPublicationHandler(serviceThrowingException, doiRequestService, environment);
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
 
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -152,6 +161,25 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(
             MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS));
+    }
+
+    @Test
+    public void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
+        throws NotFoundException, TransactionFailedException, BadRequestException, IOException {
+        Publication createdPublication = createPublication();
+        UserInstance resourceOwner = extractOwner(createdPublication);
+        SortableIdentifier doiRequestIdentifier =
+            doiRequestService.createDoiRequest(resourceOwner, createdPublication.getIdentifier());
+        InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
+        fetchPublicationHandler.handleRequest(input, output, context);
+        GatewayResponse<PublicationResponse> response = GatewayResponse.fromOutputStream(output);
+        PublicationResponse publicationDto = response.getBodyObject(PublicationResponse.class);
+
+        DoiRequest actualDoiRequest = publicationDto.getDoiRequest();
+        DoiRequest expectedDoiRequest = doiRequestService.getDoiRequest(resourceOwner, doiRequestIdentifier)
+                                            .toPublication()
+                                            .getDoiRequest();
+        assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
