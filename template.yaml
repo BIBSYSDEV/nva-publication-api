@@ -560,7 +560,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -606,7 +606,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -636,7 +636,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -683,7 +683,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -707,7 +707,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -730,7 +730,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -756,7 +756,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -784,7 +784,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -809,7 +809,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -831,7 +831,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -855,7 +855,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Role: !GetAtt LambdaRole.Arn
@@ -982,7 +982,7 @@ Resources:
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
@@ -1055,7 +1055,7 @@ Resources:
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Sub nva-resources-${AWS::StackName}
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
