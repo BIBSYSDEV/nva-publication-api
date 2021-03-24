@@ -1213,6 +1213,7 @@ Resources:
   DefaultLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS:StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
@@ -1229,6 +1230,7 @@ Resources:
   DatabaseAccessLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
+      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS:StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
@@ -1249,6 +1251,7 @@ Resources:
   EventsLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
+      PolicyName: !Sub EventsLambdaPermissions-${AWS:StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
