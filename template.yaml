@@ -1106,17 +1106,6 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
         - PolicyName: Events
           PolicyDocument:
             Version: '2012-10-17'
@@ -1131,22 +1120,6 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                 Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
-        - PolicyName: DynamoDbAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:GetItem
-                  - dynamodb:BatchGetItem
-                  - dynamodb:DescribeTable
-                  - dynamodb:UpdateItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -1160,17 +1133,6 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
         - PolicyName: Events
           PolicyDocument:
             Version: '2012-10-17'
@@ -1181,21 +1143,6 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                 Resource: !GetAtt UpdateDoiStatusDLQ.Arn
-        - PolicyName: DynamoDbAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:GetItem
-                  - dynamodb:BatchGetItem
-                  - dynamodb:DescribeTable
-                  - dynamodb:UpdateItem
-                  - dynamodb:PutItem
-                Resource:
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
-                  - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
   LambdaRole:
     Type: AWS::IAM::Role
@@ -1216,6 +1163,8 @@ Resources:
       PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -1233,17 +1182,14 @@ Resources:
       PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Action:
-              - dynamodb:Query
-              - dynamodb:GetItem
-              - dynamodb:BatchGetItem
-              - dynamodb:DescribeTable
-              - dynamodb:UpdateItem
-              - dynamodb:PutItem
+              - dynamodb:*
             Resource:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
