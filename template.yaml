@@ -67,7 +67,7 @@ Resources:
   #===========================DynamoDB Table========================================================
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Sub nva-resources-${AWS::StackName}
       BillingMode: PAY_PER_REQUEST
@@ -563,9 +563,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -611,9 +609,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -643,9 +639,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -692,9 +686,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
           Type: Api
@@ -718,9 +710,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
           Type: Api
@@ -743,9 +733,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -771,9 +759,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -799,9 +785,7 @@ Resources:
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -826,9 +810,7 @@ Resources:
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -852,9 +834,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
@@ -878,9 +858,7 @@ Resources:
           TABLE_NAME: !Sub nva-resources-${AWS::StackName}
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Sub nva-resources-${AWS::StackName}
+      Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
@@ -1088,7 +1066,7 @@ Resources:
             EventBusName: !Ref EventBusName
             Pattern:
               detail-type:
-                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
+                #Standard detail-type for successful invocation of Lambda function using Lambda destinations
                 - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
@@ -1222,37 +1200,67 @@ Resources:
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
+      Path: /
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: lambda.amazonaws.com
+              Service:
+                - lambda.amazonaws.com
             Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:*
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: "*"
+
+  DefaultLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - lambda:InvokeFunction
+            Resource: "*"
+
+  DatabaseAccessLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:Query
+              - dynamodb:GetItem
+              - dynamodb:BatchGetItem
+              - dynamodb:DescribeTable
+              - dynamodb:UpdateItem
+              - dynamodb:PutItem
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
+
+  EventsLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:*
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+            Resource: "*"
 
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
