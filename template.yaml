@@ -76,7 +76,7 @@ Parameters:
     Description: Deployment stage. Default is Dev.
 
 Conditions:
-  IsFeatureStage: Equals [ !Ref Stage, 'Feature' ]
+  IsFeatureStage: !Equals [ !Ref Stage, 'Feature' ]
 
 Resources:
 
