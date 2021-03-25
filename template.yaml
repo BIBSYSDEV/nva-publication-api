@@ -66,6 +66,17 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
+  Stage:
+    Type: String
+    Default: Dev
+    AllowedValues:
+      - Feature
+      - Dev
+      - Prod
+    Description: Deployment stage. Default is Dev.
+
+Conditions:
+  IsFeatureStage: Equals [ !Ref Stage, 'Feature' ]
 
 Resources:
 
@@ -1207,7 +1218,11 @@ Resources:
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
+      BasePath:
+        !If
+          - IsFeatureStage
+          - !Sub ${CustomDomainBasePath}-${AWS::StackName}
+          - !Ref CustomDomainBasePath
       DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
