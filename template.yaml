@@ -895,7 +895,11 @@ Resources:
         Variables:
           EVENT_BUS: !Ref EventBusName
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          BASE_PATH: !Ref CustomDomainBasePath
+          BASE_PATH:
+            !If
+            - IsFeatureStage
+            - !Sub ${CustomDomainBasePath}-${AWS::StackName}
+            - !Ref CustomDomainBasePath
           DOMAIN_NAME: !Ref CustomDomain
       Events:
         EventBridgeEvent:
