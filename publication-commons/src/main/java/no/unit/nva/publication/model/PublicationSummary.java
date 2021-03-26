@@ -1,18 +1,17 @@
 package no.unit.nva.publication.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.Optional;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JacocoGenerated;
 
 public class PublicationSummary {
-
-    public static final String MAIN_TITLE = "mainTitle";
-
-    private UUID identifier;
+    
+    private SortableIdentifier identifier;
     private String mainTitle;
     private String owner;
     private Instant modifiedDate;
@@ -31,11 +30,22 @@ public class PublicationSummary {
     public PublicationSummary() {
     }
 
-    public UUID getIdentifier() {
+    public static PublicationSummary fromPublication(Publication publication) {
+        return new PublicationSummary.Builder()
+            .withIdentifier(publication.getIdentifier())
+            .withOwner(publication.getOwner())
+            .withMainTitle(extractMainTitle(publication))
+            .withModifiedDate(publication.getModifiedDate())
+            .withCreatedDate(publication.getCreatedDate())
+            .withStatus(publication.getStatus())
+            .build();
+    }
+
+    public SortableIdentifier getIdentifier() {
         return identifier;
     }
 
-    public void setIdentifier(UUID identifier) {
+    public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
 
@@ -45,12 +55,6 @@ public class PublicationSummary {
 
     public void setMainTitle(String mainTitle) {
         this.mainTitle = mainTitle;
-    }
-
-    @JsonProperty(value = "entityDescription", access = JsonProperty.Access.WRITE_ONLY)
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void unpackNested(Map<String, Object> entityDescription) {
-        this.mainTitle = (String) entityDescription.get(MAIN_TITLE);
     }
 
     public String getOwner() {
@@ -87,24 +91,6 @@ public class PublicationSummary {
 
     @Override
     @JacocoGenerated
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        PublicationSummary that = (PublicationSummary) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
-            && Objects.equals(getMainTitle(), that.getMainTitle())
-            && Objects.equals(getOwner(), that.getOwner())
-            && Objects.equals(getModifiedDate(), that.getModifiedDate())
-            && Objects.equals(getCreatedDate(), that.getCreatedDate())
-            && getStatus() == that.getStatus();
-    }
-
-    @Override
-    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(
             getIdentifier(),
@@ -115,9 +101,34 @@ public class PublicationSummary {
             getStatus());
     }
 
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PublicationSummary that = (PublicationSummary) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getMainTitle(), that.getMainTitle())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && getStatus() == that.getStatus();
+    }
+
+    private static String extractMainTitle(Publication publication) {
+        return Optional.ofNullable(publication)
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getMainTitle)
+            .orElse(null);
+    }
+    
     public static final class Builder {
 
-        private UUID identifier;
+        private SortableIdentifier identifier;
         private String mainTitle;
         private String owner;
         private Instant modifiedDate;
@@ -127,7 +138,7 @@ public class PublicationSummary {
         public Builder() {
         }
 
-        public Builder withIdentifier(UUID identifier) {
+        public Builder withIdentifier(SortableIdentifier identifier) {
             this.identifier = identifier;
             return this;
         }

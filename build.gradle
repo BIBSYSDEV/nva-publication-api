@@ -4,30 +4,41 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'base'
+    id 'nebula.lint' version '16.17.0'
     id "io.freefair.lombok" version "5.3.0"
+    id "maven"
 }
 
 group 'no.unit.nva'
 version '1.0-SNAPSHOT'
 
 allprojects {
-
     apply plugin: 'base'
     apply plugin: 'jacoco'
+    apply plugin: 'nebula.lint'
+
+    gradleLint {
+        rules = ['unused-dependency']
+    }
 
     repositories {
-        jcenter()
+        mavenCentral()
         maven { url "https://jitpack.io" }
+        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
-        awsSdkVersion = '1.11.871'
-        awsSdk2Version = '2.14.16'
-        nvaCommonsVersion = '6a8315d0fefacbbd5be5f30497e6d693cbc6634c'
-        nvaDatamodelVersion = 'e568662e4d76ad5970cd0092c5431587e69f1480'
-        nvaTestUtilsVersion = "0.1.15"
+        awsSdkVersion = '1.11.973'
+        awsSdk2Version = '2.16.16'
+        nvaDatamodelVersion= "0.11.6"
+        nvaCommonsVersion = '1.2.5'
+        nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
         jacksonVersion = '2.10.2'
+        nvaAwsLambdaJavaEvents = '3.2.0'
+        zalandoProblemVersion = '0.25.0'
+        dynamoDbLocalVersion = '1.15.0'
+        awsLambdaCore = '1.2.1'
     }
 }
 
@@ -36,6 +47,7 @@ subprojects {
     apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
+    apply plugin: 'maven'
 
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
@@ -58,24 +70,38 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-        compileOnly group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
-        testImplementation group: 'com.github.BIBSYSDEV.nva-commons', name: 'core', version: project.ext.nvaCommonsVersion
+
+        implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+        implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
-        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.2.4'
+        testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '2.2'
+        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
+        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
+
+        testImplementation (group: 'org.javers', name: 'javers-core', version: '5.14.0'){
+            because "For comparing java objects and detailing the differences in readable way"
+        }
+
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform{
+            excludeTags("RemoteTest")
+        }
         failFast = true
         testLogging {
             events 'skipped', 'passed', 'failed'
         }
         finalizedBy jacocoTestReport
+        //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
+        environment "API_HOST", "localhost"
+        environment "API_SCHEME", "https"
     }
 
     jacocoTestReport {
@@ -112,7 +138,7 @@ subprojects {
                 limit {
                     counter = 'METHOD'
                     value = 'COVEREDRATIO'
-                    minimum = 0.0
+                    minimum = 1.000
                 }
             }
 
@@ -120,10 +146,21 @@ subprojects {
                 limit {
                     counter = 'CLASS'
                     value = 'COVEREDRATIO'
-                    minimum = 0.0
+                    minimum = 1.000
                 }
             }
         }
+    }
+
+
+    // publish submodules
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    artifacts {
+        archives sourcesJar
     }
 
 }

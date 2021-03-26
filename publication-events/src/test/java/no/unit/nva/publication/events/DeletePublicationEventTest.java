@@ -1,16 +1,14 @@
 package no.unit.nva.publication.events;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.PublicationStatus;
 import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
-
-import java.net.URI;
-import java.util.UUID;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 public class DeletePublicationEventTest {
 
@@ -22,7 +20,7 @@ public class DeletePublicationEventTest {
     public void writeDeletePublicationEventToJsonAndReadBackAsObject() throws JsonProcessingException {
         var event = new DeletePublicationEvent(
                 DeletePublicationEvent.DELETE_PUBLICATION,
-                UUID.randomUUID(),
+               SortableIdentifier.next(),
                 PublicationStatus.DRAFT_FOR_DELETION.getValue(),
                 URI.create(SOME_DOI),
                 URI.create(SOME_CUSTOMER));

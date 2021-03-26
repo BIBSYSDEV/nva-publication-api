@@ -1,386 +1,316 @@
 package no.unit.nva.publication.service.impl;
 
-import static com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder.S;
-import static java.util.Objects.isNull;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_EXISTS_CONDITION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.conditionValueMapToAttributeValueMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newPutTransactionItem;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.newTransactWriteItemsRequest;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.parseAttributeValuesMap;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.toDynamoFormat;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrganization;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.valueMapForKeyConditionCheck;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
-import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
-import com.amazonaws.services.dynamodbv2.xspec.ExpressionSpecBuilder;
-import com.amazonaws.services.dynamodbv2.xspec.QueryExpressionSpec;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Clock;
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import no.unit.nva.model.FileSet;
+import java.util.stream.Stream;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.identifiers.SortableIdentifier;
-import no.unit.nva.publication.service.impl.exceptions.ResourceCannotBeDeletedException;
+import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import no.unit.nva.publication.storage.model.daos.UniqueDoiRequestEntry;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
-import nva.commons.apigateway.exceptions.ConflictException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 
-@SuppressWarnings("PMD.GodClass")
-public class ResourceService {
-
-    public static final String EMPTY_STRING = "";
-    public static final String DOUBLE_QUOTES = "\"";
-    public static final String STATUS_FIELD_IN_RESOURCE = "status";
-    public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
-    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = "resource";
-    private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
-    public static final String RESOURCE_MAIN_TITLE_FIELD = "title";
-    public static final String RESOURCE_LINK_FIELD = "link";
-    public static final String RESOURCE_FILES_FIELD = "files";
+@SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
+public class ResourceService extends ServiceWithTransactions {
+    
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
+    public static final int MAX_FETCH_ATTEMPTS = 10;
+    public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
+    public static final String INVALID_PATH_ERROR =
+        "The document path provided in the update expression is invalid for update";
+    public static final String EMPTY_RESOURCE_IDENTIFIER_ERROR = "Empty resource identifier";
+    
+    public static final String DOI_FIELD_IN_RESOURCE = "doi";
+    public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
+    
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
-
+    private final ReadResourceService readResourceService;
+    private final UpdateResourceService updateResourceService;
+    
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
+        super();
         tableName = RESOURCES_TABLE_NAME;
         this.client = client;
         this.clockForTimestamps = clock;
         this.identifierSupplier = identifierSupplier;
-    }
-
-    public ResourceService() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone(), DEFAULT_IDENTIFIER_SUPPLIER);
+        this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
+        this.updateResourceService =
+            new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
     }
 
     public ResourceService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Resource createResource(Resource inputData) throws ConflictException {
-
-        Resource newResource = inputData.copy().withIdentifier(identifierSupplier.get()).build();
+    public Publication createPublication(Publication inputData) throws TransactionFailedException {
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(clockForTimestamps.instant());
+        return insertResource(newResource);
+    }
+
+    public Publication insertPreexistingPublication(Publication publication)
+        throws TransactionFailedException {
+        Resource resource = Resource.fromPublication(publication);
+        return insertResource(resource);
+    }
+
+    private Publication insertResource(Resource newResource) throws TransactionFailedException {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
 
-        return fetchEventuallyConsistentResource(newResource);
+        return fetchSavedResource(newResource);
     }
 
-    private Resource fetchEventuallyConsistentResource(Resource newResource) {
-        Resource savedResource = null;
-        for (int times = 0; times < 10 && savedResource == null; times++) {
-            savedResource = attempt(() -> getResource(newResource)).orElse(fail -> null);
+    public PublishPublicationStatusResponse publishPublication(UserInstance userInstance,
+                                                               SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        return updateResourceService.publishResource(userInstance, resourceIdentifier);
+    }
+    
+    public Publication markPublicationForDeletion(UserInstance userInstance,
+                                                  SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        
+        return markResourceForDeletion(resourceQueryObject(userInstance, resourceIdentifier))
+                   .toPublication();
+    }
+    
+    @SuppressWarnings(RAWTYPES)
+    public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws BadRequestException, TransactionFailedException {
+        List<Dao> daos = readResourceService
+                             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
+        
+        List<TransactWriteItem> transactionItems = transactionItemsForDraftPublicationDeletion(daos);
+        TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);
+        sendTransactionWriteRequest(transactWriteItemsRequest);
+    }
+    
+    public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
+        throws ApiGatewayException {
+        return readResourceService.getPublication(userInstance, resourceIdentifier);
+    }
+    
+    public Publication getPublication(Publication sampleResource) throws NotFoundException {
+        return readResourceService.getPublication(sampleResource);
+    }
+    
+    public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
+        return readResourceService.getResourcesByOwner(sampleUser);
+    }
+    
+    public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+        return readResourceService.getPublicationByIdentifier(identifier);
+    }
+    
+    public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
+        throws NotFoundException, TransactionFailedException {
+        updateResourceService.updateOwner(identifier, oldOwner, newOwner);
+    }
+    
+    public Publication updatePublication(Publication resourceUpdate) throws TransactionFailedException {
+        return updateResourceService.updatePublication(resourceUpdate);
+    }
+    
+    @Override
+    protected String getTableName() {
+        return tableName;
+    }
+    
+    @Override
+    protected AmazonDynamoDB getClient() {
+        return client;
+    }
+    
+    @Override
+    protected Clock getClock() {
+        return clockForTimestamps;
+    }
+    
+    private Publication fetchSavedResource(Resource newResource) {
+        return fetchEventuallyConsistentResource(newResource)
+                   .map(Resource::toPublication)
+                   .orElse(null);
+    }
+    
+    @SuppressWarnings(RAWTYPES)
+    private List<TransactWriteItem> transactionItemsForDraftPublicationDeletion(List<Dao> daos)
+        throws BadRequestException {
+        List<TransactWriteItem> transactionItems = new ArrayList<>();
+        transactionItems.addAll(deleteResourceTransactionItems(daos));
+        transactionItems.addAll(deleteDoiRequestTransactionItems(daos));
+        return transactionItems;
+    }
+    
+    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
+        TransactWriteItem resourceEntry = newPutTransactionItem(new ResourceDao(resource));
+        TransactWriteItem uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
+        return new TransactWriteItem[]{resourceEntry, uniqueIdentifierEntry};
+    }
+    
+    @SuppressWarnings(RAWTYPES)
+    private List<TransactWriteItem> deleteDoiRequestTransactionItems(List<Dao> daos) {
+        Optional<DoiRequestDao> doiRequest = extractDoiRequest(daos);
+        if (doiRequest.isPresent()) {
+            return deleteDoiRequestTransactionItems(doiRequest.orElseThrow());
         }
-        return savedResource;
+        return Collections.emptyList();
     }
-
-    public void updateResource(Resource resourceUpdate) {
-        ResourceDao resourceDao = new ResourceDao(resourceUpdate);
-
-        Map<String, AttributeValue> primaryKeyCheckValuesMap = valueMapForKeyConditionCheck(resourceDao);
-
-        PutItemRequest putItemRequest = new PutItemRequest()
-            .withItem(toDynamoFormat(resourceDao))
-            .withTableName(tableName)
-            .withConditionExpression(PRIMARY_KEY_EQUALITY_CHECK_EXPRESSION)
-            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING)
-            .withExpressionAttributeValues(primaryKeyCheckValuesMap);
-
-        client.putItem(putItemRequest);
+    
+    private List<TransactWriteItem> deleteDoiRequestTransactionItems(DoiRequestDao doiRequestDao) {
+        WithPrimaryKey identifierEntry = IdentifierEntry.create(doiRequestDao);
+        WithPrimaryKey uniqueDoiRequestEntry = UniqueDoiRequestEntry.create(doiRequestDao);
+        return
+            Stream.of(doiRequestDao, identifierEntry, uniqueDoiRequestEntry)
+                .map(this::newDeleteTransactionItem)
+    
+                .collect(Collectors.toList());
     }
-
-    public Resource getResource(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws NotFoundException {
-        return getResource(createQueryObject(userInstance, resourceIdentifier.toString()));
+    
+    @SuppressWarnings(RAWTYPES)
+    private List<TransactWriteItem> deleteResourceTransactionItems(List<Dao> daos)
+        throws BadRequestException {
+        ResourceDao resourceDao = extractResourceDao(daos);
+        
+        TransactWriteItem deleteResourceItem = newDeleteTransactionItem(resourceDao);
+        applyDeleteResourceConditions(deleteResourceItem);
+        
+        TransactWriteItem deleteResourceIdentifierItem = newDeleteTransactionItem(IdentifierEntry.create(resourceDao));
+        
+        return List.of(deleteResourceItem, deleteResourceIdentifierItem);
     }
-
-    public Resource getResource(UserInstance userInstance, String resourceIdentifier)
-        throws NotFoundException {
-        return getResource(createQueryObject(userInstance, resourceIdentifier));
+    
+    private void applyDeleteResourceConditions(TransactWriteItem deleteResource) {
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO,
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#doi", DOI_FIELD_IN_RESOURCE
+        );
+        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.getValue())
+        );
+        
+        deleteResource.getDelete()
+            .withConditionExpression("#data.#status <> :publishedStatus AND attribute_not_exists(#data.#doi)")
+            .withExpressionAttributeNames(expressionAttributeNames)
+            .withExpressionAttributeValues(expressionAttributeValues);
     }
-
-    public Resource getResource(Resource resource) throws NotFoundException {
-        Map<String, AttributeValue> primaryKey = new ResourceDao(resource).primaryKey();
-        GetItemResult getResult = getResourceByPrimaryKey(primaryKey);
-        ResourceDao fetchedDao = parseAttributeValuesMap(getResult.getItem(), ResourceDao.class);
-        return fetchedDao.getResource();
-    }
-
-    public void updateOwner(String identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException {
-        Resource existingResource = getResource(oldOwner, identifier);
-        Resource newResource = updateResourceOwner(newOwner, existingResource);
-        TransactWriteItem deleteAction = newDeleteTransactionItem(existingResource);
-        TransactWriteItem insertionAction = newPutTransactionItem(createNewTransactionPutDataEntry(newResource));
-        TransactWriteItemsRequest request = newTransactWriteItemsRequest(deleteAction, insertionAction);
-        client.transactWriteItems(request);
-    }
-
-    public List<Resource> getResourcesByOwner(UserInstance userInstance) {
-        String partitionKey =
-            ResourceDao.formatPrimaryPartitionKey(userInstance.getOrganizationUri(), userInstance.getUserIdentifier());
-        QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
-        Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
-            String.class);
-        Map<String, String> namesMap = querySpec.getNameMap();
-        QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
-
-        return queryResultToResourceList(result);
-    }
-
-    public Resource publishResource(Resource resource)
-        throws JsonProcessingException, NotFoundException, InvalidPublicationException {
-        Resource existingResource = getResource(resource);
-        if (PublicationStatus.PUBLISHED.equals(existingResource.getStatus())) {
-            return existingResource;
-        }
-        validateForPublishing(resource);
-        ResourceDao dao = new ResourceDao(resource);
-        UpdateItemRequest updateRequest = publishUpdateRequest(dao);
-        return sendUpdateRequest(updateRequest);
-    }
-
-    public Resource markPublicationForDeletion(Resource resource)
-        throws JsonProcessingException, ResourceCannotBeDeletedException {
+    
+    private Resource markResourceForDeletion(Resource resource)
+        throws ApiGatewayException {
         ResourceDao dao = new ResourceDao(resource);
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
         return attempt(() -> sendUpdateRequest(updateRequest))
-            .orElseThrow(failure -> handleConditionFailureException(failure, resource));
+                   .orElseThrow(failure -> markForDeletionError(failure, resource));
     }
-
-    private <E extends Exception> ResourceCannotBeDeletedException handleConditionFailureException(
-        Failure<Resource> failure, Resource resource) {
-        if (failure.getException() instanceof ConditionalCheckFailedException) {
-            return new ResourceCannotBeDeletedException(resource.getIdentifier().toString());
+    
+    private Optional<Resource> fetchEventuallyConsistentResource(Resource newResource) {
+        Resource savedResource = null;
+        for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedResource == null; times++) {
+            savedResource = attempt(() -> readResourceService.getResource(newResource)).orElse(fail -> null);
+            attempt(this::waitBeforeFetching).orElseThrow();
+        }
+        return Optional.ofNullable(savedResource);
+    }
+    
+    private Void waitBeforeFetching() throws InterruptedException {
+        Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
+        return null;
+    }
+    
+    private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {
+        if (primaryKeyConditionFailed(failure.getException())) {
+            return new NotFoundException(ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE);
+        } else if (failure.getException() instanceof ConditionalCheckFailedException) {
+            return new BadRequestException(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE
+                                           + resource.getIdentifier().toString());
         }
         throw new RuntimeException(failure.getException());
     }
-
-    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) throws JsonProcessingException {
+    
+    private boolean primaryKeyConditionFailed(Exception exception) {
+        return exception instanceof AmazonServiceException
+               && messageRefersToInvalidPath(exception);
+    }
+    
+    private boolean messageRefersToInvalidPath(Exception exception) {
+        return exception.getMessage().contains(INVALID_PATH_ERROR);
+    }
+    
+    private UpdateItemRequest markForDeletionUpdateRequest(ResourceDao dao) {
         String updateExpression = "SET "
-                                  + "#resource.#status = :status, "
-                                  + "#resource.#modifiedDate = :modifiedDate";
-        String conditionExpression = "#resource.#status <> :publishedStatus";
-
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
-            updateStatusExpresionValuesMap(PublicationStatus.DRAFT_FOR_DELETION);
-        expressionValuesMap.put(":publishedStatus",
-            new AttributeValue(PublicationStatus.PUBLISHED.toString()));
-
+                                  + "#data.#status = :newStatus, "
+                                  + "#data.#modifiedDate = :modifiedDate";
+        
+        String conditionExpression = "#data.#status = :expectedExistingStatus";
+        
+        Map<String, AttributeValue> expressionValuesMap = Map.of(
+            ":newStatus", new AttributeValue(PublicationStatus.DRAFT_FOR_DELETION.getValue()),
+            ":modifiedDate", new AttributeValue(nowAsString()),
+            ":expectedExistingStatus", new AttributeValue(PublicationStatus.DRAFT.toString())
+        );
+        
+        Map<String, String> expressionAttributeNames = Map.of(
+            "#status", STATUS_FIELD_IN_RESOURCE,
+            "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
+            "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
+        
         return new UpdateItemRequest()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
-            .withExpressionAttributeNames(updateStatusNamesExpressionMap())
-            .withExpressionAttributeValues(expressionValuesMap)
-            .withReturnValues(ReturnValue.ALL_NEW);
+                   .withTableName(tableName)
+                   .withKey(dao.primaryKey())
+                   .withUpdateExpression(updateExpression)
+                   .withConditionExpression(conditionExpression)
+                   .withExpressionAttributeNames(expressionAttributeNames)
+                   .withExpressionAttributeValues(expressionValuesMap)
+                   .withReturnValues(ReturnValue.ALL_NEW);
     }
-
-    private void validateForPublishing(Resource resource) throws InvalidPublicationException {
-        boolean hasNoTitle = isNull(resource.getTitle());
-        boolean hasNeitherLinkNorFile = isNull(resource.getLink()) && emptyResourceFiles(resource);
-
-        if (hasNoTitle) {
-            String missingField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_MAIN_TITLE_FIELD))
-                .orElseThrow();
-            throw new InvalidPublicationException(Collections.singletonList(missingField));
-        } else if (hasNeitherLinkNorFile) {
-            String linkField = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_LINK_FIELD)).orElseThrow();
-            String files = attempt(() -> findFieldNameOrThrowError(resource, RESOURCE_FILES_FIELD)).orElseThrow();
-            throw new InvalidPublicationException(List.of(files, linkField));
-        }
-    }
-
-    private String findFieldNameOrThrowError(Resource resource, String resourceField) throws NoSuchFieldException {
-        return resource.getClass().getDeclaredField(resourceField).getName();
-    }
-
-    private boolean emptyResourceFiles(Resource resource) {
-        return Optional.ofNullable(resource.getFiles())
-            .map(FileSet::getFiles)
-            .map(List::isEmpty)
-            .orElse(true);
-    }
-
+    
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
         UpdateItemResult requestResult = client.updateItem(updateRequest);
         return Try.of(requestResult)
-            .map(UpdateItemResult::getAttributes)
-            .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
-            .orElseThrow();
+                   .map(UpdateItemResult::getAttributes)
+                   .map(valuesMap -> parseAttributeValuesMap(valuesMap, ResourceDao.class))
+                   .map(ResourceDao::getData)
+                   .orElseThrow();
     }
-
-    private UpdateItemRequest publishUpdateRequest(ResourceDao dao) throws JsonProcessingException {
-
-        ConcurrentHashMap<String, String> expressionNamesMap = publishUpdateExpressionNamesMap();
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap =
-            updateStatusExpresionValuesMap(PublicationStatus.PUBLISHED);
-
-        String updateExpression = "SET"
-                                  + " #resource.#status = :status, "
-                                  + "#resource.#modifiedDate = :modifiedDate, "
-                                  + "#resource.#publishedDate = :modifiedDate ";
-        return new UpdateItemRequest()
-            .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression("#resource.#status <> " + PublicationStatus.PUBLISHED.toString())
-            .withExpressionAttributeNames(expressionNamesMap)
-            .withExpressionAttributeValues(expressionValuesMap)
-            .withReturnValues(ReturnValue.ALL_NEW);
-    }
-
-    private ConcurrentHashMap<String, String> publishUpdateExpressionNamesMap() {
-        ConcurrentHashMap<String, String> expressionNamesMap = updateStatusNamesExpressionMap();
-        expressionNamesMap.put("#publishedDate", PUBLISHED_DATE_FIELD_IN_RESOURCE);
-        return expressionNamesMap;
-    }
-
-    private ConcurrentHashMap<String, String> updateStatusNamesExpressionMap() {
-        ConcurrentHashMap<String, String> expressionNamesMap = new ConcurrentHashMap<>();
-        expressionNamesMap.put("#status", STATUS_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#modifiedDate", MODIFIED_FIELD_IN_RESOURCE);
-        expressionNamesMap.put("#resource", RESOURCE_FIELD_IN_RESOURCE_DAO);
-        return expressionNamesMap;
-    }
-
-    private ConcurrentHashMap<String, AttributeValue> updateStatusExpresionValuesMap(
-        PublicationStatus publicationStatus)
-        throws JsonProcessingException {
-        String nowString = instantAsString(clockForTimestamps.instant());
-        ConcurrentHashMap<String, AttributeValue> expressionValuesMap = new ConcurrentHashMap<>();
-        expressionValuesMap.put(":status", new AttributeValue(publicationStatus.getValue()));
-        expressionValuesMap.put(":modifiedDate", new AttributeValue(nowString));
-        return expressionValuesMap;
-    }
-
-    private String instantAsString(Instant instant) throws JsonProcessingException {
-        String jsonString = JsonUtils.objectMapper.writeValueAsString(instant);
-        return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
-    }
-
-    private static List<Resource> queryResultToResourceList(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(resultValuesMap -> parseAttributeValuesMap(resultValuesMap, ResourceDao.class))
-            .map(ResourceDao::getResource)
-            .collect(Collectors.toList());
-    }
-
-    private QueryResult performQuery(String conditionExpression, Map<String, AttributeValue> valuesMap,
-                                     Map<String, String> namesMap) {
-        return client.query(
-            new QueryRequest().withKeyConditionExpression(conditionExpression)
-                .withExpressionAttributeNames(namesMap)
-                .withExpressionAttributeValues(valuesMap)
-                .withTableName(tableName)
-        );
-    }
-
-    private QueryExpressionSpec partitionKeyToQuerySpec(String partitionKey) {
-        return new ExpressionSpecBuilder()
-            .withKeyCondition(S(PRIMARY_KEY_PARTITION_KEY_NAME).eq(partitionKey)).buildForQuery();
-    }
-
-    private TransactWriteItemsResult sendTransactionWriteRequest(TransactWriteItemsRequest putRequest)
-        throws ConflictException {
-        return attempt(() -> client.transactWriteItems(putRequest)).orElseThrow(this::handleTransactionFailure);
-    }
-
-    private Resource updateResourceOwner(UserInstance newOwner, Resource existingResource) {
-        return existingResource.copy()
-            .withPublisher(userOrganization(newOwner))
-            .withOwner(newOwner.getUserIdentifier())
-            .withModifiedDate(clockForTimestamps.instant())
-            .build();
-    }
-
-    private <T extends WithPrimaryKey> TransactWriteItem newDeleteTransactionItem(Resource resource) {
-        ResourceDao resourceDao = new ResourceDao(resource);
-        return new TransactWriteItem()
-            .withDelete(new Delete().withTableName(tableName).withKey(resourceDao.primaryKey()));
-    }
-
-    private TransactWriteItem[] transactionItemsForNewResourceInsertion(Resource resource) {
-        Put resourceEntry = createNewTransactionPutDataEntry(resource);
-        Put uniqueIdentifierEntry = createNewTransactionPutEntryForEnsuringUniqueIdentifier(resource);
-
-        TransactWriteItem dataEntry = newPutTransactionItem(resourceEntry);
-        TransactWriteItem identifierEntry = newPutTransactionItem(uniqueIdentifierEntry);
-
-        return new TransactWriteItem[]{dataEntry, identifierEntry};
-    }
-
-    private Put createNewTransactionPutDataEntry(Resource resource) {
-        return createTransactionPutEntry(new ResourceDao(resource));
-    }
-
-    private Put createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
-        return createTransactionPutEntry(new IdentifierEntry(resource.getIdentifier().toString()));
-    }
-
-    private ConflictException handleTransactionFailure(Failure<TransactWriteItemsResult> fail) {
-        return new ConflictException(fail.getException());
-    }
-
-    private Resource createQueryObject(UserInstance userInstance, String resourceIdentifier) {
-        return Resource.emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
-            resourceIdentifier);
-    }
-
-    private <T extends WithPrimaryKey> Put createTransactionPutEntry(T data) {
-        return new Put().withItem(toDynamoFormat(data)).withTableName(tableName)
-            .withConditionExpression(KEY_EXISTS_CONDITION)
-            .withExpressionAttributeNames(PRIMARY_KEY_PLACEHOLDERS_AND_ATTRIBUTE_NAMES_MAPPING);
-    }
-
-    private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
-        GetItemResult result = client.getItem(new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(primaryKey));
-        if (isNull(result.getItem())) {
-            throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
-        }
-        return result;
+    
+    private TransactWriteItem createNewTransactionPutEntryForEnsuringUniqueIdentifier(Resource resource) {
+        return newPutTransactionItem(new IdentifierEntry(resource.getIdentifier().toString()));
     }
 }

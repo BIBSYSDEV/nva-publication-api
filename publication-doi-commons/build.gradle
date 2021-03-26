@@ -3,14 +3,15 @@ repositories {
 }
 
 dependencies {
-    api group: 'com.github.BIBSYSDEV', name: 'nva-commons', version: project.nvaCommonsVersion
-    api(group: 'com.amazonaws', name: 'aws-lambda-java-events', version: '3.2.0') {
+    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
+
+    api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    api(group: 'com.amazonaws', name: 'aws-lambda-java-events', version: project.ext.nvaAwsLambdaJavaEvents) {
         because('Contains DynamodbEvent.DynamodbStreamRecord')
     }
 
     testImplementation project(":publication-testing")
-
-    testImplementation('com.amazonaws:DynamoDBLocal:1.12.0') {
+    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }

@@ -29,41 +29,43 @@ Parameters:
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
   CustomDomain:
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Custom API to connect this lambda to
+    Default: CustomDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
+    Default: publication
   PublicationsTableName:
     Type: String
     Description: Reference to table containing publications
-    Default: nva_publications
-  PublicationsByOwnerIndexName:
-    Type: String
-    Description: Reference to index containing publications by owner
-    Default: ByPublisher
-  PublishedPublicationsIndexName:
-    Type: String
-    Description: Reference to index containing published publications
-    Default: ByStatePublishedDate
+    Default: nva_resources
   DynamoDBStreamArn:
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Amazon DynamoDB Stream ARN.
+    Default: PublicationsTableStreamArn
   EventBusName:
-    Type : 'AWS::SSM::Parameter::Value<String>'
-    Default: nvaEventBusName
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: EventBusName
   EventBusArn:
-    Type : 'AWS::SSM::Parameter::Value<String>'
-    Default: nvaEventBusArn
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: EventBusArn
+  MaxConcurrency:
+    Type: Number
+    Default: 100
+    Description: Max number of provisioned hot instances for a lambda function
+  MinConcurrency:
+    Type: Number
+    Default: 1
+    MaxValue: 1
+    MinValue: 1
+    Description: Min number of provisioned hot instances for a lambda function
   EventBridgeMaxAttempt:
     Type: Number
     Default: 1
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
-  OrestisResources:
-    Type: String
-    Default: 'OrestisResources'
 
 Resources:
 
@@ -82,33 +84,9 @@ Resources:
         swagger: '2.0'
         info:
           title: NVA Publication API
-          version: '1.0'
+          version: 1.0.0
         paths:
           /:
-            get:
-              summary: List published publications ordered by date desc
-              consumes:
-                - application/json
-              produces:
-                - application/json
-              parameters:
-                - in: query
-                  name: pagesize
-                  type: string
-                  required: false
-                  description: Maximum number of wanted publications in response.
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListPublicationsFunction.Arn}/invocations
-                responses: {}
-                httpMethod: POST
-                type: AWS_PROXY
-              responses:
-                '200':
-                  description: OK
-                  schema:
-                    $ref: '#/definitions/Publication'
-
             post:
               summary: Create Publication
               consumes:
@@ -116,7 +94,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: body
                   name: customer
@@ -125,8 +103,8 @@ Resources:
                     $ref: '#/definitions/Publication'
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}/invocations
-                responses: {}
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreatePublicationFunction.Arn}:live/invocations
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -158,8 +136,8 @@ Resources:
                   description: UUID identifier of the Publication to fetch.
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}/invocations
-                responses: {}
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -174,7 +152,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
@@ -190,7 +168,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaModifyPublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -205,7 +183,7 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               parameters:
                 - in: path
                   name: identifier
@@ -216,7 +194,7 @@ Resources:
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaDeletePublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
@@ -232,18 +210,18 @@ Resources:
               produces:
                 - application/json
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublicationsByOwnerFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
                 '200':
                   description: OK
                   schema:
-                    type: list
+                    type: array
                     items:
                       $ref: '#/definitions/Publication'
           /{identifier}/publish:
@@ -261,22 +239,22 @@ Resources:
                   required: true
                   description: UUID identifier of the Publication to publish.
               security:
-                - CognitoUserPool: []
+                - CognitoUserPool: [ ]
               x-amazon-apigateway-integration:
                 uri:
                   Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaPublishPublicationFunction.Arn}/invocations
-                responses: {}
+                responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
               responses:
                 '202':
                   description: Publishing in progress
                   schema:
-                    $ref: '#/definitions/PublishPublicationStatus'
+                    $ref: '#/definitions/PublicationPublishStatus'
                 '204':
                   description: Publish completed
                   schema:
-                    $ref: '#/definitions/PublishPublicationStatus'
+                    $ref: '#/definitions/PublicationPublishStatus'
                 '400':
                   description: Bad Request
                   schema:
@@ -289,34 +267,125 @@ Resources:
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
-          /resources:
-            post:
-              summary: Create Resource
-              consumes:
-                - application/json
-              produces:
-                - application/json
+          /doirequest:
+            get:
+              summary: Find DOI Requests By Role
+              parameters:
+                - in: query
+                  name: role
+                  description: The role used to find DOI requests for.
+                  type: string
               security:
                 - CognitoUserPool: [ ]
-              x-amazon-apigateway-integration:
-                uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateResourceFunction.Arn}/invocations
-                responses: { }
-                httpMethod: POST
-                type: AWS_PROXY
               responses:
-                '201':
-                  description: Created
+                '200':
+                  description: OK
                   schema:
                     $ref: '#/definitions/Publication'
                 '400':
                   description: Bad Request
                   schema:
                     $ref: '#/definitions/Problem'
+
+                '404':
+                  description: Not Found
+                  schema:
+                    $ref: '#/definitions/Problem'
+
                 '502':
                   description: Bad Gateway
                   schema:
                     $ref: '#/definitions/Problem'
+
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListDoiRequestsHandler.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+            post:
+              summary: Create a DOI request
+              consumes:
+                - application/json
+              produces:
+                - application/json
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: body
+                  name: CreateDoiRequest
+                  schema:
+                    $ref: "#/definitions/CreateDoiRequest"
+              responses:
+                '201':
+                  description: "Created"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateDoiRequestFunction.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+          /update-doi-request/{publicationIdentifier}:
+            post:
+              summary: Initiate a Update DOI Request process
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: path
+                  name: publicationIdentifier
+                  description: Publication Identifier (uuid)
+                  required: true
+                  type: string
+                - in: body
+                  name: updateDoiRequest
+                  description: new status and message
+                  schema:
+                    $ref: '#/definitions/UpdateDoiRequest'
+              responses:
+                '202':
+                  description: "Accepted"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateDoiRequestHandler.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+          /messages:
+            post:
+              summary: Create a message.
+              security:
+                - CognitoUserPool: [ ]
+              parameters:
+                - in: body
+                  name: createMessageReuqest
+                  required: true
+                  schema:
+                    $ref: '#/definitions/CreateMessageRequest'
+              responses:
+                '201':
+                  description: "Created"
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaCreateMessageFunction.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+            get:
+              summary: Get messages for a user.
+              security:
+                - CognitoUserPool: [ ]
+              responses:
+                '200':
+                  description: "OK"
+                  schema:
+                    $ref: '#/definitions/ResourceMessages'
+              x-amazon-apigateway-integration:
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListMessagesFunction.Arn}/invocations
+                responses: { }
+                httpMethod: POST
+                type: AWS_PROXY
+
         definitions:
           Publication:
             type: object
@@ -336,6 +405,70 @@ Resources:
                 type: integer
               detail:
                 type: string
+          CreateDoiRequest:
+            type: object
+            properties:
+              identifier:
+                type: string
+                description: The resource identifier
+              message:
+                type: string
+                description: Optional message to Curator
+          UpdateDoiRequest:
+            type: object
+            properties:
+              doiRequestStatus:
+                $ref: '#/definitions/DoiRequestStatus'
+            description: Initiate a Update DOI request process
+          DoiRequestMessageDto:
+            type: object
+            properties:
+              message:
+                type: string
+          DoiRequestStatus:
+            description: Enum values for valid doiRequestStatus
+            type: string
+            enum:
+              - REQUESTED
+              - APPROVED
+              - REJECTED
+          ResourceMessages:
+            description: Message list for a Publication
+            type: object
+            properties:
+              publication:
+                $ref: '#/definitions/Publication'
+              messages:
+                type: array
+                items:
+                  $ref: '#/definitions/Message'
+          Message:
+            description: Message
+            type: object
+            properties:
+              sender:
+                type: string
+              owner:
+                type: string
+              date:
+                type: string
+              messageType:
+                type: string
+                enum:
+                  - DoiRequest
+                  - Support
+          CreateMessageRequest:
+            type: object
+            properties:
+              publicationIdentifier:
+                type: string
+              message:
+                type: string
+              messageType:
+                type: string
+                enum:
+                  - DoiRequest
+                  - Support
         securityDefinitions:
           CognitoUserPool:
             type: apiKey
@@ -346,6 +479,8 @@ Resources:
               type: cognito_user_pools
               providerARNs:
                 - !Ref CognitoAuthorizerArn
+
+  #==============================Commons Layer=========================================================
   NvaPublicationCommonsLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -356,11 +491,7 @@ Resources:
         - java11
       LicenseInfo: 'MIT'
       RetentionPolicy: Retain
-  DynamodbEventFanoutStreamRecordsDLQ:
-    Type: "AWS::SQS::Queue"
-  UpdateDoiStatusDLQ:
-    Type: "AWS::SQS::Queue"
-
+  #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -370,12 +501,15 @@ Resources:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce # Or Canary10Percent5Minutes, Linear10PercentEvery1Minute, ...
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
@@ -389,12 +523,33 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
+  NvaCreatePublicationFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaCreatePublicationFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaCreatePublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
 
-  NvaCreateResourceFunction:
+  NvaCreatePublicationFucntionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaCreatePublicationScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaCreatePublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+  NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-publication
-      Handler: no.unit.nva.publication.create.CreateResourceHandler::handleRequest
+      CodeUri: create-doi-request
+      Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
       Layers:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
@@ -402,16 +557,21 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref OrestisResources
+            TableName: !Ref PublicationsTableName
       Events:
         GetEvent:
           Type: Api
           Properties:
-            Path: /resources
+            Path: /doirequest
             Method: post
             RestApiId: !Ref NvaPublicationApi
+
+
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -421,12 +581,17 @@ Resources:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -437,6 +602,30 @@ Resources:
             Path: /{identifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
+  NvaFecthPublicationFunctionScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: !Ref MaxConcurrency
+      MinCapacity: !Ref MinConcurrency
+      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+
+  NvaFetchPublicationFucntionScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: NvaFetchPublicationFucntionScalingPolicy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref NvaFecthPublicationFunctionScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+
+
   NvaModifyPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -450,8 +639,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -462,6 +651,7 @@ Resources:
             Path: /{identifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
+
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -475,8 +665,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -500,8 +690,8 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -512,6 +702,64 @@ Resources:
             Path: /by-owner
             Method: get
             RestApiId: !Ref NvaPublicationApi
+
+  ListDoiRequestsHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: list-doi-requests
+      Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
+      MemorySize: 768
+      Timeout: 600
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /doirequest
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdateDoiRequestHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: update-doi-request
+      Handler: no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler::handleRequest
+      MemorySize: 768
+      Timeout: 600
+      Runtime: java11
+      Tracing: Active
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          API_HOST: !Ref CustomDomain
+          API_SCHEME: 'https'
+          TABLE_NAME: !Ref PublicationsTableName
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /update-doi-request/{publicationIdentifier}
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -524,11 +772,9 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
+          TABLE_NAME: !Ref PublicationsTableName
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
@@ -539,11 +785,12 @@ Resources:
             Path: /{identifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
-  NvaListPublicationsFunction:
+
+  NvaCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: list-publications
-      Handler: no.unit.nva.publication.query.ListPublishedPublicationsHandler::handleRequest
+      CodeUri: create-message
+      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
       Layers:
         - !Ref NvaPublicationCommonsLayer
       Runtime: java11
@@ -552,60 +799,47 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref PublicationsTableName
       Events:
-        GetEvent:
+        ApiEvent:
           Type: Api
           Properties:
-            Path: /
-            Method: get
-            RequestParameters:
-              - method.request.querystring.pagesize
+            Path: /messages
+            Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  LambdaRole:
-    Type: AWS::IAM::Role
+  NvaListMessagesFunction:
+    Type: AWS::Serverless::Function
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
+      CodeUri: list-messages
+      Handler: no.unit.nva.pubication.messages.list.ListMessagesHandler::handleRequest
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      Runtime: java11
+      MemorySize: 1408
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:*
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: "*"
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PublicationsTableName
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /messages
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
 
-  DeletePublicationEventProducerDlq:
-    Type: "AWS::SQS::Queue"
+
+  #==========================Event Lambda functions====================================================
 
   DeletePublicationEventProducer:
     Type: AWS::Serverless::Function
@@ -636,16 +870,13 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
-  DynamoDbFanoutPublicationDtoProducerDLQ:
-    Type: "AWS::SQS::Queue"
-
-  DynamoDbFanoutPublicationDtoProducer:
+  DoiRequestEventProducer:
     Type: AWS::Serverless::Function
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-dtopublicationdoi-producer
-      Handler: no.unit.nva.doi.event.producer.DynamoDbFanoutPublicationDtoProducer::handleRequest
+      Handler: no.unit.nva.doi.event.producer.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -660,7 +891,15 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !Ref EventBusName
-            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
+            Pattern:
+              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newPublication:
+                    doiRequest:
+                      type: [ { "exists": true } ] # "exists" works only in leaf nodes.
+
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -668,10 +907,8 @@ Resources:
             Destination: !Ref EventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DynamoDbFanoutPublicationDtoProducerDLQ.Arn
+            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
 
-  PublicationFanoutHandlerDLQ:
-    Type: "AWS::SQS::Queue"
 
   PublicationFanoutHandler:
     Type: AWS::Serverless::Function
@@ -688,7 +925,12 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !Ref EventBusName
-            Pattern: { "detail-type": [ "dynamodb-stream-event" ] }
+            Pattern: {
+              "detail-type": [ "dynamodb-stream-event" ],
+              "resources": [
+                !Ref DynamoDBStreamArn
+              ]
+            }
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -698,8 +940,6 @@ Resources:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
 
-  DeleteDraftPublicationHandlerDLQ:
-    Type: "AWS::SQS::Queue"
 
   DeleteDraftPublicationHandler:
     Type: AWS::Serverless::Function
@@ -710,14 +950,12 @@ Resources:
       Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
           TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -739,12 +977,13 @@ Resources:
             Type: SQS
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
+
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
       Layers:
         - !Ref NvaPublicationCommonsLayer
-      CodeUri: publication-event-emitter
+      CodeUri: dynamodb-event-emitter
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
@@ -773,6 +1012,112 @@ Resources:
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
+
+
+  UpdateDoiStatusHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: update-doi-status
+      Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PublicationsTableName
+          API_SCHEME: https
+          API_HOST: !Ref CustomDomain
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              detail-type:
+                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
+                - "Lambda Function Invocation Result - Success"
+              detail:
+                responsePayload:
+                  type:
+                    - doi.updateDoiStatus
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
+  #===============================DLOQs===================================================================
+  DynamodbEventFanoutStreamRecordsDLQ:
+    Type: "AWS::SQS::Queue"
+  UpdateDoiStatusDLQ:
+    Type: "AWS::SQS::Queue"
+  DeletePublicationEventProducerDlq:
+    Type: "AWS::SQS::Queue"
+  PublicationFanoutHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DeleteDraftPublicationHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DoiRequestEventProducerDLQ:
+    Type: "AWS::SQS::Queue"
+
+
+  #==============================ROLES=======================================================================
+
+  DeleteDraftPublicationLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaDefaults
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - lambda:InvokeFunction
+                Resource: "*"
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !Ref EventBusArn
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+        - PolicyName: DynamoDbAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateItem
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -815,54 +1160,54 @@ Resources:
                 Action:
                   - dynamodb:Query
                   - dynamodb:GetItem
-                  - dynamodb:Query
                   - dynamodb:BatchGetItem
                   - dynamodb:DescribeTable
                   - dynamodb:UpdateItem
                   - dynamodb:PutItem
                 Resource:
                   - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
+                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
 
-  UpdateDoiStatusHandlerFunction:
-    Type: AWS::Serverless::Function
+  LambdaRole:
+    Type: AWS::IAM::Role
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
-      CodeUri: update-doi-status
-      Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
-      Runtime: java11
-      MemorySize: 1408
-      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref PublicationsTableName
-          BY_PUBLISHER_INDEX_NAME: !Ref PublicationsByOwnerIndexName
-          BY_PUBLISHED_PUBLICATIONS_INDEX_NAME: !Ref PublishedPublicationsIndexName
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-      Events:
-        EventBridgeEvent:
-          Type: EventBridgeRule
-          Properties:
-            EventBusName: !Ref EventBusName
-            Pattern:
-              detail-type:
-                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
-                - "Lambda Function Invocation Result - Success"
-              detail:
-                responsePayload:
-                  type:
-                    - doi.updateDoiStatus
-      EventInvokeConfig:
-        DestinationConfig:
-          OnFailure:
-            Type: SQS
-            Destination: !GetAtt UpdateDoiStatusDLQ.Arn
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaDefaults
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - lambda:InvokeFunction
+                Resource: "*"
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:*
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: "*"
 
-
+  #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
       BasePath: !Ref CustomDomainBasePath
-      DomainName: !Ref CustomDomain
+      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage

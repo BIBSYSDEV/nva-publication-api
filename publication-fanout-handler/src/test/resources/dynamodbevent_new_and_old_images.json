@@ -1,685 +1,358 @@
 {
   "version": "0",
-  "id": "d437a46a-e515-761c-e31d-5e23c5a0a247",
+  "id": "6c62155d-e172-4a35-a9db-01f913282c37",
   "detail-type": "dynamodb-stream-event",
   "source": "aws-dynamodb-stream-eventbridge-fanout",
   "account": "884807050265",
-  "time": "2020-10-30T13:21:40Z",
+  "time": "2021-02-02T13:14:08Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:dynamodb:eu-west-1:884807050265:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
+    "arn:aws:dynamodb:eu-west-1:884807050265:table/OrestisResources/stream/2021-02-01T12:02:08.358"
   ],
   "detail": {
-    "eventID": "63951b991a8fc9942126c906a0b70d87",
-    "eventName": "INSERT",
+    "eventID": "3af11c2b1ca7250a416b045361882a4e",
+    "eventName": "MODIFY",
     "eventVersion": "1.1",
     "eventSource": "aws:dynamodb",
     "awsRegion": "eu-west-1",
     "dynamodb": {
-      "approximateCreationDateTime": 1604064096000,
+      "approximateCreationDateTime": 1612271648000,
       "keys": {
-        "identifier": {
-          "s": "42d5f94a-f756-484a-aee0-d01a44d24e91"
+        "PK0": {
+          "s": "Resource:f54c8aa9-073a-46a1-8f7c-dde66c853934:og@unit.no"
         },
-        "modifiedDate": {
-          "s": "2020-09-24T11:15:17.671542Z"
+        "SK0": {
+          "s": "Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         }
       },
       "newImage": {
-        "owner": {
-          "s": "og@unit.no"
+        "PK0": {
+          "s": "Resource:f54c8aa9-073a-46a1-8f7c-dde66c853934:og@unit.no"
         },
-        "identifier": {
-          "s": "42d5f94a-f756-484a-aee0-d01a44d24e91"
-        },
-        "publisherOwnerDate": {
-          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#og@unit.no#2020-09-24T11:15:17.671542Z"
-        },
-        "type": {
-          "s": "Publication"
-        },
-        "doiRequest": {
+        "data": {
           "m": {
-            "date": {
-              "s": "2020-10-22T13:09:17.317127Z"
+            "owner": {
+              "s": "og@unit.no"
             },
-            "messages": {
-              "l": [
-                {
+            "identifier": {
+              "s": "017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
+            },
+            "entityDescription": {
+              "m": {
+                "date": {
                   "m": {
-                    "author": {
-                      "s": "og@unit.no"
+                    "month": {
+                      "s": "2"
                     },
-                    "text": {
-                      "s": "doiiii"
+                    "year": {
+                      "s": "2021"
                     },
                     "type": {
-                      "s": "DoiRequestMessage"
+                      "s": "PublicationDate"
                     },
-                    "timestamp": {
-                      "s": "2020-10-22T13:09:17.317166Z"
+                    "day": {
+                      "s": "2"
                     }
                   }
-                }
-              ]
-            },
-            "type": {
-              "s": "DoiRequest"
-            },
-            "status": {
-              "s": "REQUESTED"
-            }
-          }
-        },
-        "fileSet": {
-          "m": {
-            "files": {
-              "l": [
-                {
+                },
+                "reference": {
                   "m": {
-                    "identifier": {
-                      "s": "9728965a-7ceb-4678-b351-343006255bfc"
+                    "type": {
+                      "s": "Reference"
                     },
-                    "license": {
+                    "publicationInstance": {
                       "m": {
-                        "identifier": {
-                          "s": "CC0"
-                        },
-                        "type": {
-                          "s": "License"
-                        },
-                        "labels": {
+                        "pages": {
                           "m": {
-                            "nb": {
-                              "s": "CC0"
+                            "type": {
+                              "s": "Range"
                             }
                           }
-                        }
-                      }
-                    },
-                    "size": {
-                      "n": "129655"
-                    },
-                    "publisherAuthority": {
-                      "bool": true
-                    },
-                    "name": {
-                      "s": "DTOandBOs.pdf"
-                    },
-                    "administrativeAgreement": {
-                      "bool": false
-                    },
-                    "embargoDate": {
-                      "s": "2020-09-24T11:14:00Z"
-                    },
-                    "mimeType": {
-                      "s": "application/pdf"
-                    },
-                    "type": {
-                      "s": "File"
-                    }
-                  }
-                }
-              ]
-            },
-            "type": {
-              "s": "FileSet"
-            }
-          }
-        },
-        "entityDescription": {
-          "m": {
-            "date": {
-              "m": {
-                "year": {
-                  "s": "2017"
-                },
-                "type": {
-                  "s": "PublicationDate"
-                }
-              }
-            },
-            "reference": {
-              "m": {
-                "publicationInstance": {
-                  "m": {
-                    "volume": {
-                      "s": "64"
-                    },
-                    "pages": {
-                      "m": {
-                        "end": {
-                          "s": "92"
+                        },
+                        "peerReviewed": {
+                          "bool": true
                         },
                         "type": {
-                          "s": "Range"
-                        },
-                        "begin": {
-                          "s": "75"
+                          "s": "JournalArticle"
                         }
                       }
                     },
-                    "peerReviewed": {
-                      "bool": true
-                    },
-                    "type": {
-                      "s": "JournalArticle"
+                    "publicationContext": {
+                      "m": {
+                        "level": {
+                          "s": "NO_LEVEL"
+                        },
+                        "openAccess": {
+                          "bool": false
+                        },
+                        "peerReviewed": {
+                          "bool": false
+                        },
+                        "type": {
+                          "s": "Journal"
+                        },
+                        "title": {
+                          "s": "Proceedings of the VLDB Endowment"
+                        },
+                        "url": {
+                          "s": "http://www.eecs.umich.edu/db/pvldb/"
+                        }
+                      }
                     }
                   }
+                },
+                "mainTitle": {
+                  "s": "Title01"
+                },
+                "description": {
+                  "s": "Description01"
+                },
+                "language": {
+                  "s": "http://lexvo.org/id/iso639-3/eng"
+                },
+                "contributors": {
+                  "l": [
+                    {
+                      "m": {
+                        "sequence": {
+                          "n": "1"
+                        },
+                        "identity": {
+                          "m": {
+                            "name": {
+                              "s": "Gkorgkas,Orestis Stylianos"
+                            },
+                            "orcId": {
+                              "s": "0000-0001-8310-5489"
+                            },
+                            "id": {
+                              "s": "https://api.dev.nva.aws.unit.no/person/1582627888604"
+                            },
+                            "type": {
+                              "s": "Identity"
+                            }
+                          }
+                        },
+                        "correspondingAuthor": {
+                          "bool": false
+                        },
+                        "affiliations": {
+                          "l": [
+                            {
+                              "m": {
+                                "id": {
+                                  "s": "https://api.cristin.no/v2/institutions/20202"
+                                },
+                                "type": {
+                                  "s": "Organization"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        "type": {
+                          "s": "Contributor"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "abstract": {
+                  "s": "Abstract01"
                 },
                 "type": {
-                  "s": "Reference"
+                  "s": "EntityDescription"
                 },
-                "publicationContext": {
-                  "m": {
-                    "openAccess": {
-                      "bool": false
-                    },
-                    "peerReviewed": {
-                      "bool": false
-                    },
-                    "title": {
-                      "s": "Information Systems"
-                    },
-                    "type": {
-                      "s": "Journal"
-                    },
-                    "printIssn": {
-                      "s": "0306-4379"
+                "npiSubjectHeading": {
+                  "s": "1039"
+                },
+                "tags": {
+                  "l": [
+                    {
+                      "s": "databases"
                     }
-                  }
-                },
-                "doi": {
-                  "s": "https://doi.org/10.1016/j.is.2016.09.004"
+                  ]
                 }
               }
             },
-            "metadataSource": {
-              "s": "https://www.crossref.org/"
+            "createdDate": {
+              "s": "2021-02-02T13:09:34.968328Z"
             },
-            "mainTitle": {
-              "s": "Exploratory product search using top-k join queries"
-            },
-            "description": {
-              "s": "sdfsfd"
-            },
-            "language": {
-              "s": "http://lexvo.org/id/iso639-3/eng"
-            },
-            "abstract": {
-              "s": "ksdfkds"
-            },
-            "contributors": {
+            "projects": {
               "l": [
                 {
                   "m": {
-                    "sequence": {
-                      "n": "1"
+                    "name": {
+                      "s": "Method for compression of data"
                     },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Gkorgkas, Orestis"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
+                    "id": {
+                      "s": "403885"
                     },
                     "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "2"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Vlachou, Akrivi"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "3"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Doulkeridis, Christos"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "4"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Nørvåg, Kjetil"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
+                      "s": "ResearchProject"
                     }
                   }
                 }
               ]
             },
+            "statusString": {
+              "s": "DRAFT"
+            },
+            "modifiedDate": {
+              "s": "2021-02-02T13:14:08.049806Z"
+            },
+            "publisher": {
+              "m": {
+                "id": {
+                  "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+                },
+                "type": {
+                  "s": "Organization"
+                }
+              }
+            },
             "type": {
-              "s": "EntityDescription"
+              "s": "Resource"
             },
-            "npiSubjectHeading": {
-              "s": "1039"
+            "status": {
+              "s": "DRAFT"
             },
-            "alternativeTitles": {
-              "m": {}
-            },
-            "tags": {
-              "l": []
+            "fileSet": {
+              "m": {
+                "files": {
+                  "l": [
+                    {
+                      "m": {
+                        "identifier": {
+                          "s": "321235e8-7b35-47ae-92e5-918c8f774020"
+                        },
+                        "license": {
+                          "m": {
+                            "identifier": {
+                              "s": "CC0"
+                            },
+                            "type": {
+                              "s": "License"
+                            },
+                            "labels": {
+                              "m": {
+                                "nb": {
+                                  "s": "CC0"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "size": {
+                          "n": "428244"
+                        },
+                        "publisherAuthority": {
+                          "bool": false
+                        },
+                        "name": {
+                          "s": "vldb09-677233.pdf"
+                        },
+                        "administrativeAgreement": {
+                          "bool": false
+                        },
+                        "mimeType": {
+                          "s": "application/pdf"
+                        },
+                        "type": {
+                          "s": "File"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "type": {
+                  "s": "FileSet"
+                }
+              }
             }
           }
         },
-        "publisherId": {
-          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+        "PK2": {
+          "s": "Customer:f54c8aa9-073a-46a1-8f7c-dde66c853934:Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "createdDate": {
-          "s": "2020-09-24T11:13:36.013058Z"
+        "PK1": {
+          "s": "Resource:Customer:f54c8aa9-073a-46a1-8f7c-dde66c853934:Status:DRAFT"
         },
-        "modifiedDate": {
-          "s": "2020-09-24T11:15:17.671542Z"
+        "SK1": {
+          "s": "Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "publisher": {
-          "m": {
-            "id": {
-              "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-            },
-            "type": {
-              "s": "Organization"
-            }
-          }
+        "SK0": {
+          "s": "Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "publishedDate": {
-          "s": "2020-09-24T11:15:17.671525Z"
+        "SK2": {
+          "s": "b:Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "doiRequestStatusDate": {
-          "s": "REQUESTED#2020-10-22T13:09:17.317127Z"
-        },
-        "status": {
-          "s": "Published"
+        "type": {
+          "s": "Resource"
         }
       },
       "oldImage": {
-        "owner": {
-          "s": "og@unit.no"
+        "PK0": {
+          "s": "Resource:f54c8aa9-073a-46a1-8f7c-dde66c853934:og@unit.no"
         },
-        "identifier": {
-          "s": "42d5f94a-f756-484a-aee0-d01a44d24e91"
-        },
-        "publisherOwnerDate": {
-          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934#og@unit.no#2020-09-24T11:15:17.671542Z"
-        },
-        "type": {
-          "s": "Publication"
-        },
-        "doiRequest": {
+        "data": {
           "m": {
-            "date": {
-              "s": "2020-10-22T13:09:17.317127Z"
+            "owner": {
+              "s": "og@unit.no"
             },
-            "messages": {
-              "l": [
-                {
-                  "m": {
-                    "author": {
-                      "s": "og@unit.no"
-                    },
-                    "text": {
-                      "s": "doiiii"
-                    },
-                    "type": {
-                      "s": "DoiRequestMessage"
-                    },
-                    "timestamp": {
-                      "s": "2020-10-22T13:09:17.317166Z"
-                    }
-                  }
+            "identifier": {
+              "s": "017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
+            },
+            "createdDate": {
+              "s": "2021-02-02T13:09:34.968328Z"
+            },
+            "statusString": {
+              "s": "DRAFT"
+            },
+            "modifiedDate": {
+              "s": "2021-02-02T13:09:34.968142Z"
+            },
+            "publisher": {
+              "m": {
+                "id": {
+                  "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+                },
+                "type": {
+                  "s": "Organization"
                 }
-              ]
+              }
             },
             "type": {
-              "s": "DoiRequest"
+              "s": "Resource"
             },
             "status": {
-              "s": "REQUESTED"
+              "s": "DRAFT"
             }
           }
         },
-        "fileSet": {
-          "m": {
-            "files": {
-              "l": [
-                {
-                  "m": {
-                    "identifier": {
-                      "s": "9728965a-7ceb-4678-b351-343006255bfc"
-                    },
-                    "license": {
-                      "m": {
-                        "identifier": {
-                          "s": "CC0"
-                        },
-                        "type": {
-                          "s": "License"
-                        },
-                        "labels": {
-                          "m": {
-                            "nb": {
-                              "s": "CC0"
-                            }
-                          }
-                        }
-                      }
-                    },
-                    "size": {
-                      "n": "129655"
-                    },
-                    "publisherAuthority": {
-                      "bool": true
-                    },
-                    "name": {
-                      "s": "DTOandBOs.pdf"
-                    },
-                    "administrativeAgreement": {
-                      "bool": false
-                    },
-                    "embargoDate": {
-                      "s": "2020-09-24T11:14:00Z"
-                    },
-                    "mimeType": {
-                      "s": "application/pdf"
-                    },
-                    "type": {
-                      "s": "File"
-                    }
-                  }
-                }
-              ]
-            },
-            "type": {
-              "s": "FileSet"
-            }
-          }
+        "PK2": {
+          "s": "Customer:f54c8aa9-073a-46a1-8f7c-dde66c853934:Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "entityDescription": {
-          "m": {
-            "date": {
-              "m": {
-                "year": {
-                  "s": "2017"
-                },
-                "type": {
-                  "s": "PublicationDate"
-                }
-              }
-            },
-            "reference": {
-              "m": {
-                "publicationInstance": {
-                  "m": {
-                    "volume": {
-                      "s": "64"
-                    },
-                    "pages": {
-                      "m": {
-                        "end": {
-                          "s": "92"
-                        },
-                        "type": {
-                          "s": "Range"
-                        },
-                        "begin": {
-                          "s": "75"
-                        }
-                      }
-                    },
-                    "peerReviewed": {
-                      "bool": true
-                    },
-                    "type": {
-                      "s": "JournalArticle"
-                    }
-                  }
-                },
-                "type": {
-                  "s": "Reference"
-                },
-                "publicationContext": {
-                  "m": {
-                    "openAccess": {
-                      "bool": false
-                    },
-                    "peerReviewed": {
-                      "bool": false
-                    },
-                    "title": {
-                      "s": "Information Systems"
-                    },
-                    "type": {
-                      "s": "Journal"
-                    },
-                    "printIssn": {
-                      "s": "0306-4379"
-                    }
-                  }
-                },
-                "doi": {
-                  "s": "https://doi.org/10.1016/j.is.2016.09.004"
-                }
-              }
-            },
-            "metadataSource": {
-              "s": "https://www.crossref.org/"
-            },
-            "mainTitle": {
-              "s": "Exploratory product search using top-k join queries"
-            },
-            "description": {
-              "s": "sdfsfd"
-            },
-            "language": {
-              "s": "http://lexvo.org/id/iso639-3/eng"
-            },
-            "abstract": {
-              "s": "ksdfkds"
-            },
-            "contributors": {
-              "l": [
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "1"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Gkorgkas, Orestis"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "2"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Vlachou, Akrivi"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "3"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Doulkeridis, Christos"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                },
-                {
-                  "m": {
-                    "sequence": {
-                      "n": "4"
-                    },
-                    "identity": {
-                      "m": {
-                        "name": {
-                          "s": "Nørvåg, Kjetil"
-                        },
-                        "type": {
-                          "s": "Identity"
-                        }
-                      }
-                    },
-                    "correspondingAuthor": {
-                      "bool": false
-                    },
-                    "type": {
-                      "s": "Contributor"
-                    }
-                  }
-                }
-              ]
-            },
-            "type": {
-              "s": "EntityDescription"
-            },
-            "npiSubjectHeading": {
-              "s": "1039"
-            },
-            "alternativeTitles": {
-              "m": {}
-            },
-            "tags": {
-              "l": []
-            }
-          }
+        "PK1": {
+          "s": "Resource:Customer:f54c8aa9-073a-46a1-8f7c-dde66c853934:Status:DRAFT"
         },
-        "publisherId": {
-          "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
+        "SK1": {
+          "s": "Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "createdDate": {
-          "s": "2020-09-24T11:13:36.013058Z"
+        "SK0": {
+          "s": "Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "modifiedDate": {
-          "s": "2020-09-24T11:15:17.671542Z"
+        "SK2": {
+          "s": "b:Resource:017762dcd278-7fc0762a-5fef-4edf-9b1b-c3964087af06"
         },
-        "publisher": {
-          "m": {
-            "id": {
-              "s": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-            },
-            "type": {
-              "s": "Organization"
-            }
-          }
-        },
-        "publishedDate": {
-          "s": "2020-09-24T11:15:17.671525Z"
-        },
-        "doiRequestStatusDate": {
-          "s": "REQUESTED#2020-10-22T13:09:17.317127Z"
-        },
-        "status": {
-          "s": "Published"
+        "type": {
+          "s": "Resource"
         }
       },
-      "sequenceNumber": "200000000025410353361",
-      "sizeBytes": 2124,
+      "sequenceNumber": "78426100000000068256699567",
+      "sizeBytes": 2717,
       "streamViewType": "NEW_AND_OLD_IMAGES"
     },
-    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
-  }
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/OrestisResources/stream/2021-02-01T12:02:08.358"
   }
 }
-
-
-
-

@@ -30,7 +30,7 @@
     "responsePayload": {
       "type": "doi.publication.updateDoi",
       "item": {
-        "publicationId": "https://example.net/unittest/namespace/publication/41076d56-2839-11eb-b644-1bb5be85c01b",
+        "publicationId": "41076d56-2839-11eb-b644-1bb5be85c01b",
         "doi": "https://doi.org/10.1103/physrevd.100.085005",
         "modifiedDate": "2999-08-14T10:30:10.019991Z"
       }
