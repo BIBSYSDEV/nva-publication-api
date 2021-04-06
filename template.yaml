@@ -1220,3 +1220,11 @@ Resources:
       DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
+  PublicationsTableStreamArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Description: ARN of PublicationsTableStream
+      Name: PublicationsTableStreamArn
+      Type: String
+      Value: !GetAtt NvaResourcesTable.StreamArn
