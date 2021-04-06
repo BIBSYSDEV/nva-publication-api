@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   AWS
 
-  Sample SAM Template for AWS
+  SAM Template for NVA Publication Service
 
 Metadata:
   AWS::ServerlessRepo::Application:
@@ -36,14 +36,6 @@ Parameters:
     Type: String
     Description: Base path mapping in CustomDomain
     Default: publication
-  PublicationsTableName:
-    Type: String
-    Description: Reference to table containing publications
-    Default: nva_resources
-  DynamoDBStreamArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: Amazon DynamoDB Stream ARN.
-    Default: PublicationsTableStreamArn
   EventBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: EventBusName
@@ -71,6 +63,66 @@ Resources:
 
   ApiAccessLogGroup:
     Type: AWS::Logs::LogGroup
+
+  #===========================DynamoDB Table========================================================
+  NvaResourcesTable:
+    Type: AWS::DynamoDB::Table
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Delete # DeletionPolicy should be added on main branch stacks through use of stack policy
+    Properties:
+      TableName: !Sub nva-resources-${AWS::StackName}
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: PK0
+          AttributeType: S
+        - AttributeName: SK0
+          AttributeType: S
+        - AttributeName: PK1
+          AttributeType: S
+        - AttributeName: SK1
+          AttributeType: S
+        - AttributeName: PK2
+          AttributeType: S
+        - AttributeName: SK2
+          AttributeType: S
+        - AttributeName: PK3
+          AttributeType: S
+        - AttributeName: SK3
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK0
+          KeyType: HASH
+        - AttributeName: SK0
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByTypeCustomerStatus
+          KeySchema:
+            - AttributeName: PK1
+              KeyType: HASH
+            - AttributeName: SK1
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ByCustomerResource
+          KeySchema:
+            - AttributeName: PK2
+              KeyType: HASH
+            - AttributeName: SK2
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourcesByIdentifier
+          KeySchema:
+            - AttributeName: PK3
+              KeyType: HASH
+            - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      StreamSpecification:
+        StreamViewType: NEW_AND_OLD_IMAGES
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -509,12 +561,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -557,12 +607,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -589,12 +637,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -638,12 +684,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
           Type: Api
@@ -664,12 +708,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
           Type: Api
@@ -689,12 +731,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -717,12 +757,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -747,10 +785,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_HOST: !Ref CustomDomain
           API_SCHEME: 'https'
-          TABLE_NAME: !Ref PublicationsTableName
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -774,10 +810,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-          TABLE_NAME: !Ref PublicationsTableName
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
+      Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
           Type: Api
@@ -798,12 +832,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
@@ -824,12 +856,10 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref PublicationsTableName
+      Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
           Type: Api
@@ -928,7 +958,7 @@ Resources:
             Pattern: {
               "detail-type": [ "dynamodb-stream-event" ],
               "resources": [
-                !Ref DynamoDBStreamArn
+                !GetAtt NvaResourcesTable.StreamArn
               ]
             }
       EventInvokeConfig:
@@ -953,7 +983,7 @@ Resources:
       Role: !GetAtt DeleteDraftPublicationLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
       Events:
@@ -1008,7 +1038,7 @@ Resources:
         FanoutSource:
           Type: DynamoDB
           Properties:
-            Stream: !Ref DynamoDBStreamArn
+            Stream: !GetAtt NvaResourcesTable.StreamArn
             StartingPosition: TRIM_HORIZON
             BatchSize: 10
             Enabled: true
@@ -1026,7 +1056,7 @@ Resources:
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          TABLE_NAME: !Ref PublicationsTableName
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -1037,7 +1067,7 @@ Resources:
             EventBusName: !Ref EventBusName
             Pattern:
               detail-type:
-                #Standard detail-type for successful invocation of Lambda function using Labmda destinations
+                #Standard detail-type for successful invocation of Lambda function using Lambda destinations
                 - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
@@ -1077,17 +1107,6 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
         - PolicyName: Events
           PolicyDocument:
             Version: '2012-10-17'
@@ -1102,22 +1121,6 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                 Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
-        - PolicyName: DynamoDbAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:GetItem
-                  - dynamodb:BatchGetItem
-                  - dynamodb:DescribeTable
-                  - dynamodb:UpdateItem
-                  - dynamodb:PutItem
-                  - dynamodb:DeleteItem
-                Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
 
   UpdateDoiStatusLambdaRole:
     Type: AWS::IAM::Role
@@ -1131,17 +1134,6 @@ Resources:
             Action: sts:AssumeRole
       Path: /
       Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
         - PolicyName: Events
           PolicyDocument:
             Version: '2012-10-17'
@@ -1152,56 +1144,73 @@ Resources:
                   - sqs:ReceiveMessage
                   - sqs:DeleteMessage
                 Resource: !GetAtt UpdateDoiStatusDLQ.Arn
-        - PolicyName: DynamoDbAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - dynamodb:Query
-                  - dynamodb:GetItem
-                  - dynamodb:BatchGetItem
-                  - dynamodb:DescribeTable
-                  - dynamodb:UpdateItem
-                  - dynamodb:PutItem
-                Resource:
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName ] ]
-                  - !Join [ "",[ "arn:aws:dynamodb",":",!Ref AWS::Region,":",!Ref AWS::AccountId,":","table/",!Ref PublicationsTableName, "/index/","*" ] ]
 
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
+      Path: /
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal:
-              Service: lambda.amazonaws.com
+              Service:
+                - lambda.amazonaws.com
             Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: LambdaDefaults
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:*
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: "*"
+
+  DefaultLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - lambda:InvokeFunction
+            Resource: "*"
+
+  DatabaseAccessLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
+
+  EventsLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:*
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+            Resource: "*"
 
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
