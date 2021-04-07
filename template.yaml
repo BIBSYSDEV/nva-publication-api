@@ -65,6 +65,7 @@ Resources:
     Type: AWS::Logs::LogGroup
 
   #===========================DynamoDB Table========================================================
+
   NvaResourcesTable:
     Type: AWS::DynamoDB::Table
     UpdateReplacePolicy: Retain
@@ -123,6 +124,141 @@ Resources:
         StreamViewType: NEW_AND_OLD_IMAGES
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+
+  #===============================DLOQs===================================================================
+
+  DynamodbEventFanoutStreamRecordsDLQ:
+    Type: "AWS::SQS::Queue"
+  UpdateDoiStatusDLQ:
+    Type: "AWS::SQS::Queue"
+  DeletePublicationEventProducerDlq:
+    Type: "AWS::SQS::Queue"
+  PublicationFanoutHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DeleteDraftPublicationHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+  DoiRequestEventProducerDLQ:
+    Type: "AWS::SQS::Queue"
+
+
+  #==============================ROLES=======================================================================
+
+  DeleteDraftPublicationLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:PutEvents
+                Resource: !Ref EventBusArn
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
+
+  UpdateDoiStatusLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: Events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                Resource: !GetAtt UpdateDoiStatusDLQ.Arn
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action: sts:AssumeRole
+
+  DefaultLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - lambda:InvokeFunction
+            Resource: "*"
+
+  DatabaseAccessLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+        - !Ref DeleteDraftPublicationLambdaRole
+        - !Ref UpdateDoiStatusLambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:*
+            Resource:
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
+              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
+
+  EventsLambdaPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - events:*
+              - sqs:SendMessage
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+            Resource: "*"
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -1078,139 +1214,6 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
-  #===============================DLOQs===================================================================
-  DynamodbEventFanoutStreamRecordsDLQ:
-    Type: "AWS::SQS::Queue"
-  UpdateDoiStatusDLQ:
-    Type: "AWS::SQS::Queue"
-  DeletePublicationEventProducerDlq:
-    Type: "AWS::SQS::Queue"
-  PublicationFanoutHandlerDLQ:
-    Type: "AWS::SQS::Queue"
-  DeleteDraftPublicationHandlerDLQ:
-    Type: "AWS::SQS::Queue"
-  DoiRequestEventProducerDLQ:
-    Type: "AWS::SQS::Queue"
-
-
-  #==============================ROLES=======================================================================
-
-  DeleteDraftPublicationLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - events:PutEvents
-                Resource: !Ref EventBusArn
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
-
-  UpdateDoiStatusLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Path: /
-      Policies:
-        - PolicyName: Events
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:SendMessage
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                Resource: !GetAtt UpdateDoiStatusDLQ.Arn
-
-  LambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action: sts:AssumeRole
-
-  DefaultLambdaPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub DefaultLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-        - !Ref DeleteDraftPublicationLambdaRole
-        - !Ref UpdateDoiStatusLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              - lambda:InvokeFunction
-            Resource: "*"
-
-  DatabaseAccessLambdaPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-        - !Ref DeleteDraftPublicationLambdaRole
-        - !Ref UpdateDoiStatusLambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:*
-            Resource:
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
-              - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
-
-  EventsLambdaPermissions:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyName: !Sub EventsLambdaPermissions-${AWS::StackName}
-      Roles:
-        - !Ref LambdaRole
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Action:
-              - events:*
-              - sqs:SendMessage
-              - sqs:ReceiveMessage
-              - sqs:DeleteMessage
-            Resource: "*"
 
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
