@@ -58,6 +58,13 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
+  Suffix:
+    Type: String
+    Default: ''
+    Description: Suffix used for naming resources for feature branches to avoid conflicts.
+
+Conditions:
+  WithSuffix: !Not [ !Ref Suffix, '' ]
 
 Resources:
 
@@ -1216,10 +1223,15 @@ Resources:
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
   #===========================BasePathMappings========================================================
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${Ref CustomDomainBasePath}-${Suffix}
+        - !Sub ${Ref CustomDomainBasePath}
+      DomainName: !Sub api.${Ref CustomDomain}
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
