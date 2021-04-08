@@ -1230,8 +1230,8 @@ Resources:
       BasePath:
         !If
         - WithSuffix
-        - !Sub ${Ref CustomDomainBasePath}-${Suffix}
-        - !Sub ${Ref CustomDomainBasePath}
-      DomainName: !Sub api.${Ref CustomDomain}
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Sub api.${CustomDomain}
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
