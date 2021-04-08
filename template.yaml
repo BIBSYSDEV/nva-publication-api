@@ -64,7 +64,7 @@ Parameters:
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
 
 Conditions:
-  WithSuffix: !Not [ !Ref Suffix, '' ]
+  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ]]
 
 Resources:
 
