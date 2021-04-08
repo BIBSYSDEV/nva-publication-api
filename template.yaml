@@ -1015,6 +1015,7 @@ Resources:
   #==========================Event Lambda functions====================================================
 
   DeletePublicationEventProducer:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1044,6 +1045,7 @@ Resources:
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
   DoiRequestEventProducer:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1084,6 +1086,7 @@ Resources:
 
 
   PublicationFanoutHandler:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1115,6 +1118,7 @@ Resources:
 
 
   DeleteDraftPublicationHandler:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1188,6 +1192,7 @@ Resources:
 
 
   UpdateDoiStatusHandlerFunction:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
