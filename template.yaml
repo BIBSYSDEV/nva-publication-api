@@ -253,7 +253,7 @@ Resources:
   S3AccessPermsisions:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
+      PolicyName: !Sub S3AccessPermsisions-${AWS::StackName}
       Roles:
         - !Ref LambdaRole
       PolicyDocument:
