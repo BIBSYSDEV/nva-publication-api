@@ -69,7 +69,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         StubS3Driver s3Driver = new StubS3Driver(bucketName, resourceFiles);
         ImportRequest request = new ImportRequest(bucketName, SOME_PATH, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        List<ImportResult> result = dataImportHandler.importAllFilesFromFolder(request);
+        dataImportHandler.importAllFilesFromFolder(request);
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(equalTo(s3Driver.getAllIonItems().size())));

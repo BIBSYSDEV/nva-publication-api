@@ -10,6 +10,13 @@ import java.util.Optional;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
+/**
+ * Matcher for MockitoHamcrest to match arguments that contain a specific PartitionKey
+ *
+ * <p>Example Usage:
+ * {@code when(mockClient.batchWriteItem(argThat(requestContains(failingPrimaryPartitionKey))))
+ * .thenAnswer(answerForFailingPrimaryPartitionKey(failingPrimaryPartitionKey)); }
+ */
 public class BatchWriteItemRequestMatcher extends BaseMatcher<BatchWriteItemRequest> {
 
     private final String failingPk;
