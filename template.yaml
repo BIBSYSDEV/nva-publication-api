@@ -1215,6 +1215,22 @@ Resources:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
+  #==========================Manually triggered functions=============================================
+  ImportFromS3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: data-import-from-s3
+      Handler: no.unit.nva.dataimport:DataImport::importAllFilesInFolder
+      Runtime: java11
+      MemorySize: 2400
+      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
+      Environment:
+        Variables:
+          AWS_REGION: "eu-west-1"
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+
   #===========================BasePathMappings========================================================
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping

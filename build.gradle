@@ -22,6 +22,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { url "https://jitpack.io" }
         maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
@@ -29,7 +30,7 @@ allprojects {
 
     project.ext {
         awsSdkVersion = '1.11.973'
-        awsSdk2Version = '2.16.16'
+        awsSdk2Version = '2.16.37'
         nvaDatamodelVersion= "0.11.6"
         nvaCommonsVersion = '1.2.5'
         nvaTestUtilsVersion = "0.1.18"
