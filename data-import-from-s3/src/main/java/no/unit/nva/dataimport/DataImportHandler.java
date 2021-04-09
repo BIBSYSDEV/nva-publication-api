@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 public class DataImportHandler {
 
     private static final int MAX_ATTEMPTS = 10;
+    public static final S3Driver SETUP_DRIVER_AFTER_BUCKET_IS_KNOWN = null;
     private final AmazonDynamoDB dynamoClient;
     private S3Driver s3Driver;
     private String tableName;
@@ -38,7 +39,7 @@ public class DataImportHandler {
 
     @JacocoGenerated
     public DataImportHandler() {
-        this(null, defaultDynamoClient());
+        this(SETUP_DRIVER_AFTER_BUCKET_IS_KNOWN, defaultDynamoClient());
     }
 
     public DataImportHandler(S3Driver s3Driver, AmazonDynamoDB dynamoClient) {
