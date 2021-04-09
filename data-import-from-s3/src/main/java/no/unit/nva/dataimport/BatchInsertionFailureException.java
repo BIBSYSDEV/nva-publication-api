@@ -14,10 +14,10 @@ public class BatchInsertionFailureException extends RuntimeException {
     public static final String DELIMITER = System.lineSeparator();
 
     public BatchInsertionFailureException(BatchWriteItemResult result) {
-        super(constructMessage(result));
+        super(keysOfFailedItems(result));
     }
 
-    private static String constructMessage(BatchWriteItemResult result) {
+    private static String keysOfFailedItems(BatchWriteItemResult result) {
         return result.getUnprocessedItems().values()
                    .stream()
                    .flatMap(Collection::stream)
