@@ -1,15 +1,16 @@
 package no.unit.nva.dataimport;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
+import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
 public class ImportRequest implements JsonSerializable {
 
-    @JsonProperty("bucket")
-    private String bucket;
-    @JsonProperty("folderPath")
-    private String folderPath;
+    public static final String PATH_DELIMITER = "/";
+    @JsonProperty("s3location")
+    private URI s3Location;
     @JsonProperty("table")
     private String table;
 
@@ -19,31 +20,21 @@ public class ImportRequest implements JsonSerializable {
 
     }
 
-    public ImportRequest(String bucket,
-                         String folderPath,
+    public ImportRequest(String s3location,
                          String table) {
-        this.bucket = bucket;
-        this.folderPath = folderPath;
+
         this.table = table;
-    }
-
-    public String getBucket() {
-        return bucket;
+        this.s3Location = URI.create(s3location);
     }
 
     @JacocoGenerated
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
+    public URI getS3Location() {
+        return s3Location;
     }
 
     @JacocoGenerated
-    public String getFolderPath() {
-        return folderPath;
-    }
-
-    @JacocoGenerated
-    public void setFolderPath(String folderPath) {
-        this.folderPath = folderPath;
+    public void setS3Location(URI s3Location) {
+        this.s3Location = s3Location;
     }
 
     @JacocoGenerated
@@ -56,9 +47,42 @@ public class ImportRequest implements JsonSerializable {
         this.table = table;
     }
 
+    public String getBucket() {
+        return s3Location.getHost();
+    }
+
+    public String getFolderPath() {
+        String path = s3Location.getPath();
+        return removeRoot(path);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getS3Location(), getTable());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ImportRequest)) {
+            return false;
+        }
+        ImportRequest request = (ImportRequest) o;
+        return Objects.equals(getS3Location(), request.getS3Location()) && Objects.equals(getTable(),
+                                                                                          request.getTable());
+    }
+
     @Override
     @JacocoGenerated
     public String toString() {
         return toJsonString();
+    }
+
+    private String removeRoot(String path) {
+        return path.startsWith(PATH_DELIMITER) ? path.substring(1) : path;
     }
 }

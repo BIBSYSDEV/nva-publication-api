@@ -8,7 +8,9 @@ import nva.commons.core.parallel.ParallelExecutionException;
 
 public class ImportResult {
 
+    @JsonProperty("errorMessage")
     private final String errorMessage;
+    @JsonProperty("filename")
     private final String filename;
 
     @JsonCreator
