@@ -55,9 +55,11 @@ public class DataImportHandler {
         List<String> filesToInsert = filenames;
         List<ImportResult> failedImports = Collections.emptyList();
         int attempts = 0;
+
         while (!filesToInsert.isEmpty() && attempts < MAX_ATTEMPTS) {
             ParallelMapper<String, BatchWriteItemResult> mapping =
-                new ParallelMapper<>(filesToInsert, this::insertFile, ParallelMapper.DEFAULT_BATCH_SIZE).map();
+                new ParallelMapper<>(filesToInsert, this::writeFileContentsToDynamo, ParallelMapper.DEFAULT_BATCH_SIZE);
+            mapping.map();
 
             failedImports = collectFilesWithFailures(mapping.getExceptions());
             filesToInsert = extractFilenamesFromFailedImports(failedImports);
@@ -84,10 +86,12 @@ public class DataImportHandler {
                    .collect(Collectors.toList());
     }
 
-    private BatchWriteItemResult insertFile(String filename) {
-        FileImporter fileImporter = new FileImporter(dynamoClient, s3Driver, tableName, filename);
-        List<BatchWriteItemResult> results = attempt(fileImporter::insertFileToDynamo).orElseThrow();
-        BatchWriteItemResult result = results.stream().reduce(this::mergeResults).orElse(new BatchWriteItemResult());
+    private BatchWriteItemResult writeFileContentsToDynamo(String filename) {
+        S3ToDynamoImporter s3ToDynamoImporter = new S3ToDynamoImporter(dynamoClient, s3Driver, tableName, filename);
+        List<BatchWriteItemResult> results = attempt(s3ToDynamoImporter::insertFileToDynamo).orElseThrow();
+        BatchWriteItemResult result = results.stream()
+                                          .reduce(this::mergeResults)
+                                          .orElse(new BatchWriteItemResult());
         if (itemsFailedToBeInserted(result)) {
             throw new BatchInsertionFailureException(result);
         }
