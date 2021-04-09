@@ -22,6 +22,10 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.parallel.ParallelExecutionException;
 import nva.commons.core.parallel.ParallelMapper;
 
+/**
+ * Handler for importing data from an S3 bucket into a DynamoDb table. Data in S3 are expected to be in Amazon's ION
+ * format.
+ */
 public class DataImportHandler {
 
     private static final int MAX_ATTEMPTS = 10;
@@ -57,15 +61,19 @@ public class DataImportHandler {
         int attempts = 0;
 
         while (!filesToInsert.isEmpty() && attempts < MAX_ATTEMPTS) {
-            ParallelMapper<String, BatchWriteItemResult> mapping =
-                new ParallelMapper<>(filesToInsert, this::writeFileContentsToDynamo, ParallelMapper.DEFAULT_BATCH_SIZE);
-            mapping.map();
+            ParallelMapper<String, BatchWriteItemResult> mapping = processAllFilesInParallel(filesToInsert);
 
             failedImports = collectFilesWithFailures(mapping.getExceptions());
             filesToInsert = extractFilenamesFromFailedImports(failedImports);
             attempts++;
         }
         return failedImports;
+    }
+
+    private ParallelMapper<String, BatchWriteItemResult> processAllFilesInParallel(List<String> filesToInsert)
+        throws InterruptedException {
+        return new ParallelMapper<>(filesToInsert, this::writeFileContentsToDynamo, ParallelMapper.DEFAULT_BATCH_SIZE)
+                   .map();
     }
 
     private List<String> extractFilenamesFromFailedImports(List<ImportResult> failedImports) {
@@ -89,9 +97,7 @@ public class DataImportHandler {
     private BatchWriteItemResult writeFileContentsToDynamo(String filename) {
         S3ToDynamoImporter s3ToDynamoImporter = new S3ToDynamoImporter(dynamoClient, s3Driver, tableName, filename);
         List<BatchWriteItemResult> results = attempt(s3ToDynamoImporter::insertFileToDynamo).orElseThrow();
-        BatchWriteItemResult result = results.stream()
-                                          .reduce(this::mergeResults)
-                                          .orElse(new BatchWriteItemResult());
+        BatchWriteItemResult result = collectResults(results);
         if (itemsFailedToBeInserted(result)) {
             throw new BatchInsertionFailureException(result);
         }
@@ -102,10 +108,16 @@ public class DataImportHandler {
         return !result.getUnprocessedItems().isEmpty();
     }
 
+    private BatchWriteItemResult collectResults(List<BatchWriteItemResult> results) {
+        return results.stream()
+                   .reduce(this::mergeResults)
+                   .orElse(new BatchWriteItemResult());
+    }
+
     private BatchWriteItemResult mergeResults(BatchWriteItemResult left, BatchWriteItemResult right) {
         Map<String, List<WriteRequest>> leftUnprocessedItems = extractUnprocessedItems(left);
         Map<String, List<WriteRequest>> rightUnprocessedItems = extractUnprocessedItems(right);
-        Map<String, List<WriteRequest>> unprocessedItems = mergeMaps(leftUnprocessedItems, rightUnprocessedItems);
+        Map<String, List<WriteRequest>> unprocessedItems = mergeMapValues(leftUnprocessedItems, rightUnprocessedItems);
 
         List<ConsumedCapacity> leftConsumedCapacity = extractConsumedCapacity(left);
         List<ConsumedCapacity> rightConsumedCapacity = extractConsumedCapacity(right);
@@ -130,7 +142,16 @@ public class DataImportHandler {
                    .orElse(Collections.emptyMap());
     }
 
-    private <T> Map<String, List<T>> mergeMaps(Map<String, List<T>> left, Map<String, List<T>> right) {
+    /**
+     * This method accepts two Maps whose values are Lists and returns a Map where the value for each key is the
+     * concatenation of the values of the input maps for the respective keys.
+     *
+     * @param left  The first input.
+     * @param right The second input.
+     * @param <T>   The class of the objects of the lists.
+     * @return a Map with merged values.
+     */
+    private <T> Map<String, List<T>> mergeMapValues(Map<String, List<T>> left, Map<String, List<T>> right) {
         return Stream.concat(left.entrySet().stream(), right.entrySet().stream())
                    .collect(Collectors.groupingBy(Entry::getKey))
                    .values()
