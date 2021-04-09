@@ -105,7 +105,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void dataImportReturnsAllFailingPrimaryKeysOfFailedInputs() {
+    public void dataImportReturnsAllFailingPrimaryKeysOfFailedInputsForPartiallySuccessfulInsertions() {
         resourceFiles = List.of(SAMPLE_WITH_SOME_FAILING_ENTRIES);
 
         List<String> expectedFailingEntries =
