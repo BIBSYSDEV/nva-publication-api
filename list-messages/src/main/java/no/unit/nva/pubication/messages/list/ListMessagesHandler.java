@@ -14,6 +14,7 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -36,7 +37,8 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     }
 
     @Override
-    protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context) {
+    protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context)
+        throws BadRequestException {
         UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
         List<ResourceConversation> conversations = fetchResourceConversations(requestInfo, userInstance);
         return convertListToArray(conversations);
@@ -53,7 +55,8 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         return new MessageService(client, Clock.systemDefaultZone());
     }
 
-    private List<ResourceConversation> fetchResourceConversations(RequestInfo requestInfo, UserInstance userInstance) {
+    private List<ResourceConversation> fetchResourceConversations(RequestInfo requestInfo, UserInstance userInstance)
+        throws BadRequestException {
         if (userIsCurator(requestInfo)) {
             return
                 messageService.listMessagesForCurator(userInstance.getOrganizationUri(), MessageStatus.UNREAD);
@@ -64,15 +67,16 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         }
     }
 
-    private boolean userIsCreator(RequestInfo requestInfo) {
+    private boolean userIsCreator(RequestInfo requestInfo) throws BadRequestException {
         return matchRequestedRoleWithGivenRole(requestInfo, CREATOR_ROLE);
     }
 
-    private boolean userIsCurator(RequestInfo requestInfo) {
+    private boolean userIsCurator(RequestInfo requestInfo) throws BadRequestException {
         return matchRequestedRoleWithGivenRole(requestInfo, CURATOR_ROLE);
     }
 
-    private boolean matchRequestedRoleWithGivenRole(RequestInfo requestInfo, String requestedRole) {
+    private boolean matchRequestedRoleWithGivenRole(RequestInfo requestInfo, String requestedRole)
+        throws BadRequestException {
         String assignedRolesToUser = requestInfo.getAssignedRoles().orElse(EMPTY_STRING);
         String roleRequestByTheUser = requestInfo.getQueryParameter(REQUESTED_ROLE);
         return requestedRole.equals(roleRequestByTheUser) && assignedRolesToUser.contains(requestedRole);
