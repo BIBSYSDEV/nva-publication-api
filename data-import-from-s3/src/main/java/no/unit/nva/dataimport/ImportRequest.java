@@ -13,6 +13,7 @@ public class ImportRequest implements JsonSerializable {
     @JsonProperty("table")
     private String table;
 
+    //Default serializer necessary for AWS's serializer.
     @JacocoGenerated
     public ImportRequest() {
 
