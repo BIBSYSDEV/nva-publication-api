@@ -250,6 +250,22 @@ Resources:
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}
               - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/nva-resources-${AWS::StackName}/index/*
 
+  S3AccessPermsisions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DatabaseAccessLambdaPermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:ListBucket
+              - s3:ListBucketMultipartUploads
+            Resource: "*"
+
   EventsLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -1237,7 +1253,7 @@ Resources:
       Handler: no.unit.nva.dataimport.DataImportHandler::importAllFilesFromFolder
       Runtime: java11
       MemorySize: 2400
-      Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
+      Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
