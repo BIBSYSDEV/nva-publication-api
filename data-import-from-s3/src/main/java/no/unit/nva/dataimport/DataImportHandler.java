@@ -21,6 +21,8 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.parallel.ParallelExecutionException;
 import nva.commons.core.parallel.ParallelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Handler for importing data from an S3 bucket into a DynamoDb table. Data in S3 are expected to be in Amazon's ION
@@ -32,6 +34,7 @@ public class DataImportHandler {
     private final AmazonDynamoDB dynamoClient;
     private S3Driver s3Driver;
     private String tableName;
+    private static final Logger logger = LoggerFactory.getLogger(DataImportHandler.class);
 
     @JacocoGenerated
     public DataImportHandler() {
@@ -45,6 +48,7 @@ public class DataImportHandler {
 
     public List<ImportResult> importAllFilesFromFolder(ImportRequest input) {
         tableName = input.getTable();
+        logger.info("Bucket:" + input.getBucket());
         setupS3Driver(input.getBucket());
         List<String> filenames = s3Driver.listFiles(Path.of(input.getFolderPath()));
         return attempt(() -> insertAllFiles(filenames)).orElseThrow();
