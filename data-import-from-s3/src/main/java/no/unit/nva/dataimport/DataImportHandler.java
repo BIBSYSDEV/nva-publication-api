@@ -45,7 +45,7 @@ public class DataImportHandler {
 
     public List<ImportResult> importAllFilesFromFolder(ImportRequest input) {
         tableName = input.getTable();
-        setupS3Driver(input.getBucketName());
+        setupS3Driver(input.getBucket());
         List<String> filenames = s3Driver.listFiles(Path.of(input.getFolderPath()));
         return attempt(() -> insertAllFiles(filenames)).orElseThrow();
     }

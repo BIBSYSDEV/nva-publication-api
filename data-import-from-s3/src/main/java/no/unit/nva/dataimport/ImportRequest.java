@@ -1,35 +1,51 @@
 package no.unit.nva.dataimport;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import nva.commons.core.JacocoGenerated;
 
 public class ImportRequest {
 
-    @JsonProperty("bucketName")
-    private final String bucketName;
+    @JsonProperty("bucket")
+    private String bucket;
     @JsonProperty("folderPath")
-    private final String folderPath;
+    private String folderPath;
     @JsonProperty("table")
-    private final String table;
+    private String table;
 
-    @JsonCreator
-    public ImportRequest(@JsonProperty("bucketName") String bucketName,
-                         @JsonProperty("folderPath") String folderPath,
-                         @JsonProperty("table") String table) {
-        this.bucketName = bucketName;
+    @JacocoGenerated
+    public ImportRequest() {
+
+    }
+
+    public ImportRequest(String bucket,
+                         String folderPath,
+                         String table) {
+        this.bucket = bucket;
         this.folderPath = folderPath;
         this.table = table;
     }
 
-    public String getBucketName() {
-        return bucketName;
+    public String getBucket() {
+        return bucket;
+    }
+
+    public void setBucket(String bucket) {
+        this.bucket = bucket;
     }
 
     public String getFolderPath() {
         return folderPath;
     }
 
+    public void setFolderPath(String folderPath) {
+        this.folderPath = folderPath;
+    }
+
     public String getTable() {
         return table;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
     }
 }
