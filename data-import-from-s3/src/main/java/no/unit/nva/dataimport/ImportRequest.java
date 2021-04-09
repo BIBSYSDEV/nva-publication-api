@@ -29,22 +29,27 @@ public class ImportRequest {
         return bucket;
     }
 
+    @JacocoGenerated
     public void setBucket(String bucket) {
         this.bucket = bucket;
     }
 
+    @JacocoGenerated
     public String getFolderPath() {
         return folderPath;
     }
 
+    @JacocoGenerated
     public void setFolderPath(String folderPath) {
         this.folderPath = folderPath;
     }
 
+    @JacocoGenerated
     public String getTable() {
         return table;
     }
 
+    @JacocoGenerated
     public void setTable(String table) {
         this.table = table;
     }
