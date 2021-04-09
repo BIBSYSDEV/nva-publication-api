@@ -11,7 +11,7 @@ import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
 /**
- * Matcher for MockitoHamcrest to match arguments that contain a specific PartitionKey
+ * Matcher for MockitoHamcrest to match arguments that contain a specific PartitionKey.
  *
  * <p>Example Usage:
  * {@code when(mockClient.batchWriteItem(argThat(requestContains(failingPrimaryPartitionKey))))
