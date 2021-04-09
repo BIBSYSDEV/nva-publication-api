@@ -2,8 +2,9 @@ package no.unit.nva.dataimport;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.JsonSerializable;
 
-public class ImportRequest {
+public class ImportRequest implements JsonSerializable {
 
     @JsonProperty("bucket")
     private String bucket;
@@ -52,5 +53,11 @@ public class ImportRequest {
     @JacocoGenerated
     public void setTable(String table) {
         this.table = table;
+    }
+
+    @Override
+    @JacocoGenerated
+    public String toString() {
+        return toJsonString();
     }
 }
