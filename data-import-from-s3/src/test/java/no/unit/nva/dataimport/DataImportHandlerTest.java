@@ -36,7 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-class DataImportTest extends ResourcesDynamoDbLocalTest {
+class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String SOME_PATH = "somePath";
 
@@ -68,8 +68,8 @@ class DataImportTest extends ResourcesDynamoDbLocalTest {
     public void dataImportReadsIonFileWithResourcesAndStoresThemInDynamoDb() {
         StubS3Driver s3Driver = new StubS3Driver(bucketName, resourceFiles);
         ImportRequest request = new ImportRequest(bucketName, SOME_PATH, RESOURCES_TABLE_NAME);
-        DataImport dataImport = new DataImport(s3Driver, dynamoDbClient);
-        List<ImportResult> result = dataImport.importAllFilesInFolder(request);
+        DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
+        List<ImportResult> result = dataImportHandler.importAllFilesFromFolder(request);
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(equalTo(s3Driver.getAllIonItems().size())));
@@ -81,8 +81,8 @@ class DataImportTest extends ResourcesDynamoDbLocalTest {
 
         StubS3Driver s3Driver = failingS3Driver(failingContent);
         ImportRequest request = new ImportRequest(bucketName, SOME_PATH, RESOURCES_TABLE_NAME);
-        DataImport dataImport = new DataImport(s3Driver, dynamoDbClient);
-        List<ImportResult> failures = dataImport.importAllFilesInFolder(request);
+        DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
+        List<ImportResult> failures = dataImportHandler.importAllFilesFromFolder(request);
         List<String> failedFiles = failures.stream().map(ImportResult::getFilename).collect(Collectors.toList());
         assertThat(failedFiles, contains(FAILING_TO_READ_FILE));
     }
@@ -92,8 +92,8 @@ class DataImportTest extends ResourcesDynamoDbLocalTest {
         resourceFiles = List.of(FIRST_SAMPLE, FAILING_TO_WRITE_FILE);
         StubS3Driver s3Driver = new StubS3Driver(bucketName, resourceFiles);
         ImportRequest request = new ImportRequest(bucketName, SOME_PATH, RESOURCES_TABLE_NAME);
-        DataImport dataImport = new DataImport(s3Driver, dynamoDbClient);
-        List<ImportResult> failures = dataImport.importAllFilesInFolder(request);
+        DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
+        List<ImportResult> failures = dataImportHandler.importAllFilesFromFolder(request);
 
         String failingFilename = failures.stream()
                                      .map(ImportResult::getFilename)
@@ -118,8 +118,9 @@ class DataImportTest extends ResourcesDynamoDbLocalTest {
 
         StubS3Driver s3Driver = new StubS3Driver(bucketName, resourceFiles);
         ImportRequest request = new ImportRequest(bucketName, SOME_PATH, RESOURCES_TABLE_NAME);
-        DataImport dataImport = new DataImport(s3Driver, mockAmazonDynamoDb(failingPrimaryPartitionKey));
-        List<ImportResult> result = dataImport.importAllFilesInFolder(request);
+        DataImportHandler dataImportHandler = new DataImportHandler(s3Driver,
+                                                                    mockAmazonDynamoDb(failingPrimaryPartitionKey));
+        List<ImportResult> result = dataImportHandler.importAllFilesFromFolder(request);
         String errorMessages = result.stream()
                                    .map(ImportResult::getErrorMessage)
                                    .collect(Collectors.joining());

@@ -22,7 +22,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.parallel.ParallelExecutionException;
 import nva.commons.core.parallel.ParallelMapper;
 
-public class DataImport {
+public class DataImportHandler {
 
     private static final int MAX_ATTEMPTS = 10;
     private final AmazonDynamoDB dynamoClient;
@@ -30,16 +30,16 @@ public class DataImport {
     private String tableName;
 
     @JacocoGenerated
-    public DataImport() {
+    public DataImportHandler() {
         this(null, defaultDynamoClient());
     }
 
-    public DataImport(S3Driver s3Driver, AmazonDynamoDB dynamoClient) {
+    public DataImportHandler(S3Driver s3Driver, AmazonDynamoDB dynamoClient) {
         this.s3Driver = s3Driver;
         this.dynamoClient = dynamoClient;
     }
 
-    public List<ImportResult> importAllFilesInFolder(ImportRequest input) {
+    public List<ImportResult> importAllFilesFromFolder(ImportRequest input) {
         tableName = input.getTable();
         setupS3Driver(input.getBucketName());
         List<String> filenames = s3Driver.listFiles(Path.of(input.getFolderPath()));

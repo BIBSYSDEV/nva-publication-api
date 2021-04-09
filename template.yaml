@@ -1222,7 +1222,7 @@ Resources:
       Layers:
         - !Ref NvaPublicationCommonsLayer
       CodeUri: data-import-from-s3
-      Handler: no.unit.nva.dataimport:DataImport::importAllFilesInFolder
+      Handler: no.unit.nva.dataimport:DataImportHandler::importAllFilesFromFolder
       Runtime: java11
       MemorySize: 2400
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
