@@ -58,6 +58,13 @@ Parameters:
     MinValue: 1
     MaxValue: 5
     Description: Max attempt to put events into AWS EventBridge Event Bus. Default is 1.
+  Suffix:
+    Type: String
+    Default: ''
+    Description: Suffix used for naming resources for feature branches to avoid conflicts.
+
+Conditions:
+  WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ]]
 
 Resources:
 
@@ -1008,6 +1015,7 @@ Resources:
   #==========================Event Lambda functions====================================================
 
   DeletePublicationEventProducer:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1037,6 +1045,7 @@ Resources:
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
 
   DoiRequestEventProducer:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1077,6 +1086,7 @@ Resources:
 
 
   PublicationFanoutHandler:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1108,6 +1118,7 @@ Resources:
 
 
   DeleteDraftPublicationHandler:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1181,6 +1192,7 @@ Resources:
 
 
   UpdateDoiStatusHandlerFunction:
+    DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       Layers:
@@ -1232,10 +1244,15 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
 
   #===========================BasePathMappings========================================================
+
   NvaPublicationBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
     Properties:
-      BasePath: !Ref CustomDomainBasePath
-      DomainName: !Join [ '.', [ 'api', !Ref CustomDomain ] ]
+      BasePath:
+        !If
+        - WithSuffix
+        - !Sub ${CustomDomainBasePath}-${Suffix}
+        - !Sub ${CustomDomainBasePath}
+      DomainName: !Sub api.${CustomDomain}
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
