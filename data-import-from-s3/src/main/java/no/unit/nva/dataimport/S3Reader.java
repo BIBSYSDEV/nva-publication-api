@@ -15,7 +15,7 @@ import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
 import software.amazon.ion.system.IonTextWriterBuilder;
 
-public class S3Reader {
+class S3Reader {
 
     public static final String PK0 = DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
     // Looking for Strings '<end_of_previous_object>}<possible_white_space>{"Item":{"PK0"'
@@ -26,7 +26,7 @@ public class S3Reader {
     public static final String ION_ITEM = "Item";
     private final S3Driver s3Driver;
 
-    public S3Reader(S3Driver s3Driver) {
+    S3Reader(S3Driver s3Driver) {
         this.s3Driver = s3Driver;
     }
 

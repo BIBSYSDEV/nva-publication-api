@@ -17,7 +17,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 
-public class S3ToDynamoImporter {
+class S3ToDynamoImporter {
 
     public static final int BATCH_REQUEST_SIZE = 20;
     public static final int MAX_BATCH_INSERTION_ATTEMPTS = 10;
@@ -29,10 +29,10 @@ public class S3ToDynamoImporter {
     private final String tableName;
     private final String filename;
 
-    public S3ToDynamoImporter(AmazonDynamoDB dynamoClient,
-                              S3Driver s3Driver,
-                              String tableName,
-                              String filename
+    S3ToDynamoImporter(AmazonDynamoDB dynamoClient,
+                       S3Driver s3Driver,
+                       String tableName,
+                       String filename
     ) {
         this.dynamoClient = dynamoClient;
         this.s3Reader = new S3Reader(s3Driver);
