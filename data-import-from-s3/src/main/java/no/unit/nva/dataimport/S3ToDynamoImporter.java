@@ -40,7 +40,7 @@ public class S3ToDynamoImporter {
         this.filename = filename;
     }
 
-    public List<BatchWriteItemResult> insertFileToDynamo() throws IOException {
+    protected List<BatchWriteItemResult> insertFileToDynamo() throws IOException {
         List<Item> itemList = s3Reader.extractItemsFromS3Bucket(filename);
         return writeFileToDynamo(itemList, tableName);
     }

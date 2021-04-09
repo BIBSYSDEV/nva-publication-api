@@ -1240,7 +1240,6 @@ Resources:
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn
       Environment:
         Variables:
-          AWS_REGION: "eu-west-1"
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
 
   #===========================BasePathMappings========================================================
