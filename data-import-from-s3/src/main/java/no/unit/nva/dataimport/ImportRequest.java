@@ -28,13 +28,13 @@ public class ImportRequest implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public URI getS3Location() {
-        return s3Location;
+    public String getS3Location() {
+        return s3Location.toString();
     }
 
     @JacocoGenerated
-    public void setS3Location(URI s3Location) {
-        this.s3Location = s3Location;
+    public void setS3Location(String s3Location) {
+        this.s3Location = URI.create(s3Location);
     }
 
     @JacocoGenerated
