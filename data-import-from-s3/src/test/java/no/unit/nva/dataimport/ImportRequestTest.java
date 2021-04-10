@@ -25,14 +25,14 @@ class ImportRequestTest {
     @Test
     public void getBucketReturnsBucketNameOfS3Uri() {
         ImportRequest request = new ImportRequest(S3_LOCATION, SOME_TABLE);
-        String bucket = request.getBucket();
+        String bucket = request.extractBucketFromS3Location();
         assertThat(bucket, is(equalTo(BUCKET_NAME)));
     }
 
     @Test
     public void getFolderPathReturnsPathInsideTheBucketOfS3Uri() {
         ImportRequest request = new ImportRequest(S3_LOCATION, SOME_TABLE);
-        String folderPath = request.getFolderPath();
+        String folderPath = request.extractPathFromS3Location();
         assertThat(folderPath, is(equalTo(FOLDER_PATH)));
     }
 }

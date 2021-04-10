@@ -47,11 +47,11 @@ public class ImportRequest implements JsonSerializable {
         this.table = table;
     }
 
-    public String getBucket() {
+    public String extractBucketFromS3Location() {
         return s3Location.getHost();
     }
 
-    public String getFolderPath() {
+    public String extractPathFromS3Location() {
         String path = s3Location.getPath();
         return removeRoot(path);
     }

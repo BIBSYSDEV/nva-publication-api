@@ -52,7 +52,7 @@ public class DataImportHandler {
     public ImportResult[] importAllFilesFromFolder(ImportRequest input) {
         tableName = input.getTable();
         logger.info("Request: " + input);
-        setupS3Driver(input.getBucket());
+        setupS3Driver(input.extractBucketFromS3Location());
         List<String> filenames = fetchFilenamesFromS3Location(input);
 
         List<ImportResult> importResults = attempt(() -> insertAllFiles(filenames)).orElseThrow();
@@ -68,7 +68,7 @@ public class DataImportHandler {
     }
 
     private List<String> fetchFilenamesFromS3Location(ImportRequest input) {
-        List<String> filenames = s3Driver.listFiles(Path.of(input.getFolderPath()));
+        List<String> filenames = s3Driver.listFiles(Path.of(input.extractPathFromS3Location()));
 
         if (filenames.isEmpty()) {
             throw new IllegalArgumentException(EMPTY_LIST_ERROR);
