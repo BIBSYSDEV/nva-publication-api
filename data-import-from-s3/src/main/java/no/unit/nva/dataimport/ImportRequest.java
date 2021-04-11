@@ -15,6 +15,7 @@ public class ImportRequest implements JsonSerializable {
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String TABLE_FIELD = "table";
+    public static final String MISSING_FIELD_MESSAGE_PATTERN = "\"%s\"  field is missing";
     @JsonProperty("s3Location")
     private URI s3Location;
     @JsonProperty("table")
@@ -33,12 +34,23 @@ public class ImportRequest implements JsonSerializable {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElse(null);
     }
 
+    /**
+     * Workaround for dealing with the problem of AWS serializing objects.
+     *
+     * @param request a Map of String keys and String values containing the input parameters.
+     * @return the input as an {@link ImportRequest}
+     */
     public static ImportRequest fromMap(Map<String, String> request) {
         String s3Location = extractFieldFromMap(request, S3_LOCATION_FIELD);
         String table = extractFieldFromMap(request, TABLE_FIELD);
         return new ImportRequest(s3Location, table);
     }
 
+    /**
+     * Workaround for dealing with the problem of AWS serializing objects.
+     *
+     * @return the object as a {@link Map}
+     */
     public Map<String, String> toMap() {
         Map<String, String> map = new ConcurrentHashMap<>();
         if (nonNull(getS3Location())) {
@@ -97,8 +109,8 @@ public class ImportRequest implements JsonSerializable {
             return false;
         }
         ImportRequest request = (ImportRequest) o;
-        return Objects.equals(getS3Location(), request.getS3Location()) && Objects.equals(getTable(),
-                                                                                          request.getTable());
+        return Objects.equals(getS3Location(), request.getS3Location())
+               && Objects.equals(getTable(), request.getTable());
     }
 
     @Override
@@ -112,7 +124,11 @@ public class ImportRequest implements JsonSerializable {
                    .filter(fieldName::equalsIgnoreCase)
                    .findFirst()
                    .map(request::get)
-                   .orElseThrow(() -> new IllegalArgumentException(fieldName + " field missing"));
+                   .orElseThrow(() -> errorForMissingField(fieldName));
+    }
+
+    private static IllegalArgumentException errorForMissingField(String fieldName) {
+        return new IllegalArgumentException(String.format(MISSING_FIELD_MESSAGE_PATTERN, fieldName));
     }
 
     private String removeRoot(String path) {
