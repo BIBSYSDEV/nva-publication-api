@@ -33,6 +33,7 @@ public class DataImportHandler {
 
     public static final S3Driver SETUP_DRIVER_AFTER_BUCKET_IS_KNOWN = null;
     public static final String EMPTY_LIST_ERROR = "Specified folder either does not exist or is empty";
+    public static final int ONE_OF_THE_ENTRIES_WITH_COMMON_KEY = 0;
     private static final int MAX_ATTEMPTS = 10;
     private static final Logger logger = LoggerFactory.getLogger(DataImportHandler.class);
     private final AmazonDynamoDB dynamoClient;
@@ -193,7 +194,7 @@ public class DataImportHandler {
 
     private <T> Stream<SimpleEntry<String, List<T>>> mergeLists(List<Entry<String, List<T>>> entries) {
         List<T> values = entries.stream().flatMap(e -> e.getValue().stream()).collect(Collectors.toList());
-        return attempt(() -> entries.get(0).getKey())
+        return attempt(() -> entries.get(ONE_OF_THE_ENTRIES_WITH_COMMON_KEY).getKey())
                    .map(key -> new SimpleEntry<>(key, values))
                    .stream();
     }
