@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 public class DataImportHandler {
 
     public static final S3Driver SETUP_DRIVER_AFTER_BUCKET_IS_KNOWN = null;
+    public static final String EMPTY_LIST_ERROR = "Specified folder either does not exist or is empty";
     private static final int MAX_ATTEMPTS = 10;
     private static final Logger logger = LoggerFactory.getLogger(DataImportHandler.class);
-    public static final String EMPTY_LIST_ERROR = "Specified folder either does not exist or is empty";
     private final AmazonDynamoDB dynamoClient;
     private S3Driver s3Driver;
     private String tableName;
@@ -49,9 +49,11 @@ public class DataImportHandler {
         this.dynamoClient = dynamoClient;
     }
 
-    public ImportResult[] importAllFilesFromFolder(ImportRequest input) {
+    public ImportResult[] importAllFilesFromFolder(Map<String, String> request) {
+        logger.info("Request: " + requestToJson(request));
+        ImportRequest input = ImportRequest.fromMap(request);
         tableName = input.getTable();
-        logger.info("Request: " + input);
+
         setupS3Driver(input.extractBucketFromS3Location());
         List<String> filenames = fetchFilenamesFromS3Location(input);
 
@@ -65,6 +67,10 @@ public class DataImportHandler {
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoClient() {
         return AmazonDynamoDBClient.builder().build();
+    }
+
+    private String requestToJson(Map<String, String> request) {
+        return attempt(() -> JsonUtils.objectMapper.writeValueAsString(request)).orElseThrow();
     }
 
     private List<String> fetchFilenamesFromS3Location(ImportRequest input) {

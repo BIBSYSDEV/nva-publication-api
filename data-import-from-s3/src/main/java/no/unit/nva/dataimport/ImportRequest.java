@@ -1,15 +1,21 @@
 package no.unit.nva.dataimport;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
 public class ImportRequest implements JsonSerializable {
 
     public static final String PATH_DELIMITER = "/";
-    @JsonProperty("s3location")
+    public static final String S3_LOCATION_FIELD = "s3Location";
+    public static final String TABLE_FIELD = "table";
+    @JsonProperty("s3Location")
     private URI s3Location;
     @JsonProperty("table")
     private String table;
@@ -24,12 +30,29 @@ public class ImportRequest implements JsonSerializable {
                          String table) {
 
         this.table = table;
-        this.s3Location = URI.create(s3location);
+        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElse(null);
+    }
+
+    public static ImportRequest fromMap(Map<String, String> request) {
+        String s3Location = extractFieldFromMap(request, S3_LOCATION_FIELD);
+        String table = extractFieldFromMap(request, TABLE_FIELD);
+        return new ImportRequest(s3Location, table);
+    }
+
+    public Map<String, String> toMap() {
+        Map<String, String> map = new ConcurrentHashMap<>();
+        if (nonNull(getS3Location())) {
+            map.put(S3_LOCATION_FIELD, getS3Location());
+        }
+        if (nonNull(getTable())) {
+            map.put(TABLE_FIELD, getTable());
+        }
+        return map;
     }
 
     @JacocoGenerated
     public String getS3Location() {
-        return s3Location.toString();
+        return Optional.ofNullable(s3Location).map(URI::toString).orElse(null);
     }
 
     @JacocoGenerated
@@ -52,8 +75,10 @@ public class ImportRequest implements JsonSerializable {
     }
 
     public String extractPathFromS3Location() {
-        String path = s3Location.getPath();
-        return removeRoot(path);
+        return Optional.ofNullable(s3Location)
+                   .map(URI::getPath)
+                   .map(this::removeRoot)
+                   .orElse(null);
     }
 
     @JacocoGenerated
@@ -80,6 +105,14 @@ public class ImportRequest implements JsonSerializable {
     @JacocoGenerated
     public String toString() {
         return toJsonString();
+    }
+
+    private static String extractFieldFromMap(Map<String, String> request, String fieldName) {
+        return request.keySet().stream()
+                   .filter(fieldName::equalsIgnoreCase)
+                   .findFirst()
+                   .map(request::get)
+                   .orElseThrow(() -> new IllegalArgumentException(fieldName + " field missing"));
     }
 
     private String removeRoot(String path) {
