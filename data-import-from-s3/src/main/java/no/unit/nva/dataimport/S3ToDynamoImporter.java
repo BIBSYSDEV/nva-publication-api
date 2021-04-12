@@ -40,12 +40,13 @@ class S3ToDynamoImporter {
         this.filename = filename;
     }
 
-    protected List<BatchWriteItemResult> insertFileToDynamo() throws IOException {
+    protected List<BatchWriteItemResult> writeFileToDynamo() throws IOException {
         List<Item> itemList = s3Reader.extractItemsFromS3Bucket(filename);
-        return writeFileToDynamo(itemList, tableName);
+        return insertItemListToDynamo(itemList, tableName);
     }
 
-    private List<BatchWriteItemResult> writeFileToDynamo(List<Item> itemList, String tableName) {
+    private List<BatchWriteItemResult> insertItemListToDynamo(List<Item> itemList, String tableName) {
+
         List<BatchWriteItemResult> results = new ArrayList<>();
         for (int i = 0; i < itemList.size(); i += BATCH_REQUEST_SIZE) {
             List<Item> batch = itemList.subList(i, min(i + BATCH_REQUEST_SIZE, itemList.size()));
