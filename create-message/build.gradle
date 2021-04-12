@@ -11,11 +11,12 @@ dependencies {
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-    implementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
+
 
     testImplementation project(":publication-testing")
     testImplementation project(":list-doi-requests")
-    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: '1.0.2'
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
+    testImplementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
 }
 
 configurations.testImplementation.canBeResolved = true

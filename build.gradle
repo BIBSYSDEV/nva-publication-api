@@ -24,7 +24,6 @@ allprojects {
     repositories {
         mavenCentral()
         maven { url "https://jitpack.io" }
-        maven { url "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
@@ -39,6 +38,7 @@ allprojects {
         zalandoProblemVersion = '0.25.0'
         dynamoDbLocalVersion = '1.15.0'
         awsLambdaCore = '1.2.1'
+        javaFakerVersion = '1.0.2'
     }
 }
 
