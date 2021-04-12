@@ -7,6 +7,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.net.HttpURLConnection;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
@@ -22,7 +23,6 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import org.apache.http.HttpStatus;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
@@ -69,7 +69,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
 
     @Override
     protected Integer getSuccessStatusCode(Void input, JsonNode output) {
-        return HttpStatus.SC_OK;
+        return HttpURLConnection.HTTP_OK;
     }
 
     @JacocoGenerated
