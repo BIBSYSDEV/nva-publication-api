@@ -56,6 +56,7 @@ subprojects {
     dependencies {
 
         implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
 
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
