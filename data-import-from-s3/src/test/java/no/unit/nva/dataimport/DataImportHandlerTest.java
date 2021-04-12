@@ -158,7 +158,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void dataImportLogsImportResultWhenFailingOccurs() throws JsonProcessingException {
+    public void dataImportLogsImportResultWhenFailureOccurs() throws JsonProcessingException {
         final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         List<ImportResult> failures = handlerWithInputThatCannotBeWrittenToDynamo();
 
