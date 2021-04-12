@@ -111,14 +111,6 @@ public class DataImporter {
         }
     }
 
-    private static String addArrayDelimiters(String arrayElements) {
-        return BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
-    }
-
-    private static String makeConsecutiveJsonObjectsElementsOfJsonArray(String jsonObjects) {
-        return jsonObjects.replaceAll(CONSECUTIVE_JSON_OBJECTS, SUCCESSIVE_ELEMENTS_IN_ARRAY);
-    }
-
     private Stream<Publication> mapIonObjectsToPublications(Stream<String> content) {
         return content
                    .map(attempt(DataImporter::toJsonObjects))
@@ -126,6 +118,14 @@ public class DataImporter {
                    .map(Try::orElseThrow)
                    .map(DataImporter::parseJson)
                    .flatMap(Collection::stream);
+    }
+
+    private static String addArrayDelimiters(String arrayElements) {
+        return BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
+    }
+
+    private static String makeConsecutiveJsonObjectsElementsOfJsonArray(String jsonObjects) {
+        return jsonObjects.replaceAll(CONSECUTIVE_JSON_OBJECTS, SUCCESSIVE_ELEMENTS_IN_ARRAY);
     }
 
     private String transformMultipleJsonObjectsToJsonArrayWithObjects(String jsonObjects) {

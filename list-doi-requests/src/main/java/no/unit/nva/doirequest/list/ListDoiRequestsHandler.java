@@ -23,6 +23,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -54,7 +55,8 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     }
 
     @Override
-    protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context) {
+    protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context)
+        throws BadRequestException {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         String role = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
         String userId = requestInfo.getFeideId().orElse(null);
