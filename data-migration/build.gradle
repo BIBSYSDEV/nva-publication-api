@@ -8,9 +8,11 @@ dependencies {
     implementation project(":storage-model")
     implementation project(":publication-commons")
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+
+
     implementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
@@ -25,12 +27,11 @@ dependencies {
     compileOnly (group: 'org.picocontainer', name: 'picocontainer', version: '2.15'){
         because "PMD complains for org/picocontainer/ComponentFactory"
     }
-
-    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
+    compileOnly(group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion){
+        because 'PMD complains for "com/amazonaws/services/dynamodbv2/AmazonDynamoDB"'
     }
 
+    testImplementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation project(":publication-testing")
 }
