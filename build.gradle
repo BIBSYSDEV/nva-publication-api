@@ -24,13 +24,12 @@ allprojects {
     repositories {
         mavenCentral()
         maven { url "https://jitpack.io" }
-        maven { url  "https://dl.bintray.com/unit-nva/nva-commons" }
     }
 
     project.ext {
         awsSdkVersion = '1.11.973'
         awsSdk2Version = '2.16.37'
-        nvaDatamodelVersion= "0.11.6"
+        nvaDatamodelVersion = "0.11.6"
         nvaCommonsVersion = '1.5.12'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'
@@ -39,6 +38,7 @@ allprojects {
         zalandoProblemVersion = '0.25.0'
         dynamoDbLocalVersion = '1.15.0'
         awsLambdaCore = '1.2.1'
+        javaFakerVersion = '1.0.2'
     }
 }
 
@@ -55,6 +55,8 @@ subprojects {
 
     dependencies {
 
+        implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
@@ -70,10 +72,8 @@ subprojects {
         compileOnly group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
         testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
-
         implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
         implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-
 
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
@@ -84,14 +84,14 @@ subprojects {
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
 
-        testImplementation (group: 'org.javers', name: 'javers-core', version: '5.14.0'){
+        testImplementation(group: 'org.javers', name: 'javers-core', version: '5.14.0') {
             because "For comparing java objects and detailing the differences in readable way"
         }
 
     }
 
     test {
-        useJUnitPlatform{
+        useJUnitPlatform {
             excludeTags("RemoteTest")
         }
         failFast = true
@@ -152,7 +152,6 @@ subprojects {
         }
     }
 
-
     // publish submodules
     task sourcesJar(type: Jar, dependsOn: classes) {
         archiveClassifier = 'sources'
@@ -173,7 +172,8 @@ def getProjectList() {
 task jacocoMerge(type: JacocoMerge) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = 'Merge the JaCoCo data files from all subprojects into one'
-    project.afterEvaluate {  // do it at the end of the config phase to be sure all information is present
+    project.afterEvaluate {
+        // do it at the end of the config phase to be sure all information is present
         FileCollection execFiles = project.objects.fileCollection()   // an empty FileCollection
         getProjectList().each { Project subproject ->
             if (subproject.pluginManager.hasPlugin('jacoco')) {
@@ -214,10 +214,10 @@ task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
         // The JacocoReport tasks are the source of truth for class files and sources.
         def reportTasks = getReportTasks(tasks.jacocoRootReport)
         classDirectories.from project.files({
-            reportTasks.collect {it.classDirectories}.findAll {it != null}
+            reportTasks.collect { it.classDirectories }.findAll { it != null }
         })
         sourceDirectories.from project.files({
-            reportTasks.collect {it.sourceDirectories}.findAll {it != null}
+            reportTasks.collect { it.sourceDirectories }.findAll { it != null }
         })
     }
 
