@@ -20,8 +20,6 @@ dependencies {
     }
     testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
 
-    //compileOnly because because the runtime dependencies are included in commons.
-    compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
     compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
     compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
 
