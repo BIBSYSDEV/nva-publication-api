@@ -8,10 +8,10 @@ dependencies {
     implementation project(":storage-model")
     implementation project(":publication-commons")
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
     implementation(group: 'org.javers', name: 'javers-core', version: '5.14.0') {
@@ -22,19 +22,25 @@ dependencies {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    compileOnly (group: 'org.picocontainer', name: 'picocontainer', version: '2.15'){
-        because "PMD complains for org/picocontainer/ComponentFactory"
-    }
-
-    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
-
+    testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+    testImplementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation project(":publication-testing")
-}
 
+    compileOnly(group: 'software.amazon.awssdk', name: 'auth', version: project.ext.awsSdk2Version) {
+        because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
+    }
+
+    compileOnly(group: 'org.picocontainer', name: 'picocontainer', version: '2.15') {
+        because "PMD complains for org/picocontainer/ComponentFactory"
+    }
+    compileOnly(group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion) {
+        because 'PMD complains for "com/amazonaws/services/dynamodbv2/AmazonDynamoDB"'
+    }
+    compileOnly(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version) {
+        because 'PMD complains about "Lsoftware/amazon/awssdk/services/s3/S3Client"'
+    }
+}
 
 configurations.testImplementation.canBeResolved = true
 
