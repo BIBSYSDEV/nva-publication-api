@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -43,6 +44,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class DataMigrationTest extends AbstractDataMigrationTest {
@@ -87,11 +89,21 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     @Test
     @Tag("RemoteTest")
     public void performMigration() throws IOException {
-        var dataMigration = newDataMigration(remoteS3Client);
+        // Remember to set the env variable TABLE_NAME for the test if you are working with remote resources!
+        final String bucketName = "bucketName";
+        final Path dataPath = Path.of("AWSDynamoDB", "sldkflskfjlskf", "data");
+        S3Driver remoteS3Client = new S3Driver(bucketName);
+        AmazonDynamoDB dynamoClient =
+            AmazonDynamoDBClientBuilder.standard().withRegion(Region.EU_WEST_1.toString()).build();
+        ResourceService resourceService = new ResourceService(dynamoClient, Clock.systemDefaultZone());
+        DoiRequestService doiRequestService = new DoiRequestService(dynamoClient, Clock.systemDefaultZone());
+        MessageService messageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
+
+        var dataMigration = new DataMigration(remoteS3Client, dataPath, resourceService,
+                                              doiRequestService, messageService);
         List<ResourceUpdate> update = dataMigration.migrateData();
         assertThat(update, is(not(empty())));
     }
-
 
     @Test
     public void migrateDataInsertsPublicationsToDynamoDb() throws IOException {
