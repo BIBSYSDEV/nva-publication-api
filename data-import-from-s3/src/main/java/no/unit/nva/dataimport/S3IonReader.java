@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -16,6 +17,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
@@ -31,6 +33,7 @@ class S3IonReader {
     public static final String END_ARRAY_DELIMITER = "]";
     public static final boolean SEQUENTIAL = false;
     public static final String ION_ITEM = "Item";
+    public static final String FILE_NOT_FOUND_ERROR_MESSAGE = "File not found: ";
     private final S3Driver s3Driver;
 
     S3IonReader(S3Driver s3Driver) {
@@ -38,7 +41,7 @@ class S3IonReader {
     }
 
     protected List<JsonNode> extractJsonNodesFromS3File(String filename) throws IOException {
-        String content = s3Driver.getFile(filename);
+        String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
         ArrayNode arrayNode = toArrayNode(jsonArrayString);
@@ -46,7 +49,7 @@ class S3IonReader {
     }
 
     protected List<Item> extractItemsFromS3File(String filename) throws IOException {
-        String content = s3Driver.getFile(filename);
+        String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
         ArrayNode arrayNode = toArrayNode(jsonArrayString);
@@ -55,10 +58,14 @@ class S3IonReader {
 
     private static String toJsonObjectsString(String ion) throws IOException {
         StringBuilder stringBuilder = new StringBuilder();
-        try (IonWriter writer = IonTextWriterBuilder.json().build(stringBuilder)) {
+        try (IonWriter writer = createIonWriter(stringBuilder)) {
             rewrite(ion, writer);
         }
         return stringBuilder.toString();
+    }
+
+    private static IonWriter createIonWriter(StringBuilder stringBuilder) {
+        return IonTextWriterBuilder.json().withCharset(StandardCharsets.UTF_8).build(stringBuilder);
     }
 
     private static void rewrite(String textIon, IonWriter writer) throws IOException {
@@ -92,6 +99,14 @@ class S3IonReader {
 
     private static Item toItem(JsonNode json) throws JsonProcessingException {
         return Item.fromJSON(JsonUtils.objectMapperNoEmpty.writeValueAsString(json));
+    }
+
+    private String fetchFile(String filename) {
+        try {
+            return s3Driver.getFile(filename);
+        } catch (NoSuchKeyException e) {
+            throw new IllegalArgumentException(FILE_NOT_FOUND_ERROR_MESSAGE + filename);
+        }
     }
 
     private Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
