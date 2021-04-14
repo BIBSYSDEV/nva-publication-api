@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.dataimport.S3IonReader;
@@ -70,7 +71,8 @@ public class DataImporter {
     private Stream<Publication> fetchPublications(Stream<String> filenames) {
         return filenames
                    .map(attempt(ionReader::extractJsonNodeStreamFromS3File))
-                   .flatMap(Try::orElseThrow)
+                   .flatMap(Try::stream)
+                   .flatMap(Function.identity())
                    .map(DataImporter::convertToPublication);
     }
 }

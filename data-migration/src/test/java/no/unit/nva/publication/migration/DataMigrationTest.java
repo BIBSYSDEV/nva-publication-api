@@ -10,11 +10,11 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -42,9 +42,7 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class DataMigrationTest extends AbstractDataMigrationTest {
@@ -52,14 +50,14 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     public static final String EXPECTED_ERROR_MESSAGE = "expectedMessage";
     public static final String ISO_TIME_REGEX = "^.*[\\d]{4}-[\\d]{2}-[\\d]{2}T[\\d]{2}:[\\d]{2}:[\\d]{2}.*$";
     public static final String CURRENT_EXECUTIION_FOLDER_SYSTEM_PROPERTY = "user.dir";
+    public static final String NON_EXISTENT_FILE = "nonExistentFile";
     private static final Path EXISTING_DATA_PATH = Path.of("AWSDynamoDB",
-        "01614701350715-b7f02d9e", "data/");
+                                                           "01614701350715-b7f02d9e", "data/");
     private static final String EXISTING_REMOTE_BUCKET_NAME = "orestis-export";
     private static final Set<Publication> EXPECTED_IMPORTED_PUBLICATIONS_WITH_DOI_REQUESTS =
         constructExpectedPublicationsWithDoiRequests();
     private ResourceService resourceService;
     private FakeS3Driver fakeS3Client;
-    private S3Driver remoteS3Client;
     private DoiRequestService doiRequestService;
     private MessageService messageService;
     private DataMigration dataMigration;
@@ -68,7 +66,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     public void init() {
         super.init();
         AmazonDynamoDB dynamoClient = super.client;
-        remoteS3Client = remoteS3Driver();
         fakeS3Client = new FakeS3Driver();
         resourceService = new ResourceService(dynamoClient, Clock.systemDefaultZone());
         doiRequestService = new DoiRequestService(dynamoClient, Clock.systemDefaultZone());
@@ -76,33 +73,12 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
         dataMigration = newDataMigration(fakeS3Client);
     }
 
-
     @AfterEach
     public void deleteReportFiles() {
         File executionFolder = new File(System.getProperty(CURRENT_EXECUTIION_FOLDER_SYSTEM_PROPERTY));
         Arrays.stream(Objects.requireNonNull(executionFolder.listFiles()))
             .filter(f -> f.getName().matches(ISO_TIME_REGEX))
             .forEach(File::delete);
-    }
-
-    //TODO: Create a standalone running module: (NP-2297)
-    @Test
-    @Tag("RemoteTest")
-    public void performMigration() throws IOException {
-        // Remember to set the env variable TABLE_NAME for the test if you are working with remote resources!
-        final String bucketName = "bucketName";
-        final Path dataPath = Path.of("AWSDynamoDB", "sldkflskfjlskf", "data");
-        S3Driver remoteS3Client = new S3Driver(bucketName);
-        AmazonDynamoDB dynamoClient =
-            AmazonDynamoDBClientBuilder.standard().withRegion(Region.EU_WEST_1.toString()).build();
-        ResourceService resourceService = new ResourceService(dynamoClient, Clock.systemDefaultZone());
-        DoiRequestService doiRequestService = new DoiRequestService(dynamoClient, Clock.systemDefaultZone());
-        MessageService messageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
-
-        var dataMigration = new DataMigration(remoteS3Client, dataPath, resourceService,
-                                              doiRequestService, messageService);
-        List<ResourceUpdate> update = dataMigration.migrateData();
-        assertThat(update, is(not(empty())));
     }
 
     @Test
@@ -151,10 +127,10 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
             .getPublication(any(Publication.class));
 
         dataMigration = new DataMigration(fakeS3Client,
-            EXISTING_DATA_PATH,
-            spiedResourceService,
-            doiRequestService,
-            messageService);
+                                          EXISTING_DATA_PATH,
+                                          spiedResourceService,
+                                          doiRequestService,
+                                          messageService);
 
         assertThatUpdatesContainExpectedMessages();
     }
@@ -168,9 +144,24 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
             .getMessage(any(UserInstance.class), any(SortableIdentifier.class));
 
         dataMigration = new DataMigration(fakeS3Client, EXISTING_DATA_PATH, resourceService, doiRequestService,
-            messageServiceThrowingError);
+                                          messageServiceThrowingError);
 
         assertThatUpdatesContainExpectedMessages();
+    }
+
+    @Test
+    public void migrateDataThrowsNoExceptionWhenInputFileDoesNotExist()
+        throws IOException, NotFoundException {
+        fakeS3Client = new FakeS3Driver() {
+            @Override
+            public List<String> listFiles(Path path) {
+                return List.of(NON_EXISTENT_FILE);
+            }
+        };
+        dataMigration = new DataMigration(fakeS3Client, EXISTING_DATA_PATH, resourceService, doiRequestService,
+                                          messageService);
+
+        assertDoesNotThrow(() -> dataMigration.migrateData());
     }
 
     public void assertThatUpdatesContainExpectedMessages() throws IOException {
@@ -196,7 +187,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
             .getDoiRequest(any(UserInstance.class), any(SortableIdentifier.class));
 
         dataMigration = new DataMigration(fakeS3Client, EXISTING_DATA_PATH, resourceService, spiedDoiRequestService,
-            messageService);
+                                          messageService);
 
         assertThatUpdatesContainExpectedMessages();
     }
@@ -265,7 +256,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
 
     private DataMigration newDataMigration(S3Driver s3Client) {
         return new DataMigration(s3Client, EXISTING_DATA_PATH, resourceService,
-            doiRequestService, messageService);
+                                 doiRequestService, messageService);
     }
 
     private Set<SortableIdentifier> testDataPublicationUniqueIdentifiers() {

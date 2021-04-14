@@ -31,7 +31,7 @@ public class DataMigrationHandlerTest extends AbstractDataMigrationTest {
 
     @Test
     public void handleRequestReturnsListOfUpdatesWhenInputRequestContainsS3ResourceFile() throws IOException {
-        String importRequest = new DataMigrationRequest(SOME_S_3_LOCATION).toJsonString();
+        String importRequest = new DataMigrationRequest("s3://orestis-export/AWSDynamoDB/nva-test").toJsonString();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         handler.handleRequest(IoUtils.stringToStream(importRequest), outputStream, CONTEXT);
         List<ResourceUpdate> result = Arrays.asList(deserializeOutput(outputStream));
