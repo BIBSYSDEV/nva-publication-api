@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -65,7 +66,7 @@ class S3IonReaderTest {
 
     private static List<String> extractIdsFromFile() throws IOException {
         var inputStream = new GZIPInputStream(IoUtils.inputStreamFromResources(S3IonReaderTest.RESOURCE_FILE));
-        var bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+        var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         return bufferedReader.lines().map(S3IonReaderTest::getFieldFromString).collect(Collectors.toList());
     }
 
