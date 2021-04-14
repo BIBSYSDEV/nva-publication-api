@@ -31,11 +31,9 @@ public class DataImporter {
     }
 
     public List<Publication> getPublications() {
-        var filenames = s3Client.listFiles(dataPath);
-        var publicationsWithDuplicates = mapIonObjectsToPublications(filenames.stream())
-                                             .collect(Collectors.toList());
-
-        return removeDuplicates(publicationsWithDuplicates.stream());
+        List<String> filenames = s3Client.listFiles(dataPath);
+        Stream<Publication> publicationsWithDuplicates = fetchPublications(filenames.stream());
+        return removeDuplicates(publicationsWithDuplicates);
     }
 
     protected static List<Publication> removeDuplicates(Stream<Publication> publicationsWithDuplicates) {
@@ -69,7 +67,7 @@ public class DataImporter {
         return objectMapperWithEmpty.convertValue(item, Publication.class);
     }
 
-    private Stream<Publication> mapIonObjectsToPublications(Stream<String> filenames) {
+    private Stream<Publication> fetchPublications(Stream<String> filenames) {
         return filenames
                    .map(attempt(ionReader::extractJsonNodeStreamFromS3File))
                    .flatMap(Try::orElseThrow)
