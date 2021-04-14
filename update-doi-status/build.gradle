@@ -1,6 +1,4 @@
-repositories {
-    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
-}
+
 
 dependencies {
 
@@ -13,8 +11,5 @@ dependencies {
     implementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
     testImplementation project(":publication-testing")
-    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
+
 }

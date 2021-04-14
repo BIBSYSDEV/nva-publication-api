@@ -1,6 +1,4 @@
-repositories {
-    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
-}
+
 
 dependencies {
 
@@ -18,12 +16,6 @@ dependencies {
     implementation group:'com.github.BIBSYSDEV.nva-user-access-service', name:'user-access-rights', version:'0.3.0'
 
     testImplementation project (':publication-testing')
-
-    testImplementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion){
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
-        exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
-    }
-
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-sts', version: project.ext.awsSdkVersion
 

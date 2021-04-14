@@ -6,7 +6,7 @@ import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
-import java.util.Map;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -29,13 +28,12 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
+import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
-@EnableRuleMigrationSupport
 public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String IDENTIFIER = "identifier";
@@ -82,7 +80,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
-        assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
+        Assert.assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
     @Test
@@ -168,11 +166,4 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
 
-    private Map<String, Object> getClaims(String owner) {
-        return Map.of(
-            REQUEST_CONTEXT, Map.of(
-                AUTHORIZER, Map.of(
-                    CLAIMS, Map.of(
-                        CUSTOM_FEIDE_ID, owner))));
-    }
 }
