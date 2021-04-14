@@ -4,7 +4,7 @@ plugins {
     id 'checkstyle'
     id 'pmd'
     id 'base'
-    id 'nebula.lint' version '16.17.0'
+    id 'nebula.lint' version '16.22.0'
     id "maven"
 }
 
@@ -79,13 +79,13 @@ subprojects {
         testImplementation group: 'com.github.BIBSYSDEV', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
         testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.2'
         testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: '2.2'
-        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.8.0'
+        testImplementation group: 'org.mockito', name: 'mockito-core', version: '3.9.0'
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
         testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
 
-        testImplementation(group: 'org.javers', name: 'javers-core', version: '5.14.0') {
+        testImplementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
             because "For comparing java objects and detailing the differences in readable way"
         }
 
