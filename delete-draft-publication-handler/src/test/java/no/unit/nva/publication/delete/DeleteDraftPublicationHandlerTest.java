@@ -21,10 +21,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 import org.mockito.Mockito;
 
-@EnableRuleMigrationSupport
 public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String WILDCARD = "*";
