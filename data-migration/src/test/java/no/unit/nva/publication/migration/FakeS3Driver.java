@@ -95,11 +95,15 @@ class FakeS3Driver extends S3Driver {
         List<Publication> publications = allSamplePublications();
         Map<String, Set<String>> fileContents = new ConcurrentHashMap<>();
         for (Publication publication : publications) {
-            String file = FILENAMES.get(random.nextInt(FILENAMES.size()));
+            String file = pickRandomFile(random);
             String content = attempt(() -> serializePublication(publication)).orElseThrow();
             addContentToFile(file, content, fileContents);
         }
         return fileContents;
+    }
+
+    private static String pickRandomFile(Random random) {
+        return FILENAMES.get(random.nextInt(FILENAMES.size()));
     }
 
     private static void addContentToFile(String file, String content, Map<String, Set<String>> fileContents) {
