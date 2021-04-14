@@ -3,12 +3,13 @@ dependencies {
 
     implementation project(":storage-model")
     implementation project(":publication-commons")
+    implementation project(":data-import-from-s3")
 
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
 
-    implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
+    testImplementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
     implementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
         because "For comparing objects during migration"

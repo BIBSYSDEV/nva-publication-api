@@ -23,11 +23,11 @@ import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
 import software.amazon.ion.system.IonTextWriterBuilder;
 
-class S3IonReader {
+public class S3IonReader {
 
     public static final String PK0 = DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
     // Looking for Strings '<end_of_previous_object>}<possible_white_space>{"Item":{"PK0"'
-    public static final String CONSECUTIVE_JSON_OBJECTS = "(})\\s*(\\{\"Item\":\\{\"" + PK0 + "\")";
+    public static final String CONSECUTIVE_JSON_OBJECTS = "(})\\s*(\\{\"Item\":\\{\".+?\")";
     public static final String SUCCESSIVE_ELEMENTS_IN_ARRAY = "$1,$2";
     public static final String BEGIN_ARRAY_DELIMITER = "[";
     public static final String END_ARRAY_DELIMITER = "]";
@@ -36,19 +36,23 @@ class S3IonReader {
     public static final String FILE_NOT_FOUND_ERROR_MESSAGE = "File not found: ";
     private final S3Driver s3Driver;
 
-    S3IonReader(S3Driver s3Driver) {
+    public S3IonReader(S3Driver s3Driver) {
         this.s3Driver = s3Driver;
     }
 
-    protected List<JsonNode> extractJsonNodesFromS3File(String filename) throws IOException {
+    public List<JsonNode> extractJsonNodesFromS3File(String filename) throws IOException {
+        return extractJsonNodeStreamFromS3File(filename).collect(Collectors.toList());
+    }
+
+    public Stream<JsonNode> extractJsonNodeStreamFromS3File(String filename) throws IOException {
         String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
         ArrayNode arrayNode = toArrayNode(jsonArrayString);
-        return convertToJsonNodeStream(arrayNode).collect(Collectors.toList());
+        return convertToJsonNodeStream(arrayNode);
     }
 
-    protected List<Item> extractItemsFromS3File(String filename) throws IOException {
+    public List<Item> extractItemsFromS3File(String filename) throws IOException {
         String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
