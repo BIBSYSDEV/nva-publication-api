@@ -36,9 +36,7 @@ import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.migrationsupport.rules.EnableRuleMigrationSupport;
 
-@EnableRuleMigrationSupport
 public class CreatePublicationHandlerTest {
 
     public static final String HTTPS = "https";
@@ -52,7 +50,9 @@ public class CreatePublicationHandlerTest {
     public static final String HEADERS = "headers";
     public static final String BODY = "body";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
-        .constructParametricType(GatewayResponse.class, PublicationResponse.class);
+                                                                           .constructParametricType(
+                                                                               GatewayResponse.class,
+                                                                               PublicationResponse.class);
     private ResourceService publicationServiceMock;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
@@ -85,7 +85,7 @@ public class CreatePublicationHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
-            PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+                                                                             PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
 
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
             PublicationMapper.convertValue(publication, PublicationResponse.class),
@@ -104,7 +104,7 @@ public class CreatePublicationHandlerTest {
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
         GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
-            PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+                                                                             PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
 
         assertEquals(HttpStatus.SC_CREATED, actual.getStatusCode());
         assertNotNull(actual.getBodyObject(PublicationResponse.class));
@@ -146,13 +146,13 @@ public class CreatePublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-            .withModifiedDate(Instant.now())
-            .withOwner("owner")
-            .withPublisher(new Organization.Builder()
-                .withId(URI.create("http://example.org/publisher/1"))
-                .build()
-            )
-            .build();
+                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
+                   .withModifiedDate(Instant.now())
+                   .withOwner("owner")
+                   .withPublisher(new Organization.Builder()
+                                      .withId(URI.create("http://example.org/publisher/1"))
+                                      .build()
+                   )
+                   .build();
     }
 }
