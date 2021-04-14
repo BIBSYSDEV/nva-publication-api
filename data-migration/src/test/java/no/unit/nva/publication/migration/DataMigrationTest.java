@@ -150,8 +150,7 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     }
 
     @Test
-    public void migrateDataThrowsNoExceptionWhenInputFileDoesNotExist()
-        throws IOException, NotFoundException {
+    public void migrateDataThrowsNoExceptionWhenInputFileDoesNotExist() {
         fakeS3Client = new FakeS3Driver() {
             @Override
             public List<String> listFiles(Path path) {
