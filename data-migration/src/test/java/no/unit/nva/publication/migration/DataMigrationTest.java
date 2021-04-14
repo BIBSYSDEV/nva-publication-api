@@ -175,8 +175,9 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
 
     public void assertThatUpdatesContainExpectedMessages() throws IOException {
         List<ResourceUpdate> resourcesUpdates = dataMigration.migrateData();
-        List<String> failureMessages = resourcesUpdates.stream().filter(ResourceUpdate::isFailure)
-                                           .map(ResourceUpdate::getExceptionString)
+        List<String> failureMessages = resourcesUpdates.stream()
+                                           .filter(ResourceUpdate::isFailure)
+                                           .map(ResourceUpdate::getException)
                                            .collect(Collectors.toList());
 
         assertThat(failureMessages, is(not(empty())));
@@ -270,11 +271,6 @@ public class DataMigrationTest extends AbstractDataMigrationTest {
     private Set<SortableIdentifier> testDataPublicationUniqueIdentifiers() {
         return extractIdentifiers(FakeS3Driver.allSamplePublications()
                                       .stream());
-    }
-
-    private DoiRequest fetchDoiRequestByResourceIdentifier(UserInstance owner, SortableIdentifier publicationIdentifier)
-        throws NotFoundException {
-        return doiRequestService.getDoiRequestByResourceIdentifier(owner, publicationIdentifier);
     }
 
     private S3Driver remoteS3Driver() {

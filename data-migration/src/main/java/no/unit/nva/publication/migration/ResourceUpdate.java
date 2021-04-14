@@ -22,18 +22,27 @@ public final class ResourceUpdate {
     private static final boolean SUCCESS = true;
     private static final boolean FAILURE = false;
 
+    @JsonIgnore
+    private Exception exceptionObject;
+    @JsonIgnore
+    private Diff diffObject;
+
     @JsonProperty("resourceType")
-    private final String resourceType;
+    private String resourceType;
     @JsonProperty("oldVersion")
-    private final Publication oldVersion;
+    private Publication oldVersion;
     @JsonProperty("newVersion")
-    private final Publication newVersion;
-    @JsonIgnore
-    private final Exception exception;
+    private Publication newVersion;
     @JsonProperty("success")
-    private final boolean success;
-    @JsonIgnore
-    private final Diff diff;
+    private boolean success;
+    @JsonProperty("exception")
+    private String exception;
+    @JsonProperty("difference")
+    private String difference;
+
+    public ResourceUpdate() {
+
+    }
 
     private ResourceUpdate(
         String resourceType,
@@ -45,9 +54,11 @@ public final class ResourceUpdate {
         this.resourceType = resourceType;
         this.oldVersion = oldVersion;
         this.newVersion = newVersion;
-        this.exception = exception;
+        this.exceptionObject = exception;
+        this.exception = constructExceptionString(exception);
         this.success = success;
-        this.diff = diff;
+        this.diffObject = diff;
+        this.difference = constructDifferenceString(diff);
     }
 
     public static ResourceUpdate createSuccessfulUpdate(String resourceType, Publication oldVersion,
@@ -59,37 +70,50 @@ public final class ResourceUpdate {
         return new ResourceUpdate(resourceType, oldVersion, null, exception, FAILURE, null);
     }
 
-    public ResourceUpdate compareVersions() {
-        return new ResourceUpdate(resourceType, oldVersion, newVersion, exception, success, difference());
+    @JacocoGenerated
+    public String getResourceType() {
+        return resourceType;
     }
 
     @JacocoGenerated
-    @JsonProperty("difference")
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public ResourceUpdate compareVersions() {
+        return new ResourceUpdate(resourceType, oldVersion, newVersion, exceptionObject, success,
+                                  calculateDifference());
+    }
+
+    @JacocoGenerated
     public String getDifference() {
-        return Optional.ofNullable(diff).map(Diff::prettyPrint).orElse(null);
+        return difference;
+    }
+
+    @JacocoGenerated
+    public void setDifference(String difference) {
+        this.difference = difference;
     }
 
     @JacocoGenerated
     @JsonProperty("exception")
-    public String getExceptionString() {
-        StringWriter writer = new StringWriter();
-        PrintWriter printer = new PrintWriter(writer);
-        if (nonNull(exception)) {
-            exception.printStackTrace(printer);
-        }
-
-        return writer.toString();
+    public String getException() {
+        return exception;
     }
 
     @JacocoGenerated
-    @JsonIgnore
-    public Exception getException() {
-        return exception;
+    public void setException(String exception) {
+        this.exception = exception;
     }
 
     @JacocoGenerated
     public boolean isSuccess() {
         return success;
+    }
+
+    @JacocoGenerated
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 
     @JacocoGenerated
@@ -103,8 +127,18 @@ public final class ResourceUpdate {
     }
 
     @JacocoGenerated
+    public void setOldVersion(Publication oldVersion) {
+        this.oldVersion = oldVersion;
+    }
+
+    @JacocoGenerated
     public Publication getNewVersion() {
         return newVersion;
+    }
+
+    @JacocoGenerated
+    public void setNewVersion(Publication newVersion) {
+        this.newVersion = newVersion;
     }
 
     @JacocoGenerated
@@ -117,6 +151,20 @@ public final class ResourceUpdate {
         return versionsAreEqual() || versionsAreSemanticallyEquivalent();
     }
 
+    private String constructDifferenceString(Diff diff) {
+        return Optional.ofNullable(diff).map(Diff::prettyPrint).orElse(null);
+    }
+
+    private String constructExceptionString(Exception exception) {
+        StringWriter writer = new StringWriter();
+        PrintWriter printer = new PrintWriter(writer);
+        if (nonNull(exception)) {
+            exception.printStackTrace(printer);
+        }
+
+        return writer.toString();
+    }
+
     private boolean versionsAreEqual() {
         return Objects.equals(newVersion, oldVersion);
     }
@@ -125,14 +173,14 @@ public final class ResourceUpdate {
         if (comparisonHasNotBeenExecuted()) {
             throw new IllegalStateException(NOT_COMPARED_VERSIONS_ERROR);
         }
-        return resourceIsPublication() && !diff.hasChanges();
+        return resourceIsPublication() && !diffObject.hasChanges();
     }
 
     private boolean comparisonHasNotBeenExecuted() {
-        return resourceIsPublication() && isNull(diff);
+        return resourceIsPublication() && isNull(difference);
     }
 
-    private Diff difference() {
+    private Diff calculateDifference() {
         if (resourceIsPublication()) {
             return JAVERS.compare(oldVersion, newVersion);
         }
