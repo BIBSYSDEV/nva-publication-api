@@ -1,7 +1,3 @@
-repositories {
-
-}
-
 dependencies {
     //This package is added by SAM template in the runtime environment
     compileOnly project(':publication-commons')
