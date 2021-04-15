@@ -1271,6 +1271,7 @@ Resources:
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
 
 
   #===========================BasePathMappings========================================================
