@@ -11,6 +11,8 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Transforms and moves data from an S3 bucket to a DynamoDb table. It expects the data to be a DynamoDb export is S3 in
@@ -18,6 +20,8 @@ import no.unit.nva.s3.S3Driver;
  */
 public class DataMigration {
 
+    public static final String ERROR_WRITING_REPORT_TO_HARD_DISK = "Could not write report to hard disk.";
+    private static final Logger logger = LoggerFactory.getLogger(DataMigration.class);
     private final S3Driver s3Driver;
     private final Path s3DataPath;
     private final DoiRequestService doiRequestService;
@@ -83,8 +87,12 @@ public class DataMigration {
     }
 
     private void generateReport(List<ResourceUpdate> publicationsUpdateResult) throws IOException {
-        ReportGenerator reportGenerator = new ReportGenerator(publicationsUpdateResult);
-        reportGenerator.writeDifferences();
-        reportGenerator.writeFailures();
+        try {
+            ReportGenerator reportGenerator = new ReportGenerator(publicationsUpdateResult);
+            reportGenerator.writeDifferences();
+            reportGenerator.writeFailures();
+        } catch (Exception e) {
+            logger.warn(ERROR_WRITING_REPORT_TO_HARD_DISK);
+        }
     }
 }

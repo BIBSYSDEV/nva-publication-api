@@ -1267,10 +1267,12 @@ Resources:
       Handler: no.unit.nva.publication.migration.DataMigrationHandler::handleRequest
       Runtime: java11
       MemorySize: 2400
+      Timeout: 900
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
 
 
   #===========================BasePathMappings========================================================
