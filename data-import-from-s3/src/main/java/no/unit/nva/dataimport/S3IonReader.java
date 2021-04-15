@@ -13,7 +13,6 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
@@ -25,7 +24,6 @@ import software.amazon.ion.system.IonTextWriterBuilder;
 
 public class S3IonReader {
 
-    public static final String PK0 = DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
     // Looking for Strings '<end_of_previous_object>}<possible_white_space>{"Item":{"PK0"'
     public static final String CONSECUTIVE_JSON_OBJECTS = "(})\\s*(\\{\"Item\":\\{\".+?\")";
     public static final String SUCCESSIVE_ELEMENTS_IN_ARRAY = "$1,$2";

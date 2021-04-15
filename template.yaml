@@ -1258,6 +1258,21 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
 
+  MigrateData:
+    Type: AWS::Serverless::Function
+    Properties:
+      Layers:
+        - !Ref NvaPublicationCommonsLayer
+      CodeUri: data-migration
+      Handler: no.unit.nva.publication.migration.DataMigrationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 2400
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+
+
   #===========================BasePathMappings========================================================
 
   NvaPublicationBasePathMapping:

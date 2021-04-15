@@ -24,7 +24,8 @@ public class DataMigration {
     private final PublicationImporter publicationImporter;
     private final MessageService messageService;
 
-    public DataMigration(S3Driver s3Driver, Path s3DataPath,
+    public DataMigration(S3Driver s3Driver,
+                         Path s3DataPath,
                          ResourceService resourceService,
                          DoiRequestService doiRequestService,
                          MessageService messageService) {
