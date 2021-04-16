@@ -137,7 +137,6 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-
     public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
         Publication publication = createSamplePublication();
         String messageText = randomString();

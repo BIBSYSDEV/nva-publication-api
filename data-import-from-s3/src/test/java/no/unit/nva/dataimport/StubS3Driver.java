@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,19 +12,20 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.ioutils.IoUtils;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class StubS3Driver extends S3Driver {
 
-    private final List<String> resourceFiles;
+    private final List<String> filesInBucket;
 
-    public StubS3Driver(String bucketName, List<String> resourceFiles) {
+    public StubS3Driver(String bucketName, List<String> filesInBucket) {
         super(null, bucketName);
-        this.resourceFiles = resourceFiles;
+        this.filesInBucket = filesInBucket;
     }
 
     @Override
     public List<String> listFiles(Path folder) {
-        return resourceFiles;
+        return filesInBucket;
     }
 
     @Override
@@ -40,16 +42,15 @@ public class StubS3Driver extends S3Driver {
     }
 
     private Stream<String> fileContent(String filename) {
-        InputStream inputStream = IoUtils.inputStreamFromResources(filename);
-        if (streamIsEmpty(inputStream)) {
-            throw new IllegalStateException("File does not exist or file is empty");
-        }
+        InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename))
+                                      .orElseThrow(fail -> fileNotFoundException());
+
         GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8));
         return reader.lines();
     }
 
-    private boolean streamIsEmpty(InputStream inputStream) {
-        return attempt(() -> inputStream.available() == 0).orElseThrow();
+    private NoSuchKeyException fileNotFoundException() {
+        return NoSuchKeyException.builder().message("File does not exist or file is empty").build();
     }
 }

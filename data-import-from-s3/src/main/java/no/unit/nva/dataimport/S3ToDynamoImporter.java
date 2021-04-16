@@ -25,7 +25,7 @@ class S3ToDynamoImporter {
     public static final boolean NO_UNPROCESSED_ITEMS = false;
 
     private final AmazonDynamoDB dynamoClient;
-    private final S3Reader s3Reader;
+    private final S3IonReader s3IonReader;
     private final String tableName;
     private final String filename;
 
@@ -35,17 +35,18 @@ class S3ToDynamoImporter {
                        String filename
     ) {
         this.dynamoClient = dynamoClient;
-        this.s3Reader = new S3Reader(s3Driver);
+        this.s3IonReader = new S3IonReader(s3Driver);
         this.tableName = tableName;
         this.filename = filename;
     }
 
-    protected List<BatchWriteItemResult> insertFileToDynamo() throws IOException {
-        List<Item> itemList = s3Reader.extractItemsFromS3Bucket(filename);
-        return writeFileToDynamo(itemList, tableName);
+    protected List<BatchWriteItemResult> writeFileToDynamo() throws IOException {
+        List<Item> itemList = s3IonReader.extractItemsFromS3File(filename);
+        return insertItemListToDynamo(itemList, tableName);
     }
 
-    private List<BatchWriteItemResult> writeFileToDynamo(List<Item> itemList, String tableName) {
+    private List<BatchWriteItemResult> insertItemListToDynamo(List<Item> itemList, String tableName) {
+
         List<BatchWriteItemResult> results = new ArrayList<>();
         for (int i = 0; i < itemList.size(); i += BATCH_REQUEST_SIZE) {
             List<Item> batch = itemList.subList(i, min(i + BATCH_REQUEST_SIZE, itemList.size()));
