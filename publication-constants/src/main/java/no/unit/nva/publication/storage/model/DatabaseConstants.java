@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,11 +42,11 @@ public final class DatabaseConstants {
     public static final String BY_TYPE_CUSTOMER_STATUS_PK_FORMAT =
         //Do not refactor to method, declaration order of static variables is important.
         String.join(KEY_FIELDS_DELIMITER,
-            RECORD_TYPE,
-            CUSTOMER_INDEX_FIELD_PREFIX,
-            CUSTOMER_IDENTIFIER,
-            STATUS_INDEX_FIELD_PREFIX,
-            STATUS);
+                    RECORD_TYPE,
+                    CUSTOMER_INDEX_FIELD_PREFIX,
+                    CUSTOMER_IDENTIFIER,
+                    STATUS_INDEX_FIELD_PREFIX,
+                    STATUS);
     private static final String ENTRY_IDENTIFIER = STRING_PLACEHOLDER;
 
     public static final String PRIMARY_KEY_SORT_KEY_FORMAT =
@@ -57,6 +58,7 @@ public final class DatabaseConstants {
     private DatabaseConstants() {
     }
 
+    @JacocoGenerated
     private static String readTableNameFromEnvironment() {
         try {
             return environment.readEnv(RESOURCES_TABLE_NAME_ENV_VARIABLE);
@@ -65,15 +67,17 @@ public final class DatabaseConstants {
         }
     }
 
+    @JacocoGenerated
     private static String defaultValue() {
         logWarning();
         return DEFAULT_RESOURCES_TABLE_NAME;
     }
 
+    @JacocoGenerated
     private static void logWarning() {
         logger.warn(ENVIRONMENT_VARIABLE_NOT_SET_WARNING,
-            RESOURCES_TABLE_NAME_ENV_VARIABLE,
-            DEFAULT_RESOURCES_TABLE_NAME
+                    RESOURCES_TABLE_NAME_ENV_VARIABLE,
+                    DEFAULT_RESOURCES_TABLE_NAME
         );
     }
 }

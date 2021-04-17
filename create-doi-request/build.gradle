@@ -1,5 +1,3 @@
-
-
 dependencies {
     // compileOnly because under current deployment model, these dependencies are included
     // in the publication-commons layer.
@@ -10,21 +8,32 @@ dependencies {
     testImplementation project(":publication-commons")
 
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
+    testImplementation project(':publication-testing')
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+    testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
+    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
+
+
 
 
     compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
-    testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
 
     compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
     compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
-
-
-
-    testImplementation project (':publication-testing')
-
 
 }
 

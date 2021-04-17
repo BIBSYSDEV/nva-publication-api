@@ -7,13 +7,23 @@ dependencies {
 
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: project.ext.nvaAwsLambdaJavaEvents
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+
+    testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
+        because "For comparing java objects and detailing the differences in readable way"
+    }
 
     compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
-
-   testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
 
 }

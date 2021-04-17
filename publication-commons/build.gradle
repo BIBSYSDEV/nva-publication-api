@@ -1,34 +1,43 @@
 
 
 dependencies {
-    api project(":storage-model")
+    implementation project(":publication-constants")
+    implementation project(":storage-model")
 
-    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
 
-    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+
+    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: project.ext.jacksonVersion
-    api group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
-    api group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
-    api group: 'org.zalando', name: 'jackson-datatype-problem', version: project.ext.zalandoProblemVersion
+    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
 
-    api group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
-    api group: 'com.amazonaws', name: 'aws-java-sdk-core', version: project.ext.awsSdkVersion
-    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
 
+
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: project.ext.awsSdkVersion
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: project.ext.log4jApiVersion
 
     testImplementation project(":publication-testing")
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
+    testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
+        because "For comparing java objects and detailing the differences in readable way"
+    }
+
 
 }
 

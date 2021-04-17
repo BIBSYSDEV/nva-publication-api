@@ -8,7 +8,9 @@ import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -17,7 +19,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.HttpHeaders;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ public class PublicationsByOwnerHandlerTest {
     private ResourceService resourceService;
     private Context context;
 
-    private OutputStream output;
+    private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
 
     /**
@@ -77,10 +77,10 @@ public class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(
             inputStream(), output, context);
 
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<PublicationsByOwnerResponse> gatewayResponse = GatewayResponse.fromOutputStream(output);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(CONTENT_TYPE));
-        Assert.assertTrue(gatewayResponse.getHeaders().keySet().contains(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
+        assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
     }
 
     @Test

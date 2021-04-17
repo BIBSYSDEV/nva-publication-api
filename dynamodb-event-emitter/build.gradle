@@ -1,9 +1,24 @@
 dependencies {
     implementation project(":publication-doi-commons")
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
 
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-events', version: project.ext.nvaAwsLambdaJavaEvents
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'sqs', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'auth', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'sdk-core', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'aws-core', version: project.ext.awsSdk2Version
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
+
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+
 }

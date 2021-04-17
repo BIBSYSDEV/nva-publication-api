@@ -1,31 +1,33 @@
 
 
 dependencies {
-    api project(":publication-doi-commons")
-    api(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+    implementation project(":publication-constants")
+
+    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
-    api group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    api group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    compileOnly group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
 
-    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
-    api(group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion) {
+
+    implementation(group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion) {
         because('For generating test data in tests. Another alternative is jfairy')
     }
+    implementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
 
-    api group: 'com.amazonaws', name: 'aws-java-sdk-lambda', version: project.ext.awsSdkVersion
-    api group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-    api group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
-    api(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion) {
+    implementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
-    api group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
-    api group: 'org.junit.jupiter', name: 'junit-jupiter-migrationsupport', version: project.ext.junit5Version
 
-    implementation project (":storage-model")
+    implementation (group: 'org.apache.httpcomponents', name: 'httpcore', version: project.ext.dynamoDbHttpCoreDependency){
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
+
 }
 
 configurations.api.canBeResolved = true
