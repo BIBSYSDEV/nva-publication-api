@@ -691,17 +691,7 @@ Resources:
               providerARNs:
                 - !Ref CognitoAuthorizerArn
 
-  #==============================Commons Layer=========================================================
-  NvaPublicationCommonsLayer:
-    Type: AWS::Serverless::LayerVersion
-    Properties:
-      LayerName: publication-commons-layer
-      Description: Publication Commons
-      ContentUri: publication-commons/build/distributions/publication-commons.zip
-      CompatibleRuntimes:
-        - java11
-      LicenseInfo: 'MIT'
-      RetentionPolicy: Retain
+
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
