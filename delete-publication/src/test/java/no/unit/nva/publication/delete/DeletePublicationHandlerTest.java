@@ -28,7 +28,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -39,10 +38,6 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     public static final String IDENTIFIER = "identifier";
     public static final String WILDCARD = "*";
     public static final String SOME_USER = "some_other_user";
-    public static final String REQUEST_CONTEXT = "requestContext";
-    public static final String AUTHORIZER = "authorizer";
-    public static final String CLAIMS = "claims";
-    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
     public static final URI SOME_CUSTOMER = URI.create("https://www.example.org");
     private DeletePublicationHandler handler;
     private ResourceService publicationService;
@@ -80,7 +75,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
-        Assert.assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
+        assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
     @Test
