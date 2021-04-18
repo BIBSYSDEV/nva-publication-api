@@ -708,8 +708,6 @@ Resources:
     Properties:
       CodeUri: create-publication
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       AutoPublishAlias: live
@@ -759,8 +757,6 @@ Resources:
     Properties:
       CodeUri: create-doi-request
       Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -784,8 +780,6 @@ Resources:
     Properties:
       CodeUri: fetch-publication
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       AutoPublishAlias: live
@@ -836,8 +830,6 @@ Resources:
     Properties:
       CodeUri: modify-publication
       Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -860,8 +852,6 @@ Resources:
     Properties:
       CodeUri: delete-publication
       Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -883,8 +873,6 @@ Resources:
     Properties:
       CodeUri: publications-by-owner
       Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -905,8 +893,6 @@ Resources:
   ListDoiRequestsHandler:
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: list-doi-requests
       Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
       MemorySize: 768
@@ -931,8 +917,6 @@ Resources:
   UpdateDoiRequestHandler:
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: update-doi-request
       Handler: no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler::handleRequest
       MemorySize: 768
@@ -960,8 +944,6 @@ Resources:
     Properties:
       CodeUri: publish-publication
       Handler: no.unit.nva.publication.publish.PublishPublicationHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -984,8 +966,6 @@ Resources:
     Properties:
       CodeUri: create-message
       Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -1008,8 +988,6 @@ Resources:
     Properties:
       CodeUri: list-messages
       Handler: no.unit.nva.pubication.messages.list.ListMessagesHandler::handleRequest
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -1034,8 +1012,6 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: delete-publication-event-producer
       Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
@@ -1064,8 +1040,6 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-event-dtopublicationdoi-producer
       Handler: no.unit.nva.doi.event.producer.DoiRequestEventProducer::handleRequest
       Runtime: java11
@@ -1105,8 +1079,6 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: publication-fanout-handler
       Handler: no.unit.nva.publication.events.PublicationFanoutHandler::handleRequest
       Runtime: java11
@@ -1137,8 +1109,6 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: delete-draft-publication-handler
       Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
       Runtime: java11
@@ -1174,8 +1144,6 @@ Resources:
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: dynamodb-event-emitter
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
@@ -1211,8 +1179,6 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: update-doi-status
       Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
@@ -1247,8 +1213,6 @@ Resources:
   ImportFromS3Function:
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: data-import-from-s3
       Handler: no.unit.nva.dataimport.DataImportHandler::importAllFilesFromFolder
       Runtime: java11
@@ -1261,8 +1225,6 @@ Resources:
   MigrateData:
     Type: AWS::Serverless::Function
     Properties:
-      Layers:
-        - !Ref NvaPublicationCommonsLayer
       CodeUri: data-migration
       Handler: no.unit.nva.publication.migration.DataMigrationHandler::handleRequest
       Runtime: java11
