@@ -1,11 +1,9 @@
 dependencies {
     // compileOnly because under current deployment model, these dependencies are included
     // in the publication-commons layer.
-    compileOnly project(":storage-model")
-    testImplementation project(":storage-model")
+    implementation project(":storage-model")
+    implementation project(":publication-commons")
 
-    compileOnly project(":publication-commons")
-    testImplementation project(":publication-commons")
 
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
@@ -19,13 +17,12 @@ dependencies {
     runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
+
     testImplementation project(':publication-testing')
 
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
     testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-
-
 
 
     compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
