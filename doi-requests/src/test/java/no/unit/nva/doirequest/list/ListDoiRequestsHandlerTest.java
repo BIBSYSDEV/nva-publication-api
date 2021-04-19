@@ -1,8 +1,5 @@
 package no.unit.nva.doirequest.list;
 
-import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
-import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
-import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
@@ -14,8 +11,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.github.javafaker.Faker;
 import java.io.ByteArrayOutputStream;
@@ -54,6 +49,7 @@ import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
@@ -105,7 +101,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         List<Publication> actualResponse = parseResponse();
 
         List<Publication> expectedResponse = toPublications(expectedDoiRequests);
-        MatcherAssert.assertThat(actualResponse, Is.is(IsEqual.equalTo(expectedResponse)));
+        assertThat(actualResponse, is(equalTo(expectedResponse)));
     }
 
     public List<Publication> parseResponse() throws com.fasterxml.jackson.core.JsonProcessingException {
@@ -135,8 +131,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                                                               doiRequest -> !doiRequestBelongsToCustomer(
                                                                   curatorsCustomer, doiRequest));
 
-        MatcherAssert.assertThat(actualResponse, IsIterableContaining.hasItem(expectedResponse));
-        MatcherAssert.assertThat(actualResponse, IsNot.not(IsIterableContaining.hasItem(unexpectedDoiResponse)));
+        assertThat(actualResponse, hasItem(expectedResponse));
+        assertThat(actualResponse, not(hasItem(unexpectedDoiResponse)));
     }
 
     @Test
@@ -153,7 +149,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         List<Publication> responseBody = parseResponse();
 
-        MatcherAssert.assertThat(responseBody, Is.is(IsEmptyCollection.emptyCollectionOf(Publication.class)));
+        assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
     }
 
     @Test
@@ -178,7 +174,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         List<Publication> responseBody = parseResponse();
 
-        MatcherAssert.assertThat(responseBody, Is.is(IsEqual.equalTo(List.of(expectedDoiRequest))));
+        assertThat(responseBody, is(equalTo(List.of(expectedDoiRequest))));
     }
 
     @Test
@@ -195,7 +191,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         List<Publication> responseBody = parseResponse();
 
-        MatcherAssert.assertThat(responseBody, Is.is(IsEmptyCollection.emptyCollectionOf(Publication.class)));
+        assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
     }
 
     @Test
@@ -207,10 +203,11 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
         String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
-        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, ListDoiRequestsHandler.CREATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId,
+                                                                 ListDoiRequestsHandler.CREATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
-        MatcherAssert.assertThat(actualMessages, Matchers.containsInAnyOrder(expectedMessages));
+        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -221,10 +218,11 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(0).getPublisher().getId();
-        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, ListDoiRequestsHandler.CURATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId,
+                                                                 ListDoiRequestsHandler.CURATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
-        MatcherAssert.assertThat(actualMessages, Matchers.containsInAnyOrder(expectedMessages));
+        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -239,18 +237,19 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
         final var otherMessages = createSupportMessagesForPublications(publications);
 
-        var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId, ListDoiRequestsHandler.CREATOR_ROLE);
+        var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId,
+                                                        ListDoiRequestsHandler.CREATOR_ROLE);
 
         var expectedMessages = extractMessageTexts(doiRequestMessages);
         var notExpectedMessages = extractMessageTexts(otherMessages);
 
-        MatcherAssert.assertThat(actualMessages, Matchers.hasItems(expectedMessages));
+        assertThat(actualMessages, hasItems(expectedMessages));
         assertThatActualMessagesDoNotContainAnyOf(actualMessages, notExpectedMessages);
     }
 
     private void assertThatActualMessagesDoNotContainAnyOf(List<String> actualMessages, String[] notExpectedMessages) {
         for (String notExpectedMessage : notExpectedMessages) {
-            MatcherAssert.assertThat(actualMessages, IsNot.not(IsIterableContaining.hasItem(notExpectedMessage)));
+            assertThat(actualMessages, not(hasItem(notExpectedMessage)));
         }
     }
 
@@ -357,9 +356,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private List<Publication> createPublishedPublicationsOfSameOwner() throws ApiGatewayException {
 
-        Stream<Publication> publicationsToBeSaved = Stream
-                                                        .of(PublicationGenerator.publicationWithoutIdentifier(),
-                                                            PublicationGenerator.publicationWithoutIdentifier());
+        Stream<Publication> publicationsToBeSaved = Stream.of(publicationWithoutIdentifier(),
+                                                              publicationWithoutIdentifier());
         List<Publication> publications = createPublications(publicationsToBeSaved);
 
         for (Publication pub : publications) {
@@ -369,7 +367,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.publicationWithoutIdentifier();
+        Publication publication = publicationWithoutIdentifier();
         Publication publicationWithDifferentOwner = publication.copy().withOwner(SOME_OTHER_OWNER).build();
         List<Publication> publications = createPublications(Stream.of(publication, publicationWithDifferentOwner));
 
@@ -380,7 +378,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<Publication> publishedPublicationsOfDifferentPublisher() throws ApiGatewayException {
-        Publication publication = PublicationGenerator.publicationWithoutIdentifier();
+        Publication publication = publicationWithoutIdentifier();
         Publication publicationWithDifferentPublisher = publication
                                                             .copy()
                                                             .withOwner(SOME_OTHER_OWNER)

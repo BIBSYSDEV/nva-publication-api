@@ -1,7 +1,5 @@
 package no.unit.nva.doirequest.update;
 
-import static no.unit.useraccessserivce.accessrights.AccessRight.APPROVE_DOI_REQUEST;
-import static no.unit.useraccessserivce.accessrights.AccessRight.REJECT_DOI_REQUEST;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -14,6 +12,7 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -116,9 +115,9 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
 
     private void updateContentLocationHeader(SortableIdentifier publicationIdentifier) {
-        setAdditionalHeadersSupplier(() ->
-                                         Collections.singletonMap(HttpHeaders.LOCATION,
-                                             getContentLocation(publicationIdentifier)));
+        setAdditionalHeadersSupplier(
+            () -> Collections.singletonMap(HttpHeaders.LOCATION,
+                                           getContentLocation(publicationIdentifier)));
     }
 
     private String getContentLocation(SortableIdentifier publicationID) {
