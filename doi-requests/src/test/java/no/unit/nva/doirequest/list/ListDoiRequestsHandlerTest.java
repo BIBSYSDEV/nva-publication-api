@@ -1,5 +1,8 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
+import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
+import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
@@ -94,7 +97,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         List<DoiRequest> expectedDoiRequests = createDoiRequests(publications);
 
         URI curatorsPublisher = publications.get(0).getPublisher().getId();
-        InputStream request = createRequest(curatorsPublisher, SOME_CURATOR, ListDoiRequestsHandler.CURATOR_ROLE);
+        InputStream request = createRequest(curatorsPublisher, SOME_CURATOR, CURATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
@@ -117,7 +120,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI curatorsCustomer = publications.get(FIRST_ELEMENT).getPublisher().getId();
 
-        InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, ListDoiRequestsHandler.CURATOR_ROLE);
+        InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, CURATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
@@ -143,7 +146,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI usersPublisher = publications.get(0).getPublisher().getId();
 
-        InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, ListDoiRequestsHandler.CREATOR_ROLE);
+        InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, CREATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
@@ -163,7 +166,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         InputStream request = createRequest(
             userInstance.getOrganizationUri(),
             userInstance.getUserIdentifier(),
-            ListDoiRequestsHandler.CREATOR_ROLE
+            CREATOR_ROLE
         );
 
         handler.handleRequest(request, outputStream, context);
@@ -203,8 +206,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
         String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
-        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId,
-                                                                 ListDoiRequestsHandler.CREATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
@@ -218,8 +220,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(0).getPublisher().getId();
-        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId,
-                                                                 ListDoiRequestsHandler.CURATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
         assertThat(actualMessages, containsInAnyOrder(expectedMessages));
@@ -238,7 +239,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var otherMessages = createSupportMessagesForPublications(publications);
 
         var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId,
-                                                        ListDoiRequestsHandler.CREATOR_ROLE);
+                                                        CREATOR_ROLE);
 
         var expectedMessages = extractMessageTexts(doiRequestMessages);
         var notExpectedMessages = extractMessageTexts(otherMessages);
@@ -328,7 +329,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                    .withFeideId(userIdentifier)
                    .withRoles(userRole)
                    .withQueryParameters(
-                       Map.of(ListDoiRequestsHandler.ROLE_QUERY_PARAMETER, userRole))
+                       Map.of(ROLE_QUERY_PARAMETER, userRole))
                    .build();
     }
 
