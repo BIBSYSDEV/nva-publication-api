@@ -1,4 +1,4 @@
-package no.unit.nva.doi.requests.handlers;
+package no.unit.nva.doirequest.update;
 
 import java.util.Optional;
 import no.unit.nva.model.DoiRequestStatus;

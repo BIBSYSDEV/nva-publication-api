@@ -745,7 +745,7 @@ Resources:
   NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-doi-request
+      CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.create.CreateDoiRequestHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -883,7 +883,7 @@ Resources:
   ListDoiRequestsHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: list-doi-requests
+      CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.list.ListDoiRequestsHandler::handleRequest
       MemorySize: 768
       Timeout: 600
@@ -907,8 +907,8 @@ Resources:
   UpdateDoiRequestHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: update-doi-request
-      Handler: no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler::handleRequest
+      CodeUri: doi-request
+      Handler: no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler::handleRequest
       MemorySize: 768
       Timeout: 600
       Runtime: java11

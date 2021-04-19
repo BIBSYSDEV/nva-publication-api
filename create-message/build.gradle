@@ -17,9 +17,8 @@ dependencies {
     runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
-
     testImplementation project(":publication-testing")
-    testImplementation project(":list-doi-requests")
+    testImplementation project(":doi-requests")
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion

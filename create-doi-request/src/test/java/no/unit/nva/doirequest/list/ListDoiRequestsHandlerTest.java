@@ -83,7 +83,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         resourceService = new ResourceService(client, mockClock);
 
         outputStream = new ByteArrayOutputStream();
-        context = mock(Context.class);
+        context = Mockito.mock(Context.class);
         Environment environment = mockEnvironment();
 
         doiRequestService = new DoiRequestService(client, mockClock);
@@ -98,14 +98,14 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         List<DoiRequest> expectedDoiRequests = createDoiRequests(publications);
 
         URI curatorsPublisher = publications.get(0).getPublisher().getId();
-        InputStream request = createRequest(curatorsPublisher, SOME_CURATOR, CURATOR_ROLE);
+        InputStream request = createRequest(curatorsPublisher, SOME_CURATOR, ListDoiRequestsHandler.CURATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
         List<Publication> actualResponse = parseResponse();
 
         List<Publication> expectedResponse = toPublications(expectedDoiRequests);
-        assertThat(actualResponse, is(equalTo(expectedResponse)));
+        MatcherAssert.assertThat(actualResponse, Is.is(IsEqual.equalTo(expectedResponse)));
     }
 
     public List<Publication> parseResponse() throws com.fasterxml.jackson.core.JsonProcessingException {
@@ -121,7 +121,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI curatorsCustomer = publications.get(FIRST_ELEMENT).getPublisher().getId();
 
-        InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, CURATOR_ROLE);
+        InputStream request = createRequest(curatorsCustomer, SOME_CURATOR, ListDoiRequestsHandler.CURATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
@@ -135,8 +135,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                                                               doiRequest -> !doiRequestBelongsToCustomer(
                                                                   curatorsCustomer, doiRequest));
 
-        assertThat(actualResponse, hasItem(expectedResponse));
-        assertThat(actualResponse, not(hasItem(unexpectedDoiResponse)));
+        MatcherAssert.assertThat(actualResponse, IsIterableContaining.hasItem(expectedResponse));
+        MatcherAssert.assertThat(actualResponse, IsNot.not(IsIterableContaining.hasItem(unexpectedDoiResponse)));
     }
 
     @Test
@@ -147,13 +147,13 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI usersPublisher = publications.get(0).getPublisher().getId();
 
-        InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, CREATOR_ROLE);
+        InputStream request = createRequest(usersPublisher, SOME_OTHER_OWNER, ListDoiRequestsHandler.CREATOR_ROLE);
 
         handler.handleRequest(request, outputStream, context);
 
         List<Publication> responseBody = parseResponse();
 
-        assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
+        MatcherAssert.assertThat(responseBody, Is.is(IsEmptyCollection.emptyCollectionOf(Publication.class)));
     }
 
     @Test
@@ -167,7 +167,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         InputStream request = createRequest(
             userInstance.getOrganizationUri(),
             userInstance.getUserIdentifier(),
-            CREATOR_ROLE
+            ListDoiRequestsHandler.CREATOR_ROLE
         );
 
         handler.handleRequest(request, outputStream, context);
@@ -178,7 +178,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         List<Publication> responseBody = parseResponse();
 
-        assertThat(responseBody, is(equalTo(List.of(expectedDoiRequest))));
+        MatcherAssert.assertThat(responseBody, Is.is(IsEqual.equalTo(List.of(expectedDoiRequest))));
     }
 
     @Test
@@ -195,7 +195,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         List<Publication> responseBody = parseResponse();
 
-        assertThat(responseBody, is(emptyCollectionOf(Publication.class)));
+        MatcherAssert.assertThat(responseBody, Is.is(IsEmptyCollection.emptyCollectionOf(Publication.class)));
     }
 
     @Test
@@ -207,10 +207,10 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
         String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
-        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, ListDoiRequestsHandler.CREATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
-        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
+        MatcherAssert.assertThat(actualMessages, Matchers.containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -221,10 +221,10 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(0).getPublisher().getId();
-        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, CURATOR_ROLE);
+        List<String> actualMessages = sendRequestAndReadMessages(SOME_CURATOR, commonPublisherId, ListDoiRequestsHandler.CURATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
-        assertThat(actualMessages, containsInAnyOrder(expectedMessages));
+        MatcherAssert.assertThat(actualMessages, Matchers.containsInAnyOrder(expectedMessages));
     }
 
     @Test
@@ -239,18 +239,18 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
         final var otherMessages = createSupportMessagesForPublications(publications);
 
-        var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId, CREATOR_ROLE);
+        var actualMessages = sendRequestAndReadMessages(publicationsOwnerIdentifier, commonPublisherId, ListDoiRequestsHandler.CREATOR_ROLE);
 
         var expectedMessages = extractMessageTexts(doiRequestMessages);
         var notExpectedMessages = extractMessageTexts(otherMessages);
 
-        assertThat(actualMessages, hasItems(expectedMessages));
+        MatcherAssert.assertThat(actualMessages, Matchers.hasItems(expectedMessages));
         assertThatActualMessagesDoNotContainAnyOf(actualMessages, notExpectedMessages);
     }
 
     private void assertThatActualMessagesDoNotContainAnyOf(List<String> actualMessages, String[] notExpectedMessages) {
         for (String notExpectedMessage : notExpectedMessages) {
-            assertThat(actualMessages, not(hasItem(notExpectedMessage)));
+            MatcherAssert.assertThat(actualMessages, IsNot.not(IsIterableContaining.hasItem(notExpectedMessage)));
         }
     }
 
@@ -295,8 +295,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Environment mockEnvironment() {
-        Environment environment = mock(Environment.class);
-        when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
+        Environment environment = Mockito.mock(Environment.class);
+        Mockito.when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
     }
 
@@ -329,7 +329,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
                    .withFeideId(userIdentifier)
                    .withRoles(userRole)
                    .withQueryParameters(
-                       Map.of(ROLE_QUERY_PARAMETER, userRole))
+                       Map.of(ListDoiRequestsHandler.ROLE_QUERY_PARAMETER, userRole))
                    .build();
     }
 
@@ -358,8 +358,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     private List<Publication> createPublishedPublicationsOfSameOwner() throws ApiGatewayException {
 
         Stream<Publication> publicationsToBeSaved = Stream
-                                                        .of(publicationWithoutIdentifier(),
-                                                            publicationWithoutIdentifier());
+                                                        .of(PublicationGenerator.publicationWithoutIdentifier(),
+                                                            PublicationGenerator.publicationWithoutIdentifier());
         List<Publication> publications = createPublications(publicationsToBeSaved);
 
         for (Publication pub : publications) {
@@ -369,7 +369,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() throws ApiGatewayException {
-        Publication publication = publicationWithoutIdentifier();
+        Publication publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication publicationWithDifferentOwner = publication.copy().withOwner(SOME_OTHER_OWNER).build();
         List<Publication> publications = createPublications(Stream.of(publication, publicationWithDifferentOwner));
 
@@ -380,7 +380,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<Publication> publishedPublicationsOfDifferentPublisher() throws ApiGatewayException {
-        Publication publication = publicationWithoutIdentifier();
+        Publication publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication publicationWithDifferentPublisher = publication
                                                             .copy()
                                                             .withOwner(SOME_OTHER_OWNER)
@@ -421,8 +421,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private void setupClock() {
-        mockClock = mock(Clock.class);
-        when(mockClock.instant())
+        mockClock = Mockito.mock(Clock.class);
+        Mockito.when(mockClock.instant())
             .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)

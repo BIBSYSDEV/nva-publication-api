@@ -1,4 +1,4 @@
-package no.unit.nva.doi.requests.handlers;
+package no.unit.nva.doirequest.update;
 
 import static no.unit.useraccessserivce.accessrights.AccessRight.APPROVE_DOI_REQUEST;
 import static no.unit.useraccessserivce.accessrights.AccessRight.REJECT_DOI_REQUEST;
@@ -97,8 +97,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private boolean userIsNotAuthorized(RequestInfo requestInfo) {
         return
             !(
-                requestInfo.userHasAccessRight(APPROVE_DOI_REQUEST.toString())
-                && requestInfo.userHasAccessRight(REJECT_DOI_REQUEST.toString())
+                requestInfo.userHasAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
+                && requestInfo.userHasAccessRight(AccessRight.REJECT_DOI_REQUEST.toString())
             );
     }
 

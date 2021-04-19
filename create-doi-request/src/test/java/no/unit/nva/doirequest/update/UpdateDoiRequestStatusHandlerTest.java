@@ -1,4 +1,4 @@
-package no.unit.nva.doi.requests.handlers;
+package no.unit.nva.doirequest.update;
 
 import static no.unit.nva.doi.requests.handlers.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doi.requests.handlers.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
