@@ -6,14 +6,23 @@ dependencies {
 
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
     testImplementation project(":publication-testing")
-    testImplementation project(":list-doi-requests")
+    testImplementation project(":doi-requests")
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
 }
 
 configurations.testImplementation.canBeResolved = true

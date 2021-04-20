@@ -5,10 +5,19 @@ dependencies {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
 
-    compileOnly( group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
+
+    compileOnly(group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
 }

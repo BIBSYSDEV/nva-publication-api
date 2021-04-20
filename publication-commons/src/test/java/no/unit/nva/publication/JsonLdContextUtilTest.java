@@ -1,7 +1,7 @@
 package no.unit.nva.publication;
 
 import static nva.commons.core.JsonUtils.objectMapper;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;

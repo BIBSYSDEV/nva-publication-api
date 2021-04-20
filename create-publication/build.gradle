@@ -1,18 +1,27 @@
-
 dependencies {
     //This package is added by SAM template in the runtime environment
-    compileOnly project(':publication-commons')
-    testImplementation project(':publication-commons')
+    implementation project(':publication-commons')
+    compileOnly(project(':storage-model')) {
+        because "PMD complains about no/unit/nva/publication/storage/model/UserInstance"
+    }
 
     implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-
+    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
     }
 
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
     testImplementation project(":publication-testing")
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-migrationsupport', version: project.ext.junit5Version
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
 
     compileOnly(group: 'com.amazonaws', name: 'aws-java-sdk-api-gateway', version: project.ext.awsSdkVersion) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
