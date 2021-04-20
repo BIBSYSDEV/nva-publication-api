@@ -94,6 +94,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withEntityDescription(publication.getEntityDescription())
                    .withDoi(publication.getDoi())
                    .withHandle(publication.getHandle())
+                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
                    .build();
     }
 

@@ -3,7 +3,9 @@ package no.unit.nva.publication.storage.model;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
@@ -90,5 +92,9 @@ public final class ResourceBuilder {
 
     public Resource build() {
         return resource;
+    }
+
+    public DoiRequestBuilder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        return null;
     }
 }

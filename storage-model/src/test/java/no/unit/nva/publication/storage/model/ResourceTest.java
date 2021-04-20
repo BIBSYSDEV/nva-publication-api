@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Approval;
 import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
@@ -156,9 +157,15 @@ public class ResourceTest {
                    .withProjects(sampleProjects)
                    .withDoiRequest(EMPTY_DOI_REQUEST)
                    .withEntityDescription(sampleEntityDescription(reference))
+                   .withAdditionalIdentifiers(sampleAdditionalIdentifiers())
                    .build();
     }
-    
+
+    private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
+        AdditionalIdentifier identifier = new AdditionalIdentifier(randomString(), randomString());
+        return Set.of(identifier);
+    }
+
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
         return new Reference.Builder()
                    .withDoi(randomUri())
@@ -166,7 +173,7 @@ public class ResourceTest {
                    .withPublicationInstance(sampleJournalArticle())
                    .build();
     }
-    
+
     private static Identity sampleIdentity() {
         return new Identity.Builder()
                    .withId(SAMPLE_ID)
