@@ -24,8 +24,8 @@ dependencies {
         because "For comparing objects during migration"
     }
 
-    implementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion

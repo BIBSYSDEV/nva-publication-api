@@ -11,8 +11,8 @@ dependencies {
     runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
 
-    compileOnly(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    compileOnly(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
     testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
@@ -22,7 +22,7 @@ dependencies {
     testImplementation project (":publication-testing")
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
-    testImplementation(group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
+    testImplementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion)
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
 }
