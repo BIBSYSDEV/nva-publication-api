@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -80,7 +81,7 @@ public class DataMigration {
         List<Contributor> updatedContributors = Optional.ofNullable(publication)
                                                     .stream()
                                                     .map(Publication::getEntityDescription)
-                                                    .map(EntityDescription::getContributors)
+                                                    .map(this::extractContributors)
                                                     .flatMap(Collection::stream)
                                                     .map(attempt(this::updateContributor))
                                                     .map(Try::orElseThrow)
@@ -91,6 +92,13 @@ public class DataMigration {
             return publication.copy().withEntityDescription(entityDescription).build();
         }
         return publication;
+    }
+
+    private List<Contributor> extractContributors(EntityDescription entityDescription) {
+        if (nonNull(entityDescription) && nonNull(entityDescription.getContributors())) {
+            return entityDescription.getContributors();
+        }
+        return Collections.emptyList();
     }
 
     private Contributor updateContributor(Contributor c) throws MalformedContributorException {
