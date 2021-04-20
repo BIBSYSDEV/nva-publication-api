@@ -907,7 +907,7 @@ Resources:
   UpdateDoiRequestHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: doi-request
+      CodeUri: doi-requests
       Handler: no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler::handleRequest
       MemorySize: 768
       Timeout: 600
