@@ -164,7 +164,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(retrievedDao, is(equalTo(originalDao)));
     }
     
-    @ParameterizedTest
+    @ParameterizedTest(name = "toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation")
     @MethodSource("instanceProvider")
     public void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao<?> originalDao) {
         

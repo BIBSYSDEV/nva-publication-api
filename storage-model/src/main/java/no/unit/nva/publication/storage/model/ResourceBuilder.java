@@ -90,11 +90,12 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public Resource build() {
-        return resource;
+    public ResourceBuilder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        resource.setAdditionalIdentifiers(additionalIdentifiers);
+        return this;
     }
 
-    public DoiRequestBuilder withAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
-        return null;
+    public Resource build() {
+        return resource;
     }
 }
