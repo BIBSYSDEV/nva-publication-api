@@ -1,5 +1,6 @@
 package no.unit.nva.publication.migration;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -76,13 +77,20 @@ public class DataMigration {
     }
 
     private Publication addCreatorRoleToContributors(Publication publication) {
-        EntityDescription entityrDescription = publication.getEntityDescription();
-        List<Contributor> updatedContributors = entityrDescription.getContributors().stream()
+        List<Contributor> updatedContributors = Optional.ofNullable(publication)
+                                                    .stream()
+                                                    .map(Publication::getEntityDescription)
+                                                    .map(EntityDescription::getContributors)
+                                                    .flatMap(Collection::stream)
                                                     .map(attempt(this::updateContributor))
                                                     .map(Try::orElseThrow)
                                                     .collect(Collectors.toList());
-        entityrDescription.setContributors(updatedContributors);
-        return publication.copy().withEntityDescription(entityrDescription).build();
+        if (nonNull(publication) && !updatedContributors.isEmpty()) {
+            EntityDescription entityDescription = publication.getEntityDescription();
+            entityDescription.setContributors(updatedContributors);
+            return publication.copy().withEntityDescription(entityDescription).build();
+        }
+        return publication;
     }
 
     private Contributor updateContributor(Contributor c) throws MalformedContributorException {
