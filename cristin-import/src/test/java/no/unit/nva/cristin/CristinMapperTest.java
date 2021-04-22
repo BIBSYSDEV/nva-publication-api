@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 
 public class CristinMapperTest {
 
-    public static final String SAMPLE_INPUT_01 = "input01";
+    public static final String SAMPLE_INPUT_01 = "input01.gz";
     private static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;
 
     @Test
