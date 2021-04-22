@@ -1,4 +1,4 @@
-package no.unit.nva.cristin;
+package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;

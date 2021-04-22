@@ -1,4 +1,4 @@
-package no.unit.nva.cristin;
+package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.LocalDate;

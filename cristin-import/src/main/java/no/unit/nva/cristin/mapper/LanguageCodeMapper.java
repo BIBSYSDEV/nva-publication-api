@@ -1,4 +1,4 @@
-package no.unit.nva.cristin;
+package no.unit.nva.cristin.mapper;
 
 import java.net.URI;
 import java.util.Locale;

@@ -1,4 +1,4 @@
-package no.unit.nva.cristin;
+package no.unit.nva.cristin.mapper;
 
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -127,7 +129,8 @@ public class CristinMapperTest {
     }
 
     private BufferedReader newReader() throws IOException {
-        return new BufferedReader(new InputStreamReader(IoUtils.inputStreamFromResources(SAMPLE_INPUT_01)));
+        InputStream inputStream = new GZIPInputStream(IoUtils.inputStreamFromResources(SAMPLE_INPUT_01));
+        return new BufferedReader(new InputStreamReader(inputStream));
     }
 
     private Stream<CristinObject> readJsonArray() {
