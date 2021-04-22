@@ -7,9 +7,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.ioutils.IoUtils;
@@ -31,26 +31,25 @@ public class StubS3Driver extends S3Driver {
 
     @Override
     public String getFile(String filename) {
-        Stream<String> lines = fileContent(filename);
-        return lines.collect(Collectors.joining(System.lineSeparator()));
+        List<String> lines = fileContent(filename);
+        return String.join(System.lineSeparator(), lines);
     }
 
     public List<String> getAllIonItems() {
         return listFiles(null)
                    .stream()
-                   .flatMap(this::fileContent)
+                   .map(this::fileContent)
+                   .flatMap(Collection::stream)
                    .collect(Collectors.toList());
     }
 
-    private Stream<String> fileContent(String filename) {
+    private List<String> fileContent(String filename) {
         try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename))
                                            .orElseThrow(fail -> fileNotFoundException());
             GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
             BufferedReader reader = new BufferedReader(
                 new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8))) {
-            List<String> content = reader.lines().collect(Collectors.toList());
-            //workaround to be able to close the reader and not get a PDM warning.
-            return content.stream();
+            return reader.lines().collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
