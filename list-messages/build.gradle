@@ -19,7 +19,7 @@ dependencies {
 
 
     testImplementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
 
