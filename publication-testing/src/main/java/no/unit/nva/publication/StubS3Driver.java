@@ -2,6 +2,7 @@ package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -42,12 +43,17 @@ public class StubS3Driver extends S3Driver {
     }
 
     private Stream<String> fileContent(String filename) {
-        InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename))
-                                      .orElseThrow(fail -> fileNotFoundException());
-
-        GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8));
-        return reader.lines();
+        try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename))
+                                           .orElseThrow(fail -> fileNotFoundException());
+            GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(gzipInputStream, StandardCharsets.UTF_8))) {
+            List<String> content = reader.lines().collect(Collectors.toList());
+            //workaround to be able to close the reader and not get a PDM warning.
+            return content.stream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private NoSuchKeyException fileNotFoundException() {

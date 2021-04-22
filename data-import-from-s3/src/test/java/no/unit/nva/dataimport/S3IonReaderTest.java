@@ -18,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import no.unit.nva.publication.StubS3Driver;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;

@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.publication.StubS3Driver;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
