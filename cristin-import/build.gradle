@@ -1,0 +1,20 @@
+apply plugin: 'io.freefair.lombok'
+
+dependencies {
+
+    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jsr310", version: project.ext.jacksonVersion
+    runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jdk8", version: project.ext.jacksonVersion
+
+    testImplementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
+    compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+    compileOnly group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+}

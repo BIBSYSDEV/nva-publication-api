@@ -6,6 +6,7 @@ plugins {
     id 'base'
     id 'nebula.lint' version '16.22.0'
     id "maven"
+    id "io.freefair.lombok" version "5.3.0" apply false
 }
 
 group 'no.unit.nva'
@@ -29,7 +30,7 @@ allprojects {
     project.ext {
         awsSdkVersion = '1.11.973'
         awsSdk2Version = '2.16.37'
-        nvaDatamodelVersion = "0.11.6"
+        nvaDatamodelVersion = "0.11.11"
         nvaCommonsVersion = '1.5.12'
         nvaTestUtilsVersion = "0.1.18"
         junit5Version = '5.6.0'

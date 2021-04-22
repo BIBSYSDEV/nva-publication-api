@@ -59,7 +59,6 @@ public class DataMigration {
     @SuppressWarnings("unchecked")
     private List<ResourceUpdate> executeMigration() {
         List<Publication> publications = fetchPublications();
-
         List<ResourceUpdate> publicationsUpdateResult = updateResources(publications);
         List<ResourceUpdate> doiRequestUpdatesResult = updateDoiRequests(publications);
         List<ResourceUpdate> messageUpdateResult = updateMessages();
@@ -115,6 +114,7 @@ public class DataMigration {
     private Role updateRole(Contributor c) {
         return Optional.ofNullable(c).map(Contributor::getRole).orElse(Role.CREATOR);
     }
+
 
     private List<ResourceUpdate> updateMessages() {
         MessagesImporter messagesImporter = new MessagesImporter(s3Driver, s3DataPath, messageService);
