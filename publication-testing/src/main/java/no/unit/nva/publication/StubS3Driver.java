@@ -1,4 +1,4 @@
-package no.unit.nva.dataimport;
+package no.unit.nva.publication;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.io.BufferedReader;
