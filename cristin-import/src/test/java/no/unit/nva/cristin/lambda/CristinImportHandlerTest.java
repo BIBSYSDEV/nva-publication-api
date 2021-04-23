@@ -38,7 +38,7 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerReturnsCristinResourcesFromSpecifiedS3Location() throws IOException {
+    public void handlerReturnsPublicationsWhenInputIsS3LocationWithCristinResources() throws IOException {
         ImportRequest request = new ImportRequest(SOME_S3_LOCATION);
 
         handler.handleRequest(request.toInputStream(), outputStream, CONTEXT);
