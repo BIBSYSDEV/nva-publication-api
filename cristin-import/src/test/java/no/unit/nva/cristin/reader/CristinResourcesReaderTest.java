@@ -27,7 +27,7 @@ public class CristinResourcesReaderTest {
     public void readCristinResourcesReturnsStreamOfCristinObjectsRemoteTest() {
         String bucket = new Environment().readEnv("AWS_BUCKET");
         S3Driver s3Driver = new S3Driver(bucket);
-        CristinReader reader = new CristinReader(s3Driver);
+        S3CristinRecordsReader reader = new S3CristinRecordsReader(s3Driver);
         List<CristinObject> cristinObjects = reader.readResources(Path.of("")).collect(Collectors.toList());
         assertThat(cristinObjects.size(), is(greaterThan(0)));
     }
@@ -35,7 +35,7 @@ public class CristinResourcesReaderTest {
     @Test
     public void readCristinResourcesReturnsStreamOfCristinObjects() {
         S3Driver s3Driver = new StubS3Driver(SOME_BUCKET_NAME, List.of(RESOURCE_01));
-        CristinReader reader = new CristinReader(s3Driver);
+        S3CristinRecordsReader reader = new S3CristinRecordsReader(s3Driver);
         List<CristinObject> cristinObjects = reader.readResources(SOME_FOLDER).collect(Collectors.toList());
         assertThat(cristinObjects, hasSize(NUMBER_OF_RECORDS_IN_RESOURCES));
     }
@@ -43,7 +43,7 @@ public class CristinResourcesReaderTest {
     @Test
     public void readCristinResourcesReturnsStreamOfCristinObjectsWhenInputIsJsonArray() {
         S3Driver s3Driver = new StubS3Driver(SOME_BUCKET_NAME, List.of(RESOURCE_01_AS_JSON_ARRAY));
-        CristinReader reader = new CristinReader(s3Driver);
+        S3CristinRecordsReader reader = new S3CristinRecordsReader(s3Driver);
         List<CristinObject> cristinObjects = reader.readResources(SOME_FOLDER).collect(Collectors.toList());
         assertThat(cristinObjects, hasSize(NUMBER_OF_RECORDS_IN_RESOURCES));
     }
