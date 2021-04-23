@@ -14,6 +14,9 @@ import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 
+/**
+ * Reads specially tailored records of Cristing results from an S3 bucket and converts them to NVA Publications.
+ */
 public class CristinReader {
 
     public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperWithEmpty;
