@@ -24,7 +24,7 @@ public class CristinResourcesReaderTest {
 
     @Test
     @Tag("RemoteTest")
-    public void readCristinResourcesReturnsStreamOfCristinObjectsRemoteTest() {
+    public void readCristinResourcesReturnsStreamOfCristinObjectsFromRealS3LocationWithCristinResources() {
         String bucket = new Environment().readEnv("AWS_BUCKET");
         S3Driver s3Driver = new S3Driver(bucket);
         CristinReader reader = new CristinReader(s3Driver);
@@ -33,7 +33,7 @@ public class CristinResourcesReaderTest {
     }
 
     @Test
-    public void readCristinResourcesReturnsStreamOfCristinObjects() {
+    public void readCristinResourcesReturnsStreamOfCristinObjectsWhenInputContainsS3LocationWithCristinResources() {
         S3Driver s3Driver = new StubS3Driver(SOME_BUCKET_NAME, List.of(RESOURCE_01));
         CristinReader reader = new CristinReader(s3Driver);
         List<CristinObject> cristinObjects = reader.readResources(SOME_FOLDER).collect(Collectors.toList());
