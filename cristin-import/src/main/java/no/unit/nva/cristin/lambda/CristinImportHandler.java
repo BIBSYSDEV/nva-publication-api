@@ -39,13 +39,13 @@ public class CristinImportHandler implements RequestStreamHandler {
         List<JsonNode> result = publications
                                     .map(this::serializeWithTypes)
                                     .collect(Collectors.toList());
-        writeToDynamo(publications);
+        writeToDynamo();
 
         writeOutput(result, output);
     }
 
     @JacocoGenerated
-    private void writeToDynamo(Stream<Publication> publications) {
+    private void writeToDynamo() {
         //TODO: write toDynamo
     }
 
