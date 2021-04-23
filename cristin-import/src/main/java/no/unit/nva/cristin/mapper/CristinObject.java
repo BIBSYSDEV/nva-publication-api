@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.model.Publication;
 
 @Data
 @Builder
@@ -25,5 +26,9 @@ public class CristinObject {
 
     public CristinObject() {
 
+    }
+
+    public Publication toPublication() {
+        return new CristinMapper(this).generatePublication();
     }
 }
