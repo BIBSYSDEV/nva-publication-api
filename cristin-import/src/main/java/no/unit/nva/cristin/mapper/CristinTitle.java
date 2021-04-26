@@ -24,13 +24,13 @@ public class CristinTitle {
     @JsonProperty(ABSTRACT)
     private String abstractText;
     @JsonProperty("status_original")
-    private String isOriginalTitle;
+    private String statusOriginal;
 
     public CristinTitle() {
     }
 
     @JsonIgnore
     public boolean isMainTitle() {
-        return VALUE_OF_ORIGINAL_TITLE_STATUS.equalsIgnoreCase(isOriginalTitle);
+        return VALUE_OF_ORIGINAL_TITLE_STATUS.equalsIgnoreCase(statusOriginal);
     }
 }

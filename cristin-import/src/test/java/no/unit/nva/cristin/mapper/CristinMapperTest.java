@@ -69,8 +69,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    @DisplayName("map returns resource with main title equal to \"arstall\"")
-    public void mapReturnsResourceWithDateEqualToArsTall() {
+    @DisplayName("map returns resource with date equal to \"arstall\"")
+    public void mapReturnsResourceWithDateEqualToArstall() {
         List<String> expectedPublicationYear = cristinObjects()
                                                    .map(CristinObject::getPublicationYear)
                                                    .collect(Collectors.toList());
