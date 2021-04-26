@@ -83,7 +83,6 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
                    .flatMap(Collection::stream)
                    .map(AdditionalIdentifier::getValue)
                    .collect(Collectors.toList());
->>>>>>>b34730268ce24824772082058eaf0a5a163ef0f4
     }
 
     private Publication parseJson(String json) throws com.fasterxml.jackson.core.JsonProcessingException {
