@@ -16,7 +16,4 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           REGION: eu-west-1
           FunctionName: ${{ secrets.AWS_CICD_FUNCTION_NAME }}
-          LogType: Tail
           Payload: ${{ toJSON(github) }}
-      - name: Store tail logs to file
-        run: echo "${{ fromJSON(steps.invoke.outputs.response).LogResult }}" > invocation-logs.json
