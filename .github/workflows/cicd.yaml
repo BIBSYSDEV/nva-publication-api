@@ -2,7 +2,7 @@ name: Trigger DynamicPipelineMakerLambda
 
 on:
   pull_request:
-    types: [opened, closed]
+    types: [opened, reopened, closed]
 
 jobs:
   dynamic-pipeline-maker-lambda:
