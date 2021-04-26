@@ -51,35 +51,31 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
         handler.handleRequest(request.toInputStream(), outputStream, CONTEXT);
 
         List<String> expectedCristinIds = expectedCristinIds();
+        List<String> actualCristinIds = extractActualIdsFromDatabase();
+
+        assertThat(actualCristinIds, containsInAnyOrder(expectedCristinIds.toArray(String[]::new)));
+    }
+
+    private List<String> extractActualIdsFromDatabase() {
         ScanRequest scanRequest = new ScanRequest()
                                       .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
                                       .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME);
-        var actualCristinIds = client.scan(scanRequest)
-                                   .getItems()
-                                   .stream()
-                                   .map(ItemUtils::toItem)
-                                   .map(Item::toJSON)
-                                   .map(attempt(this::parseJson))
-                                   .map(Try::orElseThrow)
-                                   .map(Publication::getAdditionalIdentifiers)
-                                   .flatMap(Collection::stream)
-                                   .map(AdditionalIdentifier::getValue)
-                                   .collect(Collectors.toList());
-
-        assertThat(actualCristinIds, containsInAnyOrder(expectedCristinIds.toArray(String[]::new)));
+        return client.scan(scanRequest)
+                   .getItems()
+                   .stream()
+                   .map(ItemUtils::toItem)
+                   .map(Item::toJSON)
+                   .map(attempt(this::parseJson))
+                   .map(Try::orElseThrow)
+                   .map(Publication::getAdditionalIdentifiers)
+                   .flatMap(Collection::stream)
+                   .map(AdditionalIdentifier::getValue)
+                   .collect(Collectors.toList());
     }
 
     private Publication parseJson(String json) throws com.fasterxml.jackson.core.JsonProcessingException {
         ResourceDao dao = JsonUtils.objectMapperWithEmpty.readValue(json, ResourceDao.class);
         return dao.getData().toPublication();
-    }
-
-    private List<String> extractCristinIds(List<Publication> generatedPublications) {
-        return generatedPublications.stream()
-                   .map(Publication::getAdditionalIdentifiers)
-                   .flatMap(Collection::stream)
-                   .map(AdditionalIdentifier::getValue)
-                   .collect(Collectors.toList());
     }
 
     private List<String> expectedCristinIds() throws IOException {
