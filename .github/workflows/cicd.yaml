@@ -11,7 +11,7 @@ jobs:
       - name: Trigger DynamicPipelineMakerLambda
         uses: gagoar/invoke-aws-lambda@master
         env:
-          EVENT: '{ "github": { "repository": "{0}", "event_name": "{1}", "event": { "action": "{2}" }, "ref": "{3}" } }'
+          EVENT: '"{ "github": { "repository": "{0}", "event_name": "{1}", "event": { "action": "{2}" }, "ref": "{3}" } }"'
         with:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
