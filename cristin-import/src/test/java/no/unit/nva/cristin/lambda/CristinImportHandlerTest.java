@@ -57,20 +57,7 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
         handler.handleRequest(request.toInputStream(), outputStream, CONTEXT);
 
         List<String> expectedCristinIds = expectedCristinIds();
-        ScanRequest scanRequest = new ScanRequest()
-                                      .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                                      .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME);
-        var actualCristinIds = client.scan(scanRequest)
-                                   .getItems()
-                                   .stream()
-                                   .map(ItemUtils::toItem)
-                                   .map(Item::toJSON)
-                                   .map(attempt(this::parseJson))
-                                   .map(Try::orElseThrow)
-                                   .map(Publication::getAdditionalIdentifiers)
-                                   .flatMap(Collection::stream)
-                                   .map(AdditionalIdentifier::getValue)
-                                   .collect(Collectors.toList());
+        List<String> actualCristinIds = extractActualIdsFromDatabase();
 
         assertThat(actualCristinIds, containsInAnyOrder(expectedCristinIds.toArray(String[]::new)));
     }
@@ -79,6 +66,23 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
         return attempt(CristinDataGenerator::new)
                    .map(CristinDataGenerator::randomDataAsString)
                    .orElseThrow();
+    }
+
+    private List<String> extractActualIdsFromDatabase() {
+        ScanRequest scanRequest = new ScanRequest()
+                                      .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
+                                      .withIndexName(DatabaseConstants.RESOURCES_BY_IDENTIFIER_INDEX_NAME);
+        return client.scan(scanRequest)
+                   .getItems()
+                   .stream()
+                   .map(ItemUtils::toItem)
+                   .map(Item::toJSON)
+                   .map(attempt(this::parseJson))
+                   .map(Try::orElseThrow)
+                   .map(Publication::getAdditionalIdentifiers)
+                   .flatMap(Collection::stream)
+                   .map(AdditionalIdentifier::getValue)
+                   .collect(Collectors.toList());
     }
 
     private Publication parseJson(String json) throws com.fasterxml.jackson.core.JsonProcessingException {

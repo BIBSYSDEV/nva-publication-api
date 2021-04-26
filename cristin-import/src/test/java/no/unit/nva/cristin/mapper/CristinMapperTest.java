@@ -102,6 +102,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private CristinTitle mainTitle(List<CristinTitle> titles) {
-            return titles.stream().filter(CristinTitle::isMainTitle).collect(SingletonCollector.collect());
+        return titles.stream().filter(CristinTitle::isMainTitle).collect(SingletonCollector.collect());
     }
 }
