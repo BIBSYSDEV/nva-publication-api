@@ -21,6 +21,8 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
         objectMapperWithEmpty.getTypeFactory().constructCollectionType(List.class, CristinObject.class);
     protected String content;
 
+
+
     public Stream<CristinObject> cristinObjects() {
         return attempt(this::readJsonArray).orElse(fail -> readSeriesOfJsonObjects());
     }
@@ -48,7 +50,6 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
     }
 
     private BufferedReader newContentReader() {
-        return attempt(() -> new BufferedReader(new InputStreamReader(IoUtils.stringToStream(content))))
-                   .orElseThrow();
+        return attempt(() -> new BufferedReader(new InputStreamReader(IoUtils.stringToStream(content)))).orElseThrow();
     }
 }

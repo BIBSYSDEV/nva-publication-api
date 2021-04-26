@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
-import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -21,6 +20,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsResourceWithCristinIdStoredInAdditionalIdentifiers() throws IOException {
+    public void mapReturnsResourceWithCristinIdStoredInAdditionalIdentifiers() {
         Set<String> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
 
         Set<String> actualIds = cristinObjects()
@@ -49,13 +49,12 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    @DisplayName("map returns resource with main title the max length title in \"titteltekst\"")
-    public void mapReturnsResourceWithMainTitleTheMaxLengthTitleInTitteltekst() throws IOException {
+    public void mapReturnsResourceWithMainTitleBeingTheTitleAnnotatedAsOriginalTitle() {
 
         List<CristinObject> cristinObjects = cristinObjects().collect(Collectors.toList());
         List<String> expectedTitles = cristinObjects.stream()
                                           .map(CristinObject::getCristinTitles)
-                                          .map(this::maxLengthTitle)
+                                          .map(this::mainTitle)
                                           .map(CristinTitle::getTitle)
                                           .collect(Collectors.toList());
 
@@ -71,7 +70,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     @DisplayName("map returns resource with main title equal to \"arstall\"")
-    public void mapReturnsResourceWithDateEqualToArsTall() throws IOException {
+    public void mapReturnsResourceWithDateEqualToArsTall() {
         List<String> expectedPublicationYear = cristinObjects()
                                                    .map(CristinObject::getPublicationYear)
                                                    .collect(Collectors.toList());
@@ -87,7 +86,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     @DisplayName("map returns resource with createdDate equal to \"dato_opprettet\"")
-    public void mapReturnsResourceWithCreatedDateEqualToDatoOpprettet() throws IOException {
+    public void mapReturnsResourceWithCreatedDateEqualToDatoOpprettet() {
         ZoneOffset currentZoneOffset = ZoneId.systemDefault().getRules().getOffset(Instant.now());
         List<Instant> expectedCreatedDates = cristinObjects()
                                                  .map(CristinObject::getEntryCreationDate)
@@ -102,15 +101,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
     }
 
-    private CristinTitle maxLengthTitle(List<CristinTitle> titles) {
-        CristinTitle maxTitle = null;
-        int maxSize = -1;
-        for (CristinTitle title : titles) {
-            if (maxSize < title.getTitle().length()) {
-                maxSize = title.getTitle().length();
-                maxTitle = title;
-            }
-        }
-        return maxTitle;
+    private CristinTitle mainTitle(List<CristinTitle> titles) {
+            return titles.stream().filter(CristinTitle::isMainTitle).collect(SingletonCollector.collect());
     }
 }

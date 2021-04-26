@@ -60,15 +60,11 @@ public class CristinMapper {
     }
 
     private String extractMainTitle() {
-        return extractTitleInOriginalLanguage()
-                   .map(CristinTitle::getTitle)
-                   .orElseThrow();
-    }
-
-    private Optional<CristinTitle> extractTitleInOriginalLanguage() {
         return extractCristinTitles()
                    .filter(CristinTitle::isMainTitle)
-                   .findFirst();
+                   .findFirst()
+                   .map(CristinTitle::getTitle)
+                   .orElseThrow();
     }
 
     private Stream<CristinTitle> extractCristinTitles() {
@@ -79,7 +75,9 @@ public class CristinMapper {
     }
 
     private URI extractLanguage() {
-        return extractTitleInOriginalLanguage()
+        return extractCristinTitles()
+                   .filter(CristinTitle::isMainTitle)
+                   .findFirst()
                    .map(CristinTitle::getLanguagecode)
                    .map(LanguageCodeMapper::parseLanguage)
                    .orElse(LanguageCodeMapper.ENGLISH_LANG_URI);
