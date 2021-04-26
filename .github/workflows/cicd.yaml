@@ -18,5 +18,5 @@ jobs:
           FunctionName: ${{ secrets.AWS_CICD_FUNCTION_NAME }}
           LogType: Tail
           Payload: ${{ toJSON(github) }}
-      - name: Echo tail logs to console
-        run: echo "${{ fromJSON(steps.invoke.outputs.response).LogResult }}"
+      - name: Store tail logs to file
+        run: echo "${{ fromJSON(steps.invoke.outputs.response).LogResult }}" > invocation-logs.json
