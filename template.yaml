@@ -1233,7 +1233,7 @@ Resources:
       Handler: no.unit.nva.cristin.lambda.CristinImportHandler::handleRequest
       Runtime: java11
       MemorySize: 4096
-      Timeout: 300 # 5 min timout
+      Timeout: 300 # 5 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:

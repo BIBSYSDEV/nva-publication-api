@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static java.util.Objects.nonNull;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -10,11 +10,12 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class CristinTitle implements Comparable<CristinTitle> {
+public class CristinTitle {
 
     public static final String MAIN_TITLE = "titteltekst";
     public static final String LANGUAGE_CODE = "sprakkode";
     public static final String ABSTRACT = "abstract";
+    public static final String VALUE_OF_ORIGINAL_TITLE_STATUS = "J"; //probably means "Ja"
 
     @JsonProperty(LANGUAGE_CODE)
     private String languagecode;
@@ -23,20 +24,13 @@ public class CristinTitle implements Comparable<CristinTitle> {
     @JsonProperty(ABSTRACT)
     private String abstractText;
     @JsonProperty("status_original")
-    private String originalStatus;
+    private String isOriginalTitle;
 
     public CristinTitle() {
-
     }
 
-    @Override
-    public int compareTo(CristinTitle that) {
-        Integer thisLength = calculateTitleLength(this);
-        Integer thatLength = calculateTitleLength(that);
-        return thisLength.compareTo(thatLength);
-    }
-
-    private Integer calculateTitleLength(CristinTitle cristinTitle) {
-        return nonNull(cristinTitle.getTitle()) ? cristinTitle.getTitle().length() : 0;
+    @JsonIgnore
+    public boolean isMainTitle() {
+        return VALUE_OF_ORIGINAL_TITLE_STATUS.equalsIgnoreCase(isOriginalTitle);
     }
 }
