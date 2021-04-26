@@ -9,10 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Trigger DynamicPipelineMakerLambda
+        id: invoke
         uses: gagoar/invoke-aws-lambda@master
         with:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           REGION: eu-west-1
           FunctionName: ${{ secrets.AWS_CICD_FUNCTION_NAME }}
+          LogType: Tail
           Payload: ${{ toJSON(github) }}
+      - name: Echo tail logs to console
+        run: echo "${{ fromJSON(steps.invoke.outputs.response).LogResult }}"
