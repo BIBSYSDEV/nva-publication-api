@@ -59,7 +59,7 @@ public class CristinResourcesReaderTest extends AbstractCristinImportTest {
 
     @Test
     public void readCristinResourcesReturnsStreamOfCristinObjectsWhenInputIsJsonArray() throws JsonProcessingException {
-        FakeS3Client s3Client = CristinObjectsAsJsonArray();
+        FakeS3Client s3Client = cristinObjectsAsJsonArray();
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET_NAME);
         S3CristinRecordsReader reader = new S3CristinRecordsReader(s3Driver);
@@ -67,7 +67,7 @@ public class CristinResourcesReaderTest extends AbstractCristinImportTest {
         assertThat(cristinObjects, hasSize(NUMBER_OF_RECORDS_IN_RESOURCES));
     }
 
-    private FakeS3Client CristinObjectsAsJsonArray() throws JsonProcessingException {
+    private FakeS3Client cristinObjectsAsJsonArray() throws JsonProcessingException {
         List<JsonNode> jsonNodes = new CristinDataGenerator().randomObjects()
                                        .map(this::convertToJsonNode)
                                        .collect(Collectors.toList());
