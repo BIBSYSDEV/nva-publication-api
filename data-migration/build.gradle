@@ -20,7 +20,7 @@ dependencies {
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
 
-    implementation(group: 'org.javers', name: 'javers-core', version: '6.0.1') {
+    implementation(group: 'org.javers', name: 'javers-core', version: '6.1.0') {
         because "For comparing objects during migration"
     }
 
