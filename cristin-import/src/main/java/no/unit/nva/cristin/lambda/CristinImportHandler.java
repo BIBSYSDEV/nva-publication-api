@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
-import no.unit.nva.cristin.reader.CristinReader;
+import no.unit.nva.cristin.reader.S3CristinRecordsReader;
 import no.unit.nva.model.Publication;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -56,7 +56,7 @@ public class CristinImportHandler implements RequestStreamHandler {
 
     private Stream<Publication> extractPublicationsFromS3Location(String bucket, String path) {
         S3Driver s3Driver = new S3Driver(s3Client, bucket);
-        CristinReader reader = new CristinReader(s3Driver);
+        S3CristinRecordsReader reader = new S3CristinRecordsReader(s3Driver);
         List<CristinObject> resources = reader.readResources(Path.of(path)).collect(Collectors.toList());
         return resources.stream()
                    .map(CristinMapper::new)

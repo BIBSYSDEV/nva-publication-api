@@ -17,7 +17,7 @@ import nva.commons.core.attempt.Try;
 /**
  * Reads specially tailored records of Cristing results from an S3 bucket and converts them to NVA Publications.
  */
-public class CristinReader {
+public class S3CristinRecordsReader {
 
     public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperWithEmpty;
     public static final CollectionType CRISTIN_OBJECTS_ARRAY =
@@ -25,7 +25,7 @@ public class CristinReader {
 
     private final S3Driver s3Driver;
 
-    public CristinReader(S3Driver s3Driver) {
+    public S3CristinRecordsReader(S3Driver s3Driver) {
         this.s3Driver = s3Driver;
     }
 
