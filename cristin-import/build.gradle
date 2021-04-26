@@ -1,14 +1,16 @@
 apply plugin: 'io.freefair.lombok'
 
 dependencies {
+    implementation project(":publication-constants")
+    implementation project(":publication-commons")
 
-    testImplementation project(":publication-testing")
     implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
@@ -16,11 +18,18 @@ dependencies {
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jsr310", version: project.ext.jacksonVersion
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jdk8", version: project.ext.jacksonVersion
 
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
     implementation(group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version)
 
+    testImplementation project (":storage-model")
+    testImplementation project(":publication-testing")
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
 
+    compileOnly(project(":storage-model")){
+        because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"
+    }
     compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
     compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
     compileOnly group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
@@ -29,4 +38,20 @@ dependencies {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
 
+}
+
+configurations.testImplementation.canBeResolved = true
+
+task copyNativeDeps(type: Copy) {
+    from(configurations.testImplementation) {
+        include "*.dylib"
+        include "*.so"
+        include "*.dll"
+    }
+    into 'build/dynamodb-local'
+}
+
+test.dependsOn copyNativeDeps
+test.doFirst {
+    systemProperty "java.library.path", 'build/dynamodb-local'
 }

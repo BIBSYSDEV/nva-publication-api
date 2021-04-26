@@ -12,10 +12,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 
-public class AbstractCristinImportTest {
+public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
 
     public static final String SAMPLE_INPUT_01 = "input01.gz";
     public static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;

@@ -15,22 +15,28 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
 
+    @BeforeEach
+    public void init() {
+        super.init();
+    }
+
     @Test
     public void mapReturnsResourceWithCristinIdStoredInAdditionalIdentifiers() throws IOException {
         Set<String> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
 
-        Set<String> actualIds = extractedPublications()
+        Set<String> actualIds = cristinObjects()
+                                    .map(CristinObject::toPublication)
                                     .map(Publication::getAdditionalIdentifiers)
                                     .flatMap(Collection::stream)
                                     .map(AdditionalIdentifier::getValue)
@@ -44,20 +50,21 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @DisplayName("map returns resource with main title the max length title in \"titteltekst\"")
     public void mapReturnsResourceWithMainTitleTheMaxLengthTitleInTitteltekst() throws IOException {
 
-        List<CristinObject> cristingObjects = cristinObjects().collect(Collectors.toList());
-        List<String> expectedTitles = cristingObjects.stream()
+        List<CristinObject> cristinObjects = cristinObjects().collect(Collectors.toList());
+        List<String> expectedTitles = cristinObjects.stream()
                                           .map(CristinObject::getCristinTitles)
                                           .map(this::maxLengthTitle)
                                           .map(CristinTitle::getTitle)
                                           .collect(Collectors.toList());
 
-        List<String> actualTitles = extractedPublications()
+        List<String> actualTitles = cristinObjects.stream()
+                                        .map(CristinObject::toPublication)
                                         .map(Publication::getEntityDescription)
                                         .map(EntityDescription::getMainTitle)
                                         .collect(Collectors.toList());
         assertThat(expectedTitles, is(not(empty())));
         assertThat(actualTitles, containsInAnyOrder(expectedTitles.toArray(String[]::new)));
-        assertThat(actualTitles.size(), is(equalTo(cristingObjects.size())));
+        assertThat(actualTitles.size(), is(equalTo(cristinObjects.size())));
     }
 
     @Test
@@ -67,7 +74,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                    .map(CristinObject::getPublicationYear)
                                                    .collect(Collectors.toList());
 
-        List<String> actualPublicationDates = extractedPublications()
+        List<String> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
                                                   .map(Publication::getEntityDescription)
                                                   .map(EntityDescription::getDate)
                                                   .map(PublicationDate::getYear)
@@ -86,7 +93,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                  .map(time -> time.toInstant(currentZoneOffset))
                                                  .collect(Collectors.toList());
 
-        List<Instant> actualCreatedDates = extractedPublications()
+        List<Instant> actualCreatedDates = cristinObjects().map(CristinObject::toPublication)
                                                .map(Publication::getCreatedDate)
                                                .collect(Collectors.toList());
 
@@ -103,11 +110,5 @@ public class CristinMapperTest extends AbstractCristinImportTest {
             }
         }
         return maxTitle;
-    }
-
-    private Stream<Publication> extractedPublications() throws IOException {
-        return cristinObjects()
-                   .map(CristinMapper::new)
-                   .map(CristinMapper::generatePublication);
     }
 }

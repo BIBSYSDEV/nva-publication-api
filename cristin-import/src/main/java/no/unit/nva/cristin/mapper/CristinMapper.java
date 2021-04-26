@@ -9,11 +9,13 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 
 public class CristinMapper {
 
+    public static final String SOME_REAL_OWNER = "og@unit.no";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -25,7 +27,14 @@ public class CristinMapper {
                    .withAdditionalIdentifiers(Set.of(extractIdentifier()))
                    .withEntityDescription(generateEntityDescription())
                    .withCreatedDate(extractEntryCreationDate())
+                   .withPublisher(extractOrganization())
+                   .withOwner(SOME_REAL_OWNER)
                    .build();
+    }
+
+    private Organization extractOrganization() {
+        URI customerUri = URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
+        return new Organization.Builder().withId(customerUri).build();
     }
 
     private Instant extractEntryCreationDate() {
