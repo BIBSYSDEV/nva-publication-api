@@ -28,12 +28,20 @@ public class EventEmitter<T extends JsonSerializable> {
         this.client = eventBridgeClient;
     }
 
+    public void addEvents(Collection<T> events) {
+
+        List<PutEventsRequestEntry> entries = events.stream()
+                                                  .map(this::createPutEventRequesEntry)
+                                                  .collect(Collectors.toList());
+        putEventsRequests = createBatchesOfPutEventsRequests(entries);
+    }
+
     public List<PutEventsResult> emitEvents() {
-        List<PutEventsResult> failedEvents = sendRequestsToEventBridgeAndCollectFailedRequests(putEventsRequests);
+        List<PutEventsResult> failedEvents = emitEventsAndCollectFailures(putEventsRequests);
         int attempts = 0;
         while (!failedEvents.isEmpty() && attempts < MAX_ATTEMPTS) {
             List<PutEventsRequest> requestsToResend = collectRequestsForResending(failedEvents);
-            failedEvents = sendRequestsToEventBridgeAndCollectFailedRequests(requestsToResend);
+            failedEvents = emitEventsAndCollectFailures(requestsToResend);
             attempts++;
         }
         if (!failedEvents.isEmpty()) {
@@ -43,15 +51,7 @@ public class EventEmitter<T extends JsonSerializable> {
         return Collections.emptyList();
     }
 
-    public void addEvents(Collection<T> events) {
-
-        List<PutEventsRequestEntry> entries = events.stream()
-                                                  .map(this::newPutEventRequestEntry)
-                                                  .collect(Collectors.toList());
-        putEventsRequests = createBatchesOfPutEventsRequests(entries);
-    }
-
-    private PutEventsRequestEntry newPutEventRequestEntry(T filenameEvent) {
+    private PutEventsRequestEntry createPutEventRequesEntry(T filenameEvent) {
 
         return PutEventsRequestEntry.builder()
                    .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
@@ -65,6 +65,7 @@ public class EventEmitter<T extends JsonSerializable> {
 
     private List<PutEventsRequest> createBatchesOfPutEventsRequests(List<PutEventsRequestEntry> entries) {
         List<PutEventsRequest> eventsRequests = new ArrayList<>();
+
         for (int subListStartIndex = 0; subListStartIndex < entries.size(); subListStartIndex += BATCH_SIZE) {
             int subListEndIndex = endIndex(subListStartIndex, entries);
             List<PutEventsRequestEntry> sublist = entries.subList(subListStartIndex, subListEndIndex);
@@ -80,21 +81,18 @@ public class EventEmitter<T extends JsonSerializable> {
 
     @JacocoGenerated
     private List<PutEventsRequest> collectRequestsForResending(List<PutEventsResult> failedEvents) {
-        return failedEvents
-                   .stream()
-                   .map(PutEventsResult::getRequest)
-                   .collect(Collectors.toList());
+        return failedEvents.stream().map(PutEventsResult::getRequest).collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> sendRequestsToEventBridgeAndCollectFailedRequests(
+    private List<PutEventsResult> emitEventsAndCollectFailures(
         List<PutEventsRequest> eventRequests) {
         return eventRequests.stream()
-                   .map(this::putEventRequest)
+                   .map(this::emitEvent)
                    .filter(PutEventsResult::hasFailures)
                    .collect(Collectors.toList());
     }
 
-    private PutEventsResult putEventRequest(PutEventsRequest request) {
+    private PutEventsResult emitEvent(PutEventsRequest request) {
         PutEventsResponse result = client.putEvents(request);
         return new PutEventsResult(request, result);
     }
