@@ -9,7 +9,7 @@ phases:
   build:
     commands:
       - sam build
-      - sam package --s3-bucket $S3_BUCKET --output-template-file transformed.yaml
+      - sam package --s3-bucket $SAM_BUCKET --output-template-file transformed.yaml
       - echo "{}" > configuration-dev.json
       - echo "{}" > configuration-prod.json
 artifacts:
