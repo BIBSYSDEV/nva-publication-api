@@ -1,0 +1,19 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      java: openjdk11
+    commands:
+      - pip3 install aws-sam-cli
+  build:
+    commands:
+      - sam build
+      - sam package --s3-bucket $S3_BUCKET --output-template-file transformed.yaml
+      - echo "{}" > configuration-dev.json
+      - echo "{}" > configuration-prod.json
+artifacts:
+  files:
+    - transformed.yaml
+    - configuration-dev.json
+    - configuration-prod.json
