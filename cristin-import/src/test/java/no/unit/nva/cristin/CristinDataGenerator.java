@@ -76,9 +76,9 @@ public class CristinDataGenerator {
         title.setLanguagecode(randomLanguageCode());
         title.setAbstractText(randomString());
         if (index == FIRST_TITLE) {
-            title.setOriginalStatus(CristinTitle.VALUE_OF_ORIGINAL_TITLE_STATUS);
+            title.setStatusOriginal(CristinTitle.VALUE_OF_ORIGINAL_TITLE_STATUS);
         } else {
-            title.setOriginalStatus(null);
+            title.setStatusOriginal(null);
         }
         return title;
     }
