@@ -30,7 +30,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        content = new CristinDataGenerator().randomDataAsString();
+        testingData = new CristinDataGenerator().randomDataAsString();
     }
 
     @Test

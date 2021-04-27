@@ -35,8 +35,8 @@ public class CristinResourcesReaderTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
-        content = new CristinDataGenerator().randomDataAsString();
-        s3Client = new FakeS3Client(Map.of(RESOURCE_01, IoUtils.stringToStream(content)));
+        testingData = new CristinDataGenerator().randomDataAsString();
+        s3Client = new FakeS3Client(Map.of(RESOURCE_01, IoUtils.stringToStream(testingData)));
     }
 
     @Test

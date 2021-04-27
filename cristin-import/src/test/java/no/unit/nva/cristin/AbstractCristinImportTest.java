@@ -19,7 +19,7 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
     public static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;
     public static final CollectionType CRISTING_OBJECTS_LIST_JAVATYPE =
         objectMapperWithEmpty.getTypeFactory().constructCollectionType(List.class, CristinObject.class);
-    protected String content;
+    protected String testingData;
 
 
 
@@ -50,6 +50,7 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
     }
 
     private BufferedReader newContentReader() {
-        return attempt(() -> new BufferedReader(new InputStreamReader(IoUtils.stringToStream(content)))).orElseThrow();
+        return attempt(() -> new BufferedReader(new InputStreamReader(IoUtils.stringToStream(testingData))))
+                   .orElseThrow();
     }
 }

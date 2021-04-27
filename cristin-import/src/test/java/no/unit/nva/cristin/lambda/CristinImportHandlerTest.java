@@ -43,8 +43,8 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
     public void init() {
         super.init();
         AmazonDynamoDB dynamoDbClient = client;
-        content = generateData();
-        InputStream inputStream = IoUtils.stringToStream(content);
+        testingData = generateData();
+        InputStream inputStream = IoUtils.stringToStream(testingData);
         S3Client s3Client = new FakeS3Client(Map.of(RESOURCE_FILE, inputStream));
         handler = new CristinImportHandler(s3Client, dynamoDbClient);
         outputStream = new ByteArrayOutputStream();
