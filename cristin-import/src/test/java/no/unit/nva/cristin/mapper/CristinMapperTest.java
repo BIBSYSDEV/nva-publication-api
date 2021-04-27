@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.AbstractCristinImportTest;
+import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
@@ -29,6 +30,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @BeforeEach
     public void init() {
         super.init();
+        testingData = new CristinDataGenerator().randomDataAsString();
     }
 
     @Test

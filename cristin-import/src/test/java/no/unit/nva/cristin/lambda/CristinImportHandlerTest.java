@@ -11,16 +11,20 @@ import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.AbstractCristinImportTest;
+import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +35,7 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
 
     public static final String SOME_S3_LOCATION = "s3://some/location";
     public static final Context CONTEXT = mock(Context.class);
-    public static final String RESOURCE_FILE = "input01.gz";
+    public static final String RESOURCE_FILE = "input01";
     private CristinImportHandler handler;
     private ByteArrayOutputStream outputStream;
 
@@ -39,7 +43,9 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
     public void init() {
         super.init();
         AmazonDynamoDB dynamoDbClient = client;
-        S3Client s3Client = new FakeS3Client(RESOURCE_FILE);
+        testingData = generateData();
+        InputStream inputStream = IoUtils.stringToStream(testingData);
+        S3Client s3Client = new FakeS3Client(Map.of(RESOURCE_FILE, inputStream));
         handler = new CristinImportHandler(s3Client, dynamoDbClient);
         outputStream = new ByteArrayOutputStream();
     }
@@ -54,6 +60,12 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
         List<String> actualCristinIds = extractActualIdsFromDatabase();
 
         assertThat(actualCristinIds, containsInAnyOrder(expectedCristinIds.toArray(String[]::new)));
+    }
+
+    private String generateData() {
+        return attempt(CristinDataGenerator::new)
+                   .map(CristinDataGenerator::randomDataAsString)
+                   .orElseThrow();
     }
 
     private List<String> extractActualIdsFromDatabase() {

@@ -15,6 +15,7 @@ public class CristinTitle implements Comparable<CristinTitle> {
     public static final String MAIN_TITLE = "titteltekst";
     public static final String LANGUAGE_CODE = "sprakkode";
     public static final String ABSTRACT = "abstract";
+    public static final String VALUE_OF_ORIGINAL_TITLE_STATUS = "J";
 
     @JsonProperty(LANGUAGE_CODE)
     private String languagecode;

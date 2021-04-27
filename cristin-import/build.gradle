@@ -24,6 +24,7 @@ dependencies {
 
     testImplementation project (":storage-model")
     testImplementation project(":publication-testing")
+    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
 
