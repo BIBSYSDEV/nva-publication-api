@@ -23,7 +23,7 @@ public class ImportRequest implements JsonSerializable {
 
     @JsonCreator
     public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location) {
-        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElse(null);
+        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
     }
 
     public static ImportRequest fromJson(String jsonString) {
