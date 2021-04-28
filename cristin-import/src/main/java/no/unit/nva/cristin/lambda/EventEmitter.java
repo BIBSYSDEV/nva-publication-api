@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import nva.commons.core.JsonSerializable;
 import org.apache.commons.collections4.ListUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
 import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
@@ -44,7 +42,6 @@ public class EventEmitter<T extends JsonSerializable> {
     public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
     private static final int BATCH_SIZE = 10;
     private static final int MAX_ATTEMPTS = 10;
-    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
@@ -139,10 +136,7 @@ public class EventEmitter<T extends JsonSerializable> {
     }
 
     private PutEventsResult emitEvent(PutEventsRequest request) {
-        request.entries().forEach(entry -> logger.info(entry.eventBusName() + ":" + entry.detailType()));
         PutEventsResponse result = client.putEvents(request);
-
-        logger.info(result.toString());
         return new PutEventsResult(request, result);
     }
 }
