@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.lambda;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,7 +13,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class FakeEventBridgeClient implements EventBridgeClient {
 
-    private List<PutEventsRequest> evenRequests;
+    private final List<PutEventsRequest> evenRequests;
 
     public FakeEventBridgeClient() {
         this.evenRequests = new ArrayList<>();
@@ -37,9 +36,8 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     public List<String> listEmittedFilenames() {
         return evenRequests.stream().flatMap(events -> events.entries().stream())
                    .map(PutEventsRequestEntry::detail)
-                   .map(FilenameEvent::fromJson)
-                   .map(FilenameEvent::getFileUri)
-                   .map(URI::toString)
+                   .map(ImportRequest::fromJson)
+                   .map(ImportRequest::getS3Location)
                    .collect(Collectors.toList());
     }
 
@@ -63,9 +61,9 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     }
 
     private PutEventsResultEntry toResponse(PutEventsRequestEntry request) {
-        FilenameEvent event = FilenameEvent.fromJson(request.detail());
+        ImportRequest event = ImportRequest.fromJson(request.detail());
         return PutEventsResultEntry.builder()
-                   .eventId(event.getFileUri().toString())
+                   .eventId(event.getS3Location())
                    .build();
     }
 }

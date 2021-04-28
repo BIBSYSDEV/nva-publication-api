@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -101,17 +100,16 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .map(PutEventsRequest::entries)
                    .flatMap(Collection::stream)
                    .map(PutEventsRequestEntry::detail)
-                   .map(FilenameEvent::fromJson)
-                   .map(FilenameEvent::getFileUri)
-                   .map(URI::toString)
+                   .map(ImportRequest::fromJson)
+                   .map(ImportRequest::getS3Location)
                    .collect(Collectors.toList());
     }
 
     private List<PutEventsResult> emitEvents(Context context, List<String> files) {
-        EventEmitter<FilenameEvent> eventEmitter =
+        EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT, context.getInvokedFunctionArn(), eventBridgeClient);
 
-        List<FilenameEvent> filenameEvents = files.stream().map(FilenameEvent::new).collect(Collectors.toList());
+        List<ImportRequest> filenameEvents = files.stream().map(ImportRequest::new).collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }
