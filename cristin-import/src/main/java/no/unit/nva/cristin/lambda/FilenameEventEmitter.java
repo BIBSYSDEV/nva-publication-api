@@ -21,7 +21,6 @@ import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -70,7 +69,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private static S3Client defaultS3Client() {
         return S3Client.builder()
                    .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.builder().build())
                    .build();
     }
 
