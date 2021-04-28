@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static java.util.Objects.isNull;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,9 +30,10 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
     public static final String IMPORT_CRISTIN_FILENAME_EVENT = "import.cristin.filename-event";
     public static final String LINE_SEPARATOR = System.lineSeparator();
+    public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
+    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
-    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
 
     public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         this.s3Client = s3Client;
@@ -41,22 +43,35 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportRequest importRequest = parseInput(input);
-        S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
-        List<String> files = s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+        List<String> files = listFiles(importRequest);
         validateLocation(importRequest, files);
 
-        List<FilenameEvent> filenameEvents = files.stream().map(FilenameEvent::new).collect(Collectors.toList());
+        List<PutEventsResult> failedRequests = emitEvents(context, files);
+        logWarningForNotEmittedFilenames(failedRequests);
+        returnNotEmittedFilenames(output, failedRequests);
+    }
 
-        List<PutEventsResult> failedRequests = emitEvents(context, filenameEvents);
-        String failedRequestsString = failedRequests.stream()
-                                          .map(PutEventsResult::toString)
-                                          .collect(Collectors.joining(LINE_SEPARATOR));
-        List<String> notEmittedFilenames = collecteNotEmittedFilenames(failedRequests);
-        logger.warn("Some files failed to be emitted:" + failedRequestsString);
+    private void returnNotEmittedFilenames(OutputStream output, List<PutEventsResult> failedRequests)
+        throws IOException {
+        List<String> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
         writeOutput(output, notEmittedFilenames);
     }
 
-    private List<String> collecteNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+    private List<String> listFiles(ImportRequest importRequest) {
+        S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
+        return s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+    }
+
+    private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+        String failedRequestsString = failedRequests
+                                          .stream()
+                                          .map(PutEventsResult::toString)
+                                          .collect(Collectors.joining(LINE_SEPARATOR));
+
+        logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
+    }
+
+    private List<String> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         return failedRequests.stream()
                    .map(PutEventsResult::getRequest)
                    .map(PutEventsRequest::entries)
@@ -68,10 +83,11 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(Context context, List<FilenameEvent> filenameEvents) {
+    private List<PutEventsResult> emitEvents(Context context, List<String> files) {
         EventEmitter<FilenameEvent> eventEmitter =
             new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT, context.getInvokedFunctionArn(), eventBridgeClient);
 
+        List<FilenameEvent> filenameEvents = files.stream().map(FilenameEvent::new).collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }
@@ -92,7 +108,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         }
     }
 
-    private <T> String toJson(T results) throws com.fasterxml.jackson.core.JsonProcessingException {
+    private <T> String toJson(T results) throws JsonProcessingException {
         return JsonUtils.objectMapper.writeValueAsString(results);
     }
 }
