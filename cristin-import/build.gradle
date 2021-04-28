@@ -27,6 +27,7 @@ dependencies {
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
+    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
 
     compileOnly(project(":storage-model")){
         because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"

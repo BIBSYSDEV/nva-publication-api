@@ -48,7 +48,11 @@ public class FakeEventBridgeClient implements EventBridgeClient {
         throws AwsServiceException, SdkClientException {
         this.evenRequests.add(putEventsRequest);
         List<PutEventsResultEntry> resultEntries = createResultEntries(putEventsRequest);
-        return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(0).build();
+        return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(numberOfFailures()).build();
+    }
+
+    protected Integer numberOfFailures() {
+        return 0;
     }
 
     private List<PutEventsResultEntry> createResultEntries(PutEventsRequest putEventsRequest) {

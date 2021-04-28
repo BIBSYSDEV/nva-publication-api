@@ -2,6 +2,7 @@ package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.lambda.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.testutils.IoUtils.stringToStream;
+import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,11 +25,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class FilenameEventEmitterTest {
@@ -38,18 +41,20 @@ public class FilenameEventEmitterTest {
     public static final String FILE_02 = "file02";
     public static final List<String> FILE_LIST = List.of(FILE_01, FILE_02);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
+    public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     private static final Context CONTEXT = mock(Context.class);
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
     private FakeEventBridgeClient eventBridgeClient;
+    private FakeS3Client s3Client;
 
     @BeforeEach
     public void init() {
         outputStream = new ByteArrayOutputStream();
         this.eventBridgeClient = new FakeEventBridgeClient();
 
-        S3Client s3Client = new FakeS3Client(FILE_CONTENTS);
+        s3Client = new FakeS3Client(FILE_CONTENTS);
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
     }
 
@@ -86,7 +91,7 @@ public class FilenameEventEmitterTest {
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         PutEventsResult[] failedResultsArray =
-            JsonUtils.objectMapperWithEmpty.readValue(outputStream.toString(), PutEventsResult[].class);
+            objectMapperWithEmpty.readValue(outputStream.toString(), PutEventsResult[].class);
         var failedResults = Arrays.asList(failedResultsArray);
 
         assertThat(failedResults, is(empty()));
@@ -104,6 +109,23 @@ public class FilenameEventEmitterTest {
                    containsString(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getS3Location()));
     }
 
+    @Test
+    public void handlerLogsAndReturnsFailedEventRequestsWhenEventsFailToBeEmitted() throws IOException {
+
+        TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+        handler = handlerThatFailsToEmitMessages();
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        InputStream inputStream = toJsonStream(importRequest);
+        handler.handleRequest(inputStream, outputStream, CONTEXT);
+        String[] failedResultsArray = objectMapperWithEmpty.readValue(outputStream.toString(), String[].class);
+        var failedResults = Arrays.asList(failedResultsArray);
+
+        assertThat(failedResults, containsInAnyOrder(FILE_LIST.toArray(String[]::new)));
+        for (String filename : FILE_LIST) {
+            assertThat(appender.getMessages(), containsString(filename));
+        }
+    }
+
     private static Map<String, InputStream> fileContents() {
         return FILE_LIST.stream()
                    .map(file -> new SimpleEntry<>(file, fileContent()))
@@ -115,20 +137,30 @@ public class FilenameEventEmitterTest {
         return InputStream.nullInputStream();
     }
 
+    private FilenameEventEmitter handlerThatFailsToEmitMessages() {
+        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient() {
+            @Override
+            protected Integer numberOfFailures() {
+                return NON_ZERO_NUMBER_OF_FAILURES;
+            }
+        };
+        return new FilenameEventEmitter(s3Client, eventBridgeClient);
+    }
+
     private FilenameEventEmitter handlerThatReceivesEmptyS3Location() {
         S3Client s3Client = new FakeS3Client(Collections.emptyMap());
         return new FilenameEventEmitter(s3Client, eventBridgeClient);
     }
 
     private <T> InputStream toJsonStream(T importRequest) {
-        return attempt(() -> JsonUtils.objectMapperWithEmpty.writeValueAsString(importRequest))
+        return attempt(() -> objectMapperWithEmpty.writeValueAsString(importRequest))
                    .map(IoUtils::stringToStream)
                    .orElseThrow();
     }
 
     private String invalidBody() throws JsonProcessingException {
-        ObjectNode root = JsonUtils.objectMapperWithEmpty.createObjectNode();
+        ObjectNode root = objectMapperWithEmpty.createObjectNode();
         root.put("someField", "someValue");
-        return JsonUtils.objectMapperWithEmpty.writeValueAsString(root);
+        return objectMapperWithEmpty.writeValueAsString(root);
     }
 }
