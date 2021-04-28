@@ -93,7 +93,7 @@ public class EventEmitter<T extends JsonSerializable> {
                    .detailType(detailType)
                    .time(Instant.now())
                    .detail(eventDetail.toJsonString())
-                   .source(invokingFunctionArn)
+                   .source("lambda")
                    .build();
     }
 
