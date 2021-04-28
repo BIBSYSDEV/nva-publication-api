@@ -43,6 +43,7 @@ public class FilenameEventEmitterTest {
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     private static final Context CONTEXT = mock(Context.class);
+    public static final String SOME_OTHER_BUS = "someOtherBus";
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -52,7 +53,7 @@ public class FilenameEventEmitterTest {
     @BeforeEach
     public void init() {
         outputStream = new ByteArrayOutputStream();
-        this.eventBridgeClient = new FakeEventBridgeClient();
+        this.eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
@@ -118,12 +119,23 @@ public class FilenameEventEmitterTest {
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         String[] failedResultsArray = objectMapperWithEmpty.readValue(outputStream.toString(), String[].class);
-        var failedResults = Arrays.asList(failedResultsArray);
+        List<String> failedResults = Arrays.asList(failedResultsArray);
 
         assertThat(failedResults, containsInAnyOrder(FILE_LIST.toArray(String[]::new)));
         for (String filename : FILE_LIST) {
             assertThat(appender.getMessages(), containsString(filename));
         }
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenEventBusCannotBeFound() {
+        eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
+        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        InputStream inputStream = toJsonStream(importRequest);
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+        assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
     }
 
     private static Map<String, InputStream> fileContents() {
@@ -138,7 +150,7 @@ public class FilenameEventEmitterTest {
     }
 
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {
-        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient() {
+        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
             @Override
             protected Integer numberOfFailures() {
                 return NON_ZERO_NUMBER_OF_FAILURES;

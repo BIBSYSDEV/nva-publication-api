@@ -11,14 +11,15 @@ import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.EventBus;
+import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 /**
  * This class accepts a set of colletion of {@link JsonSerializable} objects and emits one event per object in
- * EventBridge.
- * The events have the following format:
+ * EventBridge. The events have the following format:
  *
  * <p><pre>{@code
  * {
@@ -40,13 +41,14 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
  */
 public class EventEmitter<T extends JsonSerializable> {
 
+    public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
     private static final int BATCH_SIZE = 10;
     private static final int MAX_ATTEMPTS = 10;
+    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private List<PutEventsRequest> putEventsRequests;
-    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
 
     public EventEmitter(String detailType, String invokingFunctionArn, EventBridgeClient eventBridgeClient) {
         this.detailType = detailType;
@@ -71,6 +73,15 @@ public class EventEmitter<T extends JsonSerializable> {
      * @return The failed requests and the respective responses from EventBridge.
      */
     public List<PutEventsResult> emitEvents() {
+        checkBus();
+        List<PutEventsResult> failedEvents = tryManyTimesToEmitTheEvents();
+        if (failedEvents != null) {
+            return failedEvents;
+        }
+        return Collections.emptyList();
+    }
+
+    private List<PutEventsResult> tryManyTimesToEmitTheEvents() {
         List<PutEventsResult> failedEvents = emitEventsAndCollectFailures(putEventsRequests);
         int attempts = 0;
         while (!failedEvents.isEmpty() && attempts < MAX_ATTEMPTS) {
@@ -81,8 +92,19 @@ public class EventEmitter<T extends JsonSerializable> {
         if (!failedEvents.isEmpty()) {
             return failedEvents;
         }
+        return null;
+    }
 
-        return Collections.emptyList();
+    private void checkBus() {
+        List<String> busNames =
+            client.listEventBuses(ListEventBusesRequest.builder().namePrefix(EVENT_BUS_NAME).build())
+                .eventBuses()
+                .stream()
+                .map(EventBus::name)
+                .collect(Collectors.toList());
+        if (!busNames.contains(EVENT_BUS_NAME)) {
+            throw new IllegalStateException(BUS_NOT_FOUND_ERROR + EVENT_BUS_NAME);
+        }
     }
 
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
@@ -119,6 +141,7 @@ public class EventEmitter<T extends JsonSerializable> {
     private PutEventsResult emitEvent(PutEventsRequest request) {
         request.entries().forEach(entry -> logger.info(entry.eventBusName() + ":" + entry.detailType()));
         PutEventsResponse result = client.putEvents(request);
+
         logger.info(result.toString());
         return new PutEventsResult(request, result);
     }

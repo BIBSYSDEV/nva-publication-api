@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.EventBus;
+import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
+import software.amazon.awssdk.services.eventbridge.model.ListEventBusesResponse;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
@@ -14,10 +17,12 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class FakeEventBridgeClient implements EventBridgeClient {
 
+    private final String eventBusName;
     private List<PutEventsRequest> evenRequests;
 
-    public FakeEventBridgeClient() {
+    public FakeEventBridgeClient(String eventBusName) {
         this.evenRequests = new ArrayList<>();
+        this.eventBusName = eventBusName;
     }
 
     @Override
@@ -30,8 +35,19 @@ public class FakeEventBridgeClient implements EventBridgeClient {
 
     }
 
-    public List<PutEventsRequest> getEventRequests() {
-        return evenRequests;
+    @Override
+    public ListEventBusesResponse listEventBuses(ListEventBusesRequest listEventBusesRequest)
+        throws AwsServiceException, SdkClientException {
+        EventBus eventBus = EventBus.builder().name(eventBusName).build();
+        return ListEventBusesResponse.builder().eventBuses(eventBus).build();
+    }
+
+    @Override
+    public PutEventsResponse putEvents(PutEventsRequest putEventsRequest)
+        throws AwsServiceException, SdkClientException {
+        this.evenRequests.add(putEventsRequest);
+        List<PutEventsResultEntry> resultEntries = createResultEntries(putEventsRequest);
+        return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(numberOfFailures()).build();
     }
 
     public List<String> listEmittedFilenames() {
@@ -41,14 +57,6 @@ public class FakeEventBridgeClient implements EventBridgeClient {
                    .map(FilenameEvent::getFileUri)
                    .map(URI::toString)
                    .collect(Collectors.toList());
-    }
-
-    @Override
-    public PutEventsResponse putEvents(PutEventsRequest putEventsRequest)
-        throws AwsServiceException, SdkClientException {
-        this.evenRequests.add(putEventsRequest);
-        List<PutEventsResultEntry> resultEntries = createResultEntries(putEventsRequest);
-        return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(numberOfFailures()).build();
     }
 
     protected Integer numberOfFailures() {
