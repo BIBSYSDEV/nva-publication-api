@@ -13,23 +13,23 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 /**
- * Emits events in AWS EventBridge each event has the following format:
+ * This class accepts a set of colletion of {@link JsonSerializable} objects and emits one event per object in
+ * EventBridge.
+ * The events have the following format:
+ *
  * <p><pre>{@code
  * {
- *   "version": "0",
- *   "id": "6a7e8feb-b491-4cf7-a9f1-bf3703467718",
- *   "detail-type": "EC2 Instance State-change Notification",
- *   "source": "aws.ec2",
- *   "account": "111122223333",
- *   "time": "2017-12-22T18:43:48Z",
- *   "region": "us-west-1",
+ *   "version": "0", // set by AWS automatically
+ *   "id": "6a7e8feb-b491-4cf7-a9f1-bf3703467718", // set by AWS automatically
+ *   "detail-type": "<supplied by user>", //all events have the same detail-type
+ *   "source": "<supplied_invoked_function_arn>",
+ *   "account": "111122223333", //set by AWS.
+ *   "time": "2017-12-22T18:43:48Z", // Instant.now()
+ *   "region": "us-west-1",//set by AWS.
  *   "resources": [
- *     "arn:aws:ec2:us-west-1:123456789012:instance/i-1234567890abcdef0"
+ *     <supplied_invoked_function_arn>
  *   ],
- *   "detail": {
- *     "someField": "someValue",
- *     "someOtherField": "someOtherValue"
- *   }
+ *   "detail": {<supplied_body>}
  * }
  * }</pre>
  *
