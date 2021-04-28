@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.ApplicationConstants.EVENT_BUS_NAME;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
@@ -7,6 +8,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import nva.commons.core.JsonSerializable;
 import org.apache.commons.collections4.ListUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -43,6 +46,7 @@ public class EventEmitter<T extends JsonSerializable> {
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private List<PutEventsRequest> putEventsRequests;
+    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
 
     public EventEmitter(String detailType, String invokingFunctionArn, EventBridgeClient eventBridgeClient) {
         this.detailType = detailType;
@@ -84,7 +88,7 @@ public class EventEmitter<T extends JsonSerializable> {
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
 
         return PutEventsRequestEntry.builder()
-                   .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
+                   .eventBusName(EVENT_BUS_NAME)
                    .resources(invokingFunctionArn)
                    .detailType(detailType)
                    .time(Instant.now())
@@ -114,6 +118,7 @@ public class EventEmitter<T extends JsonSerializable> {
 
     private PutEventsResult emitEvent(PutEventsRequest request) {
         PutEventsResponse result = client.putEvents(request);
+        logger.info(result.toString());
         return new PutEventsResult(request, result);
     }
 }
