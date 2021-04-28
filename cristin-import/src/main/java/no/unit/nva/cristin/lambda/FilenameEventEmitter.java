@@ -63,7 +63,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
                    .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.builder().build())
                    .build();
     }
 

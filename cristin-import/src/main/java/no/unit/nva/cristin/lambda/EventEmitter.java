@@ -117,6 +117,7 @@ public class EventEmitter<T extends JsonSerializable> {
     }
 
     private PutEventsResult emitEvent(PutEventsRequest request) {
+        request.entries().forEach(entry -> logger.info(entry.eventBusName() + ":" + entry.detailType()));
         PutEventsResponse result = client.putEvents(request);
         logger.info(result.toString());
         return new PutEventsResult(request, result);
