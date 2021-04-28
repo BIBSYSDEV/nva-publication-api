@@ -37,7 +37,7 @@ public class InputEntriesEventEmitterTest {
     @BeforeEach
     public void init() {
         s3Client = new FakeS3Client(MOCK_S3_CONTENTS);
-        eventBridgeClient = new FakeEventBridgeClient();
+        eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
         handler = new InputEntriesEventEmitter(s3Client, eventBridgeClient);
         outpuStream = new ByteArrayOutputStream();
     }

@@ -50,6 +50,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
         String content = s3Driver.getFile(input.extractPathFromS3Location());
         List<JsonNode> contents = parseContents(content);
         EventEmitter<JsonNode> eventEmitter = new EventEmitter<>(CRISTIN_IMPORT_ENTRY_EVENT,
+                                                                 this.getClass().getCanonicalName(),
                                                                  context.getInvokedFunctionArn(),
                                                                  eventBridgeClient);
         eventEmitter.addEvents(contents);

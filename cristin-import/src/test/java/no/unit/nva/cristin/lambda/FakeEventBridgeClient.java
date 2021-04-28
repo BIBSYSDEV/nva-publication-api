@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.EventBus;
+import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
+import software.amazon.awssdk.services.eventbridge.model.ListEventBusesResponse;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
@@ -13,10 +16,13 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class FakeEventBridgeClient implements EventBridgeClient {
 
-    private final List<PutEventsRequest> evenRequests;
 
-    public FakeEventBridgeClient() {
+    private final List<PutEventsRequest> evenRequests;
+    private final String eventBusName;
+
+    public FakeEventBridgeClient(String eventBusName) {
         this.evenRequests = new ArrayList<>();
+        this.eventBusName = eventBusName;
     }
 
     @Override
@@ -29,16 +35,11 @@ public class FakeEventBridgeClient implements EventBridgeClient {
 
     }
 
-    public List<PutEventsRequest> getEventRequests() {
-        return evenRequests;
-    }
-
-    public List<String> listEmittedFilenames() {
-        return evenRequests.stream().flatMap(events -> events.entries().stream())
-                   .map(PutEventsRequestEntry::detail)
-                   .map(ImportRequest::fromJson)
-                   .map(ImportRequest::getS3Location)
-                   .collect(Collectors.toList());
+    @Override
+    public ListEventBusesResponse listEventBuses(ListEventBusesRequest listEventBusesRequest)
+        throws AwsServiceException, SdkClientException {
+        EventBus eventBus = EventBus.builder().name(eventBusName).build();
+        return ListEventBusesResponse.builder().eventBuses(eventBus).build();
     }
 
     @Override
@@ -47,6 +48,14 @@ public class FakeEventBridgeClient implements EventBridgeClient {
         this.evenRequests.add(putEventsRequest);
         List<PutEventsResultEntry> resultEntries = createResultEntries(putEventsRequest);
         return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(numberOfFailures()).build();
+    }
+
+    public List<String> listEmittedFilenames() {
+        return evenRequests.stream().flatMap(events -> events.entries().stream())
+                   .map(PutEventsRequestEntry::detail)
+                   .map(ImportRequest::fromJson)
+                   .map(ImportRequest::getS3Location)
+                   .collect(Collectors.toList());
     }
 
     protected Integer numberOfFailures() {

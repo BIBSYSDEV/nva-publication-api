@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -33,6 +34,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
+    public static final String PATH_SEPARATOR = "/";
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -50,9 +52,8 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportRequest importRequest = parseInput(input);
-        List<String> files = listFiles(importRequest);
+        List<URI> files = listFiles(importRequest);
         validateLocation(importRequest, files);
-
         List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
@@ -62,7 +63,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
                    .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.builder().build())
+                   .httpClient(UrlConnectionHttpClient.create())
                    .build();
     }
 
@@ -70,8 +71,16 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private static S3Client defaultS3Client() {
         return S3Client.builder()
                    .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.builder().build())
+                   .httpClient(UrlConnectionHttpClient.create())
                    .build();
+    }
+
+    private URI createUri(URI s3Location, String filename) {
+        if (s3Location.getPath().endsWith(PATH_SEPARATOR)) {
+            return URI.create(s3Location + filename);
+        } else {
+            return URI.create(s3Location + PATH_SEPARATOR + filename);
+        }
     }
 
     private void returnNotEmittedFilenames(OutputStream output, List<PutEventsResult> failedRequests)
@@ -80,18 +89,22 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         writeOutput(output, notEmittedFilenames);
     }
 
-    private List<String> listFiles(ImportRequest importRequest) {
+    private List<URI> listFiles(ImportRequest importRequest) {
+        URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
-        return s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+        List<String> filenames = s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+        return filenames.stream().map(filename -> createUri(s3Location, filename)).collect(Collectors.toList());
     }
 
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
-        String failedRequestsString = failedRequests
-                                          .stream()
-                                          .map(PutEventsResult::toString)
-                                          .collect(Collectors.joining(LINE_SEPARATOR));
+        if (!failedRequests.isEmpty()) {
+            String failedRequestsString = failedRequests
+                                              .stream()
+                                              .map(PutEventsResult::toString)
+                                              .collect(Collectors.joining(LINE_SEPARATOR));
 
-        logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
+            logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
+        }
     }
 
     private List<String> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
@@ -105,16 +118,19 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(Context context, List<String> files) {
+    private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
         EventEmitter<ImportRequest> eventEmitter =
-            new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT, context.getInvokedFunctionArn(), eventBridgeClient);
+            new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT,
+                               this.getClass().getCanonicalName(),
+                               context.getInvokedFunctionArn(),
+                               eventBridgeClient);
 
         List<ImportRequest> filenameEvents = files.stream().map(ImportRequest::new).collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }
 
-    private void validateLocation(ImportRequest importRequest, List<String> files) {
+    private void validateLocation(ImportRequest importRequest, List<URI> files) {
         if (isNull(files) || files.isEmpty()) {
             throw new IllegalArgumentException(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getS3Location());
         }
