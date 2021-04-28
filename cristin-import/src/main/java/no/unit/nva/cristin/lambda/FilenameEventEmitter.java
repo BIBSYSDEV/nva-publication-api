@@ -59,6 +59,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         returnNotEmittedFilenames(output, failedRequests);
     }
 
+    @JacocoGenerated
     private static EventBridgeClient defaultEventBridgeClient() {
         return EventBridgeClient.builder()
                    .region(ApplicationConstants.AWS_REGION)
@@ -66,6 +67,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .build();
     }
 
+    @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
                    .region(ApplicationConstants.AWS_REGION)
