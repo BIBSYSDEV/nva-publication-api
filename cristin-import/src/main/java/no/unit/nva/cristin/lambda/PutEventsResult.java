@@ -44,6 +44,6 @@ public class PutEventsResult {
      */
     @Override
     public String toString() {
-        return String.format(TO_STRING_TEMPLATE, request.toString(), response.toString());
+        return String.format(TO_STRING_TEMPLATE, getRequest().toString(), getResponse().toString());
     }
 }
