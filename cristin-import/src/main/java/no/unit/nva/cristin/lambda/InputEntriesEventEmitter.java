@@ -5,7 +5,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -25,14 +24,18 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String CONSECUTIVE_JSON_OBJECTS = "(})\\s*(\\{)";
+    public static final String CONSECUTIVE_JSON_OBJECTS = "}\n\\{";
+    public static final String NODES_IN_ARRAY = "},{";
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String EMPTY_STRING = "";
     public static final String CRISTIN_IMPORT_ENTRY_EVENT = "cristin.import.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
+
     private static final boolean SEQUENTIAL = false;
     private static final Logger logger = LoggerFactory.getLogger(InputEntriesEventEmitter.class);
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
+    private static final Object END_OF_ARRAY = "]";
+    private static final String BEGINNING_OF_ARRAY = "[";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -84,11 +87,17 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private List<JsonNode> parseContentAsListOfJsonObjects(String content) {
-        String[] jsonObjectStrings = content.split(CONSECUTIVE_JSON_OBJECTS);
-        return Arrays.stream(jsonObjectStrings)
-                   .map(attempt(JsonUtils.objectMapper::readTree))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+
+        return attempt(() -> content.replaceAll(CONSECUTIVE_JSON_OBJECTS, NODES_IN_ARRAY))
+                   .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
+                   .map(jsonArrayString -> (ArrayNode) JsonUtils.objectMapper.readTree(jsonArrayString))
+                   .map(array -> toStream(array).collect(Collectors.toList()))
+                   .orElseThrow();
+    }
+
+    private Stream<JsonNode> toStream(ArrayNode root) {
+        return StreamSupport
+                   .stream(Spliterators.spliteratorUnknownSize(root.elements(), Spliterator.ORDERED), SEQUENTIAL);
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {

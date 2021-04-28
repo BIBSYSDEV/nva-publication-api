@@ -16,13 +16,16 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class FakeEventBridgeClient implements EventBridgeClient {
 
-
     private final List<PutEventsRequest> evenRequests;
     private final String eventBusName;
 
     public FakeEventBridgeClient(String eventBusName) {
         this.evenRequests = new ArrayList<>();
         this.eventBusName = eventBusName;
+    }
+
+    public List<PutEventsRequest> getEvenRequests() {
+        return evenRequests;
     }
 
     @Override
@@ -70,9 +73,6 @@ public class FakeEventBridgeClient implements EventBridgeClient {
     }
 
     private PutEventsResultEntry toResponse(PutEventsRequestEntry request) {
-        ImportRequest event = ImportRequest.fromJson(request.detail());
-        return PutEventsResultEntry.builder()
-                   .eventId(event.getS3Location())
-                   .build();
+        return PutEventsResultEntry.builder().build();
     }
 }
