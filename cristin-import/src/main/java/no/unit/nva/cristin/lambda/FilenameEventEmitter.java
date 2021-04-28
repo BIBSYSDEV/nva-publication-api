@@ -53,7 +53,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         ImportRequest importRequest = parseInput(input);
         List<String> files = listFiles(importRequest);
         validateLocation(importRequest, files);
-
+        logger.info("All files:" + files);
         List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
@@ -87,6 +87,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+        logger.warn("Failed requests size:" + failedRequests.size());
         String failedRequestsString = failedRequests
                                           .stream()
                                           .map(PutEventsResult::toString)
