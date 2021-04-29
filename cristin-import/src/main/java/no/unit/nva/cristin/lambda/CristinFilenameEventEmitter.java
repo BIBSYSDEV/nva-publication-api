@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class FilenameEventEmitter implements RequestStreamHandler {
+public class CristinFilenameEventEmitter implements RequestStreamHandler {
 
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
     public static final String EVENT_DETAIL_TYPE = "import.cristin.filename-event";
@@ -36,17 +36,17 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
-    public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
-    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
+    public static final String CANONICAL_NAME = CristinFilenameEventEmitter.class.getCanonicalName();
+    private static final Logger logger = LoggerFactory.getLogger(CristinFilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
-    public FilenameEventEmitter() {
+    public CristinFilenameEventEmitter() {
         this(defaultS3Client(), defaultEventBridgeClient());
     }
 
-    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public CristinFilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
     }

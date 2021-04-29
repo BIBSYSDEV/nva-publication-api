@@ -29,7 +29,7 @@ import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class InputEntriesEventEmitterTest {
+public class CristinEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
     public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/location.file");
@@ -47,7 +47,7 @@ public class InputEntriesEventEmitterTest {
 
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
-    private InputEntriesEventEmitter handler;
+    private CristinEntriesEventEmitter handler;
     private ByteArrayOutputStream outputStream;
 
     @BeforeEach
@@ -146,13 +146,13 @@ public class InputEntriesEventEmitterTest {
 
     private InputStream createRequestEventForFile(ImportRequest detail) {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FilenameEventEmitter.EVENT_DETAIL_TYPE);
+        request.setDetailType(CristinFilenameEventEmitter.EVENT_DETAIL_TYPE);
         request.setDetail(detail);
         return toInputStream(request);
     }
 
-    private InputEntriesEventEmitter newHandler() {
-        return new InputEntriesEventEmitter(s3Client, eventBridgeClient);
+    private CristinEntriesEventEmitter newHandler() {
+        return new CristinEntriesEventEmitter(s3Client, eventBridgeClient);
     }
 
     private List<SampleObject> collectEmittedObjects() {

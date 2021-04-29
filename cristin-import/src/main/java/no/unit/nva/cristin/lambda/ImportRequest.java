@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.ApplicationConstants.EMPTY_STRING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -17,7 +18,6 @@ public class ImportRequest implements JsonSerializable {
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
-    private static final String EMPTY_STRING = "";
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
