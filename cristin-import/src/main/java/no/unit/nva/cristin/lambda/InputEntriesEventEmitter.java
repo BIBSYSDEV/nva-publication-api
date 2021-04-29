@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String CONSECUTIVE_JSON_OBJECTS = "}\n\\{";
+    public static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\n\\s*\\{";
     public static final String NODES_IN_ARRAY = "},{";
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String EMPTY_STRING = "";
