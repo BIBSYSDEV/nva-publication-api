@@ -115,16 +115,16 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
-        JsonNode arrayNode = JsonUtils.objectMapperNoEmpty.readTree(content);
-        if (arrayNode.isArray()) {
-            return convertToJsonNodeStream((ArrayNode) arrayNode).collect(Collectors.toList());
+        return toStream(getNodeIterator(content))
+                   .collect(Collectors.toList());
+    }
+
+    private ArrayNode getNodeIterator(String content) throws JsonProcessingException {
+        JsonNode jsonNode = JsonUtils.objectMapperNoEmpty.readTree(content);
+        if (jsonNode.isArray()) {
+            return (ArrayNode) jsonNode;
         } else {
             throw new IllegalArgumentException("Content is not array node");
         }
-    }
-
-    private Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
-        return StreamSupport
-                   .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
     }
 }
