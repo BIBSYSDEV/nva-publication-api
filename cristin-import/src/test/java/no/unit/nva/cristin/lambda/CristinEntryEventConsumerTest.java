@@ -1,11 +1,15 @@
 package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.nonNull;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.mockito.Mockito.mock;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,21 +17,29 @@ import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CristinEntryEventConsumerTest {
+public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
 
     public static final Path CRISTIN_ENTRY_EVENT = Path.of("cristinentryevent.json");
     public static final Context CONTEXT = mock(Context.class);
     public static final String DETAIL_FIEL = "detail";
-    private final CristinEntryEventConsumer handler = new CristinEntryEventConsumer();
+    private CristinEntryEventConsumer handler;
     private ByteArrayOutputStream outputStream;
 
     @BeforeEach
     public void init() {
+        super.init();
+        handler = new CristinEntryEventConsumer(client);
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -41,6 +53,28 @@ public class CristinEntryEventConsumerTest {
         Publication expectedPublication = generatePublicationFromResource(input);
 
         assertThat(publication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() throws JsonProcessingException {
+        String input = IoUtils.stringFromResources(CRISTIN_ENTRY_EVENT);
+        handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+        Publication expectedPublication = generatePublicationFromResource(input);
+        Publication actualPublication =
+            client.scan(new ScanRequest().withTableName(DatabaseConstants.RESOURCES_TABLE_NAME))
+                .getItems()
+                .stream()
+                .map(ItemUtils::toItem)
+                .map(Item::toJSON)
+                .map(attempt(json -> JsonUtils.objectMapperNoEmpty.readValue(json, ResourceDao.class)))
+                .filter(Try::isSuccess)
+                .map(Try::orElseThrow)
+                .map(ResourceDao::getData)
+                .map(Resource::toPublication)
+                .collect(SingletonCollector.collect());
+
+        assertThat(expectedPublication.getAdditionalIdentifiers(),
+                   is(equalTo(actualPublication.getAdditionalIdentifiers())));
     }
 
     private Publication generatePublicationFromResource(String input) throws JsonProcessingException {
