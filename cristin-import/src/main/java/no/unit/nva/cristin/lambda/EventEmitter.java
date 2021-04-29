@@ -46,11 +46,16 @@ public class EventEmitter<T extends JsonSerializable> {
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private List<PutEventsRequest> putEventsRequests;
+    private final String eventSource;
 
-    public EventEmitter(String detailType, String invokingFunctionArn, EventBridgeClient eventBridgeClient) {
+    public EventEmitter(String detailType,
+                        String eventSource,
+                        String invokingFunctionArn,
+                        EventBridgeClient eventBridgeClient) {
         this.detailType = detailType;
         this.invokingFunctionArn = invokingFunctionArn;
         this.client = eventBridgeClient;
+        this.eventSource = eventSource;
     }
 
     /**
@@ -112,7 +117,7 @@ public class EventEmitter<T extends JsonSerializable> {
                    .detailType(detailType)
                    .time(Instant.now())
                    .detail(eventDetail.toJsonString())
-                   .source("lambda")
+                   .source(eventSource)
                    .build();
     }
 
