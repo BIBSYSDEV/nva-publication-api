@@ -25,19 +25,19 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\n\\s*\\{";
-    public static final String NODES_IN_ARRAY = "},{";
-    public static final String LINE_SEPARATOR = System.lineSeparator();
-    public static final String EMPTY_STRING = "";
     public static final String CRISTIN_IMPORT_ENTRY_EVENT = "cristin.import.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
+    private static final String CANONICAL_NAME = InputEntriesEventEmitter.class.getCanonicalName();
+    private static final String LINE_SEPARATOR = System.lineSeparator();
+    private static final String EMPTY_STRING = "";
     private static final boolean SEQUENTIAL = false;
     private static final Logger logger = LoggerFactory.getLogger(InputEntriesEventEmitter.class);
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
+    private static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\n\\s*\\{";
+    private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
-    public static final String CANONICAL_NAME = InputEntriesEventEmitter.class.getCanonicalName();
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
