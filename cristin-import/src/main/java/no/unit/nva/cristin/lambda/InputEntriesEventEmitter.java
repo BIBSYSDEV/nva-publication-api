@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
@@ -30,12 +31,13 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     public static final String EMPTY_STRING = "";
     public static final String CRISTIN_IMPORT_ENTRY_EVENT = "cristin.import.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
-
+    public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     private static final boolean SEQUENTIAL = false;
     private static final Logger logger = LoggerFactory.getLogger(InputEntriesEventEmitter.class);
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
+    public static final String CANONICAL_NAME = InputEntriesEventEmitter.class.getCanonicalName();
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -50,16 +52,28 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        String content = s3Driver.getFile(input.extractPathFromS3Location());
+        String content = fetchFileFromS3(input, s3Driver);
         List<JsonNode> contents = parseContents(content);
-        EventEmitter<JsonNode> eventEmitter = new EventEmitter<>(CRISTIN_IMPORT_ENTRY_EVENT,
-                                                                 this.getClass().getCanonicalName(),
-                                                                 context.getInvokedFunctionArn(),
-                                                                 eventBridgeClient);
+        EventEmitter<JsonNode> eventEmitter = newEventEmitter(context);
         eventEmitter.addEvents(contents);
         List<PutEventsResult> failedEntries = eventEmitter.emitEvents();
         logWarningForNotEmittedEntries(failedEntries);
         return EMPTY_STRING;
+    }
+
+    private EventEmitter<JsonNode> newEventEmitter(Context context) {
+        return new EventEmitter<>(CRISTIN_IMPORT_ENTRY_EVENT,
+                                  CANONICAL_NAME,
+                                  context.getInvokedFunctionArn(),
+                                  eventBridgeClient);
+    }
+
+    private String fetchFileFromS3(ImportRequest input, S3Driver s3Driver) {
+        try {
+            return s3Driver.getFile(input.extractPathFromS3Location());
+        } catch (NoSuchKeyException exception) {
+            throw new IllegalArgumentException(FILE_NOT_FOUND_ERROR + input.getS3Location(), exception);
+        }
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {

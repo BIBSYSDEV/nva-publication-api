@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,15 +33,17 @@ public class InputEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
     public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/location.file");
+    public static final ImportRequest NON_EXISTING_FILE = new ImportRequest("s3://some/s3/nonexisting.file");
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
-    public static final List<SampleObject> FILE_01_CONTENTS = randomContents();
+    public static final SampleObject[] FILE_01_CONTENTS = randomContents().toArray(SampleObject[]::new);
     public static final Map<String, InputStream> CONTENTS_AS_JSON_ARRAY =
         Map.of(EXISTING_FILE.extractPathFromS3Location(), contentsAsJsonArray());
     public static final Map<String, InputStream> CONTENTS_AS_JSON_OBJECTS_LIST =
         Map.of(EXISTING_FILE.extractPathFromS3Location(), contentsAsJsonObjectsList());
 
     public static final Context CONTEXT = mock(Context.class);
+    public static final String SOME_OTHER_BUS = "someOtherBus";
 
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
@@ -53,7 +54,7 @@ public class InputEntriesEventEmitterTest {
     public void init() {
         s3Client = new FakeS3Client(CONTENTS_AS_JSON_ARRAY);
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
-        handler = new InputEntriesEventEmitter(s3Client, eventBridgeClient);
+        handler = newHandler();
         outputStream = new ByteArrayOutputStream();
     }
 
@@ -63,6 +64,7 @@ public class InputEntriesEventEmitterTest {
         request.setDetailType(UNEXPECTED_DETAIL_TYPE);
         request.setDetail(EXISTING_FILE);
         InputStream input = toInputStream(request);
+
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(), containsString(request.getDetailType()));
@@ -70,32 +72,44 @@ public class InputEntriesEventEmitterTest {
 
     @Test
     public void handlerEmitsEventWithResourceWhenFileUriExistsAndContainsDataAsJsonArray() {
-        AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT);
-        request.setDetail(EXISTING_FILE);
-        InputStream input = toInputStream(request);
+        InputStream input = createRequestEventForFile(EXISTING_FILE);
+
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedResourceObjects = collectEmittedObjects();
 
-        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects();
-
-        assertThat(emittedResourceObjects, containsInAnyOrder(expectedResourceObjects));
+        assertThat(emittedResourceObjects, containsInAnyOrder(FILE_01_CONTENTS));
     }
 
     @Test
     public void handlerEmitsEventWithResourceWhenFileUriExistsAndContainsDataAsJsonObjectsList() {
         s3Client = new FakeS3Client(CONTENTS_AS_JSON_OBJECTS_LIST);
-        handler = new InputEntriesEventEmitter(s3Client, eventBridgeClient);
-        AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT);
-        request.setDetail(EXISTING_FILE);
-        InputStream input = toInputStream(request);
+        handler = newHandler();
+
+        InputStream input = createRequestEventForFile(EXISTING_FILE);
+
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedResourceObjects = collectEmittedObjects();
 
-        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects();
+        assertThat(emittedResourceObjects, containsInAnyOrder(FILE_01_CONTENTS));
+    }
 
-        assertThat(emittedResourceObjects, containsInAnyOrder(expectedResourceObjects));
+    @Test
+    public void handlerThrowsExceptionWhenTryingToEmitToNonExistingEventBus() {
+        eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
+        handler = newHandler();
+        var input = createRequestEventForFile(EXISTING_FILE);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+        String eventBusNameUsedByHandler = ApplicationConstants.EVENT_BUS_NAME;
+        assertThat(exception.getMessage(), containsString(eventBusNameUsedByHandler));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenInputUriIsNotAnExistingFile() {
+        InputStream input = createRequestEventForFile(NON_EXISTING_FILE);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
+        assertThat(exception.getMessage(), containsString(NON_EXISTING_FILE.getS3Location()));
     }
 
     private static List<SampleObject> randomContents() {
@@ -104,7 +118,7 @@ public class InputEntriesEventEmitterTest {
     }
 
     private static InputStream contentsAsJsonArray() {
-        List<JsonNode> nodes = contentAsJsonNodes(FILE_01_CONTENTS);
+        List<JsonNode> nodes = contentAsJsonNodes();
         ArrayNode root = JsonUtils.objectMapper.createArrayNode();
         root.addAll(nodes);
         String jsonArrayString = attempt(() -> objectMapperNoEmpty.writeValueAsString(root)).orElseThrow();
@@ -113,7 +127,7 @@ public class InputEntriesEventEmitterTest {
 
     private static InputStream contentsAsJsonObjectsList() {
         var objectMapper = objectMapperNoEmpty.configure(SerializationFeature.INDENT_OUTPUT, false);
-        String nodesInLines = contentAsJsonNodes(FILE_01_CONTENTS)
+        String nodesInLines = contentAsJsonNodes()
                                   .stream()
                                   .map(attempt(objectMapper::writeValueAsString))
                                   .map(Try::orElseThrow)
@@ -121,19 +135,24 @@ public class InputEntriesEventEmitterTest {
         return IoUtils.stringToStream(nodesInLines);
     }
 
-    private static List<JsonNode> contentAsJsonNodes(List<SampleObject> contents) {
-        return contents
-                   .stream()
+    private static List<JsonNode> contentAsJsonNodes() {
+        return Stream.of(FILE_01_CONTENTS)
+
                    .map(JsonSerializable::toJsonString)
                    .map(attempt(objectMapperNoEmpty::readTree))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
 
-    private SampleObject[] allGeneratedResourceObjects() {
-        return Stream.of(FILE_01_CONTENTS)
-                   .flatMap(Collection::stream)
-                   .collect(Collectors.toList()).toArray(SampleObject[]::new);
+    private InputStream createRequestEventForFile(ImportRequest detail) {
+        AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
+        request.setDetailType(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT);
+        request.setDetail(detail);
+        return toInputStream(request);
+    }
+
+    private InputEntriesEventEmitter newHandler() {
+        return new InputEntriesEventEmitter(s3Client, eventBridgeClient);
     }
 
     private List<SampleObject> collectEmittedObjects() {
