@@ -115,11 +115,11 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
-        return toStream(getNodeIterator(content))
+        return toStream(parseAsArrayNode(content))
                    .collect(Collectors.toList());
     }
 
-    private ArrayNode getNodeIterator(String content) throws JsonProcessingException {
+    private ArrayNode parseAsArrayNode(String content) throws JsonProcessingException {
         JsonNode jsonNode = JsonUtils.objectMapperNoEmpty.readTree(content);
         if (jsonNode.isArray()) {
             return (ArrayNode) jsonNode;
