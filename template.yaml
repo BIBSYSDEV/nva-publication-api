@@ -1218,7 +1218,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: "orestis-test-bus"
             Pattern:
               detail-type:
                 - import.cristin.filename-event
