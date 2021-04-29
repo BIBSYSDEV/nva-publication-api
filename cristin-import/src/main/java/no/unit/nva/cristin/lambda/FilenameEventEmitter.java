@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
-    public static final String IMPORT_CRISTIN_FILENAME_EVENT = "import.cristin.filename-event";
+    public static final String EVENT_DETAIL_TYPE = "import.cristin.filename-event";
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
@@ -120,7 +120,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
 
         EventEmitter<ImportRequest> eventEmitter =
-            new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT,
+            new EventEmitter<>(EVENT_DETAIL_TYPE,
                                CANONICAL_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);

@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String CRISTIN_IMPORT_ENTRY_EVENT = "cristin.import.entry-event";
+    public static final String EVENT_DETAIL_TYPE = "cristin.import.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     private static final String CANONICAL_NAME = InputEntriesEventEmitter.class.getCanonicalName();
@@ -62,7 +62,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private EventEmitter<JsonNode> newEventEmitter(Context context) {
-        return new EventEmitter<>(CRISTIN_IMPORT_ENTRY_EVENT,
+        return new EventEmitter<>(EVENT_DETAIL_TYPE,
                                   CANONICAL_NAME,
                                   context.getInvokedFunctionArn(),
                                   eventBridgeClient);
@@ -77,7 +77,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT)) {
+        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.EVENT_DETAIL_TYPE)) {
             throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
         }
     }
