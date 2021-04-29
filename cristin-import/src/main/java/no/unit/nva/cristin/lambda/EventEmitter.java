@@ -47,8 +47,8 @@ public class EventEmitter<T> {
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
-    private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
+    private final String eventSource;
 
     public EventEmitter(String detailType,
                         String eventSource,

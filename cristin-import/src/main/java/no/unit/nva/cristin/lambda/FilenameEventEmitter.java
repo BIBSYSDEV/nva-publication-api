@@ -35,6 +35,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
+    public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -76,11 +77,9 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private URI createUri(URI s3Location, String filename) {
-        if (s3Location.getPath().endsWith(PATH_SEPARATOR)) {
-            return URI.create(s3Location + filename);
-        } else {
-            return URI.create(s3Location + PATH_SEPARATOR + filename);
-        }
+        return s3Location.getPath().endsWith(PATH_SEPARATOR)
+                   ? URI.create(s3Location + filename)
+                   : URI.create(s3Location + PATH_SEPARATOR + filename);
     }
 
     private void returnNotEmittedFilenames(OutputStream output, List<PutEventsResult> failedRequests)
@@ -119,9 +118,10 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
+
         EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT,
-                               this.getClass().getCanonicalName(),
+                               CANONICAL_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);
 
