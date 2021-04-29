@@ -77,7 +77,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private URI createUri(URI s3Location, String filename) {
-        return (s3Location.getPath().endsWith(PATH_SEPARATOR))
+        return s3Location.getPath().endsWith(PATH_SEPARATOR)
                    ? URI.create(s3Location + filename)
                    : URI.create(s3Location + PATH_SEPARATOR + filename);
     }
