@@ -77,8 +77,7 @@ public class InputEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedResourceObjects = collectEmittedObjects();
 
-        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects()
-                                                     .toArray(SampleObject[]::new);
+        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects();
 
         assertThat(emittedResourceObjects, containsInAnyOrder(expectedResourceObjects));
     }
@@ -94,8 +93,7 @@ public class InputEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedResourceObjects = collectEmittedObjects();
 
-        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects()
-                                                     .toArray(SampleObject[]::new);
+        SampleObject[] expectedResourceObjects = allGeneratedResourceObjects();
 
         assertThat(emittedResourceObjects, containsInAnyOrder(expectedResourceObjects));
     }
@@ -132,10 +130,10 @@ public class InputEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
-    private List<SampleObject> allGeneratedResourceObjects() {
+    private SampleObject[] allGeneratedResourceObjects() {
         return Stream.of(FILE_01_CONTENTS)
                    .flatMap(Collection::stream)
-                   .collect(Collectors.toList());
+                   .collect(Collectors.toList()).toArray(SampleObject[]::new);
     }
 
     private List<SampleObject> collectEmittedObjects() {
