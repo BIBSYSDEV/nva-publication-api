@@ -79,10 +79,11 @@ public class FilenameEventEmitterTest {
 
     @ParameterizedTest(
         name = "handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
-    @ValueSource(strings = {SOME_S3_LOCATION, SOME_S3_LOCATION + PATH_SEPARATOR})
-    public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location()
+    @ValueSource(strings = {"", PATH_SEPARATOR})
+    public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
+        String pathSeparator)
         throws IOException {
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION + pathSeparator);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         List<String> fileList = eventBridgeClient.listEmittedFilenames();
