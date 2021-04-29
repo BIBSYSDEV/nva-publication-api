@@ -14,6 +14,7 @@ import nva.commons.core.ioutils.IoUtils;
 
 public class ImportRequest implements JsonSerializable {
 
+    public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
     private static final String EMPTY_STRING = "";
@@ -23,12 +24,12 @@ public class ImportRequest implements JsonSerializable {
 
     @JsonCreator
     public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location) {
-        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElse(null);
+        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
     }
 
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportRequest.class))
-                   .orElseThrow();
+                   .orElseThrow(fail -> handleNotParsableInputError(jsonString));
     }
 
     @JacocoGenerated
@@ -74,6 +75,10 @@ public class ImportRequest implements JsonSerializable {
 
     public InputStream toInputStream() {
         return IoUtils.stringToStream(toJsonString());
+    }
+
+    private static IllegalArgumentException handleNotParsableInputError(String inputString) {
+        return new IllegalArgumentException(ILLEGAL_ARGUMENT_MESSAGE + inputString);
     }
 
     private String removeRoot(String path) {

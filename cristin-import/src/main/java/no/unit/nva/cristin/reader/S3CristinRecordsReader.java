@@ -15,7 +15,7 @@ import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 
 /**
- * Reads specially tailored records of Cristing results from an S3 bucket and converts them to NVA Publications.
+ * Reads specially tailored records of Cristin results from an S3 bucket and converts them to NVA Publications.
  */
 public class S3CristinRecordsReader {
 
