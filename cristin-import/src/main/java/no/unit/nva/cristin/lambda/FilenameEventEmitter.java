@@ -35,7 +35,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
-    public static final String CANONICAL_NAME = FilenameEvent.class.getCanonicalName();
+    public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -112,20 +112,20 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .map(PutEventsRequest::entries)
                    .flatMap(Collection::stream)
                    .map(PutEventsRequestEntry::detail)
-                   .map(FilenameEvent::fromJson)
-                   .map(FilenameEvent::getFileUri)
-                   .map(URI::toString)
+                   .map(ImportRequest::fromJson)
+                   .map(ImportRequest::getS3Location)
                    .collect(Collectors.toList());
     }
 
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
-        EventEmitter<FilenameEvent> eventEmitter =
+
+        EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT,
                                CANONICAL_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);
 
-        List<FilenameEvent> filenameEvents = files.stream().map(FilenameEvent::new).collect(Collectors.toList());
+        List<ImportRequest> filenameEvents = files.stream().map(ImportRequest::new).collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }

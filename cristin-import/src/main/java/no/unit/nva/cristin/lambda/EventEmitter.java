@@ -1,12 +1,14 @@
 package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.lambda.ApplicationConstants.EVENT_BUS_NAME;
+import static nva.commons.core.attempt.Try.attempt;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.JsonUtils;
 import org.apache.commons.collections4.ListUtils;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
@@ -37,7 +39,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
  *
  * @param <T> the type of the event detail.
  */
-public class EventEmitter<T extends JsonSerializable> {
+public class EventEmitter<T> {
 
     public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
     private static final int BATCH_SIZE = 10;
@@ -116,9 +118,13 @@ public class EventEmitter<T extends JsonSerializable> {
                    .resources(invokingFunctionArn)
                    .detailType(detailType)
                    .time(Instant.now())
-                   .detail(eventDetail.toJsonString())
+                   .detail(toJson(eventDetail))
                    .source(eventSource)
                    .build();
+    }
+
+    private String toJson(T eventDetail) {
+        return attempt(() -> JsonUtils.objectMapperNoEmpty.writeValueAsString(eventDetail)).orElseThrow();
     }
 
     private List<PutEventsRequest> createBatchesOfPutEventsRequests(List<PutEventsRequestEntry> entries) {

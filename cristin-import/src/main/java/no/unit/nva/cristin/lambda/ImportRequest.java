@@ -27,6 +27,10 @@ public class ImportRequest implements JsonSerializable {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
     }
 
+    public ImportRequest(URI s3location) {
+        this.s3Location = s3location;
+    }
+
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportRequest.class))
                    .orElseThrow(fail -> handleNotParsableInputError(jsonString));
