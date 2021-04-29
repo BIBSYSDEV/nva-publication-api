@@ -47,6 +47,7 @@ public class FilenameEventEmitterTest {
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
     private static final Context CONTEXT = mock(Context.class);
+    public static final String EMPTY_STRING = "";
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -79,7 +80,7 @@ public class FilenameEventEmitterTest {
 
     @ParameterizedTest(
         name = "handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
-    @ValueSource(strings = {"", PATH_SEPARATOR})
+    @ValueSource(strings = {EMPTY_STRING, PATH_SEPARATOR})
     public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
