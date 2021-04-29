@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.FilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.cristin.lambda.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.testutils.IoUtils.stringToStream;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
@@ -31,6 +32,8 @@ import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -42,7 +45,9 @@ public class FilenameEventEmitterTest {
     public static final List<String> FILE_LIST = List.of(FILE_01, FILE_02);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
+    public static final String SOME_OTHER_BUS = "someOtherBus";
     private static final Context CONTEXT = mock(Context.class);
+    public static final String EMPTY_STRING = "";
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -52,7 +57,7 @@ public class FilenameEventEmitterTest {
     @BeforeEach
     public void init() {
         outputStream = new ByteArrayOutputStream();
-        this.eventBridgeClient = new FakeEventBridgeClient();
+        this.eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
@@ -73,15 +78,19 @@ public class FilenameEventEmitterTest {
         assertDoesNotThrow(action);
     }
 
-    @Test
-    public void handlerEmitsEvensForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location()
+    @ParameterizedTest(
+        name = "handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
+    @ValueSource(strings = {EMPTY_STRING, PATH_SEPARATOR})
+    public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
+        String pathSeparator)
         throws IOException {
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION + pathSeparator);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         List<String> fileList = eventBridgeClient.listEmittedFilenames();
 
-        assertThat(fileList, containsInAnyOrder(FILE_LIST.toArray(String[]::new)));
+        String[] expectedFiles = expectedFileUris();
+        assertThat(fileList, containsInAnyOrder(expectedFiles));
     }
 
     @Test
@@ -118,12 +127,24 @@ public class FilenameEventEmitterTest {
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         String[] failedResultsArray = objectMapperWithEmpty.readValue(outputStream.toString(), String[].class);
-        var failedResults = Arrays.asList(failedResultsArray);
+        List<String> failedResults = Arrays.asList(failedResultsArray);
 
-        assertThat(failedResults, containsInAnyOrder(FILE_LIST.toArray(String[]::new)));
+        String[] expectedFileUris = expectedFileUris();
+        assertThat(failedResults, containsInAnyOrder(expectedFileUris));
         for (String filename : FILE_LIST) {
             assertThat(appender.getMessages(), containsString(filename));
         }
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenEventBusCannotBeFound() {
+        eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
+        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        InputStream inputStream = toJsonStream(importRequest);
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
+        assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
     }
 
     private static Map<String, InputStream> fileContents() {
@@ -137,8 +158,15 @@ public class FilenameEventEmitterTest {
         return InputStream.nullInputStream();
     }
 
+    private String[] expectedFileUris() {
+        return FILE_LIST.stream()
+                   .map(filename -> SOME_S3_LOCATION + PATH_SEPARATOR + filename)
+                   .collect(Collectors.toList())
+                   .toArray(String[]::new);
+    }
+
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {
-        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient() {
+        EventBridgeClient eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
             @Override
             protected Integer numberOfFailures() {
                 return NON_ZERO_NUMBER_OF_FAILURES;

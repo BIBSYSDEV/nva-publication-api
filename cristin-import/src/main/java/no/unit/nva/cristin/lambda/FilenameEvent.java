@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Optional;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 
@@ -14,8 +15,13 @@ public class FilenameEvent implements JsonSerializable {
     private final URI fileUri;
 
     @JsonCreator
+    @JacocoGenerated
     public FilenameEvent(@JsonProperty("fileUri") String fileUri) {
         this.fileUri = Optional.ofNullable(fileUri).map(URI::create).orElseThrow();
+    }
+
+    public FilenameEvent(URI fileUri) {
+        this.fileUri = fileUri;
     }
 
     public static FilenameEvent fromJson(String json) {
