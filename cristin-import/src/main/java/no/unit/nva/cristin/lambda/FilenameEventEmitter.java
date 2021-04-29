@@ -1,6 +1,8 @@
 package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +23,6 @@ import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -58,22 +59,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
-    }
-
-    @JacocoGenerated
-    private static EventBridgeClient defaultEventBridgeClient() {
-        return EventBridgeClient.builder()
-                   .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
-    }
-
-    @JacocoGenerated
-    private static S3Client defaultS3Client() {
-        return S3Client.builder()
-                   .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
     }
 
     private URI createUri(URI s3Location, String filename) {

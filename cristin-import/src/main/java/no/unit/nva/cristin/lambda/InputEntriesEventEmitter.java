@@ -1,5 +1,7 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,6 +16,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
@@ -40,6 +43,11 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     private static final String BEGINNING_OF_ARRAY = "[";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
+
+    @JacocoGenerated
+    public InputEntriesEventEmitter() {
+        this(defaultS3Client(), defaultEventBridgeClient());
+    }
 
     public InputEntriesEventEmitter(S3Client s3Client,
                                     EventBridgeClient eventBridgeClient) {
