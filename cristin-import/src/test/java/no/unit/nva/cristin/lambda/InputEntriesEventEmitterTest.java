@@ -146,7 +146,7 @@ public class InputEntriesEventEmitterTest {
 
     private InputStream createRequestEventForFile(ImportRequest detail) {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT);
+        request.setDetailType(FilenameEventEmitter.EVENT_DETAIL_TYPE);
         request.setDetail(detail);
         return toInputStream(request);
     }

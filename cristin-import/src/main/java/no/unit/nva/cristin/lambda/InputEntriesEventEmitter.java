@@ -1,5 +1,7 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,6 +16,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
@@ -25,7 +28,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String CRISTIN_IMPORT_ENTRY_EVENT = "cristin.import.entry-event";
+    public static final String EVENT_DETAIL_TYPE = "cristin.import.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     private static final String CANONICAL_NAME = InputEntriesEventEmitter.class.getCanonicalName();
@@ -40,6 +43,11 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     private static final String BEGINNING_OF_ARRAY = "[";
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
+
+    @JacocoGenerated
+    public InputEntriesEventEmitter() {
+        this(defaultS3Client(), defaultEventBridgeClient());
+    }
 
     public InputEntriesEventEmitter(S3Client s3Client,
                                     EventBridgeClient eventBridgeClient) {
@@ -62,7 +70,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private EventEmitter<JsonNode> newEventEmitter(Context context) {
-        return new EventEmitter<>(CRISTIN_IMPORT_ENTRY_EVENT,
+        return new EventEmitter<>(EVENT_DETAIL_TYPE,
                                   CANONICAL_NAME,
                                   context.getInvokedFunctionArn(),
                                   eventBridgeClient);
@@ -77,7 +85,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.IMPORT_CRISTIN_FILENAME_EVENT)) {
+        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.EVENT_DETAIL_TYPE)) {
             throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
         }
     }
@@ -115,6 +123,7 @@ public class InputEntriesEventEmitter extends EventHandler<ImportRequest, String
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
+
         return toStream(parseAsArrayNode(content))
                    .collect(Collectors.toList());
     }

@@ -1,6 +1,8 @@
 package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +23,6 @@ import nva.commons.core.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
@@ -30,7 +31,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
-    public static final String IMPORT_CRISTIN_FILENAME_EVENT = "import.cristin.filename-event";
+    public static final String EVENT_DETAIL_TYPE = "import.cristin.filename-event";
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
@@ -58,22 +59,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
-    }
-
-    @JacocoGenerated
-    private static EventBridgeClient defaultEventBridgeClient() {
-        return EventBridgeClient.builder()
-                   .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
-    }
-
-    @JacocoGenerated
-    private static S3Client defaultS3Client() {
-        return S3Client.builder()
-                   .region(ApplicationConstants.AWS_REGION)
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
     }
 
     private URI createUri(URI s3Location, String filename) {
@@ -120,7 +105,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
 
         EventEmitter<ImportRequest> eventEmitter =
-            new EventEmitter<>(IMPORT_CRISTIN_FILENAME_EVENT,
+            new EventEmitter<>(EVENT_DETAIL_TYPE,
                                CANONICAL_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);

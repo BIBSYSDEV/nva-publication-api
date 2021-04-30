@@ -1199,6 +1199,31 @@ Resources:
             Type: SQS
             Destination: !GetAtt UpdateDoiStatusDLQ.Arn
 
+
+  CristinEntriesEventEmitter:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.InputEntriesEventEmitter::handleRequest
+      Runtime: java11
+      MemorySize: 4096
+      Timeout: 300 # 5 min timeout
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          EVENT_BUS: "orestis-test-bus"
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: "orestis-test-bus"
+            Pattern:
+              detail-type:
+                - import.cristin.filename-event
+
+
   #==========================Manually triggered functions=============================================
   ImportFromS3Function:
     Type: AWS::Serverless::Function
