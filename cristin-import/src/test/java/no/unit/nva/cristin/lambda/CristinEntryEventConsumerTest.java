@@ -91,6 +91,7 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         String unexpectedDetailType = "unexpectedDetailType";
         String input = eventWithInvalidDetailType(unexpectedDetailType);
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(), containsString(CristinEntriesEventEmitter.EVENT_DETAIL_TYPE));
         assertThat(exception.getMessage(), containsString(unexpectedDetailType));
@@ -99,21 +100,40 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void handlerLogsErrorWhenFailingToStorePublicationToDynamo() {
 
-        TestAppender appender = LogUtils.getTestingAppender(CristinEntryEventConsumer.class);
-        resourceService = new ResourceService(client, Clock.systemDefaultZone()) {
+        final TestAppender appender = LogUtils.getTestingAppender(CristinEntryEventConsumer.class);
+        resourceService = resourceServiceThrowingExceptionWhenSavingResource();
+        handler = new CristinEntryEventConsumer(resourceService);
+
+        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getId();
+        Executable action = () -> handler.handleRequest(stringToStream(validEvent()), outputStream, CONTEXT);
+
+        //execute without throwing the exception
+        assertThrows(RuntimeException.class, action);
+
+        assertThat(appender.getMessages(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
+        assertThat(appender.getMessages(), containsString(RESOURCE_EXCEPTION_MESSAGE));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenFailingToStorePublicationToDynamo() {
+        resourceService = resourceServiceThrowingExceptionWhenSavingResource();
+        handler = new CristinEntryEventConsumer(resourceService);
+
+        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getId();
+        Executable action = () -> handler.handleRequest(stringToStream(validEvent()), outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        assertThat(exception.getMessage(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
+        assertThat(exception.getCause().getMessage(), containsString(RESOURCE_EXCEPTION_MESSAGE));
+    }
+
+    private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
+        return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
             public Publication createPublicationWithPredefinedCreationDate(Publication publication) {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
         };
-        handler = new CristinEntryEventConsumer(resourceService);
-        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getId();
-        Executable action = () -> handler.handleRequest(stringToStream(validEvent()), outputStream, CONTEXT);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        assertThat(exception.getMessage(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
-        assertThat(appender.getMessages(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
-        assertThat(exception.getCause().getMessage(), containsString(RESOURCE_EXCEPTION_MESSAGE));
-        assertThat(appender.getMessages(), containsString(RESOURCE_EXCEPTION_MESSAGE));
     }
 
     private static AwsEventBridgeEvent<CristinObject> parseEvent(String input) {
