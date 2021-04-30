@@ -3,6 +3,7 @@ package no.unit.nva.cristin.mapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -14,12 +15,16 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,10 +32,13 @@ import org.junit.jupiter.api.Test;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
 
+    private CristinDataGenerator cristinDataGenerator;
+
     @BeforeEach
     public void init() {
         super.init();
-        testingData = new CristinDataGenerator().randomDataAsString();
+        cristinDataGenerator = new CristinDataGenerator();
+        testingData = cristinDataGenerator.randomDataAsString();
     }
 
     @Test
@@ -99,6 +107,27 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                .collect(Collectors.toList());
 
         assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
+    }
+
+    @Test
+    public void mapReturnsBookAnthologyWhenInputHasMainTypeBookAndSecondaryTypeAnthology() {
+        testingData = Stream.of(cristinDataGenerator.randomBookAnthology())
+                          .map(JsonSerializable::toJsonString)
+                          .collect(SingletonCollector.collect());
+        Publication actualPublication =
+            cristinObjects()
+                .map(CristinObject::toPublication)
+                .collect(SingletonCollector.collect());
+        var actualPublicationInstance = actualPublication
+                                            .getEntityDescription()
+                                            .getReference()
+                                            .getPublicationInstance();
+        var actualPublicationContext = actualPublication
+                                           .getEntityDescription()
+                                           .getReference()
+                                           .getPublicationContext();
+        assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
+        assertThat(actualPublicationContext, is(instanceOf(Book.class)));
     }
 
     private CristinTitle mainTitle(List<CristinTitle> titles) {

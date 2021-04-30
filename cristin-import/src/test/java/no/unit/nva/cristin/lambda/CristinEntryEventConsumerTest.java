@@ -79,7 +79,8 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         UserInstance userInstance = extractUserInstance(expectedPublication);
 
         Publication actualPublication = resourceService.getPublicationsByOwner(userInstance)
-                                            .stream().collect(SingletonCollector.collect());
+                                            .stream()
+                                            .collect(SingletonCollector.collect());
 
         expectedPublication.setIdentifier(actualPublication.getIdentifier());
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);

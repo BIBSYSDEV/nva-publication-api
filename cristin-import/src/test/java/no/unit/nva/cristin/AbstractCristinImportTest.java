@@ -17,7 +17,7 @@ import nva.commons.core.attempt.Try;
 public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
 
     public static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;
-    public static final CollectionType CRISTING_OBJECTS_LIST_JAVATYPE =
+    public static final CollectionType CRISTIN_OBJECTS_LIST_JAVATYPE =
         objectMapperWithEmpty.getTypeFactory().constructCollectionType(List.class, CristinObject.class);
     protected String testingData;
 
@@ -39,7 +39,7 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
 
     private List<CristinObject> parseCristinObjectsArray(String jsonString) {
         return attempt(() -> objectMapperWithEmpty.<List<CristinObject>>readValue(jsonString,
-                                                                                  CRISTING_OBJECTS_LIST_JAVATYPE))
+                                                                                  CRISTIN_OBJECTS_LIST_JAVATYPE))
                    .orElseThrow();
     }
 

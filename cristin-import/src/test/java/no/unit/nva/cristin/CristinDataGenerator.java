@@ -1,6 +1,8 @@
 package no.unit.nva.cristin;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.javafaker.Faker;
@@ -36,6 +38,20 @@ public class CristinDataGenerator {
         return randomObjects()
                    .map(this::toJsonString)
                    .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    public CristinObject randomBookAnthology() {
+        CristinObject cristinObject = CristinObject
+                                          .builder()
+                                          .withCristinTitles(List.of(newCristinTitle(FIRST_TITLE)))
+                                          .withEntryCreationDate(LocalDate.now())
+                                          .withMainCategory(MappingConstants.MAIN_CATEGORY_BOOK)
+                                          .withSecondaryCategory(MappingConstants.SECONDARY_CATEGORY_ANTHOLOGY)
+                                          .withId(randomString())
+                                          .withPublicationYear(randomYear())
+                                          .build();
+        assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
     }
 
     private static <T> T randomElement(List<T> elements) {
