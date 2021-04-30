@@ -123,7 +123,6 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
-
         return toStream(parseAsArrayNode(content))
                    .collect(Collectors.toList());
     }
