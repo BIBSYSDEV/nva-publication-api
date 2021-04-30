@@ -1,7 +1,8 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.lambda.FilenameEventEmitter.PATH_SEPARATOR;
-import static no.unit.nva.cristin.lambda.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
+import static no.unit.nva.cristin.lambda.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.PATH_SEPARATOR;
+import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.testutils.IoUtils.stringToStream;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
@@ -37,7 +38,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class FilenameEventEmitterTest {
+public class CristinFilenameEventEmitterTest {
 
     public static final String SOME_S3_LOCATION = "s3://some/location";
     public static final String FILE_01 = "file01";
@@ -47,9 +48,8 @@ public class FilenameEventEmitterTest {
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
     private static final Context CONTEXT = mock(Context.class);
-    public static final String EMPTY_STRING = "";
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-    private FilenameEventEmitter handler;
+    private CristinFilenameEventEmitter handler;
 
     private FakeEventBridgeClient eventBridgeClient;
     private FakeS3Client s3Client;
@@ -60,7 +60,7 @@ public class FilenameEventEmitterTest {
         this.eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
-        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        handler = new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
     }
 
     @Test
@@ -121,7 +121,7 @@ public class FilenameEventEmitterTest {
     @Test
     public void handlerLogsAndReturnsFailedEventRequestsWhenEventsFailToBeEmitted() throws IOException {
 
-        TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+        TestAppender appender = LogUtils.getTestingAppender(CristinFilenameEventEmitter.class);
         handler = handlerThatFailsToEmitMessages();
         ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
         InputStream inputStream = toJsonStream(importRequest);
@@ -139,7 +139,7 @@ public class FilenameEventEmitterTest {
     @Test
     public void handlerThrowsExceptionWhenEventBusCannotBeFound() {
         eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
-        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        handler = new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
         ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
         InputStream inputStream = toJsonStream(importRequest);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -165,19 +165,19 @@ public class FilenameEventEmitterTest {
                    .toArray(String[]::new);
     }
 
-    private FilenameEventEmitter handlerThatFailsToEmitMessages() {
+    private CristinFilenameEventEmitter handlerThatFailsToEmitMessages() {
         EventBridgeClient eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
             @Override
             protected Integer numberOfFailures() {
                 return NON_ZERO_NUMBER_OF_FAILURES;
             }
         };
-        return new FilenameEventEmitter(s3Client, eventBridgeClient);
+        return new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
     }
 
-    private FilenameEventEmitter handlerThatReceivesEmptyS3Location() {
+    private CristinFilenameEventEmitter handlerThatReceivesEmptyS3Location() {
         S3Client s3Client = new FakeS3Client(Collections.emptyMap());
-        return new FilenameEventEmitter(s3Client, eventBridgeClient);
+        return new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
     }
 
     private <T> InputStream toJsonStream(T importRequest) {

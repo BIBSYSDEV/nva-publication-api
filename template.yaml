@@ -62,6 +62,10 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
+    #temporary parameter
+  CristinImportEventBusName:
+    Type: String
+    Default: orestis-test-bus
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ]]
@@ -1204,7 +1208,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.InputEntriesEventEmitter::handleRequest
+      Handler: no.unit.nva.cristin.lambda.CristinEntriesEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 4096
       Timeout: 300 # 5 min timeout
@@ -1213,12 +1217,12 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: "orestis-test-bus"
+          EVENT_BUS: !Ref CristinImportEventBusName
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: "orestis-test-bus"
+            EventBusName: !Ref CristinImportEventBusName
             Pattern:
               detail-type:
                 - import.cristin.filename-event
@@ -1267,11 +1271,11 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
 
-  FilenameEventEmitter:
+  CristinFilenameEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
-      Handler: no.unit.nva.cristin.lambda.FilenameEventEmitter::handleRequest
+      Handler: no.unit.nva.cristin.lambda.CristinFilenameEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 4096
       Timeout: 300 # 5 min timeout
@@ -1280,7 +1284,7 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: "orestis-test-bus"
+          EVENT_BUS: !Ref CristinImportEventBusName
 
 
   #===========================BasePathMappings========================================================

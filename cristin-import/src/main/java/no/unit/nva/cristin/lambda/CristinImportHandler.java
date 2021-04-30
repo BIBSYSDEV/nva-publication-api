@@ -28,7 +28,6 @@ public class CristinImportHandler implements RequestStreamHandler {
 
     public CristinImportHandler(S3Client s3Client, AmazonDynamoDB dynamoDbClient) {
         this.s3Client = s3Client;
-
         this.dynamoDbClient = dynamoDbClient;
     }
 
