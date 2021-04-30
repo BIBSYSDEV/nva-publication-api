@@ -28,19 +28,22 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
 
-
-
     implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
 
-    testImplementation project (":storage-model")
+    testImplementation project(":storage-model")
     testImplementation project(":publication-testing")
     testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 'utils', version: project.ext.awsSdk2Version
+    testImplementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
+        because "For comparing java objects and detailing the differences in readable way"
+    }
 
-    compileOnly(project(":storage-model")){
+
+    compileOnly(project(":storage-model")) {
         because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"
     }
     compileOnly group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
@@ -52,6 +55,10 @@ dependencies {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
 
+}
+
+test{
+    environment "MAX_SLEEP_TIME", "1"
 }
 
 configurations.testImplementation.canBeResolved = true

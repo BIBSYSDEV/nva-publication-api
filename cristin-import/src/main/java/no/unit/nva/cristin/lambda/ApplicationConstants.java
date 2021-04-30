@@ -11,25 +11,14 @@ public final class ApplicationConstants {
 
     public static final String EMPTY_STRING = "";
     public static final Environment ENVIRONMENT = new Environment();
-    public static final String EVENT_BUS_ENV_VARIABLE = "EVENT_BUS";
-    public static final String AWS_REGION_ENV_VARIABLE = "AWS_REGION";
     public static final String DEFAULT_EVENT_BUS = "default";
     public static final String EVENT_BUS_NAME = setupEventBus();
-
     public static final Region AWS_REGION = setupRegion();
+    private static final Integer DEFAULT_MAX_SLEEP_TIME = 100;
+    public static final Integer MAX_SLEEP_TIME = setupSleepTimeIncreaseFactor();
 
     private ApplicationConstants() {
 
-    }
-
-    @JacocoGenerated
-    private static String setupEventBus() {
-        return ENVIRONMENT.readEnvOpt(EVENT_BUS_ENV_VARIABLE).orElse(DEFAULT_EVENT_BUS);
-    }
-
-    @JacocoGenerated
-    private static Region setupRegion() {
-        return ENVIRONMENT.readEnvOpt(AWS_REGION_ENV_VARIABLE).map(Region::of).orElse(Region.EU_WEST_1);
     }
 
     @JacocoGenerated
@@ -46,5 +35,21 @@ public final class ApplicationConstants {
                    .region(ApplicationConstants.AWS_REGION)
                    .httpClient(UrlConnectionHttpClient.create())
                    .build();
+    }
+
+    private static Integer setupSleepTimeIncreaseFactor() {
+        return ENVIRONMENT.readEnvOpt("MAX_SLEEP_TIME")
+                   .map(Integer::parseInt)
+                   .orElse(DEFAULT_MAX_SLEEP_TIME);
+    }
+
+    @JacocoGenerated
+    private static String setupEventBus() {
+        return ENVIRONMENT.readEnvOpt("EVENT_BUS").orElse(DEFAULT_EVENT_BUS);
+    }
+
+    @JacocoGenerated
+    private static Region setupRegion() {
+        return ENVIRONMENT.readEnvOpt("AWS_REGION").map(Region::of).orElse(Region.EU_WEST_1);
     }
 }
