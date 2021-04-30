@@ -1247,7 +1247,7 @@ Resources:
             EventBusName: !Ref CristinImportEventBusName
             Pattern:
               detail-type:
-                -import.cristin.entry-event
+                - import.cristin.entry-event
 
 
   #==========================Manually triggered functions=============================================
