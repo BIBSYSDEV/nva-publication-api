@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.MAX_SLEEP_TIME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import java.util.Random;
@@ -11,6 +12,7 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.ResourceService;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
@@ -25,6 +27,12 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObject, Publi
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private final ResourceService resourceService;
 
+    @JacocoGenerated
+    public CristinEntryEventConsumer() {
+        this(defaultDynamoDbClient());
+    }
+
+    @JacocoGenerated
     protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient) {
         this(new ResourceService(dynamoDbClient, Clock.systemDefaultZone()));
     }
@@ -49,6 +57,14 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObject, Publi
 
         Try<Publication> attemptSave = persistInDatabase(publication);
         return attemptSave.orElseThrow(fail -> handleSavingError(fail, input));
+    }
+
+    @JacocoGenerated
+    private static AmazonDynamoDB defaultDynamoDbClient() {
+        return AmazonDynamoDBClientBuilder
+                   .standard()
+                   .withRegion(ApplicationConstants.AWS_REGION.id())
+                   .build();
     }
 
     private Try<Publication> persistInDatabase(Publication publication) {
