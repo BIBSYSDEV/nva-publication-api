@@ -106,23 +106,37 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private ResourceService resourceService;
     private Clock clock;
     private DoiRequestService doiRequestService;
-    
+
     @BeforeEach
     public void init() {
         super.init();
-        clock = mock(Clock.class);
-        when(clock.instant())
-            .thenReturn(RESOURCE_CREATION_TIME)
-            .thenReturn(RESOURCE_MODIFICATION_TIME)
-            .thenReturn(RESOURCE_SECOND_MODIFICATION_TIME)
-            .thenReturn(RESOURCE_THIRD_MODIFICATION_TIME);
+        Clock clock = setupClock();
         resourceService = new ResourceService(client, clock);
         doiRequestService = new DoiRequestService(client, clock);
     }
-    
+
+    @Test
+    public void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
+        throws TransactionFailedException, NotFoundException {
+        Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        verifyThatResourceClockWillReturnPredefinedCreationTime();
+        Instant publicationPredefinedTime = Instant.now();
+
+        inputPublication.setCreatedDate(publicationPredefinedTime);
+        SortableIdentifier savedPublicationIdentifier =
+            resourceService.createPublicationWithPredefinedCreationDate(inputPublication).getIdentifier();
+        Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
+
+        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
+        inputPublication.setIdentifier(savedPublicationIdentifier);
+
+        assertThat(publicationPredefinedTime, is(not(equalTo(RESOURCE_CREATION_TIME))));
+        assertThat(savedPublication, is(equalTo(inputPublication)));
+    }
+
     @Test
     public void createResourceCreatesResource() throws NotFoundException, TransactionFailedException {
-        
+
         Publication resource = publicationWithIdentifier();
         Publication savedResource = resourceService.createPublication(resource);
         Publication readResource = resourceService.getPublication(savedResource);
@@ -751,21 +765,37 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         TestAppender testAppender = LogUtils.getTestingAppender(ReadResourceService.class);
         SortableIdentifier someIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublicationByIdentifier(someIdentifier);
-        
+
         NotFoundException exception = assertThrows(NotFoundException.class, action);
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
         assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
         assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
     }
-    
+
+    private Clock setupClock() {
+        Clock clock = mock(Clock.class);
+        when(clock.instant())
+            .thenReturn(RESOURCE_CREATION_TIME)
+            .thenReturn(RESOURCE_MODIFICATION_TIME)
+            .thenReturn(RESOURCE_SECOND_MODIFICATION_TIME)
+            .thenReturn(RESOURCE_THIRD_MODIFICATION_TIME);
+        this.clock = clock;
+        return clock;
+    }
+
+    private void verifyThatResourceClockWillReturnPredefinedCreationTime() {
+        assertThat(clock.instant(), is(equalTo(RESOURCE_CREATION_TIME)));
+        clock = setupClock();
+    }
+
     private ResourceService resourceServiceThatDoesNotReceivePublicationUpdateAfterCreation(AmazonDynamoDB client) {
         when(client.getItem(any(GetItemRequest.class)))
             .thenReturn(new GetItemResult().withItem(Collections.emptyMap()));
-        
+
         ResourceService resourceService = new ResourceService(client, clock);
         return resourceService;
     }
-    
+
     private void assertThatIdentifierEntryHasBeenCreated() {
         assertThatResourceAndIdentifierEntryExist();
     }
