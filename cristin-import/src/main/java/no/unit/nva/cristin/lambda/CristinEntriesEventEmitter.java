@@ -29,7 +29,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String EVENT_DETAIL_TYPE = "cristin.import.entry-event";
+    public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     private static final String CANONICAL_NAME = CristinEntriesEventEmitter.class.getCanonicalName();
