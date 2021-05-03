@@ -114,10 +114,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         testingData = Stream.of(cristinDataGenerator.randomBookAnthology())
                           .map(JsonSerializable::toJsonString)
                           .collect(SingletonCollector.collect());
-        Publication actualPublication =
-            cristinObjects()
-                .map(CristinObject::toPublication)
-                .collect(SingletonCollector.collect());
+        Publication actualPublication = cristinObjects()
+                                            .map(CristinObject::toPublication)
+                                            .collect(SingletonCollector.collect());
         var actualPublicationInstance = actualPublication
                                             .getEntityDescription()
                                             .getReference()

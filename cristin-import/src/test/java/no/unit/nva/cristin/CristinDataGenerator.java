@@ -49,6 +49,7 @@ public class CristinDataGenerator {
                                           .withSecondaryCategory(MappingConstants.SECONDARY_CATEGORY_ANTHOLOGY)
                                           .withId(randomString())
                                           .withPublicationYear(randomYear())
+                                          .withPublicationOwner(randomString())
                                           .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;

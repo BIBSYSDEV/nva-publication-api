@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
@@ -38,13 +39,14 @@ import org.junit.jupiter.api.function.Executable;
 public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
 
     public static final Path VALID_CRISTIN_ENTRY_EVENT = Path.of("valid_cristin_entry_event.json");
-    public static final AwsEventBridgeEvent<CristinObject> VALID_CRISTIN_ENTRY_EVENT_OBJECT =
+    public static final AwsEventBridgeEvent<FileContentsEvent<CristinObject>> VALID_CRISTIN_ENTRY_EVENT_OBJECT =
         parseEvent(IoUtils.stringFromResources(VALID_CRISTIN_ENTRY_EVENT));
 
     public static final Context CONTEXT = mock(Context.class);
     public static final String DETAIL_FIELD = "detail";
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
+    public static final String OWNER_VALUE_IN_RESOURCE_FILE = "someRandomUser";
 
     private CristinEntryEventConsumer handler;
     private ByteArrayOutputStream outputStream;
@@ -88,6 +90,22 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
+    public void handlerSavesPublicationWithOwnerBeingTheSuppliedByTheEventOwner() throws JsonProcessingException {
+        String input = validEvent();
+        handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+        CristinObject cristinObject = generatePublicationFromResource(input);
+        Publication expectedPublication = cristinObject.toPublication();
+        UserInstance userInstance = extractUserInstance(expectedPublication);
+
+        Publication actualPublication = resourceService.getPublicationsByOwner(userInstance)
+                                            .stream()
+                                            .collect(SingletonCollector.collect());
+        String actualPublicationOwner = actualPublication.getOwner();
+
+        assertThat(actualPublicationOwner, is(equalTo(OWNER_VALUE_IN_RESOURCE_FILE)));
+    }
+
+    @Test
     public void handlerThrowsExceptionWhenInputDetailTypeIsNotTheExpected() throws JsonProcessingException {
         String unexpectedDetailType = "unexpectedDetailType";
         String input = eventWithInvalidDetailType(unexpectedDetailType);
@@ -105,7 +123,7 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService);
 
-        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getId();
+        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getContents().getId();
         Executable action = () -> handler.handleRequest(stringToStream(validEvent()), outputStream, CONTEXT);
 
         //execute without throwing the exception
@@ -120,12 +138,27 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService);
 
-        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getId();
+        String cristinIdentifier = Optional.of(VALID_CRISTIN_ENTRY_EVENT_OBJECT)
+                                       .map(AwsEventBridgeEvent::getDetail)
+                                       .map(FileContentsEvent::getContents)
+                                       .map(CristinObject::getId)
+                                       .orElseThrow();
         Executable action = () -> handler.handleRequest(stringToStream(validEvent()), outputStream, CONTEXT);
 
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         assertThat(exception.getMessage(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
         assertThat(exception.getCause().getMessage(), containsString(RESOURCE_EXCEPTION_MESSAGE));
+    }
+
+    private static AwsEventBridgeEvent<FileContentsEvent<CristinObject>> parseEvent(String input) {
+        JavaType detailType = objectMapperNoEmpty.getTypeFactory().constructParametricType(FileContentsEvent.class,
+                                                                                           CristinObject.class);
+
+        JavaType eventType = objectMapperNoEmpty.getTypeFactory()
+                                 .constructParametricType(AwsEventBridgeEvent.class, detailType);
+        return attempt(() -> objectMapperNoEmpty
+                                 .<AwsEventBridgeEvent<FileContentsEvent<CristinObject>>>
+                                      readValue(input, eventType)).orElseThrow();
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
@@ -137,21 +170,13 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         };
     }
 
-    private static AwsEventBridgeEvent<CristinObject> parseEvent(String input) {
-        JavaType javaType =
-            objectMapperNoEmpty.getTypeFactory()
-                .constructParametricType(AwsEventBridgeEvent.class, CristinObject.class);
-        return attempt(
-            () -> objectMapperNoEmpty.<AwsEventBridgeEvent<CristinObject>>readValue(input, javaType)).orElseThrow();
-    }
-
     private String validEvent() {
         return IoUtils.stringFromResources(VALID_CRISTIN_ENTRY_EVENT);
     }
 
     private String eventWithInvalidDetailType(String invalidDetailType) throws JsonProcessingException {
         String input = validEvent();
-        AwsEventBridgeEvent<CristinObject> event = parseEvent(input);
+        AwsEventBridgeEvent<FileContentsEvent<CristinObject>> event = parseEvent(input);
 
         event.setDetailType(invalidDetailType);
         input = objectMapperNoEmpty.writeValueAsString(event);
@@ -164,9 +189,11 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
 
     private CristinObject generatePublicationFromResource(String input) throws JsonProcessingException {
         JsonNode jsonNode = objectMapperNoEmpty.readTree(input);
-        JsonNode detail = jsonNode.get(DETAIL_FIELD);
-        CristinObject object = objectMapperNoEmpty.convertValue(detail, CristinObject.class);
-        assert nonNull(object.getId()); //java assertion produces Error not exception
-        return object;
+        String detail = jsonNode.get(DETAIL_FIELD).toString();
+        FileContentsEvent<CristinObject> eventDetails = FileContentsEvent.fromJson(detail, CristinObject.class);
+        CristinObject cristinObject = eventDetails.getContents();
+        cristinObject.setPublicationOwner(eventDetails.getPublicationsOwner());
+        assert nonNull(cristinObject.getId()); //java assertion produces Error not exception
+        return cristinObject;
     }
 }

@@ -18,22 +18,32 @@ public class ImportRequest implements JsonSerializable {
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
+    public static final String PUBLICATIONS_OWNER = "publicationsOwner";
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
+    @JsonProperty(PUBLICATIONS_OWNER)
+    private final String publicationsOwner;
 
     @JsonCreator
-    public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location) {
+    public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location,
+                         @JsonProperty(PUBLICATIONS_OWNER) String publicationsOwner) {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
+        this.publicationsOwner = Optional.ofNullable(publicationsOwner).orElseThrow();
     }
 
-    public ImportRequest(URI s3location) {
+    public ImportRequest(URI s3location, String owner) {
         this.s3Location = s3location;
+        this.publicationsOwner = owner;
     }
 
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportRequest.class))
                    .orElseThrow(fail -> handleNotParsableInputError(jsonString));
+    }
+
+    public String getPublicationsOwner() {
+        return publicationsOwner;
     }
 
     @JacocoGenerated

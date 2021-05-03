@@ -61,15 +61,18 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
         String content = fetchFileFromS3(input, s3Driver);
-        List<JsonNode> contents = parseContents(content);
-        EventEmitter<JsonNode> eventEmitter = newEventEmitter(context);
-        eventEmitter.addEvents(contents);
+        List<FileContentsEvent> eventBodies = parseContents(content)
+                                                  .stream()
+                                                  .map(contents -> new FileContentsEvent(contents, input))
+                                                  .collect(Collectors.toList());
+        EventEmitter<FileContentsEvent> eventEmitter = newEventEmitter(context);
+        eventEmitter.addEvents(eventBodies);
         List<PutEventsResult> failedEntries = eventEmitter.emitEvents();
         logWarningForNotEmittedEntries(failedEntries);
         return EMPTY_STRING;
     }
 
-    private EventEmitter<JsonNode> newEventEmitter(Context context) {
+    private EventEmitter<FileContentsEvent> newEventEmitter(Context context) {
         return new EventEmitter<>(EVENT_DETAIL_TYPE,
                                   CANONICAL_NAME,
                                   context.getInvokedFunctionArn(),
