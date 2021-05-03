@@ -10,7 +10,7 @@ dependencies {
     implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
-    implementation group:'com.github.bibsysdev.nva-user-access-service', name:'user-access-rights', version:'0.3.0'
+    implementation group:'com.github.bibsysdev.nva-user-access-service', name:'user-access-rights', version:'0.3.1'
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
 
