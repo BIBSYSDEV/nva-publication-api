@@ -85,9 +85,8 @@ public class CristinMapper {
     }
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
-        if ((isBook()) && isAnthology()) {
-            return new BookAnthology.Builder()
-                       .build();
+        if (isBook() && isAnthology()) {
+            return new BookAnthology.Builder().build();
         } else {
             return null;
         }
