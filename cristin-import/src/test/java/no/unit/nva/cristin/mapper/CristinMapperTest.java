@@ -23,6 +23,8 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
@@ -114,17 +116,21 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         testingData = Stream.of(cristinDataGenerator.randomBookAnthology())
                           .map(JsonSerializable::toJsonString)
                           .collect(SingletonCollector.collect());
+
         Publication actualPublication = cristinObjects()
                                             .map(CristinObject::toPublication)
                                             .collect(SingletonCollector.collect());
-        var actualPublicationInstance = actualPublication
-                                            .getEntityDescription()
-                                            .getReference()
-                                            .getPublicationInstance();
-        var actualPublicationContext = actualPublication
-                                           .getEntityDescription()
-                                           .getReference()
-                                           .getPublicationContext();
+
+        PublicationInstance<?> actualPublicationInstance = actualPublication
+                                                               .getEntityDescription()
+                                                               .getReference()
+                                                               .getPublicationInstance();
+        PublicationContext actualPublicationContext = actualPublication
+                                                          .getEntityDescription()
+                                                          .getReference()
+                                                          .getPublicationContext();
+
+
         assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));
     }
