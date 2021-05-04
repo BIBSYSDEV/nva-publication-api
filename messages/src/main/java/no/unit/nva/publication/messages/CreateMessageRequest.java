@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages.create;
+package no.unit.nva.publication.messages;
 
 import no.unit.nva.identifiers.SortableIdentifier;
 
