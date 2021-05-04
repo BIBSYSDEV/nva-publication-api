@@ -1257,7 +1257,8 @@ Resources:
       CodeUri: data-import-from-s3
       Handler: no.unit.nva.dataimport.DataImportHandler::importAllFilesFromFolder
       Runtime: java11
-      MemorySize: 2400
+      MemorySize: 8192
+      Timeout: 900
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
