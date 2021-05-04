@@ -53,15 +53,14 @@ public class CristinEntriesEventEmitterTest {
     public void init() {
         s3Client = new FakeS3Client(filesWithContentsAsJsonArrays());
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
-        handler = new CristinEntriesEventEmitter(s3Client, eventBridgeClient);
+        handler = newHandler();
         outputStream = new ByteArrayOutputStream();
     }
 
     @Test
     public void handlerEmitsEventWithResourceWhenFileUriExistsAndContainsDataAsJsonArray() {
         InputStream input = createRequestEventForFile(EXISTING_FILE);
-
-        CristinEntriesEventEmitter handler = new CristinEntriesEventEmitter(s3Client, eventBridgeClient);
+        CristinEntriesEventEmitter handler = newHandler();
         handler.handleRequest(input, outputStream, mock(Context.class));
         List<SampleObject> emittedResourceObjects = collectEmittedObjects(eventBridgeClient);
 
@@ -96,7 +95,7 @@ public class CristinEntriesEventEmitterTest {
     @Test
     public void handlerThrowsExceptionWhenTryingToEmitToNonExistingEventBus() {
         eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
-        handler = new CristinEntriesEventEmitter(s3Client, eventBridgeClient);
+        handler = newHandler();
         var input = createRequestEventForFile(EXISTING_FILE);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
@@ -161,6 +160,10 @@ public class CristinEntriesEventEmitterTest {
                    .map(attempt(objectMapperNoEmpty::readTree))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
+    }
+
+    private CristinEntriesEventEmitter newHandler() {
+        return new CristinEntriesEventEmitter(s3Client, eventBridgeClient);
     }
 
     private List<String> extractPublicationOwnersFromGeneratedEvents() {
