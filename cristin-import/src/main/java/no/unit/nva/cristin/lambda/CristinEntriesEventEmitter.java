@@ -69,8 +69,7 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
-        return contents.stream()
-                   .map(json -> new FileContentsEvent<>(json, input));
+        return contents.stream().map(json -> new FileContentsEvent<>(json, input));
     }
 
     private List<PutEventsResult> emitEvents(Context context, Stream<FileContentsEvent<JsonNode>> eventBodies) {

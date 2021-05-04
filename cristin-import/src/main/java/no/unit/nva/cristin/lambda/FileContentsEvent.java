@@ -8,6 +8,11 @@ import com.fasterxml.jackson.databind.JavaType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 
+/**
+ * Event containing the contents of a file and additional information that are necessary for processing the file
+ * content.
+ * @param <T> the class modeling the data structure of the file content.
+ */
 public class FileContentsEvent<T> {
 
     @JsonIgnore
