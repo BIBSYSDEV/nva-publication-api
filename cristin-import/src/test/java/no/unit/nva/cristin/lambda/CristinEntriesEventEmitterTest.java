@@ -61,6 +61,7 @@ public class CristinEntriesEventEmitterTest {
     public void handlerEmitsEventWithResourceWhenFileUriExistsAndContainsDataAsJsonArray() {
         InputStream input = createRequestEventForFile(EXISTING_FILE);
         CristinEntriesEventEmitter handler = newHandler();
+
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedResourceObjects = collectEmittedObjects(eventBridgeClient);
 
