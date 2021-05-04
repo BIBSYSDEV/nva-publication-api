@@ -3,10 +3,12 @@ package no.unit.nva.cristin.lambda;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
+import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.testutils.IoUtils.stringToStream;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -47,6 +49,7 @@ public class CristinFilenameEventEmitterTest {
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
+    public static final String SOME_USER = randomString();
     private static final Context CONTEXT = mock(Context.class);
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private CristinFilenameEventEmitter handler;
@@ -73,7 +76,7 @@ public class CristinFilenameEventEmitterTest {
 
     @Test
     public void handlerThrowsNoExceptionWhenInputIsValid() {
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
         Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
@@ -84,7 +87,7 @@ public class CristinFilenameEventEmitterTest {
     public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION + pathSeparator);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION + pathSeparator, SOME_USER);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         List<String> fileList = eventBridgeClient.listEmittedFilenames();
@@ -96,7 +99,7 @@ public class CristinFilenameEventEmitterTest {
     @Test
     public void handlerReturnsEmptyListWhenAllFilenamesHaveBeenEmittedSuccessfully()
         throws IOException {
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         PutEventsResult[] failedResultsArray =
@@ -110,7 +113,7 @@ public class CristinFilenameEventEmitterTest {
     public void handlerThrowsExceptionWhenS3LocationIsNotExistentOrEmpty() {
         handler = handlerThatReceivesEmptyS3Location();
 
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
         InputStream inputStream = toJsonStream(importRequest);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
@@ -123,7 +126,7 @@ public class CristinFilenameEventEmitterTest {
 
         TestAppender appender = LogUtils.getTestingAppender(CristinFilenameEventEmitter.class);
         handler = handlerThatFailsToEmitMessages();
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         String[] failedResultsArray = objectMapperWithEmpty.readValue(outputStream.toString(), String[].class);
@@ -140,11 +143,21 @@ public class CristinFilenameEventEmitterTest {
     public void handlerThrowsExceptionWhenEventBusCannotBeFound() {
         eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
         handler = new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
         InputStream inputStream = toJsonStream(importRequest);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
+    }
+
+    @Test
+    public void handlerEmitsEventsWithThatIncludeInputPublicationsOwner() throws IOException {
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER);
+        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
+        for (ImportRequest emittedRequest : emittedImportRequests) {
+            assertThat(emittedRequest.getPublicationsOwner(), is(equalTo(SOME_USER)));
+        }
     }
 
     private static Map<String, InputStream> fileContents() {

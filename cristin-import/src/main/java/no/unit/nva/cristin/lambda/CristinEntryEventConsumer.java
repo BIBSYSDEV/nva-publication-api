@@ -18,7 +18,7 @@ import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CristinEntryEventConsumer extends EventHandler<CristinObject, Publication> {
+public class CristinEntryEventConsumer extends EventHandler<CristinObjectEvent, Publication> {
 
     public static final String WRONG_DETAIL_TYPE_ERROR_TEMPLATE =
         "Unexpected detail-type: %s. Expected detail-type is: %s.";
@@ -39,16 +39,19 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObject, Publi
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService) {
-        super(CristinObject.class);
+        super(CristinObjectEvent.class);
         this.resourceService = resourceService;
     }
 
     @Override
-    protected Publication processInput(CristinObject input, AwsEventBridgeEvent<CristinObject> event, Context context) {
+    protected Publication processInput(CristinObjectEvent input,
+                                       AwsEventBridgeEvent<CristinObjectEvent> event,
+                                       Context context) {
         validateEvent(event);
-        Publication publication = input.toPublication();
+        CristinObject cristinObject = extractCristinObject(input);
+        Publication publication = cristinObject.toPublication();
         Try<Publication> attemptSave = persistInDatabase(publication);
-        return attemptSave.orElseThrow(fail -> handleSavingError(fail, input));
+        return attemptSave.orElseThrow(fail -> handleSavingError(fail, cristinObject));
     }
 
     @JacocoGenerated
@@ -59,7 +62,13 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObject, Publi
                    .build();
     }
 
-    private void validateEvent(AwsEventBridgeEvent<CristinObject> event) {
+    private CristinObject extractCristinObject(FileContentsEvent<CristinObject> input) {
+        CristinObject cristinObject = input.getContents();
+        cristinObject.setPublicationOwner(input.getPublicationsOwner());
+        return cristinObject;
+    }
+
+    private void validateEvent(AwsEventBridgeEvent<CristinObjectEvent> event) {
         if (!CristinEntriesEventEmitter.EVENT_DETAIL_TYPE.equals(event.getDetailType())) {
             String errorMessage = String.format(WRONG_DETAIL_TYPE_ERROR_TEMPLATE,
                                                 event.getDetailType(),

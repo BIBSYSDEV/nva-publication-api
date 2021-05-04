@@ -34,6 +34,8 @@ public class CristinObject implements JsonSerializable {
     private String mainCategory;
     @JsonProperty("varbeidunderkatkode")
     private String secondaryCategory;
+    @JsonProperty
+    private String publicationOwner;
 
     public CristinObject() {
 

@@ -56,7 +56,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
         ImportRequest importRequest = parseInput(input);
         List<URI> files = listFiles(importRequest);
         validateLocation(importRequest, files);
-        List<PutEventsResult> failedRequests = emitEvents(context, files);
+        List<PutEventsResult> failedRequests = emitEvents(context, files, importRequest.getPublicationsOwner());
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
     }
@@ -102,7 +102,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
+    private List<PutEventsResult> emitEvents(Context context, List<URI> files, String publicationsOwner) {
 
         EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(EVENT_DETAIL_TYPE,
@@ -110,7 +110,9 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);
 
-        List<ImportRequest> filenameEvents = files.stream().map(ImportRequest::new).collect(Collectors.toList());
+        List<ImportRequest> filenameEvents = files.stream()
+                                                 .map(uri -> new ImportRequest(uri, publicationsOwner))
+                                                 .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }

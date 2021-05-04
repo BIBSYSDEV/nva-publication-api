@@ -25,7 +25,6 @@ import no.unit.nva.model.pages.Pages;
 
 public class CristinMapper {
 
-    public static final String SOME_REAL_OWNER = "og@unit.no";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -38,7 +37,7 @@ public class CristinMapper {
                    .withEntityDescription(generateEntityDescription())
                    .withCreatedDate(extractEntryCreationDate())
                    .withPublisher(extractOrganization())
-                   .withOwner(SOME_REAL_OWNER)
+                   .withOwner(cristinObject.getPublicationOwner())
                    .build();
     }
 

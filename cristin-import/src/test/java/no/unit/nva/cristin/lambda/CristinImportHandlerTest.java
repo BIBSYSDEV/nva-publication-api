@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -52,7 +53,7 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerWritesPublicationsToDynamoDbsFromCristinResourcesInSpecifiedS3Location() throws IOException {
-        ImportRequest request = new ImportRequest(SOME_S3_LOCATION);
+        ImportRequest request = new ImportRequest(SOME_S3_LOCATION, randomString());
 
         handler.handleRequest(request.toInputStream(), outputStream, CONTEXT);
 
@@ -90,7 +91,7 @@ public class CristinImportHandlerTest extends AbstractCristinImportTest {
         return dao.getData().toPublication();
     }
 
-    private List<String> expectedCristinIds() throws IOException {
+    private List<String> expectedCristinIds() {
         return cristinObjects().map(CristinObject::getId).collect(Collectors.toList());
     }
 }

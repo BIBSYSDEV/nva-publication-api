@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 import org.apache.commons.collections4.ListUtils;
@@ -47,8 +48,8 @@ public class EventEmitter<T> {
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
-    private List<PutEventsRequest> putEventsRequests;
     private final String eventSource;
+    private List<PutEventsRequest> putEventsRequests;
 
     public EventEmitter(String detailType,
                         String eventSource,
@@ -66,8 +67,17 @@ public class EventEmitter<T> {
      * @param eventDetails A collection of details for the respective events.
      */
     public void addEvents(Collection<T> eventDetails) {
-        List<PutEventsRequestEntry> eventRequestEntries =
-            eventDetails.stream().map(this::createPutEventRequestEntry).collect(Collectors.toList());
+        addEvents(eventDetails.stream());
+    }
+
+    /**
+     * Create one event for every element in the "eventDetails" list.
+     *
+     * @param eventDetails A collection of details for the respective events.
+     */
+    public void addEvents(Stream<T> eventDetails) {
+        List<PutEventsRequestEntry> eventRequestEntries = eventDetails.map(this::createPutEventRequestEntry)
+                                                              .collect(Collectors.toList());
         putEventsRequests = createBatchesOfPutEventsRequests(eventRequestEntries);
     }
 

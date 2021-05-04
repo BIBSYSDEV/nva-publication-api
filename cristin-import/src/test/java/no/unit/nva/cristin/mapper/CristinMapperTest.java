@@ -130,6 +130,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                           .getReference()
                                                           .getPublicationContext();
 
+
         assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));
     }

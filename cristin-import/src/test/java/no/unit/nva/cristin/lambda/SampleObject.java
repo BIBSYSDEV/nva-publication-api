@@ -71,4 +71,8 @@ public class SampleObject implements JsonSerializable {
     private static String randomString() {
         return FAKER.lorem().sentence(2);
     }
+
+    public String toString() {
+        return toJsonString();
+    }
 }
