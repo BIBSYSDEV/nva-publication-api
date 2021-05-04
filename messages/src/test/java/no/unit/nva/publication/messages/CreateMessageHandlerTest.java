@@ -1,4 +1,4 @@
-package no.unit.nva.publication.messages.create;
+package no.unit.nva.publication.messages;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;

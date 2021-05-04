@@ -1,4 +1,4 @@
-package no.unit.nva.pubication.messages.list;
+package no.unit.nva.publication.messages;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;

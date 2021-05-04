@@ -958,8 +958,8 @@ Resources:
   NvaCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-message
-      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.CreateMessageHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -980,8 +980,8 @@ Resources:
   NvaListMessagesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: list-messages
-      Handler: no.unit.nva.pubication.messages.list.ListMessagesHandler::handleRequest
+      CodeUri: messages
+      Handler: no.unit.nva.pubication.messages.ListMessagesHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
