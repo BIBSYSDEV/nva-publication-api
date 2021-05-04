@@ -1,0 +1,114 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix cr:     <http://api.cristin.no/> .
+
+#Info about rdfs types
+#https://www.w3.org/TR/rdf-schema/#ch_resource
+
+cr:hasExactlyOne
+    rdf:type rdf:Property .
+
+cr:hasExactlyOne
+    rdf:label "property with exactly one value" .
+
+cr:hasExactlyOne
+    rdfs:range rdfs:Resource .
+
+cr:hasExactlyOne
+    rdfs:domain cr:Result .
+
+
+
+cr:Result
+    rdf:type rdfs:Class .
+
+cr:Result
+    cr:hasExactlyOne cr:Id .
+
+cr:Result
+    cr:hasExactlyOne cr:arstall .
+
+cr:Result
+    cr:hasExactlyOne cr:dato_opprettet .
+
+cr:Result
+    cr:hasExactlyOne cr:dato_opprettet .
+
+cr:Result
+    cr:hasExactlyOne cr:varbeidhovedkatkode .
+
+cr:Result
+    cr:hasExactlyOne cr:varbeidunderkatkode .
+
+
+
+cr:Id
+    rdf:type rdf:Property .
+
+cr:Id
+    rdfs:label "Identifier of Cristin Result entry" .
+
+cr:Id
+    rdfs:range xsd:positiveInteger .
+
+cr:Id
+    rdfs:domain cr:Result .
+
+
+cr:arstall
+    rdf:type rdf:Property .
+
+cr:arstall
+    rdfs:label "The year a resource (result) was published" .
+
+cr:arstall
+    rdfs:range xsd:positiveInteger .
+
+cr:arstall
+    rdfs:domain cr:Result .
+
+cr:dato_opprettet
+    rdf:type rdf:Property .
+
+cr:arstall
+    rdfs:label "The date the resource was registered in Cristin" .
+
+cr:arstall
+    rdfs:range xsd:date .
+
+cr:arstall
+    rdfs:domain cr:Result .
+
+cr:varbeidhovedkatkode
+    rdf:type rdf:Property .
+
+cr:varbeidhovedkatkode
+    rdfs:label "The main category of the resource" .
+
+cr:varbeidhovedkatkode
+    rdfs:comment
+        "The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en" .
+
+cr:arstall
+    rdfs:range xsd:string .
+
+cr:arstall
+    rdfs:domain cr:Result .
+
+cr:varbeidunderkatkode
+    rdf:type rdf:Property .
+
+cr:varbeidunderkatkode
+    rdfs:label "The secondary category of the resource" .
+
+cr:varbeidunderkatkode
+    rdfs:comment "No specific range available at the moment" .
+
+cr:varbeidunderkatkode
+    rdfs:range xsd:string .
+
+cr:varbeidunderkatkode
+    rdfs:domain cr:Result .
+
+
