@@ -13,13 +13,12 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent, Publication> {
+public class CristinEntryEventConsumer extends EventHandler<CristinObjectEvent, Publication> {
 
     public static final String WRONG_DETAIL_TYPE_ERROR_TEMPLATE =
         "Unexpected detail-type: %s. Expected detail-type is: %s.";
@@ -40,13 +39,13 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent, P
     }
 
     protected CristinEntryEventConsumer(ResourceService resourceService) {
-        super(FileContentsEvent.class);
+        super(CristinObjectEvent.class);
         this.resourceService = resourceService;
     }
 
     @Override
-    protected Publication processInput(FileContentsEvent input,
-                                       AwsEventBridgeEvent<FileContentsEvent> event,
+    protected Publication processInput(CristinObjectEvent input,
+                                       AwsEventBridgeEvent<CristinObjectEvent> event,
                                        Context context) {
         validateEvent(event);
         CristinObject cristinObject = extractCristinObject(input);
@@ -63,14 +62,13 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent, P
                    .build();
     }
 
-    private CristinObject extractCristinObject(FileContentsEvent input) {
-        CristinObject cristinObject =
-            JsonUtils.objectMapperNoEmpty.convertValue(input.getContents(), CristinObject.class);
+    private CristinObject extractCristinObject(FileContentsEvent<CristinObject> input) {
+        CristinObject cristinObject = input.getContents();
         cristinObject.setPublicationOwner(input.getPublicationsOwner());
         return cristinObject;
     }
 
-    private void validateEvent(AwsEventBridgeEvent<FileContentsEvent> event) {
+    private void validateEvent(AwsEventBridgeEvent<CristinObjectEvent> event) {
         if (!CristinEntriesEventEmitter.EVENT_DETAIL_TYPE.equals(event.getDetailType())) {
             String errorMessage = String.format(WRONG_DETAIL_TYPE_ERROR_TEMPLATE,
                                                 event.getDetailType(),

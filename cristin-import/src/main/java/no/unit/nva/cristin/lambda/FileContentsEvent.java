@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.lambda;
 
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
@@ -10,15 +11,16 @@ import nva.commons.core.JsonUtils;
 public class FileContentsEvent<T> {
 
     @JsonIgnore
-    private static final String CONTENTS_FIELD = "contents";
+    protected static final String CONTENTS_FIELD = "contents";
     @JsonIgnore
-    private static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
+    protected static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
     @JsonProperty(CONTENTS_FIELD)
     private final T contents;
     @JsonProperty(PUBLICATIONS_OWNER_FIELD)
     private final String publicationsOwner;
 
     @JacocoGenerated
+    @JsonCreator
     public FileContentsEvent(@JsonProperty(CONTENTS_FIELD) T contents,
                              @JsonProperty(PUBLICATIONS_OWNER_FIELD) String publicationsOwner) {
         this.contents = contents;

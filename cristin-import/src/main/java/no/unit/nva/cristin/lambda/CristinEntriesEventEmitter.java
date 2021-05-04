@@ -61,22 +61,25 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
         String content = fetchFileFromS3(input, s3Driver);
-        List<FileContentsEvent> eventBodies = parseContents(content)
-                                                  .stream()
-                                                  .map(contents -> new FileContentsEvent(contents, input))
-                                                  .collect(Collectors.toList());
-        EventEmitter<FileContentsEvent> eventEmitter = newEventEmitter(context);
-        eventEmitter.addEvents(eventBodies);
-        List<PutEventsResult> failedEntries = eventEmitter.emitEvents();
+        List<JsonNode> contents = parseContents(content);
+        Stream<FileContentsEvent<JsonNode>> eventBodies = generateEventBodies(input, contents);
+        List<PutEventsResult> failedEntries = emitEvents(context, eventBodies);
         logWarningForNotEmittedEntries(failedEntries);
         return EMPTY_STRING;
     }
 
-    private EventEmitter<FileContentsEvent> newEventEmitter(Context context) {
-        return new EventEmitter<>(EVENT_DETAIL_TYPE,
-                                  CANONICAL_NAME,
-                                  context.getInvokedFunctionArn(),
-                                  eventBridgeClient);
+    private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
+        return contents.stream()
+                   .map(json -> new FileContentsEvent<>(json, input));
+    }
+
+    private List<PutEventsResult> emitEvents(Context context, Stream<FileContentsEvent<JsonNode>> eventBodies) {
+        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter = new EventEmitter<>(EVENT_DETAIL_TYPE,
+                                                                                    CANONICAL_NAME,
+                                                                                    context.getInvokedFunctionArn(),
+                                                                                    eventBridgeClient);
+        eventEmitter.addEvents(eventBodies);
+        return eventEmitter.emitEvents();
     }
 
     private String fetchFileFromS3(ImportRequest input, S3Driver s3Driver) {
@@ -126,8 +129,7 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
     }
 
     private List<JsonNode> parseContentAsJsonArray(String content) throws JsonProcessingException {
-        return toStream(parseAsArrayNode(content))
-                   .collect(Collectors.toList());
+        return toStream(parseAsArrayNode(content)).collect(Collectors.toList());
     }
 
     private ArrayNode parseAsArrayNode(String content) throws JsonProcessingException {
