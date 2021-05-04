@@ -7,51 +7,99 @@
 #https://www.w3.org/TR/rdf-schema/#ch_resource
 
 cr:hasExactlyOne
-    rdf:type    rdf:Property ;
-    rdfs:label  "property with exactly one value" ;
-    rdfs:range  rdfs:Resource ;
-    rdfs:domain cr:Result .
+    rdf:type     rdf:Property ;
+    rdfs:comment "property with exactly one value" ;
+    rdfs:range   rdfs:Resource ;
+    rdfs:domain  cr:Result .
 
 cr:Result
     rdf:type         rdfs:Class ;
     cr:hasExactlyOne cr:Id ;
     cr:hasExactlyOne cr:arstall ;
     cr:hasExactlyOne cr:dato_opprettet ;
-    cr:hasExactlyOne cr:dato_opprettet ;
     cr:hasExactlyOne cr:varbeidhovedkatkode ;
-    cr:hasExactlyOne cr:varbeidunderkatkode .
+    cr:hasExactlyOne cr:varbeidunderkatkode ;
+    cr:hasExactlyOne cr:eierkode_opprettet ;
+    cr:hasExactlyOne cr:eierkode_siste_endring ;
+    cr:hasExactlyOne cr:dato_siste_endring ;
+    cr:hasExactlyOne cr:publiseringstatuskode ;
+    cr:hasExactlyOne cr:dato_utgitt ;
+    cr:hasExactlyOne cr:arstall_rapportert .
 
 cr:Id
-    rdf:type    rdf:Property ;
-    rdfs:label  "Identifier of Cristin Result entry" ;
-    rdfs:range  xsd:positiveInteger ;
-    rdfs:domain cr:Result .
+    rdf:type     rdf:Property ;
+    rdfs:comment "Identifier of Cristin Result entry" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  cr:Result .
 
 cr:arstall
-    rdf:type    rdf:Property ;
-    rdfs:label  "The year a resource (result) was published" ;
-    rdfs:range  xsd:positiveInteger ;
-    rdfs:domain cr:Result .
+    rdf:type     rdf:Property ;
+    rdfs:comment "The year a resource (result) was published" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  cr:Result .
 
 cr:dato_opprettet
-    rdf:type    rdf:Property ;
-    rdfs:label  "The date the resource was registered in Cristin" ;
-    rdfs:range  xsd:date ;
-    rdfs:domain cr:Result .
+    rdf:type     rdf:Property ;
+    rdfs:comment "The date the resource was registered in Cristin" ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  cr:Result .
 
 cr:varbeidhovedkatkode
-    rdf:type    rdf:Property ;
-    rdfs:label  "The main category of the resource" ;
-    rdfs:comment
-                "The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en" ;
-    rdfs:range  xsd:string ;
-    rdfs:domain cr:Result .
+    rdf:type     rdf:Property ;
+    rdfs:comment "The main category of the resource" ;
+    rdfs:comment "The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  cr:Result .
 
 cr:varbeidunderkatkode
     rdf:type     rdf:Property ;
-    rdfs:label   "The secondary category of the resource" ;
+    rdfs:comment "The secondary category of the resource" ;
     rdfs:comment "No specific range available at the moment" ;
     rdfs:range   xsd:string ;
     rdfs:domain  cr:Result .
 
 
+cr:eierkode_opprettet
+    rdf:type     rdf:Property ;
+    rdfs:comment "The institution of the person who created the first version of the registration " ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  cr:Result .
+
+
+cr:eierkode_siste_endring
+    rdf:type     rdf:Property ;
+    rdfs:comment "The institution of the person who edited last the registration " ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  cr:Result .
+
+cr:dato_siste_endring
+    rdf:type     rdf:Property ;
+    rdfs:comment "The date of the last update of the registration " ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  cr:Result .
+
+cr:publiseringstatuskode
+    rdf:type     rdf:Property ;
+    rdfs:comment "Published it can only be published" ;
+    rdfs:range   " PUBLISERT"^^xsd:string ;
+    rdfs:domain  cr:Result .
+
+
+cr:dato_utgitt
+    rdf:type     rdf:Property ;
+    rdfs:comment "Date the resource was published (e.g. through Elsevier or in OpenAccess Journal" ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  cr:Result .
+
+cr:arstall_rapportert
+    rdf:type     rdf:Property ;
+    rdfs:comment "Year that the resource was registered in Cristin" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  cr:Result .
+
+
+cr:merknadtekst
+    rdf:type     rdf:Property ;
+    rdfs:comment "UNKNOO" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  cr:Result .
