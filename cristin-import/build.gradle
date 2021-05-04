@@ -55,6 +55,10 @@ dependencies {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
 
+    compileOnly(group: 'commons-validator', name: 'commons-validator', version: '1.7'){
+        because "PMD org/apache/commons/validator/routines/ISBNValidator"
+    }
+
 }
 
 test {

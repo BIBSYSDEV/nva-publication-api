@@ -8,11 +8,18 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.Publication;
+import nva.commons.core.JsonSerializable;
 
 @Data
-@Builder
+@Builder(
+    builderClassName = "CristinObjectBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with"
+)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-public class CristinObject {
+public class CristinObject implements JsonSerializable {
 
     public static String IDENTIFIER_ORIGIN = "Cristin";
     @JsonProperty("id")
@@ -23,6 +30,10 @@ public class CristinObject {
     private LocalDate entryCreationDate;
     @JsonProperty("VARBEID_SPRAK")
     private List<CristinTitle> cristinTitles;
+    @JsonProperty("varbeidhovedkatkode")
+    private String mainCategory;
+    @JsonProperty("varbeidunderkatkode")
+    private String secondaryCategory;
 
     public CristinObject() {
 
