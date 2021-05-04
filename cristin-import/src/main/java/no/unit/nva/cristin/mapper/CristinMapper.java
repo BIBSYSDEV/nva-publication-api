@@ -15,6 +15,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -38,6 +39,7 @@ public class CristinMapper {
                    .withCreatedDate(extractEntryCreationDate())
                    .withPublisher(extractOrganization())
                    .withOwner(cristinObject.getPublicationOwner())
+                   .withStatus(PublicationStatus.DRAFT)
                    .build();
     }
 
