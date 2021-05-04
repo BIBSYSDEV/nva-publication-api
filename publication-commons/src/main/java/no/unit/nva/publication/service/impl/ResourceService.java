@@ -97,7 +97,8 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(resource);
     }
 
-    private Publication insertResource(Resource newResource) throws TransactionFailedException {
+    private Publication
+    insertResource(Resource newResource) throws TransactionFailedException {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);
