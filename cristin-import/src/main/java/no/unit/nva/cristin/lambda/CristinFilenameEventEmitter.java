@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -37,6 +38,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
     public static final String CANONICAL_NAME = CristinFilenameEventEmitter.class.getCanonicalName();
+    public static final String EMPTY_FRAGMENT = null;
     private static final Logger logger = LoggerFactory.getLogger(CristinFilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -62,9 +64,9 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
     }
 
     private URI createUri(URI s3Location, String filename) {
-        return s3Location.getPath().endsWith(PATH_SEPARATOR)
-                   ? URI.create(s3Location + filename)
-                   : URI.create(s3Location + PATH_SEPARATOR + filename);
+        String filePath = filename.startsWith(PATH_SEPARATOR) ? filename : PATH_SEPARATOR + filename;
+        return attempt(() -> new URI(s3Location.getScheme(), s3Location.getHost(), filePath, EMPTY_FRAGMENT))
+                   .orElseThrow();
     }
 
     private void returnNotEmittedFilenames(OutputStream output, List<PutEventsResult> failedRequests)
@@ -77,6 +79,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
         URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
         List<String> filenames = s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+        logger.info(attempt(() -> JsonUtils.objectMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream().map(filename -> createUri(s3Location, filename)).collect(Collectors.toList());
     }
 
