@@ -22,6 +22,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -79,6 +80,17 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
+    public void mapReturnsResourcePublicationStatusDraft() {
+
+        List<Publication> publications = cristinObjects()
+                                             .map(CristinObject::toPublication)
+                                             .collect(Collectors.toList());
+        for (Publication publication : publications) {
+            assertThat(publication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
+        }
+    }
+
+    @Test
     @DisplayName("map returns resource with date equal to \"arstall\"")
     public void mapReturnsResourceWithDateEqualToArstall() {
         List<String> expectedPublicationYear = cristinObjects()
@@ -129,7 +141,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                           .getEntityDescription()
                                                           .getReference()
                                                           .getPublicationContext();
-
 
         assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));

@@ -958,8 +958,8 @@ Resources:
   NvaCreateMessageFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-message
-      Handler: no.unit.nva.publication.messages.create.CreateMessageHandler::handleRequest
+      CodeUri: messages
+      Handler: no.unit.nva.publication.messages.CreateMessageHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -980,8 +980,8 @@ Resources:
   NvaListMessagesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: list-messages
-      Handler: no.unit.nva.pubication.messages.list.ListMessagesHandler::handleRequest
+      CodeUri: messages
+      Handler: no.unit.nva.pubication.messages.ListMessagesHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -1257,7 +1257,8 @@ Resources:
       CodeUri: data-import-from-s3
       Handler: no.unit.nva.dataimport.DataImportHandler::importAllFilesFromFolder
       Runtime: java11
-      MemorySize: 2400
+      MemorySize: 8192
+      Timeout: 900
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:

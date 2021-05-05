@@ -1,6 +1,6 @@
-package no.unit.nva.pubication.messages.list;
+package no.unit.nva.publication.messages;
 
-import static no.unit.nva.pubication.messages.list.ListMessagesHandler.CREATOR_ROLE;
+import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
