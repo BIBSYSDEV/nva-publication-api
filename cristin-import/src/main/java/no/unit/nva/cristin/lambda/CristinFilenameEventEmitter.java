@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda;
 import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.cristin.lambda.ApplicationConstants.defaultS3Client;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -77,6 +78,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
         URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
         List<String> filenames = s3Driver.listFiles(Path.of(importRequest.extractPathFromS3Location()));
+        logger.info(attempt(() -> JsonUtils.objectMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream().map(filename -> createUri(s3Location, filename)).collect(Collectors.toList());
     }
 
