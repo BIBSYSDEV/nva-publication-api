@@ -42,8 +42,10 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class CristinFilenameEventEmitterTest {
 
-    public static final String SOME_S3_LOCATION = "s3://some/location";
-    public static final String FILE_01 = "file01";
+    public static final String SOME_BUCKET = "s3://bucket/";
+    public static final String SOME_FOLDER = "some/folder/";
+    public static final String SOME_S3_LOCATION = SOME_BUCKET + SOME_FOLDER;
+    public static final String FILE_01 = SOME_FOLDER + "file01";
     public static final String FILE_02 = "file02";
     public static final List<String> FILE_LIST = List.of(FILE_01, FILE_02);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
@@ -173,7 +175,7 @@ public class CristinFilenameEventEmitterTest {
 
     private String[] expectedFileUris() {
         return FILE_LIST.stream()
-                   .map(filename -> SOME_S3_LOCATION + PATH_SEPARATOR + filename)
+                   .map(filename -> SOME_BUCKET + filename)
                    .collect(Collectors.toList())
                    .toArray(String[]::new);
     }

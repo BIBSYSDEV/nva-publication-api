@@ -37,7 +37,7 @@ public class CristinEntriesEventEmitterTest {
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
     public static final String SOME_USER = randomString();
-    public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/location.file", SOME_USER);
+    public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/folder/location.file", SOME_USER);
     public static final ImportRequest NON_EXISTING_FILE = new ImportRequest("s3://some/s3/nonexisting.file", SOME_USER);
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
