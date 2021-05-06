@@ -1,6 +1,5 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -9,7 +8,6 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -20,10 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.cristin.lambda.constants.ApplicationConstants;
-import no.unit.nva.cristin.lambda.dtos.FileContentsEvent;
-import no.unit.nva.cristin.lambda.dtos.ImportRequest;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
@@ -32,6 +28,7 @@ import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.mockito.Mockito;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -39,13 +36,13 @@ public class CristinEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
-    public static final String SOME_USER = randomString();
+    public static final String SOME_USER = PublicationGenerator.randomString();
     public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/folder/location.file", SOME_USER);
     public static final ImportRequest NON_EXISTING_FILE = new ImportRequest("s3://some/s3/nonexisting.file", SOME_USER);
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final SampleObject[] FILE_01_CONTENTS = randomContents().toArray(SampleObject[]::new);
-    public static final Context CONTEXT = mock(Context.class);
+    public static final Context CONTEXT = Mockito.mock(Context.class);
     public static final String SOME_OTHER_BUS = "someOtherBus";
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;

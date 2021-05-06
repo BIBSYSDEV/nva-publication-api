@@ -1,6 +1,6 @@
-package no.unit.nva.cristin.lambda.dtos;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

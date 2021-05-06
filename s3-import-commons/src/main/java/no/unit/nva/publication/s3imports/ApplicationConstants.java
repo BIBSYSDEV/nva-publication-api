@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.lambda.constants;
+package no.unit.nva.publication.s3imports;
 
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;

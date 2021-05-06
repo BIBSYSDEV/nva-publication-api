@@ -1,8 +1,8 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.publication.s3imports;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.defaultEventBridgeClient;
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -18,8 +18,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.cristin.lambda.dtos.ImportRequest;
-import no.unit.nva.cristin.lambda.dtos.PutEventsResult;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;

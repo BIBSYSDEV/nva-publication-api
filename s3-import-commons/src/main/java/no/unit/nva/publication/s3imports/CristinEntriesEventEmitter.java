@@ -1,8 +1,8 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EMPTY_STRING;
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.defaultEventBridgeClient;
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -14,9 +14,6 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import no.unit.nva.cristin.lambda.dtos.FileContentsEvent;
-import no.unit.nva.cristin.lambda.dtos.ImportRequest;
-import no.unit.nva.cristin.lambda.dtos.PutEventsResult;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
