@@ -1,0 +1,302 @@
+@prefix rdf:    <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:   <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix :       <http://www.example.com/cristin-ontology#> .
+
+#Info about rdfs types
+#https://www.w3.org/TR/rdf-schema/#ch_resource
+
+:Result
+    a            rdfs:Class ;
+    rdfs:comment "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
+
+:PublicationStatus
+    a rdfs:Class .
+
+:Published
+    a               rdfs:Class ;
+    rdfs:label      "PUBLISHED" ;
+    rdfs:subClassOf :PublicationStatus .
+
+:VARBEID_SPRAK_Class
+    a            rdfs:Class ;
+    rdfs:comment "The structure defining the VARBEID_SPRAK property." .
+
+:VARBEID_PERSON_Class
+    a            rdfs:Class ;
+    rdfs:comment """
+    The structure of the VARARBEID_PERSON entry. It contains information about the status of the contributor
+    at the time the Result was registered in Cristin.
+    """ .
+
+:VARBEID_PERSON_STED_Class
+    a            rdfs:Class ;
+    rdfs:comment """
+    The structure of the VARBEID_PERSON_STED entry.
+    It contains information about the status of a contributor's institution at the time the Result
+    was registered in Cristin. It is uncertain whether the contributor presently belongs to the same institution,
+    or if the institution status has changed.
+    """ .
+
+:VARBEID_PERSON_STED_ROLLE_Class
+    a            rdfs:Class ;
+    rdfs:comment """
+     The structure of VARBEID_PERSON_STED_ROLLE. It contains information about the role of
+    the contributor in their institution at the time the Result was registered in Cristin. It is uncertain
+    whether the contributor presnetly holds the same role, or they belong to the same institution, or the
+    role still exists, or the institution's status has changed.
+    """ .
+
+:id
+    a            rdf:Property ;
+    rdfs:comment "Identifier of Cristin Result entry." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result .
+
+:arstall
+    a            rdf:Property ;
+    rdfs:comment "The year a resource (result) was published." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result .
+
+:dato_opprettet
+    a            rdf:Property ;
+    rdfs:comment "The date the resource was registered in Cristin." ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  :Result .
+
+:varbeidhovedkatkode
+    a            rdf:Property ;
+    rdfs:comment """
+    The main category of the resource,
+    The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+:varbeidunderkatkode
+    a            rdf:Property ;
+    rdfs:comment "The secondary category of the resource. No specific range available at the moment." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+:eierkode_opprettet
+    a            rdf:Property ;
+    rdfs:comment "The institution of the person who created the first version of the registration." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+
+:eierkode_siste_endring
+    a            rdf:Property ;
+    rdfs:comment "The institution of the person who edited last the registration." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+:dato_siste_endring
+    a            rdf:Property ;
+    rdfs:comment "The date of the last update of the registration." ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  :Result .
+
+:publiseringstatuskode
+    a            rdf:Property ;
+    rdfs:comment """
+    The publication status of the entry in Cristin, i.e., whether the metadata are publicly available or not.
+    This status is not related to the status of the actual data, e.g. whether the actual material has been
+    published by some publisher (e.g. Elsevier).
+    """ ;
+    rdfs:range   xsd:string ; # it can only be "PUBLISERT"
+    rdfs:domain  :Result .
+
+
+:dato_utgitt
+    a            rdf:Property ;
+    rdfs:comment "Date the resource was published (e.g. through Elsevier or in OpenAccess Journal)." ;
+    rdfs:range   xsd:date ;
+    rdfs:domain  :Result .
+
+:arstall_rapportert
+    a            rdf:Property ;
+    rdfs:comment "Year that the resource was registered in Cristin." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result .
+
+
+:merknadtekst
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+:merknadtekst_godkjenning
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :Result .
+
+:kildekode
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property." ;
+    rdfs:range   xsd:anyURI ;
+    rdfs:domain  :Result .
+
+:kildepostid
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property." ;
+    rdfs:range   xsd:anyURI ;
+    rdfs:domain  :Result .
+
+:pubidnr
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :Result .
+
+:VARBEID_SPRAK
+    a            rdf:Property ;
+    rdfs:comment """
+    A language that this work has been published in, the respective title, and the respective abstract
+    and an indication whether it is the original language or a translation.
+    """ ;
+    rdfs:range   :VARBEID_SPRAK_Class ;
+    rdfs:domain  :Result .
+
+:sprakkode
+    a            rdf:Property ;
+    rdfs:comment """
+    The language of the title and the abstract included in the VARARBEID_SPRAK entry.
+    The range could possibly be an xsd:language.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_SPRAK_Class .
+
+:tittletekst
+    a            rdf:Property ;
+    rdfs:comment "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_SPRAK_Class .
+
+:sammendragtekst
+    a            rdf:Property ;
+    rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_SPRAK_Class .
+
+:status_original
+    a            rdf:Property ;
+    rdfs:comment """
+    Indicator of whether the title in the respective VARBEID_SPRAK is the original title or not.
+    Known possible values are 'J' (which is possibly a representation for the boolean value 'true').
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_SPRAK_Class .
+
+:VITENSKAPELIGARBEID_LOKAL
+    a            rdf:Property ;
+    rdfs:comment "UNKONWN property" ;
+    rdfs:domain  :Result .
+
+:VARBEID_PERSON
+    a            rdf:Property ;
+    rdfs:comment "A contributor to the respective result entry." ;
+    rdfs:range   :VARBEID_PERSON_Class ;
+    rdfs:domain  :Result .
+
+:personlopenr
+    a            rdf:Property ;
+    rdfs:comment "The Cristin Person identifier of the contributor" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_Class .
+
+:fornavn
+    a            rdf:Property ;
+    rdfs:comment "The first/given name of the contributor of the respective result entry" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_Class .
+
+:etternavn
+    a            rdf:Property ;
+    rdfs:comment "The surname/family-name of the contributor of the respective result entry" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_Class .
+
+:VARBEID_PERSON_STED
+    a            rdf:Property ;
+    rdfs:comment """
+    Details about the institution which the contributor belongs to and the contributors role to the institution
+    at the time the publication was registered in Cristin.
+    """ ;
+    rdfs:range   :VARBEID_PERSON_STED_Class ;
+    rdfs:domain  :VARBEID_PERSON_Class .
+
+:institusjonsnr
+    a            rdf:Property ;
+    rdfs:comment "The Cristin institution identifier of the respective institution." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:avdnr
+    a            rdf:Property ;
+    rdfs:comment "Department number. More information about the origin of the number is necessary" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:undavdnr
+    a            rdf:Property ;
+    rdfs:comment "Sub-department number. More information about the origin of the number is necessary." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:gruppenr
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:stedkode_opprinnelig
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:institusjonsnavn_opprinnelig
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:avdelingsnavn_opprinnelig
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:stednavn_opprinnelig
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:vekting
+    a            rdf:Property ;
+    rdfs:comment "UNKNOWN property" ;
+    rdfs:range   rdf:nil ; #unknown range
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:VARBEID_PERSON_STED_ROLLE
+    a            rdf:Property ;
+    rdfs:comment """
+        The role of the respective person in the respective institution at the time the respective Result was registered in
+        Cristin.
+        """ ;
+    rdfs:range   :VARBEID_PERSON_STED_ROLLE_Class ;
+    rdfs:domain  :VARBEID_PERSON_STED_Class .
+
+:rollekode
+    a            rdf:Property ;
+    rdfs:comment "The role-code of the role of the contributor at the respective institution for the specific Result." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class .
+
+
