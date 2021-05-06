@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.cristin.lambda.constants;
 
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;

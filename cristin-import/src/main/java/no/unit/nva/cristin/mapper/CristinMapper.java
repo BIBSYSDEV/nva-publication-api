@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-import no.unit.nva.cristin.MappingConstants;
+import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;

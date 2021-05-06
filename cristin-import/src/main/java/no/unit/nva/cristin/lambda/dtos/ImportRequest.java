@@ -1,17 +1,15 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.cristin.lambda.dtos;
 
-import static no.unit.nva.cristin.lambda.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EMPTY_STRING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
-import nva.commons.core.ioutils.IoUtils;
 
 public class ImportRequest implements JsonSerializable {
 
@@ -85,10 +83,6 @@ public class ImportRequest implements JsonSerializable {
     @JacocoGenerated
     public String toString() {
         return toJsonString();
-    }
-
-    public InputStream toInputStream() {
-        return IoUtils.stringToStream(toJsonString());
     }
 
     private static IllegalArgumentException handleNotParsableInputError(String inputString) {
