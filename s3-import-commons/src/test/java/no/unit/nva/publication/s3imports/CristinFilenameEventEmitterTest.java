@@ -1,18 +1,17 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.PATH_SEPARATOR;
-import static no.unit.nva.cristin.lambda.CristinFilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
-import static no.unit.nva.testutils.IoUtils.stringToStream;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.CristinFilenameEventEmitter.PATH_SEPARATOR;
+import static no.unit.nva.publication.s3imports.CristinFilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -28,9 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import no.unit.nva.cristin.lambda.constants.ApplicationConstants;
-import no.unit.nva.cristin.lambda.dtos.ImportRequest;
-import no.unit.nva.cristin.lambda.dtos.PutEventsResult;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -65,7 +61,7 @@ public class CristinFilenameEventEmitterTest {
     @BeforeEach
     public void init() {
         outputStream = new ByteArrayOutputStream();
-        this.eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
+        eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
         handler = new CristinFilenameEventEmitter(s3Client, eventBridgeClient);
@@ -74,7 +70,7 @@ public class CristinFilenameEventEmitterTest {
     @Test
     public void handlerThrowsExceptionWhenInputIsInvalid() throws JsonProcessingException {
         String json = invalidBody();
-        Executable action = () -> handler.handleRequest(stringToStream(json), outputStream, CONTEXT);
+        Executable action = () -> handler.handleRequest(IoUtils.stringToStream(json), outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(), containsString(json));
     }

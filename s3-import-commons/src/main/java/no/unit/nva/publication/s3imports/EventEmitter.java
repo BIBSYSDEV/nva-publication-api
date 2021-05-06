@@ -1,6 +1,5 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EVENT_BUS_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import java.time.Instant;
 import java.util.Collection;
@@ -8,7 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.cristin.lambda.dtos.PutEventsResult;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 import org.apache.commons.collections4.ListUtils;
@@ -112,20 +110,21 @@ public class EventEmitter<T> {
 
     private void checkBus() {
         List<String> busNames =
-            client.listEventBuses(ListEventBusesRequest.builder().namePrefix(EVENT_BUS_NAME).build())
+            client.listEventBuses(
+                ListEventBusesRequest.builder().namePrefix(ApplicationConstants.EVENT_BUS_NAME).build())
                 .eventBuses()
                 .stream()
                 .map(EventBus::name)
                 .collect(Collectors.toList());
-        if (!busNames.contains(EVENT_BUS_NAME)) {
-            throw new IllegalStateException(BUS_NOT_FOUND_ERROR + EVENT_BUS_NAME);
+        if (!busNames.contains(ApplicationConstants.EVENT_BUS_NAME)) {
+            throw new IllegalStateException(BUS_NOT_FOUND_ERROR + ApplicationConstants.EVENT_BUS_NAME);
         }
     }
 
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
 
         return PutEventsRequestEntry.builder()
-                   .eventBusName(EVENT_BUS_NAME)
+                   .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
                    .resources(invokingFunctionArn)
                    .detailType(detailType)
                    .time(Instant.now())

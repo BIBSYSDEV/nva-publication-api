@@ -3,6 +3,7 @@ package no.unit.nva.cristin.lambda.dtos;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
 
 /**
  * Wrapper class for using in Lambda functions.

@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.lambda.dtos;
+package no.unit.nva.publication.s3imports;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
