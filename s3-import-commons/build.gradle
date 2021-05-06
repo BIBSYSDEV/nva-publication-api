@@ -2,10 +2,6 @@ dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
 
-//    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-//        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-//    }
-
     implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'eventhandlers', version: project.ext.nvaCommonsVersion
