@@ -1207,7 +1207,7 @@ Resources:
   CristinEntriesEventEmitter:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3-import.commons
+      CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.CristinEntriesEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 4096
@@ -1286,7 +1286,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
-      Handler: no.unit.nva.publication.s3imports.CristinFilenameEventEmitter::handleRequest
+      Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 4096
       Timeout: 300 # 5 min timeout

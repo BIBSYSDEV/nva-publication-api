@@ -29,26 +29,26 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class CristinFilenameEventEmitter implements RequestStreamHandler {
+public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
-    public static final String EVENT_DETAIL_TYPE = "import.cristin.filename-event";
+    public static final String EVENT_DETAIL_TYPE = "import.filename-event";
     public static final String LINE_SEPARATOR = System.lineSeparator();
 
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
-    public static final String CANONICAL_NAME = CristinFilenameEventEmitter.class.getCanonicalName();
+    public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String EMPTY_FRAGMENT = null;
-    private static final Logger logger = LoggerFactory.getLogger(CristinFilenameEventEmitter.class);
+    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
-    public CristinFilenameEventEmitter() {
+    public FilenameEventEmitter() {
         this(defaultS3Client(), defaultEventBridgeClient());
     }
 
-    public CristinFilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
     }
@@ -58,7 +58,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
         ImportRequest importRequest = parseInput(input);
         List<URI> files = listFiles(importRequest);
         validateLocation(importRequest, files);
-        List<PutEventsResult> failedRequests = emitEvents(context, files, importRequest.getPublicationsOwner());
+        List<PutEventsResult> failedRequests = emitEvents(context, files, importRequest);
         logWarningForNotEmittedFilenames(failedRequests);
         returnNotEmittedFilenames(output, failedRequests);
     }
@@ -105,7 +105,7 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(Context context, List<URI> files, String publicationsOwner) {
+    private List<PutEventsResult> emitEvents(Context context, List<URI> files, ImportRequest importRequest) {
 
         EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(EVENT_DETAIL_TYPE,
@@ -114,10 +114,16 @@ public class CristinFilenameEventEmitter implements RequestStreamHandler {
                                eventBridgeClient);
 
         List<ImportRequest> filenameEvents = files.stream()
-                                                 .map(uri -> new ImportRequest(uri, publicationsOwner))
+                                                 .map(uri -> newImportRequestForSingleFile(importRequest, uri))
                                                  .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
+    }
+
+    private ImportRequest newImportRequestForSingleFile(ImportRequest importRequest, URI uri) {
+        return new ImportRequest(uri,
+                                 importRequest.getPublicationsOwner(),
+                                 importRequest.getImportEventType());
     }
 
     private void validateLocation(ImportRequest importRequest, List<URI> files) {
