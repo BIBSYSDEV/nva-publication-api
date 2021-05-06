@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.lambda.ApplicationConstants.EVENT_BUS_NAME;
+import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.EVENT_BUS_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import java.time.Instant;
 import java.util.Collection;
@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.dtos.PutEventsResult;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 import org.apache.commons.collections4.ListUtils;

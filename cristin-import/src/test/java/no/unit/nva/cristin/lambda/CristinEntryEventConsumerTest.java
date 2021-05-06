@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
+import no.unit.nva.cristin.lambda.dtos.FileContentsEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;

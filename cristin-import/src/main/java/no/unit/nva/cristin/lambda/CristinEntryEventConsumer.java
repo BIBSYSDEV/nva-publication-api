@@ -1,12 +1,15 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.lambda.ApplicationConstants.MAX_SLEEP_TIME;
+import static no.unit.nva.cristin.lambda.constants.ApplicationConstants.MAX_SLEEP_TIME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
 import java.util.Random;
+import no.unit.nva.cristin.lambda.constants.ApplicationConstants;
+import no.unit.nva.cristin.lambda.dtos.CristinObjectEvent;
+import no.unit.nva.cristin.lambda.dtos.FileContentsEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;

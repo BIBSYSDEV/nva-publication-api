@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import nva.commons.core.JsonUtils;

@@ -1,4 +1,4 @@
-package no.unit.nva.cristin;
+package no.unit.nva.cristin.lambda.constants;
 
 public final class MappingConstants {
 

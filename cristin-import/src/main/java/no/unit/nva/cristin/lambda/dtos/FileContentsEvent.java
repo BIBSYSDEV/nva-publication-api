@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.lambda;
+package no.unit.nva.cristin.lambda.dtos;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
