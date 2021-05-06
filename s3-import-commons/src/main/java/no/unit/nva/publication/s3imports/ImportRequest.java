@@ -11,6 +11,15 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 
+/**
+ * An {@link ImportRequest} contains 3 fields.
+ * <p>1. The {@link ImportRequest#s3Location} field is a URI to an S3 bucket of the form "s3://somebucket/some/path/".
+ * <p>2. The {@link ImportRequest#importEventType} field is a String denoting the event type that is going to be
+ * created for each entry contained in the files of the folder. Pay attention that each file may contain multiple
+ * entries.
+ * <p>3. The {@link ImportRequest#publicationsOwner} is a temporary field for deciding the publication owner
+ * until this field is calculated by the code automatically.
+ */
 public class ImportRequest implements JsonSerializable {
 
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
@@ -23,7 +32,6 @@ public class ImportRequest implements JsonSerializable {
     private final URI s3Location;
     @JsonProperty(PUBLICATIONS_OWNER)
     private final String publicationsOwner;
-
     // This field will be set as the event detail-type by the handler that emits one event per entry
     // and it will be expected by the specialized handler that will process the entry. E.g. DataMigrationHandler.
     @JsonProperty(IMPORT_EVENT_TYPE)

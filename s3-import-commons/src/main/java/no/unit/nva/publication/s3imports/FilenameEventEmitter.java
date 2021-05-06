@@ -29,6 +29,13 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 
+/**
+ * {@link FilenameEventEmitter} accepts an {@link ImportRequest}, it lists all the files in the S3 location defined in
+ * the {@link ImportRequest} and it emits on event per filename.
+ * <p>Each event has as event detail-type the value {@link FilenameEventEmitter#EVENT_DETAIL_TYPE } and detail
+ * (event-body) an {@link ImportRequest} where s3Location is the URI of the respective file and the rest of the fields
+ * are copied from the input.
+ */
 public class FilenameEventEmitter implements RequestStreamHandler {
 
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
