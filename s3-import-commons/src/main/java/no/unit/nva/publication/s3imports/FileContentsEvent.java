@@ -12,10 +12,10 @@ import nva.commons.core.JsonUtils;
 /**
  * Event containing the contents of a file and additional information that are necessary for processing the file
  * content.
- * <p>
- * In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which is *
- * specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic format
- * such as a {@link Map} annotated with "@JsonAnySetter".
+ *
+ * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
+ * is  specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic
+ * format such as a {@link Map} annotated with "&#64;JsonAnySetter".
  *
  * @param <T> the class modeling the data structure of the file content.
  */

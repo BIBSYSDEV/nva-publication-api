@@ -33,7 +33,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  * This class accepts an {@link ImportRequest} and emits  with event detail-type equal to the value of the{@link
  * ImportRequest#getImportEventType()}.
  *
- * <p>The body of the event (field "detail") is of type {@link FileContentsEvent<JsonNode>} and it contains
+ * <p>The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
  * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
  * <p>
  * In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which is
