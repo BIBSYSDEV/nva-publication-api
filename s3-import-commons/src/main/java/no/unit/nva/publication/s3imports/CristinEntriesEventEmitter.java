@@ -90,7 +90,7 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(CristinFilenameEventEmitter.EVENT_DETAIL_TYPE)) {
+        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.EVENT_DETAIL_TYPE)) {
             throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
         }
     }

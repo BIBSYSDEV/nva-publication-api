@@ -37,10 +37,10 @@ public class CristinEntriesEventEmitterTest {
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
     public static final String SOME_USER = PublicationGenerator.randomString();
-    public static final ImportRequest EXISTING_FILE = new ImportRequest("s3://some/s3/folder/location.file", SOME_USER);
-    public static final ImportRequest NON_EXISTING_FILE = new ImportRequest("s3://some/s3/nonexisting.file", SOME_USER);
+    public static final String IMPORT_EVENT_TYPE = "importEventType";
+    public static final ImportRequest EXISTING_FILE = newImportRequest("s3://some/s3/folder/location.file");
+    public static final ImportRequest NON_EXISTING_FILE = newImportRequest("s3://some/s3/nonexisting.file");
     public static final String LINE_SEPARATOR = System.lineSeparator();
-
     public static final SampleObject[] FILE_01_CONTENTS = randomContents().toArray(SampleObject[]::new);
     public static final Context CONTEXT = Mockito.mock(Context.class);
     public static final String SOME_OTHER_BUS = "someOtherBus";
@@ -122,6 +122,12 @@ public class CristinEntriesEventEmitterTest {
         }
     }
 
+    private static ImportRequest newImportRequest(String s3location) {
+        return new ImportRequest(s3location,
+                                 SOME_USER,
+                                 IMPORT_EVENT_TYPE);
+    }
+
     private static Map<String, InputStream> filesWithContentsAsJsonObjectsLists() {
         return Map.of(EXISTING_FILE.extractPathFromS3Location(), contentsAsJsonObjectsList());
     }
@@ -178,7 +184,7 @@ public class CristinEntriesEventEmitterTest {
 
     private InputStream createRequestEventForFile(ImportRequest detail) {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(CristinFilenameEventEmitter.EVENT_DETAIL_TYPE);
+        request.setDetailType(FilenameEventEmitter.EVENT_DETAIL_TYPE);
         request.setDetail(detail);
         return toInputStream(request);
     }
