@@ -62,10 +62,6 @@ Parameters:
     Type: String
     Default: ''
     Description: Suffix used for naming resources for feature branches to avoid conflicts.
-    #temporary parameter
-  CristinImportEventBusName:
-    Type: String
-    Default: orestis-test-bus
 
 Conditions:
   WithSuffix: !Not [ !Equals [ !Ref Suffix, '' ]]
@@ -1205,6 +1201,8 @@ Resources:
 
 
   CristinEntriesEventEmitter:
+    DependsOn:
+      - ImportRequestsEventBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -1222,12 +1220,14 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref CristinImportEventBusName
+            EventBusName: !GetAtt ImportRequestsEventBus.Name
             Pattern:
               detail-type:
                 - import.filename-event
 
   CristinEntriesEventConsumer:
+    DependsOn:
+      - ImportRequestsEventBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
@@ -1244,7 +1244,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref CristinImportEventBusName
+            EventBusName: !GetAtt ImportRequestsEventBus.Name
             Pattern:
               detail-type:
                 - import.cristin.entry-event
@@ -1279,6 +1279,8 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
 
   CristinFilenameEventEmitter:
+    DependsOn:
+      - ImportRequestsEventBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -1291,9 +1293,14 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: !Ref CristinImportEventBusName
+          EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
 
 
+  #=============================Event Buses =============================================================
+  ImportRequestsEventBus:
+    Type: AWS::Events::EventBus
+    Properties:
+      Name: !Join [ '',[ 'import-requests-event-bus',!Ref Suffix ] ]
 
   #===========================BasePathMappings========================================================
 
