@@ -28,8 +28,8 @@ public class FileContent {
             return false;
         }
         FileContent that = (FileContent) o;
-        return Objects.equals(getFilename(), that.getFilename()) && Objects.equals(getFileContent(),
-                                                                                   that.getFileContent());
+        return Objects.equals(getFilename(), that.getFilename())
+               && Objects.equals(getFileContent(), that.getFileContent());
     }
 
     public String getFilename() {
