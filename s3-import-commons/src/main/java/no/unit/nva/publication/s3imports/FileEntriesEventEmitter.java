@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import java.io.IOException;
 import java.util.List;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -27,17 +28,19 @@ import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
-public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, String> {
+/**
+ * This class accepts an {@link ImportRequest}
+ */
+public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
-    private static final String CANONICAL_NAME = CristinEntriesEventEmitter.class.getCanonicalName();
+    private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
-    private static final Logger logger = LoggerFactory.getLogger(CristinEntriesEventEmitter.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileEntriesEventEmitter.class);
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
-    private static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\n\\s*\\{";
+    private static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\\{";
     private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
@@ -45,12 +48,12 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
     private final EventBridgeClient eventBridgeClient;
 
     @JacocoGenerated
-    public CristinEntriesEventEmitter() {
+    public FileEntriesEventEmitter() {
         this(defaultS3Client(), defaultEventBridgeClient());
     }
 
-    public CristinEntriesEventEmitter(S3Client s3Client,
-                                      EventBridgeClient eventBridgeClient) {
+    public FileEntriesEventEmitter(S3Client s3Client,
+                                   EventBridgeClient eventBridgeClient) {
         super(ImportRequest.class);
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
@@ -63,7 +66,7 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
         String content = fetchFileFromS3(input, s3Driver);
         List<JsonNode> contents = parseContents(content);
         Stream<FileContentsEvent<JsonNode>> eventBodies = generateEventBodies(input, contents);
-        List<PutEventsResult> failedEntries = emitEvents(context, eventBodies);
+        List<PutEventsResult> failedEntries = emitEvents(context, input, eventBodies);
         logWarningForNotEmittedEntries(failedEntries);
         return EMPTY_STRING;
     }
@@ -72,8 +75,10 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
         return contents.stream().map(json -> new FileContentsEvent<>(json, input));
     }
 
-    private List<PutEventsResult> emitEvents(Context context, Stream<FileContentsEvent<JsonNode>> eventBodies) {
-        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter = new EventEmitter<>(EVENT_DETAIL_TYPE,
+    private List<PutEventsResult> emitEvents(Context context,
+                                             ImportRequest input,
+                                             Stream<FileContentsEvent<JsonNode>> eventBodies) {
+        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter = new EventEmitter<>(input.getImportEventType(),
                                                                                     CANONICAL_NAME,
                                                                                     context.getInvokedFunctionArn(),
                                                                                     eventBridgeClient);
@@ -110,7 +115,15 @@ public class CristinEntriesEventEmitter extends EventHandler<ImportRequest, Stri
         if (result.isFailure()) {
             result = attempt(() -> parseContentAsListOfJsonObjects(content));
         }
+        if (result.isFailure()) {
+            result = attempt(() -> parseContentsAsIonFormat(content));
+        }
         return result.orElseThrow();
+    }
+
+    private List<JsonNode> parseContentsAsIonFormat(String content) throws IOException {
+        S3IonReader s3IonReader = new S3IonReader();
+        return s3IonReader.extractJsonNodesFromIonContent(content).collect(Collectors.toList());
     }
 
     private List<JsonNode> parseContentAsListOfJsonObjects(String content) {

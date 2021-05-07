@@ -10,8 +10,10 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     implementation group: 'software.amazon.awssdk', name: 'aws-core', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'sdk-core', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
     implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
     implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
