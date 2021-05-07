@@ -1215,7 +1215,7 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: !Ref CristinImportEventBusName
+          EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
