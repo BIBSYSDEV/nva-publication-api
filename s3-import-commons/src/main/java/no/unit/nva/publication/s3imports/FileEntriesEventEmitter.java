@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -29,7 +30,15 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
- * This class accepts an {@link ImportRequest}
+ * This class accepts an {@link ImportRequest} and emits  with event detail-type equal to the value of the{@link
+ * ImportRequest#getImportEventType()}.
+ *
+ * <p>The body of the event (field "detail") is of type {@link FileContentsEvent<JsonNode>} and it contains
+ * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
+ * <p>
+ * In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which is
+ * specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic format
+ * such as a {@link Map} annotated with "@JsonAnySetter".
  */
 public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
