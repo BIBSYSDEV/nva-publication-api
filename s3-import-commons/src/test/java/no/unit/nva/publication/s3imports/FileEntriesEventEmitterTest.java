@@ -145,7 +145,7 @@ public class FileEntriesEventEmitterTest {
         var detailTypes = eventBridgeClient
                               .getEvenRequests()
                               .stream()
-                              .flatMap(ev -> ev.entries().stream())
+                              .flatMap(eventRequest -> eventRequest.entries().stream())
                               .map(PutEventsRequestEntry::detailType)
                               .collect(Collectors.toList());
         assertThat(detailTypes.size(), is(equalTo(FILE_01_CONTENTS.length)));
