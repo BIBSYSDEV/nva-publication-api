@@ -35,8 +35,9 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  *
  * <p>The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
  * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
- * <p>
- * In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which is
+ *
+ * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
+ * is
  * specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic format
  * such as a {@link Map} annotated with "@JsonAnySetter".
  */
