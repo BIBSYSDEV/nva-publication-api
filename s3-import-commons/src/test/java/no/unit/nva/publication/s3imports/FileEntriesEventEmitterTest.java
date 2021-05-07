@@ -48,9 +48,9 @@ public class FileEntriesEventEmitterTest {
     public static final String SOME_USER = randomString();
     public static final String IMPORT_EVENT_TYPE = "importEventType";
     public static final ImportRequest IMPORT_REQUEST_FOR_EXISTING_FILE =
-        newStandardImportRequest("s3://some/s3/folder/location.file");
-    public static final ImportRequest IMPORT_REQUEST_FOR_NON_EXISTING_FILE = newStandardImportRequest(
-        "s3://some/s3/nonexisting.file");
+        new ImportRequest("s3://some/s3/folder/location.file", SOME_USER, IMPORT_EVENT_TYPE);
+    public static final ImportRequest IMPORT_REQUEST_FOR_NON_EXISTING_FILE =
+        new ImportRequest("s3://some/s3/nonexisting.file", SOME_USER, IMPORT_EVENT_TYPE);
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
     public static final Context CONTEXT = Mockito.mock(Context.class);
@@ -137,17 +137,11 @@ public class FileEntriesEventEmitterTest {
     public void handlerEmitsEventsWithDetailTypeEqualToInputsImportRequestEventType() {
         String expectedImportRequestEventType = randomString();
         ImportRequest importRequestWithCustomType =
-            new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.getS3Location(),
-                              IMPORT_REQUEST_FOR_EXISTING_FILE.getPublicationsOwner(),
-                              expectedImportRequestEventType);
+            newImportRequest(expectedImportRequestEventType);
         InputStream input = createRequestEventForFile(importRequestWithCustomType);
         handler.handleRequest(input, outputStream, CONTEXT);
-        var detailTypes = eventBridgeClient
-                              .getEvenRequests()
-                              .stream()
-                              .flatMap(eventRequest -> eventRequest.entries().stream())
-                              .map(PutEventsRequestEntry::detailType)
-                              .collect(Collectors.toList());
+        var detailTypes = extractDetailTypesFromEvents();
+
         assertThat(detailTypes.size(), is(equalTo(FILE_01_CONTENTS.length)));
         for (String detailType : detailTypes) {
             assertThat(detailType, is(equalTo(expectedImportRequestEventType)));
@@ -167,16 +161,18 @@ public class FileEntriesEventEmitterTest {
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
     }
 
+    private static ImportRequest newImportRequest(String customImportRequestEventType) {
+        return new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location(),
+                                 IMPORT_REQUEST_FOR_EXISTING_FILE.getPublicationsOwner(),
+                                 customImportRequestEventType);
+    }
+
     private static Stream<Function<Collection<SampleObject>, FileContent>> ionContentProvider() {
         return Stream.of(
             FileEntriesEventEmitterTest::fileWithContentAsIonObjectsList,
             FileEntriesEventEmitterTest::fileWithContentAsIonArray
 
         );
-    }
-
-    private static ImportRequest newStandardImportRequest(String s3location) {
-        return new ImportRequest(s3location, SOME_USER, IMPORT_EVENT_TYPE);
     }
 
     private static FileContent fileWithContentsAsJsonObjectsLists() {
@@ -252,6 +248,15 @@ public class FileEntriesEventEmitterTest {
 
     private static List<SampleObject> randomObjects() {
         return Stream.of(SampleObject.random(), SampleObject.random(), SampleObject.random())
+                   .collect(Collectors.toList());
+    }
+
+    private List<String> extractDetailTypesFromEvents() {
+        return eventBridgeClient
+                   .getEvenRequests()
+                   .stream()
+                   .flatMap(eventRequest -> eventRequest.entries().stream())
+                   .map(PutEventsRequestEntry::detailType)
                    .collect(Collectors.toList());
     }
 
