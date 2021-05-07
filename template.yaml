@@ -1208,10 +1208,10 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
-      Handler: no.unit.nva.publication.s3imports.CristinEntriesEventEmitter::handleRequest
+      Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Runtime: java11
-      MemorySize: 4096
-      Timeout: 300 # 5 min timeout
+      MemorySize: 8192
+      Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1225,7 +1225,7 @@ Resources:
             EventBusName: !Ref CristinImportEventBusName
             Pattern:
               detail-type:
-                - import.cristin.filename-event
+                - import.filename-event
 
   CristinEntriesEventConsumer:
     Type: AWS::Serverless::Function
@@ -1264,8 +1264,6 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
 
-
-
   MigrateData:
     Type: AWS::Serverless::Function
     Properties:
@@ -1279,8 +1277,6 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-
-
 
   CristinFilenameEventEmitter:
     Type: AWS::Serverless::Function
