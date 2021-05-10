@@ -32,7 +32,7 @@ allprojects {
         awsSdk2Version = '2.16.46'
         nvaDatamodelVersion = "0.11.13"
         nvaCommonsVersion = '1.5.14'
-        nvaTestUtilsVersion = "7429724fdd41dd78ee7e525302cacd9d6974a20c"
+        nvaTestUtilsVersion = "410c08dff2c646eb4653580158255bab40b0e10e"
         junit5Version = '5.6.0'
         jacksonVersion = '2.12.3'
         nvaAwsLambdaJavaEvents = '3.2.0'

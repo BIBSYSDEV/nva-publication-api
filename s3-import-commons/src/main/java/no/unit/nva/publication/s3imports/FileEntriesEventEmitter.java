@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -82,7 +83,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
-        return contents.stream().map(json -> new FileContentsEvent<>(json, input));
+        URI fileUri = URI.create(input.getS3Location());
+        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, json, input));
     }
 
     private List<PutEventsResult> emitEvents(Context context,
