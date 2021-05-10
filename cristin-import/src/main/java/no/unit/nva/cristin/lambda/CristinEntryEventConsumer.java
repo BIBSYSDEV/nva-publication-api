@@ -146,9 +146,9 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Cr
     private void saveReportToS3(Failure<Publication> fail,
                                 AwsEventBridgeEvent<FileContentsEvent<CristinObject>> event) {
         URI errorFileUri = constructErrorFileUri(event);
+        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<CristinObject>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
         s3Driver.insertFile(Path.of(errorFileUri.getPath()), reportContent.toJsonString());
     }
 }
