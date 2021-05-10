@@ -5,12 +5,18 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
+import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 
 /**
  * Event containing the contents of a file and additional information that are necessary for processing the file
  * content.
+ *
+ * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
+ * is  specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic
+ * format such as a {@link Map} annotated with "&#64;JsonAnySetter".
+ *
  * @param <T> the class modeling the data structure of the file content.
  */
 public class FileContentsEvent<T> {

@@ -12,6 +12,7 @@ dependencies {
 
     implementation group: 'software.amazon.awssdk', name: 'aws-core', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'sdk-core', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
     implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
     implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'

@@ -13,7 +13,6 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
-import no.unit.nva.publication.s3imports.CristinEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.JacocoGenerated;
@@ -29,6 +28,7 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObjectEvent, 
     public static final int MAX_EFFORTS = 10;
     public static final String ERROR_SAVING_CRISTIN_RESULT = "Could not save cristin result with ID: ";
     public static final Random RANDOM = new Random(System.currentTimeMillis());
+    public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private final ResourceService resourceService;
 
@@ -73,10 +73,10 @@ public class CristinEntryEventConsumer extends EventHandler<CristinObjectEvent, 
     }
 
     private void validateEvent(AwsEventBridgeEvent<CristinObjectEvent> event) {
-        if (!CristinEntriesEventEmitter.EVENT_DETAIL_TYPE.equals(event.getDetailType())) {
+        if (!EVENT_DETAIL_TYPE.equals(event.getDetailType())) {
             String errorMessage = String.format(WRONG_DETAIL_TYPE_ERROR_TEMPLATE,
                                                 event.getDetailType(),
-                                                CristinEntriesEventEmitter.EVENT_DETAIL_TYPE);
+                                                EVENT_DETAIL_TYPE);
             throw new IllegalArgumentException(errorMessage);
         }
     }

@@ -22,7 +22,6 @@ import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.s3imports.CristinEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -114,7 +113,7 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(CristinEntriesEventEmitter.EVENT_DETAIL_TYPE));
+        assertThat(exception.getMessage(), containsString(CristinEntryEventConsumer.EVENT_DETAIL_TYPE));
         assertThat(exception.getMessage(), containsString(unexpectedDetailType));
     }
 
