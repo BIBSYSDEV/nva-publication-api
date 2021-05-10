@@ -164,8 +164,7 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void
-    handlerSavesErrorReportFileInS3InTheLocationIndicatedAsTheInputsFileLocationAndWithFilenameBeingTheObjectId() {
+    public void handlerSavesErrorReportInS3InTheLocationIndicatedAsTheInputsFileLocationAndWithFilenameTheObjectId() {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         String event = validEventToJsonString();
 
