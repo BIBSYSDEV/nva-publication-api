@@ -15,21 +15,21 @@ public class ImportResult<I> implements JsonSerializable {
     @JsonIgnore
     public static final String EXCEPTION_FIELD = "exception";
     @JsonIgnore
-    public static final String STATUS = "status";
+    public static final String STATUS_FIELD = "status";
     @JsonIgnore
-    public static final String FAILURE = "FAILURE";
+    private static final String FAILURE = "FAILURE";
     @JsonProperty(EVENT_FIELD)
     private final I event;
     @JsonProperty(EXCEPTION_FIELD)
     private final String exception;
-    @JsonProperty(STATUS)
+    @JsonProperty(STATUS_FIELD)
     private final String status;
 
     @JsonCreator
     @JacocoGenerated
     public ImportResult(@JsonProperty(EVENT_FIELD) I event,
                         @JsonProperty(EXCEPTION_FIELD) String exception,
-                        @JsonProperty(STATUS) String status) {
+                        @JsonProperty(STATUS_FIELD) String status) {
         this.event = event;
         this.exception = exception;
         this.status = status;
@@ -42,7 +42,7 @@ public class ImportResult<I> implements JsonSerializable {
     }
 
     public static <I> ImportResult<I> reportFailure(I event, Exception exception) {
-        return new ImportResult<I>(event, exception, FAILURE);
+        return new ImportResult<>(event, exception, FAILURE);
     }
 
     @JacocoGenerated
