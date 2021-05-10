@@ -11,6 +11,7 @@
   ],
   "detail": {
     "publicationsOwner": "someRandomUser",
+    "fileUri": "s3://bucket/parent/child/filename.json",
     "contents": {
       "id": 5709,
       "varbeidhovedkatkode": "BOK",

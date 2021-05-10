@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
+import java.net.URI;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -25,6 +26,11 @@ public class FileContentsEvent<T> {
     protected static final String CONTENTS_FIELD = "contents";
     @JsonIgnore
     protected static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
+    @JsonIgnore
+    public static final String FILE_URI = "fileUri";
+
+    @JsonProperty(FILE_URI)
+    private final URI fileUri;
     @JsonProperty(CONTENTS_FIELD)
     private final T contents;
     @JsonProperty(PUBLICATIONS_OWNER_FIELD)
@@ -32,13 +38,16 @@ public class FileContentsEvent<T> {
 
     @JacocoGenerated
     @JsonCreator
-    public FileContentsEvent(@JsonProperty(CONTENTS_FIELD) T contents,
+    public FileContentsEvent(@JsonProperty(FILE_URI) URI fileUri,
+                             @JsonProperty(CONTENTS_FIELD) T contents,
                              @JsonProperty(PUBLICATIONS_OWNER_FIELD) String publicationsOwner) {
+        this.fileUri = fileUri;
         this.contents = contents;
         this.publicationsOwner = publicationsOwner;
     }
 
-    public FileContentsEvent(T contents, ImportRequest input) {
+    public FileContentsEvent(URI fileUri, T contents, ImportRequest input) {
+        this.fileUri = fileUri;
         this.contents = contents;
         this.publicationsOwner = input.getPublicationsOwner();
     }
@@ -47,6 +56,10 @@ public class FileContentsEvent<T> {
         JavaType javaType = constructJavaType(contentsClass);
         return attempt(() -> JsonUtils.objectMapperNoEmpty
                                  .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
+    }
+
+    public URI getFileUri() {
+        return fileUri;
     }
 
     public T getContents() {
