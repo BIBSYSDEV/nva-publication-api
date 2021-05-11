@@ -1,4 +1,4 @@
-package no.unit.nva.cristin.lambda.dtos;
+package no.unit.nva.publication.s3imports;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -11,15 +11,15 @@ import nva.commons.core.exceptions.ExceptionUtils;
 public class ImportResult<I> implements JsonSerializable {
 
     @JsonIgnore
-    public static final String EVENT_FIELD = "event";
+    public static final String INPUT_FIELD = "input";
     @JsonIgnore
     public static final String EXCEPTION_FIELD = "exception";
     @JsonIgnore
     public static final String STATUS_FIELD = "status";
     @JsonIgnore
-    private static final String FAILURE = "FAILURE";
-    @JsonProperty(EVENT_FIELD)
-    private final I event;
+    public static final String FAILURE = "FAILURE";
+    @JsonProperty(INPUT_FIELD)
+    private final I input;
     @JsonProperty(EXCEPTION_FIELD)
     private final String exception;
     @JsonProperty(STATUS_FIELD)
@@ -27,16 +27,16 @@ public class ImportResult<I> implements JsonSerializable {
 
     @JsonCreator
     @JacocoGenerated
-    public ImportResult(@JsonProperty(EVENT_FIELD) I event,
+    public ImportResult(@JsonProperty(INPUT_FIELD) I input,
                         @JsonProperty(EXCEPTION_FIELD) String exception,
                         @JsonProperty(STATUS_FIELD) String status) {
-        this.event = event;
+        this.input = input;
         this.exception = exception;
         this.status = status;
     }
 
-    private ImportResult(I event, Exception exception, String status) {
-        this.event = event;
+    private ImportResult(I input, Exception exception, String status) {
+        this.input = input;
         this.exception = ExceptionUtils.stackTraceInSingleLine(exception);
         this.status = status;
     }
@@ -51,8 +51,8 @@ public class ImportResult<I> implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public I getEvent() {
-        return event;
+    public I getInput() {
+        return input;
     }
 
     @JacocoGenerated
@@ -63,7 +63,7 @@ public class ImportResult<I> implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getEvent(), getException(), getStatus());
+        return Objects.hash(getInput(), getException(), getStatus());
     }
 
     @JacocoGenerated
@@ -76,7 +76,7 @@ public class ImportResult<I> implements JsonSerializable {
             return false;
         }
         ImportResult<?> that = (ImportResult<?>) o;
-        return Objects.equals(getEvent(), that.getEvent())
+        return Objects.equals(getInput(), that.getInput())
                && Objects.equals(getException(), that.getException())
                && Objects.equals(getStatus(), that.getStatus());
     }

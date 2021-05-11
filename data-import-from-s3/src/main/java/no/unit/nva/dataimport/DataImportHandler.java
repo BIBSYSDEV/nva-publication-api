@@ -17,6 +17,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -50,7 +51,7 @@ public class DataImportHandler {
         this.dynamoClient = dynamoClient;
     }
 
-    public ImportResult[] importAllFilesFromFolder(Map<String, String> request) {
+    public List<ImportResult<FailedDynamoEntriesReport>> importAllFilesFromFolder(Map<String, String> request) {
         logger.info("Request: " + requestToJson(request));
         ImportRequest input = ImportRequest.fromMap(request);
         tableName = input.getTable();
@@ -58,16 +59,24 @@ public class DataImportHandler {
         setupS3Driver(input.extractBucketFromS3Location());
         List<String> filenames = fetchFilenamesFromS3Location(input);
 
-        List<ImportResult> importResults = attempt(() -> insertAllFiles(filenames)).orElseThrow();
+        List<ImportResult<FailedDynamoEntriesReport>> importResults = attempt(
+            () -> insertAllFiles(filenames)).orElseThrow();
 
         logResults(importResults);
         //Return array because AWS Serializer has problem with lists.
-        return importResults.toArray(ImportResult[]::new);
+        return importResults;
     }
 
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoClient() {
         return AmazonDynamoDBClient.builder().build();
+    }
+
+    private static ImportResult<FailedDynamoEntriesReport> generateReportEntry(ParallelExecutionException failure) {
+        String message = failure.getMessage();
+        String inputFilename = (String) failure.getInput();
+        FailedDynamoEntriesReport resultReport = new FailedDynamoEntriesReport(message, inputFilename);
+        return ImportResult.reportFailure(resultReport, failure);
     }
 
     private String requestToJson(Map<String, String> request) {
@@ -83,9 +92,10 @@ public class DataImportHandler {
         return filenames;
     }
 
-    private List<ImportResult> insertAllFiles(List<String> filenames) throws InterruptedException {
+    private List<ImportResult<FailedDynamoEntriesReport>> insertAllFiles(List<String> filenames)
+        throws InterruptedException {
         List<String> filesToInsert = filenames;
-        List<ImportResult> failedImports = Collections.emptyList();
+        List<ImportResult<FailedDynamoEntriesReport>> failedImports = Collections.emptyList();
 
         int attempts = 0;
         while (!filesToInsert.isEmpty() && attempts < MAX_ATTEMPTS) {
@@ -103,9 +113,11 @@ public class DataImportHandler {
         return new ParallelMapper<>(filesToInsert, this::insertFileToDynamo).map();
     }
 
-    private List<String> extractFilenamesFromFailedImports(List<ImportResult> failedImports) {
+    private List<String> extractFilenamesFromFailedImports(
+        List<ImportResult<FailedDynamoEntriesReport>> failedImports) {
         return failedImports.stream().parallel()
-                   .map(ImportResult::getFilename)
+                   .map(ImportResult::getInput)
+                   .map(FailedDynamoEntriesReport::getInputFilename)
                    .collect(Collectors.toList());
     }
 
@@ -115,9 +127,10 @@ public class DataImportHandler {
         }
     }
 
-    private List<ImportResult> collectFilesWithFailures(List<ParallelExecutionException> failures) {
+    private List<ImportResult<FailedDynamoEntriesReport>> collectFilesWithFailures(
+        List<ParallelExecutionException> failures) {
         return failures.stream()
-                   .map(ImportResult::fromParallelExecutionException)
+                   .map(DataImportHandler::generateReportEntry)
                    .collect(Collectors.toList());
     }
 
@@ -141,7 +154,7 @@ public class DataImportHandler {
                    .orElse(new BatchWriteItemResult());
     }
 
-    private void logResults(List<ImportResult> importResults) {
+    private void logResults(List<ImportResult<FailedDynamoEntriesReport>> importResults) {
         String resultJson = attempt(() -> JsonUtils.objectMapper.writeValueAsString(importResults)).orElseThrow();
         logger.info("result:" + resultJson);
     }
