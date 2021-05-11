@@ -85,19 +85,22 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        var emitEventsAttempt =
-            attempt(() -> fetchFileFromS3(input, s3Driver))
-                .map(this::parseContents)
-                .map(jsonNodes -> generateEventBodies(input, jsonNodes))
-                .map(eventBodies -> emitEvents(context, input, eventBodies));
-
+        Try<List<PutEventsResult>> emitEventsAttempt = attemptToEmitEvents(input, context, s3Driver);
         storeErrorReportsInS3(emitEventsAttempt, input);
         logWarningForNotEmittedEntries(emitEventsAttempt);
 
-        return throwExceptionIfEventEmissionFailedCompletely(emitEventsAttempt);
+        return returnNothingOrThrowExceptionWhenEmissionFailedCompletely(emitEventsAttempt);
     }
 
-    private String throwExceptionIfEventEmissionFailedCompletely(Try<List<PutEventsResult>> emitEventsAttempt) {
+    private Try<List<PutEventsResult>> attemptToEmitEvents(ImportRequest input, Context context, S3Driver s3Driver) {
+        return attempt(() -> fetchFileFromS3(input, s3Driver))
+                   .map(this::parseContents)
+                   .map(jsonNodes -> generateEventBodies(input, jsonNodes))
+                   .map(eventBodies -> emitEvents(context, input, eventBodies));
+    }
+
+    private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
+        Try<List<PutEventsResult>> emitEventsAttempt) {
         return emitEventsAttempt.map(attempt -> EMPTY_STRING).orElseThrow();
     }
 
