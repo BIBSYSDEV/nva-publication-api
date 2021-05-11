@@ -2,6 +2,7 @@
 
 dependencies {
     implementation project(":publication-constants")
+    implementation project(":s3-import-commons")
     implementation project(":storage-model")
 
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
