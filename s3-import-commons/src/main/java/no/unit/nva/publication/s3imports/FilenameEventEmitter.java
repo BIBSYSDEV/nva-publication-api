@@ -15,12 +15,14 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
     public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
-    public static final String EMPTY_FRAGMENT = null;
+    public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -68,19 +70,26 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         validateLocation(importRequest, files);
         List<PutEventsResult> failedRequests = emitEvents(context, files, importRequest);
         logWarningForNotEmittedFilenames(failedRequests);
-        returnNotEmittedFilenames(output, failedRequests);
+        List<String> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
+        writeFailedEmitActionsInS3(failedRequests, importRequest);
+        writeOutput(output, notEmittedFilenames);
+    }
+
+    private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request) {
+        UriWrapper errorReportLocation =
+            new UriWrapper(request.getS3Location()).addChild(Path.of(ERROR_REPORT_FILENAME));
+        S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketFromS3Location());
+        String errorReportContent = PutEventsResult.toString(failedRequests);
+        s3Driver.insertFile(errorReportLocation.toS3bucketPath(), errorReportContent);
     }
 
     private URI createUri(URI s3Location, String filename) {
-        String filePath = filename.startsWith(PATH_SEPARATOR) ? filename : PATH_SEPARATOR + filename;
-        return attempt(() -> new URI(s3Location.getScheme(), s3Location.getHost(), filePath, EMPTY_FRAGMENT))
+        return Try.of(s3Location)
+                   .map(UriWrapper::new)
+                   .map(UriWrapper::getHost)
+                   .map(u -> u.addChild(Path.of(filename)))
+                   .map(UriWrapper::getUri)
                    .orElseThrow();
-    }
-
-    private void returnNotEmittedFilenames(OutputStream output, List<PutEventsResult> failedRequests)
-        throws IOException {
-        List<String> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
-        writeOutput(output, notEmittedFilenames);
     }
 
     private List<URI> listFiles(ImportRequest importRequest) {
@@ -97,7 +106,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                               .stream()
                                               .map(PutEventsResult::toString)
                                               .collect(Collectors.joining(LINE_SEPARATOR));
-
             logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
         }
     }

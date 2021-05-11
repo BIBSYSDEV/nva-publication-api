@@ -2,6 +2,7 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
@@ -43,10 +45,10 @@ public class FilenameEventEmitterTest {
 
     public static final String SOME_BUCKET = "s3://bucket/";
     public static final String SOME_FOLDER = "some/folder/";
-    public static final String SOME_S3_LOCATION = SOME_BUCKET + SOME_FOLDER;
-    public static final String FILE_01 = SOME_FOLDER + "file01";
-    public static final String FILE_02 = "file02";
-    public static final List<String> FILE_LIST = List.of(FILE_01, FILE_02);
+    public static final String SOME_S3_LOCATION = SOME_BUCKET;
+    public static final String FILE_DIRECTLY_UNDER_S3_LOCATION = SOME_FOLDER + "file01";
+    public static final String FILE_IN_SUBFOLDER = SOME_FOLDER + "someOtherFolder/file02";
+    public static final List<String> FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
@@ -89,6 +91,7 @@ public class FilenameEventEmitterTest {
     public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
+        init(); // @BeforeEach seems to not run between subsequent iterations of Parameterized test
         ImportRequest importRequest = new ImportRequest(
             SOME_S3_LOCATION + pathSeparator,
             SOME_USER,
@@ -141,6 +144,21 @@ public class FilenameEventEmitterTest {
         assertThat(failedResults, containsInAnyOrder(expectedFileUris));
         for (String filename : FILE_LIST) {
             assertThat(appender.getMessages(), containsString(filename));
+        }
+    }
+
+    @Test
+    public void handlerSavesInS3FolderErrorReportContainingAllFilenamesThatFailedToBeEmitted() throws IOException {
+        handler = handlerThatFailsToEmitMessages();
+        ImportRequest importRequest = newImportRequest();
+        InputStream inputStream = toJsonStream(importRequest);
+        handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
+
+        String content = s3Driver.getFile(ERROR_REPORT_FILENAME);
+        for (String filename : FILE_LIST) {
+            assertThat(content, containsString(filename));
         }
     }
 
