@@ -11,7 +11,7 @@ import java.util.stream.StreamSupport;
 
 public class UriWrapper {
 
-    public static final String EMPTY_FRAGEMENT = null;
+    public static final String EMPTY_FRAGMENT = null;
     public static final String ROOT = "/";
     public static final String EMPTY_PATH = null;
     private final URI uri;
@@ -30,11 +30,17 @@ public class UriWrapper {
     }
 
     public UriWrapper getHost() {
-        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), EMPTY_PATH, EMPTY_FRAGEMENT))
+        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), EMPTY_PATH, EMPTY_FRAGMENT))
                    .map(UriWrapper::new)
                    .orElseThrow();
     }
 
+    /**
+     * Appends a path to the URI.
+     *
+     * @param childPath the path to be appended.
+     * @return a UriWrapper containing the whole path.
+     */
     public UriWrapper addChild(Path childPath) {
         Path thisPath = Path.of(uri.getPath());
         List<String> thisPathArray = pathToArray(thisPath);
@@ -43,7 +49,7 @@ public class UriWrapper {
         totalPathList.addAll(childPathArray);
         String[] totalPathArray = totalPathList.toArray(String[]::new);
         Path totalPath = Path.of(ROOT, totalPathArray);
-        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), totalPath.toString(), EMPTY_FRAGEMENT))
+        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), totalPath.toString(), EMPTY_FRAGMENT))
                    .map(UriWrapper::new)
                    .orElseThrow();
     }
