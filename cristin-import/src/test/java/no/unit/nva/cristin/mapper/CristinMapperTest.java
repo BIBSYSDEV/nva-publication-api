@@ -203,6 +203,14 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                    .collect(Collectors.toList());
     }
 
+    private List<ContributionReference> extractContributions(CristinObject cristinObject) {
+        final Integer cristinResourceIdentifier = cristinObject.getId();
+        return cristinObject.getContributors().stream()
+                   .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
+                                                       c.getContributorOrder()))
+                   .collect(Collectors.toList());
+    }
+
     private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
         return identifier.getSource().equals(IDENTIFIER_ORIGIN);
     }
@@ -216,14 +224,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     private Integer extractPersonId(Contributor contributor) {
         String personIdentifier = Path.of(contributor.getIdentity().getId().getPath()).getFileName().toString();
         return Integer.parseInt(personIdentifier);
-    }
-
-    private List<ContributionReference> extractContributions(CristinObject cristinObject) {
-        final Integer cristinResourceIdentifier = cristinObject.getId();
-        return cristinObject.getContributors().stream()
-                   .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
-                                                       c.getContributorOrder()))
-                   .collect(Collectors.toList());
     }
 
     private String formatNameAccordingToNvaPattern(CristinContributor cristinContributor) {
