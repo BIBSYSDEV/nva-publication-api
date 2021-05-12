@@ -2,6 +2,8 @@ package no.unit.nva.publication.s3imports;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.stream.Collectors;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
@@ -19,6 +21,10 @@ public class PutEventsResult {
                            @JsonProperty("response") PutEventsResponse response) {
         this.request = request;
         this.response = response;
+    }
+
+    public static String toString(List<PutEventsResult> events) {
+        return events.stream().map(Object::toString).collect(Collectors.joining(System.lineSeparator()));
     }
 
     @JacocoGenerated
