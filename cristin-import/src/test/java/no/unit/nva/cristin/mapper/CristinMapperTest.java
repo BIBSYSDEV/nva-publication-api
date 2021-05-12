@@ -169,22 +169,23 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                   .map(Contributor::getIdentity)
                                                   .map(Identity::getName)
                                                   .collect(Collectors.toList());
+
         assertThat(actualContributorNames, containsInAnyOrder(expectedContributorNames.toArray(String[]::new)));
     }
 
     @Test
-    public void mapReturnsResourceWhereNvaContributorSequentIsEqualToCristinContributorSequence() {
+    public void mapReturnsResourceWhereNvaContributorSequenceIsEqualToCristinContributorSequence() {
 
-        var expectedContributions = cristinObjects()
-                                        .map(this::extractContributions)
-                                        .flatMap(Collection::stream)
-                                        .collect(Collectors.toSet());
+        Set<ContributionReference> expectedContributions = cristinObjects()
+                                                               .map(this::extractContributions)
+                                                               .flatMap(Collection::stream)
+                                                               .collect(Collectors.toSet());
 
-        var actualContributions = cristinObjects()
-                                      .map(CristinObject::toPublication)
-                                      .map(this::extractContributions)
-                                      .flatMap(Collection::stream)
-                                      .collect(Collectors.toSet());
+        Set<ContributionReference> actualContributions = cristinObjects()
+                                                             .map(CristinObject::toPublication)
+                                                             .map(this::extractContributions)
+                                                             .flatMap(Collection::stream)
+                                                             .collect(Collectors.toSet());
 
         assertThat(expectedContributions, is(equalTo(actualContributions)));
     }
