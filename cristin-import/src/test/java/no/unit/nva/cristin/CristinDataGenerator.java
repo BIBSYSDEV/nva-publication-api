@@ -39,8 +39,7 @@ public class CristinDataGenerator {
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
 
     public Stream<CristinObject> randomObjects() {
-        return IntStream.range(0, 100)
-                   .boxed()
+        return IntStream.range(0, 100).boxed()
                    .map(this::newCristinObject);
     }
 
@@ -53,7 +52,7 @@ public class CristinDataGenerator {
     public CristinObject randomBookAnthology() {
         CristinObject cristinObject = CristinObject
                                           .builder()
-                                          .withCristinTitles(List.of(newCristinTitle(FIRST_TITLE)))
+                                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
                                           .withEntryCreationDate(LocalDate.now())
                                           .withMainCategory(CristinMainCategory.BOOK)
                                           .withSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY)
@@ -94,24 +93,20 @@ public class CristinDataGenerator {
         return randomArrayElement(CristinSecondaryCategory.values());
     }
 
-    private <T> T randomArrayElement(T[] array) {
-        return array[RANDOM.nextInt(array.length)];
-    }
-
     private CristinMainCategory randomMainCategory() {
         return randomArrayElement(CristinMainCategory.values());
     }
 
     private List<CristinContributor> randomContributors() {
-        return IntStream.range(0, smallRandomNumber()).boxed()
+        return smallSample()
                    .map(this::randomContributor)
                    .collect(Collectors.toList());
     }
 
-    private CristinContributor randomContributor(Integer i) {
+    private CristinContributor randomContributor(Integer contributorIndex) {
         return CristinContributor.builder()
-                   .withContributorOrder(i)
-                   .withIdentifier(i)
+                   .withContributorOrder(contributorIndex)
+                   .withIdentifier(contributorIndex)
                    .withGivenName(randomString())
                    .withFamilyName(randomString())
                    .withAffiliations(randomAffiliations())
@@ -119,8 +114,8 @@ public class CristinDataGenerator {
     }
 
     private List<CristinContributorsAffiliation> randomAffiliations() {
-        return IntStream.range(0, smallRandomNumber()).boxed()
-                   .map(i -> randomAffiliation())
+        return smallSample()
+                   .map(ignored -> randomAffiliation())
                    .collect(Collectors.toList());
     }
 
@@ -160,13 +155,12 @@ public class CristinDataGenerator {
     }
 
     private List<CristinTitle> randomTitles() {
-        return IntStream.range(0, smallRandomNumber())
-                   .boxed()
-                   .map(this::newCristinTitle)
+        return smallSample()
+                   .map(this::randomCristinTitle)
                    .collect(Collectors.toList());
     }
 
-    private CristinTitle newCristinTitle(int index) {
+    private CristinTitle randomCristinTitle(int index) {
         CristinTitle title = new CristinTitle();
         title.setTitle(randomString());
         title.setLanguagecode(randomLanguageCode());
@@ -177,6 +171,14 @@ public class CristinDataGenerator {
             title.setStatusOriginal(CristinTitle.NOT_ORIGINAL_TITLE);
         }
         return title;
+    }
+
+    private <T> T randomArrayElement(T[] array) {
+        return array[RANDOM.nextInt(array.length)];
+    }
+
+    private Stream<Integer> smallSample() {
+        return IntStream.range(0, smallRandomNumber()).boxed();
     }
 
     private String randomLanguageCode() {
