@@ -61,6 +61,7 @@ dependencies {
 
 test {
     environment "MAX_SLEEP_TIME", "1"
+    environment "CREATE_CONTRIBUTOR_ID", "true"
 }
 
 configurations.testImplementation.canBeResolved = true

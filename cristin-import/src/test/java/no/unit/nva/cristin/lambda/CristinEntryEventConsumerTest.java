@@ -134,7 +134,7 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
 
-        String cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getContents().getId();
+        Integer cristinIdentifier = VALID_CRISTIN_ENTRY_EVENT_OBJECT.getDetail().getContents().getId();
         Executable action = () -> handler.handleRequest(stringToStream(validEventToJsonString()), outputStream,
                                                         CONTEXT);
 
@@ -150,11 +150,11 @@ public class CristinEntryEventConsumerTest extends ResourcesDynamoDbLocalTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
 
-        String cristinIdentifier = Optional.of(VALID_CRISTIN_ENTRY_EVENT_OBJECT)
-                                       .map(AwsEventBridgeEvent::getDetail)
-                                       .map(FileContentsEvent::getContents)
-                                       .map(CristinObject::getId)
-                                       .orElseThrow();
+        Integer cristinIdentifier = Optional.of(VALID_CRISTIN_ENTRY_EVENT_OBJECT)
+                                        .map(AwsEventBridgeEvent::getDetail)
+                                        .map(FileContentsEvent::getContents)
+                                        .map(CristinObject::getId)
+                                        .orElseThrow();
         Executable action = () -> handler.handleRequest(stringToStream(validEventToJsonString()), outputStream,
                                                         CONTEXT);
 

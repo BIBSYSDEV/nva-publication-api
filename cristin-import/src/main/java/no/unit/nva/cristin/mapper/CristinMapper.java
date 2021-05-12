@@ -6,11 +6,13 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -23,6 +25,7 @@ import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.pages.Pages;
+import nva.commons.core.attempt.Try;
 
 public class CristinMapper {
 
@@ -64,7 +67,16 @@ public class CristinMapper {
                    .withMainTitle(extractMainTitle())
                    .withDate(extractPublicationDate())
                    .withReference(buildReference())
+                   .withContributors(extractContributors())
                    .build();
+    }
+
+    private List<Contributor> extractContributors() {
+        return cristinObject.getContributors()
+                   .stream()
+                   .map(attempt(CristinContributor::toNvaContributor))
+                   .map(Try::orElseThrow)
+                   .collect(Collectors.toList());
     }
 
     private Reference buildReference() {
@@ -94,11 +106,11 @@ public class CristinMapper {
     }
 
     private boolean isAnthology() {
-        return MappingConstants.SECONDARY_CATEGORY_ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isBook() {
-        return MappingConstants.MAIN_CATEGORY_BOOK.equalsIgnoreCase(cristinObject.getMainCategory());
+        return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
     }
 
     private PublicationDate extractPublicationDate() {
@@ -130,6 +142,6 @@ public class CristinMapper {
     }
 
     private AdditionalIdentifier extractIdentifier() {
-        return new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId());
+        return new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
     }
 }
