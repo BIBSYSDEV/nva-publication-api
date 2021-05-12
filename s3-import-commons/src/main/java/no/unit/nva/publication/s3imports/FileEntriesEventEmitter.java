@@ -4,12 +4,15 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRIN
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Spliterator;
@@ -27,6 +30,9 @@ import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
@@ -38,14 +44,15 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
  *
  * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
- * is
- * specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic format
- * such as a {@link Map} annotated with "@JsonAnySetter".
+ * is specific to the task of importing Cristin records.  In the future, this should be replaced by a more generic
+ * format such as a {@link Map} annotated with "@JsonAnySetter".
  */
 public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
+    public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
+    public static final String ERROR_REPORT_FILE_SUFFIX = ".error";
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
@@ -70,16 +77,50 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         this.eventBridgeClient = eventBridgeClient;
     }
 
+    public static String errorReportFilename(String inputFilename) {
+        return inputFilename + ERROR_REPORT_FILE_SUFFIX;
+    }
+
     @Override
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        String content = fetchFileFromS3(input, s3Driver);
-        List<JsonNode> contents = parseContents(content);
-        Stream<FileContentsEvent<JsonNode>> eventBodies = generateEventBodies(input, contents);
-        List<PutEventsResult> failedEntries = emitEvents(context, input, eventBodies);
-        logWarningForNotEmittedEntries(failedEntries);
-        return EMPTY_STRING;
+        Try<List<PutEventsResult>> emitEventsAttempt = attemptToEmitEvents(input, context, s3Driver);
+        storeErrorReportsInS3(emitEventsAttempt, input);
+        logWarningForNotEmittedEntries(emitEventsAttempt);
+
+        return returnNothingOrThrowExceptionWhenEmissionFailedCompletely(emitEventsAttempt);
+    }
+
+    private Try<List<PutEventsResult>> attemptToEmitEvents(ImportRequest input, Context context, S3Driver s3Driver) {
+        return attempt(() -> fetchFileFromS3(input, s3Driver))
+                   .map(this::parseContents)
+                   .map(jsonNodes -> generateEventBodies(input, jsonNodes))
+                   .map(eventBodies -> emitEvents(context, input, eventBodies));
+    }
+
+    private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
+        Try<List<PutEventsResult>> emitEventsAttempt) {
+        return emitEventsAttempt.map(attempt -> EMPTY_STRING).orElseThrow();
+    }
+
+    private void storeErrorReportsInS3(Try<List<PutEventsResult>> failedEntries, ImportRequest input) {
+        S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
+        UriWrapper reportFilename = generateErrorReportFilename(input);
+        List<PutEventsResult> putEventsResults =
+            failedEntries.orElse(this::generateReportIndicatingTotalEmissionFailure);
+
+        String reportContent = PutEventsResult.toString(putEventsResults);
+        s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
+    }
+
+    private UriWrapper generateErrorReportFilename(ImportRequest input) {
+        final String inputFilename = Path.of(input.extractPathFromS3Location()).getFileName().toString();
+        return Try.of(input.getS3Location())
+                   .map(UriWrapper::new)
+                   .map(parent -> parent.getParent().orElse(parent.getHost()))
+                   .map(parent -> parent.addChild(Path.of(errorReportFilename(inputFilename))))
+                   .orElseThrow();
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
@@ -90,12 +131,30 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private List<PutEventsResult> emitEvents(Context context,
                                              ImportRequest input,
                                              Stream<FileContentsEvent<JsonNode>> eventBodies) {
-        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter = new EventEmitter<>(input.getImportEventType(),
-                                                                                    CANONICAL_NAME,
-                                                                                    context.getInvokedFunctionArn(),
-                                                                                    eventBridgeClient);
+        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter =
+            new EventEmitter<>(input.getImportEventType(),
+                               CANONICAL_NAME,
+                               context.getInvokedFunctionArn(),
+                               eventBridgeClient);
         eventEmitter.addEvents(eventBodies);
         return eventEmitter.emitEvents();
+    }
+
+    private List<PutEventsResult> generateReportIndicatingTotalEmissionFailure(
+        Try<List<PutEventsResult>> completeEmissionFailure) {
+        PutEventsResponse customPutEventsResponse =
+            generatePutEventsResultIndicatingNoEventsWereEmitted(completeEmissionFailure);
+        PutEventsResult putEventsResult = new PutEventsResult(NO_REQUEST_WAS_EMITTED, customPutEventsResponse);
+        return Collections.singletonList(putEventsResult);
+    }
+
+    private PutEventsResponse generatePutEventsResultIndicatingNoEventsWereEmitted(
+        Try<List<PutEventsResult>> completeEmissionFailure) {
+        String exceptionStackStraceAsResultMessage =
+            stackTraceInSingleLine(completeEmissionFailure.getException());
+        PutEventsResultEntry putEventsResultEntry =
+            PutEventsResultEntry.builder().errorMessage(exceptionStackStraceAsResultMessage).build();
+        return PutEventsResponse.builder().entries(putEventsResultEntry).build();
     }
 
     private String fetchFileFromS3(ImportRequest input, S3Driver s3Driver) {
@@ -112,7 +171,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         }
     }
 
-    private void logWarningForNotEmittedEntries(List<PutEventsResult> failedRequests) {
+    private void logWarningForNotEmittedEntries(Try<List<PutEventsResult>> failedRequests) {
         String failedRequestsString = failedRequests
                                           .stream()
                                           .map(PutEventsResult::toString)

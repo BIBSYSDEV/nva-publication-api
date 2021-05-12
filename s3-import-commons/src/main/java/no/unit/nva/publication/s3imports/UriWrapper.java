@@ -6,13 +6,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import nva.commons.core.attempt.Try;
 
 public class UriWrapper {
 
     public static final String EMPTY_FRAGMENT = null;
     public static final String ROOT = "/";
+    public static final Path ROOT_PATH = Path.of(ROOT);
     public static final String EMPTY_PATH = null;
     private final URI uri;
 
@@ -60,6 +63,21 @@ public class UriWrapper {
                    ? path.substring(1)
                    : path;
         return Path.of(path);
+    }
+
+    public Path getPath() {
+        return Path.of(uri.getPath());
+    }
+
+    public Optional<UriWrapper> getParent() {
+        return Optional.of(uri)
+                   .map(URI::getPath)
+                   .map(Path::of)
+                   .map(Path::getParent)
+                   .map(Path::toString)
+                   .map(attempt(p -> new URI(uri.getScheme(), uri.getHost(), p, EMPTY_FRAGMENT)))
+                   .map(Try::orElseThrow)
+                   .map(UriWrapper::new);
     }
 
     private List<String> pathToArray(Path thisPath) {
