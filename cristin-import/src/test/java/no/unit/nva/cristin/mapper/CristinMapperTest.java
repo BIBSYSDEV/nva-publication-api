@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -7,6 +8,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -19,7 +21,9 @@ import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Identity;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -35,6 +39,7 @@ import org.junit.jupiter.api.Test;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
 
+    public static final String NAME_DELIMITER = ", ";
     private CristinDataGenerator cristinDataGenerator;
 
     @BeforeEach
@@ -46,14 +51,15 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsResourceWithCristinIdStoredInAdditionalIdentifiers() {
-        Set<String> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
+        Set<Integer> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
 
-        Set<String> actualIds = cristinObjects()
-                                    .map(CristinObject::toPublication)
-                                    .map(Publication::getAdditionalIdentifiers)
-                                    .flatMap(Collection::stream)
-                                    .map(AdditionalIdentifier::getValue)
-                                    .collect(Collectors.toSet());
+        Set<Integer> actualIds = cristinObjects()
+                                     .map(CristinObject::toPublication)
+                                     .map(Publication::getAdditionalIdentifiers)
+                                     .flatMap(Collection::stream)
+                                     .map(AdditionalIdentifier::getValue)
+                                     .map(Integer::parseInt)
+                                     .collect(Collectors.toSet());
 
         assertThat(expectedIds.size(), is(equalTo(NUMBER_OF_LINES_IN_RESOURCES_FILE)));
         assertThat(actualIds, is(equalTo(expectedIds)));
@@ -144,6 +150,84 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));
+    }
+
+    @Test
+    public void mapReturnsResourceWhereNvaContributorsNamesAreConcatenationsOfCristinFirstAndFamilyNames() {
+
+        List<String> expectedContributorNames = cristinObjects()
+                                                    .map(CristinObject::getContributors)
+                                                    .flatMap(Collection::stream)
+                                                    .map(this::formatNameAccordingToNvaPattern)
+                                                    .collect(Collectors.toList());
+
+        List<String> actualContributorNames = cristinObjects()
+                                                  .map(CristinObject::toPublication)
+                                                  .map(Publication::getEntityDescription)
+                                                  .map(EntityDescription::getContributors)
+                                                  .flatMap(Collection::stream)
+                                                  .map(Contributor::getIdentity)
+                                                  .map(Identity::getName)
+                                                  .collect(Collectors.toList());
+
+        assertThat(actualContributorNames, containsInAnyOrder(expectedContributorNames.toArray(String[]::new)));
+    }
+
+    @Test
+    public void mapReturnsResourceWhereNvaContributorSequenceIsEqualToCristinContributorSequence() {
+
+        Set<ContributionReference> expectedContributions = cristinObjects()
+                                                               .map(this::extractContributions)
+                                                               .flatMap(Collection::stream)
+                                                               .collect(Collectors.toSet());
+
+        Set<ContributionReference> actualContributions = cristinObjects()
+                                                             .map(CristinObject::toPublication)
+                                                             .map(this::extractContributions)
+                                                             .flatMap(Collection::stream)
+                                                             .collect(Collectors.toSet());
+
+        assertThat(expectedContributions, is(equalTo(actualContributions)));
+    }
+
+    private List<ContributionReference> extractContributions(Publication publication) {
+
+        AdditionalIdentifier cristinIdentifier = publication.getAdditionalIdentifiers().stream()
+                                                     .filter(this::isCristinIdentifier)
+                                                     .collect(SingletonCollector.collect());
+        Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.getValue());
+
+        return publication.getEntityDescription()
+                   .getContributors().stream()
+                   .map(contributor -> extractContributionReference(cristinIdentifierValue, contributor))
+                   .collect(Collectors.toList());
+    }
+
+    private List<ContributionReference> extractContributions(CristinObject cristinObject) {
+        final Integer cristinResourceIdentifier = cristinObject.getId();
+        return cristinObject.getContributors().stream()
+                   .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
+                                                       c.getContributorOrder()))
+                   .collect(Collectors.toList());
+    }
+
+    private boolean isCristinIdentifier(AdditionalIdentifier identifier) {
+        return identifier.getSource().equals(IDENTIFIER_ORIGIN);
+    }
+
+    private ContributionReference extractContributionReference(Integer cristinIdentifierValue,
+                                                               Contributor contributor) {
+        return new ContributionReference(cristinIdentifierValue, extractPersonId(contributor),
+                                         contributor.getSequence());
+    }
+
+    private Integer extractPersonId(Contributor contributor) {
+        String personIdentifier = Path.of(contributor.getIdentity().getId().getPath()).getFileName().toString();
+        return Integer.parseInt(personIdentifier);
+    }
+
+    private String formatNameAccordingToNvaPattern(CristinContributor cristinContributor) {
+        return cristinContributor.getFamilyName() + NAME_DELIMITER + cristinContributor.getGivenName();
     }
 
     private CristinTitle mainTitle(List<CristinTitle> titles) {

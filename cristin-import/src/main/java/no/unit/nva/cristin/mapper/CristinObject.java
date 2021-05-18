@@ -21,9 +21,10 @@ import nva.commons.core.JsonSerializable;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public class CristinObject implements JsonSerializable {
 
+    public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static String IDENTIFIER_ORIGIN = "Cristin";
     @JsonProperty("id")
-    private String id;
+    private Integer id;
     @JsonProperty("arstall")
     private String publicationYear;
     @JsonProperty("dato_opprettet")
@@ -31,9 +32,12 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("VARBEID_SPRAK")
     private List<CristinTitle> cristinTitles;
     @JsonProperty("varbeidhovedkatkode")
-    private String mainCategory;
+    private CristinMainCategory mainCategory;
     @JsonProperty("varbeidunderkatkode")
-    private String secondaryCategory;
+    private CristinSecondaryCategory secondaryCategory;
+    @JsonProperty("VARBEID_PERSON")
+    private List<CristinContributor> contributors;
+
     @JsonProperty
     private String publicationOwner;
 
