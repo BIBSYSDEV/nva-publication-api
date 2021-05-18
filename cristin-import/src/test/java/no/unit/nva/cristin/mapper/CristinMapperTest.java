@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -8,6 +9,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
+import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -24,6 +26,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
@@ -40,6 +43,9 @@ import org.junit.jupiter.api.Test;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String FIRST_ORG_NUMBER_IN_TEST_RESOURCE_FILE = "195.65.54.32";
+    public static final String SECOND_ORG_NUMBER_IN_TEST_RESOURCE_FILE = "1.2.3.4";
+    public static final String THIRD_ORG_NUMBER_IN_RESOURCE_FILE = "0.0.0.0";
     private CristinDataGenerator cristinDataGenerator;
 
     @BeforeEach
@@ -188,6 +194,39 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                              .collect(Collectors.toSet());
 
         assertThat(expectedContributions, is(equalTo(actualContributions)));
+    }
+
+    @Test
+    public void mapReturnsResourceWhereNvaContributorHasAffiliationsWithUriCreatedBasedOnReferenceUriAndUnitNumbers() {
+
+        var expectedAffiliations = cristinObjects()
+                                       .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
+                                       .flatMap(contributor -> contributor.getAffiliations().stream())
+                                       .map(this::explicitFormattingOfCristinAffiliationCode)
+                                       .map(this::addCristinOrgHostPrefix)
+                                       .map(URI::create);
+
+        List<URI> actualAffiliations = cristinObjects().map(CristinObject::toPublication)
+                                           .map(Publication::getEntityDescription)
+                                           .map(EntityDescription::getContributors)
+                                           .flatMap(Collection::stream)
+                                           .map(Contributor::getAffiliations)
+                                           .flatMap(Collection::stream)
+                                           .map(Organization::getId)
+                                           .collect(Collectors.toList());
+
+        assertThat(actualAffiliations, containsInAnyOrder(expectedAffiliations.toArray(URI[]::new)));
+    }
+
+    //We do not use any more complex logic to make the tests fail if anything changes
+    private String explicitFormattingOfCristinAffiliationCode(CristinContributorsAffiliation c) {
+        return String.format("%s.%s.%s.%s", c.getInstitutionIdentifier(), c.getDepartmentIdentifier(),
+                             c.getSubdepartmentIdentifier(), c.getGroupNumber());
+    }
+
+    //Hardcode Cristin ORG URIs for avoiding re-using the logic under test.
+    private String addCristinOrgHostPrefix(String cristinAffiliationCode) {
+        return CRISTIN_ORG_URI.toString() + cristinAffiliationCode;
     }
 
     private List<ContributionReference> extractContributions(Publication publication) {

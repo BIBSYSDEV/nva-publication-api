@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,7 @@ import lombok.Data;
 import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -55,14 +57,21 @@ public class CristinContributor {
         return new Contributor.Builder()
                    .withIdentity(identity)
                    .withCorrespondingAuthor(false)
+                   .withAffiliations(extractAffiliations())
                    .withRole(Role.CREATOR)
                    .withSequence(contributorOrder)
                    .build();
     }
 
+    private List<Organization> extractAffiliations() {
+        return affiliations.stream()
+                   .map(CristinContributorsAffiliation::toNvaOrganization)
+                   .collect(Collectors.toList());
+    }
+
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ? new UriWrapper(MappingConstants.CRISTIN_API)
+                   ? new UriWrapper(MappingConstants.CRISTIN_PERSONS_URI)
                          .addChild(Path.of(identifier.toString()))
                          .getUri()
                    : null;
