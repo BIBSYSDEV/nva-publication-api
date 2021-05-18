@@ -581,7 +581,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void markPublicationForDeletionLogsConditionExceptionWhenUpdateConditionFails() throws ApiGatewayException {
-        TestAppender testAppender = LogUtils.getTestingAppenderForRootLogger();
+        TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
         Publication resource = createPublishedResource();
         Executable action =
             () -> resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
