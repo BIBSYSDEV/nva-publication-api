@@ -6,6 +6,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_
 import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
@@ -14,6 +15,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -39,9 +41,10 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
-        
+
+        Map<String, AttributeValue> item = data.toDynamoFormat();
         Put put = new Put()
-                      .withItem(data.toDynamoFormat())
+                      .withItem(item)
                       .withTableName(tableName)
                       .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
                       .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);

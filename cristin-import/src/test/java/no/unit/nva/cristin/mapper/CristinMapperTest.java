@@ -1,6 +1,8 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.DUMMY_UUID;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.PUBLIC_DOMAIN_LICENSE;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -18,6 +20,7 @@ import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
@@ -25,7 +28,10 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.File;
+import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -43,9 +49,6 @@ import org.junit.jupiter.api.Test;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
-    public static final String FIRST_ORG_NUMBER_IN_TEST_RESOURCE_FILE = "195.65.54.32";
-    public static final String SECOND_ORG_NUMBER_IN_TEST_RESOURCE_FILE = "1.2.3.4";
-    public static final String THIRD_ORG_NUMBER_IN_RESOURCE_FILE = "0.0.0.0";
     private CristinDataGenerator cristinDataGenerator;
 
     @BeforeEach
@@ -233,6 +236,37 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(actualPublicationDates,
                    containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
+    }
+
+    @Test
+    public void mapReturnsPublicationWithFileSetContainingSingleFileWithIdentifierEqualToNilUUID() {
+        Set<UUID> actualFileIdentifiers = cristinObjects()
+                                              .map(CristinObject::toPublication)
+                                              .map(Publication::getFileSet)
+                                              .map(FileSet::getFiles)
+                                              .flatMap(Collection::stream)
+                                              .map(File::getIdentifier)
+                                              .collect(Collectors.toSet());
+
+        Set<UUID> expectedIdentifiers = Set.of(DUMMY_UUID);
+
+        assertThat(actualFileIdentifiers, is(equalTo(expectedIdentifiers)));
+    }
+
+    @Test
+    public void mapReturnsPublicationWithFileSetContainingSingleFileWithPublicDomainLicense() {
+        Set<String> actualLicenseIdentifiers = cristinObjects()
+                                                   .map(CristinObject::toPublication)
+                                                   .map(Publication::getFileSet)
+                                                   .map(FileSet::getFiles)
+                                                   .flatMap(Collection::stream)
+                                                   .map(File::getLicense)
+                                                   .map(License::getIdentifier)
+                                                   .collect(Collectors.toSet());
+
+        Set<String> expectedLicenseIdentifiers = Set.of(PUBLIC_DOMAIN_LICENSE);
+
+        assertThat(actualLicenseIdentifiers, is(equalTo(expectedLicenseIdentifiers)));
     }
 
     private PublicationDate yearStringToPublicationDate(String yearString) {
