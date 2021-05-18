@@ -1,6 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.logger;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
@@ -40,6 +41,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.exceptions.ExceptionUtils;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
@@ -266,6 +268,7 @@ public class ResourceService extends ServiceWithTransactions {
         if (primaryKeyConditionFailed(failure.getException())) {
             return new NotFoundException(ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE);
         } else if (failure.getException() instanceof ConditionalCheckFailedException) {
+            logger.warn(ExceptionUtils.stackTraceInSingleLine(failure.getException()));
             return new BadRequestException(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE
                                            + resource.getIdentifier().toString());
         }
