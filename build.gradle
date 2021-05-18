@@ -30,7 +30,7 @@ allprojects {
     project.ext {
         awsSdkVersion = '1.11.973'
         awsSdk2Version = '2.16.46'
-        nvaDatamodelVersion = "0.11.13"
+        nvaDatamodelVersion = "0.11.14"
         nvaCommonsVersion = '1.5.14'
         nvaTestUtilsVersion = "50fa3b208398e9877f702a71ad7b16ea65b139d7"
         junit5Version = '5.6.0'

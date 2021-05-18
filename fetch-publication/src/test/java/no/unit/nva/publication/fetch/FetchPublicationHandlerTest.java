@@ -128,7 +128,7 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
             .build();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
-        String actualDetail = getProblemDetail(gatewayResponse);
+        String actualDetail = gatewayResponse.getBodyObject(Problem.class).getDetail();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(actualDetail, containsString(IDENTIFIER_NULL_ERROR));
     }
