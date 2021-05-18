@@ -121,10 +121,10 @@ public class CristinDataGenerator {
 
     private CristinContributorsAffiliation randomAffiliation() {
         return CristinContributorsAffiliation.builder()
-                   .withInstitutionIdentifier(largeRandomNumber())
-                   .withDepartmentIdentifier(largeRandomNumber())
-                   .withGroupNumber(largeRandomNumber())
-                   .withSubdepartmentIdentifier(largeRandomNumber())
+                   .withInstitutionIdentifier(threeDigitPositiveNumber())
+                   .withDepartmentIdentifier(threeDigitPositiveNumber())
+                   .withGroupNumber(threeDigitPositiveNumber())
+                   .withSubdepartmentIdentifier(threeDigitPositiveNumber())
                    .withOriginalInsitutionCode(randomString())
                    .withOriginalInstitutionName(randomString())
                    .withOriginalPlaceName(randomString())
@@ -195,5 +195,9 @@ public class CristinDataGenerator {
 
     private int largeRandomNumber() {
         return 1 + RANDOM.nextInt();
+    }
+
+    private int threeDigitPositiveNumber() {
+        return RANDOM.nextInt(1000);
     }
 }
