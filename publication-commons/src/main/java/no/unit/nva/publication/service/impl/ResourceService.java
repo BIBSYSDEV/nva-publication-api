@@ -1,7 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.logger;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
@@ -42,6 +41,8 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
@@ -56,12 +57,14 @@ public class ResourceService extends ServiceWithTransactions {
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
 
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
+
 
     public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
         super();
@@ -302,14 +305,16 @@ public class ResourceService extends ServiceWithTransactions {
             "#modifiedDate", MODIFIED_FIELD_IN_RESOURCE,
             "#data", RESOURCE_FIELD_IN_RESOURCE_DAO);
 
-        return new UpdateItemRequest()
-                   .withTableName(tableName)
-                   .withKey(dao.primaryKey())
-                   .withUpdateExpression(updateExpression)
-                   .withConditionExpression(conditionExpression)
-                   .withExpressionAttributeNames(expressionAttributeNames)
-                   .withExpressionAttributeValues(expressionValuesMap)
-                   .withReturnValues(ReturnValue.ALL_NEW);
+        UpdateItemRequest request = new UpdateItemRequest()
+                                        .withTableName(tableName)
+                                        .withKey(dao.primaryKey())
+                                        .withUpdateExpression(updateExpression)
+                                        .withConditionExpression(conditionExpression)
+                                        .withExpressionAttributeNames(expressionAttributeNames)
+                                        .withExpressionAttributeValues(expressionValuesMap)
+                                        .withReturnValues(ReturnValue.ALL_NEW);
+        logger.info("DeleteRequest:" + request.toString());
+        return request;
     }
 
     private Resource sendUpdateRequest(UpdateItemRequest updateRequest) {
