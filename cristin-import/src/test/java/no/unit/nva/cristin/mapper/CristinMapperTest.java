@@ -200,8 +200,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsResourceWhereNvaContributorHasAffiliationsWithUriCreatedBasedOnReferenceUriAndUnitNumbers() {
 
         var expectedAffiliations = cristinObjects()
-                                       .flatMap(c -> c.getContributors().stream())
-                                       .flatMap(c -> c.getAffiliations().stream())
+                                       .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
+                                       .flatMap(contributor -> contributor.getAffiliations().stream())
                                        .map(this::explicitFormattingOfCristinAffiliationCode)
                                        .map(this::addCristinOrgHostPrefix)
                                        .map(URI::create);
