@@ -128,7 +128,7 @@ public class CristinDataGenerator {
                    .withOriginalInsitutionCode(randomString())
                    .withOriginalInstitutionName(randomString())
                    .withOriginalPlaceName(randomString())
-                   .withOringalDepartmentName(randomString())
+                   .withOriginalDepartmentName(randomString())
                    .withDepartmentIdentifier(largeRandomNumber())
                    .withRoles(randomAffiliationRoles())
                    .build();

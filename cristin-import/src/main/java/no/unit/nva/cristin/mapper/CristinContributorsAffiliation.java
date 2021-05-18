@@ -31,7 +31,7 @@ public class CristinContributorsAffiliation {
     @JsonProperty("institusjonsnavn_opprinnelig")
     private String originalInstitutionName;
     @JsonProperty("avdelingsnavn_opprinnelig")
-    private String oringalDepartmentName;
+    private String originalDepartmentName;
     @JsonProperty("stednavn_opprinnelig")
     private String originalPlaceName; //TODO:  what is a place?
     @JsonProperty
