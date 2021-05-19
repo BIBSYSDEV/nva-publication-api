@@ -39,7 +39,7 @@ public abstract class ServiceWithTransactions {
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
     
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
-        
+
         Put put = new Put()
                       .withItem(data.toDynamoFormat())
                       .withTableName(tableName)
