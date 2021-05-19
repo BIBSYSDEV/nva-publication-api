@@ -9,8 +9,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import no.unit.nva.cristin.lambda.dtos.CristinObjectEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.handlers.EventHandler;
@@ -40,6 +42,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String FILE_ENDING = ".json";
     public static final String EMPTY_FRAGMENT = null;
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
+    public static final String ID_FIELD = "id";
+    public static final String UNKNOWN_CRISTIN_ID = "unknownCristinId_";
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
@@ -60,21 +64,18 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     public static URI constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        CristinObject cristinObject = parseCristinObject(event);
-        Path parentFolder = extractFolderPath(event.getDetail());
+        Path filePath = constructErrorFilePath(event);
         String scheme = event.getDetail().getFileUri().getScheme();
-        String bucketName = event.getDetail().getFileUri().getHost();
-        String filename = cristinObject.getId() + FILE_ENDING;
-        Path filePath = Path.of(parentFolder.toString(), filename);
-        return attempt(() -> new URI(scheme, bucketName, filePath.toString(), EMPTY_FRAGMENT)).orElseThrow();
+        String bucketNameAsHost = event.getDetail().getFileUri().getHost();
+        return attempt(() -> new URI(scheme, bucketNameAsHost, filePath.toString(), EMPTY_FRAGMENT)).orElseThrow();
     }
 
     protected static CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        CristinObject cristinObject =
-            attempt(() -> event.getDetail().getContents())
-                .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
-                .orElseThrow();
-        cristinObject.setPublicationOwner(event.getDetail().getPublicationsOwner());
+        CristinObject cristinObject = attempt(() -> event.getDetail().getContents())
+                                          .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode,
+                                                                                                      CristinObject.class))
+                                          .orElseThrow();
+        cristinObject.hardcodePublicationOwner(event.getDetail().getPublicationsOwner());
         return cristinObject;
     }
 
@@ -86,7 +87,17 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         CristinObject cristinObject = parseCristinObject(event);
         Try<Publication> attemptSave = attempt(cristinObject::toPublication)
                                            .flatMap(this::persistInDatabase);
-        return attemptSave.orElseThrow(fail -> handleSavingError(fail, event, cristinObject));
+        return attemptSave.orElseThrow(fail -> handleSavingError(fail, event));
+    }
+
+    private static Path constructErrorFilePath(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        Path parentFolder = extractFolderPath(event.getDetail());
+        String filename = createErrorReportFilename(event) + FILE_ENDING;
+        return Path.of(parentFolder.toString(), filename);
+    }
+
+    private static String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        return extractCristinObjectId(event).orElse(unknownCristinIdReportFilename());
     }
 
     @JacocoGenerated
@@ -141,10 +152,21 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         }
     }
 
+    private static Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        return attempt(() -> parseCristinObject(event))
+                   .map(CristinObject::getId)
+                   .map(Objects::toString)
+                   .toOptional();
+    }
+
+    private static String unknownCristinIdReportFilename() {
+        return UNKNOWN_CRISTIN_ID + UUID.randomUUID();
+    }
+
     private RuntimeException handleSavingError(Failure<Publication> fail,
-                                               AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
-                                               CristinObject cristinObject) {
-        String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObject.getId();
+                                               AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        String cristinObjectId = extractCristinObjectId(event).orElse(null);
+        String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, event);
         return new RuntimeException(errorMessage, fail.getException());

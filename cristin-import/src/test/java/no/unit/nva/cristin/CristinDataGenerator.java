@@ -50,6 +50,7 @@ public class CristinDataGenerator {
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
+    public static final String ID_FIELD = "id";
 
     public Stream<CristinObject> randomObjects() {
         return IntStream.range(0, 100).boxed()
@@ -95,12 +96,18 @@ public class CristinDataGenerator {
         return newCristinObject(0).toJsonString();
     }
 
-    public JsonNode customMainCategory(String customMainCategory) throws JsonProcessingException {
+    public JsonNode objectWithCustomMainCategory(String customMainCategory) throws JsonProcessingException {
         return cristinObjectWithUnexpectedValue(customMainCategory, MAIN_CATEGORY_FIELD);
     }
 
-    public JsonNode customSecondaryCategory(String customSecondaryCategory) throws JsonProcessingException {
+    public JsonNode objectWithCustomSecondaryCategory(String customSecondaryCategory) throws JsonProcessingException {
         return cristinObjectWithUnexpectedValue(customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
+    }
+
+    public JsonNode objectWithoutId() throws JsonProcessingException {
+        ObjectNode cristinObject = cristinObjectAsObjectNode();
+        cristinObject.remove(ID_FIELD);
+        return cristinObject;
     }
 
     private static <T> T randomElement(List<T> elements) {
@@ -133,11 +140,15 @@ public class CristinDataGenerator {
 
     private JsonNode cristinObjectWithUnexpectedValue(String customSecondaryCategory, String secondaryCategoryField)
         throws JsonProcessingException {
-        CristinObject cristinObject = newCristinObject(0);
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
-        ObjectNode json = (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+        ObjectNode json = cristinObjectAsObjectNode();
         json.put(secondaryCategoryField, customSecondaryCategory);
         return json;
+    }
+
+    private ObjectNode cristinObjectAsObjectNode() throws JsonProcessingException {
+        CristinObject cristinObject = newCristinObject(0);
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
+        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
     private <T> JsonNode convertToJsonNode(T inputData) {
