@@ -199,12 +199,13 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapReturnsResourceWhereNvaContributorHasAffiliationsWithUriCreatedBasedOnReferenceUriAndUnitNumbers() {
 
-        var expectedAffiliations = cristinObjects()
-                                       .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
-                                       .flatMap(contributor -> contributor.getAffiliations().stream())
-                                       .map(this::explicitFormattingOfCristinAffiliationCode)
-                                       .map(this::addCristinOrgHostPrefix)
-                                       .map(URI::create);
+        List<URI> expectedAffiliations = cristinObjects()
+                                             .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
+                                             .flatMap(contributor -> contributor.getAffiliations().stream())
+                                             .map(this::explicitFormattingOfCristinAffiliationCode)
+                                             .map(this::addCristinOrgHostPrefix)
+                                             .map(URI::create)
+                                             .collect(Collectors.toList());
 
         List<URI> actualAffiliations = cristinObjects().map(CristinObject::toPublication)
                                            .map(Publication::getEntityDescription)
@@ -216,6 +217,27 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                            .collect(Collectors.toList());
 
         assertThat(actualAffiliations, containsInAnyOrder(expectedAffiliations.toArray(URI[]::new)));
+    }
+
+    @Test
+    public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationDate() {
+        List<PublicationDate> expectedPublicationDates = cristinObjects()
+                                                             .map(CristinObject::getPublicationYear)
+                                                             .map(this::yearStringToPublicationDate)
+                                                             .collect(Collectors.toList());
+        List<PublicationDate> actualPublicationDates = cristinObjects()
+                                                           .map(CristinObject::toPublication)
+                                                           .map(Publication::getEntityDescription)
+                                                           .map(EntityDescription::getDate)
+                                                           .collect(Collectors.toList());
+
+        assertThat(actualPublicationDates,
+                   containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
+    }
+
+    private PublicationDate yearStringToPublicationDate(String yearString) {
+        return new PublicationDate.Builder().withYear(
+            yearString).build();
     }
 
     //We do not use any more complex logic to make the tests fail if anything changes
