@@ -40,6 +40,10 @@ public class CristinMapper {
     public static final File NON_EXISTENT_FILE = createNonExistentFile();
     public static final String UNIT_ORG = "https://api.dev.nva.aws.unit"
                                           + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934";
+    public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secodary category";
+    public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
+    public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
+                                                                            + "categories";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -129,10 +133,17 @@ public class CristinMapper {
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook() && isAnthology()) {
-            return new BookAnthology.Builder().build();
-        } else {
-            return null;
+            return createBuildAnthology();
+        } else if (cristinObject.getMainCategory().isUnknownCategory()) {
+            throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
+        } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
+            throw new UnsupportedOperationException(ERROR_PARSING_SECONDARY_CATEGORY);
         }
+        throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
+    }
+
+    private BookAnthology createBuildAnthology() {
+        return new BookAnthology.Builder().build();
     }
 
     private boolean isAnthology() {

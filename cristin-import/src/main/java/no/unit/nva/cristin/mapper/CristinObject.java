@@ -22,6 +22,8 @@ import nva.commons.core.JsonSerializable;
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
+    public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
+    public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
     public static String IDENTIFIER_ORIGIN = "Cristin";
     @JsonProperty("id")
     private Integer id;
@@ -31,9 +33,9 @@ public class CristinObject implements JsonSerializable {
     private LocalDate entryCreationDate;
     @JsonProperty("VARBEID_SPRAK")
     private List<CristinTitle> cristinTitles;
-    @JsonProperty("varbeidhovedkatkode")
+    @JsonProperty(MAIN_CATEGORY_FIELD)
     private CristinMainCategory mainCategory;
-    @JsonProperty("varbeidunderkatkode")
+    @JsonProperty(SECONDARY_CATEGORY_FIELD)
     private CristinSecondaryCategory secondaryCategory;
     @JsonProperty("VARBEID_PERSON")
     private List<CristinContributor> contributors;
@@ -49,7 +51,4 @@ public class CristinObject implements JsonSerializable {
         return new CristinMapper(this).generatePublication();
     }
 
-    public CristinObjectBuilder copy() {
-        return this.toBuilder();
-    }
 }

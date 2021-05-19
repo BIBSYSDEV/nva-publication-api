@@ -5,14 +5,14 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Map;
 
 public enum CristinMainCategory {
-    BOOK;
+    BOOK, TEMPORARILY_UNKNOWN, UNMAPPED;
 
-    private static final Map<String, CristinMainCategory> ALIASES_MAP = createAliasesMap();
+    private static final Map<String, CristinMainCategory> KNOWN_ALIASES_MAP = createKnownAliasesMap();
     private static final Map<CristinMainCategory, String> DEFAULT_NAMES_MAP = defaultNamesMap();
 
     @JsonCreator
     public static CristinMainCategory fromString(String category) {
-        return ALIASES_MAP.get(category);
+        return KNOWN_ALIASES_MAP.getOrDefault(category, UNMAPPED);
     }
 
     @JsonValue
@@ -20,11 +20,17 @@ public enum CristinMainCategory {
         return DEFAULT_NAMES_MAP.get(this);
     }
 
-    private static Map<String, CristinMainCategory> createAliasesMap() {
+    public boolean isUnknownCategory() {
+        return UNMAPPED.equals(this);
+    }
+
+    private static Map<String, CristinMainCategory> createKnownAliasesMap() {
         return Map.of("BOK", BOOK);
     }
 
     private static Map<CristinMainCategory, String> defaultNamesMap() {
-        return Map.of(BOOK, "BOK");
+        return Map.of(BOOK, "BOK",
+                      TEMPORARILY_UNKNOWN, "TEMPORARILY_UNKNOWN",
+                      UNMAPPED, "UNMAPPED");
     }
 }
