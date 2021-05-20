@@ -57,6 +57,10 @@ public class CristinDataGenerator {
                    .map(this::newCristinObject);
     }
 
+    public CristinObject randomObject() {
+        return newCristinObject(largeRandomNumber());
+    }
+
     public String randomDataAsString() {
         return randomObjects()
                    .map(this::toJsonString)

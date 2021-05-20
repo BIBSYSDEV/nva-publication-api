@@ -41,9 +41,10 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String FILE_ENDING = ".json";
     public static final String EMPTY_FRAGMENT = null;
-    private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     public static final String ID_FIELD = "id";
     public static final String UNKNOWN_CRISTIN_ID = "unknownCristinId_";
+    public static final String DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE = null;
+    private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
@@ -63,20 +64,11 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         this.s3Client = s3Client;
     }
 
-    public static URI constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        Path filePath = constructErrorFilePath(event);
-        String scheme = event.getDetail().getFileUri().getScheme();
-        String bucketNameAsHost = event.getDetail().getFileUri().getHost();
-        return attempt(() -> new URI(scheme, bucketNameAsHost, filePath.toString(), EMPTY_FRAGMENT)).orElseThrow();
-    }
-
-    protected static CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        CristinObject cristinObject = attempt(() -> event.getDetail().getContents())
-                                          .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode,
-                                                                                                      CristinObject.class))
-                                          .orElseThrow();
-        cristinObject.hardcodePublicationOwner(event.getDetail().getPublicationsOwner());
-        return cristinObject;
+    protected static URI constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        Path filePath = constructErrorFilePathInsideTheBucket(event);
+        String uriScheme = event.getDetail().getFileUri().getScheme();
+        String bucketAsUriHost = event.getDetail().getFileUri().getHost();
+        return attempt(() -> new URI(uriScheme, bucketAsUriHost, filePath.toString(), EMPTY_FRAGMENT)).orElseThrow();
     }
 
     @Override
@@ -84,13 +76,25 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                                        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
                                        Context context) {
         validateEvent(event);
-        CristinObject cristinObject = parseCristinObject(event);
-        Try<Publication> attemptSave = attempt(cristinObject::toPublication)
-                                           .flatMap(this::persistInDatabase);
-        return attemptSave.orElseThrow(fail -> handleSavingError(fail, event));
+        return attempt(() -> parseCristinObject(event))
+                   .map(CristinObject::toPublication)
+                   .flatMap(this::persistInDatabase)
+                   .orElseThrow(fail -> handleSavingError(fail, event));
     }
 
-    private static Path constructErrorFilePath(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private static CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        CristinObject cristinObject = attempt(() -> event.getDetail().getContents())
+                                          .map(CristinEntryEventConsumer::parseJson)
+                                          .orElseThrow();
+        cristinObject.hardcodePublicationOwner(event.getDetail().getPublicationsOwner());
+        return cristinObject;
+    }
+
+    private static CristinObject parseJson(JsonNode jsonNode) {
+        return JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class);
+    }
+
+    private static Path constructErrorFilePathInsideTheBucket(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         Path parentFolder = extractFolderPath(event.getDetail());
         String filename = createErrorReportFilename(event) + FILE_ENDING;
         return Path.of(parentFolder.toString(), filename);
@@ -115,6 +119,17 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .map(Path::of)
                    .map(Path::getParent)
                    .orElseThrow();
+    }
+
+    private static Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        return attempt(() -> parseCristinObject(event))
+                   .map(CristinObject::getId)
+                   .map(Objects::toString)
+                   .toOptional();
+    }
+
+    private static String unknownCristinIdReportFilename() {
+        return UNKNOWN_CRISTIN_ID + UUID.randomUUID();
     }
 
     private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -152,20 +167,9 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         }
     }
 
-    private static Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::getId)
-                   .map(Objects::toString)
-                   .toOptional();
-    }
-
-    private static String unknownCristinIdReportFilename() {
-        return UNKNOWN_CRISTIN_ID + UUID.randomUUID();
-    }
-
     private RuntimeException handleSavingError(Failure<Publication> fail,
                                                AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        String cristinObjectId = extractCristinObjectId(event).orElse(null);
+        String cristinObjectId = extractCristinObjectId(event).orElse(DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE);
         String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, event);

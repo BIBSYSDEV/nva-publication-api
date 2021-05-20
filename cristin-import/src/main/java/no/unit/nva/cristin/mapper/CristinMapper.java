@@ -38,8 +38,8 @@ public class CristinMapper {
     public static final String DUMMY_FILENAME = "NonExistent";
     public static final String SOME_LANGUAGE = "nb";
     public static final File NON_EXISTENT_FILE = createNonExistentFile();
-    public static final String UNIT_ORG = "https://api.dev.nva.aws.unit"
-                                          + ".no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934";
+    public static final URI HARDCODED_NVA_CUSTOMER =
+        URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secodary category";
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
@@ -81,8 +81,7 @@ public class CristinMapper {
     }
 
     private Organization extractOrganization() {
-        URI customerUri = URI.create(UNIT_ORG);
-        return new Organization.Builder().withId(customerUri).build();
+        return new Organization.Builder().withId(HARDCODED_NVA_CUSTOMER).build();
     }
 
     private Instant extractEntryCreationDate() {
