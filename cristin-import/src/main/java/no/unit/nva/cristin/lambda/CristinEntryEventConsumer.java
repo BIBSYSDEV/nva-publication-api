@@ -41,7 +41,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String FILE_ENDING = ".json";
     public static final String EMPTY_FRAGMENT = null;
-    public static final String ID_FIELD = "id";
     public static final String UNKNOWN_CRISTIN_ID = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE = null;
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
