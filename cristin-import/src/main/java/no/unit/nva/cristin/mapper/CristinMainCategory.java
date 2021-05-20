@@ -7,7 +7,7 @@ import java.util.Objects;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinMainCategory {
-    BOOK("BOK"), UNMAPPED;
+    BOOK("BOK", "BOOK"), UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
     private final List<String> aliases;
