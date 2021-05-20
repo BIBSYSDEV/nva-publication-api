@@ -38,7 +38,7 @@ dependencies {
     }
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
-    compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
+    compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.66'
     compileOnly group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
     compileOnly(project(":storage-model")) {
