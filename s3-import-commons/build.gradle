@@ -13,6 +13,7 @@ dependencies {
     implementation group: 'software.amazon.awssdk', name: 'aws-core', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'sdk-core', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
 
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
@@ -40,7 +41,6 @@ dependencies {
 
     compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
     compileOnly group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
-    compileOnly group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
     compileOnly group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
 
     compileOnly(group: 'software.amazon.awssdk', name: 'auth', version: project.ext.awsSdk2Version) {
