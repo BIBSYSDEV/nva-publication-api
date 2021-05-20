@@ -31,6 +31,7 @@ import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<JsonNode>, Publication> {
@@ -52,7 +53,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(defaultDynamoDbClient(), S3Client.builder().build());
+        this(defaultDynamoDbClient(), defaultS3Client());
     }
 
     @JacocoGenerated
@@ -75,6 +76,12 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .map(CristinObject::toPublication)
                    .flatMap(this::persistInDatabase)
                    .orElseThrow(fail -> handleSavingError(fail, event));
+    }
+
+    private static S3Client defaultS3Client() {
+        return S3Client.builder()
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
 
     @JacocoGenerated
