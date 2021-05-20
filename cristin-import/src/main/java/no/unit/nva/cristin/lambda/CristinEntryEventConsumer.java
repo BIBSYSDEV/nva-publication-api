@@ -44,7 +44,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String FILE_ENDING = ".json";
     public static final String EMPTY_FRAGMENT = null;
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
-    public static final String DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE = null;
+    public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private final ResourceService resourceService;
@@ -143,7 +143,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private RuntimeException handleSavingError(Failure<Publication> fail,
                                                AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        String cristinObjectId = extractCristinObjectId(event).orElse(DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE);
+        String cristinObjectId = extractCristinObjectId(event).orElse(DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE);
         String errorMessage = ERROR_SAVING_CRISTIN_RESULT + cristinObjectId;
         logger.error(errorMessage, fail.getException());
         saveReportToS3(fail, event);
