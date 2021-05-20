@@ -15,7 +15,7 @@ public final class ApplicationConstants {
     public static final String EVENT_BUS_NAME = setupEventBus();
     public static final Region AWS_REGION = setupRegion();
     private static final Integer DEFAULT_MAX_SLEEP_TIME = 100;
-    public static final Integer MAX_SLEEP_TIME = setupSleepTimeIncreaseFactor();
+    public static final Integer MAX_SLEEP_TIME = setupMaxSleepTime();
 
     private ApplicationConstants() {
 
@@ -37,7 +37,7 @@ public final class ApplicationConstants {
                    .build();
     }
 
-    private static Integer setupSleepTimeIncreaseFactor() {
+    private static Integer setupMaxSleepTime() {
         return ENVIRONMENT.readEnvOpt("MAX_SLEEP_TIME")
                    .map(Integer::parseInt)
                    .orElse(DEFAULT_MAX_SLEEP_TIME);
