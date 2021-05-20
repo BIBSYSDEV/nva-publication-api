@@ -19,6 +19,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
+import no.unit.nva.model.Level;
 import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -46,6 +47,8 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
+    public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
+    public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -127,6 +130,9 @@ public class CristinMapper {
         if (isBook()) {
             return new Book.Builder()
                        .withIsbnList(Collections.emptyList())
+                       .withPublisher(HARDCODED_BOOK_PUBLISHER)
+                       .withLevel(SAMPLE_HARDCODED_LEVEL)
+                       .withOpenAccess(false)
                        .build();
         }
         return null;
