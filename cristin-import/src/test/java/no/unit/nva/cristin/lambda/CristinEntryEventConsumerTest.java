@@ -5,6 +5,7 @@ import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.FILE_ENDING;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.mapper.CristinMapper.HARDCODED_NVA_CUSTOMER;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
@@ -281,6 +282,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
             objectMapperNoEmpty.readValue(errorReport, IMPORT_RESULT_JAVA_TYPE);
 
+        assertThat(errorReportFile, containsString(UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX));
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
     }
 

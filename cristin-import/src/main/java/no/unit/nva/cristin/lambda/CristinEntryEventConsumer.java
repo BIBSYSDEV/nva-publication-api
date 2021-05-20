@@ -41,7 +41,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String FILE_ENDING = ".json";
     public static final String EMPTY_FRAGMENT = null;
-    public static final String UNKNOWN_CRISTIN_ID = "unknownCristinId_";
+    public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXPCETION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
@@ -81,19 +81,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .standard()
                    .withRegion(ApplicationConstants.AWS_REGION.id())
                    .build();
-    }
-
-    private static Path extractFolderPath(FileContentsEvent<JsonNode> event) {
-        return Optional.of(event)
-                   .map(FileContentsEvent::getFileUri)
-                   .map(URI::getPath)
-                   .map(Path::of)
-                   .map(Path::getParent)
-                   .orElseThrow();
-    }
-
-    private static String unknownCristinIdReportFilename() {
-        return UNKNOWN_CRISTIN_ID + UUID.randomUUID();
     }
 
     private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -153,10 +140,9 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::getId)
-                   .map(Objects::toString)
-                   .toOptional();
+        Try<Integer> id = attempt(() -> parseCristinObject(event))
+                              .map(CristinObject::getId);
+        return id.toOptional().map(Objects::toString);
     }
 
     private void saveReportToS3(Failure<Publication> fail,
@@ -181,7 +167,20 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return Path.of(parentFolder.toString(), ERRORS_FOLDER, filename);
     }
 
+    private Path extractFolderPath(FileContentsEvent<JsonNode> event) {
+        return Optional.of(event)
+                   .map(FileContentsEvent::getFileUri)
+                   .map(URI::getPath)
+                   .map(Path::of)
+                   .map(Path::getParent)
+                   .orElseThrow();
+    }
+
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return extractCristinObjectId(event).orElse(unknownCristinIdReportFilename());
+        return extractCristinObjectId(event).orElseGet(() -> unknownCristinIdReportFilename());
+    }
+
+    private String unknownCristinIdReportFilename() {
+        return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID();
     }
 }
