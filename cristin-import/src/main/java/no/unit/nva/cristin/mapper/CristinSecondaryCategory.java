@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Map;
 
 public enum CristinSecondaryCategory {
-    ANTHOLOGY, TEMPORARILY_UNKNOWN, UNMAPPED;
+    ANTHOLOGY, UNMAPPED;
 
     private static final Map<String, CristinSecondaryCategory> KNOWN_ALIASES_MAP = knownAliases();
     private static final Map<CristinSecondaryCategory, String> DEFAULT_NAMES_MAP = defaultNamesMap();
@@ -30,7 +30,6 @@ public enum CristinSecondaryCategory {
 
     private static Map<CristinSecondaryCategory, String> defaultNamesMap() {
         return Map.of(ANTHOLOGY, "ANTOLOGI",
-                      TEMPORARILY_UNKNOWN, "TEMPORARILY_UNKNOWN",
                       UNMAPPED, "UNMAPPED");
     }
 }
