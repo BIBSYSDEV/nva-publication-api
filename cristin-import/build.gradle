@@ -15,7 +15,8 @@ dependencies {
 
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+
+    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jsr310", version: project.ext.jacksonVersion
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jdk8", version: project.ext.jacksonVersion
 
@@ -38,6 +39,8 @@ dependencies {
         because "For comparing java objects and detailing the differences in readable way"
     }
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+
+    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
     compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
     compileOnly group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
