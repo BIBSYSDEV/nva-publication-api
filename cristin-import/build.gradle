@@ -21,12 +21,9 @@ dependencies {
 
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: project.ext.awsSdkVersion
-    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-
+    compileOnly group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
 
     implementation group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
-
-    runtimeOnly group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
 
     testImplementation project(":storage-model")
     testImplementation project(":publication-testing")

@@ -78,6 +78,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .orElseThrow(fail -> handleSavingError(fail, event));
     }
 
+    @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
                    .httpClient(UrlConnectionHttpClient.create())
