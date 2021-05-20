@@ -49,6 +49,7 @@ public class CristinMapper {
                                                                             + "categories";
     public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
     public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
+    public static final String HARDCODED_PAGE = "1";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -150,10 +151,11 @@ public class CristinMapper {
     }
 
     private BookAnthology createBookAnthology() {
+        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
         MonographPages pages = new MonographPages.Builder()
-                                   .withPages("1")
+                                   .withPages(HARDCODED_PAGE)
                                    .withIllustrated(false)
-                                   .withIntroduction(new Range.Builder().withBegin("1").withEnd("1").build())
+                                   .withIntroduction(introductionRange)
                                    .build();
         return new BookAnthology.Builder()
                    .withPeerReviewed(false)
