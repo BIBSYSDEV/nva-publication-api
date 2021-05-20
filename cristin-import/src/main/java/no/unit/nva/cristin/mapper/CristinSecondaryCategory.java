@@ -2,29 +2,38 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import nva.commons.core.SingletonCollector;
 
 public enum CristinSecondaryCategory {
-    ANTHOLOGY;
+    ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"), UNMAPPED;
 
-    private static final Map<String, CristinSecondaryCategory> ALIASES_MAP = createAliasesMap();
-    private static final Map<CristinSecondaryCategory, String> DEFAULT_NAMES_MAP = defaultNamesMap();
+    public static final int DEFAULT_VALUE = 0;
+    private final List<String> aliases;
+
+    CristinSecondaryCategory(String... aliases) {
+        this.aliases = Arrays.asList(aliases);
+    }
 
     @JsonCreator
     public static CristinSecondaryCategory fromString(String category) {
-        return ALIASES_MAP.get(category);
+        return Arrays.stream(values())
+                   .filter(enumValue -> enumValue.aliases.contains(category))
+                   .collect(SingletonCollector.collectOrElse(UNMAPPED));
     }
 
     @JsonValue
     public String getValue() {
-        return DEFAULT_NAMES_MAP.get(this);
+        if (Objects.nonNull(aliases) && !aliases.isEmpty()) {
+            return aliases.get(DEFAULT_VALUE);
+        }
+        return this.name();
     }
 
-    private static Map<String, CristinSecondaryCategory> createAliasesMap() {
-        return Map.of("ANTOLOGI", ANTHOLOGY);
+    public boolean isUnknownCategory() {
+        return UNMAPPED.equals(this);
     }
 
-    private static Map<CristinSecondaryCategory, String> defaultNamesMap() {
-        return Map.of(ANTHOLOGY, "ANTOLOGI");
-    }
 }
