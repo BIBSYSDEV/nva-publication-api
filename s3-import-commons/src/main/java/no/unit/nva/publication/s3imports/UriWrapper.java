@@ -58,9 +58,7 @@ public class UriWrapper {
 
     public Path toS3bucketPath() {
         String path = uri.getPath();
-        path = path.startsWith(ROOT)
-                   ? path.substring(1)
-                   : path;
+        path = path.startsWith(ROOT) ? path.substring(1) : path;
         return Path.of(path);
     }
 
