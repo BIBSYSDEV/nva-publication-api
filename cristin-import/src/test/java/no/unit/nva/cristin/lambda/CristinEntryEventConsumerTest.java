@@ -2,6 +2,7 @@ package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.FILE_ENDING;
 import static no.unit.nva.cristin.mapper.CristinMapper.HARDCODED_NVA_CUSTOMER;
@@ -13,8 +14,8 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -36,6 +37,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
+import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
@@ -53,18 +55,14 @@ import org.junit.jupiter.api.function.Executable;
 
 public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
-    public static final Path VALID_CRISTIN_ENTRY_EVENT = Path.of("valid_cristin_entry_event.json");
-    public static final AwsEventBridgeEvent<FileContentsEvent<JsonNode>> VALID_CRISTIN_ENTRY_EVENT_OBJECT =
-        parseEvent(IoUtils.stringFromResources(VALID_CRISTIN_ENTRY_EVENT));
-
     public static final Context CONTEXT = mock(Context.class);
     public static final String DETAIL_FIELD = "detail";
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final String RESOURCE_EXCEPTION_MESSAGE = "resourceExceptionMessage";
-    public static final String OWNER_VALUE_IN_RESOURCE_FILE = "someRandomUser";
     public static final JavaType IMPORT_RESULT_JAVA_TYPE = constructImportResultJavaType();
     public static final String IGNORED_VALUE = "someBucket";
     public static final Path LIST_ALL_FILES = Path.of("");
+    public static final String ID_FIELD_NAME = "id";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -90,14 +88,13 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         CristinObject cristinObject = cristinDataGenerator.randomObject();
-        String event = cristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
+        InputStream input = stringToStream(event.toJsonString());
 
-        Integer cristinIdentifier = cristinObject.getId();
-        Executable action = () -> handler.handleRequest((stringToStream(event)), outputStream,
-                                                        CONTEXT);
-
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         runWithoutThrowingException(action);
 
+        Integer cristinIdentifier = cristinObject.getId();
         assertThat(appender.getMessages(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
         assertThat(appender.getMessages(), containsString(RESOURCE_EXCEPTION_MESSAGE));
     }
@@ -117,21 +114,19 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() {
         CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event =
-            cristinDataGenerator.toAwsEvent(cristinObject);
-        InputStream input = stringToStream(event.toJsonString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        InputStream input = stringToStream(awsEvent.toJsonString());
+
         handler.handleRequest(input, outputStream, CONTEXT);
 
+        UserInstance userInstance = createExpectedPublcationOwner(awsEvent);
+        Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
-        expectedPublication.setOwner(event.getDetail().getPublicationsOwner());
-
-        UserInstance userInstance = extractUserInstance(event);
-
-        Publication actualPublication = resourceService.getPublicationsByOwner(userInstance)
-                                            .stream()
-                                            .collect(SingletonCollector.collect());
-
+        //publications owner is for now set in import time and is available as extra information in the event.
+        expectedPublication.setOwner(awsEvent.getDetail().getPublicationsOwner());
+        //NVA identifier is not known until the entry has been saved in the NVA database.
         expectedPublication.setIdentifier(actualPublication.getIdentifier());
+
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
@@ -139,18 +134,16 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerSavesPublicationWithOwnerBeingTheSuppliedByTheEventOwner() {
         CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
-        InputStream input = stringToStream(event.toJsonString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        InputStream input = stringToStream(awsEvent.toJsonString());
 
         handler.handleRequest(input, outputStream, CONTEXT);
 
-        UserInstance userInstance = extractUserInstance(event);
-        Publication actualPublication = resourceService.getPublicationsByOwner(userInstance)
-                                            .stream()
-                                            .collect(SingletonCollector.collect());
+        UserInstance userInstance = createExpectedPublcationOwner(awsEvent);
+        Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         String actualPublicationOwner = actualPublication.getOwner();
 
-        assertThat(actualPublicationOwner, is(equalTo(event.getDetail().getPublicationsOwner())));
+        assertThat(actualPublicationOwner, is(equalTo(awsEvent.getDetail().getPublicationsOwner())));
     }
 
     @Test
@@ -182,7 +175,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerSavesErrorReportInS3InTheLocationIndicatedAsTheInputsFileLocationAndWithFilenameTheObjectId() {
+    public void handlerSavesErrorReportInS3InTheLocationIndicatedAsTheInputsFileLocationAndWithFilenameTheObjectId()
+        throws JsonProcessingException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         CristinObject cristinObject = cristinDataGenerator.randomObject();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
@@ -191,20 +185,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         assertThrows(RuntimeException.class, action);
 
-        URI errorFileUri = CristinEntryEventConsumer.constructErrorFileUri(VALID_CRISTIN_ENTRY_EVENT_OBJECT);
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
-
-        String expectedFilename = cristinObject.getId() + FILE_ENDING;
-        Path expectedFolderPath = Optional.of(event)
-                                      .map(AwsEventBridgeEvent::getDetail)
-                                      .map(FileContentsEvent::getFileUri)
-                                      .map(URI::getPath)
-                                      .map(Path::of)
-                                      .map(Path::getParent)
-                                      .orElseThrow();
-        Path expectedPath = Path.of(expectedFolderPath.toString(), expectedFilename);
-        String actualReport = s3Driver.getFile(expectedPath.toString());
-        assertThat(actualReport, is(not(emptyString())));
+        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
+            extractActualReportFromS3Client(event);
+        assertThat(actualReport, is(not(nullValue())));
     }
 
     @Test
@@ -233,12 +216,18 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
-        RuntimeException thrownException = assertThrows(RuntimeException.class, action);
-        JsonNode expectedReport = constructExpectedErrorReport((Exception) thrownException.getCause(),
-                                                               event);
 
-        JsonNode actualReport = extractActualReportFromS3Client(event);
-        assertThat(actualReport, is(equalTo(expectedReport)));
+        RuntimeException thrownException = assertThrows(RuntimeException.class, action);
+        Exception cause = (Exception) thrownException.getCause();
+        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> expectedReport =
+            constructExpectedErrorReport(cause, event);
+
+        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
+            extractActualReportFromS3Client(event);
+
+        JsonNode expectedReportJson = objectMapperNoEmpty.convertValue(expectedReport, JsonNode.class);
+        JsonNode actualReportJson = objectMapperNoEmpty.convertValue(actualReport, JsonNode.class);
+        assertThat(actualReportJson, is(equalTo(expectedReportJson)));
     }
 
     @Test
@@ -251,13 +240,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
         runWithoutThrowingException(action);
 
-        URI errorFileUri = CristinEntryEventConsumer.constructErrorFileUri(awsEvent);
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
-        String actualReport = s3Driver.getFile(errorFileUri.getPath());
+        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
+            extractActualReportFromS3Client(awsEvent);
 
-        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> report =
-            objectMapperNoEmpty.readValue(actualReport, IMPORT_RESULT_JAVA_TYPE);
-        assertThat(report.getInput().getDetail().getContents(), is(equalTo(inputData)));
+        assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(inputData)));
     }
 
     @Test
@@ -319,23 +305,38 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                       readValue(input, eventType)).orElseThrow();
     }
 
+    private Publication fetchPublicationDirectlyFromDatabase(UserInstance userInstance) {
+        return resourceService.getPublicationsByOwner(userInstance)
+                   .stream()
+                   .collect(SingletonCollector.collect());
+    }
+
+    private URI constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
+        UriWrapper inputFileUri = new UriWrapper(awsEvent.getDetail().getFileUri());
+        UriWrapper errorsFolder = inputFileUri.getParent()
+                                      .map(parent -> parent.addChild(Path.of(ERRORS_FOLDER)))
+                                      .orElseThrow();
+        String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
+        String filename = cristinObjectId + FILE_ENDING;
+        return errorsFolder.addChild(Path.of(filename)).getUri();
+    }
+
     private void runWithoutThrowingException(Executable action) {
         assertThrows(RuntimeException.class, action);
     }
 
-    private JsonNode extractActualReportFromS3Client(
+    private ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> extractActualReportFromS3Client(
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) throws JsonProcessingException {
-        URI errorFileUri = CristinEntryEventConsumer.constructErrorFileUri(event);
+        URI errorFileUri = constructErrorFileUri(event);
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
         String content = s3Driver.getFile(errorFileUri.getPath());
-        return objectMapperNoEmpty.readTree(content);
+        return objectMapperNoEmpty.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 
-    private JsonNode constructExpectedErrorReport(Exception thrownException,
-                                                  AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> expectedImportResult =
-            ImportResult.reportFailure(event, thrownException);
-        return objectMapperNoEmpty.convertValue(expectedImportResult, JsonNode.class);
+    private ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> constructExpectedErrorReport(
+        Throwable thrownException,
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        return ImportResult.reportFailure(event, (Exception) thrownException);
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
@@ -361,7 +362,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return cristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
     }
 
-    private UserInstance extractUserInstance(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private UserInstance createExpectedPublcationOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return new UserInstance(event.getDetail().getPublicationsOwner(), HARDCODED_NVA_CUSTOMER);
     }
 
