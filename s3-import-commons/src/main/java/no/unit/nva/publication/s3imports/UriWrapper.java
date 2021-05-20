@@ -15,7 +15,6 @@ public class UriWrapper {
 
     public static final String EMPTY_FRAGMENT = null;
     public static final String ROOT = "/";
-    public static final Path ROOT_PATH = Path.of(ROOT);
     public static final String EMPTY_PATH = null;
     private final URI uri;
 
