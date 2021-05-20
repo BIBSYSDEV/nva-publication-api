@@ -16,6 +16,7 @@ public final class ApplicationConstants {
     public static final Region AWS_REGION = setupRegion();
     private static final Integer DEFAULT_MAX_SLEEP_TIME = 100;
     public static final Integer MAX_SLEEP_TIME = setupMaxSleepTime();
+    public static final String ERRORS_FOLDER = "errors";
 
     private ApplicationConstants() {
 

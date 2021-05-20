@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
@@ -76,11 +77,18 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request) {
-        UriWrapper errorReportLocation =
-            new UriWrapper(request.getS3Location()).addChild(Path.of(ERROR_REPORT_FILENAME));
+        UriWrapper errorReportUri = createErrorReportUri(request);
         S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketFromS3Location());
         String errorReportContent = PutEventsResult.toString(failedRequests);
-        s3Driver.insertFile(errorReportLocation.toS3bucketPath(), errorReportContent);
+        if (!failedRequests.isEmpty()) {
+            s3Driver.insertFile(errorReportUri.toS3bucketPath(), errorReportContent);
+        }
+    }
+
+    private UriWrapper createErrorReportUri(ImportRequest request) {
+        return new UriWrapper(request.getS3Location()).getParent()
+                   .orElse(new UriWrapper(request.getS3Location()))
+                   .addChild(Path.of(ERRORS_FOLDER, ERROR_REPORT_FILENAME));
     }
 
     private URI createUri(URI s3Location, String filename) {

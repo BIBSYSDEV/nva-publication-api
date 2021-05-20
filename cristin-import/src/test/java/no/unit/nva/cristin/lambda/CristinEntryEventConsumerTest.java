@@ -329,9 +329,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
         UriWrapper inputFileUri = new UriWrapper(awsEvent.getDetail().getFileUri());
-        UriWrapper errorsFolder = inputFileUri.getParent()
-                                      .map(parent -> parent.addChild(Path.of(ERRORS_FOLDER)))
-                                      .orElseThrow();
+        UriWrapper errorsFolder = inputFileUri.getParent().orElseThrow().addChild(Path.of(ERRORS_FOLDER));
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
         String filename = cristinObjectId + FILE_ENDING;
         return errorsFolder.addChild(Path.of(filename));

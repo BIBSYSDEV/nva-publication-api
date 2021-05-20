@@ -60,6 +60,7 @@ public class FileEntriesEventEmitterTest {
     public static final String SOME_OTHER_BUS = "someOtherBus";
     public static final String SOME_BUCKETNAME = "someBucketname";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
+    public static final String ALL_FILES = ".";
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
@@ -164,6 +165,19 @@ public class FileEntriesEventEmitterTest {
         }
     }
 
+    @Test
+    public void handlerDoesNotCrateFileInS3FolderWhenNoErrorsOccur() {
+        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        FileEntriesEventEmitter handler = newHandler();
+
+        handler.handleRequest(input, outputStream, CONTEXT);
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        List<String> allFiles = s3Driver.listFiles(Path.of(ALL_FILES));
+        String expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
+
+        assertThat(allFiles, containsInAnyOrder(expectedFile));
+    }
+
     private String extractActualErrorReport(ImportRequest importRequestForExistingFile) {
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         UriWrapper expectedErrorReportFilename = expectedErrorReportUri(importRequestForExistingFile);
@@ -215,6 +229,7 @@ public class FileEntriesEventEmitterTest {
                                  customImportRequestEventType);
     }
 
+    //used in parametrized test
     private static Stream<Function<Collection<SampleObject>, FileContent>> ionContentProvider() {
         return Stream.of(
             FileEntriesEventEmitterTest::fileWithContentAsIonObjectsList,
@@ -319,8 +334,8 @@ public class FileEntriesEventEmitterTest {
     private UriWrapper generateUriForErrorReportFile(UriWrapper uri) {
         Path path = uri.getPath();
         String filename = path.getFileName().toString();
-        String errorReportFilename = FileEntriesEventEmitter.errorReportFilename(filename);
-        return uri.getParent().orElseThrow().addChild(Path.of(errorReportFilename));
+        Path errorReportPath = FileEntriesEventEmitter.errorReportPath(filename);
+        return uri.getParent().orElseThrow().addChild((errorReportPath));
     }
 
     private List<String> extractDetailTypesFromEvents() {

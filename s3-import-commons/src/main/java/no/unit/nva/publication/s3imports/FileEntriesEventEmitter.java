@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static nva.commons.core.attempt.Try.attempt;
@@ -77,8 +78,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         this.eventBridgeClient = eventBridgeClient;
     }
 
-    public static String errorReportFilename(String inputFilename) {
-        return inputFilename + ERROR_REPORT_FILE_SUFFIX;
+    public static Path errorReportPath(String inputFilename) {
+        return Path.of(ERRORS_FOLDER, inputFilename + ERROR_REPORT_FILE_SUFFIX);
     }
 
     @Override
@@ -106,7 +107,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private void storeErrorReportsInS3(Try<List<PutEventsResult>> failedEntries, ImportRequest input) {
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        UriWrapper reportFilename = generateErrorReportFilename(input);
+        UriWrapper reportFilename = generateErrorReportUri(input);
         List<PutEventsResult> putEventsResults =
             failedEntries.orElse(this::generateReportIndicatingTotalEmissionFailure);
 
@@ -116,12 +117,12 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         }
     }
 
-    private UriWrapper generateErrorReportFilename(ImportRequest input) {
+    private UriWrapper generateErrorReportUri(ImportRequest input) {
         final String inputFilename = Path.of(input.extractPathFromS3Location()).getFileName().toString();
         return Try.of(input.getS3Location())
                    .map(UriWrapper::new)
-                   .map(parent -> parent.getParent().orElse(parent.getHost()))
-                   .map(parent -> parent.addChild(Path.of(errorReportFilename(inputFilename))))
+                   .map(uri -> uri.getParent().orElseThrow())
+                   .map(parent -> parent.addChild(errorReportPath(inputFilename)))
                    .orElseThrow();
     }
 
