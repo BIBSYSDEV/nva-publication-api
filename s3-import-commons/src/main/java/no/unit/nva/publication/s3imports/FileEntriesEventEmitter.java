@@ -110,8 +110,10 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         List<PutEventsResult> putEventsResults =
             failedEntries.orElse(this::generateReportIndicatingTotalEmissionFailure);
 
-        String reportContent = PutEventsResult.toString(putEventsResults);
-        s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
+        if (!putEventsResults.isEmpty()) {
+            String reportContent = PutEventsResult.toString(putEventsResults);
+            s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
+        }
     }
 
     private UriWrapper generateErrorReportFilename(ImportRequest input) {
