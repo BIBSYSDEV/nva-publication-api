@@ -1,35 +1,36 @@
 package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import nva.commons.core.SingletonCollector;
 
 public enum CristinMainCategory {
-    BOOK, UNMAPPED;
+    BOOK("BOK"), UNMAPPED;
 
-    private static final Map<String, CristinMainCategory> KNOWN_ALIASES_MAP = createKnownAliasesMap();
-    private static final Map<CristinMainCategory, String> DEFAULT_NAMES_MAP = defaultNamesMap();
+    public static final int DEFAULT_VALUE = 0;
+    private final List<String> aliases;
+
+    CristinMainCategory(String... mapping) {
+        aliases = Arrays.asList(mapping);
+    }
 
     @JsonCreator
     public static CristinMainCategory fromString(String category) {
-        return KNOWN_ALIASES_MAP.getOrDefault(category, UNMAPPED);
+        return Arrays.stream(values())
+                   .filter(item -> item.aliases.contains(category))
+                   .collect(SingletonCollector.collectOrElse(UNMAPPED));
     }
 
-    @JsonValue
     public String getValue() {
-        return DEFAULT_NAMES_MAP.get(this);
+        if (Objects.nonNull(aliases) && !aliases.isEmpty()) {
+            return aliases.get(DEFAULT_VALUE);
+        }
+        return this.name();
     }
 
     public boolean isUnknownCategory() {
         return UNMAPPED.equals(this);
-    }
-
-    private static Map<String, CristinMainCategory> createKnownAliasesMap() {
-        return Map.of("BOK", BOOK);
-    }
-
-    private static Map<CristinMainCategory, String> defaultNamesMap() {
-        return Map.of(BOOK, "BOK",
-                      UNMAPPED, "UNMAPPED");
     }
 }
