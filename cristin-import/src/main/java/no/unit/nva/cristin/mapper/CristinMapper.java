@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.DUMMY_UUID;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.PUBLIC_DOMAIN_LICENSE;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.time.Instant;
@@ -9,7 +8,6 @@ import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,10 +15,7 @@ import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.File;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Level;
-import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
@@ -38,9 +33,6 @@ import nva.commons.core.attempt.Try;
 
 public class CristinMapper {
 
-    public static final String DUMMY_FILENAME = "NonExistent";
-    public static final String SOME_LANGUAGE = "nb";
-    public static final File NON_EXISTENT_FILE = createNonExistentFile();
     public static final URI HARDCODED_NVA_CUSTOMER =
         URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
@@ -50,6 +42,7 @@ public class CristinMapper {
     public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
     public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
     public static final String HARDCODED_PAGE = "1";
+
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -64,25 +57,7 @@ public class CristinMapper {
                    .withPublisher(extractOrganization())
                    .withOwner(cristinObject.getPublicationOwner())
                    .withStatus(PublicationStatus.DRAFT)
-                   .withFileSet(createFileSetPointingToTheNilFile())
-                   .build();
-    }
-
-    private static File createNonExistentFile() {
-        License publicDomainLicense = new License.Builder()
-                                          .withIdentifier(PUBLIC_DOMAIN_LICENSE)
-                                          .withLabels(Map.of(SOME_LANGUAGE, PUBLIC_DOMAIN_LICENSE))
-                                          .build();
-        return new File.Builder()
-                   .withName(DUMMY_FILENAME)
-                   .withIdentifier(DUMMY_UUID)
-                   .withLicense(publicDomainLicense)
-                   .build();
-    }
-
-    private FileSet createFileSetPointingToTheNilFile() {
-        return new FileSet.Builder()
-                   .withFiles(List.of(NON_EXISTENT_FILE))
+                   .withLink(HARDCODED_SAMPLE_DOI)
                    .build();
     }
 
