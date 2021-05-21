@@ -14,12 +14,10 @@ public class ImportRequest implements JsonSerializable {
 
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
-    public static final String TABLE_FIELD = "table";
     public static final String MISSING_FIELD_MESSAGE_PATTERN = "\"%s\"  field is missing";
     @JsonProperty("s3Location")
     private URI s3Location;
-    @JsonProperty("table")
-    private String table;
+
 
     //Default serializer necessary for AWS's serializer.
     @JacocoGenerated
@@ -27,10 +25,7 @@ public class ImportRequest implements JsonSerializable {
 
     }
 
-    public ImportRequest(String s3location,
-                         String table) {
-
-        this.table = table;
+    public ImportRequest(String s3location) {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElse(null);
     }
 
@@ -41,9 +36,8 @@ public class ImportRequest implements JsonSerializable {
      * @return the input as an {@link ImportRequest}
      */
     public static ImportRequest fromMap(Map<String, String> request) {
-        String s3Location = extractFieldFromMap(request, S3_LOCATION_FIELD);
-        String table = extractFieldFromMap(request, TABLE_FIELD);
-        return new ImportRequest(s3Location, table);
+        String s3Location = extractFieldFromMap(request);
+        return new ImportRequest(s3Location);
     }
 
     /**
@@ -55,9 +49,6 @@ public class ImportRequest implements JsonSerializable {
         Map<String, String> map = new ConcurrentHashMap<>();
         if (nonNull(getS3Location())) {
             map.put(S3_LOCATION_FIELD, getS3Location());
-        }
-        if (nonNull(getTable())) {
-            map.put(TABLE_FIELD, getTable());
         }
         return map;
     }
@@ -72,15 +63,6 @@ public class ImportRequest implements JsonSerializable {
         this.s3Location = URI.create(s3Location);
     }
 
-    @JacocoGenerated
-    public String getTable() {
-        return table;
-    }
-
-    @JacocoGenerated
-    public void setTable(String table) {
-        this.table = table;
-    }
 
     public String extractBucketFromS3Location() {
         return s3Location.getHost();
@@ -96,7 +78,7 @@ public class ImportRequest implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getS3Location(), getTable());
+        return Objects.hash(getS3Location());
     }
 
     @JacocoGenerated
@@ -109,8 +91,7 @@ public class ImportRequest implements JsonSerializable {
             return false;
         }
         ImportRequest request = (ImportRequest) o;
-        return Objects.equals(getS3Location(), request.getS3Location())
-               && Objects.equals(getTable(), request.getTable());
+        return Objects.equals(getS3Location(), request.getS3Location());
     }
 
     @Override
@@ -119,16 +100,16 @@ public class ImportRequest implements JsonSerializable {
         return toJsonString();
     }
 
-    private static String extractFieldFromMap(Map<String, String> request, String fieldName) {
+    private static String extractFieldFromMap(Map<String, String> request) {
         return request.keySet().stream()
-                   .filter(fieldName::equalsIgnoreCase)
+                   .filter(S3_LOCATION_FIELD::equalsIgnoreCase)
                    .findFirst()
                    .map(request::get)
-                   .orElseThrow(() -> errorForMissingField(fieldName));
+                   .orElseThrow(ImportRequest::errorForMissingField);
     }
 
-    private static IllegalArgumentException errorForMissingField(String fieldName) {
-        return new IllegalArgumentException(String.format(MISSING_FIELD_MESSAGE_PATTERN, fieldName));
+    private static IllegalArgumentException errorForMissingField() {
+        return new IllegalArgumentException(String.format(MISSING_FIELD_MESSAGE_PATTERN, S3_LOCATION_FIELD));
     }
 
     private String removeRoot(String path) {
