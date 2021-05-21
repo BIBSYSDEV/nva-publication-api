@@ -1,10 +1,10 @@
-package no.unit.nva.publication.modify;
+package no.unit.nva.publication.update;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.PUBLISHED;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
-import static no.unit.nva.publication.modify.ModifyPublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static no.unit.nva.publication.modify.ModifyPublicationHandler.ALLOWED_ORIGIN_ENV;
+import static no.unit.nva.publication.update.UpdatePublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static no.unit.nva.publication.update.UpdatePublicationHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static nva.commons.apigateway.HttpHeaders.CONTENT_TYPE;
 import static nva.commons.core.JsonUtils.objectMapper;
@@ -55,8 +55,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.zalando.problem.Problem;
 
-public class ModifyPublicationHandlerTest {
-    
+public class UpdatePublicationHandlerTest {
+
     public static final String IDENTIFIER = "identifier";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE =
         objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
@@ -69,9 +69,9 @@ public class ModifyPublicationHandlerTest {
     
     private ResourceService publicationService;
     private Context context;
-    
+
     private ByteArrayOutputStream output;
-    private ModifyPublicationHandler modifyPublicationHandler;
+    private UpdatePublicationHandler updatePublicationHandler;
     
     private Publication publication;
     
@@ -82,13 +82,13 @@ public class ModifyPublicationHandlerTest {
     public void setUp() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
-    
+
         publicationService = mock(ResourceService.class);
         context = mock(Context.class);
-    
+
         output = new ByteArrayOutputStream();
-        modifyPublicationHandler =
-            new ModifyPublicationHandler(publicationService, environment);
+        updatePublicationHandler =
+            new UpdatePublicationHandler(publicationService, environment);
         publication = createPublication();
     }
     
@@ -101,7 +101,7 @@ public class ModifyPublicationHandlerTest {
         serviceSucceedsAndReturnsModifiedPublication(modifiedPublication);
         InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
             modifiedPublication.getIdentifier()).build();
-        modifyPublicationHandler.handleRequest(inputStream, output, context);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
     }
@@ -114,7 +114,7 @@ public class ModifyPublicationHandlerTest {
         serviceSucceedsAndReturnsModifiedPublication(modifiedPublication);
         InputStream inputStream = generateInputStreamWithValidBodyAndHeadersAndPathParameters(
             modifiedPublication.getIdentifier()).build();
-        modifyPublicationHandler.handleRequest(inputStream, output, context);
+        updatePublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = toGatewayResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -126,7 +126,7 @@ public class ModifyPublicationHandlerTest {
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
     public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         InputStream event = generateInputStreamMissingPathParameters().build();
-        modifyPublicationHandler.handleRequest(event, output, context);
+        updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(IDENTIFIER_IS_NOT_A_VALID_UUID));
@@ -139,7 +139,7 @@ public class ModifyPublicationHandlerTest {
         serviceFailsOnModifyRequestWithRuntimeError();
         var event =
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
-        modifyPublicationHandler.handleRequest(event, output, context);
+        updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), containsString(
@@ -154,7 +154,7 @@ public class ModifyPublicationHandlerTest {
         publicationServiceThrowsException();
         var event =
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(publication.getIdentifier()).build();
-        modifyPublicationHandler.handleRequest(event, output, context);
+        updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
@@ -168,12 +168,12 @@ public class ModifyPublicationHandlerTest {
         var event = generateInputStreamWithValidBodyAndHeadersAndPathParameters(someIdentifier)
                         .withPathParameters(Map.of(IDENTIFIER, someOtherIdentifier.toString()))
                         .build();
-        
-        modifyPublicationHandler.handleRequest(event, output, context);
+
+        updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output);
         Problem problem = gatewayResponse.getBodyObject(Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
-        assertThat(problem.getDetail(), containsString(ModifyPublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
+        assertThat(problem.getDetail(), containsString(UpdatePublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
     }
     
     @Test
@@ -183,7 +183,7 @@ public class ModifyPublicationHandlerTest {
         String expectedDetail = serviceFailsOnGetRequestWithNotFoundError(identifier);
         var event =
             generateInputStreamWithValidBodyAndHeadersAndPathParameters(identifier).build();
-        modifyPublicationHandler.handleRequest(
+        updatePublicationHandler.handleRequest(
             event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
@@ -198,7 +198,7 @@ public class ModifyPublicationHandlerTest {
         serviceSucceedsOnGetRequest(publication);
         when(publicationService.updatePublication(any(Publication.class)))
             .then((Answer<Publication>) invocation -> {
-                throw new RuntimeException(ModifyPublicationHandlerTest.SOME_MESSAGE);
+                throw new RuntimeException(UpdatePublicationHandlerTest.SOME_MESSAGE);
             });
     }
     

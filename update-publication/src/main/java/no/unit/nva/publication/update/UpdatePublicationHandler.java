@@ -1,4 +1,4 @@
-package no.unit.nva.publication.modify;
+package no.unit.nva.publication.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -19,20 +19,20 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
 
-public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
-    
+public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
+
     public static final String IDENTIFIER_MISMATCH_ERROR_MESSAGE = "Identifiers in path and in body, do not match";
     private final ResourceService resourceService;
-    
+
     /**
      * Default constructor for MainHandler.
      */
     @JacocoGenerated
-    public ModifyPublicationHandler() {
+    public UpdatePublicationHandler() {
         this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                Clock.systemDefaultZone()),
-            new Environment());
+                 AmazonDynamoDBClientBuilder.defaultClient(),
+                 Clock.systemDefaultZone()),
+             new Environment());
     }
 
     /**
@@ -41,7 +41,7 @@ public class ModifyPublicationHandler extends ApiGatewayHandler<UpdatePublicatio
      * @param resourceService publicationService
      * @param environment     environment
      */
-    public ModifyPublicationHandler(ResourceService resourceService,
+    public UpdatePublicationHandler(ResourceService resourceService,
                                     Environment environment) {
         super(UpdatePublicationRequest.class, environment);
         this.resourceService = resourceService;
