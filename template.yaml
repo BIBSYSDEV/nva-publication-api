@@ -359,7 +359,7 @@ Resources:
                   schema:
                     $ref: '#/definitions/Publication'
             put:
-              summary: Modify Publication for Identifier
+              summary: Update Publication for Identifier
               consumes:
                 - application/json
               produces:
@@ -372,15 +372,15 @@ Resources:
                   type: string
                   format: uuid
                   required: true
-                  description: UUID identifier of the Publication to modify.
+                  description: UUID identifier of the Publication to update.
                 - in: body
                   name: publication
-                  description: The Publication to modify.
+                  description: The Publication update.
                   schema:
                     $ref: '#/definitions/Publication'
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaModifyPublicationFunction.Arn}/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaUpdatePublicationFunction.Arn}/invocations
                 responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
@@ -817,11 +817,11 @@ Resources:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
-  NvaModifyPublicationFunction:
+  NvaUpdatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: modify-publication
-      Handler: no.unit.nva.publication.modify.ModifyPublicationHandler::handleRequest
+      CodeUri: update-publication
+      Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
@@ -934,8 +934,8 @@ Resources:
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publish-publication
-      Handler: no.unit.nva.publication.publish.PublishPublicationHandler::handleRequest
+      CodeUri: update-publication
+      Handler: no.unit.nva.publication.update.PublishPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:

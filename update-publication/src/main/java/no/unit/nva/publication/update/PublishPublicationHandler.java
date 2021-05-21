@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publish;
+package no.unit.nva.publication.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;

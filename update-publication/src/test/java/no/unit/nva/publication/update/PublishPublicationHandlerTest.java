@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publish;
+package no.unit.nva.publication.update;
 
 import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
 import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
