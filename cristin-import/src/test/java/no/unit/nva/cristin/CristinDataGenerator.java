@@ -183,7 +183,7 @@ public class CristinDataGenerator {
                    .collect(Collectors.toList());
     }
 
-    private CristinContributorsAffiliation randomAffiliation() {
+    public static CristinContributorsAffiliation randomAffiliation() {
         return CristinContributorsAffiliation.builder()
                    .withInstitutionIdentifier(threeDigitPositiveNumber())
                    .withDepartmentIdentifier(threeDigitPositiveNumber())
@@ -198,12 +198,8 @@ public class CristinDataGenerator {
                    .build();
     }
 
-    private List<CristinContributorRole> randomAffiliationRoles() {
-        CristinContributorRole role = CristinContributorRole
-                                          .builder()
-                                          .withRoleCode(randomCristinContributorRoleCode())
-                                          .build();
-        return Collections.singletonList(role);
+    public static int largeRandomNumber() {
+        return 1 + RANDOM.nextInt(Integer.MAX_VALUE);
     }
 
     private CristinSecondaryCategory randomSecondaryCategory() {
@@ -249,21 +245,25 @@ public class CristinDataGenerator {
         return randomElement(LANGUAGE_CODES);
     }
 
-    private CristinContributorRoleCode randomCristinContributorRoleCode() {
+    private static List<CristinContributorRole> randomAffiliationRoles() {
+        CristinContributorRole role = CristinContributorRole
+                                          .builder()
+                                          .withRoleCode(randomCristinContributorRoleCode())
+                                          .build();
+        return Collections.singletonList(role);
+    }
+
+    private static CristinContributorRoleCode randomCristinContributorRoleCode() {
         return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
     }
 
-    private <T> T randomArrayElement(T[] array, int subArrayEndIndex) {
+    private static <T> T randomArrayElement(T[] array, int subArrayEndIndex) {
         return subArrayEndIndex > 0
                    ? array[RANDOM.nextInt(subArrayEndIndex)]
                    : array[RANDOM.nextInt(array.length)];
     }
 
-    private int largeRandomNumber() {
-        return 1 + RANDOM.nextInt(Integer.MAX_VALUE);
-    }
-
-    private int threeDigitPositiveNumber() {
+    private static int threeDigitPositiveNumber() {
         return RANDOM.nextInt(1000);
     }
 

@@ -31,6 +31,7 @@ import nva.commons.core.JacocoGenerated;
 public class CristinContributor {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
     @JsonProperty("personlopenr")
     private Integer identifier;
     @JsonProperty("fornavn")
@@ -58,9 +59,18 @@ public class CristinContributor {
                    .withIdentity(identity)
                    .withCorrespondingAuthor(false)
                    .withAffiliations(extractAffiliations())
-                   .withRole(Role.CREATOR)
+                   .withRole(extractRoles())
                    .withSequence(contributorOrder)
                    .build();
+    }
+
+    private Role extractRoles() {
+        CristinContributorRole firstRole =
+            affiliations.stream()
+                .flatMap(a -> a.getRoles().stream())
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(MISSING_ROLE_ERROR));
+        return firstRole.toNvaRole();
     }
 
     private List<Organization> extractAffiliations() {
