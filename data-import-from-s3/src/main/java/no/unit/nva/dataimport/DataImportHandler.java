@@ -1,6 +1,7 @@
 package no.unit.nva.dataimport;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -39,7 +40,7 @@ public class DataImportHandler {
     private static final Logger logger = LoggerFactory.getLogger(DataImportHandler.class);
     private final AmazonDynamoDB dynamoClient;
     private S3Driver s3Driver;
-    private String tableName;
+
 
     @JacocoGenerated
     public DataImportHandler() {
@@ -54,7 +55,6 @@ public class DataImportHandler {
     public List<ImportResult<FailedDynamoEntriesReport>> handleRequest(Map<String, String> request) {
         logger.info("Request: " + requestToJson(request));
         ImportRequest input = ImportRequest.fromMap(request);
-        tableName = input.getTable();
 
         setupS3Driver(input.extractBucketFromS3Location());
         List<String> filenames = fetchFilenamesFromS3Location(input);
@@ -135,7 +135,10 @@ public class DataImportHandler {
     }
 
     private BatchWriteItemResult insertFileToDynamo(String filename) {
-        S3ToDynamoImporter s3ToDynamoImporter = new S3ToDynamoImporter(dynamoClient, s3Driver, tableName, filename);
+        S3ToDynamoImporter s3ToDynamoImporter = new S3ToDynamoImporter(dynamoClient,
+                                                                       s3Driver,
+                                                                       RESOURCES_TABLE_NAME,
+                                                                       filename);
         List<BatchWriteItemResult> results = attempt(s3ToDynamoImporter::writeFileToDynamo).orElseThrow();
         BatchWriteItemResult result = collectResults(results);
         if (itemsFailedToBeInserted(result)) {
