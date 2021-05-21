@@ -9,7 +9,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
@@ -81,9 +80,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void dataImportReadsIonFileWithResourcesAndStoresThemInDynamoDbRemote() {
 
         String s3Location = "s3://orestis-export/AWSDynamoDB/01617869890675-2abaf414/data/";
-        String tableName = "nva-resources-orestis-resources-nva-publication";
-
-        ImportRequest request = new ImportRequest(s3Location, tableName);
+        ImportRequest request = new ImportRequest(s3Location);
         DataImportHandler dataImportHandler = new DataImportHandler();
         dataImportHandler.handleRequest(request.toMap());
 
@@ -94,7 +91,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void dataImportReadsIonFileWithResourcesAndStoresThemInDynamoDb() {
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
         dataImportHandler.handleRequest(request.toMap());
 
@@ -112,9 +109,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
         Executable action = () -> dataImportHandler.handleRequest(invalidRequests);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(),
-                   either((containsString(ImportRequest.S3_LOCATION_FIELD)))
-                       .or(containsString(ImportRequest.TABLE_FIELD)));
+        assertThat(exception.getMessage(), (containsString(ImportRequest.S3_LOCATION_FIELD)));
     }
 
     @Test
@@ -123,7 +118,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         AtomicReference<String> failingContent = new AtomicReference<>();
 
         StubS3Driver s3Driver = failingS3Driver(failingContent);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
         List<ImportResult<FailedDynamoEntriesReport>> failures =
             dataImportHandler.handleRequest(request.toMap());
@@ -148,7 +143,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         String failingPrimaryPartitionKey = extractPrimaryPartitionKeyForFailingEntries(expectedFailingEntries);
 
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver,
                                                                     mockAmazonDynamoDb(failingPrimaryPartitionKey));
         List<ImportResult<FailedDynamoEntriesReport>> result =
@@ -190,7 +185,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void importAllFilesFromFolderThrowsExceptionWhenThereAreNoFilesInTheSpecifiedBucket() {
         resourceFiles = Collections.emptyList();
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
         Executable action = () -> dataImportHandler.handleRequest(request.toMap());
@@ -203,7 +198,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void handlerLogsInput() {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
         dataImportHandler.handleRequest(request.toMap());
@@ -211,17 +206,16 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private static Stream<Map<String, String>> invalidArgumentsProvider() {
-        Map<String, String> missingS3Location = new ImportRequest(null, RESOURCES_TABLE_NAME).toMap();
-        Map<String, String> missingTable = new ImportRequest(S3_LOCATION, null).toMap();
+        Map<String, String> missingS3Location = new ImportRequest(null).toMap();
         Map<String, String> wrongFields = Map.of("someField", "someValue");
-        return Stream.of(missingS3Location, missingTable, wrongFields);
+        return Stream.of(missingS3Location, wrongFields);
     }
 
     private List<ImportResult<FailedDynamoEntriesReport>> handlerWithInputThatCannotBeWrittenToDynamo() {
         resourceFiles = List.of(FIRST_SAMPLE, FAILING_TO_WRITE_FILE);
 
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
         return dataImportHandler.handleRequest(request.toMap());
