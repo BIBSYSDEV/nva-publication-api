@@ -85,7 +85,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
 
         ImportRequest request = new ImportRequest(s3Location, tableName);
         DataImportHandler dataImportHandler = new DataImportHandler();
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
+        dataImportHandler.handleRequest(request.toMap());
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(greaterThan(0)));
@@ -96,7 +96,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
         ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
+        dataImportHandler.handleRequest(request.toMap());
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(equalTo(s3Driver.getAllIonItems().size())));
@@ -110,7 +110,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
 
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        Executable action = () -> dataImportHandler.importAllFilesFromFolder(invalidRequests);
+        Executable action = () -> dataImportHandler.handleRequest(invalidRequests);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(),
                    either((containsString(ImportRequest.S3_LOCATION_FIELD)))
@@ -126,7 +126,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
         List<ImportResult<FailedDynamoEntriesReport>> failures =
-            dataImportHandler.importAllFilesFromFolder(request.toMap());
+            dataImportHandler.handleRequest(request.toMap());
         List<String> failedFiles = failures.stream()
                                        .map(ImportResult::getInput)
                                        .map(FailedDynamoEntriesReport::getInputFilename)
@@ -152,7 +152,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver,
                                                                     mockAmazonDynamoDb(failingPrimaryPartitionKey));
         List<ImportResult<FailedDynamoEntriesReport>> result =
-            dataImportHandler.importAllFilesFromFolder(request.toMap());
+            dataImportHandler.handleRequest(request.toMap());
         String errorMessages = result.stream()
                                    .map(ImportResult::getInput)
                                    .map(FailedDynamoEntriesReport::getEntryKeys)
@@ -193,7 +193,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        Executable action = () -> dataImportHandler.importAllFilesFromFolder(request.toMap());
+        Executable action = () -> dataImportHandler.handleRequest(request.toMap());
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
 
         assertThat(exception.getMessage(), is(equalTo(EMPTY_LIST_ERROR)));
@@ -206,7 +206,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
+        dataImportHandler.handleRequest(request.toMap());
         assertThat(appender.getMessages(), containsString(request.toJsonString()));
     }
 
@@ -224,7 +224,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        return dataImportHandler.importAllFilesFromFolder(request.toMap());
+        return dataImportHandler.handleRequest(request.toMap());
     }
 
     private String extractPrimaryPartitionKeyForFailingEntries(List<String> expectedFailingEntries) {

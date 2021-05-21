@@ -51,7 +51,7 @@ public class DataImportHandler {
         this.dynamoClient = dynamoClient;
     }
 
-    public List<ImportResult<FailedDynamoEntriesReport>> importAllFilesFromFolder(Map<String, String> request) {
+    public List<ImportResult<FailedDynamoEntriesReport>> handleRequest(Map<String, String> request) {
         logger.info("Request: " + requestToJson(request));
         ImportRequest input = ImportRequest.fromMap(request);
         tableName = input.getTable();
