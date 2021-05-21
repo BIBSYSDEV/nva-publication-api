@@ -25,7 +25,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
@@ -328,14 +327,12 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .collect(SingletonCollector.collect());
     }
 
-    private URI constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
+    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
         UriWrapper inputFileUri = new UriWrapper(awsEvent.getDetail().getFileUri());
-        UriWrapper errorsFolder = inputFileUri.getParent()
-                                      .map(parent -> parent.addChild(Path.of(ERRORS_FOLDER)))
-                                      .orElseThrow();
+        UriWrapper errorsFolder = inputFileUri.getParent().orElseThrow().addChild(Path.of(ERRORS_FOLDER));
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
         String filename = cristinObjectId + FILE_ENDING;
-        return errorsFolder.addChild(Path.of(filename)).getUri();
+        return errorsFolder.addChild(Path.of(filename));
     }
 
     private void runWithoutThrowingException(Executable action) {
@@ -344,9 +341,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> extractActualReportFromS3Client(
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) throws JsonProcessingException {
-        URI errorFileUri = constructErrorFileUri(event);
-        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getHost());
-        String content = s3Driver.getFile(errorFileUri.getPath());
+        UriWrapper errorFileUri = constructErrorFileUri(event);
+        S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
+        String content = s3Driver.getFile(errorFileUri.toS3bucketPath().toString());
         return objectMapperNoEmpty.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 

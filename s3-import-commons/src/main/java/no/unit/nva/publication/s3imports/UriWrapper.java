@@ -15,7 +15,6 @@ public class UriWrapper {
 
     public static final String EMPTY_FRAGMENT = null;
     public static final String ROOT = "/";
-    public static final Path ROOT_PATH = Path.of(ROOT);
     public static final String EMPTY_PATH = null;
     private final URI uri;
 
@@ -59,9 +58,7 @@ public class UriWrapper {
 
     public Path toS3bucketPath() {
         String path = uri.getPath();
-        path = path.startsWith(ROOT)
-                   ? path.substring(1)
-                   : path;
+        path = path.startsWith(ROOT) ? path.substring(1) : path;
         return Path.of(path);
     }
 

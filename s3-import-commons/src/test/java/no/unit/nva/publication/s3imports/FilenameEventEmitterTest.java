@@ -2,6 +2,7 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,13 +50,14 @@ public class FilenameEventEmitterTest {
     public static final String SOME_S3_LOCATION = SOME_BUCKET;
     public static final String FILE_DIRECTLY_UNDER_S3_LOCATION = SOME_FOLDER + "file01";
     public static final String FILE_IN_SUBFOLDER = SOME_FOLDER + "someOtherFolder/file02";
-    public static final List<String> FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
+    public static final List<String> INPUT_FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
     public static final String SOME_USER = randomString();
     public static final String SOME_IMPORT_EVENT_TYPE = "someImportEventType";
     private static final Context CONTEXT = mock(Context.class);
+    public static final String LIST_ALL_FILES = ".";
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -142,7 +145,7 @@ public class FilenameEventEmitterTest {
 
         String[] expectedFileUris = expectedFileUris();
         assertThat(failedResults, containsInAnyOrder(expectedFileUris));
-        for (String filename : FILE_LIST) {
+        for (String filename : INPUT_FILE_LIST) {
             assertThat(appender.getMessages(), containsString(filename));
         }
     }
@@ -155,11 +158,23 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
-
-        String content = s3Driver.getFile(ERROR_REPORT_FILENAME);
-        for (String filename : FILE_LIST) {
+        Path errorReportFile = Path.of(ERRORS_FOLDER, ERROR_REPORT_FILENAME);
+        String content = s3Driver.getFile(errorReportFile.toString());
+        for (String filename : INPUT_FILE_LIST) {
             assertThat(content, containsString(filename));
         }
+    }
+
+    @Test
+    public void handlerDoesNotCreateReportFileWhenNoErrorHasOccurred()
+        throws IOException {
+        ImportRequest importRequest = newImportRequest();
+        InputStream inputStream = toJsonStream(importRequest);
+        handler.handleRequest(inputStream, outputStream, CONTEXT);
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
+
+        List<String> allFiles = s3Driver.listFiles(Path.of(LIST_ALL_FILES));
+        assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(String[]::new)));
     }
 
     @Test
@@ -198,7 +213,7 @@ public class FilenameEventEmitterTest {
     }
 
     private static Map<String, InputStream> fileContents() {
-        return FILE_LIST.stream()
+        return INPUT_FILE_LIST.stream()
                    .map(file -> new SimpleEntry<>(file, fileContent()))
                    .collect(Collectors.toMap(SimpleEntry::getKey,
                                              SimpleEntry::getValue));
@@ -213,7 +228,7 @@ public class FilenameEventEmitterTest {
     }
 
     private String[] expectedFileUris() {
-        return FILE_LIST.stream()
+        return INPUT_FILE_LIST.stream()
                    .map(filename -> SOME_BUCKET + filename)
                    .collect(Collectors.toList())
                    .toArray(String[]::new);

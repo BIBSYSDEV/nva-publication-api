@@ -7,7 +7,7 @@ import java.net.URI;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 
 /**
- * Wrapper class for using in Lambda functions.
+ * Wrapper class for using generic in Lambda handler constructors.
  */
 
 public class CristinObjectEvent extends FileContentsEvent<JsonNode> {
