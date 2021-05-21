@@ -10,11 +10,19 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
+    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+
     implementation group: 'software.amazon.awssdk', name: 'aws-core', version: project.ext.awsSdk2Version
     implementation group: 'software.amazon.awssdk', name: 'sdk-core', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'eventbridge', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
+    implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
+
     implementation group: 'software.amazon.ion', name: 'ion-java', version: '1.5.1'
 
-    implementation group: 'software.amazon.awssdk', name: 'http-client-spi', version: project.ext.awsSdk2Version
+
     implementation group: 'org.apache.commons', name: 'commons-collections4', version: '4.4'
 
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jsr310", version: project.ext.jacksonVersion
@@ -27,7 +35,6 @@ dependencies {
     testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
     testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 'utils', version: project.ext.awsSdk2Version
-    testImplementation group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
     compileOnly(project(":storage-model")) {
@@ -37,11 +44,7 @@ dependencies {
     compileOnly group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
 
-    compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
-    compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
-    compileOnly group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
-    compileOnly group: 'software.amazon.awssdk', name: 'url-connection-client', version: project.ext.awsSdk2Version
-    compileOnly group: 'software.amazon.awssdk', name: 'regions', version: project.ext.awsSdk2Version
+
 
     compileOnly(group: 'software.amazon.awssdk', name: 'auth', version: project.ext.awsSdk2Version) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "

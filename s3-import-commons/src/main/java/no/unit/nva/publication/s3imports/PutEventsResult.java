@@ -29,20 +29,6 @@ public class PutEventsResult {
         return events.stream().map(Object::toString).collect(Collectors.joining(System.lineSeparator()));
     }
 
-    @JacocoGenerated
-    public PutEventsRequest getRequest() {
-        return request;
-    }
-
-    @JacocoGenerated
-    public PutEventsResponse getResponse() {
-        return response;
-    }
-
-    public boolean hasFailures() {
-        return response.failedEntryCount() > 0;
-    }
-
     /**
      * Override toString as a workaround for the the fact at {@link PutEventsRequest} and {@link PutEventsResult} are
      * not serializable as Json objects with Jackson, but they contain all information in their {@code toString()}
@@ -55,5 +41,19 @@ public class PutEventsResult {
         String requestString = nonNull(getRequest()) ? getRequest().toString() : EMPTY_STRING;
         String responseString = nonNull(getResponse()) ? getResponse().toString() : EMPTY_STRING;
         return String.format(TO_STRING_TEMPLATE, requestString, responseString);
+    }
+
+    @JacocoGenerated
+    public PutEventsRequest getRequest() {
+        return request;
+    }
+
+    @JacocoGenerated
+    public PutEventsResponse getResponse() {
+        return response;
+    }
+
+    public boolean hasFailures() {
+        return response.failedEntryCount() > 0;
     }
 }

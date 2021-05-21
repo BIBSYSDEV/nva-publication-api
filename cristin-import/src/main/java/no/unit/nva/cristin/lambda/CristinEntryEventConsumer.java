@@ -22,13 +22,16 @@ import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<JsonNode>, Publication> {
@@ -50,7 +53,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     @JacocoGenerated
     public CristinEntryEventConsumer() {
-        this(defaultDynamoDbClient(), S3Client.builder().build());
+        this(defaultDynamoDbClient(), defaultS3Client());
     }
 
     @JacocoGenerated
@@ -73,6 +76,13 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                    .map(CristinObject::toPublication)
                    .flatMap(this::persistInDatabase)
                    .orElseThrow(fail -> handleSavingError(fail, event));
+    }
+
+    @JacocoGenerated
+    private static S3Client defaultS3Client() {
+        return S3Client.builder()
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
 
     @JacocoGenerated
@@ -109,9 +119,17 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
         for (int efforts = 0; shouldTryAgain(attemptSave, efforts); efforts++) {
             attemptSave = tryPersistingInDatabase(publication);
+
             avoidCongestionInDatabase(RANDOM.nextInt(MAX_SLEEP_TIME));
         }
         return attemptSave;
+    }
+
+    private Publication publishPublication(Publication publication)
+        throws ApiGatewayException {
+        UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        resourceService.publishPublication(userInstance, publication.getIdentifier());
+        return resourceService.getPublication(publication);
     }
 
     private boolean shouldTryAgain(Try<Publication> attemptSave, int efforts) {
@@ -119,7 +137,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private Try<Publication> tryPersistingInDatabase(Publication publication) {
-        return attempt(() -> resourceService.createPublicationWithPredefinedCreationDate(publication));
+        return attempt(() -> resourceService.createPublicationWithPredefinedCreationDate(publication))
+                   .map(this::publishPublication);
     }
 
     private void avoidCongestionInDatabase(long sleepTime) {

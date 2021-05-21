@@ -35,7 +35,6 @@ import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -92,17 +91,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         assertThat(expectedTitles, is(not(empty())));
         assertThat(actualTitles, containsInAnyOrder(expectedTitles.toArray(String[]::new)));
         assertThat(actualTitles.size(), is(equalTo(cristinObjects.size())));
-    }
-
-    @Test
-    public void mapReturnsResourcePublicationStatusDraft() {
-
-        List<Publication> publications = cristinObjects()
-                                             .map(CristinObject::toPublication)
-                                             .collect(Collectors.toList());
-        for (Publication publication : publications) {
-            assertThat(publication.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
-        }
     }
 
     @Test

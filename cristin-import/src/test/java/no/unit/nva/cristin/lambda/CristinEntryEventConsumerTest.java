@@ -36,6 +36,7 @@ import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -102,14 +103,18 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerReturnsAnNvaPublicationEntryWhenInputIsEventWithCristinResult() throws JsonProcessingException {
-        String input = validEventToJsonString();
-        handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+        CristinObject cristinObject = cristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        InputStream input = stringToStream(awsEvent.toJsonString());
+        handler.handleRequest(input, outputStream, CONTEXT);
         String json = outputStream.toString();
         Publication actualPublication = objectMapperNoEmpty.readValue(json, Publication.class);
 
-        Publication expectedPublication = generatePublicationFromResource(input).toPublication();
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
+        Publication expectedPublication = generatePublicationFromResource(awsEvent.toJsonString()).toPublication();
+        injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
+
         assertThat(actualPublication, is(equalTo(expectedPublication)));
+        assertThat(actualPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
@@ -123,13 +128,23 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         UserInstance userInstance = createExpectedPublcationOwner(awsEvent);
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
+        injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
+
+        Diff diff = JAVERS.compare(expectedPublication, actualPublication);
+        assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
+                                                              Publication actualPublication,
+                                                              Publication expectedPublication) {
         //publications owner is for now set in import time and is available as extra information in the event.
         expectedPublication.setOwner(awsEvent.getDetail().getPublicationsOwner());
         //NVA identifier is not known until the entry has been saved in the NVA database.
         expectedPublication.setIdentifier(actualPublication.getIdentifier());
-
-        Diff diff = JAVERS.compare(expectedPublication, actualPublication);
-        assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
+        expectedPublication.setStatus(PublicationStatus.PUBLISHED);
+        expectedPublication.setCreatedDate(actualPublication.getCreatedDate());
+        expectedPublication.setModifiedDate(actualPublication.getModifiedDate());
+        expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
     }
 
     @Test

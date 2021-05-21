@@ -19,6 +19,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
+import no.unit.nva.model.Level;
 import no.unit.nva.model.License;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -30,7 +31,9 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.pages.Range;
 import nva.commons.core.attempt.Try;
 
 public class CristinMapper {
@@ -44,6 +47,9 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
+    public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
+    public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
+    public static final String HARDCODED_PAGE = "1";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -125,6 +131,9 @@ public class CristinMapper {
         if (isBook()) {
             return new Book.Builder()
                        .withIsbnList(Collections.emptyList())
+                       .withPublisher(HARDCODED_BOOK_PUBLISHER)
+                       .withLevel(SAMPLE_HARDCODED_LEVEL)
+                       .withOpenAccess(false)
                        .build();
         }
         return null;
@@ -132,7 +141,7 @@ public class CristinMapper {
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook() && isAnthology()) {
-            return createBuildAnthology();
+            return createBookAnthology();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
@@ -141,8 +150,17 @@ public class CristinMapper {
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
-    private BookAnthology createBuildAnthology() {
-        return new BookAnthology.Builder().build();
+    private BookAnthology createBookAnthology() {
+        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
+        MonographPages pages = new MonographPages.Builder()
+                                   .withPages(HARDCODED_PAGE)
+                                   .withIllustrated(false)
+                                   .withIntroduction(introductionRange)
+                                   .build();
+        return new BookAnthology.Builder()
+                   .withPeerReviewed(false)
+                   .withPages(pages)
+                   .build();
     }
 
     private boolean isAnthology() {
