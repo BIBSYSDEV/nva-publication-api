@@ -4,7 +4,9 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREAT
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -31,6 +33,7 @@ import nva.commons.core.JacocoGenerated;
 public class CristinContributor {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String MISSING_ROLE_ERROR = "Affiliation without Role";
     @JsonProperty("personlopenr")
     private Integer identifier;
     @JsonProperty("fornavn")
@@ -58,9 +61,20 @@ public class CristinContributor {
                    .withIdentity(identity)
                    .withCorrespondingAuthor(false)
                    .withAffiliations(extractAffiliations())
-                   .withRole(Role.CREATOR)
+                   .withRole(extractRoles())
                    .withSequence(contributorOrder)
                    .build();
+    }
+
+    private Role extractRoles() {
+        CristinContributorRole firstRole =
+            affiliations.stream()
+                .map(CristinContributorsAffiliation::getRoles)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(MISSING_ROLE_ERROR));
+        return firstRole.toNvaRole();
     }
 
     private List<Organization> extractAffiliations() {

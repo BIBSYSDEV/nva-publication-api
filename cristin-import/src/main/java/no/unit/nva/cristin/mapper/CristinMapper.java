@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
 import static nva.commons.core.attempt.Try.attempt;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -42,6 +43,9 @@ public class CristinMapper {
     public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
     public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
     public static final String HARDCODED_PAGE = "1";
+    public static final String HARDCODED_SERIES_NUMBER = "1";
+    public static final String HARDCODED_SERIES_TITLE = "hardcoded series title";
+    public static final URI HARDCODED_URI = URI.create("https://www.example.com/");
 
     private final CristinObject cristinObject;
 
@@ -102,11 +106,14 @@ public class CristinMapper {
                    .build();
     }
 
-    private PublicationContext buildPublicationContext() throws InvalidIsbnException {
+    private PublicationContext buildPublicationContext() throws InvalidIsbnException, MalformedURLException {
         if (isBook()) {
             return new Book.Builder()
                        .withIsbnList(Collections.emptyList())
                        .withPublisher(HARDCODED_BOOK_PUBLISHER)
+                       .withSeriesNumber(HARDCODED_SERIES_NUMBER)
+                       .withSeriesTitle(HARDCODED_SERIES_TITLE)
+                       .withUrl(HARDCODED_URI.toURL())
                        .withLevel(SAMPLE_HARDCODED_LEVEL)
                        .withOpenAccess(false)
                        .build();
@@ -135,6 +142,7 @@ public class CristinMapper {
         return new BookAnthology.Builder()
                    .withPeerReviewed(false)
                    .withPages(pages)
+                   .withTextbookContent(false)
                    .build();
     }
 
