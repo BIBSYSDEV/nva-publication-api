@@ -41,7 +41,7 @@ public class CristinContributorsAffiliation {
     private String originalDepartmentName;
     @JsonProperty("stednavn_opprinnelig")
     private String originalPlaceName; //TODO:  what is a place?
-    @JsonProperty
+    @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
 
     public CristinContributorsAffiliation() {
