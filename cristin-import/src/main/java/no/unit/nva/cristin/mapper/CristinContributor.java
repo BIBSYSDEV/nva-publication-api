@@ -4,7 +4,9 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREAT
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -67,7 +69,9 @@ public class CristinContributor {
     private Role extractRoles() {
         CristinContributorRole firstRole =
             affiliations.stream()
-                .flatMap(a -> a.getRoles().stream())
+                .map(CristinContributorsAffiliation::getRoles)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(MISSING_ROLE_ERROR));
         return firstRole.toNvaRole();
