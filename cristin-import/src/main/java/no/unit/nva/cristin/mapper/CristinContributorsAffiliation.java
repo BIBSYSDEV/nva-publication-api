@@ -55,6 +55,10 @@ public class CristinContributorsAffiliation {
                    .build();
     }
 
+    public CristinObjectBuilder copy() {
+        return this.toBuilder();
+    }
+
     private URI buildId() {
         String affiliationCristinCode = String.join(CRISTIN_UNITS_DELIMITER,
                                                     institutionIdentifier.toString(),

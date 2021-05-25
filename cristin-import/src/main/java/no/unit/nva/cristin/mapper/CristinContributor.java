@@ -20,6 +20,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
 @Data
 @Builder(
@@ -51,7 +52,8 @@ public class CristinContributor {
     }
 
     public Contributor toNvaContributor() throws MalformedContributorException {
-        String fullName = getFamilyName() + NAME_DELIMITER + getGivenName();
+
+        String fullName = constructFullName();
         Identity identity = new Identity.Builder()
                                 .withName(fullName)
                                 .withId(constructId())
@@ -64,6 +66,18 @@ public class CristinContributor {
                    .withRole(extractRoles())
                    .withSequence(contributorOrder)
                    .build();
+    }
+
+    private String constructFullName() {
+        StringBuilder nameBuilder = new StringBuilder();
+        if (StringUtils.isNotBlank(getFamilyName())) {
+            nameBuilder.append(getFamilyName());
+        }
+        if (StringUtils.isNotBlank(getGivenName())) {
+            nameBuilder.append(NAME_DELIMITER);
+            nameBuilder.append(getGivenName());
+        }
+        return StringUtils.isNotBlank(nameBuilder.toString()) ? nameBuilder.toString() : null;
     }
 
     private Role extractRoles() {
