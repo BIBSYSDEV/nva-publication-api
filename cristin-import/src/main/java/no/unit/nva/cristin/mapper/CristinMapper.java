@@ -50,6 +50,7 @@ public class CristinMapper {
     public static final String HARDCODED_SERIES_NUMBER = "1";
     public static final String HARDCODED_SERIES_TITLE = "hardcoded series title";
     public static final URI HARDCODED_URI = URI.create("https://www.example.com/");
+    public static final String HARDCODED_NPI_SUBJECT = "1007";
 
     private final CristinObject cristinObject;
 
@@ -101,6 +102,7 @@ public class CristinMapper {
                    .withDate(extractPublicationDate())
                    .withReference(buildReference())
                    .withContributors(extractContributors())
+                   .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
                    .build();
     }
 

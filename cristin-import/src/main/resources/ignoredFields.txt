@@ -21,7 +21,6 @@ entityDescription.abstract
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource
-entityDescription.npiSubjectHeading
 entityDescription.tags
 
 
