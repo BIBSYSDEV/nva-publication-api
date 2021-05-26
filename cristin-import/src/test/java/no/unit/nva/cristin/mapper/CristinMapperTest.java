@@ -268,7 +268,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationsWhereCristinCreatorRoleIsMappedToNvaCreatorRole() {
+    public void mapThrowsExceptionWhenACristinAffiliationDoesNotHaveARole() {
         CristinObject cristinObjectWithContributorsWithoutRole =
             cristinDataGenerator.randomObject()
                 .copy()
