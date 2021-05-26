@@ -979,7 +979,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: messages
-      Handler: no.unit.nva.pubication.messages.ListMessagesHandler::handleRequest
+      Handler: no.unit.nva.publication.messages.ListMessagesHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:
