@@ -127,19 +127,16 @@ public class CristinDataGenerator {
     }
 
     private CristinObject newCristinObject(Integer index) {
-        CristinObject document = CristinObject.builder()
-                                     .withMainCategory(randomMainCategory())
-                                     .withSecondaryCategory(randomSecondaryCategory())
-                                     .withCristinTitles(randomTitles())
-                                     .withId(index)
-                                     .withEntryCreationDate(LocalDate.now())
-                                     .withPublicationYear(randomYear())
-                                     .withContributors(randomContributors())
-                                     .build();
-
-        assertThat(document, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
-
-        return document;
+        return CristinObject.builder()
+                   .withMainCategory(randomMainCategory())
+                   .withSecondaryCategory(randomSecondaryCategory())
+                   .withCristinTitles(randomTitles())
+                   .withId(index)
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withContributors(randomContributors())
+                   .withPublicationOwner(randomString())
+                   .build();
     }
 
     private JsonNode cristinObjectWithUnexpectedValue(String customSecondaryCategory, String secondaryCategoryField)

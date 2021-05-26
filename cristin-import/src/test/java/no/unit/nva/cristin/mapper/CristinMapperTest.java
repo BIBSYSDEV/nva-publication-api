@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
+import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
@@ -8,6 +9,7 @@ import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
@@ -269,7 +271,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapThrowsExceptionWhenACristinAffiliationDoesNotHaveARole() {
         CristinObject cristinObjectWithContributorsWithoutRole =
             cristinDataGenerator.randomObject()
-                .toBuilder()
+                .copy()
                 .withContributors(List.of(contributorWithoutRoles()))
                 .build();
 
@@ -279,8 +281,32 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         assertThat(exception.getMessage(), is(equalTo(MISSING_ROLE_ERROR)));
     }
 
+    @Test
+    public void mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing() {
+        CristinContributor contributorWithMissingName = CristinContributor.builder()
+                                                            .withIdentifier(largeRandomNumber())
+                                                            .withContributorOrder(1)
+                                                            .withAffiliations(List.of(randomAffiliation()))
+                                                            .build();
+        CristinObject cristinObjectWithContributorsWithoutRole =
+            cristinDataGenerator.randomObject().copy()
+                .withPublicationOwner(randomString())
+                .withContributors(List.of(contributorWithMissingName))
+                .build();
+        Executable action = cristinObjectWithContributorsWithoutRole::toPublication;
+        MissingFieldsException error = assertThrows(MissingFieldsException.class, action);
+        assertThat(error.getMessage(), containsString(".entityDescription.contributors[0].identity.name"));
+    }
+
+    @Test
+    public void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
+        //re-use the test for the author's name
+        mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+    }
+
     private CristinContributor contributorWithoutRoles() {
-        CristinContributorsAffiliation affiliation = CristinDataGenerator.randomAffiliation().toBuilder()
+        CristinContributorsAffiliation affiliation = CristinDataGenerator.randomAffiliation()
+                                                         .copy()
                                                          .withRoles(Collections.emptyList())
                                                          .build();
 

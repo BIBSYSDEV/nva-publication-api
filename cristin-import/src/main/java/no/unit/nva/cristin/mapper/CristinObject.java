@@ -47,6 +47,10 @@ public class CristinObject implements JsonSerializable {
 
     }
 
+    public CristinObjectBuilder copy() {
+        return this.toBuilder();
+    }
+
     public Publication toPublication() {
         return new CristinMapper(this).generatePublication();
     }

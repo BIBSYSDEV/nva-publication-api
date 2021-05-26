@@ -1,7 +1,10 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Instant;
@@ -19,6 +22,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Level;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
@@ -46,6 +50,7 @@ public class CristinMapper {
     public static final String HARDCODED_SERIES_NUMBER = "1";
     public static final String HARDCODED_SERIES_TITLE = "hardcoded series title";
     public static final URI HARDCODED_URI = URI.create("https://www.example.com/");
+    public static final String HARDCODED_NPI_SUBJECT = "1007";
 
     private final CristinObject cristinObject;
 
@@ -54,15 +59,26 @@ public class CristinMapper {
     }
 
     public Publication generatePublication() {
-        return new Publication.Builder()
-                   .withAdditionalIdentifiers(Set.of(extractIdentifier()))
-                   .withEntityDescription(generateEntityDescription())
-                   .withCreatedDate(extractEntryCreationDate())
-                   .withPublisher(extractOrganization())
-                   .withOwner(cristinObject.getPublicationOwner())
-                   .withStatus(PublicationStatus.DRAFT)
-                   .withLink(HARDCODED_SAMPLE_DOI)
-                   .build();
+        Publication publication = new Builder()
+                                      .withAdditionalIdentifiers(Set.of(extractIdentifier()))
+                                      .withEntityDescription(generateEntityDescription())
+                                      .withCreatedDate(extractEntryCreationDate())
+                                      .withPublisher(extractOrganization())
+                                      .withOwner(cristinObject.getPublicationOwner())
+                                      .withStatus(PublicationStatus.DRAFT)
+                                      .withLink(HARDCODED_SAMPLE_DOI)
+                                      .build();
+        assertPublicationDoesNotHaveEmptyFields(publication);
+        return publication;
+    }
+
+    private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
+        try {
+            assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
+        } catch (Error error) {
+            String message = error.getMessage();
+            throw new MissingFieldsException(message);
+        }
     }
 
     private Organization extractOrganization() {
@@ -86,6 +102,7 @@ public class CristinMapper {
                    .withDate(extractPublicationDate())
                    .withReference(buildReference())
                    .withContributors(extractContributors())
+                   .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
                    .build();
     }
 
