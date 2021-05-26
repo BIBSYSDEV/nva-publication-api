@@ -1,13 +1,16 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PUBLISHER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ILLUSTRATED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_TITLE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
@@ -152,13 +155,13 @@ public class CristinMapper {
         Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
         MonographPages pages = new MonographPages.Builder()
                                    .withPages(HARDCODED_PAGE)
-                                   .withIllustrated(false)
+                                   .withIllustrated(HARDCODED_ILLUSTRATED)
                                    .withIntroduction(introductionRange)
                                    .build();
         return new BookAnthology.Builder()
-                   .withPeerReviewed(false)
+                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
                    .withPages(pages)
-                   .withTextbookContent(false)
+                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
                    .build();
     }
 
