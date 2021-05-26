@@ -17,6 +17,10 @@ public final class HardcodedValues {
 
     public static final URI HARDCODED_SAMPLE_DOI = URI.create("https://doi.org/10.1145/1132956.1132959");
 
+    public static final boolean HARDCODED_ILLUSTRATED = false;
+    public static final boolean HARDCODED_PEER_REVIEWED = false;
+    public static final boolean HARDCODED_TEXTBOOK_CONTENT = false;
+
     private HardcodedValues() {
 
     }
