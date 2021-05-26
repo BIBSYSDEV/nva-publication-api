@@ -5,10 +5,10 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEV
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_TITLE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
