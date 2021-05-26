@@ -8,8 +8,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_NUMBER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_TITLE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
@@ -130,8 +128,6 @@ public class CristinMapper {
             return new Book.Builder()
                        .withIsbnList(Collections.emptyList())
                        .withPublisher(HARDCODED_BOOK_PUBLISHER)
-                       .withSeriesNumber(HARDCODED_SERIES_NUMBER)
-                       .withSeriesTitle(HARDCODED_SERIES_TITLE)
                        .withUrl(HARDCODED_URI.toURL())
                        .withLevel(HARDCODED_LEVEL)
                        .withOpenAccess(false)
