@@ -1,5 +1,13 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PUBLISHER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_NUMBER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SERIES_TITLE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
@@ -19,7 +27,6 @@ import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Level;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
@@ -38,19 +45,11 @@ import nva.commons.core.attempt.Try;
 
 public class CristinMapper {
 
-    public static final URI HARDCODED_NVA_CUSTOMER =
-        URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
-    public static final String HARDCODED_BOOK_PUBLISHER = "SomePublisher";
-    public static final Level SAMPLE_HARDCODED_LEVEL = Level.LEVEL_0;
-    public static final String HARDCODED_PAGE = "1";
-    public static final String HARDCODED_SERIES_NUMBER = "1";
-    public static final String HARDCODED_SERIES_TITLE = "hardcoded series title";
-    public static final URI HARDCODED_URI = URI.create("https://www.example.com/");
-    public static final String HARDCODED_NPI_SUBJECT = "1007";
+
 
     private final CristinObject cristinObject;
 
@@ -131,7 +130,7 @@ public class CristinMapper {
                        .withSeriesNumber(HARDCODED_SERIES_NUMBER)
                        .withSeriesTitle(HARDCODED_SERIES_TITLE)
                        .withUrl(HARDCODED_URI.toURL())
-                       .withLevel(SAMPLE_HARDCODED_LEVEL)
+                       .withLevel(HARDCODED_LEVEL)
                        .withOpenAccess(false)
                        .build();
         }
