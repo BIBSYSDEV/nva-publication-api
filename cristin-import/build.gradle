@@ -17,10 +17,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
 
     implementation group: 'org.hamcrest', name: 'hamcrest', version: project.ext.hamcrestVersion
-    implementation group: 'org.hamcrest', name: 'hamcrest-core', version: project.ext.hamcrestVersion
     implementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-
-
 
     runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
     runtimeOnly group: "com.fasterxml.jackson.datatype", name: "jackson-datatype-jsr310", version: project.ext.jacksonVersion

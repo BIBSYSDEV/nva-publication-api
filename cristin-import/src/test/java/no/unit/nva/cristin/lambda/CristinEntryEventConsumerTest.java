@@ -6,7 +6,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.FILE_ENDING;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.mapper.CristinMapper.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -124,7 +124,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
 
-        UserInstance userInstance = createExpectedPublcationOwner(awsEvent);
+        UserInstance userInstance = createExpectedPublicationOwner(awsEvent);
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
         injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
@@ -154,7 +154,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
 
-        UserInstance userInstance = createExpectedPublcationOwner(awsEvent);
+        UserInstance userInstance = createExpectedPublicationOwner(awsEvent);
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         String actualPublicationOwner = actualPublication.getOwner();
 
@@ -376,7 +376,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return cristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
     }
 
-    private UserInstance createExpectedPublcationOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private UserInstance createExpectedPublicationOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return new UserInstance(event.getDetail().getPublicationsOwner(), HARDCODED_NVA_CUSTOMER);
     }
 
