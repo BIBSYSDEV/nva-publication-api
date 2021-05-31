@@ -10,13 +10,17 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.BadRequestException;
+import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 import org.apache.http.HttpStatus;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
@@ -50,36 +54,72 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     @Override
     protected PublicationResponse processInput(UpdatePublicationRequest input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-    
+
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
         validateRequest(identifierInPath, input);
-        Publication existingPublication = resourceService.getPublication(userInstance, identifierInPath);
-    
-        Publication publication = PublicationMapper.toExistingPublication(
-            input,
-            existingPublication
-        );
-    
+        Publication existingPublication;
+        existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
+
+        Publication publication = PublicationMapper.toExistingPublication(input, existingPublication);
         Publication updatedPublication = resourceService.updatePublication(publication);
-    
         return PublicationMapper.convertValue(updatedPublication, PublicationResponse.class);
     }
-    
+
+    @Override
+    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_OK;
+    }
+
+    private Publication fetchExistingPublication(RequestInfo requestInfo,
+                                                 SortableIdentifier identifierInPath) throws ApiGatewayException {
+        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
+
+        return userCanEditOtherPeoplesPublications(requestInfo)
+                   ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
+                   : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+    }
+
+    private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
+                                                            UserInstance userInstance)
+        throws ApiGatewayException {
+        return resourceService.getPublication(userInstance, identifierInPath);
+    }
+
+    private Publication fetchPublicationForPrivilegedUser(SortableIdentifier identifierInPath,
+                                                          UserInstance userInstance)
+        throws NotFoundException, NotAuthorizedException {
+        Publication existingPublication;
+        existingPublication = resourceService.getPublicationByIdentifier(identifierInPath);
+        checkUserIsInSameInstitutionAsThePublication(userInstance, existingPublication);
+        return existingPublication;
+    }
+
+    private void checkUserIsInSameInstitutionAsThePublication(UserInstance userInstance,
+                                                              Publication existingPublication)
+        throws NotAuthorizedException {
+        if (!userInstance.getOrganizationUri().equals(existingPublication.getPublisher().getId())) {
+            throw new NotAuthorizedException();
+        }
+    }
+
+    private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
+
+        return requestInfo.getAccessRights()
+                   .stream()
+                   .filter(StringUtils::isNotBlank)
+                   .map(AccessRight::fromString)
+                   .anyMatch(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES::equals);
+    }
+
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)
         throws BadRequestException {
         if (identifiersDoNotMatch(identifierInPath, input)) {
             throw new BadRequestException(IDENTIFIER_MISMATCH_ERROR_MESSAGE);
         }
     }
-    
+
     private boolean identifiersDoNotMatch(SortableIdentifier identifierInPath,
                                           UpdatePublicationRequest input) {
         return !identifierInPath.equals(input.getIdentifier());
-    }
-    
-    @Override
-    protected Integer getSuccessStatusCode(UpdatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_OK;
     }
 }

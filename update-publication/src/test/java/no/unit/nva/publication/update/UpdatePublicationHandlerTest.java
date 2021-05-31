@@ -1,6 +1,7 @@
 package no.unit.nva.publication.update;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.publication.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.update.UpdatePublicationHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
@@ -34,11 +35,14 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.testutils.HandlerRequestBuilder;
+import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.logutils.LogUtils;
@@ -59,6 +63,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
+    public static final String SOME_CURATOR = "some@curator";
 
     private ResourceService publicationService;
     private Context context;
@@ -174,6 +179,67 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_NOT_FOUND, gatewayResponse.getStatusCode());
         assertThat(getProblemDetail(gatewayResponse), is(equalTo(RESOURCE_NOT_FOUND_MESSAGE)));
+    }
+
+    @Test
+    void handlerUpdatesResourceWhenInputIsValidAndUserHasRightToEditAnyResourceInOwnInstitution()
+        throws TransactionFailedException, IOException, NotFoundException {
+        Publication savedPublication = publicationService.createPublication(publication);
+        Publication publicationUpdate = updateTitle(savedPublication);
+
+        InputStream event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+
+        Publication updatedPublication =
+            publicationService.getPublicationByIdentifier(savedPublication.getIdentifier());
+
+        //inject modified date to the input object because modified date is not available before the actual update.
+        publicationUpdate.setModifiedDate(updatedPublication.getModifiedDate());
+
+        String expectedTitle = publicationUpdate.getEntityDescription().getMainTitle();
+        String actualTitle = updatedPublication.getEntityDescription().getMainTitle();
+        assertThat(actualTitle, is(equalTo(expectedTitle)));
+
+        assertThat(updatedPublication, is(equalTo(publicationUpdate)));
+    }
+
+    @Test
+    void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
+        throws TransactionFailedException, IOException, NotFoundException {
+        Publication savedPublication = publicationService.createPublication(publication);
+        Publication publicationUpdate = updateTitle(savedPublication);
+
+        InputStream event = userUpdatesPublicationOfOtherInstitution(publicationUpdate);
+        updatePublicationHandler.handleRequest(event, output, context);
+        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(output);
+        Problem problem = response.getBodyObject(Problem.class);
+
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+        assertThat(problem.getDetail(), is(equalTo("Unauthorized")));
+    }
+
+    private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
+        throws JsonProcessingException {
+        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(JsonUtils.objectMapperNoEmpty)
+                   .withFeideId(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withCustomerId(randomUri().toString())
+                   .withBody(publicationUpdate)
+                   .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                   .build();
+    }
+
+    private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
+        throws JsonProcessingException {
+        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(JsonUtils.objectMapperNoEmpty)
+                   .withFeideId(SOME_CURATOR)
+                   .withPathParameters(pathParameters)
+                   .withCustomerId(publicationUpdate.getPublisher().getId().toString())
+                   .withBody(publicationUpdate)
+                   .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+                   .build();
     }
 
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
