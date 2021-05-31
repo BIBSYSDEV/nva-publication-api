@@ -213,7 +213,6 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(output);
         Problem problem = response.getBodyObject(Problem.class);
-        ;
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
         assertThat(problem.getDetail(), is(equalTo("Unauthorized")));
