@@ -209,7 +209,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerSavesErrorReportInS3InTheLocationIndicatedAsTheInputsFileLocationAndWithFilenameTheObjectId()
+    public void handlerSavesErrorReportInS3OutsideTheInputFolderAndWithFilenameTheObjectId()
         throws JsonProcessingException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         CristinObject cristinObject = cristinDataGenerator.randomObject();
@@ -347,11 +347,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
-        UriWrapper inputFileUri = new UriWrapper(awsEvent.getDetail().getFileUri());
-        UriWrapper errorsFolder = inputFileUri.getParent().orElseThrow().addChild(Path.of(ERRORS_FOLDER));
+
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
-        String filename = cristinObjectId + FILE_ENDING;
-        return errorsFolder.addChild(Path.of(filename));
+        String errorReportFilename = cristinObjectId + FILE_ENDING;
+        UriWrapper inputFile = new UriWrapper(awsEvent.getDetail().getFileUri());
+        UriWrapper bucket = inputFile.getHost();
+        return bucket.addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(inputFile.getPath())
+                   .addChild(Path.of(errorReportFilename));
     }
 
     private void runWithoutThrowingException(Executable action) {

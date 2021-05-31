@@ -158,7 +158,7 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
-        Path errorReportFile = Path.of(ERRORS_FOLDER, ERROR_REPORT_FILENAME);
+        Path errorReportFile = Path.of(ERRORS_FOLDER, importRequest.extractPathFromS3Location(), ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile.toString());
         for (String filename : INPUT_FILE_LIST) {
             assertThat(content, containsString(filename));

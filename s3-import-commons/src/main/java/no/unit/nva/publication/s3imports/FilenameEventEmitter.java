@@ -86,9 +86,12 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private UriWrapper createErrorReportUri(ImportRequest request) {
-        return new UriWrapper(request.getS3Location()).getParent()
-                   .orElse(new UriWrapper(request.getS3Location()))
-                   .addChild(Path.of(ERRORS_FOLDER, ERROR_REPORT_FILENAME));
+        UriWrapper inputFolderUri = new UriWrapper(request.getS3Location());
+        UriWrapper bucketUri = inputFolderUri.getHost();
+        return bucketUri
+                   .addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(inputFolderUri.getPath())
+                   .addChild(Path.of(ERROR_REPORT_FILENAME));
     }
 
     private URI createUri(URI s3Location, String filename) {

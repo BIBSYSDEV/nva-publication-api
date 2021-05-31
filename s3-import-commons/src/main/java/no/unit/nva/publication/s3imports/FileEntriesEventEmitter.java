@@ -53,7 +53,6 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
-    public static final String ERROR_REPORT_FILE_SUFFIX = ".error";
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
@@ -78,9 +77,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         this.eventBridgeClient = eventBridgeClient;
     }
 
-    public static Path errorReportPath(String inputFilename) {
-        return Path.of(ERRORS_FOLDER, inputFilename + ERROR_REPORT_FILE_SUFFIX);
-    }
+
 
     @Override
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
@@ -118,12 +115,12 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private UriWrapper generateErrorReportUri(ImportRequest input) {
-        final String inputFilename = Path.of(input.extractPathFromS3Location()).getFileName().toString();
-        return Try.of(input.getS3Location())
-                   .map(UriWrapper::new)
-                   .map(uri -> uri.getParent().orElseThrow())
-                   .map(parent -> parent.addChild(errorReportPath(inputFilename)))
-                   .orElseThrow();
+        UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location());
+        UriWrapper bucket = inputUri.getHost();
+
+        return bucket
+                   .addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(inputUri.getPath());
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {

@@ -6,7 +6,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Objects;
@@ -133,7 +132,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return attemptSave;
     }
 
-
     private Publication publishPublication(Publication publication)
         throws ApiGatewayException {
         UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
@@ -180,12 +178,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return new RuntimeException(errorMessage, fail.getException());
     }
 
-    private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        Try<Integer> id = attempt(() -> parseCristinObject(event))
-                              .map(CristinObject::getId);
-        return id.toOptional().map(Objects::toString);
-    }
-
     private void saveReportToS3(Failure<Publication> fail,
                                 AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         UriWrapper errorFileUri = constructErrorFileUri(event);
@@ -196,34 +188,28 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        Path filePath = constructErrorFilePathInsideTheBucket(event);
-        String uriScheme = event.getDetail().getFileUri().getScheme();
-        String bucketAsUriHost = event.getDetail().getFileUri().getHost();
-        return attempt(() -> new URI(uriScheme, bucketAsUriHost, filePath.toString(), EMPTY_FRAGMENT))
-                   .map(UriWrapper::new)
-                   .orElseThrow();
-    }
-
-    private Path constructErrorFilePathInsideTheBucket(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        Path parentFolder = extractFolderPath(event.getDetail());
-        String filename = createErrorReportFilename(event) + FILE_ENDING;
-        return Path.of(parentFolder.toString(), ERRORS_FOLDER, filename);
-    }
-
-    private Path extractFolderPath(FileContentsEvent<JsonNode> event) {
-        return Optional.of(event)
-                   .map(FileContentsEvent::getFileUri)
-                   .map(URI::getPath)
-                   .map(Path::of)
-                   .map(Path::getParent)
-                   .orElseThrow();
+        UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
+        UriWrapper bucket = fileUri.getHost();
+        return bucket
+                   .addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(fileUri.getPath())
+                   .addChild(Path.of(createErrorReportFilename(event)));
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return extractCristinObjectId(event).orElseGet(this::unknownCristinIdReportFilename);
+        return extractCristinObjectId(event)
+                   .map(idString -> idString + FILE_ENDING)
+                   .orElseGet(this::unknownCristinIdReportFilename);
+    }
+
+    private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+        return attempt(() -> parseCristinObject(event))
+                   .map(CristinObject::getId)
+                   .toOptional()
+                   .map(Objects::toString);
     }
 
     private String unknownCristinIdReportFilename() {
-        return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID();
+        return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID() + FILE_ENDING;
     }
 }
