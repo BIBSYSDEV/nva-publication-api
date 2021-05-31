@@ -10,6 +10,8 @@ dependencies {
     implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
     implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
 
+    implementation group:'com.github.bibsysdev.nva-user-access-service', name:'user-access-rights', version:'6b4dd1cbdf839bba01aac9c890e31789009b00fd'
+
     implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
     implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
 

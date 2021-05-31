@@ -97,7 +97,7 @@ public final class PublicationGenerator {
                                                                         boolean withIdentifier) {
         return IntStream.range(0, numberOfPublications).boxed()
                    .map(ignored -> PublicationGenerator.publicationWithoutIdentifier())
-                   .map(pub -> addIdentifier(pub,withIdentifier))
+                   .map(pub -> addIdentifier(pub, withIdentifier))
                    .map(PublicationGenerator::changeOwner)
                    .collect(Collectors.toList());
     }
@@ -173,5 +173,14 @@ public final class PublicationGenerator {
 
     public static String randomString() {
         return FAKER.lorem().sentence();
+    }
+
+    public static URI randomUri() {
+        String uriString = "https://www.example.org/" + randomWord() + randomWord();
+        return URI.create(uriString);
+    }
+
+    private static String randomWord() {
+        return FAKER.lorem().word();
     }
 }

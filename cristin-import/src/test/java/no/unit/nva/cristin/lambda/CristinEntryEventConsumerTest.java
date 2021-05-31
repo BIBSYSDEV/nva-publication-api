@@ -36,6 +36,7 @@ import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -44,6 +45,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -131,6 +133,23 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
+    }
+
+    @Test
+    public void handlerSavesPublicationAsPublishedWhenInputIsEventWithValidCristinResult()
+        throws JsonProcessingException, TransactionFailedException, NotFoundException {
+        CristinObject cristinObject = cristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        InputStream input = stringToStream(awsEvent.toJsonString());
+
+        handler.handleRequest(input, outputStream, CONTEXT);
+        String outputString = outputStream.toString();
+        Publication publication = objectMapperNoEmpty.readValue(outputString, Publication.class);
+        String newTitle = randomString();
+        publication.getEntityDescription().setMainTitle(newTitle);
+        resourceService.updatePublication(publication);
+        Publication savedPublcation = resourceService.getPublication(publication);
+        assertThat(savedPublcation.getEntityDescription().getMainTitle(), is(equalTo(newTitle)));
     }
 
     private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
