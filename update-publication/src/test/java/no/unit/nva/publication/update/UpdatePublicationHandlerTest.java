@@ -100,7 +100,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = GatewayResponse.fromOutputStream(output);
-        PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
+        final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
