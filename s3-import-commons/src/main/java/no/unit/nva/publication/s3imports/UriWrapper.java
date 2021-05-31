@@ -16,6 +16,7 @@ public class UriWrapper {
     public static final String EMPTY_FRAGMENT = null;
     public static final String ROOT = "/";
     public static final String EMPTY_PATH = null;
+    public static final String PATH_DELIMITER = "/";
     private final URI uri;
 
     public UriWrapper(URI uri) {
@@ -63,7 +64,14 @@ public class UriWrapper {
     }
 
     public Path getPath() {
-        return Path.of(uri.getPath());
+        String pathString = uri.getPath();
+        return Path.of(removePathDelimiterFromTheEnd(pathString));
+    }
+
+    private String removePathDelimiterFromTheEnd(String pathString) {
+        return pathString.endsWith(PATH_DELIMITER)
+                   ? pathString.substring(0, pathString.length() - 1)
+                   : pathString;
     }
 
     public Optional<UriWrapper> getParent() {
