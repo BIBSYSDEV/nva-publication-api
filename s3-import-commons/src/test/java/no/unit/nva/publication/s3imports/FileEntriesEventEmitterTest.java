@@ -1,12 +1,15 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -59,8 +62,8 @@ public class FileEntriesEventEmitterTest {
     public static final Context CONTEXT = Mockito.mock(Context.class);
     public static final String SOME_OTHER_BUS = "someOtherBus";
     public static final String SOME_BUCKETNAME = "someBucketname";
-    private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
     public static final String ALL_FILES = ".";
+    private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
@@ -166,6 +169,18 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
+    public void handlerSavesErrorReportOutsideInputFolder() {
+        eventBridgeClient = eventBridgeClientThatFailsToEmitMessages();
+        handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
+        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        handler.handleRequest(input, outputStream, CONTEXT);
+        Path errorReportFolder = Path.of(ERRORS_FOLDER);
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        List<String> files = s3Driver.listFiles(errorReportFolder);
+        assertThat(files, is(not(empty())));
+    }
+
+    @Test
     public void handlerDoesNotCrateFileInS3FolderWhenNoErrorsOccur() {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         FileEntriesEventEmitter handler = newHandler();
@@ -176,12 +191,6 @@ public class FileEntriesEventEmitterTest {
         String expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
 
         assertThat(allFiles, containsInAnyOrder(expectedFile));
-    }
-
-    private String extractActualErrorReport(ImportRequest importRequestForExistingFile) {
-        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        UriWrapper expectedErrorReportFilename = expectedErrorReportUri(importRequestForExistingFile);
-        return s3Driver.getFile(expectedErrorReportFilename.toS3bucketPath().toString());
     }
 
     @Test
@@ -314,6 +323,12 @@ public class FileEntriesEventEmitterTest {
                    .collect(Collectors.toList());
     }
 
+    private String extractActualErrorReport(ImportRequest importRequestForExistingFile) {
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        UriWrapper expectedErrorReportFilename = expectedErrorReportUri(importRequestForExistingFile);
+        return s3Driver.getFile(expectedErrorReportFilename.toS3bucketPath().toString());
+    }
+
     private FakeEventBridgeClient eventBridgeClientThatFailsToEmitMessages() {
         return new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
             @Override
@@ -324,18 +339,10 @@ public class FileEntriesEventEmitterTest {
     }
 
     private UriWrapper expectedErrorReportUri(ImportRequest importRequest) {
-        return Try.of(importRequest)
-                   .map(ImportRequest::getS3Location)
-                   .map(UriWrapper::new)
-                   .map(this::generateUriForErrorReportFile)
-                   .orElseThrow();
-    }
-
-    private UriWrapper generateUriForErrorReportFile(UriWrapper uri) {
-        Path path = uri.getPath();
-        String filename = path.getFileName().toString();
-        Path errorReportPath = FileEntriesEventEmitter.errorReportPath(filename);
-        return uri.getParent().orElseThrow().addChild((errorReportPath));
+        UriWrapper s3Location = new UriWrapper(importRequest.getS3Location());
+        UriWrapper bucket = s3Location.getHost();
+        return bucket.addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(s3Location.getPath());
     }
 
     private List<String> extractDetailTypesFromEvents() {
