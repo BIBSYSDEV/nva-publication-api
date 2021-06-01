@@ -9,7 +9,7 @@ publishedDate
 doiRequest
 publisher.labels
 entityDescription.contributors.affiliations.labels
-.entityDescription.contributors.identity.id
+entityDescription.contributors.identity.id
 entityDescription.contributors.identity.arpId
 entityDescription.contributors.identity.nameType
 entityDescription.contributors.identity.orcId
