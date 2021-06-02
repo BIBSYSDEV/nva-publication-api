@@ -173,7 +173,7 @@
 
 :merknadtekst_godkjenning
     a            rdf:Property ;
-    rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved." ;
+    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
 
@@ -199,7 +199,10 @@
 
 :pubidnr
     a            rdf:Property ;
-    rdfs:comment "A reference to the record corresponding to this result in the PIA import database" ;
+    rdfs:comment """
+    A reference to the record corresponding to this result in the PIA import database.
+
+    """
     rdfs:range   xsd:positiveInteger ;
     rdfs:domain  :Result .
 
@@ -271,7 +274,7 @@
 :etternavn
     a            rdf:Property ;
     rdfs:comment """
-    The surname/family-name of the contributor of the respective result entry" ;
+    The surname/family-name of the contributor of the respective result entry
     This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
         submitted the publication to the publisher (e.g. Elsevier).
     """ ;
@@ -301,8 +304,10 @@
 :avdnr
     a            rdf:Property ;
     rdfs:comment """
-    The **current** Cristin Department number that the contributor of the publication was affiliated with.
+    The **current** Cristin Department number that the contributor of the publication was affiliated with at the time of creation of the
+    registration entry.
     This value may have changed from the time of entry was registered in Cristin.
+    See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
     rdfs:range   xsd:positiveInteger ;
     rdfs:domain  :VARBEID_PERSON_STED_Class .
@@ -310,8 +315,10 @@
 :undavdnr
     a            rdf:Property ;
     rdfs:comment """
-    The current Sub-department number that the contributor of the publication was affiliated with.
-        This value may have changed from the time of entry was registered in Cristin.
+    The current Sub-department number that the contributor of the publication was affiliated with at the time of creation of the
+    registration entry.
+    This value may have changed from the time of entry was registered in Cristin.
+    See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
     rdfs:range   xsd:positiveInteger ;
     rdfs:domain  :VARBEID_PERSON_STED_Class .
@@ -319,7 +326,7 @@
 :gruppenr
     a            rdf:Property ;
     rdfs:comment """
-     The current group number that the contributor of the publication was affiliated with.
+     The current group number that the contributor of the publication was affiliated with at the time of creation of the registration entry.
      This value may have changed from the time of entry was registered in Cristin.
     """ ;
     rdfs:range   xsd:positiveInteger ;
@@ -329,7 +336,7 @@
     a            rdf:Property ;
     rdfs:comment """
     This is a concatenation of :institusjonsnr, :avdnr, :undavdnr and gruppenr and it indicates the original identifier of the
-    institution when the Cristin entry was crated. This is an immutable value that never changes after its creation.
+    institution when the Cristin entry was created. This is an immutable value that never changes after its creation.
     """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_PERSON_STED_Class .
