@@ -201,8 +201,8 @@
     a            rdf:Property ;
     rdfs:comment """
     A reference to the record corresponding to this result in the PIA import database.
-
-    """
+    PIA is a database that holds imports from Scopus.
+    """ ;
     rdfs:range   xsd:positiveInteger ;
     rdfs:domain  :Result .
 
