@@ -173,7 +173,7 @@
 
 :merknadtekst_godkjenning
     a            rdf:Property ;
-    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved." ;
+    rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
 
