@@ -5,6 +5,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -20,10 +21,12 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -230,6 +233,13 @@ public class FileEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         List<SampleObject> emittedObjects = collectEmittedObjects(eventBridgeClient);
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
+    }
+
+    @Test
+    public void foo() {
+        String iso = new Locale("uk").getISO3Language();
+        URI uri = URI.create("http://lexvo.org/id/iso639-3/" + iso);
+        assertThat(uri, is(not(nullValue())));
     }
 
     private static ImportRequest newImportRequest(String customImportRequestEventType) {
