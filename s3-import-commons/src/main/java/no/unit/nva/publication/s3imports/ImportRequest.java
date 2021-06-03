@@ -19,16 +19,12 @@ import nva.commons.core.JsonUtils;
  * <p>2. The {@link ImportRequest#importEventType} field is a String denoting the event type that is going to be
  * created for each entry contained in the files of the folder. Pay attention that each file may contain multiple
  * entries.
- *
- * <p>3. The {@link ImportRequest#publicationsOwner} is a temporary field for deciding the publication owner
- * until this field is calculated by the code automatically.
  */
 public class ImportRequest implements JsonSerializable {
 
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
-    public static final String PUBLICATIONS_OWNER = "publicationsOwner";
     public static final String IMPORT_EVENT_TYPE = "importEventType";
 
     @JsonProperty(S3_LOCATION_FIELD)
@@ -37,21 +33,16 @@ public class ImportRequest implements JsonSerializable {
     // and it will be expected by the specialized handler that will process the entry. E.g. DataMigrationHandler.
     @JsonProperty(IMPORT_EVENT_TYPE)
     private final String importEventType;
-    @JsonProperty(PUBLICATIONS_OWNER)
-    private final String publicationsOwner;
 
     @JsonCreator
     public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location,
-                         @JsonProperty(PUBLICATIONS_OWNER) String publicationsOwner,
                          @JsonProperty(IMPORT_EVENT_TYPE) String importEventType) {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
-        this.publicationsOwner = Optional.ofNullable(publicationsOwner).orElseThrow();
         this.importEventType = importEventType;
     }
 
-    public ImportRequest(URI s3location, String owner, String importEventType) {
+    public ImportRequest(URI s3location, String importEventType) {
         this.s3Location = s3location;
-        this.publicationsOwner = owner;
         this.importEventType = importEventType;
     }
 
@@ -62,10 +53,6 @@ public class ImportRequest implements JsonSerializable {
 
     public String getImportEventType() {
         return importEventType;
-    }
-
-    public String getPublicationsOwner() {
-        return publicationsOwner;
     }
 
     @JacocoGenerated
@@ -100,9 +87,8 @@ public class ImportRequest implements JsonSerializable {
             return false;
         }
         ImportRequest that = (ImportRequest) o;
-        return Objects.equals(getS3Location(), that.getS3Location()) && Objects.equals(
-            getPublicationsOwner(), that.getPublicationsOwner()) && Objects.equals(getImportEventType(),
-                                                                                   that.getImportEventType());
+        return Objects.equals(getS3Location(), that.getS3Location())
+               && Objects.equals(getImportEventType(), that.getImportEventType());
     }
 
     private static IllegalArgumentException handleNotParsableInputError(String inputString) {

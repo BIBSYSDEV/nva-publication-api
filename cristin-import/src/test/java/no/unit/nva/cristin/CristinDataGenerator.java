@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
+import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -74,7 +75,7 @@ public class CristinDataGenerator {
     public <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), cristinData, SOME_OWNER);
+        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), cristinData);
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;
@@ -135,7 +136,7 @@ public class CristinDataGenerator {
                    .withEntryCreationDate(LocalDate.now())
                    .withPublicationYear(randomYear())
                    .withContributors(randomContributors())
-                   .withPublicationOwner(randomString())
+                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                    .build();
     }
 

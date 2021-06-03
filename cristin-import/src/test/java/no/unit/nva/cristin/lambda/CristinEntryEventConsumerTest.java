@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.FILE_ENDING;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -136,8 +137,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
                                                               Publication actualPublication,
                                                               Publication expectedPublication) {
-        //publications owner is for now set in import time and is available as extra information in the event.
-        expectedPublication.setOwner(awsEvent.getDetail().getPublicationsOwner());
+
         //NVA identifier is not known until the entry has been saved in the NVA database.
         expectedPublication.setIdentifier(actualPublication.getIdentifier());
         expectedPublication.setStatus(PublicationStatus.PUBLISHED);
@@ -146,20 +146,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
     }
 
-    @Test
-    public void handlerSavesPublicationWithOwnerBeingTheSuppliedByTheEventOwner() {
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
-        InputStream input = stringToStream(awsEvent.toJsonString());
-
-        handler.handleRequest(input, outputStream, CONTEXT);
-
-        UserInstance userInstance = createExpectedPublicationOwner(awsEvent);
-        Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
-        String actualPublicationOwner = actualPublication.getOwner();
-
-        assertThat(actualPublicationOwner, is(equalTo(awsEvent.getDetail().getPublicationsOwner())));
-    }
 
     @Test
     public void handlerThrowsExceptionWhenInputDetailTypeIsNotTheExpected() throws JsonProcessingException {
@@ -380,7 +366,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private UserInstance createExpectedPublicationOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return new UserInstance(event.getDetail().getPublicationsOwner(), HARDCODED_NVA_CUSTOMER);
+        return new UserInstance(HARDCODED_PUBLICATIONS_OWNER, HARDCODED_NVA_CUSTOMER);
     }
 
     private CristinObject generatePublicationFromResource(String input) throws JsonProcessingException {
@@ -388,7 +374,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String detail = jsonNode.get(DETAIL_FIELD).toString();
         FileContentsEvent<CristinObject> eventDetails = FileContentsEvent.fromJson(detail, CristinObject.class);
         CristinObject cristinObject = eventDetails.getContents();
-        cristinObject.setPublicationOwner(eventDetails.getPublicationsOwner());
         assert nonNull(cristinObject.getId()); //java assertion produces Error not exception
         return cristinObject;
     }

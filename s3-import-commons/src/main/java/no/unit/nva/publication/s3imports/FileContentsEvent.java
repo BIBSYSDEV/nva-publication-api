@@ -33,23 +33,13 @@ public class FileContentsEvent<T> {
     private final URI fileUri;
     @JsonProperty(CONTENTS_FIELD)
     private final T contents;
-    @JsonProperty(PUBLICATIONS_OWNER_FIELD)
-    private final String publicationsOwner;
 
     @JacocoGenerated
     @JsonCreator
     public FileContentsEvent(@JsonProperty(FILE_URI) URI fileUri,
-                             @JsonProperty(CONTENTS_FIELD) T contents,
-                             @JsonProperty(PUBLICATIONS_OWNER_FIELD) String publicationsOwner) {
+                             @JsonProperty(CONTENTS_FIELD) T contents) {
         this.fileUri = fileUri;
         this.contents = contents;
-        this.publicationsOwner = publicationsOwner;
-    }
-
-    public FileContentsEvent(URI fileUri, T contents, ImportRequest input) {
-        this.fileUri = fileUri;
-        this.contents = contents;
-        this.publicationsOwner = input.getPublicationsOwner();
     }
 
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
@@ -64,10 +54,6 @@ public class FileContentsEvent<T> {
 
     public T getContents() {
         return contents;
-    }
-
-    public String getPublicationsOwner() {
-        return publicationsOwner;
     }
 
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {

@@ -42,7 +42,6 @@ dependencies {
     testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
         because "For comparing java objects and detailing the differences in readable way"
     }
-    testImplementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
     testImplementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
