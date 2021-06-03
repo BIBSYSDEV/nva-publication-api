@@ -212,7 +212,7 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handleThrowsExceptionSayingInformingOnExpectedInputWhenS3LocationIsNotPresent() {
+    public void handleThrowsExceptionInformingOnExpectedInputWhenS3LocationIsNotPresent() {
         ImportRequest importRequest = new ImportRequest(EMPTY_URI);
         Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
