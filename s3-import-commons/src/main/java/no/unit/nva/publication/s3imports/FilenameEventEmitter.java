@@ -148,9 +148,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private ImportRequest newImportRequestForSingleFile(ImportRequest importRequest, URI uri) {
-        return new ImportRequest(uri,
-                                 importRequest.getPublicationsOwner(),
-                                 importRequest.getImportEventType());
+        return new ImportRequest(uri, importRequest.getImportEventType());
     }
 
     private void validateLocation(ImportRequest importRequest, List<URI> files) {

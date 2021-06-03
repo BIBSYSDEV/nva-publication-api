@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -96,13 +97,10 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         CristinObject cristinObject = jsonNodeToCristinObject(event);
-        cristinObject.hardcodePublicationOwner(extractUserDefinedPublicationsOwner(event));
+        cristinObject.hardcodePublicationOwner(HARDCODED_PUBLICATIONS_OWNER);
         return cristinObject;
     }
 
-    private String extractUserDefinedPublicationsOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return event.getDetail().getPublicationsOwner();
-    }
 
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())

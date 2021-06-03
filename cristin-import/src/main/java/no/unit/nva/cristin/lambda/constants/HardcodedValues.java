@@ -19,6 +19,7 @@ public final class HardcodedValues {
     public static final boolean HARDCODED_ILLUSTRATED = false;
     public static final boolean HARDCODED_PEER_REVIEWED = false;
     public static final boolean HARDCODED_TEXTBOOK_CONTENT = false;
+    public static final String HARDCODED_PUBLICATIONS_OWNER = "someone@unit.no";
 
     private HardcodedValues() {
 

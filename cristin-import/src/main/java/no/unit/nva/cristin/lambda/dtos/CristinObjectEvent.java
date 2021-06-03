@@ -14,9 +14,8 @@ public class CristinObjectEvent extends FileContentsEvent<JsonNode> {
 
     @JsonCreator
     public CristinObjectEvent(@JsonProperty(FILE_URI) URI fileUri,
-                              @JsonProperty(CONTENTS_FIELD) JsonNode contents,
-                              @JsonProperty(PUBLICATIONS_OWNER_FIELD) String publicationsOwner) {
+                              @JsonProperty(CONTENTS_FIELD) JsonNode contents) {
 
-        super(fileUri, contents, publicationsOwner);
+        super(fileUri, contents);
     }
 }

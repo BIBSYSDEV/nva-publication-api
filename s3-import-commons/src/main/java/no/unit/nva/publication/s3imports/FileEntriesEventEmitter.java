@@ -125,7 +125,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
         URI fileUri = URI.create(input.getS3Location());
-        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, json, input));
+        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, json));
     }
 
     private List<PutEventsResult> emitEvents(Context context,

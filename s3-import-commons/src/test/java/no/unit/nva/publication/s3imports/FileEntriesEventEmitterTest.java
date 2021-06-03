@@ -51,12 +51,11 @@ public class FileEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
-    public static final String SOME_USER = randomString();
     public static final String IMPORT_EVENT_TYPE = "importEventType";
     public static final ImportRequest IMPORT_REQUEST_FOR_EXISTING_FILE =
-        new ImportRequest("s3://bucket/parent/folder/location.file", SOME_USER, IMPORT_EVENT_TYPE);
+        new ImportRequest("s3://bucket/parent/folder/location.file", IMPORT_EVENT_TYPE);
     public static final ImportRequest IMPORT_REQUEST_FOR_NON_EXISTING_FILE =
-        new ImportRequest("s3://bucket/parent/folder/nonexisting.file", SOME_USER, IMPORT_EVENT_TYPE);
+        new ImportRequest("s3://bucket/parent/folder/nonexisting.file", IMPORT_EVENT_TYPE);
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
     public static final Context CONTEXT = Mockito.mock(Context.class);
@@ -194,17 +193,6 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsEventsWithImportRequestsThatIncludeInputPublicationsOwner() {
-        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
-        handler.handleRequest(input, outputStream, CONTEXT);
-        List<String> publicationOwners = extractPublicationOwnersFromGeneratedEvents();
-        assertThat(publicationOwners.size(), is(equalTo(FILE_01_CONTENTS.length)));
-        for (String publicationOwner : publicationOwners) {
-            assertThat(publicationOwner, is(equalTo(SOME_USER)));
-        }
-    }
-
-    @Test
     public void handlerEmitsEventsWithDetailTypeEqualToInputsImportRequestEventType() {
         String expectedImportRequestEventType = randomString();
         ImportRequest importRequestWithCustomType =
@@ -234,7 +222,6 @@ public class FileEntriesEventEmitterTest {
 
     private static ImportRequest newImportRequest(String customImportRequestEventType) {
         return new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location(),
-                                 IMPORT_REQUEST_FOR_EXISTING_FILE.getPublicationsOwner(),
                                  customImportRequestEventType);
     }
 
@@ -356,16 +343,6 @@ public class FileEntriesEventEmitterTest {
 
     private FileEntriesEventEmitter newHandler() {
         return new FileEntriesEventEmitter(s3Client, eventBridgeClient);
-    }
-
-    private List<String> extractPublicationOwnersFromGeneratedEvents() {
-        return eventBridgeClient.getEvenRequests().stream()
-                   .flatMap(eventsRequest -> eventsRequest.entries().stream())
-                   .map(PutEventsRequestEntry::detail)
-                   .map(attempt(detailString -> objectMapperNoEmpty.readValue(detailString, FileContentsEvent.class)))
-                   .map(Try::orElseThrow)
-                   .map(FileContentsEvent::getPublicationsOwner)
-                   .collect(Collectors.toList());
     }
 
     private InputStream createRequestEventForFile(ImportRequest detail) {

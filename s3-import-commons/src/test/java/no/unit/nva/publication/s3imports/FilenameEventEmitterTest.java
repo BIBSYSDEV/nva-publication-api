@@ -1,6 +1,5 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
@@ -54,7 +53,6 @@ public class FilenameEventEmitterTest {
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
-    public static final String SOME_USER = randomString();
     public static final String SOME_IMPORT_EVENT_TYPE = "someImportEventType";
     private static final Context CONTEXT = mock(Context.class);
     public static final String LIST_ALL_FILES = ".";
@@ -97,7 +95,6 @@ public class FilenameEventEmitterTest {
         init(); // @BeforeEach seems to not run between subsequent iterations of Parameterized test
         ImportRequest importRequest = new ImportRequest(
             SOME_S3_LOCATION + pathSeparator,
-            SOME_USER,
             SOME_IMPORT_EVENT_TYPE);
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -188,22 +185,13 @@ public class FilenameEventEmitterTest {
         assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
     }
 
-    @Test
-    public void handlerEmitsEventsWithThatIncludeInputPublicationsOwner() throws IOException {
-        ImportRequest importRequest = newImportRequest();
-        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
-        for (ImportRequest emittedRequest : emittedImportRequests) {
-            assertThat(emittedRequest.getPublicationsOwner(), is(equalTo(SOME_USER)));
-        }
-    }
 
     @Test
     public void handlerEmitsImportRequestContainingTheImportEventTypeContainedInTheInputImportRequest()
         throws IOException {
 
         String expectedImportEvent = "expectedImportEvent";
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, SOME_USER, expectedImportEvent);
+        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, expectedImportEvent);
 
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
@@ -224,7 +212,7 @@ public class FilenameEventEmitterTest {
     }
 
     private ImportRequest newImportRequest() {
-        return new ImportRequest(SOME_S3_LOCATION, SOME_USER, SOME_IMPORT_EVENT_TYPE);
+        return new ImportRequest(SOME_S3_LOCATION, SOME_IMPORT_EVENT_TYPE);
     }
 
     private String[] expectedFileUris() {
