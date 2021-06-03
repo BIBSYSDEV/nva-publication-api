@@ -1283,6 +1283,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
+          IMPORT_EVENT_TYPE: import.cristin.entry-event
 
 
   #=============================Event Buses =============================================================

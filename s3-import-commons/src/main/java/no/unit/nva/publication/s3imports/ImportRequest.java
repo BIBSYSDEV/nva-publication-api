@@ -46,6 +46,10 @@ public class ImportRequest implements JsonSerializable {
         this.importEventType = importEventType;
     }
 
+    public ImportRequest(URI s3Location) {
+        this(s3Location, null);
+    }
+
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportRequest.class))
                    .orElseThrow(fail -> handleNotParsableInputError(jsonString));
