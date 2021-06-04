@@ -45,7 +45,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
     public static final String FILE_ENDING = ".json";
-    public static final String EMPTY_FRAGMENT = null;
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";

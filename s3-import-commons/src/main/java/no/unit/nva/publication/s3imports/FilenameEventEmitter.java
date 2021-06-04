@@ -21,8 +21,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.slf4j.Logger;
@@ -42,15 +44,25 @@ import software.amazon.awssdk.services.s3.S3Client;
  */
 public class FilenameEventEmitter implements RequestStreamHandler {
 
+    public static final Environment ENVIRONMENT = new Environment();
+    public static final String EXPECTED_BODY_MESSAGE =
+        "The expected json body contains only an s3Location.\nThe received body was: ";
     public static final String WRONG_OR_EMPTY_S3_LOCATION_ERROR = "S3 location does not exist or is empty:";
+
+    public static final String INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV =
+        "Import event type is set for this handler and cannot be set by the user. "
+        + EXPECTED_BODY_MESSAGE;
+
     public static final String EVENT_DETAIL_TYPE = "import.filename-event";
     public static final String LINE_SEPARATOR = System.lineSeparator();
-
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
     public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
+    public static final String IMPORT_EVENT_TYPE_ENV_VARIABLE = "IMPORT_EVENT_TYPE";
+    public static final String IMPORT_EVENT_TYPE = fetchImportEventTypeFromEnvironment();
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
+
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -68,12 +80,16 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         ImportRequest importRequest = parseInput(input);
         List<URI> files = listFiles(importRequest);
-        validateLocation(importRequest, files);
-        List<PutEventsResult> failedRequests = emitEvents(context, files, importRequest);
+        validateImportRequest(importRequest, files);
+        List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
         List<String> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
         writeFailedEmitActionsInS3(failedRequests, importRequest);
         writeOutput(output, notEmittedFilenames);
+    }
+
+    private static String fetchImportEventTypeFromEnvironment() {
+        return ENVIRONMENT.readEnv(IMPORT_EVENT_TYPE_ENV_VARIABLE);
     }
 
     private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request) {
@@ -132,7 +148,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .collect(Collectors.toList());
     }
 
-    private List<PutEventsResult> emitEvents(Context context, List<URI> files, ImportRequest importRequest) {
+    private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
 
         EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(EVENT_DETAIL_TYPE,
@@ -141,24 +157,30 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                eventBridgeClient);
 
         List<ImportRequest> filenameEvents = files.stream()
-                                                 .map(uri -> newImportRequestForSingleFile(importRequest, uri))
+                                                 .map(this::newImportRequestForSingleFile)
                                                  .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents();
     }
 
-    private ImportRequest newImportRequestForSingleFile(ImportRequest importRequest, URI uri) {
-        return new ImportRequest(uri, importRequest.getImportEventType());
+    private ImportRequest newImportRequestForSingleFile(URI uri) {
+        return new ImportRequest(uri, IMPORT_EVENT_TYPE);
     }
 
-    private void validateLocation(ImportRequest importRequest, List<URI> files) {
+    private void validateImportRequest(ImportRequest importRequest, List<URI> files) {
         if (isNull(files) || files.isEmpty()) {
             throw new IllegalArgumentException(WRONG_OR_EMPTY_S3_LOCATION_ERROR + importRequest.getS3Location());
+        }
+        if (StringUtils.isNotBlank(importRequest.getImportEventType())) {
+            throw new IllegalArgumentException(
+                INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV + importRequest.toJsonString());
         }
     }
 
     private ImportRequest parseInput(InputStream input) {
-        return ImportRequest.fromJson(IoUtils.streamToString(input));
+        String inputString = IoUtils.streamToString(input);
+        return attempt(() -> ImportRequest.fromJson(inputString))
+                   .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
     }
 
     private <T> void writeOutput(OutputStream output, List<T> results) throws IOException {

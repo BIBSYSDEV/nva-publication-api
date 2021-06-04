@@ -3,6 +3,9 @@ package no.unit.nva.publication.s3imports;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.EXPECTED_BODY_MESSAGE;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
@@ -22,6 +25,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
@@ -31,6 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -53,9 +58,9 @@ public class FilenameEventEmitterTest {
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
-    public static final String SOME_IMPORT_EVENT_TYPE = "someImportEventType";
     private static final Context CONTEXT = mock(Context.class);
     public static final String LIST_ALL_FILES = ".";
+    public static final URI EMPTY_URI = null;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -93,9 +98,7 @@ public class FilenameEventEmitterTest {
         String pathSeparator)
         throws IOException {
         init(); // @BeforeEach seems to not run between subsequent iterations of Parameterized test
-        ImportRequest importRequest = new ImportRequest(
-            SOME_S3_LOCATION + pathSeparator,
-            SOME_IMPORT_EVENT_TYPE);
+        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION + pathSeparator));
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         List<String> fileList = eventBridgeClient.listEmittedFilenames();
@@ -185,19 +188,35 @@ public class FilenameEventEmitterTest {
         assertThat(exception.getMessage(), containsString(ApplicationConstants.EVENT_BUS_NAME));
     }
 
-
     @Test
-    public void handlerEmitsImportRequestContainingTheImportEventTypeContainedInTheInputImportRequest()
+    public void handlerEmitsImportRequestContainingTheImportEventTypeSetInTheEnvironment()
         throws IOException {
-
-        String expectedImportEvent = "expectedImportEvent";
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, expectedImportEvent);
+        String expectedImportEvent = new Environment().readEnv(IMPORT_EVENT_TYPE_ENV_VARIABLE);
+        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION));
 
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
-        for (ImportRequest emitedImportRequest : emittedImportRequests) {
-            assertThat(emitedImportRequest.getImportEventType(), is(equalTo(expectedImportEvent)));
+        for (ImportRequest emittedImportRequest : emittedImportRequests) {
+
+            assertThat(emittedImportRequest.getImportEventType(), is(equalTo(expectedImportEvent)));
         }
+    }
+
+    @Test
+    public void handleThrowsExceptionSayingThatSettingImportEventTypeIsNotAllowedWhenImportEventTypeIsSetByTheUser() {
+        String someEventType = "someEventType";
+        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION), someEventType);
+        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
+        assertThat(exception.getMessage(), containsString(INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV));
+    }
+
+    @Test
+    public void handleThrowsExceptionInformingOnExpectedInputWhenS3LocationIsNotPresent() {
+        ImportRequest importRequest = new ImportRequest(EMPTY_URI);
+        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
+        assertThat(exception.getMessage(), containsString(EXPECTED_BODY_MESSAGE));
     }
 
     private static Map<String, InputStream> fileContents() {
@@ -212,7 +231,7 @@ public class FilenameEventEmitterTest {
     }
 
     private ImportRequest newImportRequest() {
-        return new ImportRequest(SOME_S3_LOCATION, SOME_IMPORT_EVENT_TYPE);
+        return new ImportRequest(URI.create(SOME_S3_LOCATION));
     }
 
     private String[] expectedFileUris() {
