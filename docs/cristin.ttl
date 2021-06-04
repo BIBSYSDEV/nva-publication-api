@@ -15,7 +15,6 @@
 
 :Published
     a               rdfs:Class ;
-    rdfs:label      "PUBLISHED" ;
     rdfs:label      "PUBLISERT" ;
     rdfs:subClassOf :PublicationStatus .
 
@@ -38,7 +37,7 @@
     a            rdfs:Class ;
     rdfs:comment """
     The structure of the VARARBEID_PERSON entry. It contains user submitted information about the status of the contributor
-    at the time the Result was registered in Cristin. Some of the information is provided by the user manually in order to reflect the
+    at the time the Result was registered in Cristin. Some of the information can be  provided by the user manually in order to reflect the
     user's name at the time the manuscript/publication was submitted to the publisher (e.g. Elsevier).
     """ .
 
@@ -46,22 +45,15 @@
     a            rdfs:Class ;
     rdfs:comment """
     The structure of the VARBEID_PERSON_STED entry.
-    It contains information about the status of a contributor's institution at the time the Result
-    was registered in Cristin. If the institution which the contributor belonged when the Cristin entry was created has now changed,
-    then this will be reflected in the entry. However the fact that the  contributor has moved to another institution is not reflected here.
-
-    Example:
-    Contributor C worked for for institution "InstA" when they registered publication P in Cristin.
-    "InstA" has merged with another institution and now is called "InstB".
-    Contributor C is working today for "InstC". The Cristin entry will indicate the fact that:
-    "When Contributor C was affiliated with InstB, they published P".
+    The entry contains information about the contributor's institutional affiliation represented in the result entity
+     at the time of publication, as well as the current instance of that institution, should it have evolved over time.
     """ .
 
 :VARBEID_PERSON_STED_ROLLE_Class
     a            rdfs:Class ;
     rdfs:comment """
      The structure of VARBEID_PERSON_STED_ROLLE. It contains information about the role of
-    the contributor in this publication. One contributor can have two different contribution roles from different institutions.
+    the contributor in this publication. One contributor can have many different contribution roles from the same or different institutions.
     Example:
     Contributor C has contributed as "EDITOR" affiliated with InstA for publication P
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
@@ -107,8 +99,9 @@
 :eierkode_opprettet
     a            rdf:Property ;
     rdfs:comment """
-        eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. Each user can have
-        many usersnames(brukernavn) but only one eierkode.
+        eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+        can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
+        and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
      """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
@@ -116,8 +109,9 @@
 :brukernavn_opprettet
     a            rdf:Property ;
     rdfs:comment """
-        eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. Each user can have
-        many usersnames (brukernavn) but only one eierkode.
+            eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+        can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
+        and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
      """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
@@ -131,7 +125,7 @@
 
 :brukernavn_siste_endring
     a            rdf:Property ;
-    rdfs:comment "Similar to brukernanv_opprettet but it indicates who made the last change." ;
+    rdfs:comment "Similar to brukernavn_opprettet but it indicates who made the last change." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
 
@@ -146,7 +140,7 @@
     a            rdf:Property ;
     rdfs:comment """
     The publication status of the referenced publication, i.e. whether the publication status of the publication itself in the publisher (e.g. Elsevier)
-    Possible values are: IN_PRESS", "PUBLISERT" (og "TEST").
+    Possible values are: IN_PRESS", "PUBLISERT" (and "TEST").
     """ ;
     rdfs:range   :PublicationStatus ;
     rdfs:domain  :Result .
@@ -173,7 +167,7 @@
 
 :merknadtekst_godkjenning
     a            rdf:Property ;
-    rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved." ;
+    rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved or rejected." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
 
