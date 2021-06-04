@@ -1,5 +1,4 @@
 # Ignored fields:
-
 doi
 fileSet
 handle
@@ -29,6 +28,7 @@ entityDescription.reference.publicationContext.seriesTitle
 entityDescription.reference.doi
 
 # Hardcoded fields:
+owner
 publisher
 link
 entityDescription.npiSubjectHeading
