@@ -49,15 +49,21 @@ class UriWrapperTest {
     public void addChildAddsChildToPath() {
         String originalPath = "/some/path";
         UriWrapper parent = new UriWrapper(HOST + originalPath);
-        UriWrapper child = parent.addChild(Path.of("level1", "level2", "level3"));
+        UriWrapper child = parent.addChild("level1", "level2", "level3");
         URI expectedChildUri = URI.create(HOST + originalPath + "/level1/level2/level3");
         assertThat(child.getUri(), is(equalTo(expectedChildUri)));
 
-        UriWrapper anotherChild = parent.addChild(Path.of("level4")).addChild(Path.of("level5"));
+        UriWrapper anotherChild = parent.addChild("level4").addChild("level5");
         URI expectedAnotherChildUri = URI.create(HOST + originalPath + "/level4/level5");
         assertThat(anotherChild.getUri(), is(equalTo(expectedAnotherChildUri)));
     }
 
     @Test
-
+    public void addChildReturnsPathWithChildWhenChildDoesNotStartWithDelimitor() {
+        UriWrapper parentPath = new UriWrapper(HOST);
+        String inputChildPath = "some/path";
+        URI expectedResult = URI.create(HOST + "/" + inputChildPath);
+        UriWrapper actualResult = parentPath.addChild(inputChildPath);
+        assertThat(actualResult.getUri(), is(equalTo(expectedResult)));
+    }
 }
