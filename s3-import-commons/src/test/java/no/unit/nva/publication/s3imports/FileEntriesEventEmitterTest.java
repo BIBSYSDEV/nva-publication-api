@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
@@ -173,7 +174,7 @@ public class FileEntriesEventEmitterTest {
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
-        Path errorReportFolder = Path.of(ERRORS_FOLDER);
+        UnixPath errorReportFolder = UnixPath.of(ERRORS_FOLDER);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         List<String> files = s3Driver.listFiles(errorReportFolder);
         assertThat(files, is(not(empty())));
@@ -186,7 +187,7 @@ public class FileEntriesEventEmitterTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<String> allFiles = s3Driver.listFiles(Path.of(ALL_FILES));
+        List<String> allFiles = s3Driver.listFiles(UnixPath.of(ALL_FILES));
         String expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
 
         assertThat(allFiles, containsInAnyOrder(expectedFile));
@@ -328,7 +329,7 @@ public class FileEntriesEventEmitterTest {
     private UriWrapper expectedErrorReportUri(ImportRequest importRequest) {
         UriWrapper s3Location = new UriWrapper(importRequest.getS3Location());
         UriWrapper bucket = s3Location.getHost();
-        return bucket.addChild(Path.of(ERRORS_FOLDER))
+        return bucket.addChild(ERRORS_FOLDER)
                    .addChild(s3Location.getPath());
     }
 

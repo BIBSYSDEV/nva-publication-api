@@ -24,6 +24,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
@@ -110,7 +111,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
         if (!putEventsResults.isEmpty()) {
             String reportContent = PutEventsResult.toString(putEventsResults);
-            s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
+            s3Driver.insertFile(UnixPath.of(reportFilename.toS3bucketPath()), reportContent);
         }
     }
 
@@ -119,7 +120,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         UriWrapper bucket = inputUri.getHost();
 
         return bucket
-                   .addChild(Path.of(ERRORS_FOLDER))
+                   .addChild(ERRORS_FOLDER)
                    .addChild(inputUri.getPath());
     }
 

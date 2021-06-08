@@ -19,8 +19,9 @@ public enum CristinContributorRoleCode {
 
     @JsonCreator
     public static CristinContributorRoleCode fromString(String roleCode) {
-        return Optional.ofNullable(ALIASES_MAP.get(roleCode))
-                   .orElseThrow(() -> new RuntimeException(UNKNOWN_ROLE_ERROR + roleCode));
+        CristinContributorRoleCode returnValue = Optional.ofNullable(ALIASES_MAP.get(roleCode))
+            .orElseThrow(() -> new RuntimeException(UNKNOWN_ROLE_ERROR + roleCode));
+        return returnValue;
     }
 
     @JsonValue

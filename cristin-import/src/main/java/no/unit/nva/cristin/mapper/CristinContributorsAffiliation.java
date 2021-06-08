@@ -66,7 +66,7 @@ public class CristinContributorsAffiliation {
                                                     subdepartmentIdentifier.toString(),
                                                     groupNumber.toString());
         return new UriWrapper(MappingConstants.CRISTIN_ORG_URI)
-                   .addChild(Path.of(affiliationCristinCode))
+                   .addChild(affiliationCristinCode)
                    .getUri();
     }
 }

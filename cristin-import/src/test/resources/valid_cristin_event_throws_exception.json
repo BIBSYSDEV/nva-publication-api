@@ -15,7 +15,7 @@
     "contents": {
       "id": 5709,
       "varbeidhovedkatkode": "BOK",
-      "varbeidunderkatkode": "ANTOLOGI",
+      "varbeidunderkatkode": "SOMETHINGTHATFAILS",
       "brukernavn_opprettet": "someUsername",
       "eierkode_opprettet": "NTNU",
       "dato_opprettet": "2008-01-15T13:30:24",

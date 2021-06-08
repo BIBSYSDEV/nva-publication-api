@@ -57,4 +57,7 @@ class UriWrapperTest {
         URI expectedAnotherChildUri = URI.create(HOST + originalPath + "/level4/level5");
         assertThat(anotherChild.getUri(), is(equalTo(expectedAnotherChildUri)));
     }
+
+    @Test
+
 }

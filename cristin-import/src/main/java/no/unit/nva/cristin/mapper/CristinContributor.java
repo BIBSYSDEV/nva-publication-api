@@ -100,7 +100,7 @@ public class CristinContributor {
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
                    ? new UriWrapper(MappingConstants.CRISTIN_PERSONS_URI)
-                         .addChild(Path.of(identifier.toString()))
+                         .addChild(identifier.toString())
                          .getUri()
                    : null;
     }
