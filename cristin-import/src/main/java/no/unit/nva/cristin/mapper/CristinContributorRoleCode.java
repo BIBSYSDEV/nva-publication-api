@@ -2,26 +2,37 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public enum CristinContributorRoleCode {
-    CREATOR,
-    EDITOR;
+    CREATOR("FORFATTER"),
+    EDITOR("REDAKTØR");
 
-    public static final String EDITOR_NOR = "REDAKTØR";
-    public static final String CREATOR_NOR = "FORFATTER";
+    private final String value;
+
+    public static final String EDITOR_NOR = new String("REDAKTØR".getBytes(StandardCharsets.UTF_8),
+        StandardCharsets.UTF_8);
+    public static final String CREATOR_NOR = new String("FORFATTER".getBytes(StandardCharsets.UTF_8),
+        StandardCharsets.UTF_8);
     public static final String UNKNOWN_ROLE_ERROR = "Unmapped alias for roleCode: ";
     private static final Map<String, CristinContributorRoleCode> ALIASES_MAP = constructAliasesMap();
     private static final Map<CristinContributorRoleCode, String> DEFAULT_NAMES = constructDefaultNames();
 
+    CristinContributorRoleCode(String value) {
+        this.value = value;
+    }
+
     @JsonCreator
     public static CristinContributorRoleCode fromString(String roleCode) {
-        CristinContributorRoleCode returnValue = Optional.ofNullable(ALIASES_MAP.get(roleCode))
+        return Arrays.stream(CristinContributorRoleCode.values())
+            .filter(value -> value.toString().equalsIgnoreCase(roleCode))
+            .findAny()
             .orElseThrow(() -> new RuntimeException(UNKNOWN_ROLE_ERROR + roleCode));
-        return returnValue;
     }
 
     @JsonValue
