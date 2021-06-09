@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
-@SuppressWarnings("avoidescapedunicodecharacters")
 public enum CristinContributorRoleCode {
     CREATOR("FORFATTER"),
     EDITOR("REDAKT" + "\u00D8" + "R");
