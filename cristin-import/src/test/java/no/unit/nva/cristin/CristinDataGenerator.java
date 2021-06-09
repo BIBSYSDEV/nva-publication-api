@@ -14,7 +14,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -124,7 +126,10 @@ public class CristinDataGenerator {
     }
 
     private String toJsonString(CristinObject c) {
-        return attempt(() -> OBJECT_MAPPER.writeValueAsString(c)).orElseThrow();
+        return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
+            .map(s -> s.getBytes(StandardCharsets.UTF_8))
+            .map(s -> new String(s, StandardCharsets.UTF_8))
+            .orElseThrow();
     }
 
     private CristinObject newCristinObject(Integer index) {
@@ -252,6 +257,8 @@ public class CristinDataGenerator {
     }
 
     private static CristinContributorRoleCode randomCristinContributorRoleCode() {
+        System.out.println("***********************************"
+            + Arrays.stream(CristinContributorRoleCode.values()).map(v -> v.toString()).collect(Collectors.toList()) + "*******************************************" );
         return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
     }
 
