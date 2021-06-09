@@ -16,7 +16,6 @@ import com.github.javafaker.Faker;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -257,8 +256,6 @@ public class CristinDataGenerator {
     }
 
     private static CristinContributorRoleCode randomCristinContributorRoleCode() {
-        System.out.println("***********************************"
-            + Arrays.stream(CristinContributorRoleCode.values()).map(v -> v.toString()).collect(Collectors.toList()) + "*******************************************" );
         return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
     }
 
