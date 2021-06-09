@@ -52,6 +52,7 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -286,6 +287,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
     }
 
+    @Disabled
     @Test
     public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo() {
         InputStream inputData = IoUtils.inputStreamFromResources("valid_cristin_event_throws_exception.json");

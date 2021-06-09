@@ -8,6 +8,7 @@ public enum CristinContributorRoleCode {
     CREATOR("FORFATTER"),
     EDITOR("REDAKT" + "\u00D8" + "R"); //REDAKTØR
 
+
     private final String value;
 
     public static final String UNKNOWN_ROLE_ERROR = "Unmapped alias for roleCode: ";
