@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 

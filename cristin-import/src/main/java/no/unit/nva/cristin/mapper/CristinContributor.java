@@ -3,7 +3,6 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;

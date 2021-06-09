@@ -8,7 +8,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemResult;
 import com.amazonaws.services.dynamodbv2.model.ConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
-import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +19,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.parallel.ParallelExecutionException;
@@ -84,7 +84,7 @@ public class DataImportHandler {
     }
 
     private List<String> fetchFilenamesFromS3Location(ImportRequest input) {
-        List<String> filenames = s3Driver.listFiles(Path.of(input.extractPathFromS3Location()));
+        List<String> filenames = s3Driver.listFiles(UnixPath.of(input.extractPathFromS3Location()));
 
         if (filenames.isEmpty()) {
             throw new IllegalArgumentException(EMPTY_LIST_ERROR);
