@@ -112,9 +112,9 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     private URI createUri(URI s3Location, String filename) {
         return Try.of(s3Location)
-                   .map(UriWrapper::new)
-                   .map(UriWrapper::getHost)
-                   .map(u -> u.addChild(filename))
+            .map(UriWrapper::new)
+            .map(UriWrapper::getHost)
+            .map(uri -> uri.addChild(filename))
                    .map(UriWrapper::getUri)
                    .orElseThrow();
     }
