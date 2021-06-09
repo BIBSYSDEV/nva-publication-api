@@ -292,8 +292,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Executable action = () -> handler.handleRequest(inputData, outputStream, CONTEXT);
         assertThrows(RuntimeException.class, action);
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
-        String theFile = s3Driver.getFile("errors/parent/child/filename.json/5709.json");
-        assertThat(theFile, is(not(nullValue())));
+        String expectedErrorFileLocation = "errors/parent/child/filename.json/5709.json";
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(actualErrorFile, is(not(nullValue())));
     }
 
     private static JavaType constructImportResultJavaType() {
