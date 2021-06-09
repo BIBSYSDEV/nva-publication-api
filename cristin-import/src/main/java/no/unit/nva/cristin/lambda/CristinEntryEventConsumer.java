@@ -7,7 +7,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +25,7 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -181,16 +181,16 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
-        s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString());
+        s3Driver.insertFile(UnixPath.of(errorFileUri.toS3bucketPath()), reportContent.toJsonString());
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
         UriWrapper bucket = fileUri.getHost();
         return bucket
-                   .addChild(Path.of(ERRORS_FOLDER))
-                   .addChild(fileUri.getPath())
-                   .addChild(Path.of(createErrorReportFilename(event)));
+            .addChild(ERRORS_FOLDER)
+            .addChild(fileUri.getPath())
+            .addChild(createErrorReportFilename(event));
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {

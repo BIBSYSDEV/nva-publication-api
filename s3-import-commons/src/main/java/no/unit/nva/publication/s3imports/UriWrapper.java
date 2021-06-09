@@ -2,13 +2,13 @@ package no.unit.nva.publication.s3imports;
 
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import no.unit.nva.s3.UnixPath;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 
 public class UriWrapper {
@@ -44,28 +44,27 @@ public class UriWrapper {
      * @param childPath the path to be appended.
      * @return a UriWrapper containing the whole path.
      */
-    public UriWrapper addChild(Path childPath) {
-        Path thisPath = Path.of(uri.getPath());
-        List<String> thisPathArray = pathToArray(thisPath);
-        List<String> childPathArray = pathToArray(childPath);
+    public UriWrapper addChild(String... childPath) {
+        List<String> thisPathArray = pathToArray(uri.getPath());
+        List<String> childPathArray = pathToArray(UnixPath.of(childPath).toString());
         ArrayList<String> totalPathList = new ArrayList<>(thisPathArray);
         totalPathList.addAll(childPathArray);
         String[] totalPathArray = totalPathList.toArray(String[]::new);
-        Path totalPath = Path.of(ROOT, totalPathArray);
-        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), totalPath.toString(), EMPTY_FRAGMENT))
+        String totalPath = String.join(PATH_DELIMITER, totalPathArray);
+        return attempt(() -> new URI(uri.getScheme(), uri.getHost(), totalPath, EMPTY_FRAGMENT))
                    .map(UriWrapper::new)
                    .orElseThrow();
     }
 
-    public Path toS3bucketPath() {
+    public String toS3bucketPath() {
         String path = uri.getPath();
         path = path.startsWith(ROOT) ? path.substring(1) : path;
-        return Path.of(path);
+        return path;
     }
 
-    public Path getPath() {
+    public String getPath() {
         String pathString = uri.getPath();
-        return Path.of(removePathDelimiterFromTheEnd(pathString));
+        return removePathDelimiterFromTheEnd(pathString);
     }
 
     private String removePathDelimiterFromTheEnd(String pathString) {
@@ -77,17 +76,23 @@ public class UriWrapper {
     public Optional<UriWrapper> getParent() {
         return Optional.of(uri)
                    .map(URI::getPath)
-                   .map(Path::of)
-                   .map(Path::getParent)
-                   .map(Path::toString)
+                   .flatMap(this::getParentPath)
                    .map(attempt(p -> new URI(uri.getScheme(), uri.getHost(), p, EMPTY_FRAGMENT)))
                    .map(Try::orElseThrow)
                    .map(UriWrapper::new);
     }
 
-    private List<String> pathToArray(Path thisPath) {
-        return StreamSupport.stream(thisPath.spliterator(), false)
-                   .map(Path::toString)
-                   .collect(Collectors.toList());
+    public Optional<String> getParentPath(String path) {
+        Optional<String> returnValue = Optional.of(path)
+            .map(this::removePathDelimiterFromTheEnd)
+            .filter(StringUtils::isNotBlank)
+            .map(this::pathToArray)
+            .map(pathArray -> pathArray.subList(0, pathArray.size() - 1))
+            .map(pathArraySublist -> String.join(PATH_DELIMITER, pathArraySublist));
+        return returnValue;
+    }
+
+    private List<String> pathToArray(String thisPath) {
+        return Arrays.asList(thisPath.split(PATH_DELIMITER));
     }
 }
