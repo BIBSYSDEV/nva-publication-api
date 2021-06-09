@@ -185,7 +185,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
-        return fileUri.getHost()
+        UriWrapper bucket = fileUri.getHost();
+        return bucket
             .addChild(ERRORS_FOLDER)
             .addChild(fileUri.getPath())
             .addChild(createErrorReportFilename(event));
