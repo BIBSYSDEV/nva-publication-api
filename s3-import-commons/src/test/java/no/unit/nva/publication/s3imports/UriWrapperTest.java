@@ -25,9 +25,9 @@ class UriWrapperTest {
 
         UriWrapper uriWrapper = new UriWrapper(HOST + "/level1/level2/file.json");
         UriWrapper parent = uriWrapper.getParent().orElseThrow();
-        assertThat(parent.getPath().toString(), is(equalTo("/level1/level2")));
+        assertThat(parent.getPath(), is(equalTo("/level1/level2")));
         UriWrapper grandParent = parent.getParent().orElseThrow();
-        assertThat(grandParent.getPath().toString(), is(equalTo("/level1")));
+        assertThat(grandParent.getPath(), is(equalTo("/level1")));
     }
 
     @Test

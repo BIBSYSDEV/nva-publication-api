@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.time.Clock;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.cristin.AbstractCristinImportTest;
@@ -53,7 +52,6 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -208,7 +206,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(cause.getMessage(), is(equalTo(CristinMapper.ERROR_PARSING_MAIN_CATEGORY)));
     }
 
-    @Disabled
     @Test
     public void handlerSavesErrorReportFileInS3ContainingInputDataWhenFailingToStorePublicationToDynamo()
         throws JsonProcessingException {
@@ -289,17 +286,13 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
     }
 
-    @Disabled
     @Test
-    public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
-        throws JsonProcessingException {
+    public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo() {
         InputStream inputData = IoUtils.inputStreamFromResources("valid_cristin_event_throws_exception.json");
         Executable action = () -> handler.handleRequest(inputData, outputStream, CONTEXT);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        //String expectedFileLocation = "s3://bucket/parent/child/RuntimeException/filename.json/5709";
+        assertThrows(RuntimeException.class, action);
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
-        List<String> files = s3Driver.listFiles(UnixPath.of("parent"));
-        String theFile = s3Driver.getFile("parent/child/filename.json/5709");
+        String theFile = s3Driver.getFile("errors/parent/child/filename.json/5709.json");
         assertThat(theFile, is(not(nullValue())));
     }
 
