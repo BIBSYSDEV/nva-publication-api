@@ -17,7 +17,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -48,15 +47,13 @@ public class CristinDataGenerator {
     public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperNoEmpty.configure(
         SerializationFeature.INDENT_OUTPUT, false);
     public static final int USE_WHOLE_ARRAY = -1;
-    public static final String SOME_OWNER = "some@owner";
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     public static final String ID_FIELD = "id";
 
-    public Stream<CristinObject> randomObjects() {
-        return IntStream.range(0, 100).boxed()
-                   .map(this::newCristinObject);
+    public static CristinContributorsAffiliation randomAffiliation() {
+        return creatCristinContributorsAffiliation(randomCristinContributorRoleCode());
     }
 
     public CristinObject randomObject() {
@@ -102,18 +99,21 @@ public class CristinDataGenerator {
         return newCristinObject(0).toJsonString();
     }
 
+    public static CristinContributorsAffiliation createAffiliation(CristinContributorRoleCode roleCode) {
+        return creatCristinContributorsAffiliation(roleCode);
+    }
+
+    public Stream<CristinObject> randomObjects() {
+        return IntStream.range(0, 100).boxed()
+                   .map(index -> newCristinObject(index));
+    }
+
     public JsonNode objectWithCustomMainCategory(String customMainCategory) throws JsonProcessingException {
-        return cristinObjectWithUnexpectedValue(customMainCategory, MAIN_CATEGORY_FIELD);
+        return cristinObjectWithUnexpectedValue(randomObject(), customMainCategory, MAIN_CATEGORY_FIELD);
     }
 
     public JsonNode objectWithCustomSecondaryCategory(String customSecondaryCategory) throws JsonProcessingException {
-        return cristinObjectWithUnexpectedValue(customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
-    }
-
-    public JsonNode objectWithoutId() throws JsonProcessingException {
-        ObjectNode cristinObject = cristinObjectAsObjectNode();
-        cristinObject.remove(ID_FIELD);
-        return cristinObject;
+        return cristinObjectWithUnexpectedValue(randomObject(), customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
     }
 
     private static <T> T randomElement(List<T> elements) {
@@ -126,35 +126,48 @@ public class CristinDataGenerator {
 
     private String toJsonString(CristinObject c) {
         return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
-            .map(s -> s.getBytes(StandardCharsets.UTF_8))
-            .map(s -> new String(s, StandardCharsets.UTF_8))
-            .orElseThrow();
+                   .map(s -> s.getBytes(StandardCharsets.UTF_8))
+                   .map(s -> new String(s, StandardCharsets.UTF_8))
+                   .orElseThrow();
     }
 
-    private CristinObject newCristinObject(Integer index) {
-        return CristinObject.builder()
-                   .withMainCategory(randomMainCategory())
-                   .withSecondaryCategory(randomSecondaryCategory())
-                   .withCristinTitles(randomTitles())
-                   .withId(index)
-                   .withEntryCreationDate(LocalDate.now())
-                   .withPublicationYear(randomYear())
-                   .withContributors(randomContributors())
-                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
+    public JsonNode injectCustomSecondaryCategoryIntoCristinObject(CristinObject cristinObject,
+                                                                   String customSecondaryCategory)
+        throws JsonProcessingException {
+        return cristinObjectWithUnexpectedValue(cristinObject, customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
+    }
+
+    public JsonNode objectWithoutId() throws JsonProcessingException {
+        ObjectNode cristinObject = cristinObjectAsObjectNode(randomObject());
+        cristinObject.remove(ID_FIELD);
+        return cristinObject;
+    }
+
+    public CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
+        return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
+    }
+
+    private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
+        CristinContributorRoleCode roleCode) {
+        return CristinContributorsAffiliation.builder()
+                   .withInstitutionIdentifier(threeDigitPositiveNumber())
+                   .withDepartmentIdentifier(threeDigitPositiveNumber())
+                   .withGroupNumber(threeDigitPositiveNumber())
+                   .withSubdepartmentIdentifier(threeDigitPositiveNumber())
+                   .withOriginalInsitutionCode(randomString())
+                   .withOriginalInstitutionName(randomString())
+                   .withOriginalPlaceName(randomString())
+                   .withOriginalDepartmentName(randomString())
+                   .withDepartmentIdentifier(largeRandomNumber())
+                   .withRoles(List.of(createRole(roleCode)))
                    .build();
     }
 
-    private JsonNode cristinObjectWithUnexpectedValue(String customSecondaryCategory, String secondaryCategoryField)
-        throws JsonProcessingException {
-        ObjectNode json = cristinObjectAsObjectNode();
-        json.put(secondaryCategoryField, customSecondaryCategory);
-        return json;
-    }
-
-    private ObjectNode cristinObjectAsObjectNode() throws JsonProcessingException {
-        CristinObject cristinObject = newCristinObject(0);
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
-        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+    private static CristinContributorRole createRole(CristinContributorRoleCode roleCode) {
+        return CristinContributorRole
+                   .builder()
+                   .withRoleCode(roleCode)
+                   .build();
     }
 
     private <T> JsonNode convertToJsonNode(T inputData) {
@@ -163,10 +176,30 @@ public class CristinDataGenerator {
                    : JsonUtils.objectMapperNoEmpty.convertValue(inputData, JsonNode.class);
     }
 
-    private List<CristinContributor> randomContributors() {
-        return smallSample()
-                   .map(this::randomContributor)
-                   .collect(Collectors.toList());
+    private CristinObject newCristinObject(Integer index) {
+        return createObjectWithCristinContributorRoleCode(index, randomContributors());
+    }
+
+    private CristinObject createObjectWithCristinContributorRoleCode(Integer index,
+                                                                     List<CristinContributor> contributors) {
+        return CristinObject.builder()
+                   .withMainCategory(randomMainCategory())
+                   .withSecondaryCategory(randomSecondaryCategory())
+                   .withCristinTitles(randomTitles())
+                   .withId(index)
+                   .withEntryCreationDate(LocalDate.now())
+                   .withPublicationYear(randomYear())
+                   .withContributors(contributors)
+                   .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
+                   .build();
+    }
+
+    private JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject, String customSecondaryCategory,
+                                                      String secondaryCategoryField)
+        throws JsonProcessingException {
+        ObjectNode json = cristinObjectAsObjectNode(cristinObject);
+        json.put(secondaryCategoryField, customSecondaryCategory);
+        return json;
     }
 
     private CristinContributor randomContributor(Integer contributorIndex) {
@@ -185,19 +218,21 @@ public class CristinDataGenerator {
                    .collect(Collectors.toList());
     }
 
-    public static CristinContributorsAffiliation randomAffiliation() {
-        return CristinContributorsAffiliation.builder()
-                   .withInstitutionIdentifier(threeDigitPositiveNumber())
-                   .withDepartmentIdentifier(threeDigitPositiveNumber())
-                   .withGroupNumber(threeDigitPositiveNumber())
-                   .withSubdepartmentIdentifier(threeDigitPositiveNumber())
-                   .withOriginalInsitutionCode(randomString())
-                   .withOriginalInstitutionName(randomString())
-                   .withOriginalPlaceName(randomString())
-                   .withOriginalDepartmentName(randomString())
-                   .withDepartmentIdentifier(largeRandomNumber())
-                   .withRoles(randomAffiliationRoles())
-                   .build();
+    private ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
+        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+    }
+
+    private List<CristinContributor> randomContributors() {
+        return smallSample()
+                   .map(contributorIndex -> randomContributor(contributorIndex))
+                   .collect(Collectors.toList());
+    }
+
+    private List<CristinContributor> createContributors(CristinContributorRoleCode roleCode) {
+        return smallSample()
+                   .map(contributorIndex -> creatContributor(contributorIndex, roleCode))
+                   .collect(Collectors.toList());
     }
 
     public static int largeRandomNumber() {
@@ -247,12 +282,14 @@ public class CristinDataGenerator {
         return randomElement(LANGUAGE_CODES);
     }
 
-    private static List<CristinContributorRole> randomAffiliationRoles() {
-        CristinContributorRole role = CristinContributorRole
-                                          .builder()
-                                          .withRoleCode(randomCristinContributorRoleCode())
-                                          .build();
-        return Collections.singletonList(role);
+    private CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
+        return CristinContributor.builder()
+                   .withContributorOrder(contributorIndex)
+                   .withIdentifier(contributorIndex)
+                   .withGivenName(randomString())
+                   .withFamilyName(randomString())
+                   .withAffiliations(List.of(createAffiliation(roleCode)))
+                   .build();
     }
 
     private static CristinContributorRoleCode randomCristinContributorRoleCode() {

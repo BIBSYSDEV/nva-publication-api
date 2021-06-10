@@ -52,7 +52,6 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -185,10 +184,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = stringToStream(event.toJsonString());
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
-        assertThrows(RuntimeException.class, action);
+        Exception throwException = assertThrows(RuntimeException.class, action);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
-            extractActualReportFromS3Client(event);
+            extractActualReportFromS3Client(event, throwException);
         assertThat(actualReport, is(not(nullValue())));
     }
 
@@ -225,7 +224,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
             constructExpectedErrorReport(cause, event);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
-            extractActualReportFromS3Client(event);
+            extractActualReportFromS3Client(event, thrownException);
 
         JsonNode expectedReportJson = objectMapperNoEmpty.convertValue(expectedReport, JsonNode.class);
         JsonNode actualReportJson = objectMapperNoEmpty.convertValue(actualReport, JsonNode.class);
@@ -240,10 +239,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
-        runWithoutThrowingException(action);
+        Exception thrownException = assertThrows(RuntimeException.class, action);
+        Exception cause = (Exception) thrownException.getCause();
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
-            extractActualReportFromS3Client(awsEvent);
+            extractActualReportFromS3Client(awsEvent, cause);
 
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(inputData)));
     }
@@ -287,14 +287,28 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
     }
 
-    @Disabled
     @Test
-    public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo() {
-        InputStream inputData = IoUtils.inputStreamFromResources("valid_cristin_event_throws_exception.json");
-        Executable action = () -> handler.handleRequest(inputData, outputStream, CONTEXT);
-        assertThrows(RuntimeException.class, action);
+    public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
+        throws Throwable {
+        CristinObject cristinObject = cristinDataGenerator.randomObject();
+        JsonNode cristinObjectWithCustomSecondaryCategory =
+            cristinDataGenerator.injectCustomSecondaryCategoryIntoCristinObject(
+            cristinObject, randomString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+            cristinDataGenerator.toAwsEvent(cristinObjectWithCustomSecondaryCategory);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        String exception = "UnknownError";
+        try {
+            action.execute();
+        } catch (Exception e) {
+            exception = e.getCause().getClass().getSimpleName();
+        }
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
-        String expectedErrorFileLocation = "errors/parent/child/filename.json/5709.json";
+        String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exception,
+                                                       awsEvent.getDetail().getFileUri().getPath(),
+                                                       cristinObject.getId().toString() + ".json").toString();
         String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(actualErrorFile, is(not(nullValue())));
     }
@@ -326,13 +340,15 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .collect(SingletonCollector.collect());
     }
 
-    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent) {
+    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
+                                             Exception exception) {
 
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
         String errorReportFilename = cristinObjectId + FILE_ENDING;
         UriWrapper inputFile = new UriWrapper(awsEvent.getDetail().getFileUri());
         UriWrapper bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
+                   .addChild(exception.getClass().getSimpleName())
                    .addChild(inputFile.getPath())
                    .addChild(errorReportFilename);
     }
@@ -342,8 +358,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> extractActualReportFromS3Client(
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) throws JsonProcessingException {
-        UriWrapper errorFileUri = constructErrorFileUri(event);
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event, Exception exception) throws JsonProcessingException {
+        UriWrapper errorFileUri = constructErrorFileUri(event, exception);
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         String content = s3Driver.getFile(UnixPath.of(errorFileUri.toS3bucketPath()).toString());
         return objectMapperNoEmpty.readValue(content, IMPORT_RESULT_JAVA_TYPE);

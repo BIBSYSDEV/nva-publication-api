@@ -176,20 +176,23 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private void saveReportToS3(Failure<Publication> fail,
                                 AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        UriWrapper errorFileUri = constructErrorFileUri(event);
+        UriWrapper errorFileUri = constructErrorFileUri(event, fail.getException());
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
         s3Driver.insertFile(UnixPath.of(errorFileUri.toS3bucketPath()), reportContent.toJsonString());
     }
 
-    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
+                                             Exception exception) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
         UriWrapper bucket = fileUri.getHost();
-        return bucket
-            .addChild(ERRORS_FOLDER)
-            .addChild(fileUri.getPath())
-            .addChild(createErrorReportFilename(event));
+        UriWrapper uriWrapper = bucket
+                                    .addChild(ERRORS_FOLDER)
+                                    .addChild(exception.getClass().getSimpleName())
+                                    .addChild(fileUri.getPath())
+                                    .addChild(createErrorReportFilename(event));
+        return uriWrapper;
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
