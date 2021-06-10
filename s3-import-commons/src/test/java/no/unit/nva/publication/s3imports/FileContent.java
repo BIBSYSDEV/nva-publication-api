@@ -3,13 +3,14 @@ package no.unit.nva.publication.s3imports;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
+import no.unit.nva.s3.UnixPath;
 
 public class FileContent {
 
-    private final String filename;
+    private final UnixPath filename;
     private final InputStream fileContent;
 
-    public FileContent(String filename, InputStream fileContent) {
+    public FileContent(UnixPath filename, InputStream fileContent) {
         this.filename = filename;
         this.fileContent = fileContent;
     }
@@ -32,7 +33,7 @@ public class FileContent {
                && Objects.equals(getFileContent(), that.getFileContent());
     }
 
-    public String getFilename() {
+    public UnixPath getFilename() {
         return filename;
     }
 
@@ -41,6 +42,6 @@ public class FileContent {
     }
 
     public Map<String, InputStream> toMap() {
-        return Map.of(filename, fileContent);
+        return Map.of(filename.toString(), fileContent);
     }
 }

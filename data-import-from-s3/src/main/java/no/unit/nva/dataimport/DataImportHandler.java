@@ -57,7 +57,7 @@ public class DataImportHandler {
         ImportRequest input = ImportRequest.fromMap(request);
 
         setupS3Driver(input.extractBucketFromS3Location());
-        List<String> filenames = fetchFilenamesFromS3Location(input);
+        List<UnixPath> filenames = fetchFilenamesFromS3Location(input);
 
         List<ImportResult<FailedDynamoEntriesReport>> importResults = attempt(
             () -> insertAllFiles(filenames)).orElseThrow();
@@ -74,7 +74,7 @@ public class DataImportHandler {
 
     private static ImportResult<FailedDynamoEntriesReport> generateReportEntry(ParallelExecutionException failure) {
         String message = failure.getMessage();
-        String inputFilename = (String) failure.getInput();
+        UnixPath inputFilename = (UnixPath) failure.getInput();
         FailedDynamoEntriesReport resultReport = new FailedDynamoEntriesReport(message, inputFilename);
         return ImportResult.reportFailure(resultReport, failure);
     }
@@ -83,8 +83,8 @@ public class DataImportHandler {
         return attempt(() -> JsonUtils.objectMapper.writeValueAsString(request)).orElseThrow();
     }
 
-    private List<String> fetchFilenamesFromS3Location(ImportRequest input) {
-        List<String> filenames = s3Driver.listFiles(UnixPath.of(input.extractPathFromS3Location()));
+    private List<UnixPath> fetchFilenamesFromS3Location(ImportRequest input) {
+        List<UnixPath> filenames = s3Driver.listFiles(UnixPath.of(input.extractPathFromS3Location()));
 
         if (filenames.isEmpty()) {
             throw new IllegalArgumentException(EMPTY_LIST_ERROR);
@@ -92,14 +92,14 @@ public class DataImportHandler {
         return filenames;
     }
 
-    private List<ImportResult<FailedDynamoEntriesReport>> insertAllFiles(List<String> filenames)
+    private List<ImportResult<FailedDynamoEntriesReport>> insertAllFiles(List<UnixPath> filenames)
         throws InterruptedException {
-        List<String> filesToInsert = filenames;
+        List<UnixPath> filesToInsert = filenames;
         List<ImportResult<FailedDynamoEntriesReport>> failedImports = Collections.emptyList();
 
         int attempts = 0;
         while (!filesToInsert.isEmpty() && attempts < MAX_ATTEMPTS) {
-            ParallelMapper<String, BatchWriteItemResult> mapping = insertFilesToDynamo(filesToInsert);
+            ParallelMapper<UnixPath, BatchWriteItemResult> mapping = insertFilesToDynamo(filesToInsert);
 
             failedImports = collectFilesWithFailures(mapping.getExceptions());
             filesToInsert = extractFilenamesFromFailedImports(failedImports);
@@ -108,16 +108,16 @@ public class DataImportHandler {
         return failedImports;
     }
 
-    private ParallelMapper<String, BatchWriteItemResult> insertFilesToDynamo(List<String> filesToInsert)
+    private ParallelMapper<UnixPath, BatchWriteItemResult> insertFilesToDynamo(List<UnixPath> filesToInsert)
         throws InterruptedException {
         return new ParallelMapper<>(filesToInsert, this::insertFileToDynamo).map();
     }
 
-    private List<String> extractFilenamesFromFailedImports(
+    private List<UnixPath> extractFilenamesFromFailedImports(
         List<ImportResult<FailedDynamoEntriesReport>> failedImports) {
         return failedImports.stream().parallel()
                    .map(ImportResult::getInput)
-                   .map(FailedDynamoEntriesReport::getInputFilename)
+                   .map(FailedDynamoEntriesReport::getInputFilePath)
                    .collect(Collectors.toList());
     }
 
@@ -134,7 +134,7 @@ public class DataImportHandler {
                    .collect(Collectors.toList());
     }
 
-    private BatchWriteItemResult insertFileToDynamo(String filename) {
+    private BatchWriteItemResult insertFileToDynamo(UnixPath filename) {
         S3ToDynamoImporter s3ToDynamoImporter = new S3ToDynamoImporter(dynamoClient,
                                                                        s3Driver,
                                                                        RESOURCES_TABLE_NAME,

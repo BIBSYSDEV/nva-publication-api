@@ -25,7 +25,6 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -180,7 +179,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
-        s3Driver.insertFile(UnixPath.of(errorFileUri.toS3bucketPath()), reportContent.toJsonString());
+        s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString());
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {

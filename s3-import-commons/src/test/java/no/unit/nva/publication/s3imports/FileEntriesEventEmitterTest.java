@@ -173,9 +173,8 @@ public class FileEntriesEventEmitterTest {
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
-        UnixPath errorReportFolder = UnixPath.of(ERRORS_FOLDER);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<String> files = s3Driver.listFiles(errorReportFolder);
+        List<UnixPath> files = s3Driver.listFiles(ERRORS_FOLDER);
         assertThat(files, is(not(empty())));
     }
 
@@ -186,8 +185,8 @@ public class FileEntriesEventEmitterTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<String> allFiles = s3Driver.listFiles(UnixPath.of(ALL_FILES));
-        String expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
+        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(ALL_FILES));
+        UnixPath expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
 
         assertThat(allFiles, containsInAnyOrder(expectedFile));
     }
@@ -221,7 +220,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     private static ImportRequest newImportRequest(String customImportRequestEventType) {
-        return new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location(),
+        return new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.getS3Location(),
                                  customImportRequestEventType);
     }
 
@@ -313,7 +312,7 @@ public class FileEntriesEventEmitterTest {
     private String extractActualErrorReport(ImportRequest importRequestForExistingFile) {
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         UriWrapper expectedErrorReportFilename = expectedErrorReportUri(importRequestForExistingFile);
-        return s3Driver.getFile(expectedErrorReportFilename.toS3bucketPath().toString());
+        return s3Driver.getFile(expectedErrorReportFilename.toS3bucketPath());
     }
 
     private FakeEventBridgeClient eventBridgeClientThatFailsToEmitMessages() {

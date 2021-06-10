@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import no.unit.nva.publication.StubS3Driver;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
@@ -52,20 +53,21 @@ import org.mockito.stubbing.Answer;
 
 class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
 
-    public static final String FAILING_TO_WRITE_FILE = "inputsWithWrongSortKey.ion.gz";
     public static final String PRIMARY_KEY_LOCATOR = "PK0\\s*:\\s*(.*?)$";
     public static final String ERROR_DUE_TO_WRONG_KEY = "One of the required keys was not given a value";
-    public static final String FIRST_SAMPLE = "input1.ion.gz";
-    public static final String SECOND_SAMPLE = "input2.ion.gz";
-    public static final String THIRD_SAMPLE = "input3.ion.gz";
-    public static final String FOURTH_SAMPLE = "input4.ion.gz";
-    public static final String FAILING_TO_READ_FILE = "input2.ion.gz";
-    public static final String SAMPLE_WITH_SOME_FAILING_ENTRIES = "input2.ion.gz";
+
+    public static final UnixPath FAILING_TO_WRITE_FILE = UnixPath.of("inputsWithWrongSortKey.ion.gz");
+    public static final UnixPath FIRST_SAMPLE = UnixPath.of("input1.ion.gz");
+    public static final UnixPath SECOND_SAMPLE = UnixPath.of("input2.ion.gz");
+    public static final UnixPath THIRD_SAMPLE = UnixPath.of("input3.ion.gz");
+    public static final UnixPath FOURTH_SAMPLE = UnixPath.of("input4.ion.gz");
+    public static final UnixPath FAILING_TO_READ_FILE = UnixPath.of("input2.ion.gz");
+    public static final UnixPath SAMPLE_WITH_SOME_FAILING_ENTRIES = UnixPath.of("input2.ion.gz");
     public static final int PARTITION_KEY_FOR_FAILING_ENTRIES = 0;
     public static final String FAILING_ENTRIES = "expectedFailingKeysFromInput2WhenDynamoFails.txt";
     private static final String S3_LOCATION = "s3://orestis-export/some/location";
     private AmazonDynamoDB dynamoDbClient;
-    private List<String> resourceFiles;
+    private List<UnixPath> resourceFiles;
 
     @BeforeEach
     public void init() {
@@ -122,10 +124,10 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
         List<ImportResult<FailedDynamoEntriesReport>> failures =
             dataImportHandler.handleRequest(request.toMap());
-        List<String> failedFiles = failures.stream()
-                                       .map(ImportResult::getInput)
-                                       .map(FailedDynamoEntriesReport::getInputFilename)
-                                       .collect(Collectors.toList());
+        List<UnixPath> failedFiles = failures.stream()
+                                         .map(ImportResult::getInput)
+                                         .map(FailedDynamoEntriesReport::getInputFilePath)
+                                         .collect(Collectors.toList());
 
         assertThat(failedFiles, contains(FAILING_TO_READ_FILE));
     }
@@ -171,10 +173,10 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void dataImportReturnsAllFilenamesOfFailedInputsWhenWritingToDynamoDbFails() {
         List<ImportResult<FailedDynamoEntriesReport>> failures = handlerWithInputThatCannotBeWrittenToDynamo();
 
-        String failingFilename = failures.stream()
-                                     .map(ImportResult::getInput)
-                                     .map(FailedDynamoEntriesReport::getInputFilename)
-                                     .collect(SingletonCollector.collect());
+        UnixPath failingFilename = failures.stream()
+                                       .map(ImportResult::getInput)
+                                       .map(FailedDynamoEntriesReport::getInputFilePath)
+                                       .collect(SingletonCollector.collect());
         String errorMessage = failures.stream().map(ImportResult::getException).collect(Collectors.joining());
 
         assertThat(failingFilename, is(equalTo(FAILING_TO_WRITE_FILE)));
@@ -205,6 +207,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         assertThat(appender.getMessages(), containsString(request.toJsonString()));
     }
 
+    //used as MethodSource in Parameterized Test
     private static Stream<Map<String, String>> invalidArgumentsProvider() {
         Map<String, String> missingS3Location = new ImportRequest(null).toMap();
         Map<String, String> wrongFields = Map.of("someField", "someValue");
@@ -231,7 +234,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     private StubS3Driver failingS3Driver(AtomicReference<String> failingContent) {
         return new StubS3Driver(S3_LOCATION, resourceFiles) {
             @Override
-            public String getFile(String filename) {
+            public String getFile(UnixPath filename) {
                 String content = super.getFile(filename);
                 if (FAILING_TO_READ_FILE.equals(filename)) {
                     failingContent.set(content);

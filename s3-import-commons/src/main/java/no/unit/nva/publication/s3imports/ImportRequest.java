@@ -1,12 +1,12 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
@@ -23,7 +23,6 @@ import nva.commons.core.JsonUtils;
 public class ImportRequest implements JsonSerializable {
 
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
-    public static final String PATH_DELIMITER = "/";
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String IMPORT_EVENT_TYPE = "importEventType";
 
@@ -68,11 +67,12 @@ public class ImportRequest implements JsonSerializable {
         return s3Location.getHost();
     }
 
-    public String extractPathFromS3Location() {
+    public UnixPath extractPathFromS3Location() {
         return Optional.ofNullable(s3Location)
                    .map(URI::getPath)
-                   .map(this::removeRoot)
-                   .orElse(EMPTY_STRING);
+                   .map(UnixPath::fromString)
+                   .map(UnixPath::removeRoot)
+                   .orElse(UnixPath.EMPTY_PATH);
     }
 
     @JacocoGenerated
@@ -97,9 +97,5 @@ public class ImportRequest implements JsonSerializable {
 
     private static IllegalArgumentException handleNotParsableInputError(String inputString) {
         return new IllegalArgumentException(ILLEGAL_ARGUMENT_MESSAGE + inputString);
-    }
-
-    private String removeRoot(String path) {
-        return path.startsWith(PATH_DELIMITER) ? path.substring(1) : path;
     }
 }
