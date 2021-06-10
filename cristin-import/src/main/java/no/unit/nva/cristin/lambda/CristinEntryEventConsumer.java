@@ -7,7 +7,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
@@ -26,6 +25,7 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -74,24 +74,24 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                                        Context context) {
         validateEvent(event);
         return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::toPublication)
-                   .flatMap(this::persistInDatabase)
-                   .orElseThrow(fail -> handleSavingError(fail, event));
+            .map(CristinObject::toPublication)
+            .flatMap(this::persistInDatabase)
+            .orElseThrow(fail -> handleSavingError(fail, event));
     }
 
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
+            .httpClient(UrlConnectionHttpClient.create())
+            .build();
     }
 
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
-                   .standard()
-                   .withRegion(ApplicationConstants.AWS_REGION.id())
-                   .build();
+            .standard()
+            .withRegion(ApplicationConstants.AWS_REGION.id())
+            .build();
     }
 
     private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -100,11 +100,10 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return cristinObject;
     }
 
-
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())
-                   .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
-                   .orElseThrow();
+            .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
+            .orElseThrow();
     }
 
     private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -142,7 +141,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private Try<Publication> tryPersistingInDatabase(Publication publication) {
         return attempt(() -> createPublicationDraft(publication))
-                   .map(this::publishPublication);
+            .map(this::publishPublication);
     }
 
     private Publication createPublicationDraft(Publication publication)
@@ -181,29 +180,29 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
-        s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString());
+        s3Driver.insertFile(UnixPath.of(errorFileUri.toS3bucketPath()), reportContent.toJsonString());
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
         UriWrapper bucket = fileUri.getHost();
         return bucket
-                   .addChild(Path.of(ERRORS_FOLDER))
-                   .addChild(fileUri.getPath())
-                   .addChild(Path.of(createErrorReportFilename(event)));
+            .addChild(ERRORS_FOLDER)
+            .addChild(fileUri.getPath())
+            .addChild(createErrorReportFilename(event));
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return extractCristinObjectId(event)
-                   .map(idString -> idString + FILE_ENDING)
-                   .orElseGet(this::unknownCristinIdReportFilename);
+            .map(idString -> idString + FILE_ENDING)
+            .orElseGet(this::unknownCristinIdReportFilename);
     }
 
     private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::getId)
-                   .toOptional()
-                   .map(Objects::toString);
+            .map(CristinObject::getId)
+            .toOptional()
+            .map(Objects::toString);
     }
 
     private String unknownCristinIdReportFilename() {

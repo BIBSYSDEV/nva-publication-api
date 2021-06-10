@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import lombok.AccessLevel;
@@ -66,7 +65,7 @@ public class CristinContributorsAffiliation {
                                                     subdepartmentIdentifier.toString(),
                                                     groupNumber.toString());
         return new UriWrapper(MappingConstants.CRISTIN_ORG_URI)
-                   .addChild(Path.of(affiliationCristinCode))
+                   .addChild(affiliationCristinCode)
                    .getUri();
     }
 }

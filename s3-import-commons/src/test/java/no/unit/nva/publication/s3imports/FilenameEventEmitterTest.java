@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collections;
@@ -34,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
@@ -158,7 +158,8 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
-        Path errorReportFile = Path.of(ERRORS_FOLDER, importRequest.extractPathFromS3Location(), ERROR_REPORT_FILENAME);
+        UnixPath errorReportFile =
+            UnixPath.of(ERRORS_FOLDER, importRequest.extractPathFromS3Location(), ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile.toString());
         for (String filename : INPUT_FILE_LIST) {
             assertThat(content, containsString(filename));
@@ -173,7 +174,7 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
 
-        List<String> allFiles = s3Driver.listFiles(Path.of(LIST_ALL_FILES));
+        List<String> allFiles = s3Driver.listFiles(UnixPath.of(LIST_ALL_FILES));
         assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(String[]::new)));
     }
 
