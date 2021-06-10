@@ -293,22 +293,20 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         CristinObject cristinObject = cristinDataGenerator.randomObject();
         JsonNode cristinObjectWithCustomSecondaryCategory =
             cristinDataGenerator.injectCustomSecondaryCategoryIntoCristinObject(
-            cristinObject, randomString());
+                cristinObject, randomString());
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
             cristinDataGenerator.toAwsEvent(cristinObjectWithCustomSecondaryCategory);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        String exception = "UnknownError";
-        try {
-            action.execute();
-        } catch (Exception e) {
-            exception = e.getCause().getClass().getSimpleName();
-        }
+        Exception exception = assertThrows(RuntimeException.class, action);
+
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
-        String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exception,
-                                                       awsEvent.getDetail().getFileUri().getPath(),
-                                                       cristinObject.getId().toString() + ".json").toString();
+        String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
+        String exceptionName = exception.getCause().getClass().getSimpleName();
+        String fileIdWithEnding = cristinObject.getId().toString() + ".json";
+        String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exceptionName, expectedFilePath, fileIdWithEnding)
+                                               .toString();
         String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(actualErrorFile, is(not(nullValue())));
     }

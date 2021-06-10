@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -105,7 +104,7 @@ public class CristinDataGenerator {
 
     public Stream<CristinObject> randomObjects() {
         return IntStream.range(0, 100).boxed()
-                   .map(index -> newCristinObject(index));
+                   .map(this::newCristinObject);
     }
 
     public JsonNode objectWithCustomMainCategory(String customMainCategory) throws JsonProcessingException {
@@ -126,8 +125,6 @@ public class CristinDataGenerator {
 
     private String toJsonString(CristinObject c) {
         return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
-                   .map(s -> s.getBytes(StandardCharsets.UTF_8))
-                   .map(s -> new String(s, StandardCharsets.UTF_8))
                    .orElseThrow();
     }
 
