@@ -304,7 +304,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
         String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
         String exceptionName = exception.getCause().getClass().getSimpleName();
-        String fileIdWithEnding = cristinObject.getId().toString() + ".json";
+        String fileIdWithEnding = cristinObject.getId().toString() + FILE_ENDING;
         String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exceptionName, expectedFilePath, fileIdWithEnding)
                                                .toString();
         String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
