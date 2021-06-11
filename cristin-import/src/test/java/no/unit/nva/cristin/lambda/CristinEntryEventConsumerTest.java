@@ -125,7 +125,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
 
-        UserInstance userInstance = createExpectedPublicationOwner(awsEvent);
+        UserInstance userInstance = createExpectedPublicationOwner();
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
         injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
@@ -133,19 +133,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
-
-    private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
-                                                              Publication actualPublication,
-                                                              Publication expectedPublication) {
-
-        //NVA identifier is not known until the entry has been saved in the NVA database.
-        expectedPublication.setIdentifier(actualPublication.getIdentifier());
-        expectedPublication.setStatus(PublicationStatus.PUBLISHED);
-        expectedPublication.setCreatedDate(actualPublication.getCreatedDate());
-        expectedPublication.setModifiedDate(actualPublication.getModifiedDate());
-        expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
-    }
-
 
     @Test
     public void handlerThrowsExceptionWhenInputDetailTypeIsNotTheExpected() throws JsonProcessingException {
@@ -275,15 +262,15 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         runWithoutThrowingException(action);
 
         S3Driver s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
-        String errorReportFile = s3Driver.listFiles(LIST_ALL_FILES)
-                                     .stream()
-                                     .collect(SingletonCollector.collect());
+        UnixPath errorReportFile = s3Driver.listFiles(LIST_ALL_FILES)
+                                       .stream()
+                                       .collect(SingletonCollector.collect());
         String errorReport = s3Driver.getFile(errorReportFile);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
             objectMapperNoEmpty.readValue(errorReport, IMPORT_RESULT_JAVA_TYPE);
 
-        assertThat(errorReportFile, containsString(UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX));
+        assertThat(errorReportFile.toString(), containsString(UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX));
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
     }
 
@@ -305,8 +292,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
         String exceptionName = exception.getCause().getClass().getSimpleName();
         String fileIdWithEnding = cristinObject.getId().toString() + JSON;
-        String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exceptionName, expectedFilePath, fileIdWithEnding)
-                                               .toString();
+        UnixPath expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER,
+                                                         exceptionName,
+                                                         expectedFilePath,
+                                                         fileIdWithEnding);
+
         String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
         assertThat(actualErrorFile, is(not(nullValue())));
     }
@@ -330,6 +320,18 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return attempt(() -> objectMapperNoEmpty
                                  .<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>>
                                       readValue(input, eventType)).orElseThrow();
+    }
+
+    private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
+                                                              Publication actualPublication,
+                                                              Publication expectedPublication) {
+
+        //NVA identifier is not known until the entry has been saved in the NVA database.
+        expectedPublication.setIdentifier(actualPublication.getIdentifier());
+        expectedPublication.setStatus(PublicationStatus.PUBLISHED);
+        expectedPublication.setCreatedDate(actualPublication.getCreatedDate());
+        expectedPublication.setModifiedDate(actualPublication.getModifiedDate());
+        expectedPublication.setPublishedDate(actualPublication.getPublishedDate());
     }
 
     private Publication fetchPublicationDirectlyFromDatabase(UserInstance userInstance) {
@@ -359,7 +361,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event, Exception exception) throws JsonProcessingException {
         UriWrapper errorFileUri = constructErrorFileUri(event, exception);
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
-        String content = s3Driver.getFile(UnixPath.of(errorFileUri.toS3bucketPath()).toString());
+        String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
         return objectMapperNoEmpty.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 
@@ -392,7 +394,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return cristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
     }
 
-    private UserInstance createExpectedPublicationOwner(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private UserInstance createExpectedPublicationOwner() {
         return new UserInstance(HARDCODED_PUBLICATIONS_OWNER, HARDCODED_NVA_CUSTOMER);
     }
 

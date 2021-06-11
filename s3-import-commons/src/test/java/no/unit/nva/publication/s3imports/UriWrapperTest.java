@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 class UriWrapperTest {
 
     public static final String HOST = "http://www.example.org";
+    private static final String ROOT = "/";
 
     @Test
     public void getPathRemovesPathDelimiterFromTheEndOfTheUri() {
@@ -25,9 +26,9 @@ class UriWrapperTest {
 
         UriWrapper uriWrapper = new UriWrapper(HOST + "/level1/level2/file.json");
         UriWrapper parent = uriWrapper.getParent().orElseThrow();
-        assertThat(parent.getPath(), is(equalTo("/level1/level2")));
+        assertThat(parent.getPath().toString(), is(equalTo("/level1/level2")));
         UriWrapper grandParent = parent.getParent().orElseThrow();
-        assertThat(grandParent.getPath(), is(equalTo("/level1")));
+        assertThat(grandParent.getPath().toString(), is(equalTo("/level1")));
     }
 
     @Test
@@ -58,10 +59,10 @@ class UriWrapperTest {
     }
 
     @Test
-    public void addChildReturnsPathWithChildWhenChildDoesNotStartWithDelimitor() {
+    public void addChildReturnsPathWithChildWhenChildDoesNotStartWithDelimiter() {
         UriWrapper parentPath = new UriWrapper(HOST);
         String inputChildPath = "some/path";
-        URI expectedResult = URI.create(HOST + "/" + inputChildPath);
+        URI expectedResult = URI.create(HOST + ROOT + inputChildPath);
         UriWrapper actualResult = parentPath.addChild(inputChildPath);
         assertThat(actualResult.getUri(), is(equalTo(expectedResult)));
     }
