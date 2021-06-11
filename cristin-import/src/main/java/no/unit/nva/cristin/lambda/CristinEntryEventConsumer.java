@@ -44,7 +44,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String ERROR_SAVING_CRISTIN_RESULT = "Could not save cristin result with ID: ";
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
-    public static final String FILE_ENDING = ".json";
+    public static final String JSON = ".json";
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";
@@ -176,25 +176,28 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private void saveReportToS3(Failure<Publication> fail,
                                 AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        UriWrapper errorFileUri = constructErrorFileUri(event);
+        UriWrapper errorFileUri = constructErrorFileUri(event, fail.getException());
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
         s3Driver.insertFile(UnixPath.of(errorFileUri.toS3bucketPath()), reportContent.toJsonString());
     }
 
-    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+    private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
+                                             Exception exception) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
         UriWrapper bucket = fileUri.getHost();
-        return bucket
-            .addChild(ERRORS_FOLDER)
-            .addChild(fileUri.getPath())
-            .addChild(createErrorReportFilename(event));
+        UriWrapper uriWrapper = bucket
+                                    .addChild(ERRORS_FOLDER)
+                                    .addChild(exception.getClass().getSimpleName())
+                                    .addChild(fileUri.getPath())
+                                    .addChild(createErrorReportFilename(event));
+        return uriWrapper;
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return extractCristinObjectId(event)
-            .map(idString -> idString + FILE_ENDING)
+                   .map(idString -> idString + JSON)
             .orElseGet(this::unknownCristinIdReportFilename);
     }
 
@@ -206,6 +209,6 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private String unknownCristinIdReportFilename() {
-        return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID() + FILE_ENDING;
+        return UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX + UUID.randomUUID() + JSON;
     }
 }
