@@ -43,6 +43,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.language.LanguageMapper;
 
 public class CristinMapper {
 
@@ -50,7 +51,6 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
-
 
     private final CristinObject cristinObject;
 
@@ -193,8 +193,8 @@ public class CristinMapper {
                    .filter(CristinTitle::isMainTitle)
                    .findFirst()
                    .map(CristinTitle::getLanguagecode)
-                   .map(LanguageCodeMapper::parseLanguage)
-                   .orElse(LanguageCodeMapper.ENGLISH_LANG_URI);
+                   .map(LanguageMapper::toUri)
+                   .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
     }
 
     private AdditionalIdentifier extractIdentifier() {

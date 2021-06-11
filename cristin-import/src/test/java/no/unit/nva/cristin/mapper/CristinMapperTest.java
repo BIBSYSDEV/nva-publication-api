@@ -248,15 +248,11 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @ParameterizedTest(name = "map returns NVA role {1} when Cristin role is {0}")
     @CsvSource({"REDAKTØR,EDITOR", "FORFATTER,CREATOR"})
-    public void mapReturnsPublicationsWhereCristinEditorRoleIsMappedToCorrectNvaEditorRole(String cristinRole,
-                                                                                           String nvaRole) {
+    public void mapReturnsPublicationsWhereCristinRoleIsMappedToCorrectNvaRole(String cristinRole,
+                                                                               String nvaRole) {
         CristinContributorRoleCode actualCristinRole = CristinContributorRoleCode.fromString(cristinRole);
         Role expectedNvaRole = Role.lookup(nvaRole);
-        CristinObject objectWithEditor =
-            cristinObjects().filter(
-                cristinObject -> cristinObjectHasRole(cristinObject, actualCristinRole))
-                .findFirst()
-                .orElseThrow();
+        CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
         Optional<Contributor> contributor = objectWithEditor.toPublication()
                                                 .getEntityDescription()
@@ -303,6 +299,10 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {
         //re-use the test for the author's name
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
+    }
+
+    private CristinObject createObjectWithRoleCode(CristinContributorRoleCode actualCristinRoleCode) {
+        return cristinDataGenerator.newCristinObjectWithRoleCode(actualCristinRoleCode);
     }
 
     private CristinContributor contributorWithoutRoles() {
