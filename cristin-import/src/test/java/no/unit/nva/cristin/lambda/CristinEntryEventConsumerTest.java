@@ -4,7 +4,7 @@ import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.FILE_ENDING;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
@@ -304,7 +304,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
         String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
         String exceptionName = exception.getCause().getClass().getSimpleName();
-        String fileIdWithEnding = cristinObject.getId().toString() + FILE_ENDING;
+        String fileIdWithEnding = cristinObject.getId().toString() + JSON;
         String expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER, exceptionName, expectedFilePath, fileIdWithEnding)
                                                .toString();
         String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
@@ -342,7 +342,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                                              Exception exception) {
 
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
-        String errorReportFilename = cristinObjectId + FILE_ENDING;
+        String errorReportFilename = cristinObjectId + JSON;
         UriWrapper inputFile = new UriWrapper(awsEvent.getDetail().getFileUri());
         UriWrapper bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
