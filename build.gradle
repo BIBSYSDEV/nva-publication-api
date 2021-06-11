@@ -143,6 +143,48 @@ subprojects {
         archives sourcesJar
     }
 
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = project.name
+                from components.java
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+                pom {
+                    name = project.name
+                    description = 'The nva publication service'
+                    url = 'https://github.com/BIBSYSDEV/nva-publication-api'
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'http://www.opensource.org/licenses/mit-license.php'
+                        }
+                    }
+                    developers {
+                        developer {
+                            name = 'Orestis Gkorgkas'
+                            email = 'og@unit.no'
+                            organization = 'UNIT'
+                            organizationUrl = 'https://www.unit.no/'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/BIBSYSDEV/nva-publication-api.git'
+                        developerConnection = 'scm:git:ssh://github.com/BIBSYSDEV/nva-publication-api.git'
+                        url = 'https://github.com/BIBSYSDEV/nva-publication-api/tree/main'
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 def getProjectList() {
@@ -211,43 +253,3 @@ build {
     dependsOn jacocoRootReport
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            artifactId = project.name
-            from components.java
-            versionMapping {
-                usage('java-api') {
-                    fromResolutionOf('runtimeClasspath')
-                }
-                usage('java-runtime') {
-                    fromResolutionResult()
-                }
-            }
-            pom {
-                name = project.name
-                description = 'The nva publication service'
-                url = 'https://github.com/BIBSYSDEV/nva-publication-api'
-                licenses {
-                    license {
-                        name = 'MIT License'
-                        url = 'http://www.opensource.org/licenses/mit-license.php'
-                    }
-                }
-                developers {
-                    developer {
-                        name = 'Orestis Gkorgkas'
-                        email = 'og@unit.no'
-                        organization = 'UNIT'
-                        organizationUrl = 'https://www.unit.no/'
-                    }
-                }
-                scm {
-                    connection = 'scm:git:git://github.com/BIBSYSDEV/nva-publication-api.git'
-                    developerConnection = 'scm:git:ssh://github.com/BIBSYSDEV/nva-publication-api.git'
-                    url = 'https://github.com/BIBSYSDEV/nva-publication-api/tree/main'
-                }
-            }
-        }
-    }
-}
