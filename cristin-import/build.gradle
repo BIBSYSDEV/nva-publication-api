@@ -46,7 +46,7 @@ dependencies {
 
     testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
 
-    compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.46'
+    compileOnly group: 'software.amazon.awssdk', name: 'eventbridge', version: '2.16.82'
     compileOnly group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
 
     compileOnly(project(":storage-model")) {
