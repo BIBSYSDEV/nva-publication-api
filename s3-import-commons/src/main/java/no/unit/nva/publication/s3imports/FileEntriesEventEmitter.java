@@ -169,8 +169,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private PutEventsResponse generatePutEventsResultIndicatingNoEventsWereEmitted(
         Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
         String exceptionStackStraceAsResultMessage =
-            "File in location: " + s3Location + ". Failed with the following exception: " +
-            stackTraceInSingleLine(completeEmissionFailure.getException());
+            "File in location: " + s3Location + ". Failed with the following exception: "
+            + stackTraceInSingleLine(completeEmissionFailure.getException());
         PutEventsResultEntry putEventsResultEntry =
             PutEventsResultEntry.builder().errorMessage(exceptionStackStraceAsResultMessage).build();
         return PutEventsResponse.builder().entries(putEventsResultEntry).build();
