@@ -52,6 +52,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
+    public static final String ERROR_FILE_ENDING = "error";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
@@ -76,8 +77,6 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
     }
-
-
 
     @Override
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
@@ -104,9 +103,11 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private void storeErrorReportsInS3(Try<List<PutEventsResult>> failedEntries, ImportRequest input) {
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        UriWrapper reportFilename = generateErrorReportUri(input);
-        List<PutEventsResult> putEventsResults =
-            failedEntries.orElse(this::generateReportIndicatingTotalEmissionFailure);
+        UriWrapper reportFilename = generateErrorReportUri(input, failedEntries);
+        List<PutEventsResult> putEventsResults;
+        putEventsResults =
+            failedEntries.orElse(fails -> generateReportIndicatingTotalEmissionFailure(fails,
+                                                                                       input.getS3Location()));
 
         if (!putEventsResults.isEmpty()) {
             String reportContent = PutEventsResult.toString(putEventsResults);
@@ -114,13 +115,31 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         }
     }
 
-    private UriWrapper generateErrorReportUri(ImportRequest input) {
+    private UriWrapper generateErrorReportUri(ImportRequest input, Try<List<PutEventsResult>> failedEntries) {
         UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location());
         UriWrapper bucket = inputUri.getHost();
 
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(inputUri.getPath());
+                   .addChild(removeLastPartOfPath(inputUri.getPath()))
+                   .addChild(failedEntries.isSuccess() ? "PartialFailure"
+                                 : failedEntries.getException().getClass().getSimpleName())
+                   .addChild(makeFileEndingError(retrieveLastPartOfPath(inputUri.getPath())));
+    }
+
+    private String removeLastPartOfPath(String path) {
+        int lastDeliminatorIndex = path.lastIndexOf('/');
+        return path.substring(0, lastDeliminatorIndex);
+    }
+
+    private String retrieveLastPartOfPath(String path) {
+        int lastDeliminatorIndex = path.lastIndexOf('/');
+        return path.substring(lastDeliminatorIndex);
+    }
+
+    private String makeFileEndingError(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+        return filename.substring(0, lastDot + 1) + ERROR_FILE_ENDING;
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
@@ -141,16 +160,17 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private List<PutEventsResult> generateReportIndicatingTotalEmissionFailure(
-        Try<List<PutEventsResult>> completeEmissionFailure) {
+        Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
         PutEventsResponse customPutEventsResponse =
-            generatePutEventsResultIndicatingNoEventsWereEmitted(completeEmissionFailure);
+            generatePutEventsResultIndicatingNoEventsWereEmitted(completeEmissionFailure, s3Location);
         PutEventsResult putEventsResult = new PutEventsResult(NO_REQUEST_WAS_EMITTED, customPutEventsResponse);
         return Collections.singletonList(putEventsResult);
     }
 
     private PutEventsResponse generatePutEventsResultIndicatingNoEventsWereEmitted(
-        Try<List<PutEventsResult>> completeEmissionFailure) {
+        Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
         String exceptionStackStraceAsResultMessage =
+            "File in location: " + s3Location + ". Failed with the following exception: " +
             stackTraceInSingleLine(completeEmissionFailure.getException());
         PutEventsResultEntry putEventsResultEntry =
             PutEventsResultEntry.builder().errorMessage(exceptionStackStraceAsResultMessage).build();

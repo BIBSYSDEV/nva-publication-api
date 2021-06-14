@@ -40,7 +40,9 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
+import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
@@ -51,9 +53,16 @@ public class FileEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
+    public static final String INPUT_S3_HOST = "s3:/";
+    public static final String INPUT_BUCKET = "/bucket";
+    public static final String INPUT_PATH = "/parent/folder";
+    public static final String INPUT_FILENAME = "/location.file";
+    public static final String ERROR_FILE = "/location.error";
+    public static final String PARTIAL_FAILURE = "/PartialFailure";
+
     public static final String IMPORT_EVENT_TYPE = "importEventType";
     public static final ImportRequest IMPORT_REQUEST_FOR_EXISTING_FILE =
-        new ImportRequest("s3://bucket/parent/folder/location.file", IMPORT_EVENT_TYPE);
+        new ImportRequest(INPUT_S3_HOST + INPUT_BUCKET + INPUT_PATH + INPUT_FILENAME, IMPORT_EVENT_TYPE);
     public static final ImportRequest IMPORT_REQUEST_FOR_NON_EXISTING_FILE =
         new ImportRequest("s3://bucket/parent/folder/nonexisting.file", IMPORT_EVENT_TYPE);
     public static final String LINE_SEPARATOR = System.lineSeparator();
@@ -129,8 +138,11 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        String errorReport = extractActualErrorReport(IMPORT_REQUEST_FOR_EXISTING_FILE);
-        assertThat(errorReport, is(containsString(exception.getMessage())));
+        String expectedErrorFileLocation =
+            ERRORS_FOLDER + INPUT_PATH + "/" + exception.getClass().getSimpleName() + ERROR_FILE;
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(actualErrorFile, is(containsString(exception.getMessage())));
     }
 
     @Test
@@ -147,8 +159,11 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_NON_EXISTING_FILE);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        String errorReport = extractActualErrorReport(IMPORT_REQUEST_FOR_NON_EXISTING_FILE);
-        assertThat(errorReport, is(containsString(exception.getMessage())));
+        String expectedErrorFileLocation =
+            ERRORS_FOLDER + INPUT_PATH + "/" + exception.getClass().getSimpleName() + "/nonexisting.error";
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(actualErrorFile, is(containsString(exception.getMessage())));
     }
 
     @Test
@@ -157,13 +172,16 @@ public class FileEntriesEventEmitterTest {
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
-        String errorReport = extractActualErrorReport(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        String expectedErrorFileLocation =
+            ERRORS_FOLDER + INPUT_PATH + PARTIAL_FAILURE + ERROR_FILE;
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
         List<String> samplesOfExpectedContentsInReportFile = Arrays.stream(FILE_01_CONTENTS)
                                                                  .map(SampleObject::getId)
                                                                  .map(Object::toString)
                                                                  .collect(Collectors.toList());
         for (String sample : samplesOfExpectedContentsInReportFile) {
-            assertThat(errorReport, containsString(sample));
+            assertThat(actualErrorFile, containsString(sample));
         }
     }
 
@@ -177,6 +195,40 @@ public class FileEntriesEventEmitterTest {
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         List<String> files = s3Driver.listFiles(errorReportFolder);
         assertThat(files, is(not(empty())));
+    }
+
+    @Test
+    public void handlerSavesFileInErrorsFilePathExceptionNameFileNameWhenFailingToEmitAllEntries() {
+        eventBridgeClient = eventBridgeClientThatFailsToEmitAllMessages();
+        handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
+        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
+        Exception exception = assertThrows(RuntimeException.class, action);
+
+        String expectedErrorFileLocation =
+            ERRORS_FOLDER + INPUT_PATH + "/" + exception.getClass().getSimpleName() + ERROR_FILE;
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
+        assertThat(actualErrorFile, containsString(INPUT_S3_HOST + INPUT_BUCKET + INPUT_PATH + INPUT_FILENAME));
+    }
+
+    @Test
+    public void handlerSavesFileInErrorsFilePathExceptionNameFileNameWhenFailingToEmitSomeEntries() {
+        eventBridgeClient = eventBridgeClientThatFailsToEmitMessages();
+        handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
+        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        handler.handleRequest(input, outputStream, CONTEXT);
+        String expectedErrorFileLocation =
+            ERRORS_FOLDER + INPUT_PATH + "/" + PARTIAL_FAILURE + ERROR_FILE;
+        S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
+        String actualErrorFile = s3Driver.getFile(expectedErrorFileLocation);
+        List<String> samplesOfExpectedContentsInReportFile = Arrays.stream(FILE_01_CONTENTS)
+                                                                 .map(SampleObject::getId)
+                                                                 .map(Object::toString)
+                                                                 .collect(Collectors.toList());
+        for (String sample : samplesOfExpectedContentsInReportFile) {
+            assertThat(actualErrorFile, containsString(sample));
+        }
     }
 
     @Test
@@ -321,6 +373,16 @@ public class FileEntriesEventEmitterTest {
             @Override
             public Integer numberOfFailures() {
                 return NON_ZER0_NUMBER_OF_FAILURES;
+            }
+        };
+    }
+
+    private FakeEventBridgeClient eventBridgeClientThatFailsToEmitAllMessages() {
+        return new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME) {
+
+            @Override
+            public PutEventsResponse putEvents(PutEventsRequest putEventsRequest) {
+                throw new UnsupportedOperationException();
             }
         };
     }
