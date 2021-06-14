@@ -1,191 +1,28 @@
-plugins {
-    id 'java-library'
-    id 'jacoco'
-    id 'checkstyle'
-    id 'pmd'
-    id 'base'
-    id 'nebula.lint' version '16.23.0'
-    id 'maven-publish'
-    id "io.freefair.lombok" version "5.3.0" apply false
+plugins{
+    id 'nva-publication-api.java-library-conventions'
 }
 
-group 'no.unit.nva'
-version '1.0-SNAPSHOT'
-
 allprojects {
-    apply plugin: 'base'
-    apply plugin: 'jacoco'
-    apply plugin: 'nebula.lint'
-
-    gradleLint {
-        rules = ['unused-dependency']
-    }
-
-    repositories {
-        mavenCentral()
-        maven { url "https://jitpack.io" }
-        maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
-    }
-
-    project.ext {
-        awsSdkVersion = '1.11.973'
-        awsSdk2Version = '2.16.46'
-        nvaDatamodelVersion = "0.11.14"
-        nvaCommonsVersion = '1.7.2'
-        nvaTestUtilsVersion = "0.1.22"
-        junit5Version = '5.6.0'
-        jacksonVersion = '2.12.3'
-        nvaAwsLambdaJavaEvents = '3.2.0'
-        zalandoProblemVersion = '0.25.0'
-        dynamoDbLocalVersion = '1.15.0'
-        awsLambdaCore = '1.2.1'
-        javaFakerVersion = '1.0.2'
-        mockitoVersion = '3.9.0'
-        javersVersion = '6.0.1'
-        hamcrestVersion = '2.2'
-        dynamoDbHttpCoreDependency = '4.4.13'
-        log4jApiVersion = '2.13.2'
-    }
+    apply plugin: 'nva-publication-api.java-library-conventions'
 }
 
 subprojects {
-    apply plugin: 'java-library'
-    apply plugin: 'jacoco'
-    apply plugin: 'checkstyle'
-    apply plugin: 'pmd'
-    apply plugin: 'maven-publish'
-
-    sourceCompatibility = JavaVersion.VERSION_11
-    // source-code version and must be <= targetCompatibility
-    targetCompatibility = JavaVersion.VERSION_11 // bytecode target version
-
-    dependencies {
-
-        implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
-        testImplementation group: 'org.hamcrest', name: 'hamcrest', version: project.ext.hamcrestVersion
-        testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: project.ext.hamcrestVersion
-
-        testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: project.ext.junit5Version
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: project.junit5Version
-        testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
-
-    }
-
-    test {
-        useJUnitPlatform {
-            excludeTags("RemoteTest")
+    configurations.testImplementation.canBeResolved = true
+    task copyNativeDeps(type: Copy) {
+        from(configurations.testImplementation) {
+            include "*.dylib"
+            include "*.so"
+            include "*.dll"
         }
-        failFast = true
-        testLogging {
-            events 'skipped', 'passed', 'failed'
-        }
-        finalizedBy jacocoTestReport
-        //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
-        environment "API_HOST", "localhost"
-        environment "API_SCHEME", "https"
+        into 'build/dynamodb-local'
     }
 
-    jacocoTestReport {
-        reports {
-            xml.enabled true
-        }
+    test{
+        dependsOn copyNativeDeps
+        systemProperty "java.library.path", 'build/dynamodb-local'
     }
-
-    pmd {
-        ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
-        ruleSets = []
-        ignoreFailures = false
-    }
-
-    checkstyle {
-        configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
-        showViolations = true
-    }
-
-    tasks.withType(Checkstyle) {
-        reports {
-            xml.enabled false
-            html.enabled true
-            html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
-        }
-    }
-
-    check.dependsOn jacocoTestCoverageVerification
-    jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
-
-    jacocoTestCoverageVerification {
-        violationRules {
-            rule {
-                limit {
-                    counter = 'METHOD'
-                    value = 'COVEREDRATIO'
-                    minimum = 1.000
-                }
-            }
-
-            rule {
-                limit {
-                    counter = 'CLASS'
-                    value = 'COVEREDRATIO'
-                    minimum = 1.000
-                }
-            }
-        }
-    }
-
-    // publish submodules
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        archiveClassifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
-    artifacts {
-        archives sourcesJar
-    }
-
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                artifactId = project.name
-                from components.java
-                versionMapping {
-                    usage('java-api') {
-                        fromResolutionOf('runtimeClasspath')
-                    }
-                    usage('java-runtime') {
-                        fromResolutionResult()
-                    }
-                }
-                pom {
-                    name = project.name
-                    description = 'The nva publication service'
-                    url = 'https://github.com/BIBSYSDEV/nva-publication-api'
-                    licenses {
-                        license {
-                            name = 'MIT License'
-                            url = 'http://www.opensource.org/licenses/mit-license.php'
-                        }
-                    }
-                    developers {
-                        developer {
-                            name = 'Orestis Gkorgkas'
-                            email = 'og@unit.no'
-                            organization = 'UNIT'
-                            organizationUrl = 'https://www.unit.no/'
-                        }
-                    }
-                    scm {
-                        connection = 'scm:git:git://github.com/BIBSYSDEV/nva-publication-api.git'
-                        developerConnection = 'scm:git:ssh://github.com/BIBSYSDEV/nva-publication-api.git'
-                        url = 'https://github.com/BIBSYSDEV/nva-publication-api/tree/main'
-                    }
-                }
-            }
-        }
-    }
-
 }
+
 
 def getProjectList() {
     // These projects are considered. Replace with a different list as needed.
@@ -226,30 +63,7 @@ def getReportTasks(JacocoReport pRootTask) {
     }.flatten()
 }
 
-task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = 'Generates an aggregate report from all subprojects'
-
-    logger.lifecycle 'Using aggregated file: ' + tasks.jacocoMerge.destinationFile
-    executionData.from tasks.jacocoMerge.destinationFile
-
-    project.afterEvaluate {
-        // The JacocoReport tasks are the source of truth for class files and sources.
-        def reportTasks = getReportTasks(tasks.jacocoRootReport)
-        classDirectories.from project.files({
-            reportTasks.collect { it.classDirectories }.findAll { it != null }
-        })
-        sourceDirectories.from project.files({
-            reportTasks.collect { it.sourceDirectories }.findAll { it != null }
-        })
-    }
-
-    reports {
-        xml.enabled true
-    }
-}
-
-build {
-    dependsOn jacocoRootReport
+build{
+    dependsOn(jacocoMerge)
 }
 

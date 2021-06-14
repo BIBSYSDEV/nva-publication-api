@@ -1,0 +1,76 @@
+[versions]
+nva = { strictly = "1.7.2" }
+nvaDatamodelVersion = { strictly = "0.11.14" }
+jacksonVersion = { strictly = "2.12.3" }
+awsSdkVersion = { strictly = "1.11.973" }
+awsSdk2Version = { strictly = "2.16.46" }
+log4jApiVersion = { require = "2.14.1" }
+zalandoProblemVersion = { strictly = "0.25.0" }
+awsLambdaCore = { stictly = "1.2.1" }
+awsLambdaEvents = { strictly = '3.9.0' }
+dynamoDbHttpCoreDependency = { strictly = "4.4.13" }
+dynamoDbLocal = { strictly = "1.15.0" }
+nvaUserAccessService = { require = "0.3.0" }
+awsIon = { strictly = "1.5.1" }
+commonsValidator = { strictly = "1.7" }
+apacheCommons = { strictly = "4.4" }
+testUtils = { strictly = "0.1.22" }
+hamcrest = { strictly = '2.2' }
+
+[libraries]
+nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
+nva-identifiers = { group = "com.github.bibsysdev", name = "identifiers", version.ref = "nva" }
+nva-s3 = { group = "com.github.bibsysdev", name = "s3", version.ref = "nva" }
+nva-apigateway = { group = "com.github.bibsysdev", name = "apigateway", version.ref = "nva" }
+logutils = { group = "com.github.bibsysdev", name = "logutils", version.ref = "nva" }
+nva-eventhandlers = { group = "com.github.bibsysdev", name = "eventhandlers", version.ref = "nva" }
+nva-testutils = { group = "com.github.bibsysdev", name = "nva-testutils", version.ref = "testUtils" }
+nva-user-access-rights = { group = "com.github.bibsysdev.nva-user-access-service", name = "user-access-rights", version.ref = "nvaUserAccessService" }
+nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
+
+
+
+jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
+jackson-databind = { group = "com.fasterxml.jackson.core", name = "jackson-databind", version.ref = "jacksonVersion" }
+jackson-core = { group = "com.fasterxml.jackson.core", name = "jackson-core", version.ref = "jacksonVersion" }
+jackson-datatype-jdk8 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jdk8", version.ref = "jacksonVersion" }
+jackson-datatype-jsr310 = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310", version.ref = "jacksonVersion" }
+jackson-module-parameter-names = { group = "com.fasterxml.jackson.module", name = "jackson-module-parameter-names", version.ref = "jacksonVersion" }
+
+aws-lambda-java-core = { group = "com.amazonaws", name = "aws-lambda-java-core", version.ref = "awsLambdaCore" }
+aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = "awsLambdaEvents" }
+
+
+aws-sdk-dynamodb = { group = "com.amazonaws", name = "aws-java-sdk-dynamodb", version.ref = "awsSdkVersion" }
+aws-java-sdk-core = { group = "com.amazonaws", name = "aws-java-sdk-core", version.ref = "awsSdkVersion" }
+aws-sdk-apigateway = { group = "com.amazonaws", name = "aws-java-sdk-api-gateway", version.ref = "awsSdkVersion" }
+
+dynamoDbHttpCoreDependency = { group = "org.apache.httpcomponents", name = "httpcore", version.ref = "dynamoDbHttpCoreDependency" }
+
+
+aws-sdk2-s3 = { group = "software.amazon.awssdk", name = "s3", version.ref = "awsSdk2Version" }
+aws-core = { group = "software.amazon.awssdk", name = "aws-core", version.ref = "awsSdk2Version" }
+aws-sdk2-core = { group = "software.amazon.awssdk", name = "sdk-core", version.ref = "awsSdk2Version" }
+aws-sdk2-eventbridge = { group = "software.amazon.awssdk", name = "eventbridge", version.ref = "awsSdk2Version" }
+aws-sdk2-regions = { group = "software.amazon.awssdk", name = "regions", version.ref = "awsSdk2Version" }
+aws-sdk2-urlconnectionclient = { group = "software.amazon.awssdk", name = "url-connection-client", version.ref = "awsSdk2Version" }
+aws-sdk2-httpClientApi = { group = "software.amazon.awssdk", name = "http-client-spi", version.ref = "awsSdk2Version" }
+aws-sdk2-utils = { group = "software.amazon.awssdk", name = "utils", version.ref = "awsSdk2Version" }
+aws-sdk2-auth = { group = "software.amazon.awssdk", name = "auth", version.ref = "awsSdk2Version" }
+aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = "awsSdk2Version" }
+
+aws-ion = { group = "software.amazon.ion", name = "ion-java", version.ref = "awsIon" }
+
+
+apache-commons-collections = { group = "org.apache.commons", name = "commons-collections4", version.ref = "apacheCommons" }
+
+log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api", version.ref = "log4jApiVersion" }
+
+dynamodDbLocal = { group = "com.amazonaws", name = "DynamoDBLocal", version.ref = "dynamoDbLocal" }
+javafaker = { group = "com.github.javafaker", name = "javafaker", version = { strictly = "1.0.2" } }
+javers = { group = "org.javers", name = "javers-core", version = { strictly = "6.0.1" } }
+zalando = { group = "org.zalando", name = "problem", version.ref = "zalandoProblemVersion" }
+
+commons-validator = { group = "commons-validator", name = "commons-validator", version.ref = "commonsValidator" }
+
+hamcrest = { group = 'org.hamcrest', name = 'hamcrest', version.ref = "hamcrest" }
