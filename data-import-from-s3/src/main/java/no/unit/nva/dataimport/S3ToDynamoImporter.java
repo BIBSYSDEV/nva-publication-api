@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 
 class S3ToDynamoImporter {
 
@@ -27,12 +28,12 @@ class S3ToDynamoImporter {
     private final AmazonDynamoDB dynamoClient;
     private final S3IonReader s3IonReader;
     private final String tableName;
-    private final String filename;
+    private final UnixPath filename;
 
     S3ToDynamoImporter(AmazonDynamoDB dynamoClient,
                        S3Driver s3Driver,
                        String tableName,
-                       String filename
+                       UnixPath filename
     ) {
         this.dynamoClient = dynamoClient;
         this.s3IonReader = new S3IonReader(s3Driver);

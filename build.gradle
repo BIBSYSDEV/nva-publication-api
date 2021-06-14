@@ -5,7 +5,7 @@ plugins {
     id 'pmd'
     id 'base'
     id 'nebula.lint' version '16.23.0'
-    id "maven"
+    id 'maven-publish'
     id "io.freefair.lombok" version "5.3.0" apply false
 }
 
@@ -16,9 +16,6 @@ allprojects {
     apply plugin: 'base'
     apply plugin: 'jacoco'
     apply plugin: 'nebula.lint'
-
-    compileJava.options.encoding = "UTF-8"
-    compileTestJava.options.encoding = "UTF-8"
 
     gradleLint {
         rules = ['unused-dependency']
@@ -34,8 +31,8 @@ allprojects {
         awsSdkVersion = '1.11.973'
         awsSdk2Version = '2.16.46'
         nvaDatamodelVersion = "0.11.14"
-        nvaCommonsVersion = '1.6.0'
-        nvaTestUtilsVersion = "ad2e5b4b5e4700afca85908975b811e5189bd5fa"
+        nvaCommonsVersion = '1.7.2'
+        nvaTestUtilsVersion = "0.1.22"
         junit5Version = '5.6.0'
         jacksonVersion = '2.12.3'
         nvaAwsLambdaJavaEvents = '3.2.0'
@@ -56,7 +53,7 @@ subprojects {
     apply plugin: 'jacoco'
     apply plugin: 'checkstyle'
     apply plugin: 'pmd'
-    apply plugin: 'maven'
+    apply plugin: 'maven-publish'
 
     sourceCompatibility = JavaVersion.VERSION_11
     // source-code version and must be <= targetCompatibility
@@ -146,6 +143,48 @@ subprojects {
         archives sourcesJar
     }
 
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                artifactId = project.name
+                from components.java
+                versionMapping {
+                    usage('java-api') {
+                        fromResolutionOf('runtimeClasspath')
+                    }
+                    usage('java-runtime') {
+                        fromResolutionResult()
+                    }
+                }
+                pom {
+                    name = project.name
+                    description = 'The nva publication service'
+                    url = 'https://github.com/BIBSYSDEV/nva-publication-api'
+                    licenses {
+                        license {
+                            name = 'MIT License'
+                            url = 'http://www.opensource.org/licenses/mit-license.php'
+                        }
+                    }
+                    developers {
+                        developer {
+                            name = 'Orestis Gkorgkas'
+                            email = 'og@unit.no'
+                            organization = 'UNIT'
+                            organizationUrl = 'https://www.unit.no/'
+                        }
+                    }
+                    scm {
+                        connection = 'scm:git:git://github.com/BIBSYSDEV/nva-publication-api.git'
+                        developerConnection = 'scm:git:ssh://github.com/BIBSYSDEV/nva-publication-api.git'
+                        url = 'https://github.com/BIBSYSDEV/nva-publication-api/tree/main'
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 def getProjectList() {
@@ -213,3 +252,4 @@ task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
 build {
     dependsOn jacocoRootReport
 }
+

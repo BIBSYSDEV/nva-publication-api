@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -38,11 +39,11 @@ public class S3IonReader {
         this.s3Driver = s3Driver;
     }
 
-    public List<JsonNode> extractJsonNodesFromS3File(String filename) throws IOException {
+    public List<JsonNode> extractJsonNodesFromS3File(UnixPath filename) throws IOException {
         return extractJsonNodeStreamFromS3File(filename).collect(Collectors.toList());
     }
 
-    public Stream<JsonNode> extractJsonNodeStreamFromS3File(String filename) throws IOException {
+    public Stream<JsonNode> extractJsonNodeStreamFromS3File(UnixPath filename) throws IOException {
         String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
@@ -50,7 +51,7 @@ public class S3IonReader {
         return convertToJsonNodeStream(arrayNode);
     }
 
-    public List<Item> extractItemsFromS3File(String filename) throws IOException {
+    public List<Item> extractItemsFromS3File(UnixPath filename) throws IOException {
         String content = fetchFile(filename);
         String jsonString = toJsonObjectsString(content);
         String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
@@ -103,7 +104,7 @@ public class S3IonReader {
         return Item.fromJSON(JsonUtils.objectMapperNoEmpty.writeValueAsString(json));
     }
 
-    private String fetchFile(String filename) {
+    private String fetchFile(UnixPath filename) {
         try {
             return s3Driver.getFile(filename);
         } catch (NoSuchKeyException e) {

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,20 +18,20 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class StubS3Driver extends S3Driver {
 
-    private final List<String> filesInBucket;
+    private final List<UnixPath> filesInBucket;
 
-    public StubS3Driver(String bucketName, List<String> filesInBucket) {
+    public StubS3Driver(String bucketName, List<UnixPath> filesInBucket) {
         super(null, bucketName);
-        this.filesInBucket = filesInBucket;
+        this.filesInBucket = new ArrayList<>(filesInBucket);
     }
 
     @Override
-    public List<String> listFiles(UnixPath folder) {
+    public List<UnixPath> listFiles(UnixPath folder) {
         return filesInBucket;
     }
 
     @Override
-    public String getFile(String filename) {
+    public String getFile(UnixPath filename) {
         List<String> lines = fileContent(filename);
         return String.join(System.lineSeparator(), lines);
     }
@@ -43,8 +44,8 @@ public class StubS3Driver extends S3Driver {
                    .collect(Collectors.toList());
     }
 
-    private List<String> fileContent(String filename) {
-        try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename))
+    private List<String> fileContent(UnixPath filename) {
+        try (InputStream inputStream = attempt(() -> IoUtils.inputStreamFromResources(filename.toString()))
                                            .orElseThrow(fail -> fileNotFoundException());
             GZIPInputStream gzipInputStream = attempt(() -> new GZIPInputStream(inputStream)).orElseThrow();
             BufferedReader reader = new BufferedReader(

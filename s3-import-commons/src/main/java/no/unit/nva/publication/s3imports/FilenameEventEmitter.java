@@ -97,7 +97,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketFromS3Location());
         String errorReportContent = PutEventsResult.toString(failedRequests);
         if (!failedRequests.isEmpty()) {
-            s3Driver.insertFile(UnixPath.of(errorReportUri.toS3bucketPath()), errorReportContent);
+            s3Driver.insertFile(errorReportUri.toS3bucketPath(), errorReportContent);
         }
     }
 
@@ -110,11 +110,11 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                    .addChild(ERROR_REPORT_FILENAME);
     }
 
-    private URI createUri(URI s3Location, String filename) {
+    private URI createUri(URI s3Location, UnixPath filename) {
         return Try.of(s3Location)
-            .map(UriWrapper::new)
-            .map(UriWrapper::getHost)
-            .map(uri -> uri.addChild(filename))
+                   .map(UriWrapper::new)
+                   .map(UriWrapper::getHost)
+                   .map(uri -> uri.addChild(filename))
                    .map(UriWrapper::getUri)
                    .orElseThrow();
     }
@@ -122,9 +122,11 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private List<URI> listFiles(ImportRequest importRequest) {
         URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
-        List<String> filenames = s3Driver.listFiles(UnixPath.of(importRequest.extractPathFromS3Location()));
+        List<UnixPath> filenames = s3Driver.listFiles(importRequest.extractPathFromS3Location());
         logger.info(attempt(() -> JsonUtils.objectMapper.writeValueAsString(filenames)).orElseThrow());
-        return filenames.stream().map(filename -> createUri(s3Location, filename)).collect(Collectors.toList());
+        return filenames.stream()
+                   .map(filename -> createUri(s3Location, filename))
+                   .collect(Collectors.toList());
     }
 
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {

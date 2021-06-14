@@ -52,9 +52,9 @@ public class FilenameEventEmitterTest {
     public static final String SOME_BUCKET = "s3://bucket/";
     public static final String SOME_FOLDER = "some/folder/";
     public static final String SOME_S3_LOCATION = SOME_BUCKET;
-    public static final String FILE_DIRECTLY_UNDER_S3_LOCATION = SOME_FOLDER + "file01";
-    public static final String FILE_IN_SUBFOLDER = SOME_FOLDER + "someOtherFolder/file02";
-    public static final List<String> INPUT_FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
+    public static final UnixPath FILE_DIRECTLY_UNDER_S3_LOCATION = UnixPath.of(SOME_FOLDER, "file01");
+    public static final UnixPath FILE_IN_SUBFOLDER = UnixPath.of(SOME_FOLDER, "someOtherFolder", "file02");
+    public static final List<UnixPath> INPUT_FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
     public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
     public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
     public static final String SOME_OTHER_BUS = "someOtherBus";
@@ -145,8 +145,8 @@ public class FilenameEventEmitterTest {
 
         String[] expectedFileUris = expectedFileUris();
         assertThat(failedResults, containsInAnyOrder(expectedFileUris));
-        for (String filename : INPUT_FILE_LIST) {
-            assertThat(appender.getMessages(), containsString(filename));
+        for (UnixPath filename : INPUT_FILE_LIST) {
+            assertThat(appender.getMessages(), containsString(filename.toString()));
         }
     }
 
@@ -158,11 +158,12 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
-        UnixPath errorReportFile =
-            UnixPath.of(ERRORS_FOLDER, importRequest.extractPathFromS3Location(), ERROR_REPORT_FILENAME);
-        String content = s3Driver.getFile(errorReportFile.toString());
-        for (String filename : INPUT_FILE_LIST) {
-            assertThat(content, containsString(filename));
+        UnixPath errorReportFile = ERRORS_FOLDER
+                                       .addChild(importRequest.extractPathFromS3Location())
+                                       .addChild(ERROR_REPORT_FILENAME);
+        String content = s3Driver.getFile(errorReportFile);
+        for (UnixPath filename : INPUT_FILE_LIST) {
+            assertThat(content, containsString(filename.toString()));
         }
     }
 
@@ -174,8 +175,8 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
 
-        List<String> allFiles = s3Driver.listFiles(UnixPath.of(LIST_ALL_FILES));
-        assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(String[]::new)));
+        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(LIST_ALL_FILES));
+        assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(UnixPath[]::new)));
     }
 
     @Test
@@ -222,7 +223,7 @@ public class FilenameEventEmitterTest {
 
     private static Map<String, InputStream> fileContents() {
         return INPUT_FILE_LIST.stream()
-                   .map(file -> new SimpleEntry<>(file, fileContent()))
+                   .map(file -> new SimpleEntry<>(file.toString(), fileContent()))
                    .collect(Collectors.toMap(SimpleEntry::getKey,
                                              SimpleEntry::getValue));
     }

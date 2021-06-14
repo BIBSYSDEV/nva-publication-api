@@ -23,7 +23,6 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
@@ -111,20 +110,20 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
         if (!putEventsResults.isEmpty()) {
             String reportContent = PutEventsResult.toString(putEventsResults);
-            s3Driver.insertFile(UnixPath.of(reportFilename.toS3bucketPath()), reportContent);
+            s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
         }
     }
 
     private UriWrapper generateErrorReportUri(ImportRequest input, Try<List<PutEventsResult>> failedEntries) {
-        UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location());
+        UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location().toString());
         UriWrapper bucket = inputUri.getHost();
 
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(removeLastPartOfPath(inputUri.getPath()))
+                   .addChild(removeLastPartOfPath(inputUri.getPath().toString()))
                    .addChild(failedEntries.isSuccess() ? "PartialFailure"
                                  : failedEntries.getException().getClass().getSimpleName())
-                   .addChild(makeFileEndingError(retrieveLastPartOfPath(inputUri.getPath())));
+                   .addChild(makeFileEndingError(retrieveLastPartOfPath(inputUri.getPath().toString())));
     }
 
     private String removeLastPartOfPath(String path) {
