@@ -6,12 +6,22 @@
 #Info about rdfs types
 #https://www.w3.org/TR/rdf-schema/#ch_resource
 
-:Result
+
+:NvaClass
     a            rdfs:Class ;
-    rdfs:comment "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
+    rdfs:comment "Any class that represents an entity or collection of values in NVA" .
+
+:CristinClass
+    a            rdfs:Class ;
+    rdfs:comment "Any class that represent an entity or collection of values in Cristin" .
+
+:Result
+    a               :CristinClass ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
 
 :PublicationStatus
-    a rdfs:Class .
+    a :CristinClass .
 
 :Published
     a               rdfs:Class ;
@@ -30,8 +40,9 @@
 
 
 :VARBEID_SPRAK_Class
-    a            rdfs:Class ;
-    rdfs:comment "The structure defining the VARBEID_SPRAK property." .
+    a               :CristinClass ;
+    rdfs:comment    "The structure defining the VARBEID_SPRAK property." ;
+    rdfs:subClassOf :CristinClass .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -41,16 +52,18 @@
     user's name at the time the manuscript/publication was submitted to the publisher (e.g. Elsevier).
     """ .
 
+
 :VARBEID_PERSON_STED_Class
-    a            rdfs:Class ;
+    a            :CristinClass ;
     rdfs:comment """
     The structure of the VARBEID_PERSON_STED entry.
     The entry contains information about the contributor's institutional affiliation represented in the result entity
      at the time of publication, as well as the current instance of that institution, should it have evolved over time.
     """ .
 
+
 :VARBEID_PERSON_STED_ROLLE_Class
-    a            rdfs:Class ;
+    a            :CristinClass ;
     rdfs:comment """
      The structure of VARBEID_PERSON_STED_ROLLE. It contains information about the role of
     the contributor in this publication. One contributor can have many different contribution roles from the same or different institutions.
@@ -59,42 +72,79 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
-:id
+:cristinfield
     a            rdf:Property ;
-    rdfs:comment "Identifier of Cristin Result entry." ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :Result .
+    rdfs:comment "Any property of any Cristin class" ;
+    rdfs:domain  :CristinClass ;
+    rdfs:range   rdfs:Class .
+
+
+:mapstonvafield
+    a           rdf:Property ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :cristinfield .
+
+:isignored
+    a           rdf:Property ;
+    rdfs:range  xsd:boolean ;
+    rdfs:domain :cristinfield .
+
+:id
+    a               :cristinfield ;
+    rdfs:comment    "Identifier of Cristin Result entry." ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        "additionalIdentifiers":[
+            {
+                "source":"Cristin",
+                "value": ":id"
+            }
+        ]
+    """ .
 
 :arstall
-    a            rdf:Property ;
-    rdfs:comment "The year a resource (result) was published." ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :Result .
+    a               :cristinfield ;
+    rdfs:comment    "The year a resource (result) was published." ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.date.year = :arstall;
+        entityDescription.date.month = null;
+        entityDescription.date.day = null;
+    """ .
 
 :dato_opprettet
-    a            rdf:Property ;
-    rdfs:comment "The date the resource was registered in Cristin." ;
-    rdfs:range   xsd:date ;
-    rdfs:domain  :Result .
+    a               :cristinfield ;
+    rdfs:comment    "The date the resource was registered in Cristin." ;
+    rdfs:range      xsd:date ;
+    rdfs:domain     :Result ;
+    :mapstonvafield "createdDate" .
 
 :varbeidhovedkatkode
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
     The general category of the resource. A collection of "varbeidunderkatkode".
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:range      xsd:string ;
+    rdfs:domain     :Result ;
+    :mapstonvafield "practically not in use because :varbeidunderkatkode can specify the type of publication" .
 
 :varbeidunderkatkode
-    a            rdf:Property ;
-    rdfs:comment """
+    a               :cristinfield ;
+    rdfs:comment    """
         The more specific category of the resource. No specific range available at the moment.
         Each varbeidunderkatkode belongs to only one varbeidhovedkatkode and therefore the value of this field is enough
         to deduct the exact type of the publication.
         The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en
         """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:range      xsd:string ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+       entityDescription.reference.publicationInstance
+       implementedMappings:
+         Anthology -> BookAnthology
+    """ .
 
 :eierkode_opprettet
     a            rdf:Property ;
@@ -106,70 +156,79 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :Result .
 
+
 :brukernavn_opprettet
     a            rdf:Property ;
     rdfs:comment """
-            eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+       eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
         can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
         and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
      """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 
 :eierkode_siste_endring
     a            rdf:Property ;
     rdfs:comment "Similar to eierkode_opprettet but it indicates who made the last change." ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :brukernavn_siste_endring
     a            rdf:Property ;
     rdfs:comment "Similar to brukernavn_opprettet but it indicates who made the last change." ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
-
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :dato_siste_endring
-    a            rdf:Property ;
+    a            :cristinfield ;
     rdfs:comment "The date of the last update of the registration." ;
     rdfs:range   xsd:date ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
+
+
 
 :publiseringstatuskode
-    a            rdf:Property ;
-    rdfs:comment """
-    The publication status of the referenced publication, i.e. whether the publication status of the publication itself in the publisher (e.g. Elsevier)
-    Possible values are: IN_PRESS", "PUBLISERT" (and "TEST").
-    """ ;
-    rdfs:range   :PublicationStatus ;
-    rdfs:domain  :Result .
-
+    a               rdf:Property ;
+    rdfs:comment    """
+                            The publication status of the referenced publication, i.e. whether the publication status of the publication itself in the publisher (e.g. Elsevier)
+                            Possible values are: IN_PRESS", "PUBLISERT" (and "TEST").
+                            """ ;
+    rdfs:range      :PublicationStatus ;
+    rdfs:domain     :Result ;
+    :mapstonvafield "status = PUBLISHED (hardcoded)" .
 
 :dato_utgitt
-    a            rdf:Property ;
+    a            :cristinfield ;
     rdfs:comment "Date the resource was published (e.g. through Elsevier or in OpenAccess Journal)." ;
     rdfs:range   xsd:date ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :arstall_rapportert
     a            rdf:Property ;
     rdfs:comment "Year that the resource was included in an NVI report." ;
     rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :Result .
-
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :merknadtekst
     a            rdf:Property ;
     rdfs:comment "Free text for super-users to add comments when it comes to NVI approvals." ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :merknadtekst_godkjenning
     a            rdf:Property ;
     rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved or rejected." ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :kildekode
     a            rdf:Property ;
@@ -179,7 +238,8 @@
     It is a string containing arbitrary codes such as "scopus" "norart" etc.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :kildepostid
     a            rdf:Property ;
@@ -189,7 +249,8 @@
      de-referenced.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :pubidnr
     a            rdf:Property ;
@@ -198,133 +259,157 @@
     PIA is a database that holds imports from Scopus.
     """ ;
     rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :VARBEID_SPRAK
-    a            rdf:Property ;
-    rdfs:comment """
+    a               :cristinfield ;
+    rdfs:comment    """
     A language that this work has been published in, the respective title, and the respective abstract
     and an indication whether it is the original language or a translation.
     """ ;
-    rdfs:range   :VARBEID_SPRAK_Class ;
-    rdfs:domain  :Result .
+    rdfs:range      :VARBEID_SPRAK_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.mainTitle, entityDescription.language
+    """ .
 
 :sprakkode
-    a            rdf:Property ;
-    rdfs:comment """
+    a               :cristinfield ;
+    rdfs:comment    """
     The language of the title and the abstract included in the VARARBEID_SPRAK entry.
     The range is ISO 639-1.
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_SPRAK_Class .
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_SPRAK_Class ;
+    :mapstonvafield """
+        entityDescription.language if VARBEID_SPRAK.status_original is "J"
+    """ .
 
 :tittletekst
-    a            rdf:Property ;
-    rdfs:comment "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_SPRAK_Class .
+    a               :cristinfield ;
+    rdfs:comment    "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_SPRAK_Class ;
+    :mapstonvafield """
+        entityDescription.mainTitle  if VARBEID_SPRAK.status_original is "J"
+    """ .
+
 
 :sammendragtekst
-    a            rdf:Property ;
+    a            :cristinfield ;
     rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_SPRAK_Class .
+    rdfs:domain  :VARBEID_SPRAK_Class ;
+    :isignored   "true" .
 
 :status_original
-    a            rdf:Property ;
+    a            :cristinfield ;
     rdfs:comment """
     Indicator of whether the title in the respective VARBEID_SPRAK is the original title or not.
     Known possible values are 'J' ('true'), 'N' (false) and NULL (free to interpretation).
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_SPRAK_Class .
+    rdfs:domain  :VARBEID_SPRAK_Class ;
+    :isignored   "false" .
 
 :VITENSKAPELIGARBEID_LOKAL
-    a            rdf:Property ;
+    a            :cristinfield ;
     rdfs:comment "UNKONWN property" ;
-    rdfs:domain  :Result .
+    rdfs:domain  :Result ;
+    :isignored   "true" .
 
 :VARBEID_PERSON
-    a            rdf:Property ;
-    rdfs:comment "A contributor to the respective result entry." ;
-    rdfs:range   :VARBEID_PERSON_Class ;
-    rdfs:domain  :Result .
+    a               :cristinfield ;
+    rdfs:comment    "A contributor to the respective result entry." ;
+    rdfs:range      :VARBEID_PERSON_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield "entityDescription.Contributor" .
 
 :personlopenr
-    a            rdf:Property ;
-    rdfs:comment "The Cristin Person identifier of the contributor" ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :VARBEID_PERSON_Class .
+    a               :cristinfield ;
+    rdfs:comment    "The Cristin Person identifier of the contributor" ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :VARBEID_PERSON_Class ;
+    :mapstonvafield "entityDescription.contributor.identity.id" .
 
 :fornavn
-    a            rdf:Property ;
-    rdfs:comment """The first/given name of the contributor of the respective result entry.
-        This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
-        submitted the publication to the publisher (e.g. Elsevier)
-        """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_Class .
+    a               rdf:Property ;
+    rdfs:comment    """The first/given name of the contributor of the respective result entry.
+                                                                                This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
+                                                                                submitted the publication to the publisher (e.g. Elsevier)
+                                                                                """ ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_PERSON_Class ;
+    :mapstonvafield "entityDescription.contributor.identity.fullanme" .
 
 :etternavn
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
     The surname/family-name of the contributor of the respective result entry
     This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
         submitted the publication to the publisher (e.g. Elsevier).
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_Class .
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_PERSON_Class ;
+    :mapstonvafield "entityDescription.contributor.identity.fullanme" .
 
 :VARBEID_PERSON_STED
-    a            rdf:Property ;
-    rdfs:comment """
+    a               :cristinfield ;
+    rdfs:comment    """
     Details about the institution which the contributor belongs to and the contributors role to the institution
     at the time the publication was registered in Cristin.
     """ ;
-    rdfs:range   :VARBEID_PERSON_STED_Class ;
-    rdfs:domain  :VARBEID_PERSON_Class .
+    rdfs:range      :VARBEID_PERSON_STED_Class ;
+    rdfs:domain     :VARBEID_PERSON_Class ;
+    :mapstonvafield "entityDescription.contributor.affiliation" .
+
 
 :institusjonsnr
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
     The **current** Cristin institution identifier institution that the contributor of the publication was affiliated with.
     This value may have changed from the time of entry was registered in Cristin.
     :institusjonsnr, :avdnr, :undavdnr, and :gruppenr form a unique identifier of the Contributor's affiliation.
 
     """ ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :VARBEID_PERSON_STED_Class ;
+    :mapstonvafield "entityDescription.contributor.affiliation.id" .
 
 :avdnr
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
     The **current** Cristin Department number that the contributor of the publication was affiliated with at the time of creation of the
     registration entry.
     This value may have changed from the time of entry was registered in Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :VARBEID_PERSON_STED_Class ;
+    :mapstonvafield "entityDescription.contributor.affiliation.id" .
 
 :undavdnr
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
     The current Sub-department number that the contributor of the publication was affiliated with at the time of creation of the
     registration entry.
     This value may have changed from the time of entry was registered in Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :VARBEID_PERSON_STED_Class ;
+    :mapstonvafield "entityDescription.contributor.affiliation.id" .
 
 :gruppenr
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
      The current group number that the contributor of the publication was affiliated with at the time of creation of the registration entry.
      This value may have changed from the time of entry was registered in Cristin.
     """ ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :VARBEID_PERSON_STED_Class ;
+    :mapstonvafield "entityDescription.contributor.affiliation.id" .
 
 :stedkode_opprinnelig
     a            rdf:Property ;
@@ -333,19 +418,22 @@
     institution when the Cristin entry was created. This is an immutable value that never changes after its creation.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_Class ;
+    :isignored   "true" .
 
 :institusjonsnavn_opprinnelig
     a            rdf:Property ;
     rdfs:comment "The original name of the institution at the time the Cristin entry was created. Immutable value" ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_Class ;
+    :isignored   "true" .
 
 :avdelingsnavn_opprinnelig
     a            rdf:Property ;
     rdfs:comment "The original name of the department at the time the Cristin entry was created. Immutable value" ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_Class ;
+    :isignored   "true" .
 
 :stednavn_opprinnelig
     a            rdf:Property ;
@@ -354,22 +442,25 @@
     Hierarchically, this is the name of the lowest (most specific) entity that the Contributor is affiliated with.
      """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_Class ;
+    :isignored   "true" .
 
 :vekting
     a            rdf:Property ;
     rdfs:comment "SHOULD BE REMOVED FROM THE IMPORTS." ;
     rdfs:range   rdf:nil ; #unknown range
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_Class ;
+    :isignored   "true" .
 
 :VARBEID_PERSON_STED_ROLLE
-    a            rdf:Property ;
-    rdfs:comment """
+    a               rdf:Property ;
+    rdfs:comment    """
         The role of the respective Contributor for the respective publication affiliated for this role with the respective institution.
         This entry is immutable and does not change in time.
         """ ;
-    rdfs:range   :VARBEID_PERSON_STED_ROLLE_Class ;
-    rdfs:domain  :VARBEID_PERSON_STED_Class .
+    rdfs:range      :VARBEID_PERSON_STED_ROLLE_Class ;
+    rdfs:domain     :VARBEID_PERSON_STED_Class ;
+    :mapstonvafield "entityDescription.contributor.role. only the first role of a person is considered." .
 
 :rollekode
     a            rdf:Property ;
@@ -378,6 +469,7 @@
         This entry is immutable and does not change in time.
         """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class .
+    rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class ;
+    :isignored   "false" .
 
 
