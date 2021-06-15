@@ -51,7 +51,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
-    public static final String FILE_EXTENSION_ERROR = "error";
+    public static final String FILE_EXTENSION_ERROR = ".error";
     public static final String PARTIAL_FAILURE = "PartialFailure";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
     public static final String PATH_SEPARATOR = "/";
@@ -87,11 +87,25 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     protected String processInput(ImportRequest input, AwsEventBridgeEvent<ImportRequest> event, Context context) {
         validateEvent(event);
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
-        Try<List<PutEventsResult>> emitEventsAttempt = attemptToEmitEvents(input, context, s3Driver);
-        storeErrorReportsInS3(emitEventsAttempt, input);
-        logWarningForNotEmittedEntries(emitEventsAttempt);
+        Try<List<PutEventsResult>> failedEntries = attemptToEmitEvents(input, context, s3Driver);
+        if (thereAreFailures(failedEntries)) {
+            storeErrorReportsInS3(failedEntries, input);
+            logWarningForNotEmittedEntries(failedEntries);
+        }
 
-        return returnNothingOrThrowExceptionWhenEmissionFailedCompletely(emitEventsAttempt);
+        return returnNothingOrThrowExceptionWhenEmissionFailedCompletely(failedEntries);
+    }
+
+    private boolean thereAreFailures(Try<List<PutEventsResult>> failedEntries) {
+        return completeEmissionFailure(failedEntries) || partialEmissionFailure(failedEntries);
+    }
+
+    private boolean partialEmissionFailure(Try<List<PutEventsResult>> failedEntries) {
+        return failedEntries.isSuccess() && !failedEntries.orElseThrow().isEmpty();
+    }
+
+    private boolean completeEmissionFailure(Try<List<PutEventsResult>> failedEntries) {
+        return failedEntries.isFailure();
     }
 
     private Try<List<PutEventsResult>> attemptToEmitEvents(ImportRequest input, Context context, S3Driver s3Driver) {
@@ -123,27 +137,18 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location().toString());
         UriWrapper bucket = inputUri.getHost();
 
+        String errorType = failedEntries.isSuccess()
+                               ? PARTIAL_FAILURE
+                               : failedEntries.getException().getClass().getSimpleName();
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(removeLastPathSegment(inputUri.getPath().toString()))
-                   .addChild(failedEntries.isSuccess() ? PARTIAL_FAILURE
-                                 : failedEntries.getException().getClass().getSimpleName())
-                   .addChild(makeFileExtensionError(retrieveLastPartOfPath(inputUri.getPath().toString())));
-    }
-
-    private String removeLastPathSegment(String path) {
-        int lastSegmentStartIndex = path.lastIndexOf(PATH_SEPARATOR);
-        return path.substring(0, lastSegmentStartIndex);
-    }
-
-    private String retrieveLastPartOfPath(String path) {
-        int lastSegmentStartIndex = path.lastIndexOf(PATH_SEPARATOR);
-        return path.substring(lastSegmentStartIndex);
+                   .addChild(inputUri.getParent().orElse(inputUri).getPath())
+                   .addChild(errorType)
+                   .addChild(makeFileExtensionError(inputUri.getFilename()));
     }
 
     private String makeFileExtensionError(String filename) {
-        int extensionSeparatorIndex = filename.lastIndexOf(PERIOD_CHAR);
-        return filename.substring(0, extensionSeparatorIndex + 1) + FILE_EXTENSION_ERROR;
+        return filename + FILE_EXTENSION_ERROR;
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
