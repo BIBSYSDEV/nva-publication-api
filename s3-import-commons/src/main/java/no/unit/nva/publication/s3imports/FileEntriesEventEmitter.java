@@ -23,6 +23,7 @@ import java.util.stream.StreamSupport;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
@@ -142,8 +143,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                                : failedEntries.getException().getClass().getSimpleName();
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(inputUri.getParent().orElse(inputUri).getPath())
                    .addChild(errorType)
+                   .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
                    .addChild(makeFileExtensionError(inputUri.getFilename()));
     }
 
