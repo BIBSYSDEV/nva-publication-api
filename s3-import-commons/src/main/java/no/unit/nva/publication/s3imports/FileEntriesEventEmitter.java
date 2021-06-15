@@ -51,13 +51,19 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
-    public static final String ERROR_FILE_ENDING = "error";
+    public static final String FILE_EXTENSION_ERROR = "error";
+    public static final String PARTIAL_FAILURE = "PartialFailure";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
+    public static final String PATH_SEPARATOR = "/";
+    public static final Character PERIOD_CHAR = '.';
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
     private static final Logger logger = LoggerFactory.getLogger(FileEntriesEventEmitter.class);
     private static final String NON_EMITTED_ENTRIES_WARNING_PREFIX = "Some entries failed to be emitted: ";
+    private static final String EXCEPTION_STACKTRACE_MESSAGE_TEMPLATE =
+        "File in location: %s Failed with the following exception: %s";
+
     private static final String CONSECUTIVE_JSON_OBJECTS = "}\\s*\\{";
     private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
@@ -103,8 +109,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private void storeErrorReportsInS3(Try<List<PutEventsResult>> failedEntries, ImportRequest input) {
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
         UriWrapper reportFilename = generateErrorReportUri(input, failedEntries);
-        List<PutEventsResult> putEventsResults;
-        putEventsResults =
+        List<PutEventsResult> putEventsResults =
             failedEntries.orElse(fails -> generateReportIndicatingTotalEmissionFailure(fails,
                                                                                        input.getS3Location()));
 
@@ -120,25 +125,25 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
         return bucket
                    .addChild(ERRORS_FOLDER)
-                   .addChild(removeLastPartOfPath(inputUri.getPath().toString()))
-                   .addChild(failedEntries.isSuccess() ? "PartialFailure"
+                   .addChild(removeLastPathSegment(inputUri.getPath().toString()))
+                   .addChild(failedEntries.isSuccess() ? PARTIAL_FAILURE
                                  : failedEntries.getException().getClass().getSimpleName())
-                   .addChild(makeFileEndingError(retrieveLastPartOfPath(inputUri.getPath().toString())));
+                   .addChild(makeFileExtensionError(retrieveLastPartOfPath(inputUri.getPath().toString())));
     }
 
-    private String removeLastPartOfPath(String path) {
-        int lastDeliminatorIndex = path.lastIndexOf('/');
-        return path.substring(0, lastDeliminatorIndex);
+    private String removeLastPathSegment(String path) {
+        int lastSegmentStartIndex = path.lastIndexOf(PATH_SEPARATOR);
+        return path.substring(0, lastSegmentStartIndex);
     }
 
     private String retrieveLastPartOfPath(String path) {
-        int lastDeliminatorIndex = path.lastIndexOf('/');
-        return path.substring(lastDeliminatorIndex);
+        int lastSegmentStartIndex = path.lastIndexOf(PATH_SEPARATOR);
+        return path.substring(lastSegmentStartIndex);
     }
 
-    private String makeFileEndingError(String filename) {
-        int lastDot = filename.lastIndexOf('.');
-        return filename.substring(0, lastDot + 1) + ERROR_FILE_ENDING;
+    private String makeFileExtensionError(String filename) {
+        int extensionSeparatorIndex = filename.lastIndexOf(PERIOD_CHAR);
+        return filename.substring(0, extensionSeparatorIndex + 1) + FILE_EXTENSION_ERROR;
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
@@ -168,11 +173,12 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private PutEventsResponse generatePutEventsResultIndicatingNoEventsWereEmitted(
         Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
-        String exceptionStackStraceAsResultMessage =
-            "File in location: " + s3Location + ". Failed with the following exception: "
-            + stackTraceInSingleLine(completeEmissionFailure.getException());
+        String fileLocationAndExceptionStackTraceAsResultMessage =
+            String.format(EXCEPTION_STACKTRACE_MESSAGE_TEMPLATE, s3Location,
+                          stackTraceInSingleLine(completeEmissionFailure.getException()));
         PutEventsResultEntry putEventsResultEntry =
-            PutEventsResultEntry.builder().errorMessage(exceptionStackStraceAsResultMessage).build();
+            PutEventsResultEntry.builder().errorMessage(fileLocationAndExceptionStackTraceAsResultMessage)
+                .build();
         return PutEventsResponse.builder().entries(putEventsResultEntry).build();
     }
 

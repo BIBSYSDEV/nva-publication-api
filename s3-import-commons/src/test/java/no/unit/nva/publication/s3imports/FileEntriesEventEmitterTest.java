@@ -2,6 +2,7 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PATH_SEPARATOR;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -59,6 +60,7 @@ public class FileEntriesEventEmitterTest {
     public static final String INPUT_FILENAME = "/location.file";
     public static final String ERROR_FILE = "/location.error";
     public static final String PARTIAL_FAILURE = "/PartialFailure";
+    public static final String NONE_EXISTING_ERROR_FILE = "/nonexisting.error";
 
     public static final String IMPORT_EVENT_TYPE = "importEventType";
     public static final ImportRequest IMPORT_REQUEST_FOR_EXISTING_FILE =
@@ -72,6 +74,8 @@ public class FileEntriesEventEmitterTest {
     public static final String SOME_BUCKETNAME = "someBucketname";
     public static final String ALL_FILES = ".";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
+    private static final String LOCATION_TEMPLATE =
+        ERRORS_FOLDER + INPUT_PATH + PATH_SEPARATOR + "%s" + "%s";
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
@@ -138,8 +142,8 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        String expectedErrorFileLocation =
-            ERRORS_FOLDER + INPUT_PATH + "/" + exception.getClass().getSimpleName() + ERROR_FILE;
+        String expectedErrorFileLocation = constructFileLocation(exception.getClass().getSimpleName(),
+                                                                 ERROR_FILE);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, is(containsString(exception.getMessage())));
@@ -159,8 +163,8 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_NON_EXISTING_FILE);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        String expectedErrorFileLocation =
-            ERRORS_FOLDER + INPUT_PATH + "/" + exception.getClass().getSimpleName() + "/nonexisting.error";
+        String expectedErrorFileLocation = constructFileLocation(exception.getClass().getSimpleName(),
+                                                                 NONE_EXISTING_ERROR_FILE);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, is(containsString(exception.getMessage())));
@@ -283,6 +287,10 @@ public class FileEntriesEventEmitterTest {
             FileEntriesEventEmitterTest::fileWithContentAsIonArray
 
         );
+    }
+
+    private String constructFileLocation(String classNameOrWhateverItIs, String file) {
+        return String.format(LOCATION_TEMPLATE, classNameOrWhateverItIs, file);
     }
 
     private static FileContent fileWithContentsAsJsonObjectsLists() {
