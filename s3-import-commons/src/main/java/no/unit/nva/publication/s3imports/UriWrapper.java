@@ -69,4 +69,8 @@ public class UriWrapper {
                    .map(Try::orElseThrow)
                    .map(UriWrapper::new);
     }
+
+    public String getFilename() {
+        return getPath().getFilename();
+    }
 }
