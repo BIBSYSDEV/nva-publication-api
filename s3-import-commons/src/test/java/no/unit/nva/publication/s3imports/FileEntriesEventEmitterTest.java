@@ -212,7 +212,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerSavesFileInErrorsFilePathExceptionNameFileNameWhenFailingToEmitAllEntries() {
+    public void handlerSavesFileInErrorsExceptionFilePathWhenFailingToEmitAllEntries() {
         eventBridgeClient = eventBridgeClientThatFailsToEmitAllMessages();
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
@@ -230,7 +230,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerSavesFileInErrorsFilePathExceptionNameFileNameWhenFailingToEmitSomeEntries() {
+    public void handlerSavesFileInErrorsExceptionNameFilePathWhenFailingToEmitSomeEntries() {
         eventBridgeClient = eventBridgeClientThatFailsToEmitMessages();
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
