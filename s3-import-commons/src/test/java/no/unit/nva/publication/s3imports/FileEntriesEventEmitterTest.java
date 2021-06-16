@@ -307,7 +307,6 @@ public class FileEntriesEventEmitterTest {
         );
     }
 
-
     private static FileContent fileWithContentsAsJsonObjectsLists() {
         return new FileContent(IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location(),
                                contentsAsJsonObjectsList());
