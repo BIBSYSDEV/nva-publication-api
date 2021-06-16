@@ -73,24 +73,24 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                                        Context context) {
         validateEvent(event);
         return attempt(() -> parseCristinObject(event))
-            .map(CristinObject::toPublication)
-            .flatMap(this::persistInDatabase)
-            .orElseThrow(fail -> handleSavingError(fail, event));
+                   .map(CristinObject::toPublication)
+                   .flatMap(this::persistInDatabase)
+                   .orElseThrow(fail -> handleSavingError(fail, event));
     }
 
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
-            .httpClient(UrlConnectionHttpClient.create())
-            .build();
+                   .httpClient(UrlConnectionHttpClient.create())
+                   .build();
     }
 
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
-            .standard()
-            .withRegion(ApplicationConstants.AWS_REGION.id())
-            .build();
+                   .standard()
+                   .withRegion(ApplicationConstants.AWS_REGION.id())
+                   .build();
     }
 
     private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -101,8 +101,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())
-            .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
-            .orElseThrow();
+                   .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
+                   .orElseThrow();
     }
 
     private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -140,7 +140,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private Try<Publication> tryPersistingInDatabase(Publication publication) {
         return attempt(() -> createPublicationDraft(publication))
-            .map(this::publishPublication);
+                   .map(this::publishPublication);
     }
 
     private Publication createPublicationDraft(Publication publication)
@@ -186,25 +186,24 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                                              Exception exception) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
         UriWrapper bucket = fileUri.getHost();
-        UriWrapper uriWrapper = bucket
-                                    .addChild(ERRORS_FOLDER)
-                                    .addChild(exception.getClass().getSimpleName())
-                                    .addChild(fileUri.getPath())
-                                    .addChild(createErrorReportFilename(event));
-        return uriWrapper;
+        return bucket
+                   .addChild(ERRORS_FOLDER)
+                   .addChild(exception.getClass().getSimpleName())
+                   .addChild(fileUri.getPath())
+                   .addChild(createErrorReportFilename(event));
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return extractCristinObjectId(event)
                    .map(idString -> idString + JSON)
-            .orElseGet(this::unknownCristinIdReportFilename);
+                   .orElseGet(this::unknownCristinIdReportFilename);
     }
 
     private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> parseCristinObject(event))
-            .map(CristinObject::getId)
-            .toOptional()
-            .map(Objects::toString);
+                   .map(CristinObject::getId)
+                   .toOptional()
+                   .map(Objects::toString);
     }
 
     private String unknownCristinIdReportFilename() {

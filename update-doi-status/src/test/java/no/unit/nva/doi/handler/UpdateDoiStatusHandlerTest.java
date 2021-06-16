@@ -39,7 +39,7 @@ class UpdateDoiStatusHandlerTest {
 
     public static final Path BAD_EVENT_WITH_DATE_IN_FUTURE = Path.of(
         "update_doi_status_event_bad_date_in_the_future.json");
-    public static final String NULL_OBJECT = "{ }";
+    public static final String NULL_OBJECT = "{}";
     public static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
     private static final SortableIdentifier PUBLICATION_IDENTIFIER_IN_RESOURCES =

@@ -55,8 +55,6 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     public static final String FILE_EXTENSION_ERROR = ".error";
     public static final String PARTIAL_FAILURE = "PartialFailure";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
-    public static final String PATH_SEPARATOR = "/";
-    public static final Character PERIOD_CHAR = '.';
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
