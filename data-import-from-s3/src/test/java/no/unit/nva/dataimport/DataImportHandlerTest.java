@@ -204,7 +204,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
         dataImportHandler.handleRequest(request.toMap());
-        assertThat(appender.getMessages(), containsString(request.toJsonString()));
+        assertThat(appender.getMessages(), containsString(request.getS3Location()));
     }
 
     //used as MethodSource in Parameterized Test
