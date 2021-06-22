@@ -1,48 +1,9 @@
-
-
 dependencies {
-    implementation group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
+    implementation libs.nva.datamodel
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation libs.jackson.annotations
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-
-    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
+    testImplementation libs.nva.testutils
     testImplementation project(":publication-testing")
 }
-
-configurations.testImplementation.canBeResolved = true
-
-task copyNativeDeps(type: Copy) {
-    from(configurations.testImplementation) {
-        include "*.dylib"
-        include "*.so"
-        include "*.dll"
-    }
-    into 'build/dynamodb-local'
-}
-
-test.dependsOn copyNativeDeps
-test.doFirst {
-    systemProperty "java.library.path", 'build/dynamodb-local'
-}
-
-// Build and package publication-commons and dependencies for Lambda Layer
-
-configurations.api.canBeResolved = true
-
-task copyDepsForLayer(type: Copy) {
-    from(configurations.api) {
-    }
-    into 'build/libs'
-}
-
-task buildZipForLayer(type: Zip) {
-    from('build/libs') {
-    }
-    into('java/lib')
-}
-
-buildZipForLayer.dependsOn copyDepsForLayer
-build.dependsOn buildZipForLayer

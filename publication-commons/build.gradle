@@ -1,77 +1,46 @@
+plugins {
+    id 'nva-publication-api.java-library-conventions'
+}
 
 
 dependencies {
     implementation project(":publication-constants")
     implementation project(":storage-model")
 
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
 
-
-    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+    implementation(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
-    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    runtimeOnly libs.jackson.core
+    testImplementation libs.jackson.core
 
-    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: project.ext.jacksonVersion
-    runtimeOnly group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: project.ext.jacksonVersion
+    runtimeOnly libs.jackson.datatype.jdk8
+    runtimeOnly libs.jackson.datatype.jsr310
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    runtimeOnly group: 'com.fasterxml.jackson.module', name: 'jackson-module-parameter-names', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
+    implementation libs.jackson.databind
 
+    runtimeOnly libs.jackson.module.parameter.names
+    implementation libs.jackson.annotations
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-core', version: project.ext.awsSdkVersion
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation libs.aws.java.sdk.core
+    implementation libs.aws.sdk.dynamodb
 
-    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: project.ext.log4jApiVersion
+    implementation libs.log4j.api
 
     testImplementation project(":publication-testing")
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'logutils', version: project.ext.nvaCommonsVersion
-    testImplementation group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion
-    testImplementation(group: 'org.javers', name: 'javers-core', version: project.ext.javersVersion) {
+    testImplementation libs.nva.testutils
+    testImplementation libs.logutils
+    testImplementation libs.javafaker
+    testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
 
-
 }
 
-configurations.testImplementation.canBeResolved = true
 
-task copyNativeDeps(type: Copy) {
-    from(configurations.testImplementation) {
-        include "*.dylib"
-        include "*.so"
-        include "*.dll"
-    }
-    into 'build/dynamodb-local'
-}
 
-test.dependsOn copyNativeDeps
-test.doFirst {
-    systemProperty "java.library.path", 'build/dynamodb-local'
-}
 
-// Build and package publication-commons and dependencies for Lambda Layer
-
-configurations.api.canBeResolved = true
-
-task copyDepsForLayer(type: Copy) {
-    from(configurations.api) {
-    }
-    into 'build/libs'
-}
-
-task buildZipForLayer(type: Zip) {
-    from('build/libs') {
-    }
-    into('java/lib')
-}
-
-buildZipForLayer.dependsOn copyDepsForLayer
-build.dependsOn buildZipForLayer

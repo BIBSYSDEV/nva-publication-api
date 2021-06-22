@@ -5,24 +5,24 @@ dependencies {
     implementation project(':publication-commons')
     implementation project(':storage-model')
 
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.core
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.lambda.java.core
 
-    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
+    runtimeOnly libs.jackson.databind
+    testImplementation libs.jackson.databind
 
     testImplementation project(':publication-testing')
     testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-    testImplementation (group: 'org.apache.httpcomponents', name: 'httpcore', version: project.ext.dynamoDbHttpCoreDependency){
+    testImplementation libs.nva.testutils
+    testImplementation (libs.dynamoDbHttpCoreDependency){
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 
-    compileOnly(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
+    compileOnly(libs.nva.datamodel) {
         because "PMD complains about no/unit/nva/model/Publication"
     }
 
