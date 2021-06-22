@@ -7,6 +7,7 @@ allprojects {
 }
 
 subprojects {
+    // For using DynamoDB locally
     configurations.testImplementation.canBeResolved = true
     task copyNativeDeps(type: Copy) {
         from(configurations.testImplementation) {
@@ -23,7 +24,7 @@ subprojects {
     }
 }
 
-
+//For generating one unified coverage report
 def getProjectList() {
     // These projects are considered. Replace with a different list as needed.
     subprojects + project
