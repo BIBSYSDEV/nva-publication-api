@@ -22,6 +22,8 @@ subprojects {
         dependsOn copyNativeDeps
         systemProperty "java.library.path", 'build/dynamodb-local'
     }
+
+
 }
 
 //For generating one unified coverage report
