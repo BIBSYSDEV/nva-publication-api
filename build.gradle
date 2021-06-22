@@ -31,6 +31,12 @@ def getProjectList() {
     // These projects are considered. Replace with a different list as needed.
     subprojects + project
 }
+def getReportTasks(JacocoReport pRootTask) {
+    getProjectList().collect {
+        it.tasks.withType(JacocoReport).findAll { it != pRootTask }
+    }.flatten()
+}
+
 
 task jacocoMerge(type: JacocoMerge) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
@@ -60,13 +66,30 @@ task jacocoMerge(type: JacocoMerge) {
     }
 }
 
-def getReportTasks(JacocoReport pRootTask) {
-    getProjectList().collect {
-        it.tasks.withType(JacocoReport).findAll { it != pRootTask }
-    }.flatten()
+task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = 'Generates an aggregate report from all subprojects'
+
+    logger.lifecycle 'Using aggregated file: ' + tasks.jacocoMerge.destinationFile
+    executionData.from tasks.jacocoMerge.destinationFile
+
+    project.afterEvaluate {
+        // The JacocoReport tasks are the source of truth for class files and sources.
+        def reportTasks = getReportTasks(tasks.jacocoRootReport)
+        classDirectories.from project.files({
+            reportTasks.collect { it.classDirectories }.findAll { it != null }
+        })
+        sourceDirectories.from project.files({
+            reportTasks.collect { it.sourceDirectories }.findAll { it != null }
+        })
+    }
+
+    reports {
+        xml.enabled true
+    }
 }
 
-build{
-    dependsOn(jacocoMerge)
+build {
+    dependsOn jacocoRootReport
 }
 
