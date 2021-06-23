@@ -1,0 +1,21 @@
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+repositories {
+    gradlePluginPortal()
+}
+
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = "7.0.2"
+}
+
+dependencies {
+    implementation group: 'nebula.lint', name: 'nebula.lint.gradle.plugin', version: '16.23.0'
+    implementation group: 'io.freefair.lombok', name: 'io.freefair.lombok.gradle.plugin', version: '5.3.3.3'
+    implementation group: 'org.jacoco', name: 'org.jacoco.core', version: '0.8.7'
+    implementation group: 'org.jacoco', name: 'org.jacoco.report', version: '0.8.7'
+
+
+}

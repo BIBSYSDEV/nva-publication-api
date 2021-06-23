@@ -1,46 +1,31 @@
+
+
 dependencies {
     implementation project(":publication-constants")
-
-    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    implementation (libs.nva.datamodel) {
+        exclude group:'com.github.bibsysdev', module:'core'
     }
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation libs.nva.s3
 
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 's3', version: project.ext.nvaCommonsVersion
-    compileOnly group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
+    compileOnly libs.nva.apigateway
 
-    implementation(group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion) {
-        because('For generating test data in tests. Another alternative is jfairy')
-    }
-    implementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: project.junit5Version
+    implementation libs.javafaker
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
-    implementation group: 'software.amazon.awssdk', name: 's3', version: project.ext.awsSdk2Version
+    implementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.6.0'
 
-    implementation(group: 'com.amazonaws', name: 'DynamoDBLocal', version: project.ext.dynamoDbLocalVersion) {
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk2.s3
+
+    implementation (libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    implementation(group: 'org.apache.httpcomponents', name: 'httpcore', version: project.ext.dynamoDbHttpCoreDependency) {
+    implementation (libs.dynamoDbHttpCoreDependency){
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 
 }
 
-configurations.api.canBeResolved = true
-
-task copyNativeDeps(type: Copy) {
-    from(configurations.api) {
-        include "*.dylib"
-        include "*.so"
-        include "*.dll"
-    }
-    into 'build/dynamodb-local'
-}
-
-test.dependsOn copyNativeDeps
-test.doFirst {
-    systemProperty "java.library.path", 'build/dynamodb-local'
-}

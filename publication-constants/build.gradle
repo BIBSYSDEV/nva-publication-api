@@ -1,12 +1,7 @@
+
 dependencies {
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
+    implementation libs.nva.core
+
 }
 
-configurations{
-    instrumentedJars {
-        canBeConsumed = true
-        canBeResolved = false
-        extendsFrom implementation, runtimeOnly
-    }
-}
 
