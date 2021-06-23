@@ -45,7 +45,7 @@ public class CristinDataGenerator {
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final Faker FAKER = Faker.instance();
     public static final int FIRST_TITLE = 0;
-    public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperNoEmpty.configure(
+    public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperSingleLine.configure(
             SerializationFeature.INDENT_OUTPUT, false);
     public static final int USE_WHOLE_ARRAY = -1;
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
