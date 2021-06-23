@@ -31,7 +31,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static no.unit.nva.cristin.mapper.CristinObject.*;
+import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
