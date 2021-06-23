@@ -39,6 +39,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -139,6 +140,8 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook() && isAnthology()) {
             return createBookAnthology();
+        } else if (isBook() && isMonograph()) {
+            return createBookMonograph();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
@@ -147,22 +150,37 @@ public class CristinMapper {
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
-    private BookAnthology createBookAnthology() {
+    private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
-        MonographPages pages = new MonographPages.Builder()
-                                   .withPages(HARDCODED_PAGE)
-                                   .withIllustrated(HARDCODED_ILLUSTRATED)
-                                   .withIntroduction(introductionRange)
-                                   .build();
+        return new MonographPages.Builder()
+                .withPages(HARDCODED_PAGE)
+                .withIllustrated(HARDCODED_ILLUSTRATED)
+                .withIntroduction(introductionRange)
+                .build();
+    }
+
+    private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
                    .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                   .withPages(pages)
+                   .withPages(createMonographPages())
                    .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
                    .build();
     }
 
+    private BookMonograph createBookMonograph() {
+        return new BookMonograph.Builder()
+                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                .withPages(createMonographPages())
+                .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                .build();
+    }
+
     private boolean isAnthology() {
         return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isMonograph() {
+        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isBook() {

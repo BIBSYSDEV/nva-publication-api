@@ -8,7 +8,9 @@ import java.util.Objects;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinSecondaryCategory {
-    ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"), UNMAPPED;
+    ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
+    MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
+    UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
     private final List<String> aliases;
