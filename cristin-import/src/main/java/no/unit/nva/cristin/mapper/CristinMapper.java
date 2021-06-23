@@ -150,30 +150,27 @@ public class CristinMapper {
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
-    private BookAnthology createBookAnthology() {
+    private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
-        MonographPages pages = new MonographPages.Builder()
-                                   .withPages(HARDCODED_PAGE)
-                                   .withIllustrated(HARDCODED_ILLUSTRATED)
-                                   .withIntroduction(introductionRange)
-                                   .build();
+        return new MonographPages.Builder()
+                .withPages(HARDCODED_PAGE)
+                .withIllustrated(HARDCODED_ILLUSTRATED)
+                .withIntroduction(introductionRange)
+                .build();
+    }
+
+    private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
                    .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                   .withPages(pages)
+                   .withPages(createMonographPages())
                    .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
                    .build();
     }
 
     private BookMonograph createBookMonograph() {
-        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
-        MonographPages pages = new MonographPages.Builder()
-                .withPages(HARDCODED_PAGE)
-                .withIllustrated(HARDCODED_ILLUSTRATED)
-                .withIntroduction(introductionRange)
-                .build();
         return new BookMonograph.Builder()
                 .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                .withPages(pages)
+                .withPages(createMonographPages())
                 .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
                 .build();
     }

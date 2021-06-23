@@ -81,35 +81,11 @@ public class CristinDataGenerator {
     }
 
     public CristinObject randomBookAnthology() {
-        CristinObject cristinObject = CristinObject
-                .builder()
-                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-                .withEntryCreationDate(LocalDate.now())
-                .withMainCategory(CristinMainCategory.BOOK)
-                .withSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY)
-                .withId(largeRandomNumber())
-                .withPublicationYear(randomYear())
-                .withPublicationOwner(randomString())
-                .withContributors(randomContributors())
-                .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
-        return cristinObject;
+        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
     }
 
     public CristinObject randomBookMonograph() {
-        CristinObject cristinObject = CristinObject
-                .builder()
-                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-                .withEntryCreationDate(LocalDate.now())
-                .withMainCategory(CristinMainCategory.BOOK)
-                .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
-                .withId(largeRandomNumber())
-                .withPublicationYear(randomYear())
-                .withPublicationOwner(randomString())
-                .withContributors(randomContributors())
-                .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
-        return cristinObject;
+        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
     }
 
     public String singleRandomObjectAsString() {
@@ -160,6 +136,22 @@ public class CristinDataGenerator {
 
     public CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
         return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
+    }
+
+    private CristinObject createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory secondaryCategory) {
+        CristinObject cristinObject = CristinObject
+                .builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.BOOK)
+                .withSecondaryCategory(secondaryCategory)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .build();
+        assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
     }
 
     private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
