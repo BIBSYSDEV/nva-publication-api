@@ -39,6 +39,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
@@ -139,6 +140,8 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook() && isAnthology()) {
             return createBookAnthology();
+        } else if (isBook() && isMonograph()) {
+            return createBookMonograph();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
@@ -161,8 +164,26 @@ public class CristinMapper {
                    .build();
     }
 
+    private BookMonograph createBookMonograph() {
+        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
+        MonographPages pages = new MonographPages.Builder()
+                .withPages(HARDCODED_PAGE)
+                .withIllustrated(HARDCODED_ILLUSTRATED)
+                .withIntroduction(introductionRange)
+                .build();
+        return new BookMonograph.Builder()
+                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                .withPages(pages)
+                .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                .build();
+    }
+
     private boolean isAnthology() {
         return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isMonograph() {
+        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isBook() {

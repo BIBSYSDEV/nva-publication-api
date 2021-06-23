@@ -144,6 +144,7 @@
        entityDescription.reference.publicationInstance
        implementedMappings:
          Anthology -> BookAnthology
+         Monograph -> BookMonograph
     """ .
 
 :eierkode_opprettet
