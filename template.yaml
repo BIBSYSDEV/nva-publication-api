@@ -1276,7 +1276,7 @@ Resources:
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 4096
-      Timeout: 300 # 5 min timeout
+      Timeout: 900 # 5 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
