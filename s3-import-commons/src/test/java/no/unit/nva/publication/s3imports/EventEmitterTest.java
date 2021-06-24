@@ -29,7 +29,7 @@ public class EventEmitterTest {
     private AtomicInteger sleepingCounter;
 
     @BeforeEach
-    public synchronized void init() {
+    public void init() {
         sleepingCounter = new AtomicInteger();
         sleepingCounter.set(0);
         eventBridgeClient = setupEventBridgeClient();
@@ -42,7 +42,7 @@ public class EventEmitterTest {
         eventEmitter.addEvents(eventBodies);
         eventEmitter.emitEvents();
         int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests));
+        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
         assertThat(sleepingCounter.get(), is(equalTo(1)));
     }
 
@@ -53,7 +53,7 @@ public class EventEmitterTest {
         eventEmitter.addEvents(eventBodies);
         eventEmitter.emitEvents();
         int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests));
+        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
         assertThat(sleepingCounter.get(), is(equalTo(1)));
     }
 
@@ -65,7 +65,7 @@ public class EventEmitterTest {
         int desiredBatchSize = 20;
         eventEmitter.emitEvents(desiredBatchSize, 0);
         int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests));
+        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
         int expectedEmissionGroups = eventBodies.size() / desiredBatchSize;
         assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
     }
@@ -97,7 +97,7 @@ public class EventEmitterTest {
     }
 
     private EventBridgeClient setupEventBridgeClient() {
-        final EventBridgeClient client = mock(EventBridgeClient.class);
+        EventBridgeClient client = mock(EventBridgeClient.class);
         when(client.listEventBuses(any(ListEventBusesRequest.class)))
             .thenReturn(mockListEventBusesResponse());
         when(client.putEvents(any(PutEventsRequest.class)))
