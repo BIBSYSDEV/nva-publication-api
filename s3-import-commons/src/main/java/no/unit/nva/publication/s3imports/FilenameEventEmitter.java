@@ -162,7 +162,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                                  .map(this::newImportRequestForSingleFile)
                                                  .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
-        return eventEmitter.emitEvents();
+        return eventEmitter.emitEvents(10, 1);
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {
