@@ -1,11 +1,27 @@
 package no.unit.nva.cristin;
 
+import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
+import java.net.URI;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
 import no.unit.nva.cristin.mapper.CristinContributor;
@@ -19,25 +35,6 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JsonUtils;
-
-import java.net.URI;
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
-import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
-import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
-import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CristinDataGenerator {
 
@@ -150,7 +147,7 @@ public class CristinDataGenerator {
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
                 .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of("someRandomField")));
         return cristinObject;
     }
 
@@ -226,7 +223,8 @@ public class CristinDataGenerator {
     }
 
     private ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD,
+                                                                              "someRandomField")));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 

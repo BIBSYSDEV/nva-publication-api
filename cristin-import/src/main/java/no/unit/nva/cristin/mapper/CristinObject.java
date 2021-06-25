@@ -39,12 +39,10 @@ public class CristinObject implements JsonSerializable {
     private CristinSecondaryCategory secondaryCategory;
     @JsonProperty("VARBEID_PERSON")
     private List<CristinContributor> contributors;
-
     @JsonProperty
     private String publicationOwner;
 
     public CristinObject() {
-
     }
 
     public CristinObjectBuilder copy() {

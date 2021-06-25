@@ -2,11 +2,14 @@ package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,6 +17,7 @@ import java.util.Random;
 import java.util.UUID;
 import no.unit.nva.cristin.lambda.dtos.CristinObjectEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
@@ -27,7 +31,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import org.slf4j.Logger;
@@ -48,6 +51,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
+    public static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
+        objectMapperNoEmpty.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
     private final ResourceService resourceService;
     private final S3Client s3Client;
 
@@ -99,9 +104,17 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return cristinObject;
     }
 
+    private Identifiable parseIdentifiableObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
+
+        return attempt(() -> event.getDetail().getContents())
+                   .map(jsonNode ->
+                            objectMapperNoEmpty.convertValue(jsonNode, Identifiable.class))
+                   .orElseThrow();
+    }
+
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())
-                   .map(jsonNode -> JsonUtils.objectMapperNoEmpty.convertValue(jsonNode, CristinObject.class))
+                   .map(jsonNode -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(jsonNode, CristinObject.class))
                    .orElseThrow();
     }
 
@@ -200,8 +213,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::getId)
+        return attempt(() -> parseIdentifiableObject(event))
+                   .map(Identifiable::getId)
                    .toOptional()
                    .map(Objects::toString);
     }
