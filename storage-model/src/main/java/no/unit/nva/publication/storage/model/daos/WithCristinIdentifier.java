@@ -19,6 +19,7 @@ public interface WithCristinIdentifier {
     }
 
     SortableIdentifier getIdentifier();
+
     String getCristinId();
 
 }

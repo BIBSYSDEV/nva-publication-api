@@ -49,7 +49,8 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
         return Stream.of(resources);
     }
 
-    private static List<ResourceDao> sampleResourceDaoList(int sizeOfList) throws MalformedURLException, InvalidIssnException {
+    private static List<ResourceDao> sampleResourceDaoList(int sizeOfList)
+            throws MalformedURLException, InvalidIssnException {
         ArrayList<ResourceDao> resources = new ArrayList<ResourceDao>();
         for (int i = 0; i < sizeOfList; i++) {
             resources.add(sampleResourceDao());
