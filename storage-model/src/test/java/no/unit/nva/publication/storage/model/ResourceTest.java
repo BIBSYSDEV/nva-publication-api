@@ -2,6 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -162,8 +163,9 @@ public class ResourceTest {
     }
 
     private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
-        AdditionalIdentifier identifier = new AdditionalIdentifier(randomString(), randomString());
-        return Set.of(identifier);
+        AdditionalIdentifier identifier1 = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
+        AdditionalIdentifier identifier2 = new AdditionalIdentifier(randomString(), randomString());
+        return Set.of(identifier1, identifier2);
     }
 
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
