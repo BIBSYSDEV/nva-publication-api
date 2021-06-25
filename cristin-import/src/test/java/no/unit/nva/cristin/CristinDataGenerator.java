@@ -3,6 +3,7 @@ package no.unit.nva.cristin;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -147,7 +148,7 @@ public class CristinDataGenerator {
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
                 .build();
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of("someRandomField")));
+        assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
     }
 
@@ -223,8 +224,7 @@ public class CristinDataGenerator {
     }
 
     private ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD,
-                                                                              "someRandomField")));
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
