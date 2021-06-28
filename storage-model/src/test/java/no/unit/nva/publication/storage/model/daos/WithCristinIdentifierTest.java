@@ -27,7 +27,8 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() throws MalformedURLException, InvalidIssnException {
+    public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId()
+            throws MalformedURLException, InvalidIssnException {
         ResourceDao dao = sampleResourceDao();
         client.putItem(toPutItemRequest(dao));
         WithCristinIdentifier actuallResult = queryDbFindByCristinIdentifier(dao);
@@ -36,9 +37,10 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void dynamoClientReturnsOnlyResourcesWithCristinIdWhenSearchingResourcesByCristinId() throws MalformedURLException, InvalidIssnException {
+    public void dynamoClientReturnsOnlyResourcesWithCristinIdWhenSearchingResourcesByCristinId()
+            throws MalformedURLException, InvalidIssnException {
         ResourceDao daoWithCristinId = sampleResourceDao();
-        ResourceDao daoWithoutCristinId = new ResourceDao(sampleResourceDao().getData().copy().withAdditionalIdentifiers(null).build());
+        ResourceDao daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
         client.putItem(toPutItemRequest(daoWithCristinId));
         client.putItem(toPutItemRequest(daoWithoutCristinId));
         ScanResult result = client.scan(
@@ -49,9 +51,19 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier() throws MalformedURLException, InvalidIssnException {
-        ResourceDao daoWithoutCristinId = new ResourceDao(sampleResourceDao().getData().copy().withAdditionalIdentifiers(null).build());
+    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
+            throws MalformedURLException, InvalidIssnException {
+        ResourceDao daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
         assertThat(daoWithoutCristinId.getResourceByCristinIdPartitionKey(), is(equalTo(null)));
+    }
+
+    private ResourceDao createResourceDaoWithoutCristinIdentifier()
+            throws MalformedURLException, InvalidIssnException {
+        return new ResourceDao(sampleResourceDao()
+                .getData()
+                .copy()
+                .withAdditionalIdentifiers(null)
+                .build());
     }
 
     private WithCristinIdentifier queryDbFindByCristinIdentifier(WithCristinIdentifier dao) {
