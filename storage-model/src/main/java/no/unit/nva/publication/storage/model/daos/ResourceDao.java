@@ -86,8 +86,9 @@ public class ResourceDao extends Dao<Resource>
         return data.getIdentifier();
     }
 
+
     @Override
-    public String getCristinId() {
+    public String getCristinIdentifier() {
         return Optional.ofNullable(data.getAdditionalIdentifiers()).stream()
                 .flatMap(Collection::stream)
                 .filter(this::keyEqualsCristin)

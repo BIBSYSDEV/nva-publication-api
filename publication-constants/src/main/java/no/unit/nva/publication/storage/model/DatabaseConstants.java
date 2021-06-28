@@ -34,6 +34,8 @@ public final class DatabaseConstants {
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String STATUS_INDEX_FIELD_PREFIX = "Status";
     public static final String RESOURCE_INDEX_FIELD_PREFIX = "Resource";
+    public static final String CRISTIN_ID_INDEX_FIELD_PREFIX = "CristinId";
+    public static final String NULL_VALUE_KEY = "null";
     private static final String OWNER_IDENTIFIER = STRING_PLACEHOLDER;
     private static final String RECORD_TYPE = STRING_PLACEHOLDER;
     private static final String CUSTOMER_IDENTIFIER = STRING_PLACEHOLDER;
