@@ -21,7 +21,7 @@ public interface WithCristinIdentifier {
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     default String getResourceByCristinIdPartitionKey() {
-        return CRISTIN_ID_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
+        return getCristinIdentifier() == null ? getCristinIdentifier() : CRISTIN_ID_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
     }
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)

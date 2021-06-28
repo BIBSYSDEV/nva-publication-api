@@ -1,8 +1,5 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
-import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
@@ -14,12 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.net.MalformedURLException;
-import java.util.Map;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_ID_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.NULL_VALUE_KEY;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.toPutItemRequest;
@@ -52,17 +44,14 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
         ScanResult result = client.scan(
                 new ScanRequest()
                         .withTableName(DatabaseConstants.RESOURCES_TABLE_NAME)
-                        .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME)
-                        .withScanFilter(createConditionsWithCristinIdentifier()));
-        int expectedResultCounter = 1;
-        assertThat(result.getCount(), is(equalTo(expectedResultCounter)));
+                        .withIndexName(RESOURCE_BY_CRISTIN_ID_INDEX_NAME));
+        assertThat(result.getCount(), is(equalTo(1)));
     }
 
-    private Map<String, Condition> createConditionsWithCristinIdentifier() {
-        Condition condition = new Condition()
-                .withComparisonOperator(ComparisonOperator.NOT_CONTAINS)
-                .withAttributeValueList(new AttributeValue(CRISTIN_ID_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + NULL_VALUE_KEY));
-        return Map.of(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME, condition);
+    @Test
+    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier() throws MalformedURLException, InvalidIssnException {
+        ResourceDao daoWithoutCristinId = new ResourceDao(sampleResourceDao().getData().copy().withAdditionalIdentifiers(null).build());
+        assertThat(daoWithoutCristinId.getResourceByCristinIdPartitionKey(), is(equalTo(null)));
     }
 
     private WithCristinIdentifier queryDbFindByCristinIdentifier(WithCristinIdentifier dao) {
