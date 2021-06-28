@@ -13,6 +13,7 @@
     "publicationsOwner": "someRandomUser",
     "fileUri": "s3://bucket/parent/child/filename.json",
     "contents": {
+      "unknownProperty": "helloworld",
       "id": 417536,
       "varbeidhovedkatkode": "TIDSSKRIFTPUBL",
       "varbeidunderkatkode": "ARTIKKEL",

@@ -18,6 +18,8 @@ import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -26,6 +28,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +36,7 @@ import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -52,6 +56,7 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -65,6 +70,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String IGNORED_VALUE = "someBucket";
     public static final UnixPath LIST_ALL_FILES = UnixPath.of("");
     public static final String ID_FIELD_NAME = "id";
+    public static final String NOT_IMPORTANT = "someBucketName";
+    public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -301,6 +308,33 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(actualErrorFile, is(not(nullValue())));
     }
 
+    @Test
+    public void handleRequestThrowsExceptionWhenInputContainsUnknownProperty() throws JsonProcessingException {
+        String input = IoUtils.stringFromResources(Path.of("cristin_entry_with_unknown_property.json"));
+
+        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = parseEventAsIdentifieableObject(input);
+        Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        UnixPath expectedFilePath = constructExpectedFilePathForEntryWithUnkownFields(event, exception);
+
+        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        String file = s3Driver.getFile(expectedFilePath);
+
+        assertThat(file, is(not(emptyString())));
+        assertThat(file, containsString(UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY));
+    }
+
+    // This test will fail until we have mapped all properties in the resource file or we
+    // have removed (from the resource and the import) the ones that we do not want to keep.
+    @Disabled
+    @Test
+    public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
+        String input = IoUtils.stringFromResources(Path.of("valid_cristin_entry_event.json"));
+        Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
+        assertDoesNotThrow(action);
+    }
+
     private static JavaType constructImportResultJavaType() {
 
         JavaType fileContentsType = objectMapperNoEmpty.getTypeFactory()
@@ -320,6 +354,25 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return attempt(() -> objectMapperNoEmpty
                                  .<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>>
                                       readValue(input, eventType)).orElseThrow();
+    }
+
+    private UnixPath constructExpectedFilePathForEntryWithUnkownFields(
+        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event,
+        RuntimeException exception) {
+        return UnixPath.of(ERRORS_FOLDER)
+                   .addChild(exception.getCause().getClass().getSimpleName())
+                   .addChild(event.getDetail().getFileUri().getPath())
+                   .addChild(event.getDetail().getContents().getId() + JSON);
+    }
+
+    private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
+        throws JsonProcessingException {
+        JavaType fileContentsType = objectMapperNoEmpty.getTypeFactory()
+                                        .constructParametricType(FileContentsEvent.class, Identifiable.class);
+        JavaType eventType = objectMapperNoEmpty.getTypeFactory().constructParametricType(AwsEventBridgeEvent.class,
+                                                                                          fileContentsType);
+        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = objectMapperNoEmpty.readValue(input, eventType);
+        return event;
     }
 
     private void injectValuesThatAreCreatedWhenSavingInDynamo(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent,
