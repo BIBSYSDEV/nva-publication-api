@@ -50,6 +50,7 @@ public class ResourceDaoTest {
     public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
             throws MalformedURLException, InvalidIssnException {
         ResourceDao daoWithoutCristinId = WithCristinIdentifierTest.createResourceDaoWithoutCristinIdentifier();
-        assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(), Matchers.is(Matchers.equalTo(null)));
+        assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(),
+                Matchers.is(Matchers.equalTo(null)));
     }
 }
