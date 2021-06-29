@@ -20,7 +20,7 @@ public final class DatabaseConstants {
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_NAME = "ByTypeCustomerStatus";
     public static final String BY_CUSTOMER_RESOURCE_INDEX_NAME = "ByCustomerResource";
     public static final String RESOURCES_BY_IDENTIFIER_INDEX_NAME = "ResourcesByIdentifier";
-    public static final String RESOURCE_BY_CRISTIN_ID_INDEX_NAME = "ResourceByCristinId";
+    public static final String RESOURCE_BY_CRISTIN_ID_INDEX_NAME = "ResourceByCristinIdentifier";
     public static final String PRIMARY_KEY_PARTITION_KEY_NAME = "PK0";
     public static final String PRIMARY_KEY_SORT_KEY_NAME = "SK0";
     public static final String BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME = "PK1";
@@ -34,7 +34,7 @@ public final class DatabaseConstants {
     public static final String CUSTOMER_INDEX_FIELD_PREFIX = "Customer";
     public static final String STATUS_INDEX_FIELD_PREFIX = "Status";
     public static final String RESOURCE_INDEX_FIELD_PREFIX = "Resource";
-    public static final String CRISTIN_ID_INDEX_FIELD_PREFIX = "CristinId";
+    public static final String CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX = "CristinIdentifier";
     public static final String NULL_VALUE_KEY = "null";
     private static final String OWNER_IDENTIFIER = STRING_PLACEHOLDER;
     private static final String RECORD_TYPE = STRING_PLACEHOLDER;

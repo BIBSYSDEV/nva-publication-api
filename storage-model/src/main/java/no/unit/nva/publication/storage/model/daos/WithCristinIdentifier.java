@@ -11,7 +11,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import java.util.Map;
 import java.util.Optional;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_ID_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME;
@@ -24,7 +24,7 @@ public interface WithCristinIdentifier {
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_PARTITION_KEY_NAME)
     default String getResourceByCristinIdentifierPartitionKey() {
         return getCristinIdentifier().isEmpty() ? null
-                : CRISTIN_ID_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
+                : CRISTIN_IDENTIFIER_INDEX_FIELD_PREFIX + KEY_FIELDS_DELIMITER + getCristinIdentifier();
     }
 
     @JsonProperty(RESOURCES_BY_CRISTIN_ID_INDEX_SORT_KEY_NAME)

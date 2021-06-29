@@ -10,9 +10,7 @@ import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.util.Optional;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
@@ -33,9 +31,9 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
             throws MalformedURLException, InvalidIssnException {
         ResourceDao dao = sampleResourceDao();
         client.putItem(toPutItemRequest(dao));
-        WithCristinIdentifier actuallResult = queryDbFindByCristinIdentifier(dao);
+        WithCristinIdentifier actualResult = queryDbFindByCristinIdentifier(dao);
         WithCristinIdentifier expectedItem = dao;
-        assertThat(actuallResult, is(equalTo(expectedItem)));
+        assertThat(actualResult, is(equalTo(expectedItem)));
     }
 
     @Test
