@@ -97,6 +97,10 @@ Resources:
           AttributeType: S
         - AttributeName: SK3
           AttributeType: S
+        - AttributeName: PK4
+          AttributeType: S
+        - AttributeName: SK4
+          AttributeType: S
       KeySchema:
         - AttributeName: PK0
           KeyType: HASH
@@ -124,6 +128,14 @@ Resources:
             - AttributeName: PK3
               KeyType: HASH
             - AttributeName: SK3
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ResourceByCristinId
+          KeySchema:
+            - AttributeName: PK4
+              KeyType: HASH
+            - AttributeName: SK4
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

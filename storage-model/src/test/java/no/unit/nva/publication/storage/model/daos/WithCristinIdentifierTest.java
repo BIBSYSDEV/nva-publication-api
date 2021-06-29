@@ -10,7 +10,9 @@ import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.Serializable;
 import java.net.MalformedURLException;
+import java.util.Optional;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_BY_CRISTIN_ID_INDEX_NAME;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
@@ -50,21 +52,6 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
         assertThat(result.getCount(), is(equalTo(1)));
     }
 
-    @Test
-    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
-            throws MalformedURLException, InvalidIssnException {
-        ResourceDao daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
-        assertThat(daoWithoutCristinId.getResourceByCristinIdPartitionKey(), is(equalTo(null)));
-    }
-
-    private ResourceDao createResourceDaoWithoutCristinIdentifier()
-            throws MalformedURLException, InvalidIssnException {
-        return new ResourceDao(sampleResourceDao()
-                .getData()
-                .copy()
-                .withAdditionalIdentifiers(null)
-                .build());
-    }
 
     private WithCristinIdentifier queryDbFindByCristinIdentifier(WithCristinIdentifier dao) {
         QueryRequest queryRequest = dao.createQueryFindByCristinIdentifier();
@@ -73,6 +60,15 @@ public class WithCristinIdentifierTest extends ResourcesDynamoDbLocalTest {
                 .stream()
                 .map(item -> DynamoEntry.parseAttributeValuesMap(item, dao.getClass()))
                 .collect(SingletonCollector.collectOrElse(null));
+    }
+
+    protected static ResourceDao createResourceDaoWithoutCristinIdentifier()
+            throws MalformedURLException, InvalidIssnException {
+        return new ResourceDao(sampleResourceDao()
+                .getData()
+                .copy()
+                .withAdditionalIdentifiers(null)
+                .build());
     }
 
 }

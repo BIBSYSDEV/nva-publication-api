@@ -5,9 +5,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+
+import java.net.MalformedURLException;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.storage.model.UserInstance;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 public class ResourceDaoTest {
@@ -40,5 +44,12 @@ public class ResourceDaoTest {
                              + KEY_FIELDS_DELIMITER
                              + SAMPLE_USER;
         assertThat(primaryPartitionKey, is(equalTo(expectedKey)));
+    }
+
+    @Test
+    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
+            throws MalformedURLException, InvalidIssnException {
+        ResourceDao daoWithoutCristinId = WithCristinIdentifierTest.createResourceDaoWithoutCristinIdentifier();
+        assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(), Matchers.is(Matchers.equalTo(null)));
     }
 }

@@ -163,9 +163,9 @@ public class ResourceTest {
     }
 
     private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
-        AdditionalIdentifier identifier1 = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
-        AdditionalIdentifier identifier2 = new AdditionalIdentifier(randomString(), randomString());
-        return Set.of(identifier1, identifier2);
+        AdditionalIdentifier cristinIdentifier = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
+        AdditionalIdentifier otherRandomIdentifier = new AdditionalIdentifier(randomString(), randomString());
+        return Set.of(cristinIdentifier, otherRandomIdentifier);
     }
 
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
