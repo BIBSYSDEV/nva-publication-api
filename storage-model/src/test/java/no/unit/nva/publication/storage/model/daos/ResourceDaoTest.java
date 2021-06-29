@@ -65,7 +65,8 @@ public class ResourceDaoTest {
     }
 
     @Test
-    public void resourceDaoOnlySerializesTypeDataPKAndSKFields() throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+    public void resourceDaoOnlySerializesTypeDataPKAndSKFields()
+            throws MalformedURLException, InvalidIssnException, JsonProcessingException {
         ResourceDao dao = sampleResourceDao();
         ObjectMapper mapper = JsonUtils.objectMapper.copy().configure(DeserializationFeature.FAIL_ON_IGNORED_PROPERTIES, true);
         String stringValue = mapper.writeValueAsString(dao);
