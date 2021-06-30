@@ -1,13 +1,23 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.storage.model.UserInstance;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 
 public class ResourceDaoTest {
@@ -40,5 +50,27 @@ public class ResourceDaoTest {
                              + KEY_FIELDS_DELIMITER
                              + SAMPLE_USER;
         assertThat(primaryPartitionKey, is(equalTo(expectedKey)));
+    }
+
+    @Test
+    public void getResourceByCristinIdPartitionKeyReturnsANullValueWhenObjectHasNoCristinIdentifier()
+            throws MalformedURLException, InvalidIssnException {
+        ResourceDao daoWithoutCristinId = WithCristinIdentifierTest.createResourceDaoWithoutCristinIdentifier();
+        assertThat(daoWithoutCristinId.getResourceByCristinIdentifierPartitionKey(),
+                is(equalTo(null)));
+    }
+
+    @Test
+    public void resourceDaoOnlySerializesTypeDataPKAndSKFields()
+            throws MalformedURLException, InvalidIssnException, JsonProcessingException {
+        ResourceDao dao = sampleResourceDao();
+        String stringValue = objectMapperNoEmpty.writeValueAsString(dao);
+        ObjectNode jsonNode = (ObjectNode) objectMapperNoEmpty.readTree(stringValue);
+        Iterator<String> fieldNames = jsonNode.fieldNames();
+        List<String> fieldNamelist = new ArrayList<>();
+        fieldNames.forEachRemaining(fieldNamelist::add);
+        for (String field : fieldNamelist) {
+            assertThat(StringUtils.startsWithAny(field, "PK", "SK", "data", "type"), is(true));
+        }
     }
 }
