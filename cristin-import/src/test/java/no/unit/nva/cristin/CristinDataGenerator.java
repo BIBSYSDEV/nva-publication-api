@@ -159,10 +159,6 @@ public class CristinDataGenerator {
                 .withDepartmentIdentifier(threeDigitPositiveNumber())
                 .withGroupNumber(threeDigitPositiveNumber())
                 .withSubdepartmentIdentifier(threeDigitPositiveNumber())
-                .withOriginalInsitutionCode(randomString())
-                .withOriginalInstitutionName(randomString())
-                .withOriginalPlaceName(randomString())
-                .withOriginalDepartmentName(randomString())
                 .withDepartmentIdentifier(largeRandomNumber())
                 .withRoles(List.of(createRole(roleCode)))
                 .build();
@@ -266,7 +262,7 @@ public class CristinDataGenerator {
         CristinTitle title = new CristinTitle();
         title.setTitle(randomString());
         title.setLanguagecode(randomLanguageCode());
-        title.setAbstractText(randomString());
+//        title.setAbstractText(randomString());
         if (index == FIRST_TITLE) {
             title.setStatusOriginal(CristinTitle.ORIGINAL_TITLE);
         } else {

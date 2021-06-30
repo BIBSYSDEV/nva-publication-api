@@ -14,8 +14,8 @@
     "fileUri": "s3://bucket/parent/child/filename.json",
     "contents": {
       "id": 417536,
-      "varbeidhovedkatkode": "TIDSSKRIFTPUBL",
-      "varbeidunderkatkode": "ARTIKKEL",
+      "varbeidhovedkatkode": "BOK",
+      "varbeidunderkatkode": "MONOGRAFI",
       "brukernavn_opprettet": null,
       "eierkode_opprettet": "NTNU",
       "dato_opprettet": "2000-01-21T00:00:00",
