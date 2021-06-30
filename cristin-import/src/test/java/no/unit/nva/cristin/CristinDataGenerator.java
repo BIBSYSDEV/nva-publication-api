@@ -262,7 +262,6 @@ public class CristinDataGenerator {
         CristinTitle title = new CristinTitle();
         title.setTitle(randomString());
         title.setLanguagecode(randomLanguageCode());
-//        title.setAbstractText(randomString());
         if (index == FIRST_TITLE) {
             title.setStatusOriginal(CristinTitle.ORIGINAL_TITLE);
         } else {
