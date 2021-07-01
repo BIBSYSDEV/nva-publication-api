@@ -56,7 +56,6 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -325,12 +324,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(file, containsString(UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY));
     }
 
-    // This test will fail until we have mapped all properties in the resource file or we
-    // have removed (from the resource and the import) the ones that we do not want to keep.
-    @Disabled
     @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
-        String input = IoUtils.stringFromResources(Path.of("valid_cristin_entry_event.json"));
+        String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
