@@ -1,9 +1,38 @@
 package no.unit.nva.cristin.lambda;
 
+import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.CristinDataGenerator.randomString;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.OBJECT_MAPPER_FAIL_ON_UNKNOWN;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
@@ -12,6 +41,9 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -30,36 +62,6 @@ import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.CristinDataGenerator.randomString;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
-import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 
 public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -326,14 +328,38 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(file, containsString(UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY));
     }
 
-    // This test will fail until we have mapped all properties in the resource file or we
-    // have removed (from the resource and the import) the ones that we do not want to keep.
-    //@Disabled
     @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
-        String input = IoUtils.stringFromResources(Path.of("valid_monograph_event.json"));
+        String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
+    }
+
+    @Test
+    public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() throws JsonProcessingException {
+        String consumerString = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
+
+        handler.handleRequest(IoUtils.stringToStream(consumerString), outputStream, CONTEXT);
+
+        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+
+        JsonNode cristinNode = OBJECT_MAPPER_FAIL_ON_UNKNOWN.readTree(cristinInputString);
+
+        CristinObject cristinImport = OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(cristinNode, CristinObject.class);
+
+        Publication actualPublication = cristinImport.toPublication();
+
+        PublicationInstance<?> actualPublicationInstance = actualPublication
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+
+        Pages actuallPages = actualPublicationInstance.getPages();
+
+        System.out.println(actuallPages.toString());
+
+        assertThat(actualPublicationInstance, is(instanceOf(BookMonograph.class)));
+
     }
 
     private static JavaType constructImportResultJavaType() {
