@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Collections;
@@ -21,6 +22,8 @@ import no.unit.nva.publication.s3imports.UriWrapper;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
+@JsonIgnoreProperties({"stednavn_opprinnelig", "avdelingsnavn_opprinnelig", "institusjonsnavn_opprinnelig",
+    "stedkode_opprinnelig"})
 public class CristinContributorsAffiliation {
 
     public static final String CRISTIN_UNITS_DELIMITER = ".";
@@ -32,14 +35,6 @@ public class CristinContributorsAffiliation {
     private Integer subdepartmentIdentifier;
     @JsonProperty("gruppenr")
     private Integer groupNumber;
-    @JsonProperty("stedkode_opprinnelig")
-    private String originalInsitutionCode;
-    @JsonProperty("institusjonsnavn_opprinnelig")
-    private String originalInstitutionName;
-    @JsonProperty("avdelingsnavn_opprinnelig")
-    private String originalDepartmentName;
-    @JsonProperty("stednavn_opprinnelig")
-    private String originalPlaceName; //TODO:  what is a place?
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
 
