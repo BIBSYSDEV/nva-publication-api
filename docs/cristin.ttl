@@ -478,13 +478,14 @@
     :isignored      "false" ;
     :mapstonvafield " maps to NVA Role" .
 
-:eierkode
+:vitenskapeligarbeid_lokal_eierkode
     a            rdf:Property ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """The institution the currently owns the result. Example UIO. We do not know whether the values of this field are standardized and whether there is
 a defined set of values for this property's range""" ;
     :isignored   "true" .
+
 
 :vitenskapeligarbeid_lokal_brukernavn_opprettet
     a            rdf:Property ;
