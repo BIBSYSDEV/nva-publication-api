@@ -120,10 +120,12 @@
 
 :dato_opprettet
     a               :cristinfield ;
-    rdfs:comment    "The date the resource was registered in Cristin." ;
+    rdfs:comment    "When the domain is :Result, it is the date the resource was registered in Cristin. Otherwise UNKNOWN meaning." ;
     rdfs:range      xsd:date ;
-    rdfs:domain     :Result ;
-    :mapstonvafield "createdDate" .
+    rdfs:domain     :Result, :VITENSKAPELIGARBEID_LOKAL ;
+    :mapstonvafield "createdDate when the domain is :Result" ;
+    :isignored      "true" .
+
 
 :varbeidhovedkatkode
     a               :cristinfield ;
@@ -165,12 +167,15 @@
 :brukernavn_opprettet
     a            :cristinfield ;
     rdfs:comment """
-       eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+        When the domain is :Result, eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
         can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
         and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
+
+        When it is :VITENSKAPELIGARBEID_LOKAL the meaning is UNKNOWN."
+        This entails that the semantics of this term are unclear, possibly even polysemous.
      """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL ;
     :isignored   "true" .
 
 
@@ -183,16 +188,22 @@
 
 :brukernavn_siste_endring
     a            :cristinfield ;
-    rdfs:comment "Similar to brukernavn_opprettet but it indicates who made the last change." ;
+    rdfs:comment """
+    When the domain is :Result the meaning is similar to brukernavn_opprettet but it indicates who made the last change.
+    When the domain is :VITENSKAPELIGARBEID_LOKAL  then the meaning in UNKNOWN.
+     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL ;
     :isignored   "true" .
 
 :dato_siste_endring
     a            :cristinfield ;
-    rdfs:comment "The date of the last update of the registration." ;
+    rdfs:comment """
+    When the domain is :Result, then the date of the last update of the registration.
+    When the domain is :VITENSKAPELIGARBEID_LOKAL then the meaning is UNKNOWN.
+        """ ;
     rdfs:range   xsd:date ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL ;
     :isignored   "true" .
 
 
@@ -240,7 +251,7 @@
     rdfs:comment """
     The source (provider) the result was imported from, if any.
     Mostly superseded by the list of import references in table VARBEID_KILDE
-    It is a string containing arbitrary codes such as "scopus" "norart" etc.
+    It is a string containing arbitrary codes such as "scopus" "norart", "BIBSYS" etc.
     """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
@@ -478,7 +489,7 @@
     :isignored      "false" ;
     :mapstonvafield " maps to NVA Role" .
 
-:vitenskapeligarbeid_lokal_eierkode
+:eierkode
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
@@ -487,86 +498,71 @@ a defined set of values for this property's range""" ;
     :isignored   "true" .
 
 
-:vitenskapeligarbeid_lokal_brukernavn_opprettet
-    a            :cristinfield ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
-    rdfs:comment """UNKNOWN meaning. In many cases it is empty(null). It can be different from the :brukernavn_opprettet but the NVA team does not know why.""" ;
-    :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_dato_opprettet
-    a            :cristinfield ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
-    rdfs:comment """UNKNOWN meaning. In many cases it is empty(null). It can be different from the respective field in the root object but the NVA team does not know why.""" ;
-    :isignored   "true" .
-
-:vitenskapeligarbeid_brukernavn_siste_endring
-    a            :cristinfield ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
-    rdfs:comment """UNKNOWN meaning. In many cases it is empty(null). It can be different from the respective field in the root object but the NVA team does not know why.""" ;
-    :isignored   "true" .
-
-:vitenskapeligarbeid_lokal_dato_siste_endring
-    a            :cristinfield ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
-    rdfs:comment """UNKNOWN meaning. In many cases it is empty(null). It can be different from the respective field in the root object but the NVA team does not know why.""" ;
-    :isignored   "true" .
-
-:vitenskapeligarbeid_lokal_status_kontrollert
+:status_kontrollert
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_brukernavn_kontrollert
+:brukernavn_kontrollert
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_dato_kontrollert
+:dato_kontrollert
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_status_bekreftet_arkivsporsmal
+:status_bekreftet_arkivsporsmal
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_brukernavn_avlvrt_arkivsystem
+:brukernavn_avlvrt_arkivsystem
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_dato_avlvrt_arkivsystem
+:dato_avlvrt_arkivsystem
     a            :cristinfield ;
     rdfs:range   xsd:dateTimeStamp ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_status_fulgt_medf_reg
+:status_fulgt_medf_reg
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
-:vitenskapeligarbeid_lokal_brukernavn_svart_medforf_reg
+:brukernavn_svart_medforf_reg
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
+
+:dato_svart_medforf_regel
+    a            :cristinfield ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   "true" .
+
+
+
+
+
