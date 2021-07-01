@@ -1,20 +1,12 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
-import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
-import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.time.Clock;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Random;
-import java.util.UUID;
 import no.unit.nva.cristin.lambda.dtos.CristinObjectEvent;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
@@ -38,6 +30,17 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.time.Clock;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Random;
+import java.util.UUID;
+
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
+import static nva.commons.core.attempt.Try.attempt;
+
 public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<JsonNode>, Publication> {
 
     public static final String WRONG_DETAIL_TYPE_ERROR_TEMPLATE =
@@ -52,7 +55,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String ERRORS_FOLDER = "errors";
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     public static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
-        objectMapperNoEmpty.copy().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        objectMapperNoEmpty.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
     private final ResourceService resourceService;
     private final S3Client s3Client;
 

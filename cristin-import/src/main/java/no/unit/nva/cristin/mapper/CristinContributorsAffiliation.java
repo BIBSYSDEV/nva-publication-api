@@ -1,9 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.util.Collections;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,6 +8,10 @@ import lombok.Data;
 import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.Organization;
 import no.unit.nva.publication.s3imports.UriWrapper;
+
+import java.net.URI;
+import java.util.Collections;
+import java.util.List;
 
 @Data
 @Builder(
@@ -43,8 +44,8 @@ public class CristinContributorsAffiliation {
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
 
-    public CristinContributorsAffiliation() {
 
+    public CristinContributorsAffiliation() {
     }
 
     public Organization toNvaOrganization() {

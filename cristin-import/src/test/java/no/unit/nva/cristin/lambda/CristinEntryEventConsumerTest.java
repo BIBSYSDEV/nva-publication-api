@@ -1,37 +1,9 @@
 package no.unit.nva.cristin.lambda;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.CristinDataGenerator.randomString;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
-import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.hamcrest.text.IsEmptyString.emptyString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
@@ -56,9 +28,38 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.CristinDataGenerator.randomString;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
+import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.hamcrest.text.IsEmptyString.emptyString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -327,10 +328,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     // This test will fail until we have mapped all properties in the resource file or we
     // have removed (from the resource and the import) the ones that we do not want to keep.
-    @Disabled
+    //@Disabled
     @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
-        String input = IoUtils.stringFromResources(Path.of("valid_cristin_entry_event.json"));
+        String input = IoUtils.stringFromResources(Path.of("valid_monograph_event.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }

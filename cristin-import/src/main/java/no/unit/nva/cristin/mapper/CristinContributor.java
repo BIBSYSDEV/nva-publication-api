@@ -1,12 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +14,14 @@ import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
+
+import java.net.URI;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 
 @Data
 @Builder(
@@ -47,7 +49,6 @@ public class CristinContributor {
 
     @JacocoGenerated
     public CristinContributor() {
-
     }
 
     public Contributor toNvaContributor() throws MalformedContributorException {

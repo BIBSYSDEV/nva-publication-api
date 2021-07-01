@@ -14,7 +14,7 @@ public class CristinTitle {
 
     public static final String MAIN_TITLE = "titteltekst";
     public static final String LANGUAGE_CODE = "sprakkode";
-    public static final String ABSTRACT = "abstract";
+    public static final String ABSTRACT = "sammendragtekst";
     public static final String ORIGINAL_TITLE = "J"; //probably means "Ja"
     public static final String NOT_ORIGINAL_TITLE = "N"; //probably means "Nei"
 
