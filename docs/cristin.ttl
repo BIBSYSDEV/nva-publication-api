@@ -72,6 +72,37 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
+:TYPE_MEDIEBIDRAG_Class
+    a            :CristinClass ;
+    rdfs:comment """
+    The structure of TYPE_MEDIEBIDRAG. UNKNOWN meaning
+            """ .
+
+:PRESENTASJON_VARBEID_Class
+    a            :CristinClass ;
+    rdfs:comment """
+    The structure of PRESENTASJON_VARBEID. UNKNOWN meaning
+            """ .
+
+:PRESENTASJONSTYPEKODE_VALUES
+    a :CristinClass .
+
+:PRESENTASJONSTYPEKODE_PERSON
+    a               rdfs:Class ;
+    rdfs:label      "PERSON" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+
+:PRESENTASJONSTYPEKODE_GRUPPE
+    a               rdfs:Class ;
+    rdfs:label      "GRUPPE" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+
+
+:PRESENTASJONSTYPEKODE_PROSJEKT
+    a               rdfs:Class ;
+    rdfs:label      "PROSJEKT" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+
 :cristinfield
     a            rdf:Property ;
     rdfs:comment "Any property of any Cristin class" ;
@@ -472,5 +503,49 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class ;
     :isignored   "false" .
+
+:TYPE_MEDIEBIDRAG
+    a            :cristinfield ;
+    rdfs:range   :TYPE_MEDIEBIDRAG_Class ;
+    rdfs:domain  :Result ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
+
+:varbeidlopenr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :TYPE_MEDIEBIDRAG_Class ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
+
+
+:PRESENTASJON_VARBEID
+    a            :cristinfield ;
+    rdfs:range   :PRESENTASJON_VARBEID_Class ;
+    rdfs:domain  :Result ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
+
+:presentasjonslopenr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :PRESENTASJON_VARBEID_Class ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
+
+
+:presentasjonstypekode
+    a            :cristinfield ;
+    rdfs:range   :PRESENTASJONSTYPEKODE_VALUES ;
+    rdfs:domain  :PRESENTASJON_VARBEID_Class ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
+
+:personlopenr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :PRESENTASJON_VARBEID_Class ;
+    rdfs:comment """UNKNOWN meaning""" ;
+    :isignored   true .
 
 
