@@ -3,12 +3,10 @@ package no.unit.nva.cristin.mapper;
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.OBJECT_MAPPER_FAIL_ON_UNKNOWN;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
 import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
-import static no.unit.nva.testutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -18,9 +16,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-
-import java.io.ByteArrayOutputStream;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -34,13 +30,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.MapperFeature;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -57,7 +48,6 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -303,30 +293,20 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() throws JsonProcessingException {
-        String cristinInputString = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
+        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
 
-        CristinEntryEventConsumer consumer = new CristinEntryEventConsumer();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Context CONTEXT = mock(Context.class);
-
-        consumer.handleRequest(IoUtils.stringToStream(cristinInputString), outputStream, CONTEXT);
-
-        CristinObject cristinImport = OBJECT_MAPPER_FAIL_ON_UNKNOWN.readValue(cristinInputString, CristinObject.class);
-
-        System.out.println(cristinImport.toString());
+        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
+        cristinImport.setPublicationOwner(randomString());
 
         Publication actualPublication = cristinImport.toPublication();
 
-        System.out.println(actualPublication.toString());
-
         PublicationInstance<?> actualPublicationInstance = actualPublication
-                .getEntityDescription()
-                .getReference()
-                .getPublicationInstance();
+                                                               .getEntityDescription()
+                                                               .getReference()
+                                                               .getPublicationInstance();
 
         Pages actuallPages = actualPublicationInstance.getPages();
 
-        System.out.println(actuallPages.toString());
 
         assertThat(actualPublicationInstance, is(instanceOf(BookMonograph.class)));
 

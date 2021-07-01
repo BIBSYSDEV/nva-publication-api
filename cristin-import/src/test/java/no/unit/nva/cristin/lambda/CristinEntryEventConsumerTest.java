@@ -5,7 +5,6 @@ import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
-import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.OBJECT_MAPPER_FAIL_ON_UNKNOWN;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
@@ -41,9 +40,6 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -335,32 +331,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertDoesNotThrow(action);
     }
 
-    @Test
-    public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() throws JsonProcessingException {
-        String consumerString = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
-
-        handler.handleRequest(IoUtils.stringToStream(consumerString), outputStream, CONTEXT);
-
-        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
-
-        JsonNode cristinNode = OBJECT_MAPPER_FAIL_ON_UNKNOWN.readTree(cristinInputString);
-
-        CristinObject cristinImport = OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(cristinNode, CristinObject.class);
-
-        Publication actualPublication = cristinImport.toPublication();
-
-        PublicationInstance<?> actualPublicationInstance = actualPublication
-                .getEntityDescription()
-                .getReference()
-                .getPublicationInstance();
-
-        Pages actuallPages = actualPublicationInstance.getPages();
-
-        System.out.println(actuallPages.toString());
-
-        assertThat(actualPublicationInstance, is(instanceOf(BookMonograph.class)));
-
-    }
 
     private static JavaType constructImportResultJavaType() {
 

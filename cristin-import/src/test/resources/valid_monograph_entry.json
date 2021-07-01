@@ -17,7 +17,7 @@
   "kildekode": null,
   "kildepostid": null,
   "pubidnr": null,
-  "varbeid_sprak": [
+  "VARBEID_SPRAK": [
     {
       "sprakkode": "EN",
       "titteltekst": "West-Nordic countries in crisis: neo-structuralism, collective entrepreneurship and microsocieties facing global systems of innovation",
@@ -25,7 +25,7 @@
       "status_original": "J"
     }
   ],
-  "vitenskapeligarbeid_lokal": [
+  "VITENSKAPELIGARBEID_LOKAL": [
     {
       "eierkode": "HIOF",
       "brukernavn_opprettet": null,
@@ -43,7 +43,7 @@
       "dato_svart_medforf_regel": null
     }
   ],
-  "varbeid_person": [
+  "VARBEID_PERSON": [
     {
       "personlopenr": 515057,
       "fornavn": "Ivar",
@@ -68,13 +68,13 @@
       ]
     }
   ],
-  "varbeid_kilde": null,
-  "presentasjon_varbeid": null,
-  "varbeid_emneord": null,
-  "varbeid_vdisiplin": null,
-  "varbeid_hrcs_klassifisering": null,
-  "finansiering_varbeid": null,
-  "type_bok_rapport": [
+  "VARBEID_KILDE": null,
+  "PRESENTASJON_VARBEID": null,
+  "VARBEID_EMNEORD": null,
+  "VARBEID_VDISIPLIN": null,
+  "VARBEID_HRCS_KLASSIFISERING": null,
+  "FINANSIERING_VARBEID": null,
+  "TYPE_BOK_RAPPORT": [
     {
       "hefte": null,
       "utgave": null,
@@ -102,13 +102,13 @@
       "fagfelt": null
     }
   ],
-  "type_bok_rapport_del": null,
-  "type_foredrag_poster": null,
-  "type_kunstneriskproduksjon": null,
-  "type_mediebidrag": null,
-  "type_produkt": null,
-  "type_tidsskriftpublikasjon": null,
-  "type_utstilling": null,
-  "arkivfil": null,
-  "arkivpost": null
+  "TYPE_BOK_RAPPORT_DEL": null,
+  "TYPE_FOREDRAG_POSTER": null,
+  "TYPE_KUNSTNERISKPRODUKSJON": null,
+  "TYPE_MEDIEBIDRAG": null,
+  "TYPE_PRODUKT": null,
+  "TYPE_TIDSSKRIFTPUBLIKASJON": null,
+  "TYPE_UTSTILLING": null,
+  "ARKIVFIL": null,
+  "ARKIVPOST": null
 }

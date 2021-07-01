@@ -1,22 +1,20 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.SingletonCollector;
-
-import java.net.URI;
-import java.util.Collection;
-import java.util.Objects;
-import java.util.Optional;
-
-import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 
 @JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
