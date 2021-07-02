@@ -1,4 +1,4 @@
-package no.unit.nva.publication.owner;
+package no.unit.nva.publication.fetch;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -21,15 +21,15 @@ import org.slf4j.LoggerFactory;
 
 public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, PublicationsByOwnerResponse> {
 
-    private final ResourceService resourceService;
     private static final Logger logger = LoggerFactory.getLogger(PublicationsByOwnerHandler.class);
+    private final ResourceService resourceService;
 
     @JacocoGenerated
     public PublicationsByOwnerHandler() {
         this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                Clock.systemDefaultZone()),
-            new Environment());
+                 AmazonDynamoDBClientBuilder.defaultClient(),
+                 Clock.systemDefaultZone()),
+             new Environment());
     }
 
     /**
@@ -51,14 +51,14 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         URI customerId = RequestUtil.getCustomerId(requestInfo);
         UserInstance userInstance = new UserInstance(owner, customerId);
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
-            owner,
-            customerId));
+                                  owner,
+                                  customerId));
 
         List<PublicationSummary> publicationsByOwner;
         publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
-            .stream()
-            .map(PublicationSummary::fromPublication)
-            .collect(Collectors.toList());
+                                  .stream()
+                                  .map(PublicationSummary::fromPublication)
+                                  .collect(Collectors.toList());
 
         return new PublicationsByOwnerResponse(publicationsByOwner);
     }
