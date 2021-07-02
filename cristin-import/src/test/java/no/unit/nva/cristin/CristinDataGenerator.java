@@ -201,12 +201,16 @@ public class CristinDataGenerator {
 
     private List<CristinBookReport> randomBookReport() {
         CristinBookReport bookReport = new CristinBookReport().copy().build();
-        bookReport.setIsbn("9788770342827");
+        bookReport.setIsbn(randomIsbn10());
         bookReport.setPublisherName(randomString());
         bookReport.setNumberOfPages(randomString());
         List bookReportList = new ArrayList();
         bookReportList.add(bookReport);
         return bookReportList;
+    }
+
+    private String randomIsbn10() {
+        return FAKER.code().isbn10();
     }
 
     private JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject, String customSecondaryCategory,
