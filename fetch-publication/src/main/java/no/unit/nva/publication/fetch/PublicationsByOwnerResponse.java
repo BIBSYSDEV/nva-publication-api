@@ -1,4 +1,4 @@
-package no.unit.nva.publication.owner;
+package no.unit.nva.publication.fetch;
 
 import java.util.List;
 import no.unit.nva.publication.model.PublicationSummary;
