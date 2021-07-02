@@ -93,7 +93,7 @@ public class CristinMapper {
     }
 
     private ZoneOffset zoneOffset() {
-        return ZoneOffset.systemDefault().getRules().getOffset(Instant.now());
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     private EntityDescription generateEntityDescription() {

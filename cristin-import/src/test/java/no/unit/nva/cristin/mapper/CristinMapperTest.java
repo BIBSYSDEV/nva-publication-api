@@ -119,17 +119,17 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     @DisplayName("map returns resource with createdDate equal to \"dato_opprettet\"")
-    public void mapReturnsResourceWithCreatedDateEqualToDatoOpprettet() {
-        ZoneOffset currentZoneOffset = ZoneId.systemDefault().getRules().getOffset(Instant.now());
+    public void mapReturnsResourceWithCreatedDateEqualToCristinDateAssumedToBeUtcDate() {
+        ZoneOffset utc = ZoneId.of("UTC").getRules().getOffset(Instant.now());
         List<Instant> expectedCreatedDates = cristinObjects()
-                .map(CristinObject::getEntryCreationDate)
-                .map(LocalDate::atStartOfDay)
-                .map(time -> time.toInstant(currentZoneOffset))
-                .collect(Collectors.toList());
+                                                 .map(CristinObject::getEntryCreationDate)
+                                                 .map(LocalDate::atStartOfDay)
+                                                 .map(time -> time.toInstant(utc))
+                                                 .collect(Collectors.toList());
 
         List<Instant> actualCreatedDates = cristinObjects().map(CristinObject::toPublication)
-                .map(Publication::getCreatedDate)
-                .collect(Collectors.toList());
+                                               .map(Publication::getCreatedDate)
+                                               .collect(Collectors.toList());
 
         assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
     }

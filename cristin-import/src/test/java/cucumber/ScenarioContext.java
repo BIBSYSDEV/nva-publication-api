@@ -1,31 +1,47 @@
 package cucumber;
 
+import java.util.ArrayList;
+import java.util.List;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinObject.CristinObjectBuilder;
+import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.Publication;
 
 public class ScenarioContext {
 
-    private CristinObjectBuilder cristinEntry;
+    private CristinObject cristinEntry;
     private Publication nvaEntry;
 
     public ScenarioContext() {
+
     }
 
     public void newCristinEntry() {
-        this.cristinEntry = new CristinDataGenerator().randomBookMonograph().copy();
+        this.cristinEntry = new CristinDataGenerator().randomBookMonograph();
     }
 
-    public CristinObjectBuilder getCristinEntry() {
+    public CristinObject getCristinEntry() {
         return this.cristinEntry;
     }
 
-    public void newNvaEntry() {
-
-        this.nvaEntry = cristinEntry.build().toPublication();
+    public void convertToNvaEntry() {
+        this.nvaEntry = cristinEntry.toPublication();
     }
 
     public Publication getNvaEntry() {
         return this.nvaEntry;
+    }
+
+    public void addEmptyCristinTitle() {
+        cristinEntry = cristinEntry.copy().withCristinTitles(new ArrayList<>()).build();
+    }
+
+    public void addCristinTitle() {
+        cristinEntry.getCristinTitles().add(CristinTitle.builder().build());
+    }
+
+    public CristinTitle getLatestCristinTitle() {
+        List<CristinTitle> titles = cristinEntry.getCristinTitles();
+        return titles.get(titles.size() - 1);
     }
 }
