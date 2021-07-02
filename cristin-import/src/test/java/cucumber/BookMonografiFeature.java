@@ -18,7 +18,7 @@ public class BookMonografiFeature {
         this.scenarioContext = scenarioContext;
     }
 
-    @Given("a Cristin Entry")
+    @Given("a valid Cristin Entry")
     public void aCristinEntry() {
         this.scenarioContext.newCristinEntry();
     }

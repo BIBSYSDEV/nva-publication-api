@@ -1,7 +1,7 @@
 Feature: Book Monografi transformation
 
   Background:
-    Given a Cristin Entry
+    Given a valid Cristin Entry
 
   Scenario: Hello scenario
     Given the Cristin Entry has id equal to 12345
