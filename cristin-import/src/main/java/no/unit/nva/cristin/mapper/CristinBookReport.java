@@ -11,9 +11,10 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"hefte", "utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
-        "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver", "avdnr_utgiver",
-        "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie", "sprakkode_oversatt_fra",
-        "sprakkode_oversatt_til", "originalforfatter", "originaltittel", "forlag", "fagfelt"})
+        "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver"
+        , "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
+        "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
+        "forlag", "fagfelt"})
 public class CristinBookReport {
 
     public static final String ISBN_LIST = "isbn";
