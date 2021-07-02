@@ -14,7 +14,7 @@ import lombok.Data;
 @JsonIgnoreProperties({"sammendragtekst"})
 public class CristinTitle {
 
-    public static final String MAIN_TITLE = "titteltekst";
+    public static final String TITLE = "titteltekst";
     public static final String LANGUAGE_CODE = "sprakkode";
     public static final String ABSTRACT = "sammendragtekst";
     public static final String ORIGINAL_TITLE = "J"; //probably means "Ja"
@@ -22,7 +22,7 @@ public class CristinTitle {
 
     @JsonProperty(LANGUAGE_CODE)
     private String languagecode;
-    @JsonProperty(MAIN_TITLE)
+    @JsonProperty(TITLE)
     private String title;
     @JsonProperty("status_original")
     private String statusOriginal;

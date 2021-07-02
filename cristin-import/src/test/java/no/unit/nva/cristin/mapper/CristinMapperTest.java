@@ -63,7 +63,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         super.init();
         cristinDataGenerator = new CristinDataGenerator();
         testingData = cristinDataGenerator.randomDataAsString();
-        System.out.println("test");
     }
 
     @Test
