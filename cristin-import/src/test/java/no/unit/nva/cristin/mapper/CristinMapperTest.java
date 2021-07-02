@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAM
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
 import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -45,6 +46,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
@@ -301,15 +303,57 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Publication actualPublication = cristinImport.toPublication();
 
         PublicationInstance<?> actualPublicationInstance = actualPublication
-                                                               .getEntityDescription()
-                                                               .getReference()
-                                                               .getPublicationInstance();
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
 
-        Pages actuallPages = actualPublicationInstance.getPages();
+        MonographPages monographPages = (MonographPages) actualPublicationInstance.getPages();
+        String actuallNumberOfPages = monographPages.getPages();
+
+        assertThat(actuallNumberOfPages, is(equalTo("192")));
+    }
+
+    @Test
+    public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
+        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+
+        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
+        cristinImport.setPublicationOwner(randomString());
+
+        Publication actualPublication = cristinImport.toPublication();
 
 
-        assertThat(actualPublicationInstance, is(instanceOf(BookMonograph.class)));
+        PublicationContext actualPublicationContext = actualPublication
+                .getEntityDescription()
+                .getReference()
+                .getPublicationContext();
 
+        Book bookSubType = (Book) actualPublicationContext;
+        String actuallPublisher = bookSubType.getPublisher();
+
+
+        assertThat(actuallPublisher, is(equalTo("Nyt fra Samfundsvidenskaberne")));
+    }
+
+    @Test
+    public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
+        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+
+        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
+        cristinImport.setPublicationOwner(randomString());
+
+        Publication actualPublication = cristinImport.toPublication();
+
+
+        PublicationContext actualPublicationContext = actualPublication
+                .getEntityDescription()
+                .getReference()
+                .getPublicationContext();
+
+        Book bookSubType = (Book) actualPublicationContext;
+        List<String> actuallIsbnList = bookSubType.getIsbnList();
+
+        assertThat(actuallIsbnList.get(0), is(equalTo("9788770342827")));
     }
 
     @Test

@@ -1,30 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PUBLISHER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ILLUSTRATED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -43,8 +18,35 @@ import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ILLUSTRATED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CristinMapper {
 
@@ -126,9 +128,11 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContext() throws InvalidIsbnException, MalformedURLException {
         if (isBook()) {
+            List<String> isbnList = new ArrayList<>();
+            isbnList.add(extractIsbn());
             return new Book.Builder()
-                       .withIsbnList(Collections.emptyList())
-                       .withPublisher(HARDCODED_BOOK_PUBLISHER)
+                       .withIsbnList(isbnList)
+                       .withPublisher(extractPublisherName())
                        .withUrl(HARDCODED_URI.toURL())
                        .withLevel(HARDCODED_LEVEL)
                        .withOpenAccess(false)
@@ -153,7 +157,7 @@ public class CristinMapper {
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
         return new MonographPages.Builder()
-                .withPages(HARDCODED_PAGE)
+                .withPages(extractNumberOfPages())
                 .withIllustrated(HARDCODED_ILLUSTRATED)
                 .withIntroduction(introductionRange)
                 .build();
@@ -204,6 +208,26 @@ public class CristinMapper {
                    .map(CristinObject::getCristinTitles)
                    .stream()
                    .flatMap(Collection::stream);
+    }
+
+    private CristinBookReport extractCristinBookReport() {
+        return Optional.ofNullable(cristinObject)
+                .map(CristinObject::getBookReport)
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(SingletonCollector.collectOrElse(null));
+    }
+
+    private String extractNumberOfPages() {
+        return extractCristinBookReport().getNumberOfPages();
+    }
+
+    private String extractPublisherName() {
+        return extractCristinBookReport().getPublisherName();
+    }
+
+    private String extractIsbn() {
+        return extractCristinBookReport().getIsbn();
     }
 
     private URI extractLanguage() {

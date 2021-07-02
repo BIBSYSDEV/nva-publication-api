@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinBookReport;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -147,6 +149,7 @@ public class CristinDataGenerator {
                 .withPublicationYear(randomYear())
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
+                .withBookReport(randomBookReport())
                 .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
@@ -191,8 +194,19 @@ public class CristinDataGenerator {
                 .withEntryCreationDate(LocalDate.now())
                 .withPublicationYear(randomYear())
                 .withContributors(contributors)
+                .withBookReport(randomBookReport())
                 .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                 .build();
+    }
+
+    private List<CristinBookReport> randomBookReport() {
+        List bookReportList = new ArrayList();
+        CristinBookReport bookReport = new CristinBookReport();
+        bookReport.setIsbn("9788770342827");
+        bookReport.setPublisherName(randomString());
+        bookReport.setNumberOfPages(randomString());
+        bookReportList.add(bookReport);
+        return bookReportList;
     }
 
     private JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject, String customSecondaryCategory,

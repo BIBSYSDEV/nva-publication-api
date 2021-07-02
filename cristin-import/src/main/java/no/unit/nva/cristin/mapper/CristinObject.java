@@ -32,7 +32,7 @@ import nva.commons.core.JsonSerializable;
     "TYPE_FOREDRAG_POSTER", "kildepostid", "TYPE_BOK_RAPPORT_DEL", "eierkode_opprettet", "ARKIVPOST",
     "TYPE_KUNSTNERISKPRODUKSJON", "TYPE_UTSTILLING", "pubidnr", "VARBEID_KILDE", "eierkode_siste_endring",
     "arstall_rapportert", "VARBEID_VDISIPLIN", "ARKIVFIL", "VITENSKAPELIGARBEID_LOKAL", "VARBEID_HRCS_KLASSIFISERING",
-    "merknadtekst", "dato_siste_endring", "TYPE_BOK_RAPPORT"})
+    "merknadtekst", "dato_siste_endring"})
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
@@ -57,6 +57,8 @@ public class CristinObject implements JsonSerializable {
     private CristinSecondaryCategory secondaryCategory;
     @JsonProperty("VARBEID_PERSON")
     private List<CristinContributor> contributors;
+    @JsonProperty("TYPE_BOK_RAPPORT")
+    private List<CristinBookReport> bookReport;
     private String publicationOwner;
 
     public CristinObject() {
