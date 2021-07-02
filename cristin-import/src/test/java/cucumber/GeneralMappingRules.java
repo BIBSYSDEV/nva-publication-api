@@ -33,27 +33,6 @@ public class GeneralMappingRules {
         this.scenarioContext.getCristinEntry().setId(id);
     }
 
-    @When("the Cristin Result is converted to an NVA Resource")
-    public void is_converted_to_an_nva_entry() {
-        scenarioContext.convertToNvaEntry();
-    }
-
-    @Then("the NVA Entry says {string} too.")
-    public void says_too(String message) {
-        assertThat(scenarioContext.getNvaEntry().getOwner(), is(equalTo(message)));
-    }
-
-    @Then("the NVA Resource has an additional identifier with key {string} and value {int}")
-    public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
-                                                                    int expectedCristinId) {
-        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
-            scenarioContext.getNvaEntry().getAdditionalIdentifiers();
-        AdditionalIdentifier expectedIdentifier =
-            new AdditionalIdentifier(cristinAdditionalIdentifierKey, Integer.toString(expectedCristinId));
-
-        assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
-    }
-
     @Given("the Cristin Result has an non null array of CristinTitles")
     public void theCristinEntryHasAnNonNullArrayOfCristinTitles() {
         scenarioContext.addEmptyCristinTitle();
@@ -74,15 +53,37 @@ public class GeneralMappingRules {
         scenarioContext.getLatestCristinTitle().setStatusOriginal(statusOriginal);
     }
 
+    @Given("the Cristin Result has publication year {string}")
+    public void theCristinEntryHasPublicationYear(String publicationYear) {
+        scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
+    }
+
+    @Given("that Cristin Result has created date equal to the local date {string}")
+    public void thatCristinEntryHasCreatedDateEqualToTheLocalDate(String dateString) {
+        LocalDate localDate = LocalDate.parse(dateString);
+        scenarioContext.getCristinEntry().setEntryCreationDate(localDate);
+    }
+
+    @When("the Cristin Result is converted to an NVA Resource")
+    public void is_converted_to_an_nva_entry() {
+        scenarioContext.convertToNvaEntry();
+    }
+
+    @Then("the NVA Resource has an additional identifier with key {string} and value {int}")
+    public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
+                                                                    int expectedCristinId) {
+        Set<AdditionalIdentifier> actualAdditionalIdentifiers =
+            scenarioContext.getNvaEntry().getAdditionalIdentifiers();
+        AdditionalIdentifier expectedIdentifier =
+            new AdditionalIdentifier(cristinAdditionalIdentifierKey, Integer.toString(expectedCristinId));
+
+        assertThat(actualAdditionalIdentifiers, contains(expectedIdentifier));
+    }
+
     @Then("the NVA Resource has an EntityDescription with mainTitle {string}")
     public void theNVAResourceHasAnEntityDescriptionWithMainTitle(String expectedTitle) {
         String actualTitle = scenarioContext.getNvaEntry().getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
-    }
-
-    @Given("the Cristin Result has publication year {string}")
-    public void theCristinEntryHasPublicationYear(String publicationYear) {
-        scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
     }
 
     @Then("the NVA Resource has a Publication Date with year equal to {string}, month equal to null and "
@@ -92,12 +93,6 @@ public class GeneralMappingRules {
         assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear)));
         assertThat(actualDate.getMonth(), is(nullValue()));
         assertThat(actualDate.getDay(), is(nullValue()));
-    }
-
-    @Given("that Cristin Result has created date equal to the local date {string}")
-    public void thatCristinEntryHasCreatedDateEqualToTheLocalDate(String dateString) {
-        LocalDate localDate = LocalDate.parse(dateString);
-        scenarioContext.getCristinEntry().setEntryCreationDate(localDate);
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
