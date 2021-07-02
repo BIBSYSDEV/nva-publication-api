@@ -1,5 +1,48 @@
 package no.unit.nva.cristin.lambda;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.cristin.AbstractCristinImportTest;
+import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.CristinMapper;
+import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.MissingFieldsException;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
+import no.unit.nva.publication.s3imports.ImportResult;
+import no.unit.nva.publication.s3imports.UriWrapper;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
+import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.IoUtils;
+import nva.commons.core.SingletonCollector;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
+
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
@@ -22,42 +65,6 @@ import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import no.unit.nva.cristin.AbstractCristinImportTest;
-import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinMapper;
-import no.unit.nva.cristin.mapper.CristinObject;
-import no.unit.nva.cristin.mapper.Identifiable;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.s3imports.FileContentsEvent;
-import no.unit.nva.publication.s3imports.ImportResult;
-import no.unit.nva.publication.s3imports.UriWrapper;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
-import no.unit.nva.stubs.FakeS3Client;
-import no.unit.nva.testutils.IoUtils;
-import nva.commons.core.SingletonCollector;
-import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
 public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
@@ -71,6 +78,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String ID_FIELD_NAME = "id";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
+    public static final String NULL_KEY = "null";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -325,6 +333,84 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
+    public void handlerThrowsExceptionWhenIsbnValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.randomObject();
+        cristinInput.getBookReport().get(0).setIsbn(null);
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinInput);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        UnixPath expectedFilePath = constructExpectedErrorFilePath(awsEvent, exception, cristinInput.getId());
+
+        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        String file = s3Driver.getFile(expectedFilePath);
+
+        Throwable cause = exception.getCause();
+        assertThat(file, is(not(emptyString())));
+        assertThat(cause.getCause().getClass().getSimpleName(),
+                is(equalTo(InvalidIsbnException.class.getSimpleName())));
+        assertThat(containsStrings(cause.getMessage(), Arrays.asList("isbn", NULL_KEY)),
+                is(true));
+        assertThat(containsStrings(file, Arrays.asList("isbn", cause.getClass().getSimpleName())) ,
+                is(true));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenPublisherValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.randomObject();
+        cristinInput.getBookReport().get(0).setPublisherName(null);
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinInput);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        UnixPath expectedFilePath = constructExpectedErrorFilePath(awsEvent, exception, cristinInput.getId());
+
+        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        String file = s3Driver.getFile(expectedFilePath);
+
+        Throwable cause = exception.getCause();
+
+        assertThat(file, is(not(emptyString())));
+        assertThat(cause.getClass().getSimpleName(),
+                is(equalTo(MissingFieldsException.class.getSimpleName())));
+        assertThat(containsStrings(cause.getMessage(), Arrays.asList("publisher")),
+                is(true));
+        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "publisher")) ,
+                is(true));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenNumberOfPagesValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.randomObject();
+        cristinInput.getBookReport().get(0).setNumberOfPages(null);
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinInput);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        UnixPath expectedFilePath = constructExpectedErrorFilePath(awsEvent, exception, cristinInput.getId());
+
+        S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
+        String file = s3Driver.getFile(expectedFilePath);
+
+        Throwable cause = exception.getCause();
+
+        assertThat(file, is(not(emptyString())));
+        assertThat(cause.getClass().getSimpleName(),
+                is(equalTo(MissingFieldsException.class.getSimpleName())));
+        assertThat(containsStrings(cause.getMessage(), Arrays.asList("pages")),
+                is(true));
+        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "pages")) ,
+                is(true));
+    }
+
+
+    @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
         String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
@@ -360,6 +446,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .addChild(exception.getCause().getClass().getSimpleName())
                    .addChild(event.getDetail().getFileUri().getPath())
                    .addChild(event.getDetail().getContents().getId() + JSON);
+    }
+
+    private UnixPath constructExpectedErrorFilePath(
+            AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent, RuntimeException exception, Integer id) {
+        return UnixPath.of(ERRORS_FOLDER)
+                .addChild(exception.getCause().getClass().getSimpleName())
+                .addChild(awsEvent.getDetail().getFileUri().getPath())
+                .addChild(id + JSON);
     }
 
     private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
@@ -455,5 +549,12 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         CristinObject cristinObject = eventDetails.getContents();
         assert nonNull(cristinObject.getId()); //java assertion produces Error not exception
         return cristinObject;
+    }
+
+    private boolean containsStrings(String sourceString, List<String> listOfStrings) {
+        for (String stringToLookFor: listOfStrings) {
+            if(!sourceString.toLowerCase().contains(stringToLookFor.toLowerCase())) return false;
+        }
+        return true;
     }
 }

@@ -200,7 +200,7 @@ public class CristinDataGenerator {
     }
 
     private List<CristinBookReport> randomBookReport() {
-        CristinBookReport bookReport = new CristinBookReport();
+        CristinBookReport bookReport = new CristinBookReport().copy().build();
         bookReport.setIsbn("9788770342827");
         bookReport.setPublisherName(randomString());
         bookReport.setNumberOfPages(randomString());

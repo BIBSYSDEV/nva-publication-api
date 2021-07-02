@@ -8,7 +8,13 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
+@Builder(
+    builderClassName = "CristinBookReportBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with"
+)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"hefte", "utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
         "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
@@ -30,6 +36,10 @@ public class CristinBookReport {
 
     public CristinBookReport() {
 
+    }
+
+    public CristinBookReport.CristinBookReportBuilder copy() {
+        return this.toBuilder();
     }
 
 }
