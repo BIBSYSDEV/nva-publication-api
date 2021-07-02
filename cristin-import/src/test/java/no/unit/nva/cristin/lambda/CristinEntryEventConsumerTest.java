@@ -353,7 +353,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 is(equalTo(InvalidIsbnException.class.getSimpleName())));
         assertThat(containsStrings(cause.getMessage(), Arrays.asList("isbn", NULL_KEY)),
                 is(true));
-        assertThat(containsStrings(file, Arrays.asList("isbn", cause.getClass().getSimpleName())) ,
+        assertThat(containsStrings(file, Arrays.asList("isbn", cause.getClass().getSimpleName())),
                 is(true));
     }
 
@@ -379,7 +379,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 is(equalTo(MissingFieldsException.class.getSimpleName())));
         assertThat(containsStrings(cause.getMessage(), Arrays.asList("publisher")),
                 is(true));
-        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "publisher")) ,
+        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "publisher")),
                 is(true));
     }
 
@@ -405,7 +405,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                 is(equalTo(MissingFieldsException.class.getSimpleName())));
         assertThat(containsStrings(cause.getMessage(), Arrays.asList("pages")),
                 is(true));
-        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "pages")) ,
+        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "pages")),
                 is(true));
     }
 
@@ -553,7 +553,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private boolean containsStrings(String sourceString, List<String> listOfStrings) {
         for (String stringToLookFor: listOfStrings) {
-            if(!sourceString.toLowerCase().contains(stringToLookFor.toLowerCase())) return false;
+            if (!sourceString.toLowerCase().contains(stringToLookFor.toLowerCase())) {
+                return false;
+            }
         }
         return true;
     }
