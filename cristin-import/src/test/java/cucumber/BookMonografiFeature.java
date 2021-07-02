@@ -19,7 +19,7 @@ public class BookMonografiFeature {
     }
 
     @Given("a valid Cristin Entry")
-    public void aCristinEntry() {
+    public void validCristinEntry() {
         this.scenarioContext.newCristinEntry();
     }
 
@@ -40,7 +40,7 @@ public class BookMonografiFeature {
     }
 
     @Then("the NVA Entry has an additional identifier with key {string} and value {int}")
-    public void theNVAEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
+    public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
                                                                     int expectedCristinId) {
         Set<AdditionalIdentifier> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
