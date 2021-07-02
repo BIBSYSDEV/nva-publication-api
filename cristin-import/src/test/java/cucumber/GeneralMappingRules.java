@@ -23,7 +23,7 @@ public class GeneralMappingRules {
     }
 
     @Given("a valid Cristin Result")
-    public void aCristinEntry() {
+    public void validCristinEntry() {
         this.scenarioContext.newCristinEntry();
     }
 
@@ -44,7 +44,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has an additional identifier with key {string} and value {int}")
-    public void theNVAEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
+    public void theNvaEntryHasAnAdditionalIdentifierWithKeyAndValue(String cristinAdditionalIdentifierKey,
                                                                     int expectedCristinId) {
         Set<AdditionalIdentifier> actualAdditionalIdentifiers =
             scenarioContext.getNvaEntry().getAdditionalIdentifiers();
