@@ -17,7 +17,7 @@ public class BookAnthologyFeatures {
 
     @Given("a valid Cristin Result with secondary category \"ANTOLOGI\"")
     public void a_valid_cristin_result_with_secondary_category() {
-        this.scenarioContext.newCristinEntry(() -> new CristinDataGenerator().randomBookMonograph());
+        this.scenarioContext.newCristinEntry(() -> new CristinDataGenerator().randomBookAnthology());
     }
 
     @Then("the NVA Resource has a Reference with PublicationInstance of Type {string}")
