@@ -10,7 +10,7 @@ public class DataTableTypeTransformations {
     public static final String WRONG_NUMBER_OF_FIELDS_FOR_CRISTINT_TITLE =
         String.format("This transformer maps only %d number of fields. Update the transformer to map more fields",
                       CURRENTLY_MAPPED_FIELDS);
-
+    public static final String CONTRIBUTOR_ORDINAL_NUMBER = "Ordinal Number";
     private static final String TITLE_TEXT = "Title Text";
     private static final String STATUS_ORIGINAL = "Status Original";
 

@@ -111,7 +111,7 @@ public class CristinDataGenerator {
         return elements.get(RANDOM.nextInt(elements.size()));
     }
 
-    private static int smallRandomNumber() {
+    public static int smallRandomNumber() {
         return 1 + RANDOM.nextInt(SMALL_NUMBER);
     }
 

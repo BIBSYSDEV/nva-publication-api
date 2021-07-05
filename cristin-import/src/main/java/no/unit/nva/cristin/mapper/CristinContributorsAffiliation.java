@@ -15,7 +15,7 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 
 @Data
 @Builder(
-    builderClassName = "CristinObjectBuilder",
+    builderClassName = "CristinContributorsAffiliationBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
@@ -27,13 +27,17 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 public class CristinContributorsAffiliation {
 
     public static final String CRISTIN_UNITS_DELIMITER = ".";
-    @JsonProperty("institusjonsnr")
+    public static final String INSITITUTION_IDENTIFIER = "institusjonsnr";
+    public static final String DEPARTMENT_IDENTIFIER = "avdnr";
+    public static final String SUBDEPARTMENT_IDENTIFIER = "undavdnr";
+    public static final String GROUP_IDENTIFIER = "gruppenr";
+    @JsonProperty(INSITITUTION_IDENTIFIER)
     private Integer institutionIdentifier;
-    @JsonProperty("avdnr")
+    @JsonProperty(DEPARTMENT_IDENTIFIER)
     private Integer departmentIdentifier;
-    @JsonProperty("undavdnr")
+    @JsonProperty(SUBDEPARTMENT_IDENTIFIER)
     private Integer subdepartmentIdentifier;
-    @JsonProperty("gruppenr")
+    @JsonProperty(GROUP_IDENTIFIER)
     private Integer groupNumber;
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
@@ -49,7 +53,7 @@ public class CristinContributorsAffiliation {
                    .build();
     }
 
-    public CristinObjectBuilder copy() {
+    public CristinContributorsAffiliationBuilder copy() {
         return this.toBuilder();
     }
 

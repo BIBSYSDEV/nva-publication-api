@@ -9,7 +9,7 @@ import no.unit.nva.model.Role;
 
 @Data
 @Builder(
-    builderClassName = "CristinObjectBuilder",
+    builderClassName = "CristinContributorRoleBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
