@@ -54,6 +54,7 @@ public class CristinDataGenerator {
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     public static final String ID_FIELD = "id";
+    public static final String NULL_KEY = "null";
 
     public static CristinContributorsAffiliation randomAffiliation() {
         return creatCristinContributorsAffiliation(randomCristinContributorRoleCode());
@@ -88,6 +89,10 @@ public class CristinDataGenerator {
 
     public CristinObject randomBookMonograph() {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
+    }
+
+    public CristinObject objectWithRandomBookReport() {
+        return createRandomBookWithBookReportValues();
     }
 
     public String singleRandomObjectAsString() {
@@ -169,6 +174,24 @@ public class CristinDataGenerator {
                 .build();
     }
 
+    private CristinObject createRandomBookWithBookReportValues() {
+        CristinObject cristinObject = CristinObject
+                .builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.BOOK)
+                .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .withBookReport(randomBookReport())
+                .build();
+        assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
+    }
+
+
     private static CristinContributorRole createRole(CristinContributorRoleCode roleCode) {
         return CristinContributorRole
                 .builder()
@@ -202,13 +225,13 @@ public class CristinDataGenerator {
     }
 
     private List<CristinBookReport> randomBookReport() {
-        CristinBookReport bookReport = new CristinBookReport().copy().build();
-        bookReport.setIsbn(randomIsbn13());
-        bookReport.setPublisherName(randomString());
-        bookReport.setNumberOfPages(randomString());
-        List bookReportList = new ArrayList();
-        bookReportList.add(bookReport);
-        return bookReportList;
+        CristinBookReport bookReport = CristinBookReport
+                .builder()
+                .withIsbn(randomIsbn13())
+                .withPublisherName(randomString())
+                .withNumberOfPages(randomString())
+                .build();
+        return List.of(bookReport);
     }
 
     private String randomIsbn13() {

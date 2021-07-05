@@ -1,7 +1,9 @@
 package no.unit.nva.cristin.mapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -12,10 +14,15 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.publication.s3imports.FileContentsEvent;
+import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
+import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,12 +32,14 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +48,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static no.unit.nva.cristin.CristinDataGenerator.NULL_KEY;
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
@@ -54,11 +64,16 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included objects need to be non empty\n     " +
+            "but: Empty field found: %s";
+    public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
+    public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
     private CristinDataGenerator cristinDataGenerator;
 
     @BeforeEach
@@ -293,7 +308,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
-        CristinObject cristinImport = cristinDataGenerator.randomObject();
+        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
 
         String numberOfPages = cristinImport.getBookReport().get(0).getNumberOfPages();
 
@@ -305,14 +320,14 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                 .getPublicationInstance();
 
         MonographPages monographPages = (MonographPages) actualPublicationInstance.getPages();
-        String actuallNumberOfPages = monographPages.getPages();
+        String actualNumberOfPages = monographPages.getPages();
 
-        assertThat(actuallNumberOfPages, is(equalTo(numberOfPages)));
+        assertThat(actualNumberOfPages, is(equalTo(numberOfPages)));
     }
 
     @Test
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        CristinObject cristinImport = cristinDataGenerator.randomObject();
+        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
 
         String publisherName = cristinImport.getBookReport().get(0).getPublisherName();
 
@@ -331,7 +346,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        CristinObject cristinImport = cristinDataGenerator.randomObject();
+        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
 
         String isbn = cristinImport.getBookReport().get(0).getIsbn();
 
@@ -378,6 +393,49 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         MissingFieldsException error = assertThrows(MissingFieldsException.class, action);
         assertThat(error.getMessage(), containsString(".entityDescription.contributors[0].identity.name"));
     }
+
+    @Test
+    public void handlerThrowsExceptionWhenIsbnValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        cristinInput.getBookReport().get(0).setIsbn(null);
+
+
+        Executable action = () -> cristinInput.toPublication();
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        Throwable cause = exception.getCause();
+
+        assertThat(cause.getClass().getSimpleName(),
+                is(equalTo(InvalidIsbnException.class.getSimpleName())));
+        assertThat(cause.getMessage(), is(equalTo(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY))));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenPublisherValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        cristinInput.getBookReport().get(0).setPublisherName(null);
+
+        Executable action = () -> cristinInput.toPublication();
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        assertThat(exception.getClass().getSimpleName(),
+                is(equalTo(MissingFieldsException.class.getSimpleName())));
+        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PUBLISHER_NVA_LOCATION))));
+    }
+
+    @Test
+    public void handlerThrowsExceptionWhenNumberOfPagesValueIsNull() {
+        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        cristinInput.getBookReport().get(0).setNumberOfPages(null);
+
+        Executable action = () -> cristinInput.toPublication();
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+
+        assertThat(exception.getClass().getSimpleName(),
+                is(equalTo(MissingFieldsException.class.getSimpleName())));
+        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PAGES_NVA_LOCATION))));
+    }
+
 
     @Test
     public void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {

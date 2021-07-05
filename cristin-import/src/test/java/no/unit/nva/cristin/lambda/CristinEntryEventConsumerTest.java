@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
+import no.unit.nva.cristin.mapper.CristinMapperTest;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.MissingFieldsException;
@@ -44,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.CristinDataGenerator.NULL_KEY;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
@@ -78,7 +80,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String ID_FIELD_NAME = "id";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
-    public static final String NULL_KEY = "null";
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "Expected: All fields of all included objects need to be non empty " +
+            "but: Empty field found: %s";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -347,14 +350,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         String file = s3Driver.getFile(expectedFilePath);
 
-        Throwable cause = exception.getCause();
         assertThat(file, is(not(emptyString())));
-        assertThat(cause.getCause().getClass().getSimpleName(),
-                is(equalTo(InvalidIsbnException.class.getSimpleName())));
-        assertThat(containsStrings(cause.getMessage(), Arrays.asList("isbn", NULL_KEY)),
-                is(true));
-        assertThat(containsStrings(file, Arrays.asList("isbn", cause.getClass().getSimpleName())),
-                is(true));
+        assertThat(file,containsString(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY)));
+        assertThat(file,containsString(InvalidIsbnException.class.getSimpleName()));
     }
 
     @Test
@@ -372,19 +370,13 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         String file = s3Driver.getFile(expectedFilePath);
 
-        Throwable cause = exception.getCause();
-
         assertThat(file, is(not(emptyString())));
-        assertThat(cause.getClass().getSimpleName(),
-                is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(containsStrings(cause.getMessage(), Arrays.asList("publisher")),
-                is(true));
-        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "publisher")),
-                is(true));
+        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE, CristinMapperTest.PUBLISHER_NVA_LOCATION)));
+        assertThat(file,containsString(MissingFieldsException.class.getSimpleName()));
     }
 
     @Test
-    public void handlerThrowsExceptionWhenNumberOfPagesValueIsNull() {
+    public void handlerThrowsExceptionWhenPagesValueIsNull() {
         CristinObject cristinInput = cristinDataGenerator.randomObject();
         cristinInput.getBookReport().get(0).setNumberOfPages(null);
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinInput);
@@ -398,15 +390,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         S3Driver s3Driver = new S3Driver(s3Client, NOT_IMPORTANT);
         String file = s3Driver.getFile(expectedFilePath);
 
-        Throwable cause = exception.getCause();
-
         assertThat(file, is(not(emptyString())));
-        assertThat(cause.getClass().getSimpleName(),
-                is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(containsStrings(cause.getMessage(), Arrays.asList("pages")),
-                is(true));
-        assertThat(containsStrings(file, Arrays.asList(cause.getClass().getSimpleName(), "pages")),
-                is(true));
+        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE, CristinMapperTest.PAGES_NVA_LOCATION)));
+        assertThat(file,containsString(MissingFieldsException.class.getSimpleName()));
     }
 
 
@@ -551,12 +537,5 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         return cristinObject;
     }
 
-    private boolean containsStrings(String sourceString, List<String> listOfStrings) {
-        for (String stringToLookFor: listOfStrings) {
-            if (!sourceString.toLowerCase().contains(stringToLookFor.toLowerCase())) {
-                return false;
-            }
-        }
-        return true;
-    }
+
 }

@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import nva.commons.core.JacocoGenerated;
 
 @Data
 @Builder(
@@ -38,6 +39,7 @@ public class CristinBookReport {
 
     }
 
+    @JacocoGenerated
     public CristinBookReport.CristinBookReportBuilder copy() {
         return this.toBuilder();
     }
