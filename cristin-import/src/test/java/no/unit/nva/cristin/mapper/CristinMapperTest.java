@@ -70,8 +70,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
-    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included objects need to be non empty\n     " +
-            "but: Empty field found: %s";
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included "
+            + "objects need to be non empty\n     "
+            + "but: Empty field found: %s";
     public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
     public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
     private CristinDataGenerator cristinDataGenerator;
@@ -420,7 +421,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(exception.getClass().getSimpleName(),
                 is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PUBLISHER_NVA_LOCATION))));
+        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE,
+                PUBLISHER_NVA_LOCATION))));
     }
 
     @Test
@@ -433,7 +435,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
         assertThat(exception.getClass().getSimpleName(),
                 is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PAGES_NVA_LOCATION))));
+        assertThat(exception.getMessage(), is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE,
+                PAGES_NVA_LOCATION))));
     }
 
 

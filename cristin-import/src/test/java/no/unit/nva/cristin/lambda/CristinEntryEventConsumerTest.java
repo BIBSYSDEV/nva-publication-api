@@ -80,8 +80,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String ID_FIELD_NAME = "id";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
-    public static final String MISSING_FIELD_ERROR_TEMPLATE = "Expected: All fields of all included objects need to be non empty " +
-            "but: Empty field found: %s";
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "Expected: All fields of all included "
+            + "objects need to be non empty "
+            + "but: Empty field found: %s";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -371,7 +372,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String file = s3Driver.getFile(expectedFilePath);
 
         assertThat(file, is(not(emptyString())));
-        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE, CristinMapperTest.PUBLISHER_NVA_LOCATION)));
+        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE,
+                CristinMapperTest.PUBLISHER_NVA_LOCATION)));
         assertThat(file,containsString(MissingFieldsException.class.getSimpleName()));
     }
 
@@ -391,7 +393,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String file = s3Driver.getFile(expectedFilePath);
 
         assertThat(file, is(not(emptyString())));
-        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE, CristinMapperTest.PAGES_NVA_LOCATION)));
+        assertThat(file,containsString(String.format(MISSING_FIELD_ERROR_TEMPLATE,
+                CristinMapperTest.PAGES_NVA_LOCATION)));
         assertThat(file,containsString(MissingFieldsException.class.getSimpleName()));
     }
 
