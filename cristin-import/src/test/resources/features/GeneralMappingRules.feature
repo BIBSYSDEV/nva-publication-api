@@ -99,7 +99,7 @@ Feature: Mappings that hold for all types of Cristin Results
 
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Contributors have the following names, sequences and affiliation URIs
-      | Name                      | Ordinal Number | Affiliation                                  |
+      | Name                      | Ordinal Number | Affiliation URI                              |
       | FirstFamily, FirstGiven   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
       | SecondFamily, SecondGiven | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
       | ThirdFamily, ThirdGiven   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |

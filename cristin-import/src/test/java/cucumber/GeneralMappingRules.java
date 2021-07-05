@@ -134,7 +134,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has a List of NVA Contributors :")
-    public void theNvaResourceHasAListOfNVAContributors(DataTable expectedContributors) {
+    public void theNvaResourceHasAListOfNvaContributors(DataTable expectedContributors) {
         List<String> expectedContributorNames = expectedContributors.rows(SKIP_HEADERS).asList();
         List<String> actualContributorNames = scenarioContext.getNvaEntry().getEntityDescription().getContributors()
                                                   .stream().map(Contributor::getIdentity)
@@ -154,20 +154,20 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has a List of NVA Contributors with the following sequences:")
-    public void theNvaResourceHasAListOfNVAContributorsWithTheFollowingSequences(DataTable table) {
-        List<CristinContributorFlattenedDetails> actualContributors = this.scenarioContext.getNvaEntry()
-                                                                          .getEntityDescription()
-                                                                          .getContributors()
-                                                                          .stream()
-                                                                          .map(
-                                                                              CristinContributorFlattenedDetails::extractNameAndSequence)
-                                                                          .collect(Collectors.toList());
+    public void theNvaResourceHasAListOfNvaContributorsWithTheFollowingSequences(DataTable table) {
+        List<CristinContributorFlattenedDetails> actualContributors =
+            this.scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getContributors()
+                .stream()
+                .map(CristinContributorFlattenedDetails::extractNameAndSequence)
+                .collect(Collectors.toList());
 
-        List<CristinContributorFlattenedDetails> expectedContributors = table.asMaps()
-                                                                            .stream()
-                                                                            .map(
-                                                                                CristinContributorFlattenedDetails::from)
-                                                                            .collect(Collectors.toList());
+        List<CristinContributorFlattenedDetails> expectedContributors =
+            table.asMaps()
+                .stream()
+                .map(CristinContributorFlattenedDetails::from)
+                .collect(Collectors.toList());
 
         assertThat(actualContributors, containsInAnyOrder(expectedContributors.toArray(
             CristinContributorFlattenedDetails[]::new)));
