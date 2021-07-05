@@ -1,36 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
-import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
-import static no.unit.nva.cristin.CristinDataGenerator.randomString;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
-import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
-import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -47,8 +16,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Pages;
-import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,6 +24,37 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
+import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
+import static no.unit.nva.cristin.CristinDataGenerator.randomString;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
+import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
+import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
 
@@ -294,11 +292,10 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() throws JsonProcessingException {
-        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+    public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
+        CristinObject cristinImport = cristinDataGenerator.randomObject();
 
-        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
-        cristinImport.setPublicationOwner(randomString());
+        String numberOfPages = cristinImport.getBookReport().get(0).getNumberOfPages();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -310,18 +307,16 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         MonographPages monographPages = (MonographPages) actualPublicationInstance.getPages();
         String actuallNumberOfPages = monographPages.getPages();
 
-        assertThat(actuallNumberOfPages, is(equalTo("192")));
+        assertThat(actuallNumberOfPages, is(equalTo(numberOfPages)));
     }
 
     @Test
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+        CristinObject cristinImport = cristinDataGenerator.randomObject();
 
-        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
-        cristinImport.setPublicationOwner(randomString());
+        String publisherName = cristinImport.getBookReport().get(0).getPublisherName();
 
         Publication actualPublication = cristinImport.toPublication();
-
 
         PublicationContext actualPublicationContext = actualPublication
                 .getEntityDescription()
@@ -331,19 +326,16 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Book bookSubType = (Book) actualPublicationContext;
         String actuallPublisher = bookSubType.getPublisher();
 
-
-        assertThat(actuallPublisher, is(equalTo("Nyt fra Samfundsvidenskaberne")));
+        assertThat(actuallPublisher, is(equalTo(publisherName)));
     }
 
     @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        String cristinInputString = IoUtils.stringFromResources(Path.of("valid_monograph_entry.json"));
+        CristinObject cristinImport = cristinDataGenerator.randomObject();
 
-        CristinObject cristinImport = CristinObject.fromJson(cristinInputString);
-        cristinImport.setPublicationOwner(randomString());
+        String isbn = cristinImport.getBookReport().get(0).getIsbn();
 
         Publication actualPublication = cristinImport.toPublication();
-
 
         PublicationContext actualPublicationContext = actualPublication
                 .getEntityDescription()
@@ -353,7 +345,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Book bookSubType = (Book) actualPublicationContext;
         List<String> actuallIsbnList = bookSubType.getIsbnList();
 
-        assertThat(actuallIsbnList.get(0), is(equalTo("9788770342827")));
+        assertThat(actuallIsbnList.get(0), is(equalTo(isbn)));
     }
 
     @Test
@@ -410,25 +402,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                 .withGivenName(randomString())
                 .withAffiliations(List.of((affiliation)))
                 .build();
-    }
-
-    private boolean cristinObjectHasRole(CristinObject cristinObject,
-                                         CristinContributorRoleCode roleCode) {
-        return cristinObject.getContributors()
-                .stream()
-                .anyMatch(contributor -> contributorHasAffiliationWithRole(roleCode, contributor));
-    }
-
-    private boolean contributorHasAffiliationWithRole(CristinContributorRoleCode roleCode,
-                                                      CristinContributor contributor) {
-        return contributor.getAffiliations()
-                .stream()
-                .anyMatch(affiliation -> affiliationHasRole(affiliation, roleCode));
-    }
-
-    private boolean affiliationHasRole(CristinContributorsAffiliation affiliation,
-                                       CristinContributorRoleCode roleCode) {
-        return affiliation.getRoles().stream().anyMatch(r -> r.getRoleCode().equals(roleCode));
     }
 
     private PublicationDate yearStringToPublicationDate(String yearString) {

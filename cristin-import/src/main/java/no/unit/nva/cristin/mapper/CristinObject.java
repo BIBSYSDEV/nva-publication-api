@@ -76,9 +76,6 @@ public class CristinObject implements JsonSerializable {
         this.setPublicationOwner(publicationsOwner);
     }
 
-    public static CristinObject fromJson(String json) {
-        return attempt(() -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.readValue(json, CristinObject.class)).orElseThrow();
-    }
 
     public static CristinObject fromJson(JsonNode json) {
         return attempt(() -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(json, CristinObject.class)).orElseThrow();
