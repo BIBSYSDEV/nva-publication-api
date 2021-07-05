@@ -10,7 +10,9 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
+import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.PublicationDate;
 
@@ -99,5 +101,10 @@ public class GeneralMappingRules {
     public void theNVAResourceHasACreationDateEqualTo(String expectedIsoInstant) {
         Instant expectedInstant = Instant.parse(expectedIsoInstant);
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
+    }
+
+    @Given("the Cristin Result has an  CristinTitles with values:")
+    public void theCristinResultHasAnCristinTitlesWithValues(List<CristinTitle> cristinTitles) {
+        scenarioContext.getCristinEntry().setCristinTitles(cristinTitles);
     }
 }

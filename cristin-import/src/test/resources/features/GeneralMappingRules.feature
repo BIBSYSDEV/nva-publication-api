@@ -11,35 +11,30 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there is only one CristinTitle and it is annotated as original
     Given the Cristin Result has an non null array of CristinTitles
-    And the CristinTitle array has an entry
-    And the CristinTitle entry has title text equal to "This is some title"
-    And the CristinTitle entry has original status annotation "J"
+    Given the Cristin Result has an  CristinTitles with values:
+      | Title Text         | Status Original |
+      | This is some title | J               |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
 
 
   Scenario: map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there are many titles but only one annotated as original
-    Given the Cristin Result has an non null array of CristinTitles
-    And the CristinTitle array has an entry
-    And the CristinTitle entry has title text equal to "This is the original title"
-    And the CristinTitle entry has original status annotation "J"
-    And the CristinTitle array has an entry
-    And the CristinTitle entry has title text equal to "This is translated title"
-    And the CristinTitle entry has original status annotation "N"
+    Given the Cristin Result has an  CristinTitles with values:
+      | Title Text                 | Status Original |
+      | This is the original title | J               |
+      | This is translated title   | N               |
+
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
 
   Scenario: map returns NVA Resource with Main Title being any Cristin Title annotated as
-  Original Title when there are two titles both only one annotated as original
-    Given the Cristin Result has an non null array of CristinTitles
-    And the CristinTitle array has an entry
-    And the CristinTitle entry has title text equal to "This is the original title"
-    And the CristinTitle entry has original status annotation "J"
-    And the CristinTitle array has an entry
-    And the CristinTitle entry has title text equal to "This is the original title too"
-    And the CristinTitle entry has original status annotation "J"
+  Original Title when there are two titles both annotated as original
+    Given the Cristin Result has an  CristinTitles with values:
+      | Title Text                     | Status Original |
+      | This is the original title     | J               |
+      | This is another original title | J               |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
