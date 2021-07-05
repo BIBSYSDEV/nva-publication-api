@@ -83,7 +83,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has an EntityDescription with mainTitle {string}")
-    public void theNVAResourceHasAnEntityDescriptionWithMainTitle(String expectedTitle) {
+    public void theNvaResourceHasAnEntityDescriptionWithMainTitle(String expectedTitle) {
         String actualTitle = scenarioContext.getNvaEntry().getEntityDescription().getMainTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
@@ -98,7 +98,7 @@ public class GeneralMappingRules {
     }
 
     @Then("the NVA Resource has a Creation Date equal to {string}")
-    public void theNVAResourceHasACreationDateEqualTo(String expectedIsoInstant) {
+    public void theNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
         Instant expectedInstant = Instant.parse(expectedIsoInstant);
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
     }
