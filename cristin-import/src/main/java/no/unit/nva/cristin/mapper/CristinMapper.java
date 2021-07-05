@@ -192,11 +192,12 @@ public class CristinMapper {
     }
 
     private String extractMainTitle() {
-        var x = extractCristinTitles()
-                    .filter(CristinTitle::isMainTitle)
-                    .findFirst()
-                    .map(CristinTitle::getTitle);
-        return x.orElseThrow();
+        return
+            extractCristinTitles()
+                .filter(CristinTitle::isMainTitle)
+                .findFirst()
+                .map(CristinTitle::getTitle)
+                .orElseThrow();
     }
 
     private Stream<CristinTitle> extractCristinTitles() {
