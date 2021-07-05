@@ -1,9 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -19,10 +17,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.publication.s3imports.FileContentsEvent;
-import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
-import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,14 +26,12 @@ import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -64,7 +56,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
-import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CristinMapperTest extends AbstractCristinImportTest {
@@ -82,7 +73,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         super.init();
         cristinDataGenerator = new CristinDataGenerator();
         testingData = cristinDataGenerator.randomDataAsString();
-        System.out.println("test");
     }
 
     @Test
@@ -139,17 +129,17 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     @DisplayName("map returns resource with createdDate equal to \"dato_opprettet\"")
-    public void mapReturnsResourceWithCreatedDateEqualToDatoOpprettet() {
-        ZoneOffset currentZoneOffset = ZoneId.systemDefault().getRules().getOffset(Instant.now());
+    public void mapReturnsResourceWithCreatedDateEqualToCristinDateAssumedToBeUtcDate() {
+        ZoneOffset utc = ZoneId.of("UTC").getRules().getOffset(Instant.now());
         List<Instant> expectedCreatedDates = cristinObjects()
-                .map(CristinObject::getEntryCreationDate)
-                .map(LocalDate::atStartOfDay)
-                .map(time -> time.toInstant(currentZoneOffset))
-                .collect(Collectors.toList());
+                                                 .map(CristinObject::getEntryCreationDate)
+                                                 .map(LocalDate::atStartOfDay)
+                                                 .map(time -> time.toInstant(utc))
+                                                 .collect(Collectors.toList());
 
         List<Instant> actualCreatedDates = cristinObjects().map(CristinObject::toPublication)
-                .map(Publication::getCreatedDate)
-                .collect(Collectors.toList());
+                                               .map(Publication::getCreatedDate)
+                                               .collect(Collectors.toList());
 
         assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
     }
@@ -401,7 +391,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         cristinInput.getBookReport().get(0).setIsbn(null);
 
 
-        Executable action = () -> cristinInput.toPublication();
+        Executable action = cristinInput::toPublication;
         RuntimeException exception = assertThrows(RuntimeException.class, action);
 
         Throwable cause = exception.getCause();
@@ -416,7 +406,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
         cristinInput.getBookReport().get(0).setPublisherName(null);
 
-        Executable action = () -> cristinInput.toPublication();
+        Executable action = cristinInput::toPublication;
         RuntimeException exception = assertThrows(RuntimeException.class, action);
 
         assertThat(exception.getClass().getSimpleName(),
@@ -430,7 +420,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
         cristinInput.getBookReport().get(0).setNumberOfPages(null);
 
-        Executable action = () -> cristinInput.toPublication();
+        Executable action = cristinInput::toPublication;
         RuntimeException exception = assertThrows(RuntimeException.class, action);
 
         assertThat(exception.getClass().getSimpleName(),

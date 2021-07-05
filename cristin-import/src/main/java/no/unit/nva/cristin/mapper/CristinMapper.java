@@ -95,7 +95,7 @@ public class CristinMapper {
     }
 
     private ZoneOffset zoneOffset() {
-        return ZoneOffset.systemDefault().getRules().getOffset(Instant.now());
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     private EntityDescription generateEntityDescription() {
@@ -173,10 +173,10 @@ public class CristinMapper {
 
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
-                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                .withPages(createMonographPages())
-                .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
-                .build();
+                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                   .withPages(createMonographPages())
+                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .build();
     }
 
     private boolean isAnthology() {

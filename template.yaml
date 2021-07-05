@@ -875,8 +875,8 @@ Resources:
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publications-by-owner
-      Handler: no.unit.nva.publication.owner.PublicationsByOwnerHandler::handleRequest
+      CodeUri: fetch-publication
+      Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Environment:

@@ -16,6 +16,7 @@ commonsValidator = { strictly = "1.7" }
 apacheCommons = { strictly = "4.4" }
 testUtils = { strictly = "0.1.22" }
 hamcrest = { strictly = '2.2' }
+cucumber = { strictly = '6.10.4' }
 
 [libraries]
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
@@ -61,7 +62,6 @@ aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = "
 
 aws-ion = { group = "software.amazon.ion", name = "ion-java", version.ref = "awsIon" }
 
-
 apache-commons-collections = { group = "org.apache.commons", name = "commons-collections4", version.ref = "apacheCommons" }
 
 log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api", version.ref = "log4jApiVersion" }
@@ -74,3 +74,8 @@ zalando = { group = "org.zalando", name = "problem", version.ref = "zalandoProbl
 commons-validator = { group = "commons-validator", name = "commons-validator", version.ref = "commonsValidator" }
 
 hamcrest = { group = 'org.hamcrest', name = 'hamcrest', version.ref = "hamcrest" }
+
+cucumber-java = { group = 'io.cucumber', name = 'cucumber-java', version.ref = "cucumber" }
+cucumber-java8 = { group = 'io.cucumber', name = 'cucumber-java8', version.ref = "cucumber" }
+cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = "cucumber" }
+cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = "cucumber" }

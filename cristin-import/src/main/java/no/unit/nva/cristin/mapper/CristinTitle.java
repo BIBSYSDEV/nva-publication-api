@@ -9,22 +9,29 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-@Builder
+@Builder(
+    builderClassName = "CristinObjectBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with"
+)
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"sammendragtekst"})
 public class CristinTitle {
 
-    public static final String MAIN_TITLE = "titteltekst";
+    public static final String TITLE = "titteltekst";
     public static final String LANGUAGE_CODE = "sprakkode";
     public static final String ABSTRACT = "sammendragtekst";
     public static final String ORIGINAL_TITLE = "J"; //probably means "Ja"
     public static final String NOT_ORIGINAL_TITLE = "N"; //probably means "Nei"
+    public static final String STATUS_ORIGINAL = "status_original";
 
     @JsonProperty(LANGUAGE_CODE)
     private String languagecode;
-    @JsonProperty(MAIN_TITLE)
+    @JsonProperty(TITLE)
     private String title;
-    @JsonProperty("status_original")
+    @JsonProperty(STATUS_ORIGINAL)
     private String statusOriginal;
 
     public CristinTitle() {
