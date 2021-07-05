@@ -64,11 +64,34 @@ implementation libs.jackson.databind
         because "PMD org/apache/commons/validator/routines/ISBNValidator"
     }
 
+    testImplementation libs.cucumber.java
+    testImplementation libs.cucumber.junit
+    testImplementation libs.cucumber.picocontainer
+
 }
 
 test {
     environment "MAX_SLEEP_TIME", "1"
     environment "CREATE_CONTRIBUTOR_ID", "true"
 }
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+task cucumber() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty', '--glue', 'cucumber', 'src/test/resources/features']
+        }
+    }
+}
+
+test.dependsOn(cucumber)
 
 

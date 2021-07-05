@@ -93,7 +93,7 @@ public class CristinMapper {
     }
 
     private ZoneOffset zoneOffset() {
-        return ZoneOffset.systemDefault().getRules().getOffset(Instant.now());
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     private EntityDescription generateEntityDescription() {
@@ -153,10 +153,10 @@ public class CristinMapper {
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
         return new MonographPages.Builder()
-                .withPages(HARDCODED_PAGE)
-                .withIllustrated(HARDCODED_ILLUSTRATED)
-                .withIntroduction(introductionRange)
-                .build();
+                   .withPages(HARDCODED_PAGE)
+                   .withIllustrated(HARDCODED_ILLUSTRATED)
+                   .withIntroduction(introductionRange)
+                   .build();
     }
 
     private BookAnthology createBookAnthology() {
@@ -169,10 +169,10 @@ public class CristinMapper {
 
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
-                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                .withPages(createMonographPages())
-                .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
-                .build();
+                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                   .withPages(createMonographPages())
+                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .build();
     }
 
     private boolean isAnthology() {
@@ -192,11 +192,12 @@ public class CristinMapper {
     }
 
     private String extractMainTitle() {
-        return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .map(CristinTitle::getTitle)
-                   .orElseThrow();
+        return
+            extractCristinTitles()
+                .filter(CristinTitle::isMainTitle)
+                .findFirst()
+                .map(CristinTitle::getTitle)
+                .orElseThrow();
     }
 
     private Stream<CristinTitle> extractCristinTitles() {
