@@ -62,7 +62,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | C.J.B.      | Loremius    |
       | Have, Comma | Surname     |
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a List of NVA Contributors :
+    Then the NVA Resource has a List of NVA Contributors:
       | Name                 |
       | Adams, John          |
       | Loremius, C.J.B.     |

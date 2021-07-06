@@ -135,11 +135,12 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setContributors(contributors);
     }
 
-    @Then("the NVA Resource has a List of NVA Contributors :")
+    @Then("the NVA Resource has a List of NVA Contributors:")
     public void theNvaResourceHasAListOfNvaContributors(DataTable expectedContributors) {
         List<String> expectedContributorNames = expectedContributors.rows(SKIP_HEADERS).asList();
         List<String> actualContributorNames = scenarioContext.getNvaEntry().getEntityDescription().getContributors()
-                                                  .stream().map(Contributor::getIdentity)
+                                                  .stream()
+                                                  .map(Contributor::getIdentity)
                                                   .map(Identity::getName)
                                                   .collect(Collectors.toList());
 
