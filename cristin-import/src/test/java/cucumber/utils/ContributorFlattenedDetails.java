@@ -27,14 +27,14 @@ public class ContributorFlattenedDetails implements JsonSerializable {
         return new ContributorFlattenedDetails(name, sequence, null);
     }
 
-    public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor c) {
-        String name = c.getIdentity().getName();
-        int sequence = c.getSequence();
-        URI affiliationUri = c.getAffiliations().stream().collect(SingletonCollector.collect()).getId();
+    public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor contributor) {
+        String name = contributor.getIdentity().getName();
+        int sequence = contributor.getSequence();
+        URI affiliationUri = contributor.getAffiliations().stream().collect(SingletonCollector.collect()).getId();
         return new ContributorFlattenedDetails(name, sequence, affiliationUri);
     }
 
-    public static ContributorFlattenedDetails from(Map<String, String> mapEntry) {
+    public static ContributorFlattenedDetails fromDataTableMapEntry(Map<String, String> mapEntry) {
         String name = mapEntry.get(CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_NVA_NAME);
         int sequence = Integer.parseInt(mapEntry.get(CristinContributorTransformer.CONTRIBUTOR_ORDINAL_NUMBER));
         URI uri = Optional.ofNullable(mapEntry.get(
