@@ -47,7 +47,6 @@ public class CristinContributor {
 
     @JacocoGenerated
     public CristinContributor() {
-
     }
 
     public Contributor toNvaContributor() throws MalformedContributorException {

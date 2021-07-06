@@ -22,7 +22,6 @@ entityDescription.contributors.identity.arpId
 entityDescription.contributors.identity.nameType
 entityDescription.contributors.identity.orcId
 entityDescription.contributors.affiliations.labels
-entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationContext.seriesNumber
 entityDescription.reference.publicationContext.seriesTitle
 entityDescription.reference.doi
@@ -32,10 +31,8 @@ owner
 publisher
 link
 entityDescription.npiSubjectHeading
-entityDescription.reference.publicationContext.publisher
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.level
-entityDescription.reference.publicationInstance.pages
 entityDescription.reference.publicationInstance.illustrated
 entityDescription.reference.publicationInstance.peerReviewed
 entityDescription.reference.publicationInstance.textBookContent

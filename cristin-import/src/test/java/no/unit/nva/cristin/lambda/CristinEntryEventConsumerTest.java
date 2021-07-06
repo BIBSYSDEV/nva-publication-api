@@ -71,6 +71,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String ID_FIELD_NAME = "id";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "Expected: All fields of all included "
+            + "objects need to be non empty "
+            + "but: Empty field found: %s";
     private CristinDataGenerator cristinDataGenerator;
 
     private CristinEntryEventConsumer handler;
@@ -324,12 +327,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(file, containsString(UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY));
     }
 
+
     @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
         String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
+
 
     private static JavaType constructImportResultJavaType() {
 
@@ -359,6 +364,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .addChild(exception.getCause().getClass().getSimpleName())
                    .addChild(event.getDetail().getFileUri().getPath())
                    .addChild(event.getDetail().getContents().getId() + JSON);
+    }
+
+    private UnixPath constructExpectedErrorFilePath(
+            AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent, RuntimeException exception, Integer id) {
+        return UnixPath.of(ERRORS_FOLDER)
+                .addChild(exception.getCause().getClass().getSimpleName())
+                .addChild(awsEvent.getDetail().getFileUri().getPath())
+                .addChild(id + JSON);
     }
 
     private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
@@ -455,4 +468,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assert nonNull(cristinObject.getId()); //java assertion produces Error not exception
         return cristinObject;
     }
+
+
 }

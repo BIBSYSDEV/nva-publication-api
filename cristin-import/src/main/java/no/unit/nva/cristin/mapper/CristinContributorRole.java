@@ -22,7 +22,6 @@ public class CristinContributorRole {
     private CristinContributorRoleCode roleCode;
 
     public CristinContributorRole() {
-
     }
 
     public Role toNvaRole() {

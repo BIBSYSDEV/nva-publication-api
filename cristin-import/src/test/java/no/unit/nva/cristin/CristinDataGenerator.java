@@ -1,30 +1,14 @@
 package no.unit.nva.cristin;
 
-import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
-import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
-import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
-import java.net.URI;
-import java.time.LocalDate;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinBookReport;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -36,6 +20,26 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JsonUtils;
+
+import java.net.URI;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
+import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CristinDataGenerator {
 
@@ -50,6 +54,7 @@ public class CristinDataGenerator {
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     public static final String ID_FIELD = "id";
+    public static final String NULL_KEY = "null";
 
     public static CristinContributorsAffiliation randomAffiliation() {
         return creatCristinContributorsAffiliation(randomCristinContributorRoleCode());
@@ -84,6 +89,10 @@ public class CristinDataGenerator {
 
     public CristinObject randomBookMonograph() {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
+    }
+
+    public CristinObject objectWithRandomBookReport() {
+        return createRandomBookWithBookReportValues();
     }
 
     public String singleRandomObjectAsString() {
@@ -147,6 +156,7 @@ public class CristinDataGenerator {
                 .withPublicationYear(randomYear())
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
+                .withBookReport(randomBookReport())
                 .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
@@ -163,6 +173,24 @@ public class CristinDataGenerator {
                 .withRoles(List.of(createRole(roleCode)))
                 .build();
     }
+
+    private CristinObject createRandomBookWithBookReportValues() {
+        CristinObject cristinObject = CristinObject
+                .builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.BOOK)
+                .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .withBookReport(randomBookReport())
+                .build();
+        assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
+    }
+
 
     private static CristinContributorRole createRole(CristinContributorRoleCode roleCode) {
         return CristinContributorRole
@@ -191,8 +219,23 @@ public class CristinDataGenerator {
                 .withEntryCreationDate(LocalDate.now())
                 .withPublicationYear(randomYear())
                 .withContributors(contributors)
+                .withBookReport(randomBookReport())
                 .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                 .build();
+    }
+
+    private List<CristinBookReport> randomBookReport() {
+        CristinBookReport bookReport = CristinBookReport
+                .builder()
+                .withIsbn(randomIsbn13())
+                .withPublisherName(randomString())
+                .withNumberOfPages(randomString())
+                .build();
+        return List.of(bookReport);
+    }
+
+    private String randomIsbn13() {
+        return FAKER.code().isbn13();
     }
 
     private JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject, String customSecondaryCategory,
