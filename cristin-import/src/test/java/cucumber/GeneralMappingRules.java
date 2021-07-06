@@ -1,6 +1,6 @@
 package cucumber;
 
-import static cucumber.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
+import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
@@ -9,6 +9,7 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.nullValue;
 import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
+import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -125,7 +126,7 @@ public class GeneralMappingRules {
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
     }
 
-    @Given("the Cristin Result has an  CristinTitles with values:")
+    @Given("the Cristin Result has an array of CristinTitles with values:")
     public void theCristinResultHasAnCristinTitlesWithValues(List<CristinTitle> cristinTitles) {
         scenarioContext.getCristinEntry().setCristinTitles(cristinTitles);
     }
@@ -280,6 +281,12 @@ public class GeneralMappingRules {
                                                        .withGivenName(null)
                                                        .build();
         this.scenarioContext.getCristinEntry().setContributors(List.of(contributorWithNoName));
+    }
+
+    @Then("the NVA Resource has an EntityDescription with language {string}")
+    public void theNvaResourceHasAnEntityDescriptionWithLanguage(String expectedLanguageUri) {
+        String actualLanguage = this.scenarioContext.getNvaEntry().getEntityDescription().getLanguage().toString();
+        assertThat(actualLanguage,is(equalTo(expectedLanguageUri)));
     }
 
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,

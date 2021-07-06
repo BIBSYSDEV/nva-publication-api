@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
+import no.unit.nva.cristin.mapper.CristinBookReport;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -47,9 +48,10 @@ public class CristinDataGenerator {
         SerializationFeature.INDENT_OUTPUT, false);
     public static final int USE_WHOLE_ARRAY = -1;
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
+    public static final String ID_FIELD = "id";
+    public static final String NULL_KEY = "null";
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
-    public static final String ID_FIELD = "id";
 
     public static CristinContributorsAffiliation randomAffiliation() {
         return creatCristinContributorsAffiliation(randomCristinContributorRoleCode());
@@ -71,12 +73,24 @@ public class CristinDataGenerator {
                    .collect(Collectors.toList());
     }
 
-    public CristinObject randomObject() {
-        return newCristinObject(largeRandomNumber());
-    }
-
     public static String randomString() {
         return FAKER.lorem().sentence(smallRandomNumber());
+    }
+
+    public static CristinContributorsAffiliation createAffiliation(CristinContributorRoleCode roleCode) {
+        return creatCristinContributorsAffiliation(roleCode);
+    }
+
+    public static int smallRandomNumber() {
+        return 1 + RANDOM.nextInt(SMALL_NUMBER);
+    }
+
+    public static int largeRandomNumber() {
+        return 1 + RANDOM.nextInt(Integer.MAX_VALUE);
+    }
+
+    public CristinObject randomObject() {
+        return newCristinObject(largeRandomNumber());
     }
 
     public <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
@@ -96,12 +110,12 @@ public class CristinDataGenerator {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
     }
 
-    public String singleRandomObjectAsString() {
-        return newCristinObject(0).toJsonString();
+    public CristinObject objectWithRandomBookReport() {
+        return createRandomBookWithBookReportValues();
     }
 
-    public static CristinContributorsAffiliation createAffiliation(CristinContributorRoleCode roleCode) {
-        return creatCristinContributorsAffiliation(roleCode);
+    public String singleRandomObjectAsString() {
+        return newCristinObject(0).toJsonString();
     }
 
     public CristinObject randomObject(String secondaryCategory) {
@@ -122,14 +136,6 @@ public class CristinDataGenerator {
 
     public JsonNode objectWithCustomSecondaryCategory(String customSecondaryCategory) throws JsonProcessingException {
         return cristinObjectWithUnexpectedValue(randomObject(), customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
-    }
-
-    private static <T> T randomElement(List<T> elements) {
-        return elements.get(RANDOM.nextInt(elements.size()));
-    }
-
-    public static int smallRandomNumber() {
-        return 1 + RANDOM.nextInt(SMALL_NUMBER);
     }
 
     public String randomDataAsString() {
@@ -159,6 +165,10 @@ public class CristinDataGenerator {
         return cristinObjectWithUnexpectedValue(cristinObject, customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
     }
 
+    private static <T> T randomElement(List<T> elements) {
+        return elements.get(RANDOM.nextInt(elements.size()));
+    }
+
     private static CristinContributorsAffiliation creatCristinContributorsAffiliation(
         CristinContributorRoleCode roleCode) {
         return CristinContributorsAffiliation.builder()
@@ -184,10 +194,6 @@ public class CristinDataGenerator {
                    .collect(Collectors.toList());
     }
 
-    private CristinObject newCristinObject(Integer index) {
-        return createObjectWithCristinContributorRoleCode(index, randomContributors());
-    }
-
     private static Stream<Integer> smallSample() {
         return IntStream.range(0, smallRandomNumber()).boxed();
     }
@@ -198,9 +204,12 @@ public class CristinDataGenerator {
                    : array[RANDOM.nextInt(array.length)];
     }
 
-    private String toJsonString(CristinObject c) {
-        return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
-                   .orElseThrow();
+    private static CristinContributorRoleCode randomCristinContributorRoleCode() {
+        return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
+    }
+
+    private static int threeDigitPositiveNumber() {
+        return RANDOM.nextInt(1000);
     }
 
     private CristinObject createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory secondaryCategory) {
@@ -214,20 +223,31 @@ public class CristinDataGenerator {
                                           .withPublicationYear(randomYear())
                                           .withPublicationOwner(randomString())
                                           .withContributors(randomContributors())
+                                          .withBookReport(randomBookReport())
                                           .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
     }
 
-    private ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
-        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+    private CristinObject createRandomBookWithBookReportValues() {
+        CristinObject cristinObject = CristinObject
+                                          .builder()
+                                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                                          .withEntryCreationDate(LocalDate.now())
+                                          .withMainCategory(CristinMainCategory.BOOK)
+                                          .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
+                                          .withId(largeRandomNumber())
+                                          .withPublicationYear(randomYear())
+                                          .withPublicationOwner(randomString())
+                                          .withContributors(randomContributors())
+                                          .withBookReport(randomBookReport())
+                                          .build();
+        assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
     }
 
-    private <T> JsonNode convertToJsonNode(T inputData) {
-        return inputData instanceof JsonNode
-                   ? (JsonNode) inputData
-                   : JsonUtils.objectMapperNoEmpty.convertValue(inputData, JsonNode.class);
+    private CristinObject newCristinObject(Integer index) {
+        return createObjectWithCristinContributorRoleCode(index, randomContributors());
     }
 
     private CristinObject createObjectWithCristinContributorRoleCode(Integer index,
@@ -240,12 +260,41 @@ public class CristinDataGenerator {
                    .withEntryCreationDate(LocalDate.now())
                    .withPublicationYear(randomYear())
                    .withContributors(contributors)
+                   .withBookReport(randomBookReport())
                    .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                    .build();
     }
 
-    public static int largeRandomNumber() {
-        return 1 + RANDOM.nextInt(Integer.MAX_VALUE);
+    private List<CristinBookReport> randomBookReport() {
+        CristinBookReport bookReport = CristinBookReport
+                                           .builder()
+                                           .withIsbn(randomIsbn13())
+                                           .withPublisherName(randomString())
+                                           .withNumberOfPages(randomString())
+                                           .build();
+        return List.of(bookReport);
+    }
+
+    private String randomIsbn13() {
+        return FAKER.code().isbn13();
+    }
+
+    private String toJsonString(CristinObject c) {
+        return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
+                   .orElseThrow();
+    }
+
+
+
+    private ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
+        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+    }
+
+    private <T> JsonNode convertToJsonNode(T inputData) {
+        return inputData instanceof JsonNode
+                   ? (JsonNode) inputData
+                   : JsonUtils.objectMapperNoEmpty.convertValue(inputData, JsonNode.class);
     }
 
     private CristinSecondaryCategory randomSecondaryCategory() {
@@ -300,10 +349,6 @@ public class CristinDataGenerator {
                    .collect(Collectors.toList());
     }
 
-    private static CristinContributorRoleCode randomCristinContributorRoleCode() {
-        return randomArrayElement(CristinContributorRoleCode.values(), USE_WHOLE_ARRAY);
-    }
-
     private CristinContributor creatContributor(Integer contributorIndex, CristinContributorRoleCode roleCode) {
         return CristinContributor.builder()
                    .withContributorOrder(contributorIndex)
@@ -312,10 +357,6 @@ public class CristinDataGenerator {
                    .withFamilyName(randomString())
                    .withAffiliations(List.of(createAffiliation(roleCode)))
                    .build();
-    }
-
-    private static int threeDigitPositiveNumber() {
-        return RANDOM.nextInt(1000);
     }
 
     private URI randomUri() {
