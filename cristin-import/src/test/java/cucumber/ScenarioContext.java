@@ -29,7 +29,7 @@ public class ScenarioContext {
     }
 
     public void newCristinEntry() {
-        this.cristinEntry = new CristinDataGenerator().randomObject();
+        this.cristinEntry = CristinDataGenerator.randomObject();
     }
 
     public CristinObject getCristinEntry() {

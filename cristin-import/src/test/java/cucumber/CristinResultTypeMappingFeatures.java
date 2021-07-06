@@ -17,7 +17,7 @@ public class CristinResultTypeMappingFeatures {
 
     @Given("a valid Cristin Result with secondary category {string}")
     public void valid_cristin_result_with_secondary_category(String secondaryCategory) {
-        this.scenarioContext.newCristinEntry(() -> new CristinDataGenerator().randomObject(secondaryCategory));
+        this.scenarioContext.newCristinEntry(() -> CristinDataGenerator.randomObject(secondaryCategory));
     }
 
     @Then("the NVA Resource has a Reference with PublicationInstance of Type {string}")

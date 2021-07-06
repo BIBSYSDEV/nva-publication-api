@@ -64,13 +64,12 @@ public class CristinMapperTest extends AbstractCristinImportTest {
             + "but: Empty field found: %s";
     public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
     public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
-    private CristinDataGenerator cristinDataGenerator;
+
 
     @BeforeEach
     public void init() {
         super.init();
-        cristinDataGenerator = new CristinDataGenerator();
-        testingData = cristinDataGenerator.randomDataAsString();
+        testingData = CristinDataGenerator.randomDataAsString();
     }
 
     @Test
@@ -144,9 +143,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookAnthologyWhenInputHasMainTypeBookAndSecondaryTypeAnthology() {
-        testingData = Stream.of(cristinDataGenerator.randomBookAnthology())
-                .map(JsonSerializable::toJsonString)
-                .collect(SingletonCollector.collect());
+        testingData = Stream.of(CristinDataGenerator.randomBookAnthology())
+                          .map(JsonSerializable::toJsonString)
+                          .collect(SingletonCollector.collect());
 
         Publication actualPublication = cristinObjects()
                 .map(CristinObject::toPublication)
@@ -167,9 +166,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookMonographWhenInputHasMainTypeBookAndSecondaryTypeMonograph() {
-        testingData = Stream.of(cristinDataGenerator.randomBookMonograph())
-                .map(JsonSerializable::toJsonString)
-                .collect(SingletonCollector.collect());
+        testingData = Stream.of(CristinDataGenerator.randomBookMonograph())
+                          .map(JsonSerializable::toJsonString)
+                          .collect(SingletonCollector.collect());
 
         Publication actualPublication = cristinObjects()
                 .map(CristinObject::toPublication)
@@ -297,7 +296,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
-        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
         String numberOfPages = cristinImport.getBookReport().get(0).getNumberOfPages();
 
@@ -316,7 +315,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
         String publisherName = cristinImport.getBookReport().get(0).getPublisherName();
 
@@ -335,7 +334,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        CristinObject cristinImport = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
         String isbn = cristinImport.getBookReport().get(0).getIsbn();
 
@@ -355,7 +354,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapThrowsExceptionWhenACristinAffiliationDoesNotHaveARole() {
         CristinObject cristinObjectWithContributorsWithoutRole =
-                cristinDataGenerator.randomObject()
+            CristinDataGenerator.randomObject()
                         .copy()
                         .withContributors(List.of(contributorWithoutRoles()))
                         .build();
@@ -374,7 +373,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                 .withAffiliations(List.of(randomAffiliation()))
                 .build();
         CristinObject cristinObjectWithContributorsWithoutRole =
-                cristinDataGenerator.randomObject().copy()
+            CristinDataGenerator.randomObject().copy()
                         .withPublicationOwner(randomString())
                         .withContributors(List.of(contributorWithMissingName))
                         .build();
@@ -385,7 +384,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapperThrowsExceptionWhenIsbnValueIsNull() {
-        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
         cristinInput.getBookReport().get(0).setIsbn(null);
 
         Executable action = cristinInput::toPublication;
@@ -400,7 +399,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapperThrowsExceptionWhenPublisherValueIsNull() {
-        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
         cristinInput.getBookReport().get(0).setPublisherName(null);
 
         Executable action = cristinInput::toPublication;
@@ -414,7 +413,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapperThrowsExceptionWhenNumberOfPagesValueIsNull() {
-        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
         cristinInput.getBookReport().get(0).setNumberOfPages(null);
 
         Executable action = cristinInput::toPublication;
@@ -434,7 +433,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private CristinObject createObjectWithRoleCode(CristinContributorRoleCode actualCristinRoleCode) {
-        return cristinDataGenerator.newCristinObjectWithRoleCode(actualCristinRoleCode);
+        return CristinDataGenerator.newCristinObjectWithRoleCode(actualCristinRoleCode);
     }
 
     private CristinContributor contributorWithoutRoles() {
