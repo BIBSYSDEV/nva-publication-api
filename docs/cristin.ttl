@@ -473,4 +473,48 @@
     rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class ;
     :isignored   "false" .
 
+:TYPE_BOK_RAPPORT
+    a               :cristinfield ;
+    rdfs:comment    """
+    A type of book called rapport.
+    """ ;
+    rdfs:range      :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages,
+        entityDescription.reference.publicationContext.isbnList,
+        entityDescription.reference.publicationContext.publisher
+    """ .
+
+:antall_sider_totalt
+    a               :cristinfield ;
+    rdfs:comment    """
+    The total number of pages
+    """ ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages
+    """ .
+
+:isbn
+    a               :cristinfield ;
+    rdfs:comment    "The isbn which the respective book is registered with." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.isbnList
+    """ .
+
+
+:utgivernavn
+    a            :cristinfield ;
+    rdfs:comment "The name of the publisher of the respective book." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+            entityDescription.reference.publicationContext.publisher
+        """ .
+
+
 

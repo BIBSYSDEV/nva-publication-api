@@ -11,7 +11,7 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there is only one CristinTitle and it is annotated as original
     Given the Cristin Result has an non null array of CristinTitles
-    Given the Cristin Result has an  CristinTitles with values:
+    Given the Cristin Result has an array of CristinTitles with values:
       | Title Text         | Status Original |
       | This is some title | J               |
     When the Cristin Result is converted to an NVA Resource
@@ -20,7 +20,7 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there are many titles but only one annotated as original
-    Given the Cristin Result has an  CristinTitles with values:
+    Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                 | Status Original |
       | This is the original title | J               |
       | This is translated title   | N               |
@@ -31,7 +31,7 @@ Feature: Mappings that hold for all types of Cristin Results
 
   Scenario: map returns NVA Resource with Main Title being any Cristin Title annotated as
   Original Title when there are two titles both annotated as original
-    Given the Cristin Result has an  CristinTitles with values:
+    Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                     | Status Original |
       | This is the original title     | J               |
       | This is another original title | J               |

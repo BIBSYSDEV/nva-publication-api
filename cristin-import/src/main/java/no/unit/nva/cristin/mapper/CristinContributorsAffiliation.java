@@ -42,8 +42,8 @@ public class CristinContributorsAffiliation {
     @JsonProperty("VARBEID_PERSON_STED_ROLLE")
     private List<CristinContributorRole> roles;
 
-    public CristinContributorsAffiliation() {
 
+    public CristinContributorsAffiliation() {
     }
 
     public Organization toNvaOrganization() {

@@ -16,7 +16,6 @@ entityDescription.contributors.identity.orcId
 entityDescription.contributors.email
 entityDescription.date.day
 entityDescription.date.month
-entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationContext.seriesNumber
 entityDescription.reference.publicationContext.seriesTitle
 entityDescription.reference.doi

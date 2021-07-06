@@ -47,7 +47,6 @@ public class CristinContributor {
 
     @JacocoGenerated
     public CristinContributor() {
-
     }
 
     @JacocoGenerated
