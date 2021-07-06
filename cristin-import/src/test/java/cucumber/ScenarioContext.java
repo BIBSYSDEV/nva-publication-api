@@ -2,6 +2,7 @@ package cucumber;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -16,8 +17,12 @@ public class ScenarioContext {
 
     }
 
+    public void newCristinEntry(Supplier<CristinObject> cristinObjectSupplier) {
+        this.cristinEntry = cristinObjectSupplier.get();
+    }
+
     public void newCristinEntry() {
-        this.cristinEntry = new CristinDataGenerator().randomBookMonograph();
+        this.cristinEntry = new CristinDataGenerator().randomObject();
     }
 
     public CristinObject getCristinEntry() {
