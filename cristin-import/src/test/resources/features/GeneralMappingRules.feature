@@ -8,7 +8,7 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "Cristin" and value 12345
 
-  Scenario: map returns NVA Resource with main title being the Cristin title annotated as
+  Scenario: Map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there is only one CristinTitle and it is annotated as original
     Given the Cristin Result has an non null array of CristinTitles
     Given the Cristin Result has an array of CristinTitles with values:
@@ -18,7 +18,7 @@ Feature: Mappings that hold for all types of Cristin Results
     Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
 
 
-  Scenario: map returns NVA Resource with main title being the Cristin title annotated as
+  Scenario: Map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there are many titles but only one annotated as original
     Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                 | Status Original | Language Code |
@@ -27,7 +27,7 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
-  Scenario: map returns NVA Resource with Main Title being any Cristin Title annotated as
+  Scenario: Map returns NVA Resource with Main Title being any Cristin Title annotated as
   Original Title when there are two titles both annotated as original
     Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                     | Status Original | Language Code |
@@ -66,12 +66,12 @@ Feature: Mappings that hold for all types of Cristin Results
       | "1996"          |
       | "c.a 1996"      |
 
-  Scenario: map returns NVA Resource with entry creation date equal to Cristin entry's creation date
+  Scenario: Map returns NVA Resource with entry creation date equal to Cristin entry's creation date
     Given that Cristin Result has created date equal to the local date "2011-12-03"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Creation Date equal to "2011-12-03T00:00:00Z"
 
-  Scenario: map returns NVA Resource where the Contributor names are concatenations of the
+  Scenario: Map returns NVA Resource where the Contributor names are concatenations of the
   Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:
       | Given Name  | Family Name |
@@ -85,7 +85,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | Loremius, C.J.B.     |
       | Surname, Have, Comma |
 
-  Scenario: map returns NVA Resource where NVA Contributor sequence is the same as the Cristin
+  Scenario: Map returns NVA Resource where NVA Contributor sequence is the same as the Cristin
   Contributor Sequence
     Given that the Cristin Result has the Contributors with names and sequence:
       | Given Name  | Family Name  | Ordinal Number |
@@ -99,7 +99,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | SecondFamily, SecondGiven | 2              |
       | ThirdFamily, ThirdGiven   | 3              |
 
-  Scenario: map returns NVA Resource with Contributors that have Affiliations With URIs
+  Scenario: Map returns NVA Resource with Contributors that have Affiliations With URIs
   created based on Cristin Contributor's Reference URI and Unit numbers.
     Given that the Cristin Result has the Contributors with names and sequence:
       | Given Name  | Family Name  | Ordinal Number |
@@ -128,12 +128,12 @@ Feature: Mappings that hold for all types of Cristin Results
       | REDAKTØR    | EDITOR  |
       | FORFATTER   | CREATOR |
 
-  Scenario: mapping reports error when Cristin affiliation has no role
+  Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
-  Scenario: mapping reports error when Cristin Contributor has no name
+  Scenario: Mapping reports error when Cristin Contributor has no name
     Given that the Cristin Result has a Contributor with no family and no given name
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
