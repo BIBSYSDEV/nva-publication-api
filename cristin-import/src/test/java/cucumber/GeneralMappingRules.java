@@ -169,7 +169,7 @@ public class GeneralMappingRules {
         List<ContributorFlattenedDetails> expectedContributors =
             table.asMaps()
                 .stream()
-                .map(ContributorFlattenedDetails::from)
+                .map(ContributorFlattenedDetails::fromDataTableMapEntry)
                 .collect(Collectors.toList());
 
         assertThat(actualContributors, containsInAnyOrder(expectedContributors.toArray(
@@ -198,7 +198,7 @@ public class GeneralMappingRules {
         ContributorFlattenedDetails[] expectedDetails =
             dataTable.asMaps()
                 .stream()
-                .map(ContributorFlattenedDetails::from)
+                .map(ContributorFlattenedDetails::fromDataTableMapEntry)
                 .collect(Collectors.toList())
                 .toArray(ContributorFlattenedDetails[]::new);
 
