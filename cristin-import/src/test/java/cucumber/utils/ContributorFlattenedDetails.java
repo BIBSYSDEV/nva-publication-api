@@ -1,5 +1,6 @@
-package cucumber;
+package cucumber.utils;
 
+import cucumber.CristinContributorTransformer;
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
@@ -8,40 +9,39 @@ import no.unit.nva.model.Contributor;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
-public class CristinContributorFlattenedDetails implements JsonSerializable {
+public class ContributorFlattenedDetails implements JsonSerializable {
 
     private final String name;
     private final int sequence;
     private final URI affiliationUri;
 
-    private CristinContributorFlattenedDetails(String name, int sequence, URI affiliationUri) {
+    private ContributorFlattenedDetails(String name, int sequence, URI affiliationUri) {
         this.name = name;
         this.sequence = sequence;
         this.affiliationUri = affiliationUri;
     }
 
-    public static CristinContributorFlattenedDetails extractNameAndSequence(Contributor c) {
+    public static ContributorFlattenedDetails extractNameAndSequence(Contributor c) {
         String name = c.getIdentity().getName();
         int sequence = c.getSequence();
-        return new CristinContributorFlattenedDetails(name, sequence, null);
+        return new ContributorFlattenedDetails(name, sequence, null);
     }
 
-    public static CristinContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor c) {
+    public static ContributorFlattenedDetails extractNameSequenceAndAffiliationUri(Contributor c) {
         String name = c.getIdentity().getName();
         int sequence = c.getSequence();
-        URI affiliationUri = c.getAffiliations().stream().collect(SingletonCollector.collect())
-                                 .getId();
-        return new CristinContributorFlattenedDetails(name, sequence, affiliationUri);
+        URI affiliationUri = c.getAffiliations().stream().collect(SingletonCollector.collect()).getId();
+        return new ContributorFlattenedDetails(name, sequence, affiliationUri);
     }
 
-    public static CristinContributorFlattenedDetails from(Map<String, String> mapEntry) {
+    public static ContributorFlattenedDetails from(Map<String, String> mapEntry) {
         String name = mapEntry.get(CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_NVA_NAME);
         int sequence = Integer.parseInt(mapEntry.get(CristinContributorTransformer.CONTRIBUTOR_ORDINAL_NUMBER));
         URI uri = Optional.ofNullable(mapEntry.get(
             CristinContributorTransformer.TABLE_FIELD_FOR_EXPECTED_AFFILIATION_URI))
                       .map(URI::create)
                       .orElse(null);
-        return new CristinContributorFlattenedDetails(name, sequence, uri);
+        return new ContributorFlattenedDetails(name, sequence, uri);
     }
 
     @Override
@@ -54,10 +54,10 @@ public class CristinContributorFlattenedDetails implements JsonSerializable {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof CristinContributorFlattenedDetails)) {
+        if (!(o instanceof ContributorFlattenedDetails)) {
             return false;
         }
-        CristinContributorFlattenedDetails that = (CristinContributorFlattenedDetails) o;
+        ContributorFlattenedDetails that = (ContributorFlattenedDetails) o;
         return getSequence() == that.getSequence()
                && Objects.equals(getName(), that.getName())
                && Objects.equals(getAffiliationUri(), that.getAffiliationUri());

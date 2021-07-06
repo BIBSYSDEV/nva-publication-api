@@ -1,4 +1,4 @@
-package cucumber;
+package cucumber.utils.exceptions;
 
 public class MisformattedScenarioException extends RuntimeException {
 

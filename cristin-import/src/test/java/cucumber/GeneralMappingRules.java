@@ -7,6 +7,8 @@ import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNull.nullValue;
+import cucumber.utils.ContributorFlattenedDetails;
+import cucumber.utils.exceptions.MisformattedScenarioException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -155,22 +157,22 @@ public class GeneralMappingRules {
 
     @Then("the NVA Resource has a List of NVA Contributors with the following sequences:")
     public void theNvaResourceHasAListOfNvaContributorsWithTheFollowingSequences(DataTable table) {
-        List<CristinContributorFlattenedDetails> actualContributors =
+        List<ContributorFlattenedDetails> actualContributors =
             this.scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getContributors()
                 .stream()
-                .map(CristinContributorFlattenedDetails::extractNameAndSequence)
+                .map(ContributorFlattenedDetails::extractNameAndSequence)
                 .collect(Collectors.toList());
 
-        List<CristinContributorFlattenedDetails> expectedContributors =
+        List<ContributorFlattenedDetails> expectedContributors =
             table.asMaps()
                 .stream()
-                .map(CristinContributorFlattenedDetails::from)
+                .map(ContributorFlattenedDetails::from)
                 .collect(Collectors.toList());
 
         assertThat(actualContributors, containsInAnyOrder(expectedContributors.toArray(
-            CristinContributorFlattenedDetails[]::new)));
+            ContributorFlattenedDetails[]::new)));
     }
 
     @Given("the Contributors are affiliated with the following Cristin Institution respectively:")
@@ -188,15 +190,16 @@ public class GeneralMappingRules {
     public void theNvaResourceContributorsHaveTheFollowingNamesSequencesAndAffiliationURIs(DataTable dataTable) {
         List<Contributor> contributors = this.scenarioContext.getNvaEntry().getEntityDescription().getContributors();
 
-        List<CristinContributorFlattenedDetails> actualDetails = contributors.stream()
-                                                                     .map(
-                                                                         CristinContributorFlattenedDetails::extractNameSequenceAndAffiliationUri)
-                                                                     .collect(Collectors.toList());
-        CristinContributorFlattenedDetails[] expectedDetails = dataTable.asMaps()
-                                                                   .stream()
-                                                                   .map(CristinContributorFlattenedDetails::from)
-                                                                   .collect(Collectors.toList())
-                                                                   .toArray(CristinContributorFlattenedDetails[]::new);
+        List<ContributorFlattenedDetails> actualDetails =
+            contributors.stream()
+                .map(ContributorFlattenedDetails::extractNameSequenceAndAffiliationUri)
+                .collect(Collectors.toList());
+        ContributorFlattenedDetails[] expectedDetails =
+            dataTable.asMaps()
+                .stream()
+                .map(ContributorFlattenedDetails::from)
+                .collect(Collectors.toList())
+                .toArray(ContributorFlattenedDetails[]::new);
 
         assertThat(actualDetails, containsInAnyOrder(expectedDetails));
     }
@@ -204,9 +207,8 @@ public class GeneralMappingRules {
     private void injectAffiliationsIntoContributors(List<CristinContributorsAffiliation> desiredInjectedAffiliations,
                                                     List<CristinContributor> contributors) {
         for (int contributorsIndex = 0; contributorsIndex < contributors.size(); contributorsIndex++) {
-            List<CristinContributorsAffiliation> desiredAffiliation =
-                List.of(desiredInjectedAffiliations.get(contributorsIndex));
-            contributors.get(contributorsIndex).setAffiliations(desiredAffiliation);
+            CristinContributorsAffiliation desiredAffiliation = desiredInjectedAffiliations.get(contributorsIndex);
+            contributors.get(contributorsIndex).setAffiliations(List.of(desiredAffiliation));
         }
     }
 
