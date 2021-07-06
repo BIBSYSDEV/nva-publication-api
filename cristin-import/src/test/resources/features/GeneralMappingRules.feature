@@ -28,7 +28,6 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
-
   Scenario: map returns NVA Resource with Main Title being any Cristin Title annotated as
   Original Title when there are two titles both annotated as original
     Given the Cristin Result has an  CristinTitles with values:
@@ -37,6 +36,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | This is another original title | J               |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
+
 
   Scenario Outline: map returns NVA Resource with Publication Date being equal to the Cristin Result's
   Publication Year
@@ -53,7 +53,6 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Creation Date equal to "2011-12-03T00:00:00Z"
 
-
   Scenario: map returns NVA Resource where the Contributor names are concatenations of the
   Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:
@@ -68,7 +67,6 @@ Feature: Mappings that hold for all types of Cristin Results
       | Loremius, C.J.B.     |
       | Surname, Have, Comma |
 
-
   Scenario: map returns NVA Resource where NVA Contributor sequence is the same as the Cristin
   Contributor Sequence
     Given that the Cristin Result has the Contributors with names and sequence:
@@ -82,7 +80,6 @@ Feature: Mappings that hold for all types of Cristin Results
       | FirstFamily, FirstGiven   | 1              |
       | SecondFamily, SecondGiven | 2              |
       | ThirdFamily, ThirdGiven   | 3              |
-
 
   Scenario: map returns NVA Resource with Contributors that have Affiliations With URIs
   created based on Cristin Contributor's Reference URI and Unit numbers.
@@ -103,6 +100,30 @@ Feature: Mappings that hold for all types of Cristin Results
       | FirstFamily, FirstGiven   | 1              | https://api.cristin.no/v2/units/194.66.32.15 |
       | SecondFamily, SecondGiven | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
       | ThirdFamily, ThirdGiven   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
+
+  Scenario Outline: mapping of Cristin Contributor roles
+    Given that the Cristin Result has a Contributor with role "<CristinRole>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Contributor has the role "<NvaRole>"
+    Examples:
+      | CristinRole | NvaRole |
+      | REDAKTØR    | EDITOR  |
+      | FORFATTER   | CREATOR |
+
+  Scenario: mapping reports error when Cristin affiliation has no role
+    Given that the Cristin Result has a Contributor with no role
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
+
+  Scenario: mapping reports error when Cristin Contributor has no name
+    Given that the Cristin Result has a Contributor with no family and no given name
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
+
+
+
+
+
 
 
 

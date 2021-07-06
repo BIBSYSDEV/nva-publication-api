@@ -242,16 +242,16 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationDate() {
+    public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationYear() {
         List<PublicationDate> expectedPublicationDates = cristinObjects()
-                .map(CristinObject::getPublicationYear)
-                .map(this::yearStringToPublicationDate)
-                .collect(Collectors.toList());
+                                                             .map(CristinObject::getPublicationYear)
+                                                             .map(this::yearStringToPublicationDate)
+                                                             .collect(Collectors.toList());
         List<PublicationDate> actualPublicationDates = cristinObjects()
-                .map(CristinObject::toPublication)
-                .map(Publication::getEntityDescription)
-                .map(EntityDescription::getDate)
-                .collect(Collectors.toList());
+                                                           .map(CristinObject::toPublication)
+                                                           .map(Publication::getEntityDescription)
+                                                           .map(EntityDescription::getDate)
+                                                           .collect(Collectors.toList());
 
         assertThat(actualPublicationDates,
                 containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));

@@ -1,5 +1,6 @@
 package cucumber;
 
+import static nva.commons.core.attempt.Try.attempt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -7,14 +8,20 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.Publication;
+import nva.commons.core.attempt.Try;
 
 public class ScenarioContext {
 
     private CristinObject cristinEntry;
     private Publication nvaEntry;
+    private Try<Publication> mappingAttempt;
 
     public ScenarioContext() {
 
+    }
+
+    public Try<Publication> getMappingAttempt() {
+        return mappingAttempt;
     }
 
     public void newCristinEntry(Supplier<CristinObject> cristinObjectSupplier) {
@@ -30,7 +37,8 @@ public class ScenarioContext {
     }
 
     public void convertToNvaEntry() {
-        this.nvaEntry = cristinEntry.toPublication();
+        mappingAttempt = attempt(() -> cristinEntry.toPublication());
+        this.nvaEntry = mappingAttempt.orElse(fail -> null);
     }
 
     public Publication getNvaEntry() {
@@ -48,5 +56,9 @@ public class ScenarioContext {
     public CristinTitle getLatestCristinTitle() {
         List<CristinTitle> titles = cristinEntry.getCristinTitles();
         return titles.get(titles.size() - 1);
+    }
+
+    public boolean mappingIsSuccessful() {
+        return this.mappingAttempt.isSuccess();
     }
 }
