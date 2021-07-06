@@ -4,7 +4,7 @@ import io.cucumber.java.DataTableType;
 import java.util.Map;
 import no.unit.nva.cristin.mapper.CristinTitle;
 
-public class CristinTItleTransformer {
+public class CristinTitleTransformer {
 
     public static final int CURRENTLY_MAPPED_FIELDS = 2;
     public static final String WRONG_NUMBER_OF_FIELDS_FOR_CRISTINT_TITLE =
