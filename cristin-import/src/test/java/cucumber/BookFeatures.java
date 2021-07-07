@@ -82,7 +82,7 @@ public class BookFeatures {
         assertThat(book.getPublisher(), is(equalTo(expectedPublisherName)));
     }
 
-    @Given("that the Book Report entry has an empty numberOfPages field")
+    @Given("that the Book Report entry has an empty \"numberOfPages\" field")
     public void thatTheBookReportEntryHasAnEmptyNumberOfPagesField() {
         CristinBookReport bookReport = CristinBookReport.builder()
                 .withNumberOfPages(null)

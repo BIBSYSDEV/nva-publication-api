@@ -43,6 +43,7 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 
@@ -53,8 +54,6 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
-    public static final String ERROR_MISSING_NUMBER_OF_PAGES_IN_BOOK_REPORT = "Number of pages in a Cristin "
-            + "entry of type Book report can not be null";
 
     private final CristinObject cristinObject;
 
@@ -222,8 +221,8 @@ public class CristinMapper {
 
     private String extractNumberOfPages() {
         String numberOfPages = extractCristinBookReport().getNumberOfPages();
-        if (numberOfPages == null) {
-            throw new MissingFieldsException(ERROR_MISSING_NUMBER_OF_PAGES_IN_BOOK_REPORT);
+        if (StringUtils.isBlank(numberOfPages)) {
+            throw new InvalidCristinBookReportEntryException("numberOfPages", numberOfPages);
         }
         return numberOfPages;
     }
