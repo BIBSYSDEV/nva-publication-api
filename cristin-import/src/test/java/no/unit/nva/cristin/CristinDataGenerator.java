@@ -172,6 +172,10 @@ public final class CristinDataGenerator {
         return cristinObjectWithUnexpectedValue(cristinObject, customSecondaryCategory, SECONDARY_CATEGORY_FIELD);
     }
 
+    public static String randomIsbn13() {
+        return FAKER.code().isbn13();
+    }
+
     private static <T> T randomElement(List<T> elements) {
         return elements.get(RANDOM.nextInt(elements.size()));
     }
@@ -231,7 +235,7 @@ public final class CristinDataGenerator {
                                           .withPublicationYear(randomYear())
                                           .withPublicationOwner(randomString())
                                           .withContributors(randomContributors())
-                                          .withBookReport(randomBookReport())
+                                          .withBookReports(randomBookReport())
                                           .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
@@ -248,7 +252,7 @@ public final class CristinDataGenerator {
                                           .withPublicationYear(randomYear())
                                           .withPublicationOwner(randomString())
                                           .withContributors(randomContributors())
-                                          .withBookReport(randomBookReport())
+                                          .withBookReports(randomBookReport())
                                           .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
@@ -268,7 +272,7 @@ public final class CristinDataGenerator {
                    .withEntryCreationDate(LocalDate.now())
                    .withPublicationYear(randomYear())
                    .withContributors(contributors)
-                   .withBookReport(randomBookReport())
+                   .withBookReports(randomBookReport())
                    .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                    .build();
     }
@@ -281,10 +285,6 @@ public final class CristinDataGenerator {
                                            .withNumberOfPages(randomString())
                                            .build();
         return List.of(bookReport);
-    }
-
-    private static String randomIsbn13() {
-        return FAKER.code().isbn13();
     }
 
     private static String toJsonString(CristinObject c) {

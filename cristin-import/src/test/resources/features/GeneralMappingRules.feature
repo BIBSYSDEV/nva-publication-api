@@ -119,7 +119,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | SecondFamily, SecondGiven | 2              | https://api.cristin.no/v2/units/194.66.32.15 |
       | ThirdFamily, ThirdGiven   | 3              | https://api.cristin.no/v2/units/0.0.0.0      |
 
-  Scenario Outline: mapping of Cristin Contributor roles
+  Scenario Outline: Mapping of Cristin Contributor roles
     Given that the Cristin Result has a Contributor with role "<CristinRole>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Contributor has the role "<NvaRole>"
