@@ -1,4 +1,4 @@
-package cucumber;
+package cucumber.utils.transformers;
 
 import static no.unit.nva.cristin.mapper.CristinContributorsAffiliation.DEPARTMENT_IDENTIFIER;
 import static no.unit.nva.cristin.mapper.CristinContributorsAffiliation.GROUP_IDENTIFIER;
