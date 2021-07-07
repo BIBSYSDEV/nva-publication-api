@@ -73,7 +73,7 @@ public class BookFeatures {
     }
 
     @Then("the NVA Resource has a PublicationContext with publisher equal to {string}")
-    public void theNVAResourceHasAPublicationContextWithPublisherEqualTo(String expectedPublisherName) {
+    public void theNvaResourceHasAPublicationContextWithPublisherEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
                                          .getEntityDescription()
                                          .getReference()
