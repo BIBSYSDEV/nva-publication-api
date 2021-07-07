@@ -35,12 +35,12 @@ public class BookFeatures {
     }
 
     @Given("the Book Report has an ISBN version 10 with value {string}")
-    public void theTypeBookReportFieldHasANonEmptyISBNFieldWithValue(String cristinIsbn) {
+    public void theTypeBookReportFieldHasANonEmptyIsbnFieldWithValue(String cristinIsbn) {
         scenarioContext.getCristinEntry().getBookReports().get(SINGLE_BOOK_REPORT).setIsbn(cristinIsbn);
     }
 
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
-    public void theNVAResourceHasAPublicationContextWithAnISBNListContainingTheValues(String expectedIsbn) {
+    public void theNvaResourceHasAPublicationContextWithAnIsbnListContainingTheValues(String expectedIsbn) {
         PublicationContext publicationContext = scenarioContext.getNvaEntry()
                                                     .getEntityDescription()
                                                     .getReference()

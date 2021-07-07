@@ -30,17 +30,12 @@ Feature:
       | approx. 1000 |
 
 
-  Scenario Outline: Map returns BookMonograph with Publisher copied from the Cristin Entry's Book Report
+  Scenario: Map returns BookMonograph with Publisher copied from the Cristin Entry's Book Report
   "publisher name" entry
     Given that the Cristin Result has a non empty Book Report
-
     And the Book Report has a "publisher name" entry equal to "House of Publishing"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext with publisher equal to "House of Publishing"
-    Examples:
-      | pages        |
-      | 10           |
-      | approx. 1000 |
 
 
 
