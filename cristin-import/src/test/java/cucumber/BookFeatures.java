@@ -81,4 +81,14 @@ public class BookFeatures {
         Book book = (Book) context;
         assertThat(book.getPublisher(), is(equalTo(expectedPublisherName)));
     }
+
+    @Given("that the Book Report entry has an empty numberOfPages field")
+    public void thatTheBookReportEntryHasAnEmptyNumberOfPagesField() {
+        CristinBookReport bookReport = CristinBookReport.builder()
+                .withNumberOfPages(null)
+                .withPublisherName(randomString())
+                .withIsbn(CristinDataGenerator.randomIsbn13())
+                .build();
+        scenarioContext.getCristinEntry().setBookReports(List.of(bookReport));
+    }
 }

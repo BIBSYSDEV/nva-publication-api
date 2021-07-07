@@ -38,5 +38,7 @@ Feature:
     Then the NVA Resource has a PublicationContext with publisher equal to "House of Publishing"
 
 
-
-
+  Scenario: Map throws exception when Cristin with type book report has no number of pages value.
+    Given that the Book Report entry has an empty numberOfPages field
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
