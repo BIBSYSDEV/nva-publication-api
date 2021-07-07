@@ -1,5 +1,6 @@
 package cucumber;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,8 +14,8 @@ import nva.commons.core.attempt.Try;
 public class ScenarioContext {
 
     private CristinObject cristinEntry;
-    private Publication nvaEntry;
     private Try<Publication> mappingAttempt;
+    private Publication nvaEntry;
 
     public ScenarioContext() {
 
@@ -38,10 +39,12 @@ public class ScenarioContext {
 
     public void convertToNvaEntry() {
         mappingAttempt = attempt(() -> cristinEntry.toPublication());
-        this.nvaEntry = mappingAttempt.orElse(fail -> null);
     }
 
     public Publication getNvaEntry() {
+        if (isNull(this.nvaEntry)) {
+            this.nvaEntry = this.mappingAttempt.orElseThrow();
+        }
         return this.nvaEntry;
     }
 
