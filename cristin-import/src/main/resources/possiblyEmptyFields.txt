@@ -1,0 +1,3 @@
+entityDescription.reference.publicationContext.publisher
+entityDescription.reference.publicationContext.isbnList
+entityDescription.reference.publicationInstance.pages.pages

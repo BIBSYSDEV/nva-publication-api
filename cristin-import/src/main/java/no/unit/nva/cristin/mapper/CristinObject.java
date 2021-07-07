@@ -26,12 +26,12 @@ import nva.commons.core.JsonSerializable;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"TYPE_MEDIEBIDRAG", "brukernavn_opprettet", "TYPE_TIDSSKRIFTPUBLIKASJON",
+@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "type_tidsskriftpublikasjon",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "PRESENTASJON_VARBEID", "dato_utgitt", "FINANSIERING_VARBEID", "VARBEID_EMNEORD", "TYPE_PRODUKT",
-    "TYPE_FOREDRAG_POSTER", "kildepostid", "TYPE_BOK_RAPPORT_DEL", "eierkode_opprettet", "ARKIVPOST",
-    "TYPE_KUNSTNERISKPRODUKSJON", "TYPE_UTSTILLING", "pubidnr", "VARBEID_KILDE", "eierkode_siste_endring",
-    "arstall_rapportert", "VARBEID_VDISIPLIN", "ARKIVFIL", "VITENSKAPELIGARBEID_LOKAL", "VARBEID_HRCS_KLASSIFISERING",
+    "presentasjon_varbeid", "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
+    "type_foredrag_poster", "kildepostid", "type_bok_rapport_del", "eierkode_opprettet", "arkivpost",
+    "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
+    "arstall_rapportert", "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
     "merknadtekst", "dato_siste_endring"})
 public class CristinObject implements JsonSerializable {
 

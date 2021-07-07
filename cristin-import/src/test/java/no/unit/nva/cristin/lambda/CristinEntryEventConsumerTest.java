@@ -30,13 +30,20 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.MissingFieldsException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -49,13 +56,16 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -331,6 +341,46 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
+    }
+
+    //This is a test-template to run local tests,
+    // the files needed to run the test has been removed
+    // and the test has been disabled.
+    @Disabled
+    @Test
+    public void runMappingsLocally() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("1000Monographs.txt"));
+        String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
+        ObjectNode eventTemplateJson = (ObjectNode) mapper.readTree(eventTemplateString);
+        var returnValue = listOfJsonObjects.stream()
+                .map(attempt(mapper::readTree))
+                .map(Try::orElseThrow)
+                .map(actualObj -> createEvent(actualObj))
+                .map(eventJason -> stringToStream(eventJason.toString()))
+                .map(attempt(eventJason -> handleRequest(eventJason)))
+                .filter(Try::isFailure)
+                .map(fail -> fail.getException())
+                .filter(exception -> exception instanceof MissingFieldsException)
+                .count();
+        System.out.println(returnValue);
+    }
+
+    private JsonNode createEvent(JsonNode actualObj) {
+        try {
+            String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
+            ObjectNode eventTemplateJson = (ObjectNode) JsonUtils.objectMapper.readTree(eventTemplateString);
+            ((ObjectNode) eventTemplateJson.at("/detail")).set("contents", actualObj);
+            return eventTemplateJson;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String handleRequest(InputStream eventJason) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventJason, outputStream, CONTEXT);
+        return outputStream.toString();
     }
 
 

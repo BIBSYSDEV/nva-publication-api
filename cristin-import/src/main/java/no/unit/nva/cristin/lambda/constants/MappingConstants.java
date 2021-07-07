@@ -1,11 +1,13 @@
 package no.unit.nva.cristin.lambda.constants;
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.util.Set;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+
+import java.net.URI;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class MappingConstants {
 
@@ -13,14 +15,17 @@ public final class MappingConstants {
     public static final boolean SHOULD_CREATE_CONTRIBUTOR_ID = createCristinContributorId();
     public static final URI CRISTIN_PERSONS_URI = URI.create("https://api.cristin.no/person/");
     public static final URI CRISTIN_ORG_URI = readCristinOrgUriFromEnvOrDefault();
-    public static final Set<String> IGNORED_PUBLICATION_FIELDS = readIgnoredFields();
+    public static final Set<String>
+            IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
 
     private MappingConstants() {
 
     }
 
-    private static Set<String> readIgnoredFields() {
-        return Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile())));
+    private static Set<String> readAllIngnoredAndPossiblyEmptyFields() {
+        Set<String> result = new HashSet<>(Set.copyOf(IoUtils.linesfromResource(Path.of(ignoredFieldsFile()))));
+        result.addAll(Set.copyOf(IoUtils.linesfromResource(Path.of("possiblyEmptyFields.txt"))));
+        return result;
     }
 
     private static String ignoredFieldsFile() {
