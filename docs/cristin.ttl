@@ -476,7 +476,7 @@
 :TYPE_BOK_RAPPORT
     a               :cristinfield ;
     rdfs:comment    """
-    A type of book called rapport.
+    UNKNOWN. This value can possibly be null be it is not known what conditions dictates it
     """ ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain     :Result ;
@@ -489,7 +489,7 @@
 :antall_sider_totalt
     a               :cristinfield ;
     rdfs:comment    """
-    The total number of pages
+    The total number of pages?
     """ ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
@@ -499,7 +499,7 @@
 
 :isbn
     a               :cristinfield ;
-    rdfs:comment    "The isbn which the respective book is registered with." ;
+    rdfs:comment    "The isbn which the respective book is registered with?" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :mapstonvafield """
@@ -509,7 +509,7 @@
 
 :utgivernavn
     a            :cristinfield ;
-    rdfs:comment "The name of the publisher of the respective book." ;
+    rdfs:comment "The name of the publisher of the respective book?" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
     :mapstonvafield """
