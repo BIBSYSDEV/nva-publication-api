@@ -17,8 +17,14 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -30,6 +36,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -47,6 +55,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
@@ -397,35 +406,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                 is(equalTo(InvalidIsbnException.class.getSimpleName())));
         assertThat(cause.getMessage(), is(equalTo(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY))));
     }
-
-    @Test
-    public void mapperThrowsExceptionWhenPublisherValueIsNull() {
-        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookReport().get(0).setPublisherName(null);
-
-        Executable action = cristinInput::toPublication;
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-
-        assertThat(exception.getClass().getSimpleName(),
-                   is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(exception.getMessage(),
-                   is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PUBLISHER_NVA_LOCATION))));
-    }
-
-    @Test
-    public void mapperThrowsExceptionWhenNumberOfPagesValueIsNull() {
-        CristinObject cristinInput = cristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookReport().get(0).setNumberOfPages(null);
-
-        Executable action = cristinInput::toPublication;
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-
-        assertThat(exception.getClass().getSimpleName(),
-                   is(equalTo(MissingFieldsException.class.getSimpleName())));
-        assertThat(exception.getMessage(),
-                   is(equalTo(String.format(MISSING_FIELD_ERROR_TEMPLATE, PAGES_NVA_LOCATION))));
-    }
-
 
     @Test
     public void mapThrowsMissingFieldsExceptionWhenNonIgnoredFieldIsMissing() {

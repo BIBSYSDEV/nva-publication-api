@@ -43,7 +43,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEE
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -77,7 +77,8 @@ public class CristinMapper {
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
-            assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
+            assertThat(publication,
+                    doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
