@@ -1,6 +1,8 @@
 package no.unit.nva.cristin.lambda.constants;
 
 import java.net.URI;
+import java.net.URL;
+
 import no.unit.nva.model.Level;
 
 public final class HardcodedValues {
@@ -20,6 +22,11 @@ public final class HardcodedValues {
     public static final boolean HARDCODED_PEER_REVIEWED = false;
     public static final boolean HARDCODED_TEXTBOOK_CONTENT = false;
     public static final String HARDCODED_PUBLICATIONS_OWNER = "someone@unit.no";
+
+    public static final String HARDCODED_ARTICLE_NUMBER = "1234567";
+    public static final String HARDCODED_TITLE = "Some title";
+    public static final String HARDCODED_ISSN = "0317-8471";
+    public static final boolean HARDCODED_OPEN_ACCESS = false;
 
     private HardcodedValues() {
 
