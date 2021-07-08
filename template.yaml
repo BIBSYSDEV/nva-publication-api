@@ -1317,6 +1317,13 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - lambda:InvokeFunction
+                Resource: "*"
+              - Effect: Allow
+                Action:
                   - apigateway:*
                 Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/${NvaPublicationApi}'
 
