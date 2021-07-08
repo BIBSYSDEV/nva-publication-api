@@ -50,12 +50,14 @@ import no.unit.nva.model.pages.MonographPages;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
+@Disabled
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
