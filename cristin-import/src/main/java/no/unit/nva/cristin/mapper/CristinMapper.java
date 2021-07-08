@@ -1,34 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ARTICLE_NUMBER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ILLUSTRATED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ISSN;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_ACCESS;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TITLE;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -53,6 +25,40 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_ILLUSTRATED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ARTICLE_NUMBER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ISSN;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_TITLE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_JOURNAL_ACCESS;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 
 public class CristinMapper {
@@ -142,23 +148,22 @@ public class CristinMapper {
             return new Book.Builder()
                        .withIsbnList(isbnList)
                        .withPublisher(extractPublisherName())
-                       .withUrl(HARDCODED_URI.toURL())
-                       .withLevel(HARDCODED_LEVEL)
+                       .withUrl(HARDCODED_BOOK_URI.toURL())
+                       .withLevel(HARDCODED_BOOK_LEVEL)
                        .withOpenAccess(false)
                        .build();
         }
         if (isJournal()) {
             List<String> isbnList = new ArrayList<>();
             isbnList.add(extractIsbn());
-            URL theUrl = new URL("https://www.example.com/");
             return new Journal.Builder()
-                    .withLevel(HARDCODED_LEVEL)
-                    .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                    .withOpenAccess(HARDCODED_OPEN_ACCESS)
-                    .withUrl(theUrl)
-                    .withOnlineIssn(HARDCODED_ISSN)
-                    .withPrintIssn(HARDCODED_ISSN)
-                    .withTitle(HARDCODED_TITLE)
+                    .withLevel(HARDCODED_JOURNAL_LEVEL)
+                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                    .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
+                    .withUrl(HARDCODED_JOURNAL_URI.toURL())
+                    .withOnlineIssn(HARDCODED_JOURNAL_ISSN)
+                    .withPrintIssn(HARDCODED_JOURNAL_ISSN)
+                    .withTitle(HARDCODED_JOURNAL_TITLE)
                     .build();
         }
         return null;
@@ -181,38 +186,41 @@ public class CristinMapper {
 
 
     private MonographPages createMonographPages() {
-        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
+        Range introductionRange = new Range.Builder()
+                .withBegin(HARDCODED_BOOK_PAGE)
+                .withEnd(HARDCODED_BOOK_PAGE)
+                .build();
         return new MonographPages.Builder()
                 .withPages(extractNumberOfPages())
-                .withIllustrated(HARDCODED_ILLUSTRATED)
+                .withIllustrated(HARDCODED_BOOK_ILLUSTRATED)
                 .withIntroduction(introductionRange)
                 .build();
     }
 
     private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
-                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
                    .withPages(createMonographPages())
-                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
                    .build();
     }
 
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
-                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
                    .withPages(createMonographPages())
-                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
                    .build();
     }
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
-        Range numberOfPages = new Range(HARDCODED_PAGE, HARDCODED_PAGE);
+        Range numberOfPages = new Range(HARDCODED_JOURNAL_PAGE, HARDCODED_JOURNAL_PAGE);
         return new JournalArticle.Builder()
-                .withArticleNumber(HARDCODED_ARTICLE_NUMBER)
-                .withIssue(HARDCODED_PAGE)
+                .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
-                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                .withVolume(HARDCODED_PAGE)
+                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                .withVolume(HARDCODED_JOURNAL_PAGE)
                 .build();
     }
 
