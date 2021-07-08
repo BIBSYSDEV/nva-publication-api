@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.StringUtils;
 
 @Data
 @Builder(
@@ -37,6 +38,13 @@ public class CristinBookReport {
 
     public CristinBookReport() {
 
+    }
+
+    public String getNumberOfPages() {
+        if (StringUtils.isBlank(numberOfPages)) {
+            throw new InvalidCristinBookReportEntryException(NUMBER_OF_PAGES, numberOfPages);
+        }
+        return numberOfPages;
     }
 
     @JacocoGenerated
