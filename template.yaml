@@ -1297,6 +1297,59 @@ Resources:
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
 
+  #============================ Deploy API =============================================================
+
+  ApiGatewayCreateDeloymentLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: ApiGatewayAdmin
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - apigateway:*
+                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/${NvaPublicationApi}'
+
+  ApiGatewayCreateDeloymentLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt ApiGatewayCreateDeloymentLambdaRole.Arn
+      Runtime: python3.8
+      Code:
+        ZipFile: |
+          import json, boto3
+          client = boto3.client('apigateway')
+
+          def lambda_handler(event, context):
+            properties = event['ResourceProperties']
+            response = client.create_deployment(
+            restApiId=properties['RestApiId'],
+            stageName=properties['StageName'],
+            description='Deployed from Custom Resource'
+            )
+            return {
+            'Status': 'SUCCESS'
+          }
+
+  ApiGatewayCreateDeloymentCustomResource:
+    DependsOn: NvaPublicationApi
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !Ref ApiGatewayCreateDeloymentLambda
+      RestApiId: !Ref NvaPublicationApi
+      StageName: !Ref NvaPublicationApi.Stage
 
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:
