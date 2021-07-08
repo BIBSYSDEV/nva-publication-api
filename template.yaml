@@ -1297,7 +1297,10 @@ Resources:
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
 
-  #============================ Deploy API =============================================================
+  #============================ Deploy API ============================================================================#
+  # This solves the problem described here:
+  # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
+  #====================================================================================================================#
 
   ApiGatewayCreateDeploymentLambdaRole:
     Type: AWS::IAM::Role
@@ -1317,15 +1320,8 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - lambda:InvokeFunction
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - apigateway:*
-                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/${NvaPublicationApi}'
+                  - apigateway:POST
+                Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${NvaPublicationApi}/deployments'
 
   ApiGatewayCreateDeploymentLambda:
     Type: AWS::Lambda::Function
