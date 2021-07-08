@@ -71,6 +71,10 @@ implementation libs.jackson.databind
 }
 
 test {
+    useJUnitPlatform {
+        includeEngines 'junit-jupiter'
+        includeEngines 'junit-vintage'
+    }
     environment "MAX_SLEEP_TIME", "1"
     environment "CREATE_CONTRIBUTOR_ID", "true"
 }
@@ -81,17 +85,7 @@ configurations {
     }
 }
 
-task cucumber() {
-    dependsOn assemble, testClasses
-    doLast {
-        javaexec {
-            main = "io.cucumber.core.cli.Main"
-            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
-            args = ['--plugin', 'pretty', '--glue', 'cucumber', 'src/test/resources/features']
-        }
-    }
-}
 
-test.dependsOn(cucumber)
+
 
 
