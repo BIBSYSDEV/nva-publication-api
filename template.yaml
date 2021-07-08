@@ -1333,19 +1333,24 @@ Resources:
       Runtime: python3.8
       Code:
         ZipFile: |
-          import json, boto3
+          import json, boto3, cfnresponse
           client = boto3.client('apigateway')
 
           def lambda_handler(event, context):
-            properties = event['ResourceProperties']
-            response = client.create_deployment(
-            restApiId=properties['RestApiId'],
-            stageName=properties['StageName'],
-            description='Deployed from Custom Resource'
-            )
-            return {
-            'Status': 'SUCCESS'
-          }
+            responseData = {}
+            responseStatus = cfnresponse.SUCCESS
+            if event['RequestType'] == 'Update':
+              try:
+                properties = event['ResourceProperties']
+                response = client.create_deployment(
+                  restApiId=properties['RestApiId'],
+                  stageName=properties['StageName'],
+                  description='Deployed from Custom Resource'
+                )
+              except:
+                responseStatus = cfnresponse.FAILED
+
+            cfnresponse.send(event, context, responseStatus, responseData, event['PhysicalResourceId'])
 
   ApiGatewayCreateDeloymentCustomResource:
     DependsOn: NvaPublicationApi
