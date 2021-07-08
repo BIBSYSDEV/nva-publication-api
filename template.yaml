@@ -1347,7 +1347,7 @@ Resources:
     DependsOn: NvaPublicationApi
     Type: AWS::CloudFormation::CustomResource
     Properties:
-      ServiceToken: !Ref ApiGatewayCreateDeloymentLambda
+      ServiceToken: !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/${NvaPublicationApi}'
       RestApiId: !Ref NvaPublicationApi
       StageName: !Ref NvaPublicationApi.Stage
 
