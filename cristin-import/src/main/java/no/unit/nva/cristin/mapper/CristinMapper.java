@@ -51,7 +51,6 @@ import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.SingletonCollector;
-import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 
@@ -265,11 +264,7 @@ public class CristinMapper {
     }
 
     private String extractNumberOfPages() {
-        String numberOfPages = extractCristinBookReport().getNumberOfPages();
-        if (StringUtils.isBlank(numberOfPages)) {
-            throw new InvalidCristinBookReportEntryException("numberOfPages", numberOfPages);
-        }
-        return numberOfPages;
+        return extractCristinBookReport().getNumberOfPages();
     }
 
     private String extractPublisherName() {
