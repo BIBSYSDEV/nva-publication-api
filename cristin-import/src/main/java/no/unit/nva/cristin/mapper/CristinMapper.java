@@ -135,7 +135,8 @@ public class CristinMapper {
                    .build();
     }
 
-    private PublicationContext buildPublicationContext() throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
+    private PublicationContext buildPublicationContext()
+            throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
         if (isBook()) {
             List<String> isbnList = new ArrayList<>();
             isbnList.add(extractIsbn());

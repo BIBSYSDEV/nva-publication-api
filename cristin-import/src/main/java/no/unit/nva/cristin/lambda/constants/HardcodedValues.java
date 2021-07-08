@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.lambda.constants;
 
 import java.net.URI;
-import java.net.URL;
 
 import no.unit.nva.model.Level;
 
