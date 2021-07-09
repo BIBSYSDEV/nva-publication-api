@@ -58,7 +58,7 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("VARBEID_PERSON")
     private List<CristinContributor> contributors;
     @JsonProperty("TYPE_BOK_RAPPORT")
-    private List<CristinBookReport> bookReports;
+    private CristinBookReport bookReport;
     private String publicationOwner;
 
     public CristinObject() {

@@ -297,7 +297,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String numberOfPages = cristinImport.getBookReports().get(0).getNumberOfPages();
+        String numberOfPages = cristinImport.getBookReport().getNumberOfPages();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -316,7 +316,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String publisherName = cristinImport.getBookReports().get(0).getPublisherName();
+        String publisherName = cristinImport.getBookReport().getPublisherName();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -335,7 +335,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String isbn = cristinImport.getBookReports().get(0).getIsbn();
+        String isbn = cristinImport.getBookReport().getIsbn();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -384,7 +384,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapperThrowsExceptionWhenIsbnValueIsNull() {
         CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookReports().get(0).setIsbn(null);
+        cristinInput.getBookReport().setIsbn(null);
 
         Executable action = cristinInput::toPublication;
         RuntimeException exception = assertThrows(RuntimeException.class, action);
