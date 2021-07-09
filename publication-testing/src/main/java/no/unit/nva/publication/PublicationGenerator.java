@@ -161,7 +161,7 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    private static <T> T randomArrayElement(T[] array) {
+    private static <T> T randomArrayElement(T... array) {
         return array[RANDOM.nextInt(array.length)];
     }
 

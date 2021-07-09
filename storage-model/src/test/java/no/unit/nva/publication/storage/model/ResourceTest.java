@@ -310,7 +310,7 @@ public class ResourceTest {
         return URI.create(SOME_HOST + UUID.randomUUID().toString());
     }
 
-    private <T> T randomArrayElement(T[] array) {
+    private <T> T randomArrayElement(T... array) {
         int randomIndex = RANDOM.nextInt(array.length);
         return array[randomIndex];
     }
