@@ -154,8 +154,6 @@ public class CristinMapper {
                        .build();
         }
         if (isJournal()) {
-            List<String> isbnList = new ArrayList<>();
-            isbnList.add(extractIsbn());
             return new Journal.Builder()
                     .withLevel(HARDCODED_JOURNAL_LEVEL)
                     .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)

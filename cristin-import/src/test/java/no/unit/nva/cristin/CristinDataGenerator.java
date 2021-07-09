@@ -276,9 +276,7 @@ public final class CristinDataGenerator {
                 .withPublicationYear(randomYear())
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
-                .withBookReports(randomBookReport())
                 .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
     }
 
