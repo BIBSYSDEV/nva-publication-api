@@ -25,6 +25,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class EventEmitterTest {
 
+    public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
     private EventBridgeClient eventBridgeClient;
     private AtomicInteger sleepingCounter;
 
@@ -35,27 +36,7 @@ public class EventEmitterTest {
         eventBridgeClient = setupEventBridgeClient();
     }
 
-    @Test
-    public void emitEventsEmitsAllEventsWhenCalledWithoutArguments() {
-        EventEmitter<String> eventEmitter = newEventEmitter();
-        List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(eventBodies);
-        eventEmitter.emitEvents();
-        int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
-        assertThat(sleepingCounter.get(), is(equalTo(1)));
-    }
 
-    @Test
-    public void emitEventsEmitsAllEventsWithMinimalDelay() {
-        EventEmitter<String> eventEmitter = newEventEmitter();
-        List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(eventBodies);
-        eventEmitter.emitEvents();
-        int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
-        assertThat(sleepingCounter.get(), is(equalTo(1)));
-    }
 
     @Test
     public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
