@@ -62,7 +62,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String IMPORT_EVENT_TYPE_ENV_VARIABLE = "IMPORT_EVENT_TYPE";
     public static final String IMPORT_EVENT_TYPE = fetchImportEventTypeFromEnvironment();
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
-    public static final int WAIT_TIME_IN_MILLIS_FOR_EMITTING_BATCHES_OF_FILENAMES = 1000;
+    public static final int NUMBER_OF_EVENTS_SENT_IN_PARALLEL = 10;
 
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -163,7 +163,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                                  .map(this::newImportRequestForSingleFile)
                                                  .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
-        return eventEmitter.emitEvents(10, WAIT_TIME_IN_MILLIS_FOR_EMITTING_BATCHES_OF_FILENAMES);
+        return eventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_IN_PARALLEL);
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {

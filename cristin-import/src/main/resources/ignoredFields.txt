@@ -18,6 +18,9 @@ entityDescription.date.day
 entityDescription.date.month
 entityDescription.reference.publicationContext.seriesNumber
 entityDescription.reference.publicationContext.seriesTitle
+entityDescription.reference.publicationContext.linkedContext
+entityDescription.reference.publicationInstance.contentType
+entityDescription.reference.publicationInstance.content
 entityDescription.reference.doi
 entityDescription.abstract
 entityDescription.alternativeTitles

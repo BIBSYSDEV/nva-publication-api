@@ -63,7 +63,7 @@ public class EventEmitterTest {
         List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
         eventEmitter.addEvents(eventBodies);
         int desiredBatchSize = 20;
-        eventEmitter.emitEvents(desiredBatchSize, 0);
+        eventEmitter.emitEvents(desiredBatchSize);
         int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
         int expectedEmissionGroups = eventBodies.size() / desiredBatchSize;
@@ -78,7 +78,7 @@ public class EventEmitterTest {
         eventEmitter.addEvents(eventBodies);
         //The actual batch size will always be a multiple of the events that we send per request
         int desiredBatchSize = 2 * NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        eventEmitter.emitEvents(desiredBatchSize, 0);
+        eventEmitter.emitEvents(desiredBatchSize);
 
         int expectedEmissionGroups = eventBodies.size() / desiredBatchSize;
         assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
@@ -90,7 +90,7 @@ public class EventEmitterTest {
                                   randomString(),
                                   eventBridgeClient) {
             @Override
-            protected void reduceEmittingRate(int waitTimeBetweenEmissions) {
+            protected void reduceEmittingRate() {
                 sleepingCounter.incrementAndGet();
             }
         };
