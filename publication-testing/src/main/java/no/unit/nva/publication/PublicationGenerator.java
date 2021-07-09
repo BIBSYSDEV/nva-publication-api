@@ -6,6 +6,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -36,6 +37,7 @@ public final class PublicationGenerator {
     public static final String OWNER = "owner@example.org";
     public static final String PUBLISHER_ID = "http://example.org/123";
     private static final Faker FAKER = Faker.instance();
+    public static final Random RANDOM = new Random(System.currentTimeMillis());
 
     @JacocoGenerated
     private PublicationGenerator() {
@@ -141,14 +143,14 @@ public final class PublicationGenerator {
     private static EntityDescription createSampleEntityDescription() {
         Contributor contributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
 
-        PublicationInstance<? extends Pages> publicationInstance = new JournalArticle.Builder()
-                                                                       .withArticleNumber("1")
-                                                                       .withIssue("2")
-                                                                       .withVolume("Volume 1")
-                                                                       .withPages(new Range("beginRange", "endRange"))
-                                                                       .withContent(
-                                                                           JournalArticleContentType.RESEARCH_ARTICLE)
-                                                                       .build();
+        PublicationInstance<? extends Pages> publicationInstance =
+            new JournalArticle.Builder()
+                .withArticleNumber("1")
+                .withIssue("2")
+                .withVolume("Volume 1")
+                .withPages(new Range("beginRange", "endRange"))
+                .withContent(randomArrayElement(JournalArticleContentType.values()))
+                .build();
         Reference reference = new Reference.Builder().withPublicationInstance(publicationInstance).build();
 
         return new EntityDescription.Builder()
@@ -157,6 +159,10 @@ public final class PublicationGenerator {
                    .withReference(reference)
                    .withContributors(List.of(contributor))
                    .build();
+    }
+
+    private static <T> T randomArrayElement(T[] array) {
+        return array[RANDOM.nextInt(array.length)];
     }
 
     private static Publication addIdentifier(Publication pub, boolean addIdentifier) {
