@@ -1,43 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-
-import no.unit.nva.model.AdditionalIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.Publication.Builder;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.Journal;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookAnthology;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Pages;
-import no.unit.nva.model.pages.Range;
-import nva.commons.core.SingletonCollector;
-import nva.commons.core.attempt.Try;
-import nva.commons.core.language.LanguageMapper;
-
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_ILLUSTRATED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PAGE;
@@ -59,7 +21,40 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import no.unit.nva.model.AdditionalIdentifier;
+import no.unit.nva.model.Contributor;
+import no.unit.nva.model.EntityDescription;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.Publication.Builder;
+import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.Reference;
+import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.book.BookAnthology;
+import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.model.pages.Pages;
+import no.unit.nva.model.pages.Range;
+import nva.commons.core.attempt.Try;
+import nva.commons.core.language.LanguageMapper;
 
 public class CristinMapper {
 
@@ -91,7 +86,7 @@ public class CristinMapper {
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
             assertThat(publication,
-                    doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
+                       doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
@@ -141,7 +136,7 @@ public class CristinMapper {
     }
 
     private PublicationContext buildPublicationContext()
-            throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
+        throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
         if (isBook()) {
             List<String> isbnList = new ArrayList<>();
             isbnList.add(extractIsbn());
@@ -155,14 +150,14 @@ public class CristinMapper {
         }
         if (isJournal()) {
             return new Journal.Builder()
-                    .withLevel(HARDCODED_JOURNAL_LEVEL)
-                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                    .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
-                    .withUrl(HARDCODED_JOURNAL_URI.toURL())
-                    .withOnlineIssn(HARDCODED_JOURNAL_ISSN)
-                    .withPrintIssn(HARDCODED_JOURNAL_ISSN)
-                    .withTitle(HARDCODED_JOURNAL_TITLE)
-                    .build();
+                       .withLevel(HARDCODED_JOURNAL_LEVEL)
+                       .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                       .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
+                       .withUrl(HARDCODED_JOURNAL_URI.toURL())
+                       .withOnlineIssn(HARDCODED_JOURNAL_ISSN)
+                       .withPrintIssn(HARDCODED_JOURNAL_ISSN)
+                       .withTitle(HARDCODED_JOURNAL_TITLE)
+                       .build();
         }
         return null;
     }
@@ -182,17 +177,16 @@ public class CristinMapper {
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
-
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder()
-                .withBegin(HARDCODED_BOOK_PAGE)
-                .withEnd(HARDCODED_BOOK_PAGE)
-                .build();
+                                      .withBegin(HARDCODED_BOOK_PAGE)
+                                      .withEnd(HARDCODED_BOOK_PAGE)
+                                      .build();
         return new MonographPages.Builder()
-                .withPages(extractNumberOfPages())
-                .withIllustrated(HARDCODED_BOOK_ILLUSTRATED)
-                .withIntroduction(introductionRange)
-                .build();
+                   .withPages(extractNumberOfPages())
+                   .withIllustrated(HARDCODED_BOOK_ILLUSTRATED)
+                   .withIntroduction(introductionRange)
+                   .build();
     }
 
     private BookAnthology createBookAnthology() {
@@ -214,12 +208,12 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(HARDCODED_JOURNAL_PAGE, HARDCODED_JOURNAL_PAGE);
         return new JournalArticle.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
-                .withPages(numberOfPages)
-                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                .withVolume(HARDCODED_JOURNAL_PAGE)
-                .build();
+                   .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
+                   .withIssue(HARDCODED_JOURNAL_PAGE)
+                   .withPages(numberOfPages)
+                   .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                   .withVolume(HARDCODED_JOURNAL_PAGE)
+                   .build();
     }
 
     private boolean isAnthology() {
@@ -263,10 +257,8 @@ public class CristinMapper {
 
     private CristinBookReport extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getBookReports)
-                .stream()
-                .flatMap(Collection::stream)
-                .collect(SingletonCollector.collectOrElse(null));
+                   .map(CristinObject::getBookReport)
+                   .orElse(null);
     }
 
     private String extractNumberOfPages() {

@@ -76,7 +76,8 @@ public class EventEmitter<T> {
      * @param eventDetails A collection of details for the respective events.
      */
     public void addEvents(Stream<T> eventDetails) {
-        List<PutEventsRequestEntry> eventRequestEntries = eventDetails.map(this::createPutEventRequestEntry)
+        List<PutEventsRequestEntry> eventRequestEntries = eventDetails
+                                                              .map(this::createPutEventRequestEntry)
                                                               .collect(Collectors.toList());
         putEventsRequests = createBatchesOfPutEventsRequests(eventRequestEntries);
     }
@@ -147,8 +148,7 @@ public class EventEmitter<T> {
     }
 
     private List<PutEventsResult> tryManyTimesToEmitTheEvents(int eventBatchSize) {
-        List<PutEventsResult> failedEvents = emitEventsAndCollectFailures(putEventsRequests,
-                                                                          eventBatchSize);
+        List<PutEventsResult> failedEvents = emitEventsAndCollectFailures(putEventsRequests, eventBatchSize);
         int attempts = 0;
         while (!failedEvents.isEmpty() && attempts < MAX_ATTEMPTS) {
             List<PutEventsRequest> requestsToResend = collectRequestsForResending(failedEvents);

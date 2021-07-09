@@ -6,7 +6,6 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
-import java.util.List;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinBookReport;
 import no.unit.nva.model.contexttypes.Book;
@@ -31,12 +30,12 @@ public class BookFeatures {
                                            .withPublisherName(randomString())
                                            .withIsbn(CristinDataGenerator.randomIsbn13())
                                            .build();
-        scenarioContext.getCristinEntry().setBookReports(List.of(bookReport));
+        scenarioContext.getCristinEntry().setBookReport(bookReport);
     }
 
     @Given("the Book Report has an ISBN version 10 with value {string}")
     public void theTypeBookReportFieldHasANonEmptyIsbnFieldWithValue(String cristinIsbn) {
-        scenarioContext.getCristinEntry().getBookReports().get(SINGLE_BOOK_REPORT).setIsbn(cristinIsbn);
+        scenarioContext.getCristinEntry().getBookReport().setIsbn(cristinIsbn);
     }
 
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
@@ -52,8 +51,7 @@ public class BookFeatures {
 
     @Given("the Book Report has a \"total number of pages\" entry equal to {string}")
     public void theBookReportHasAEqualTo(String numberOfPages) {
-        scenarioContext.getCristinEntry().getBookReports()
-            .get(SINGLE_BOOK_REPORT)
+        scenarioContext.getCristinEntry().getBookReport()
             .setNumberOfPages(numberOfPages);
     }
 
@@ -69,7 +67,7 @@ public class BookFeatures {
 
     @Given("the Book Report has a \"publisher name\" entry equal to {string}")
     public void theBookReportHasAPublisherNameEntryEqualTo(String publisherName) {
-        scenarioContext.getCristinEntry().getBookReports().get(SINGLE_BOOK_REPORT).setPublisherName(publisherName);
+        scenarioContext.getCristinEntry().getBookReport().setPublisherName(publisherName);
     }
 
     @Then("the NVA Resource has a PublicationContext with publisher equal to {string}")
@@ -89,6 +87,6 @@ public class BookFeatures {
                 .withPublisherName(randomString())
                 .withIsbn(CristinDataGenerator.randomIsbn13())
                 .build();
-        scenarioContext.getCristinEntry().setBookReports(List.of(bookReport));
+        scenarioContext.getCristinEntry().setBookReport(bookReport);
     }
 }
