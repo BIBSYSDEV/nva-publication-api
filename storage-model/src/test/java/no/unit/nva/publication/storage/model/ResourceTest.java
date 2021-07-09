@@ -237,6 +237,7 @@ public class ResourceTest {
                    .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
                    .withPrintIssn(SAMPLE_ISSN)
                    .withUrl(randomUri().toURL())
+                   .withLinkedContext(randomUri().toString())
                    .build();
     }
     
