@@ -26,6 +26,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
@@ -145,6 +146,8 @@ public final class PublicationGenerator {
                                                                        .withIssue("2")
                                                                        .withVolume("Volume 1")
                                                                        .withPages(new Range("beginRange", "endRange"))
+                                                                       .withContent(
+                                                                           JournalArticleContentType.RESEARCH_ARTICLE)
                                                                        .build();
         Reference reference = new Reference.Builder().withPublicationInstance(publicationInstance).build();
 
