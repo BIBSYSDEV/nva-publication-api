@@ -1354,7 +1354,7 @@ Resources:
               except:
                 responseStatus = cfnresponse.FAILED
 
-            cfnresponse.send(event, context, responseStatus, responseData, event['PhysicalResourceId'])
+            cfnresponse.send(event, context, responseStatus, responseData)
 
   ApiGatewayCreateDeloymentCustomResource:
     DependsOn: NvaPublicationApi
