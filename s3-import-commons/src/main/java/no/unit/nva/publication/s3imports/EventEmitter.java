@@ -11,6 +11,8 @@ import java.util.stream.Stream;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
 import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
@@ -50,6 +52,7 @@ public class EventEmitter<T> {
     private final EventBridgeClient client;
     private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
+    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
 
     public EventEmitter(String detailType,
                         String eventSource,
@@ -184,8 +187,11 @@ public class EventEmitter<T> {
         int numberOfRequests = calculateNumberOfRequestsSentPerBatch(numberOfEntriesEmittedPerBatch);
 
         for (int startIndex = 0; startIndex < eventRequests.size(); startIndex = startIndex + numberOfRequests) {
-            List<PutEventsRequest> batch =
-                eventRequests.subList(startIndex, endIndex(eventRequests, startIndex + numberOfRequests));
+            int endIndex = endIndex(eventRequests, startIndex + numberOfRequests);
+            List<PutEventsRequest> batch = eventRequests.subList(startIndex, endIndex);
+            if (batch.isEmpty()) {
+                logger.warn(String.format("Batch is empty:startIndex:%s endIndex:%s", startIndex, endIndex));
+            }
             result.add(batch);
         }
 
@@ -194,7 +200,7 @@ public class EventEmitter<T> {
 
     private int calculateNumberOfRequestsSentPerBatch(int numberOfEntriesEmittedPerBatch) {
         int numberOfRequests = numberOfEntriesEmittedPerBatch / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        return numberOfRequests == 0 ? 1 : numberOfRequests;
+        return numberOfRequests == 0 ? 1 : numberOfRequests + 1;
     }
 
     private int endIndex(List<PutEventsRequest> eventRequests, int overfloadingEndIndex) {
