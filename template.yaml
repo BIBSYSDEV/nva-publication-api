@@ -1356,13 +1356,18 @@ Resources:
 
             cfnresponse.send(event, context, responseStatus, responseData)
 
-  ApiGatewayCreateDeloymentCustomResource:
+  ApiGatewayCreateDeploymentCustomResource:
     DependsOn: NvaPublicationApi
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn
       RestApiId: !Ref NvaPublicationApi
       StageName: !Ref NvaPublicationApi.Stage
+      Timestamp:
+        Fn::Transform:
+          Name: AWS::Include
+          Parameters:
+            Location: ./build/timestamp
 
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:
