@@ -1325,6 +1325,7 @@ Resources:
                   - apigateway:POST
                 Resource: !Sub 'arn:aws:apigateway:${AWS::Region}::/restapis/${NvaPublicationApi}/deployments'
 
+  # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-lambda-function-code-cfnresponsemodule.html
   ApiGatewayCreateDeploymentLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -1332,10 +1333,11 @@ Resources:
       MemorySize: 128
       Timeout: 30
       Role: !GetAtt ApiGatewayCreateDeploymentLambdaRole.Arn
-      Runtime: python2.7
+      Runtime: python3.8
       Code:
         ZipFile: |
-          import json, boto3, cfnresponse
+          import json, boto3
+          import cfnresponse
           client = boto3.client('apigateway')
 
           def lambda_handler(event, context):
