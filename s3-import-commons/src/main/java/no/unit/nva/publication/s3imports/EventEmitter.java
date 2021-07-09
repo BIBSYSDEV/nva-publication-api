@@ -200,7 +200,7 @@ public class EventEmitter<T> {
 
     private int calculateNumberOfRequestsSentPerBatch(int numberOfEntriesEmittedPerBatch) {
         int numberOfRequests = numberOfEntriesEmittedPerBatch / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        return numberOfRequests == 0 ? 1 : numberOfRequests + 1;
+        return numberOfRequests == 0 ? 1 : numberOfRequests;
     }
 
     private int endIndex(List<PutEventsRequest> eventRequests, int overfloadingEndIndex) {

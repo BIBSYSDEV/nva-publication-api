@@ -58,10 +58,10 @@ public class EventEmitterTest {
         List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
         eventEmitter.addEvents(eventBodies);
         //The actual batch size will always be a multiple of the events that we send per request
-        int desiredBatchSize = 2 * NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        eventEmitter.emitEvents(desiredBatchSize);
+        int desiredEmittedEntriesPetBatch = 2 * NUMBER_OF_EVENTS_SENT_PER_REQUEST;
+        eventEmitter.emitEvents(desiredEmittedEntriesPetBatch);
 
-        int expectedEmissionGroups = eventBodies.size() / desiredBatchSize;
+        int expectedEmissionGroups = eventBodies.size() / desiredEmittedEntriesPetBatch;
         assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
     }
 
