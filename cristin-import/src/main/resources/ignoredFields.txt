@@ -7,7 +7,6 @@ modifiedDate
 projects
 publishedDate
 doiRequest
-.owner
 publisher.labels
 entityDescription.contributors.affiliations.labels
 entityDescription.contributors.identity.id
