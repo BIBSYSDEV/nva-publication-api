@@ -7,7 +7,7 @@ Feature:
   Scenario: Map returns NVA Resource with Reference having a PublicationInstance of type
   BookAnthology when the Cristin Result's secondary category is "Monografi"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Reference with PublicationInstance of Type "BookMonograph"
+    Then the NVA Resource is an instance of "BookMonograph"
 
   Scenario: Map returns NVA Resource with Reference having a PublicationContext of type "Book"
   with ISBN values being the ISBN-13 version of the ISBN value of the Cristin TYPE_BOK_RAPPORT

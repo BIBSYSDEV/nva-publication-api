@@ -10,6 +10,7 @@ import nva.commons.core.SingletonCollector;
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
+    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;

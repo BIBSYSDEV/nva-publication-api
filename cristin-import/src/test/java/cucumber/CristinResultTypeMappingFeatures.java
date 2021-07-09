@@ -20,13 +20,13 @@ public class CristinResultTypeMappingFeatures {
         this.scenarioContext.newCristinEntry(() -> CristinDataGenerator.randomObject(secondaryCategory));
     }
 
-    @Then("the NVA Resource has a Reference with PublicationInstance of Type {string}")
-    public void the_nva_resource_has_a_reference_with_publication_instance_of_type(String publicationInstanceType) {
+    @Then("the NVA Resource is an instance of {string}")
+    public void theNvaResourceIsAnInstanceOf(String type) {
         String publicationType = this.scenarioContext.getNvaEntry()
-                                     .getEntityDescription()
-                                     .getReference()
-                                     .getPublicationInstance()
-                                     .getInstanceType();
-        assertThat(publicationType, is(equalTo(publicationInstanceType)));
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance()
+                .getInstanceType();
+        assertThat(publicationType, is(equalTo(type)));
     }
 }

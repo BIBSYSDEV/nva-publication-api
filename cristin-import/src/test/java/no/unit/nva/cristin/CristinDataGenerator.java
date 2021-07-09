@@ -104,6 +104,8 @@ public final class CristinDataGenerator {
                 return randomBookMonograph();
             case ANTHOLOGY:
                 return randomBookAnthology();
+            case JOURNAL_ARTICLE:
+                return randomJournalArticle();
             default:
                 break;
         }
@@ -118,6 +120,10 @@ public final class CristinDataGenerator {
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;
+    }
+
+    private static CristinObject randomJournalArticle() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
     }
 
     public static CristinObject randomBookAnthology() {
@@ -255,6 +261,22 @@ public final class CristinDataGenerator {
                                           .withBookReports(randomBookReport())
                                           .build();
         assertThat(cristinObject, doesNotHaveEmptyValues());
+        return cristinObject;
+    }
+
+    private static CristinObject createRandomJournalWithSpecifiedSecondaryCategory(
+            CristinSecondaryCategory secondaryCategory) {
+        CristinObject cristinObject = CristinObject
+                .builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.JOURNAL)
+                .withSecondaryCategory(secondaryCategory)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .build();
         return cristinObject;
     }
 
