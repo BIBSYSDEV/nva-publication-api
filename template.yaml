@@ -1367,7 +1367,7 @@ Resources:
         Fn::Transform:
           Name: AWS::Include
           Parameters:
-            Location: ./build/timestamp
+            Location: ./.timestamp
 
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:
