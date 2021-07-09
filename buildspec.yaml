@@ -10,7 +10,11 @@ phases:
     commands:
       - date '+%s' > .timestamp
       - sam build
-      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged.yaml
+      - sam package --s3-bucket $S3_BUCKET --output-template-file packaged_raw.yaml
+  post_build:
+    commands:
+      - BUILD_TIMESTAMP=$(date '+%s')
+      - envsubst '${BUILD_TIMESTAMP}' < packaged_raw.yaml > packaged.yaml
 artifacts:
   files:
     - packaged.yaml

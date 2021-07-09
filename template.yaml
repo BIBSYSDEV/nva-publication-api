@@ -1363,11 +1363,7 @@ Resources:
       ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn
       RestApiId: !Ref NvaPublicationApi
       StageName: !Ref NvaPublicationApi.Stage
-      Timestamp:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: ./.timestamp
+      Timestamp: '${BUILD_TIMESTAMP}'
 
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:

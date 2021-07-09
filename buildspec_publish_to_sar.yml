@@ -10,7 +10,6 @@ phases:
 
   build:
     commands:
-      - date '+%s' > .timestamp
       # Force build of publication-commons to produce zip for Lambda Layer
       - ./gradlew :publication-commons:clean :publication-commons:build
       # Use AWS SAM to build and package the application by using AWS CloudFormation
