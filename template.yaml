@@ -1230,7 +1230,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
-          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          BATCH_EMISSION_INTERVAL_MILLIS: 500
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

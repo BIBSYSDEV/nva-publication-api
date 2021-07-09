@@ -67,6 +67,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private static final String NODES_IN_ARRAY = "},{";
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
+    public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 100;
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -164,7 +165,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);
         eventEmitter.addEvents(eventBodies);
-        return eventEmitter.emitEvents();
+        return eventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
 
     private List<PutEventsResult> generateReportIndicatingTotalEmissionFailure(
