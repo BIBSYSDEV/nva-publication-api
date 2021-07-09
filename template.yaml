@@ -1364,6 +1364,7 @@ Resources:
       RestApiId: !Ref NvaPublicationApi
       StageName: !Ref NvaPublicationApi.Stage
       Timestamp: '${BUILD_TIMESTAMP}'
+      AuthorizerArn: !Ref CognitoAuthorizerArn
 
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:
