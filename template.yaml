@@ -1248,7 +1248,7 @@ Resources:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 2048
       Timeout: 300 # 5 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
