@@ -26,7 +26,7 @@ import nva.commons.core.JsonSerializable;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "type_tidsskriftpublikasjon",
+@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
     "presentasjon_varbeid", "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "type_foredrag_poster", "kildepostid", "type_bok_rapport_del", "eierkode_opprettet", "arkivpost",
@@ -59,6 +59,8 @@ public class CristinObject implements JsonSerializable {
     private List<CristinContributor> contributors;
     @JsonProperty("TYPE_BOK_RAPPORT")
     private CristinBookReport bookReport;
+    @JsonProperty("type_tidsskriftpublikasjon")
+    private CristinJournalPublication journalPublication;
     private String publicationOwner;
 
     public CristinObject() {

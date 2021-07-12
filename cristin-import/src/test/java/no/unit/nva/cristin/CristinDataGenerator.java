@@ -30,6 +30,8 @@ import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinJournalPublication;
+import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
@@ -52,6 +54,8 @@ public final class CristinDataGenerator {
     public static final String NULL_KEY = "null";
     private static final List<String> LANGUAGE_CODES = List.of("nb", "no", "en");
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
+    private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
+    private static final String JOURNAL_PUBLICATION_FIELD = "journalPublication";
 
     private CristinDataGenerator() {
 
@@ -182,6 +186,16 @@ public final class CristinDataGenerator {
         return FAKER.code().isbn13();
     }
 
+
+    public static String randomIssn() {
+        String issnMissingChecksum = random7DigitNumber();
+        return createValidIssn(issnMissingChecksum);
+    }
+
+    private static String random7DigitNumber() {
+        return String.valueOf((int)(Math.random() * 9000000) + 1000000);
+    }
+
     private static <T> T randomElement(List<T> elements) {
         return elements.get(RANDOM.nextInt(elements.size()));
     }
@@ -243,7 +257,6 @@ public final class CristinDataGenerator {
                                           .withContributors(randomContributors())
                                           .withBookReport(randomBookReport())
                                           .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
     }
 
@@ -260,7 +273,6 @@ public final class CristinDataGenerator {
                                           .withContributors(randomContributors())
                                           .withBookReport(randomBookReport())
                                           .build();
-        assertThat(cristinObject, doesNotHaveEmptyValues());
         return cristinObject;
     }
 
@@ -276,8 +288,10 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
+                    .withJournalPublication(randomJournalPublictaion())
                    .build();
     }
+
 
     private static CristinObject newCristinObject(Integer index) {
         return createObjectWithCristinContributorRoleCode(index, randomContributors());
@@ -307,13 +321,32 @@ public final class CristinDataGenerator {
                    .build();
     }
 
+    private static CristinJournalPublication randomJournalPublictaion() {
+        return CristinJournalPublication.builder()
+                .withJournal(randomCristinJournalPublicationJournal())
+                .withPagesBegin("1")
+                .withPagesEnd(String.valueOf(smallRandomNumber()))
+                .withVolume(String.valueOf(smallRandomNumber()))
+                .withDoi(String.valueOf(smallRandomNumber()))
+                .build();
+    }
+
+    private static CristinJournalPublicationJournal randomCristinJournalPublicationJournal() {
+        return CristinJournalPublicationJournal.builder()
+                .withIssn(randomIssn())
+                .withIssnOnline(randomIssn())
+                .withPublisherName(randomString())
+                .build();
+    }
+
     private static String toJsonString(CristinObject c) {
         return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
                    .orElseThrow();
     }
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
-        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(Set.of(PUBLICATION_OWNER_FIELD)));
+        assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
+                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
@@ -391,4 +424,21 @@ public final class CristinDataGenerator {
         String suffix = FAKER.lorem().word() + FAKER.lorem().word();
         return URI.create(prefix + suffix);
     }
+
+    private static String createValidIssn(String issnMissingChecksum) {
+        int totalSum = 0;
+        for (int i = 0; i < issnMissingChecksum.length(); i++) {
+            int number = Character.getNumericValue(issnMissingChecksum.charAt(i));
+            totalSum += (8 - i) * number;
+        }
+
+        int mod11 = totalSum % 11;
+        int checksum = mod11 == 0 ? 0 : 11 - mod11;
+        String issnWithChecksum = checksum == 10 ? issnMissingChecksum + "X" : issnMissingChecksum + checksum;
+        return issnWithChecksum.substring(0, MIDDLE_INDEX_OF_ISSN_STRING)
+                + "-"
+                + issnWithChecksum.substring(MIDDLE_INDEX_OF_ISSN_STRING);
+    }
+
+
 }
