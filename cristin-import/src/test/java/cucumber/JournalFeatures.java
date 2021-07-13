@@ -24,6 +24,8 @@ public class JournalFeatures {
 
     private final ScenarioContext scenarioContext;
 
+    private static final String EMPTY_PUBLISHER_NAME = null;
+
     public JournalFeatures(ScenarioContext scenarioContext) {
         this.scenarioContext = scenarioContext;
     }
@@ -188,6 +190,6 @@ public class JournalFeatures {
         scenarioContext.getCristinEntry()
                         .getJournalPublication()
                         .getJournal()
-                        .setPublisherName(null);
+                        .setPublisherName(EMPTY_PUBLISHER_NAME);
     }
 }
