@@ -24,6 +24,8 @@ public class JournalFeatures {
 
     private final ScenarioContext scenarioContext;
 
+    private static final String EMPTY_PUBLISHER_NAME = null;
+
     public JournalFeatures(ScenarioContext scenarioContext) {
         this.scenarioContext = scenarioContext;
     }
@@ -181,5 +183,13 @@ public class JournalFeatures {
                                         .getReference();
         URI actualDoi = reference.getDoi();
         assertThat(actualDoi, is(equalTo(URI.create(expectedDoi))));
+    }
+
+    @Given("that the Journal Article entry has an empty \"publisherName\" field")
+    public void thatTheJournalArticleEntryHasAnEmptyPublisherNameField() {
+        scenarioContext.getCristinEntry()
+                        .getJournalPublication()
+                        .getJournal()
+                        .setPublisherName(EMPTY_PUBLISHER_NAME);
     }
 }

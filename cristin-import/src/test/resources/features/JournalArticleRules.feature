@@ -19,7 +19,7 @@ Feature: Mapping of Journal Article
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a PublicationContext with onlineIssn equal to "1903-6523"
 
-  Scenario: Map returns a Journal Article with title copied from the Cristin Entrys's Journal Publication "publisheName" entry.
+  Scenario: Map returns a Journal Article with title copied from the Cristin Entrys's Journal Publication "publisherName" entry.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "publisherName" entry equal to "Some article publisher"
     When the Cristin Result is converted to an NVA Resource
@@ -48,3 +48,8 @@ Feature: Mapping of Journal Article
     And the Journal Publication has a "doi" entry equal to "10.1093/ajae/aaq063"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a Reference object with doi equal to "10.1093/ajae/aaq063"
+
+  Scenario: Mapping fails when a Cristin Result of type JournalArticle has no information about the publisher name.
+    Given that the Journal Article entry has an empty "publisherName" field
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.

@@ -516,5 +516,97 @@
             entityDescription.reference.publicationContext.publisher
         """ .
 
+:TYPE_TIDSSKRIFTPUBLIKASJON
+    a               :cristinfield ;
+    rdfs:comment    """
+    A type publication called tidsskrift.
+    """ ;
+    rdfs:range      :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.volume,
+        entityDescription.reference.publicationInstance.pages.begin,
+        entityDescription.reference.publicationInstance.pages.end,
+        entityDescription.reference.doi
+    """ .
+
+:volum
+    a               :cristinfield ;
+    rdfs:comment    """
+    The volume in which the article is published. Possibly null.
+    """ ;
+    rdfs:range      xsd:String ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.volume
+    """ .
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The page number the that marks the start of the article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages.begin
+    """ .
+
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The page number the that marks the end of the article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages.end
+    """ .
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The doi connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.doi
+    """ .
+
+:TIDSSKRIFT
+    a               :cristinfield ;
+    rdfs:comment    """
+    UNKNOWN.
+    """ ;
+    rdfs:range      :TIDSSKRIFT_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.printIssn
+    """ .
+
+:issn
+    a               :cristinfield ;
+    rdfs:comment    "The issn connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.printIssn
+    """ .
+
+:issn_elektronisk
+    a               :cristinfield ;
+    rdfs:comment    "The online version of the issn connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.onlineIssn
+    """ .
+
+:tidsskriftnavn
+    a               :cristinfield ;
+    rdfs:comment    "The name of the journal publishing the article" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.title
+    """ .
+
+
 
 
