@@ -1,3 +1,9 @@
 entityDescription.reference.publicationContext.publisher
 entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationInstance.pages.pages
+entityDescription.reference.doi
+entityDescription.reference.publicationInstance.volume
+entityDescription.reference.publicationContext.onlineIssn
+entityDescription.reference.publicationInstance.pages.end
+entityDescription.reference.publicationInstance.pages.begin
+entityDescription.reference.publicationContext.printIssn

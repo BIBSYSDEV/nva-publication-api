@@ -1,16 +1,16 @@
 {
-  "id":1187165,
+  "id":886441,
   "varbeidhovedkatkode":"TIDSSKRIFTPUBL",
   "varbeidunderkatkode":"ARTIKKEL_FAG",
-  "brukernavn_opprettet":"oddtroen",
-  "eierkode_opprettet":"HIM",
-  "dato_opprettet":"2014-12-18T14:26:11",
-  "brukernavn_siste_endring":"oddtroen",
-  "eierkode_siste_endring":"HIM",
-  "dato_siste_endring":"2015-01-20T14:04:01",
+  "brukernavn_opprettet":"broren",
+  "eierkode_opprettet":"MF",
+  "dato_opprettet":"2012-01-16T10:29:32",
+  "brukernavn_siste_endring":"broren",
+  "eierkode_siste_endring":"MF",
+  "dato_siste_endring":"2012-01-16T10:29:32",
   "publiseringstatuskode":"PUBLISERT",
   "dato_utgitt":null,
-  "arstall":2014,
+  "arstall":2011,
   "arstall_rapportert":null,
   "merknadtekst":null,
   "merknadtekst_godkjenning":null,
@@ -19,19 +19,19 @@
   "pubidnr":null,
   "varbeid_sprak":[
     {
-      "sprakkode":"EN",
-      "titteltekst":"Commentary: five opportunities for innovation in violencerisk assessment research",
-      "sammendragtekst":"Structured risk assessment instruments are frequently used to aid in a number ofmedico-legal decisions. With hundreds of available risk assessment tools and a steadily\r\ngrowing literature on their utility, it is important to examine possibilities for research\r\ninnovation. The present article provides an overview of 5 recommendations for innovation\r\nin risk assessment research: (a) move beyond focusing on the idiographicversus-\r\nnomothetic controversy and start focusing on the nomothetic-versus-nomothetic\r\ncontroversy, (b) move beyond discrimination validity, (c) move beyond using comparisons\r\nagainst chance, (d) move beyond using rules-of-thumb to justify claims of\r\npredictive validity, and (e) move beyond assuming incidents of recidivism occurred\r\nafter index offenses.",
+      "sprakkode":"NB",
+      "titteltekst":"To-regimentslæren i dagens Norge",
+      "sammendragtekst":null,
       "status_original":"J"
     }
   ],
   "vitenskapeligarbeid_lokal":[
     {
-      "eierkode":"HIM",
+      "eierkode":"MF",
       "brukernavn_opprettet":null,
-      "dato_opprettet":"2014-12-18T14:26:11",
+      "dato_opprettet":"2012-01-16T10:29:32",
       "brukernavn_siste_endring":null,
-      "dato_siste_endring":"2014-12-18T14:26:11",
+      "dato_siste_endring":null,
       "status_kontrollert":null,
       "brukernavn_kontrollert":null,
       "dato_kontrollert":null,
@@ -45,14 +45,14 @@
   ],
   "varbeid_person":[
     {
-      "personlopenr":559450,
-      "fornavn":"Jay P.",
-      "etternavn":"Singh",
+      "personlopenr":318877,
+      "fornavn":"Torleiv",
+      "etternavn":"Austad",
       "rekkefolgenr":1,
       "varbeid_person_sted":[
         {
-          "institusjonsnr":211,
-          "avdnr":2,
+          "institusjonsnr":190,
+          "avdnr":0,
           "undavdnr":0,
           "gruppenr":0,
           "stedkode_opprinnelig":null,
@@ -70,7 +70,26 @@
   ],
   "varbeid_kilde":null,
   "presentasjon_varbeid":null,
-  "varbeid_emneord":null,
+  "varbeid_emneord":[
+    {
+      "emneordlopenr":6548,
+      "emneordnavn_bokmal":"Norge",
+      "emneordnavn_engelsk":"Norway",
+      "emneordnavn_nynorsk":null
+    },
+    {
+      "emneordlopenr":21317,
+      "emneordnavn_bokmal":"Martin Luther",
+      "emneordnavn_engelsk":"Martin Luther",
+      "emneordnavn_nynorsk":null
+    },
+    {
+      "emneordlopenr":28315,
+      "emneordnavn_bokmal":"Toregimentslæren",
+      "emneordnavn_engelsk":"Two kingdoms doctrine",
+      "emneordnavn_nynorsk":null
+    }
+  ],
   "varbeid_vdisiplin":null,
   "varbeid_hrcs_klassifisering":null,
   "finansiering_varbeid":null,
@@ -80,11 +99,33 @@
   "type_kunstneriskproduksjon":null,
   "type_mediebidrag":null,
   "type_produkt":null,
-  "type_tidsskriftpublikasjon":[
-    {
-      "varbeidlopenr":1187165
-    }
-  ],
+  "type_tidsskriftpublikasjon": {
+    "tidsskrift":{
+      "tidsskriftnr":2184708,
+      "tidsskriftnavn":"Dansk Tidsskrift for Teologi og Kirke",
+      "nsdkode":479200,
+      "issn":"1903-6523",
+      "issn_elektronisk":"2446-0850",
+      "landkode_utgiver":"DK",
+      "sprakkode":"DA",
+      "status_referee_ordning":"J",
+      "dato_utgutt":null,
+      "status_serie":null
+    },
+    "antall_sider_totalt":null,
+    "publiseringsar":2011,
+    "hefte":"2",
+    "sidenr_fra":"26",
+    "sidenr_til":"36",
+    "status_referee_ordning":null,
+    "supplement":null,
+    "utbredelsesomrade":null,
+    "volum":"38",
+    "artikkelnummer":null,
+    "doi":null,
+    "arstall_trykket":null,
+    "arstall_online":null
+  },
   "type_utstilling":null,
   "arkivfil":null,
   "arkivpost":null

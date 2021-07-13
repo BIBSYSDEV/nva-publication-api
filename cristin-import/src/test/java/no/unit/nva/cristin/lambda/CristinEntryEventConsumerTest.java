@@ -350,18 +350,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void runMappingsLocally() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("1000Monographs.txt"));
-        String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
-        ObjectNode eventTemplateJson = (ObjectNode) mapper.readTree(eventTemplateString);
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100JournalArticles.txt"));
         var returnValue = listOfJsonObjects.stream()
                 .map(attempt(mapper::readTree))
                 .map(Try::orElseThrow)
                 .map(actualObj -> createEvent(actualObj))
                 .map(eventJason -> stringToStream(eventJason.toString()))
                 .map(attempt(eventJason -> handleRequest(eventJason)))
-                .filter(Try::isFailure)
-                .map(fail -> fail.getException())
-                .filter(exception -> exception instanceof MissingFieldsException)
+                .filter(Try::isSuccess)
                 .count();
         System.out.println(returnValue);
     }
