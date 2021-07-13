@@ -114,6 +114,7 @@ public class CristinMapper {
                    .withReference(buildReference())
                    .withContributors(extractContributors())
                    .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
+                   .withAbstract(extractAbstract())
                    .build();
     }
 
@@ -131,7 +132,7 @@ public class CristinMapper {
         return new Reference.Builder()
                    .withPublicationInstance(publicationInstance)
                    .withPublishingContext(publicationContext)
-                    .withDoi(extractDoi())
+                   .withDoi(extractDoi())
                    .build();
     }
 
@@ -322,6 +323,14 @@ public class CristinMapper {
             return URI.create(extractCristinJournalPublication().getDoi());
         }
         return null;
+    }
+
+    private String extractAbstract() {
+        return extractCristinTitles()
+                .filter(CristinTitle::isMainTitle)
+                .findFirst()
+                .map(CristinTitle::getAbstractText)
+                .orElse(null);
     }
 
 

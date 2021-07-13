@@ -302,8 +302,9 @@
     rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_SPRAK_Class ;
-    :isignored   "true" .
-
+    :mapstonvafield """
+            entityDescription.abstract  if VARBEID_SPRAK.status_original is "J"
+        """ .
 :status_original
     a            :cristinfield ;
     rdfs:comment """
