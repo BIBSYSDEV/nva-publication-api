@@ -182,4 +182,12 @@ public class JournalFeatures {
         URI actualDoi = reference.getDoi();
         assertThat(actualDoi, is(equalTo(URI.create(expectedDoi))));
     }
+
+    @Given("that the Journal Article entry has an empty \"publisherName\" field")
+    public void thatTheJournalArticleEntryHasAnEmptyPublisherNameField() {
+        scenarioContext.getCristinEntry()
+                        .getJournalPublication()
+                        .getJournal()
+                        .setPublisherName(null);
+    }
 }
