@@ -114,6 +114,7 @@ public class CristinMapper {
                    .withReference(buildReference())
                    .withContributors(extractContributors())
                    .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
+                   .withTags(extractTags())
                    .build();
     }
 
@@ -324,6 +325,29 @@ public class CristinMapper {
         return null;
     }
 
+    private List<CristinTags> extractCristinTags() {
+        return Optional.ofNullable(cristinObject)
+                .map(CristinObject::getTags)
+                .orElse(null);
+    }
 
+    private List<String> extractTags() {
+        if (extractCristinTags() == null) {
+            return null;
+        }
+        List<String> listOfTags = new ArrayList<>();
+        for (CristinTags cristinTags : extractCristinTags()) {
+            if (cristinTags.getBokmal() != null) {
+                listOfTags.add(cristinTags.getBokmal());
+            }
+            if (cristinTags.getEnglish() != null) {
+                listOfTags.add(cristinTags.getEnglish());
+            }
+            if (cristinTags.getNynorsk() != null) {
+                listOfTags.add(cristinTags.getNynorsk());
+            }
+        }
+        return listOfTags;
+    }
 
 }
