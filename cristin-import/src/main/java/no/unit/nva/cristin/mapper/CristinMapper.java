@@ -39,6 +39,7 @@ import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -77,10 +78,12 @@ public class CristinMapper {
                                       .withOwner(cristinObject.getPublicationOwner())
                                       .withStatus(PublicationStatus.DRAFT)
                                       .withLink(HARDCODED_SAMPLE_DOI)
+                                      .withProjects(extractProjects())
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
+
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
@@ -90,6 +93,14 @@ public class CristinMapper {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
+    }
+
+    private List<ResearchProject> extractProjects() {
+        return cristinObject.getPresentationalWork()
+                .stream()
+                .filter(CristinPresentationalWork::isProject)
+                .map(CristinPresentationalWork::toNvaResearchProject)
+                .collect(Collectors.toList());
     }
 
     private Organization extractOrganization() {

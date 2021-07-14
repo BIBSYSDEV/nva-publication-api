@@ -131,7 +131,7 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: Map returns an NVA Resource with ResearchProject URI generated based on
   Cristin entry's PresentationalWork id when teh PresentationalWork type is PROSJEKT
     Given that the Cristin Result has a PresentationalWork object that is not null
-    And the PresentationalWork type is set to "PROSJEKT" and ID set to "1234"
+    And the PresentationalWork type is set to "PROSJEKT" and ID set to 1234
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Research project with the id "https://api.test.nva.aws.unit.no/project/1234"
 

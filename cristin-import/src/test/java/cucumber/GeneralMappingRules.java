@@ -15,10 +15,13 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -32,6 +35,7 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import nva.commons.core.SingletonCollector;
 
@@ -312,11 +316,26 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
     }
 
-    @And("the PresentationalWork type is set to {string} and ID set to {string}")
-    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, String id) {
+    @And("the PresentationalWork type is set to {string} and ID set to {int}")
+    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, Integer id) {
         scenarioContext.getCristinEntry()
                 .getPresentationalWork()
+                .forEach(work -> {
+                            work.setPresentationType(type);
+                            work.setIdentifier(id);
+                });
+    }
+
+    @Then("the NVA Resource has a Research project with the id {string}")
+    public void theNVAResourceHasAResearchProjectWithTheId(String idString) {
+        URI actuallId = scenarioContext
+                .getNvaEntry()
+                .getProjects()
                 .stream()
-                .map(work -> work.setPresentationType(type))
+                .findFirst()
+                .map(Project::getId)
+                .orElse(null);
+        URI expectedId = URI.create(idString);
+        assertThat(actuallId, is(equalTo(expectedId)));
     }
 }
