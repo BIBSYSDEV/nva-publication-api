@@ -96,6 +96,9 @@ public class CristinMapper {
     }
 
     private List<ResearchProject> extractProjects() {
+        if (cristinObject.getPresentationalWork() == null) {
+            return null;
+        }
         return cristinObject.getPresentationalWork()
                 .stream()
                 .filter(CristinPresentationalWork::isProject)

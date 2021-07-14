@@ -11,7 +11,6 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_RESEARCH_PROJECT_NAME;
 

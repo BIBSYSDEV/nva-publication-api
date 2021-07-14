@@ -38,6 +38,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import nva.commons.core.SingletonCollector;
@@ -316,7 +317,8 @@ public class GeneralMappingRules {
 
     @Given("that the Cristin Result has a PresentationalWork object that is not null")
     public void thatTheCristinResultHasAPresentationalWorkObjectThatIsNotNull() {
-        scenarioContext.getCristinEntry().setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
+        scenarioContext.getCristinEntry()
+                .setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
     }
 
     @And("the PresentationalWork type is set to {string} and ID set to {int}")
@@ -324,13 +326,13 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry()
                 .getPresentationalWork()
                 .forEach(work -> {
-                            work.setPresentationType(type);
-                            work.setIdentifier(id);
+                    work.setPresentationType(type);
+                    work.setIdentifier(id);
                 });
     }
 
     @Then("the NVA Resource has a Research project with the id {string}")
-    public void theNVAResourceHasAResearchProjectWithTheId(String idString) {
+    public void theNvaResourceHasAResearchProjectWithTheId(String idString) {
         URI actuallId = scenarioContext
                 .getNvaEntry()
                 .getProjects()
@@ -376,5 +378,33 @@ public class GeneralMappingRules {
     public void theNvaResourceHasTheTags(List<String> expectedTags) {
         List<String> actualTags = this.scenarioContext.getNvaEntry().getEntityDescription().getTags();
         assertThat(actualTags, is(containsInAnyOrder(expectedTags.toArray())));
+    }
+
+    @Given("that the Cristin Result has a ResearchProject set to null")
+    public void thatTheCristinResultHasAResearchProjectSetToNull() {
+        scenarioContext.getCristinEntry().setPresentationalWork(null);
+    }
+
+    @Then("the NVA Resource has no projects")
+    public void theNvaResourceHasNoProjects() {
+        List<ResearchProject> actuallProjects = scenarioContext.getNvaEntry().getProjects();
+        assertThat(actuallProjects, is(equalTo(null)));
+    }
+
+    @Given("that the Cristin Result has PresentationalWork objects with the values:")
+    public void thatTheCristinResultHasPresentationalWorkObjectsWithTheValues(
+            List<CristinPresentationalWork> presentationalWorks) {
+        scenarioContext.getCristinEntry().setPresentationalWork(presentationalWorks);
+    }
+
+    @Then("the NVA Resource has Research projects with the id values:")
+    public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> actuallUriList = scenarioContext.getNvaEntry()
+                .getProjects()
+                .stream()
+                .map(Project::getId)
+                .collect(Collectors.toList());
+        assertThat(actuallUriList, is(equalTo(expectedUriList)));
     }
 }
