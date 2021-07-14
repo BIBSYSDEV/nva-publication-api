@@ -37,6 +37,10 @@ public class CristinPresentationalWork {
     @JsonProperty("presentasjonstypekode")
     private String presentationType;
 
+    @JacocoGenerated
+    public CristinPresentationalWork() {
+
+    }
 
     @JacocoGenerated
     public CristinPresentationalWorkBuilder copy() {
