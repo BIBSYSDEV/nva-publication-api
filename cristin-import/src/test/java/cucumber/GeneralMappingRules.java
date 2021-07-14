@@ -15,10 +15,13 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -28,11 +31,14 @@ import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
 import no.unit.nva.cristin.mapper.CristinTags;
+import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
+import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import nva.commons.core.SingletonCollector;
@@ -309,6 +315,35 @@ public class GeneralMappingRules {
         }
     }
 
+    @Given("that the Cristin Result has a PresentationalWork object that is not null")
+    public void thatTheCristinResultHasAPresentationalWorkObjectThatIsNotNull() {
+        scenarioContext.getCristinEntry()
+                .setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
+    }
+
+    @And("the PresentationalWork type is set to {string} and ID set to {int}")
+    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, Integer id) {
+        scenarioContext.getCristinEntry()
+                .getPresentationalWork()
+                .forEach(work -> {
+                    work.setPresentationType(type);
+                    work.setIdentifier(id);
+                });
+    }
+
+    @Then("the NVA Resource has a Research project with the id {string}")
+    public void theNvaResourceHasAResearchProjectWithTheId(String idString) {
+        URI actuallId = scenarioContext
+                .getNvaEntry()
+                .getProjects()
+                .stream()
+                .findFirst()
+                .map(Project::getId)
+                .orElse(null);
+        URI expectedId = URI.create(idString);
+        assertThat(actuallId, is(equalTo(expectedId)));
+    }
+
     @Then("the NVA Resource has the following abstract {string}")
     public void theNvaResourceHasTheFollowingAbstract(String expectedAbstract) {
         String actuallAbstract = scenarioContext
@@ -343,5 +378,33 @@ public class GeneralMappingRules {
     public void theNvaResourceHasTheTags(List<String> expectedTags) {
         List<String> actualTags = this.scenarioContext.getNvaEntry().getEntityDescription().getTags();
         assertThat(actualTags, is(containsInAnyOrder(expectedTags.toArray())));
+    }
+
+    @Given("that the Cristin Result has a ResearchProject set to null")
+    public void thatTheCristinResultHasAResearchProjectSetToNull() {
+        scenarioContext.getCristinEntry().setPresentationalWork(null);
+    }
+
+    @Then("the NVA Resource has no projects")
+    public void theNvaResourceHasNoProjects() {
+        List<ResearchProject> actuallProjects = scenarioContext.getNvaEntry().getProjects();
+        assertThat(actuallProjects, is(equalTo(null)));
+    }
+
+    @Given("that the Cristin Result has PresentationalWork objects with the values:")
+    public void thatTheCristinResultHasPresentationalWorkObjectsWithTheValues(
+            List<CristinPresentationalWork> presentationalWorks) {
+        scenarioContext.getCristinEntry().setPresentationalWork(presentationalWorks);
+    }
+
+    @Then("the NVA Resource has Research projects with the id values:")
+    public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> actuallUriList = scenarioContext.getNvaEntry()
+                .getProjects()
+                .stream()
+                .map(Project::getId)
+                .collect(Collectors.toList());
+        assertThat(actuallUriList, is(equalTo(expectedUriList)));
     }
 }

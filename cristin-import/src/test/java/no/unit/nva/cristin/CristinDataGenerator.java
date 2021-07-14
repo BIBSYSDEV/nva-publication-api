@@ -34,6 +34,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -57,6 +58,7 @@ public final class CristinDataGenerator {
     private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
     private static final String JOURNAL_PUBLICATION_FIELD = "journalPublication";
     private static final String CRISTIN_TAGS = "tags";
+    private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
 
     private CristinDataGenerator() {
 
@@ -76,6 +78,12 @@ public final class CristinDataGenerator {
                    .build();
     }
 
+    public static CristinPresentationalWork randomPresentationalWork() {
+        return CristinPresentationalWork.builder()
+                .withPresentationType(randomWord())
+                .withIdentifier(smallRandomNumber()).build();
+    }
+
     public static List<CristinContributorsAffiliation> randomAffiliations() {
         return smallSample()
                    .map(ignored -> randomAffiliation())
@@ -84,6 +92,10 @@ public final class CristinDataGenerator {
 
     public static String randomString() {
         return FAKER.lorem().sentence(smallRandomNumber());
+    }
+
+    public static String randomWord() {
+        return FAKER.lorem().word();
     }
 
     public static CristinContributorsAffiliation createAffiliation(CristinContributorRoleCode roleCode) {
@@ -347,7 +359,7 @@ public final class CristinDataGenerator {
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
-                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS)));
+                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, CRISTIN_PRESENTATIONAL_WORK)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
@@ -390,6 +402,7 @@ public final class CristinDataGenerator {
         }
         return title;
     }
+
 
     private static CristinMainCategory randomMainCategory() {
         return randomArrayElement(CristinMainCategory.values(), NUMBER_OF_KNOWN_MAIN_CATEGORIES);

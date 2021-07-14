@@ -29,6 +29,9 @@ public final class HardcodedValues {
     public static final boolean HARDCODED_OPEN_JOURNAL_ACCESS = false;
     public static final boolean HARDCODED_JOURNAL_PEER_REVIEWED = false;
 
+    //RESEARCH_PROJECT
+    public static final String HARDCODED_RESEARCH_PROJECT_NAME = "Some project name";
+
 
     private HardcodedValues() {
 

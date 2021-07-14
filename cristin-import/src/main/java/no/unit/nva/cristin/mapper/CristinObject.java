@@ -28,7 +28,7 @@ import nva.commons.core.JsonSerializable;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
-    "presentasjon_varbeid", "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
+    "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "type_foredrag_poster", "kildepostid", "type_bok_rapport_del", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
     "arstall_rapportert", "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
@@ -57,6 +57,8 @@ public class CristinObject implements JsonSerializable {
     private CristinSecondaryCategory secondaryCategory;
     @JsonProperty("VARBEID_PERSON")
     private List<CristinContributor> contributors;
+    @JsonProperty("presentasjon_varbeid")
+    private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
     @JsonProperty("TYPE_BOK_RAPPORT")
