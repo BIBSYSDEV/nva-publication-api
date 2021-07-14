@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,7 +16,6 @@ import lombok.Data;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"sammendragtekst"})
 public class CristinTitle {
 
     public static final String TITLE = "titteltekst";
@@ -33,6 +31,8 @@ public class CristinTitle {
     private String title;
     @JsonProperty(STATUS_ORIGINAL)
     private String statusOriginal;
+    @JsonProperty(ABSTRACT)
+    private String abstractText;
 
     public CristinTitle() {
     }

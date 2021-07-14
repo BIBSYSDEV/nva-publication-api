@@ -11,6 +11,7 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -32,6 +33,8 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.PublicationDate;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import nva.commons.core.SingletonCollector;
 
 public class GeneralMappingRules {
@@ -303,6 +306,31 @@ public class GeneralMappingRules {
         List<CristinContributor> contributors) {
         if (contributors.size() != desiredInjectedAffiliations.size()) {
             throw new MisformattedScenarioException(ERROR_MESSAGE_FOR_MISMATCH_BETWEEN_ROLES_AND_AFFILIATIONS);
+        }
+    }
+
+    @Then("the NVA Resource has the following abstract {string}")
+    public void theNvaResourceHasTheFollowingAbstract(String expectedAbstract) {
+        String actuallAbstract = scenarioContext
+                                    .getNvaEntry()
+                                    .getEntityDescription()
+                                    .getAbstract();
+        assertThat(actuallAbstract, is(equalTo(expectedAbstract)));
+    }
+
+    @Then("the NVA Resource has no abstract")
+    public void theNvaResourceHasNoAbstract() {
+        String actuallAbstract = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getAbstract();
+        assertThat(actuallAbstract, is(equalTo(null)));
+    }
+
+    @And("the cristin title abstract is sett to null")
+    public void theCristinTitleAbstractIsSettToNull() {
+        for (CristinTitle title : scenarioContext.getCristinEntry().getCristinTitles()) {
+            title.setAbstractText(null);
         }
     }
 
