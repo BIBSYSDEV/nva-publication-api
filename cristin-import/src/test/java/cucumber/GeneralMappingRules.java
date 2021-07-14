@@ -11,6 +11,7 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -26,6 +27,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -303,5 +305,18 @@ public class GeneralMappingRules {
         if (contributors.size() != desiredInjectedAffiliations.size()) {
             throw new MisformattedScenarioException(ERROR_MESSAGE_FOR_MISMATCH_BETWEEN_ROLES_AND_AFFILIATIONS);
         }
+    }
+
+    @Given("that the Cristin Result has a PresentationalWork object that is not null")
+    public void thatTheCristinResultHasAPresentationalWorkObjectThatIsNotNull() {
+        scenarioContext.getCristinEntry().setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
+    }
+
+    @And("the PresentationalWork type is set to {string} and ID set to {string}")
+    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, String id) {
+        scenarioContext.getCristinEntry()
+                .getPresentationalWork()
+                .stream()
+                .map(work -> work.setPresentationType(type))
     }
 }

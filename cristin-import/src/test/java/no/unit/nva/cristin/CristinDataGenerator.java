@@ -34,6 +34,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinObject;
+import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -75,6 +76,12 @@ public final class CristinDataGenerator {
                    .build();
     }
 
+    public static CristinPresentationalWork randomPresentationalWork() {
+        return CristinPresentationalWork.builder()
+                .withPresentationType(randomWord())
+                .withIdentifier(smallRandomNumber()).build();
+    }
+
     public static List<CristinContributorsAffiliation> randomAffiliations() {
         return smallSample()
                    .map(ignored -> randomAffiliation())
@@ -83,6 +90,10 @@ public final class CristinDataGenerator {
 
     public static String randomString() {
         return FAKER.lorem().sentence(smallRandomNumber());
+    }
+
+    public static String randomWord() {
+        return FAKER.lorem().word();
     }
 
     public static CristinContributorsAffiliation createAffiliation(CristinContributorRoleCode roleCode) {
@@ -388,6 +399,7 @@ public final class CristinDataGenerator {
         }
         return title;
     }
+
 
     private static CristinMainCategory randomMainCategory() {
         return randomArrayElement(CristinMainCategory.values(), NUMBER_OF_KNOWN_MAIN_CATEGORIES);
