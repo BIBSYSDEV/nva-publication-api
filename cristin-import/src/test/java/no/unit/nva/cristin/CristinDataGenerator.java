@@ -57,6 +57,7 @@ public final class CristinDataGenerator {
     private static final int NUMBER_OF_KNOWN_MAIN_CATEGORIES = 1;
     private static final int MIDDLE_INDEX_OF_ISSN_STRING = 4;
     private static final String JOURNAL_PUBLICATION_FIELD = "journalPublication";
+    private static final String CRISTIN_TAGS = "tags";
 
     private CristinDataGenerator() {
 
@@ -357,7 +358,7 @@ public final class CristinDataGenerator {
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
-                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD)));
+                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
@@ -391,6 +392,7 @@ public final class CristinDataGenerator {
     private static CristinTitle randomCristinTitle(int index) {
         CristinTitle title = new CristinTitle();
         title.setTitle(randomString());
+        title.setAbstractText((randomString()));
         title.setLanguagecode(randomLanguageCode());
         if (index == FIRST_TITLE) {
             title.setStatusOriginal(CristinTitle.ORIGINAL_TITLE);

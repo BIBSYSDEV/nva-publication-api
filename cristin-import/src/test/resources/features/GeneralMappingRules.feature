@@ -12,8 +12,8 @@ Feature: Mappings that hold for all types of Cristin Results
   Original Title when there is only one CristinTitle and it is annotated as original
     Given the Cristin Result has an non null array of CristinTitles
     Given the Cristin Result has an array of CristinTitles with values:
-      | Title Text         | Status Original | Language Code |
-      | This is some title | J               | en            |
+      | Title Text         | Abstract Text                 | Status Original | Language Code |
+      | This is some title | This is the original abstract | J               | en            |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
 
@@ -21,18 +21,18 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario: Map returns NVA Resource with main title being the Cristin title annotated as
   Original Title when there are many titles but only one annotated as original
     Given the Cristin Result has an array of CristinTitles with values:
-      | Title Text                 | Status Original | Language Code |
-      | This is the original title | J               | en            |
-      | This is translated title   | N               | en            |
+      | Title Text                 | Abstract Text                 | Status Original | Language Code |
+      | This is the original title | This is the original abstract | J               | en            |
+      | This is translated title   | This is some other abstract   | N               | en            |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
   Scenario: Map returns NVA Resource with Main Title being any Cristin Title annotated as
   Original Title when there are two titles both annotated as original
     Given the Cristin Result has an array of CristinTitles with values:
-      | Title Text                     | Status Original | Language Code |
-      | This is the original title     | J               | en            |
-      | This is another original title | J               | en            |
+      | Title Text                     | Abstract Text                     | Status Original | Language Code |
+      | This is the original title     | This is the original abstract     | J               | en            |
+      | This is another original title | This is another original abstract | J               | en            |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
@@ -40,9 +40,9 @@ Feature: Mappings that hold for all types of Cristin Results
   Scenario Outline: map returns NVA Resource with language being the Lexvo URI equivalent of the
   Cristin language code of the title annotated as original
     Given the Cristin Result has an array of CristinTitles with values:
-      | Title Text                 | Status Original | Language Code       |
-      | This is the original title | J               | <OriginalTitleCode> |
-      | This is some other title   | N               | ru                  |
+      | Title Text                 | Abstract Text                 | Status Original | Language Code       |
+      | This is the original title | This is the original abstract | J               | <OriginalTitleCode> |
+      | This is some other title   | This is some other abstract   | N               | ru                  |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with language "<NvaLanguage>"
     Examples:
@@ -127,6 +127,59 @@ Feature: Mappings that hold for all types of Cristin Results
       | CristinRole | NvaRole |
       | REDAKTØR    | EDITOR  |
       | FORFATTER   | CREATOR |
+
+  Scenario: Map returnes NVA Resource with abstract equal to Cristin entrys "sammendragtekst"
+    when Cristin entry "statusOriginal" has the value "J"
+    Given the Cristin Result has an array of CristinTitles with values:
+      | Abstract Text                 | Title Text                 | Status Original | Language Code |
+      | This is the original abstract | This is the original Title | J               | NO            |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the following abstract "This is the original abstract"
+
+  Scenario: Map returns NVA Resource with main title being the Cristin abstract annotated as
+  Original abstract when there are many abstracts but only one annotated as original
+    Given the Cristin Result has an array of CristinTitles with values:
+      | Abstract Text                   | Title Text                 | Status Original | Language Code |
+      | This is the some other abstract | This is some other Title   | N               | NO            |
+      | This is the original abstract   | This is the original Title | J               | NO            |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the following abstract "This is the original abstract"
+
+  Scenario: Mapping does not fail when there is no abstract
+    Given the Cristin Result has an array of CristinTitles with values:
+      | Abstract Text                   | Title Text                 | Status Original | Language Code |
+      | This is the some other abstract | This is some other Title   | J               | NO            |
+    And the cristin title abstract is sett to null
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has no abstract
+
+
+  Scenario: Map returns NVA Resource with tags equal to the values in the Cristin entry emneord.
+    Given that the Cristin Result has a CristinTag object with the values:
+    | Bokmal | English | Nynorsk |
+    | kirke  | church  | kyrkje  |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the tags:
+    | kirke  |
+    | church |
+    | kyrkje |
+
+  Scenario: Map returns NVA Resource with tags equal to the values in the Cristin entry emneord.
+    Given that the Cristin Result has a CristinTag object with the values:
+      | Bokmal | English | Nynorsk |
+      |        | church  | kyrkje  |
+      | bokmal |         | nynorsk |
+      | hus    | house   |         |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the tags:
+      | bokmal  |
+      | church  |
+      | kyrkje  |
+      | nynorsk |
+      | hus     |
+      | house   |
+
+
 
   Scenario: Map returns an NVA Resource with ResearchProject URI generated based on
   Cristin entry's PresentationalWork id when teh PresentationalWork type is PROSJEKT

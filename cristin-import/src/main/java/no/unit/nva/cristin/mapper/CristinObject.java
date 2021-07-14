@@ -49,7 +49,7 @@ public class CristinObject implements JsonSerializable {
     private String publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
-    @JsonProperty("VARBEID_SPRAK")
+    @JsonProperty("varbeid_sprak")
     private List<CristinTitle> cristinTitles;
     @JsonProperty(MAIN_CATEGORY_FIELD)
     private CristinMainCategory mainCategory;
@@ -59,6 +59,8 @@ public class CristinObject implements JsonSerializable {
     private List<CristinContributor> contributors;
     @JsonProperty("presentasjon_varbeid")
     private List<CristinPresentationalWork> presentationalWork;
+    @JsonProperty("varbeid_emneord")
+    private List<CristinTags> tags;
     @JsonProperty("TYPE_BOK_RAPPORT")
     private CristinBookReport bookReport;
     @JsonProperty("type_tidsskriftpublikasjon")

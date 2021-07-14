@@ -21,11 +21,10 @@ entityDescription.reference.publicationContext.seriesTitle
 entityDescription.reference.publicationContext.linkedContext
 entityDescription.reference.publicationInstance.contentType
 entityDescription.reference.publicationInstance.content
-entityDescription.abstract
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource
-entityDescription.tags
+
 
 
 

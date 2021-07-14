@@ -302,8 +302,9 @@
     rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_SPRAK_Class ;
-    :isignored   "true" .
-
+    :mapstonvafield """
+            entityDescription.abstract  if VARBEID_SPRAK.status_original is "J"
+        """ .
 :status_original
     a            :cristinfield ;
     rdfs:comment """
@@ -606,6 +607,53 @@
     :mapstonvafield """
         entityDescription.reference.publicationContext.title
     """ .
+
+:VARBEID_EMNEORD
+    a               :cristinfield ;
+    rdfs:comment    """
+    UNKNOWN.
+    """ ;
+    rdfs:range      :VARBEID_EMNEORD_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.tags,
+    """ .
+
+:emneordnavn_bokmal
+    a               :cristinfield ;
+    rdfs:comment    """
+    The bokmal version. Possibly null.
+    """ ;
+    rdfs:range      xsd:String ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordnavn_engelsk
+    a               :cristinfield ;
+    rdfs:comment    "The english version. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordnavn_nynorsk
+    a               :cristinfield ;
+    rdfs:comment    "The nynorsk version. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordlopenr
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN" ;
+    rdfs:range      xsd:Integer ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :isignored      "true" .
 
 
 
