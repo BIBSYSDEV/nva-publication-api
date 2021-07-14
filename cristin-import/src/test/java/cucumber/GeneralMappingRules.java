@@ -27,6 +27,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -331,5 +332,16 @@ public class GeneralMappingRules {
         for (CristinTitle title : scenarioContext.getCristinEntry().getCristinTitles()) {
             title.setAbstractText(null);
         }
+    }
+
+    @Given("that the Cristin Result has a CristinTag object with the values:")
+    public void thatTheCristinResultHasACristinTagObjectWithTheValues(List<CristinTags> cristinTags) {
+        scenarioContext.getCristinEntry().setTags(cristinTags);
+    }
+
+    @Then("the NVA Resource has the tags:")
+    public void theNvaResourceHasTheTags(List<String> expectedTags) {
+        List<String> actualTags = this.scenarioContext.getNvaEntry().getEntityDescription().getTags();
+        assertThat(actualTags, is(containsInAnyOrder(expectedTags.toArray())));
     }
 }

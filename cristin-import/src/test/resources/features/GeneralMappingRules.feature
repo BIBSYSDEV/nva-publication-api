@@ -154,6 +154,33 @@ Feature: Mappings that hold for all types of Cristin Results
     Then the NVA Resource has no abstract
 
 
+  Scenario: Map returns NVA Resource with tags equal to the values in the Cristin entry emneord.
+    Given that the Cristin Result has a CristinTag object with the values:
+    | Bokmal | English | Nynorsk |
+    | kirke  | church  | kyrkje  |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the tags:
+    | kirke  |
+    | church |
+    | kyrkje |
+
+  Scenario: Map returns NVA Resource with tags equal to the values in the Cristin entry emneord.
+    Given that the Cristin Result has a CristinTag object with the values:
+      | Bokmal | English | Nynorsk |
+      |        | church  | kyrkje  |
+      | bokmal |         | nynorsk |
+      | hus    | house   |         |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the tags:
+      | bokmal  |
+      | church  |
+      | kyrkje  |
+      | nynorsk |
+      | hus     |
+      | house   |
+
+
+
   Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role
     When the Cristin Result is converted to an NVA Resource
