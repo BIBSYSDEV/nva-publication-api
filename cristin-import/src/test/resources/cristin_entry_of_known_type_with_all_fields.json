@@ -179,7 +179,12 @@
         "originalforfatter": null,
         "originaltittel": null,
         "forlag": null,
-        "fagfelt": null
+        "fagfelt":{
+            "fagfeltkode":1081,
+            "fagomradekode":"MED",
+            "navn":"Samfunnsmedisin",
+            "navn_engelsk":"Public, Environmental and Occupational Health"
+        }
       },
       "type_bok_rapport_del": null,
       "type_foredrag_poster": null,

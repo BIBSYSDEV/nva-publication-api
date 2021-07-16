@@ -30,6 +30,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -47,7 +50,9 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.pages.MonographPages;
+import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -394,6 +399,17 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         assertThat(cause.getClass().getSimpleName(),
                    is(equalTo(InvalidIsbnException.class.getSimpleName())));
         assertThat(cause.getMessage(), is(equalTo(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY))));
+    }
+
+    @Test
+    public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
+        CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
+        cristinObject.getBookReport().getSubjectField().setSubjectFieldCode(null);
+
+        System.out.println(cristinObject);
+
+        Executable action = cristinObject::toPublication;
+        assertThrows(MissingFieldsException.class, action);
     }
 
     @Test

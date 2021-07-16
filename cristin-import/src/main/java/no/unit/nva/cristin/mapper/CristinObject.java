@@ -55,13 +55,13 @@ public class CristinObject implements JsonSerializable {
     private CristinMainCategory mainCategory;
     @JsonProperty(SECONDARY_CATEGORY_FIELD)
     private CristinSecondaryCategory secondaryCategory;
-    @JsonProperty("VARBEID_PERSON")
+    @JsonProperty("varbeid_person")
     private List<CristinContributor> contributors;
     @JsonProperty("presentasjon_varbeid")
     private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
-    @JsonProperty("TYPE_BOK_RAPPORT")
+    @JsonProperty("type_bok_rapport")
     private CristinBookReport bookReport;
     @JsonProperty("type_tidsskriftpublikasjon")
     private CristinJournalPublication journalPublication;
