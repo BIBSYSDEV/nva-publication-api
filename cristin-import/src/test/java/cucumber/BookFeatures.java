@@ -114,12 +114,4 @@ public class BookFeatures {
     public void thatTheBookReportHasNoSubjectField() {
         scenarioContext.getCristinEntry().getBookReport().setSubjectField(null);
     }
-
-    @Then("the NVA Resource has no npiSubjectHeading")
-    public void theNvaResourceHasNoNpiSubjectHeading() {
-        String actuallNpiSubjectHeading = scenarioContext.getNvaEntry()
-                                                        .getEntityDescription()
-                                                        .getNpiSubjectHeading();
-        assertThat(actuallNpiSubjectHeading, is(equalTo(null)));
-    }
 }

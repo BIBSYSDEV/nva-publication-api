@@ -15,7 +15,7 @@ public class CristinSubjectFieldTransformer {
     private static final String FIELD_CODE = "FieldCode";
 
     @DataTableType
-    public CristinSubjectField toCristinSubjecField(Map<String, String> entry) {
+    public CristinSubjectField toCristinSubjectField(Map<String, String> entry) {
         if (entry.keySet().size() != CURRENTLY_MAPPED_FIELDS) {
             throw new UnsupportedOperationException(WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_SUBJECT_FIELD);
         }

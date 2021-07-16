@@ -45,7 +45,7 @@ Feature:
     Then the NVA Resource has a npiSubjectHeading with value equal to 1234
 
 
-  Scenario: Map returns NVA Resource without npiSubjectHeading if the Cristin Entry has no subjectField
+  Scenario: Map fails when the Cristin Entry has no subjectField
     Given that the Cristin Result has a non empty Book Report
     And that the Book Report has no subjectField
     When the Cristin Result is converted to an NVA Resource
