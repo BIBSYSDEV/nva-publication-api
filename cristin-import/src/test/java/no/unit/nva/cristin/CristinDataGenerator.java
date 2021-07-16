@@ -36,6 +36,7 @@ import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
+import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
@@ -59,6 +60,7 @@ public final class CristinDataGenerator {
     private static final String JOURNAL_PUBLICATION_FIELD = "journalPublication";
     private static final String CRISTIN_TAGS = "tags";
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
+    private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
 
     private CristinDataGenerator() {
 
@@ -258,35 +260,31 @@ public final class CristinDataGenerator {
 
     private static CristinObject createRandomBookWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
-        CristinObject cristinObject = CristinObject
-                                          .builder()
-                                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-                                          .withEntryCreationDate(LocalDate.now())
-                                          .withMainCategory(CristinMainCategory.BOOK)
-                                          .withSecondaryCategory(secondaryCategory)
-                                          .withId(largeRandomNumber())
-                                          .withPublicationYear(randomYear())
-                                          .withPublicationOwner(randomString())
-                                          .withContributors(randomContributors())
-                                          .withBookReport(randomBookReport())
-                                          .build();
-        return cristinObject;
+        return CristinObject.builder()
+                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                          .withEntryCreationDate(LocalDate.now())
+                          .withMainCategory(CristinMainCategory.BOOK)
+                          .withSecondaryCategory(secondaryCategory)
+                          .withId(largeRandomNumber())
+                          .withPublicationYear(randomYear())
+                          .withPublicationOwner(randomString())
+                          .withContributors(randomContributors())
+                          .withBookReport(randomBookReport())
+                          .build();
     }
 
     private static CristinObject createRandomBookWithBookReportValues() {
-        CristinObject cristinObject = CristinObject
-                                          .builder()
-                                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
-                                          .withEntryCreationDate(LocalDate.now())
-                                          .withMainCategory(CristinMainCategory.BOOK)
-                                          .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
-                                          .withId(largeRandomNumber())
-                                          .withPublicationYear(randomYear())
-                                          .withPublicationOwner(randomString())
-                                          .withContributors(randomContributors())
-                                          .withBookReport(randomBookReport())
-                                          .build();
-        return cristinObject;
+        return CristinObject.builder()
+                          .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                          .withEntryCreationDate(LocalDate.now())
+                          .withMainCategory(CristinMainCategory.BOOK)
+                          .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
+                          .withId(largeRandomNumber())
+                          .withPublicationYear(randomYear())
+                          .withPublicationOwner(randomString())
+                          .withContributors(randomContributors())
+                          .withBookReport(randomBookReport())
+                          .build();
     }
 
     private static CristinObject createRandomJournalWithSpecifiedSecondaryCategory(
@@ -325,13 +323,20 @@ public final class CristinDataGenerator {
                    .build();
     }
 
-    private static CristinBookReport randomBookReport() {
+    public static CristinBookReport randomBookReport() {
         return CristinBookReport
                    .builder()
                    .withIsbn(randomIsbn13())
                    .withPublisherName(randomString())
                    .withNumberOfPages(randomString())
+                   .withSubjectField(randomSubjectField())
                    .build();
+    }
+
+    private static CristinSubjectField randomSubjectField() {
+        return CristinSubjectField.builder()
+                    .withSubjectFieldCode(smallRandomNumber())
+                    .build();
     }
 
     private static CristinJournalPublication randomJournalPublictaion() {
@@ -359,7 +364,8 @@ public final class CristinDataGenerator {
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
-                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS, CRISTIN_PRESENTATIONAL_WORK)));
+                Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
+                        CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 

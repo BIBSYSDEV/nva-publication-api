@@ -9,4 +9,5 @@ entityDescription.reference.publicationInstance.pages.begin
 entityDescription.reference.publicationContext.printIssn
 entityDescription.abstract
 entityDescription.tags
+entityDescription.npiSubjectHeading
 projects

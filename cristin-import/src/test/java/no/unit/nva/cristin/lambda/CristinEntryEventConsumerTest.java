@@ -33,8 +33,6 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -43,7 +41,6 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
-import no.unit.nva.cristin.mapper.MissingFieldsException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -348,15 +345,15 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     // and the test has been disabled.
     @Disabled
     @Test
-    public void runMappingsLocally() throws JsonProcessingException {
+    public void runMappingsLocally() {
         ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100JournalArticles.txt"));
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Fagfelt.txt"));
         var returnValue = listOfJsonObjects.stream()
                 .map(attempt(mapper::readTree))
                 .map(Try::orElseThrow)
-                .map(actualObj -> createEvent(actualObj))
+                .map(this::createEvent)
                 .map(eventJason -> stringToStream(eventJason.toString()))
-                .map(attempt(eventJason -> handleRequest(eventJason)))
+                .map(attempt(this::handleRequest))
                 .filter(Try::isSuccess)
                 .count();
         System.out.println(returnValue);

@@ -485,6 +485,7 @@
         entityDescription.reference.publicationInstance.pages,
         entityDescription.reference.publicationContext.isbnList,
         entityDescription.reference.publicationContext.publisher
+        entityDescription.npiSubjectHeading
     """ .
 
 :antall_sider_totalt
@@ -516,6 +517,44 @@
     :mapstonvafield """
             entityDescription.reference.publicationContext.publisher
         """ .
+
+:fagfelt
+    a            :cristinfield ;
+    rdfs:comment "The scientific field in which the book is published" ;
+    rdfs:range   :FAGFELT_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    .
+
+
+:fagfeltkode
+    a            :cristinfield ;
+    rdfs:comment "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:range   xsd:PositiveInteger ;
+    rdfs:domain  :FAGFELT_Class ;
+    :mapstonvafield """
+            entityDescription.npiSubjectHeading
+        """ .
+
+:fagomradekode
+    a            :cristinfield ;
+    rdfs:comment "The (abriviation) code representing the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
+
+:navn
+    a            :cristinfield ;
+    rdfs:comment "The name of the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
+
+:navn_engelsk
+    a            :cristinfield ;
+    rdfs:comment "The english name of the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON
     a               :cristinfield ;

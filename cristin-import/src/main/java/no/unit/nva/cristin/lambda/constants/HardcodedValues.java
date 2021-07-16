@@ -7,7 +7,6 @@ import no.unit.nva.model.Level;
 public final class HardcodedValues {
 
     //COMMON
-    public static final String HARDCODED_NPI_SUBJECT = "1007";
     public static final URI HARDCODED_NVA_CUSTOMER =
         URI.create("https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934");
     public static final String HARDCODED_PUBLICATIONS_OWNER = "someone@unit.no";

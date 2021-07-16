@@ -11,7 +11,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOU
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_JOURNAL_ACCESS;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
@@ -127,11 +126,12 @@ public class CristinMapper {
                    .withDate(extractPublicationDate())
                    .withReference(buildReference())
                    .withContributors(extractContributors())
-                   .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
+                   .withNpiSubjectHeading(extractNpiSubjectHeading())
                    .withAbstract(extractAbstract())
                    .withTags(extractTags())
                    .build();
     }
+
 
     private List<Contributor> extractContributors() {
         return cristinObject.getContributors()
@@ -301,6 +301,24 @@ public class CristinMapper {
 
     private AdditionalIdentifier extractIdentifier() {
         return new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
+    }
+
+    private String extractNpiSubjectHeading() {
+        if (!isBook()) {
+            return null;
+        }
+        if (extractSubjectField() == null) {
+            throw new MissingFieldsException(CristinBookReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+        }
+        Integer code = extractSubjectField().getSubjectFieldCode();
+        if (code == null) {
+            throw new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE);
+        }
+        return String.valueOf(code);
+    }
+
+    private CristinSubjectField extractSubjectField() {
+        return extractCristinBookReport().getSubjectField();
     }
 
     private CristinJournalPublication extractCristinJournalPublication() {
