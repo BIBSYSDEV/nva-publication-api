@@ -125,12 +125,15 @@ public final class CristinDataGenerator {
                 return randomBookAnthology();
             case JOURNAL_ARTICLE:
                 return randomJournalArticle();
+            case REPORT:
+                return randomReportReport();
             default:
                 break;
         }
         throw new IllegalStateException(
             String.format("The secondary category %s is not covered", secondaryCategory));
     }
+
 
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
@@ -151,6 +154,10 @@ public final class CristinDataGenerator {
 
     public static CristinObject randomBookMonograph() {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
+    }
+
+    private static CristinObject randomReportReport() {
+        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.REPORT);
     }
 
     public static CristinObject objectWithRandomBookReport() {
@@ -299,8 +306,23 @@ public final class CristinDataGenerator {
                    .withPublicationYear(randomYear())
                    .withPublicationOwner(randomString())
                    .withContributors(randomContributors())
-                    .withJournalPublication(randomJournalPublictaion())
+                   .withJournalPublication(randomJournalPublictaion())
                    .build();
+    }
+
+    private static CristinObject createRandomReportWithSpecifiedSecondaryCategory(
+        CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.REPORT)
+                .withSecondaryCategory(secondaryCategory)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .withBookReport(randomBookReport())
+                .build();
     }
 
 

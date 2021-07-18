@@ -11,6 +11,7 @@ public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
     JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
+    REPORT("RAPPORT", "REPORT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
