@@ -145,6 +145,7 @@
        implementedMappings:
          Anthology -> BookAnthology
          Monograph -> BookMonograph
+         Rapport -> ReportResearch
     """ .
 
 :eierkode_opprettet

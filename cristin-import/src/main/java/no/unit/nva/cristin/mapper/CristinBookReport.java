@@ -53,6 +53,13 @@ public class CristinBookReport {
         return numberOfPages;
     }
 
+    public String getPublisherName() {
+        if (StringUtils.isBlank(publisherName)) {
+            throw new InvalidCristinBookReportEntryException(PUBLISHER, publisherName);
+        }
+        return publisherName;
+    }
+
     @JacocoGenerated
     public CristinBookReport.CristinBookReportBuilder copy() {
         return this.toBuilder();

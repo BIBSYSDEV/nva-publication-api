@@ -182,6 +182,7 @@ public class CristinMapper {
         if (isReport()) {
             return new Report.Builder()
                     .withLevel(HARDCODED_REPORT_LEVEL)
+                    .withPublisher(extractPublisherName())
                     .withUrl(HARDCODED_REPORT_URL.toURL())
                     .build();
         }
@@ -247,9 +248,7 @@ public class CristinMapper {
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {
-        return new ReportResearch.Builder()
-                .withPages(createMonographPages())
-                .build();
+        return new ReportResearch.Builder().build();
     }
 
     private boolean isAnthology() {
