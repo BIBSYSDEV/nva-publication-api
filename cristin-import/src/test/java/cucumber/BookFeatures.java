@@ -17,7 +17,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import nva.commons.core.SingletonCollector;
 
-import java.util.List;
 
 public class BookFeatures {
 
