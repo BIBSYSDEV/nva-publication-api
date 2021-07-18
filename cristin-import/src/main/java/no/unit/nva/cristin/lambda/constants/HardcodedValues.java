@@ -31,6 +31,10 @@ public final class HardcodedValues {
     //RESEARCH_PROJECT
     public static final String HARDCODED_RESEARCH_PROJECT_NAME = "Some project name";
 
+    //REPORT
+    public static final Level HARDCODED_REPORT_LEVEL = Level.LEVEL_0;
+    public static final URI HARDCODED_REPORT_URL = URI.create("https://www.example.com/");
+
 
     private HardcodedValues() {
 

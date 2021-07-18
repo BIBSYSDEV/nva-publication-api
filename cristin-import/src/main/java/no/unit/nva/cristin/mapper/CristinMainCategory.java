@@ -9,6 +9,7 @@ import nva.commons.core.SingletonCollector;
 public enum CristinMainCategory {
     BOOK("BOK", "BOOK"),
     JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"),
+    REPORT("RAPPORT", "REPORT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
