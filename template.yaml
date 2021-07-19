@@ -1256,6 +1256,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref CustomDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
