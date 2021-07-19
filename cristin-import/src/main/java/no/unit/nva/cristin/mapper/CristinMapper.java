@@ -42,6 +42,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
@@ -50,6 +51,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
@@ -186,6 +188,9 @@ public class CristinMapper {
                     .withUrl(HARDCODED_REPORT_URL.toURL())
                     .build();
         }
+        if (isChapter()) {
+            return new Chapter.Builder().build();
+        }
         return null;
     }
 
@@ -197,8 +202,10 @@ public class CristinMapper {
             return createBookMonograph();
         } else if (isJournal() && isJournalArticle()) {
             return createJournalArticle();
-        } else if (isReport() && isReportReport()) {
+        } else if (isReport() && isResearchReport()) {
             return createReportResearch();
+        } else if (isChapter() && isChapterArticle()) {
+            return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
@@ -251,6 +258,11 @@ public class CristinMapper {
         return new ReportResearch.Builder().build();
     }
 
+    private PublicationInstance<? extends Pages> createChapterArticle() {
+        return new ChapterArticle.Builder().build();
+    }
+
+
     private boolean isAnthology() {
         return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
     }
@@ -271,12 +283,20 @@ public class CristinMapper {
         return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
     }
 
-    private boolean isReportReport() {
-        return CristinSecondaryCategory.REPORT.equals(cristinObject.getSecondaryCategory());
+    private boolean isResearchReport() {
+        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isReport() {
         return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
+    }
+
+    private boolean isChapterArticle() {
+        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isChapter() {
+        return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
     }
 
     private PublicationDate extractPublicationDate() {

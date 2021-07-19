@@ -3,7 +3,6 @@ package no.unit.nva.cristin;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -125,8 +124,10 @@ public final class CristinDataGenerator {
                 return randomBookAnthology();
             case JOURNAL_ARTICLE:
                 return randomJournalArticle();
-            case REPORT:
-                return randomReportReport();
+            case RESEARCH_REPORT:
+                return randomResearchReport();
+            case CHAPTER_ARTICLE:
+                return randomChapterArticle();
             default:
                 break;
         }
@@ -156,9 +157,14 @@ public final class CristinDataGenerator {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
     }
 
-    private static CristinObject randomReportReport() {
-        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.REPORT);
+    private static CristinObject randomResearchReport() {
+        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.RESEARCH_REPORT);
     }
+
+    private static CristinObject randomChapterArticle() {
+        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    }
+
 
     public static CristinObject objectWithRandomBookReport() {
         return createRandomBookWithBookReportValues();
@@ -322,6 +328,20 @@ public final class CristinDataGenerator {
                 .withPublicationOwner(randomString())
                 .withContributors(randomContributors())
                 .withBookReport(randomBookReport())
+                .build();
+    }
+
+    private static CristinObject createRandomChapterWithSpecifiedSecondaryCategory(
+            CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.CHAPTER)
+                .withSecondaryCategory(secondaryCategory)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
                 .build();
     }
 
