@@ -13,7 +13,7 @@ Feature:
     Given that the Cristin Result has a non empty Book Report
     And the Book Report has a "publisher name" entry equal to "some Publisher"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource Report has a PublicationContext with publisher equal to "some Publisher"}
+    Then the NVA Resource Report has a PublicationContext with publisher equal to "some Publisher"
 
   Scenario: Mapping fails when a Cristin Entry has no publisher name
     Given that the Cristin Result has an empty publisherName field

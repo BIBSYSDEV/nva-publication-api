@@ -17,7 +17,7 @@ public class ReportFeatures {
         this.scenarioContext = scenarioContext;
     }
 
-    @Then("the NVA Resource Report has a PublicationContext with publisher equal to {string}}")
+    @Then("the NVA Resource Report has a PublicationContext with publisher equal to {string}")
     public void theNvaResourceReportHasAPublicationContextWithPublisherEqualTo(String expectedPublisher) {
         PublicationContext context = scenarioContext.getNvaEntry()
                 .getEntityDescription()
