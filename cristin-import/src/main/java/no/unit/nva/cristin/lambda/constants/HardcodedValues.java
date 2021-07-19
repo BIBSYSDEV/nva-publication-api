@@ -14,7 +14,7 @@ public final class HardcodedValues {
 
     //BOOK
     public static final Level HARDCODED_BOOK_LEVEL = Level.LEVEL_0;
-    public static final URI HARDCODED_BOOK_URI = URI.create("https://www.example.com/");
+    public static final URI HARDCODED_BOOK_URI = URI.create("https://www.book-example.com/");
     public static final String HARDCODED_BOOK_PAGE = "1";
     public static final boolean HARDCODED_BOOK_ILLUSTRATED = false;
     public static final boolean HARDCODED_BOOK_PEER_REVIEWED = false;
@@ -22,7 +22,7 @@ public final class HardcodedValues {
 
     //JOURNAL
     public static final Level HARDCODED_JOURNAL_LEVEL = Level.LEVEL_0;
-    public static final URI HARDCODED_JOURNAL_URI = URI.create("https://www.example.com/");
+    public static final URI HARDCODED_JOURNAL_URI = URI.create("https://www.journal-example.com/");
     public static final String HARDCODED_JOURNAL_PAGE = "1";
     public static final String HARDCODED_JOURNAL_ARTICLE_NUMBER = "1234567";
     public static final boolean HARDCODED_OPEN_JOURNAL_ACCESS = false;
@@ -33,7 +33,10 @@ public final class HardcodedValues {
 
     //REPORT
     public static final Level HARDCODED_REPORT_LEVEL = Level.LEVEL_0;
-    public static final URI HARDCODED_REPORT_URL = URI.create("https://www.example.com/");
+    public static final URI HARDCODED_REPORT_URL = URI.create("https://www.report-example.com/");
+
+    //CHAPTER_ARTICLE
+    public static final URI HARDCODED_CHAPTER_ARTICLE_URI = URI.create("https://www.chapter-example.com/");
 
 
     private HardcodedValues() {

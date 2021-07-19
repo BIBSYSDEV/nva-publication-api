@@ -146,6 +146,7 @@
          Anthology -> BookAnthology
          Monograph -> BookMonograph
          Rapport -> ReportResearch
+         Kapittel -> ChapterArticle
     """ .
 
 :eierkode_opprettet
