@@ -6,6 +6,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ARTICLE_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
@@ -189,7 +190,9 @@ public class CristinMapper {
                     .build();
         }
         if (isChapter()) {
-            return new Chapter.Builder().build();
+            return new Chapter.Builder()
+                    .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
+                    .build();
         }
         return null;
     }
