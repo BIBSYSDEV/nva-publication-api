@@ -10,6 +10,7 @@ public enum CristinMainCategory {
     BOOK("BOK", "BOOK"),
     JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"),
     REPORT("RAPPORT", "REPORT"),
+    CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
