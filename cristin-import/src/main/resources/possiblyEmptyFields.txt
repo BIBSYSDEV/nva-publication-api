@@ -1,6 +1,6 @@
 entityDescription.reference.publicationContext.publisher
 entityDescription.reference.publicationContext.isbnList
-entityDescription.reference.publicationInstance.pages.pages
+entityDescription.reference.publicationInstance.pages
 entityDescription.reference.doi
 entityDescription.reference.publicationInstance.volume
 entityDescription.reference.publicationContext.onlineIssn
