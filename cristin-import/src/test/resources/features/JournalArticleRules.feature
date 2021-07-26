@@ -7,6 +7,21 @@ Feature: Mapping of Journal Article
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource is an instance of "JournalArticle"
 
+  Scenario: Map returns a Journal Article NVA Resource when the Cristin Result is an "ARTICLE"
+    Given a valid Cristin Result with secondary category "ARTIKKEL"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource is an instance of "JournalArticle"
+
+  Scenario: Map returns a Journal Article NVA Resource when the Cristin Result is an "POPULARARTICLE"
+    Given a valid Cristin Result with secondary category "ARTIKKEL_POP"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource is an instance of "JournalArticle"
+
+  Scenario: Map returns a Journal Article NVA Resource when the Cristin Result is an "ACADEMICREVIEW"
+    Given a valid Cristin Result with secondary category "OVERSIKTSART"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource is an instance of "JournalArticle"
+
   Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "issn" entry equal to "1903-6523"
