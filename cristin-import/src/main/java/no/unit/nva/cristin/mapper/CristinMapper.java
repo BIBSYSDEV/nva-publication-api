@@ -321,10 +321,10 @@ public class CristinMapper {
                    .flatMap(Collection::stream);
     }
 
-    private CristinBookReport extractCristinBookReport() {
+    private CristinBookOrReport extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getBookReport)
-                   .orElse(null);
+            .map(CristinObject::getBookOrReport)
+            .orElse(null);
     }
 
     private String extractNumberOfPages() {
@@ -357,7 +357,7 @@ public class CristinMapper {
             return null;
         }
         if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            throw new MissingFieldsException(CristinBookOrReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
         }
         Integer code = extractSubjectField().getSubjectFieldCode();
         if (code == null) {
@@ -385,7 +385,7 @@ public class CristinMapper {
     }
 
     private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getPublisherName();
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 
     private String extractPagesBegin() {

@@ -8,7 +8,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.mapper.CristinBookReport;
+import no.unit.nva.cristin.mapper.CristinBookOrReport;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -28,13 +28,13 @@ public class BookFeatures {
 
     @Given("that the Cristin Result has a non empty Book Report")
     public void that_the_cristin_results_has_a_non_empty_type_book_report_field() {
-        CristinBookReport bookReport = CristinDataGenerator.randomBookReport();
-        scenarioContext.getCristinEntry().setBookReport(bookReport);
+        CristinBookOrReport bookReport = CristinDataGenerator.randomBookOrReport();
+        scenarioContext.getCristinEntry().setBookOrReport(bookReport);
     }
 
     @Given("the Book Report has an ISBN version 10 with value {string}")
     public void theTypeBookReportFieldHasANonEmptyIsbnFieldWithValue(String cristinIsbn) {
-        scenarioContext.getCristinEntry().getBookReport().setIsbn(cristinIsbn);
+        scenarioContext.getCristinEntry().getBookOrReport().setIsbn(cristinIsbn);
     }
 
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
@@ -50,7 +50,7 @@ public class BookFeatures {
 
     @Given("the Book Report has a \"total number of pages\" entry equal to {string}")
     public void theBookReportHasAEqualTo(String numberOfPages) {
-        scenarioContext.getCristinEntry().getBookReport()
+        scenarioContext.getCristinEntry().getBookOrReport()
             .setNumberOfPages(numberOfPages);
     }
 
@@ -66,7 +66,7 @@ public class BookFeatures {
 
     @Given("the Book Report has a \"publisher name\" entry equal to {string}")
     public void theBookReportHasAPublisherNameEntryEqualTo(String publisherName) {
-        scenarioContext.getCristinEntry().getBookReport().setPublisherName(publisherName);
+        scenarioContext.getCristinEntry().getBookOrReport().setPublisherName(publisherName);
     }
 
     @Then("the NVA Resource has a PublicationContext with publisher equal to {string}")
@@ -81,18 +81,18 @@ public class BookFeatures {
 
     @Given("that the Book Report entry has an empty \"numberOfPages\" field")
     public void thatTheBookReportEntryHasAnEmptyNumberOfPagesField() {
-        CristinBookReport bookReport = CristinBookReport.builder()
-                .withNumberOfPages(null)
-                .withPublisherName(randomString())
-                .withIsbn(CristinDataGenerator.randomIsbn13())
-                .build();
-        scenarioContext.getCristinEntry().setBookReport(bookReport);
+        CristinBookOrReport bookReport = CristinBookOrReport.builder()
+            .withNumberOfPages(null)
+            .withPublisherName(randomString())
+            .withIsbn(CristinDataGenerator.randomIsbn13())
+            .build();
+        scenarioContext.getCristinEntry().setBookOrReport(bookReport);
     }
 
     @And("that the Book Report has a subjectField with the subjectFieldCode equal to {int}")
     public void thatTheBookReportHasASubjectFieldWithTheSubjectFieldCodeEqualTo(int subjectFieldCode) {
         scenarioContext.getCristinEntry()
-                        .getBookReport()
+            .getBookOrReport()
                         .setSubjectField(CristinSubjectField
                                         .builder()
                                         .withSubjectFieldCode(subjectFieldCode)
@@ -110,7 +110,7 @@ public class BookFeatures {
 
     @And("that the Book Report has no subjectField")
     public void thatTheBookReportHasNoSubjectField() {
-        scenarioContext.getCristinEntry().getBookReport().setSubjectField(null);
+        scenarioContext.getCristinEntry().getBookOrReport().setSubjectField(null);
     }
 
     @Then("the NVA Resource has a PublicationContext of type {string}")

@@ -1,13 +1,12 @@
 package cucumber;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 
 public class ReportFeatures {
 
@@ -30,6 +29,6 @@ public class ReportFeatures {
 
     @Given("that the Cristin Result has an empty publisherName field")
     public void thatTheCristinResultHasAnEmptyPublisherNameField() {
-        scenarioContext.getCristinEntry().getBookReport().setPublisherName(null);
+        scenarioContext.getCristinEntry().getBookOrReport().setPublisherName(null);
     }
 }
