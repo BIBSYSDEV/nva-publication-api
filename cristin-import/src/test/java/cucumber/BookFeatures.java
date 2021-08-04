@@ -4,7 +4,6 @@ import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -89,7 +88,7 @@ public class BookFeatures {
         scenarioContext.getCristinEntry().setBookOrReportMetadata(bookReport);
     }
 
-    @And("that the Book Report has a subjectField with the subjectFieldCode equal to {int}")
+    @Given("that the Book Report has a subjectField with the subjectFieldCode equal to {int}")
     public void thatTheBookReportHasASubjectFieldWithTheSubjectFieldCodeEqualTo(int subjectFieldCode) {
         scenarioContext.getCristinEntry()
             .getBookOrReportMetadata()
@@ -108,7 +107,7 @@ public class BookFeatures {
         assertThat(actuallSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
     }
 
-    @And("that the Book Report has no subjectField")
+    @Given("that the Book Report has no subjectField")
     public void thatTheBookReportHasNoSubjectField() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setSubjectField(null);
     }

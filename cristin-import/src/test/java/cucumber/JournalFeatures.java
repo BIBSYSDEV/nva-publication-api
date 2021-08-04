@@ -6,7 +6,6 @@ import static no.unit.nva.cristin.CristinDataGenerator.smallRandomNumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
@@ -41,7 +40,7 @@ public class JournalFeatures {
         scenarioContext.getCristinEntry().setJournalPublication(journalPublication);
     }
 
-    @And("the Journal Publication has a \"journalName\" entry equal to {string}")
+    @Given("the Journal Publication has a \"journalName\" entry equal to {string}")
     public void theJournalPublicationHasApublisherNameEntryEqualTo(String publisherName) {
         scenarioContext.getCristinEntry()
             .getJournalPublication()
@@ -49,7 +48,7 @@ public class JournalFeatures {
             .setJournalTitle(publisherName);
     }
 
-    @And("the Journal Publication has a \"issn\" entry equal to {string}")
+    @Given("the Journal Publication has a \"issn\" entry equal to {string}")
     public void theJournalPublicationHasAIssnEntryEqualTo(String issnNumber) {
         scenarioContext.getCristinEntry()
             .getJournalPublication()
@@ -69,7 +68,7 @@ public class JournalFeatures {
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
 
-    @And("the Journal Publication has a \"issnOnline\" entry equal to {string}")
+    @Given("the Journal Publication has a \"issnOnline\" entry equal to {string}")
     public void theJournalPublicationHasAIssnOnlineEntryEqualTo(String issnNumber) {
         scenarioContext.getCristinEntry()
                 .getJournalPublication()
@@ -113,14 +112,14 @@ public class JournalFeatures {
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
 
-    @And("the Journal Publication has a \"pagesBegin\" entry equal to {string}")
+    @Given("the Journal Publication has a \"pagesBegin\" entry equal to {string}")
     public void theJournalPublicationHasAPagesBeginEntryEqualTo(String pagesBegin) {
         scenarioContext.getCristinEntry()
                         .getJournalPublication()
                         .setPagesBegin(pagesBegin);
     }
 
-    @And("the Journal Publication has a \"pagesEnd\" entry equal to {string}")
+    @Given("the Journal Publication has a \"pagesEnd\" entry equal to {string}")
     public void theJournalPublicationHasAPagesEndEntryEqualTo(String pagesEnd) {
         scenarioContext.getCristinEntry()
                         .getJournalPublication()
@@ -151,7 +150,7 @@ public class JournalFeatures {
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 
-    @And("the Journal Publication has a \"volume\" entry equal to {string}")
+    @Given("the Journal Publication has a \"volume\" entry equal to {string}")
     public void theJournalPublicationHasAVolumeEntryEqualTo(String volume) {
         scenarioContext.getCristinEntry()
             .getJournalPublication()
@@ -166,7 +165,7 @@ public class JournalFeatures {
             .setJournalTitle(EMPTY_JOURNAL_TITLE);
     }
 
-    @And("the Journal Publication has a \"doi\" entry equal to {string}")
+    @Given("the Journal Publication has a \"doi\" entry equal to {string}")
     public void theJournalPublicationHasADoiEntryEqualTo(String doi) {
         scenarioContext.getCristinEntry()
             .getJournalPublication()
