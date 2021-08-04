@@ -7,10 +7,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Clock;
 import java.util.Objects;
 import java.util.Optional;
@@ -51,9 +48,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;
     public static final String ERRORS_FOLDER = "errors";
-    public static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
-        objectMapperWithEmpty.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private final ResourceService resourceService;
     private final S3Client s3Client;
@@ -116,7 +111,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())
-                   .map(jsonNode -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(jsonNode, CristinObject.class))
+                   .map(CristinObject::fromJson)
                    .orElseThrow();
     }
 

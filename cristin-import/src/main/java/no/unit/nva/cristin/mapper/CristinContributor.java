@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PERSONS_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -11,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -23,7 +23,7 @@ import nva.commons.core.StringUtils;
 
 @Data
 @Builder(
-    builderClassName = "CristinObjectBuilder",
+    builderClassName = "CristinContributorBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
@@ -47,7 +47,11 @@ public class CristinContributor {
 
     @JacocoGenerated
     public CristinContributor() {
+    }
 
+    @JacocoGenerated
+    public CristinContributorBuilder copy() {
+        return this.toBuilder();
     }
 
     public Contributor toNvaContributor() throws MalformedContributorException {
@@ -98,7 +102,7 @@ public class CristinContributor {
 
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ? new UriWrapper(MappingConstants.CRISTIN_PERSONS_URI)
+                   ? new UriWrapper(CRISTIN_PERSONS_URI)
                          .addChild(identifier.toString())
                          .getUri()
                    : null;

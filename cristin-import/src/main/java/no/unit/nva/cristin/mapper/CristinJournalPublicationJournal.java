@@ -1,0 +1,44 @@
+package no.unit.nva.cristin.mapper;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import nva.commons.core.JacocoGenerated;
+
+@Data
+@Builder(
+        builderClassName = "CristinJournalPublicationJournalBuilder",
+        toBuilder = true,
+        builderMethodName = "builder",
+        buildMethodName = "build",
+        setterPrefix = "with"
+)
+@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@JsonIgnoreProperties({"tidsskriftnr", "nsdkode", "landkode_utgiver", "sprakkode", "status_referee_ordning",
+    "dato_utgutt", "status_serie"})
+public class CristinJournalPublicationJournal {
+
+    public static final String ISSN = "issn";
+    public static final String ISSN_ONLINE = "issn_elektronisk";
+    public static final String PUBLISHER_NAME = "tidsskriftnavn";
+
+    @JsonProperty(ISSN)
+    private String issn;
+    @JsonProperty(ISSN_ONLINE)
+    private String issnOnline;
+    @JsonProperty(PUBLISHER_NAME)
+    private String publisherName;
+
+    public CristinJournalPublicationJournal() {
+
+    }
+
+
+    @JacocoGenerated
+    public CristinJournalPublicationJournalBuilder copy() {
+        return this.toBuilder();
+    }
+}

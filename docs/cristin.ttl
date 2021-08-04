@@ -151,6 +151,8 @@
        implementedMappings:
          Anthology -> BookAnthology
          Monograph -> BookMonograph
+         Rapport -> ReportResearch
+         Kapittel -> ChapterArticle
     """ .
 
 :eierkode_opprettet
@@ -317,8 +319,9 @@
     rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_SPRAK_Class ;
-    :isignored   "true" .
-
+    :mapstonvafield """
+            entityDescription.abstract  if VARBEID_SPRAK.status_original is "J"
+        """ .
 :status_original
     a            :cristinfield ;
     rdfs:comment """
@@ -562,6 +565,228 @@ a defined set of values for this property's range""" ;
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
+
+
+
+:TYPE_BOK_RAPPORT
+    a               :cristinfield ;
+    rdfs:comment    """
+    A type of book called rapport.
+    """ ;
+    rdfs:range      :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages,
+        entityDescription.reference.publicationContext.isbnList,
+        entityDescription.reference.publicationContext.publisher
+        entityDescription.npiSubjectHeading
+    """ .
+
+:antall_sider_totalt
+    a               :cristinfield ;
+    rdfs:comment    """
+    The total number of pages
+    """ ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages
+    """ .
+
+:isbn
+    a               :cristinfield ;
+    rdfs:comment    "The isbn which the respective book is registered with." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.isbnList
+    """ .
+
+
+:utgivernavn
+    a            :cristinfield ;
+    rdfs:comment "The name of the publisher of the respective book." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    :mapstonvafield """
+            entityDescription.reference.publicationContext.publisher
+        """ .
+
+:fagfelt
+    a            :cristinfield ;
+    rdfs:comment "The scientific field in which the book is published" ;
+    rdfs:range   :FAGFELT_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    .
+
+
+:fagfeltkode
+    a            :cristinfield ;
+    rdfs:comment "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:range   xsd:PositiveInteger ;
+    rdfs:domain  :FAGFELT_Class ;
+    :mapstonvafield """
+            entityDescription.npiSubjectHeading
+        """ .
+
+:fagomradekode
+    a            :cristinfield ;
+    rdfs:comment "The (abriviation) code representing the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
+
+:navn
+    a            :cristinfield ;
+    rdfs:comment "The name of the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
+
+:navn_engelsk
+    a            :cristinfield ;
+    rdfs:comment "The english name of the scientific field in which the book is published" ;
+    rdfs:range   xsd:String ;
+    rdfs:domain  :FAGFELT_Class ;
+    :isignored   "true" .
+
+:TYPE_TIDSSKRIFTPUBLIKASJON
+    a               :cristinfield ;
+    rdfs:comment    """
+    A type publication called tidsskrift.
+    """ ;
+    rdfs:range      :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.volume,
+        entityDescription.reference.publicationInstance.pages.begin,
+        entityDescription.reference.publicationInstance.pages.end,
+        entityDescription.reference.doi
+    """ .
+
+:volum
+    a               :cristinfield ;
+    rdfs:comment    """
+    The volume in which the article is published. Possibly null.
+    """ ;
+    rdfs:range      xsd:String ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.volume
+    """ .
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The page number the that marks the start of the article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages.begin
+    """ .
+
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The page number the that marks the end of the article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages.end
+    """ .
+
+:side_fra
+    a               :cristinfield ;
+    rdfs:comment    "The doi connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.doi
+    """ .
+
+:TIDSSKRIFT
+    a               :cristinfield ;
+    rdfs:comment    """
+    UNKNOWN.
+    """ ;
+    rdfs:range      :TIDSSKRIFT_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.printIssn
+    """ .
+
+:issn
+    a               :cristinfield ;
+    rdfs:comment    "The issn connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.printIssn
+    """ .
+
+:issn_elektronisk
+    a               :cristinfield ;
+    rdfs:comment    "The online version of the issn connected to the respective article. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.onlineIssn
+    """ .
+
+:tidsskriftnavn
+    a               :cristinfield ;
+    rdfs:comment    "The name of the journal publishing the article" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationContext.title
+    """ .
+
+:VARBEID_EMNEORD
+    a               :cristinfield ;
+    rdfs:comment    """
+    UNKNOWN.
+    """ ;
+    rdfs:range      :VARBEID_EMNEORD_Class ;
+    rdfs:domain     :Result ;
+    :mapstonvafield """
+        entityDescription.tags,
+    """ .
+
+:emneordnavn_bokmal
+    a               :cristinfield ;
+    rdfs:comment    """
+    The bokmal version. Possibly null.
+    """ ;
+    rdfs:range      xsd:String ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordnavn_engelsk
+    a               :cristinfield ;
+    rdfs:comment    "The english version. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordnavn_nynorsk
+    a               :cristinfield ;
+    rdfs:comment    "The nynorsk version. Possibly null." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :mapstonvafield """
+        entityDescription.tags
+    """ .
+
+:emneordlopenr
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN" ;
+    rdfs:range      xsd:Integer ;
+    rdfs:domain     :VARBEID_EMNEORD_Class ;
+    :isignored      "true" .
 
 
 

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.owner;
+package no.unit.nva.publication.fetch;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
@@ -87,7 +87,7 @@ public class PublicationsByOwnerHandlerTest {
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream input = new HandlerUtils(objectMapper)
-            .requestObjectToApiGatewayRequestInputSteam(null, null);
+                                .requestObjectToApiGatewayRequestInputSteam(null, null);
         publicationsByOwnerHandler.handleRequest(input, output, context);
 
         GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
@@ -111,33 +111,37 @@ public class PublicationsByOwnerHandlerTest {
     private InputStream inputStream() throws IOException {
         Map<String, Object> event = new HashMap<>();
         event.put("requestContext",
-            singletonMap("authorizer",
-                singletonMap("claims",
-                    Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID, VALID_ORG_NUMBER))));
+                  singletonMap("authorizer",
+                               singletonMap("claims",
+                                            Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID,
+                                                   VALID_ORG_NUMBER))));
         event.put("headers", singletonMap(HttpHeaders.CONTENT_TYPE,
-            ContentType.APPLICATION_JSON.getMimeType()));
+                                          ContentType.APPLICATION_JSON.getMimeType()));
         return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
     }
 
     private List<Publication> publicationSummaries() {
         List<Publication> publicationSummaries = new ArrayList<>();
         publicationSummaries.add(new Publication.Builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withModifiedDate(Instant.now())
-            .withCreatedDate(Instant.now())
-            .withOwner("junit")
-            .withEntityDescription(new EntityDescription.Builder().withMainTitle("Some main title").build())
-            .withStatus(DRAFT)
-            .build()
+                                     .withIdentifier(SortableIdentifier.next())
+                                     .withModifiedDate(Instant.now())
+                                     .withCreatedDate(Instant.now())
+                                     .withOwner("junit")
+                                     .withEntityDescription(
+                                         new EntityDescription.Builder().withMainTitle("Some main title").build())
+                                     .withStatus(DRAFT)
+                                     .build()
         );
         publicationSummaries.add(new Publication.Builder()
-            .withIdentifier(SortableIdentifier.next())
-            .withModifiedDate(Instant.now())
-            .withCreatedDate(Instant.now())
-            .withOwner(OWNER)
-            .withEntityDescription(new EntityDescription.Builder().withMainTitle("A complete different title").build())
-            .withStatus(DRAFT)
-            .build()
+                                     .withIdentifier(SortableIdentifier.next())
+                                     .withModifiedDate(Instant.now())
+                                     .withCreatedDate(Instant.now())
+                                     .withOwner(OWNER)
+                                     .withEntityDescription(
+                                         new EntityDescription.Builder().withMainTitle("A complete different title")
+                                             .build())
+                                     .withStatus(DRAFT)
+                                     .build()
         );
         return publicationSummaries;
     }

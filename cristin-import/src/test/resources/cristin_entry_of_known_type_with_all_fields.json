@@ -10,7 +10,7 @@
     "arn:aws:lambda:eu-west-1:11111111111111111:function:publication-api-n-CristinEntriesEventEmitt-1111111111"
   ],
   "detail": {
-    "publicationsOwner": "someRandomUser",
+    "publicationsowner": "someRandomUser",
     "fileUri": "s3://bucket/parent/child/filename.json",
     "contents": {
       "id": 417536,
@@ -31,7 +31,7 @@
       "kildekode": "BIBSYS",
       "kildepostid": "r00005232",
       "pubidnr": null,
-      "VARBEID_SPRAK": [
+      "varbeid_sprak": [
         {
           "sprakkode": "EN",
           "titteltekst": "Muscle growth in yolk-sac larvae of the Atlantic halibut as influenced by temperature in the egg and yolk-sac stage",
@@ -39,7 +39,7 @@
           "status_original": "J"
         }
       ],
-      "VITENSKAPELIGARBEID_LOKAL": [
+      "vitenskapeligarbeid_lokal": [
         {
           "eierkode": "NTNU",
           "brukernavn_opprettet": null,
@@ -73,13 +73,13 @@
           "dato_svart_medforf_regel": null
         }
       ],
-      "VARBEID_PERSON": [
+      "varbeid_person": [
         {
           "personlopenr": 30988,
           "fornavn": "Trina Falck",
           "etternavn": "Galloway",
           "rekkefolgenr": 1,
-          "VARBEID_PERSON_STED": [
+          "varbeid_person_sted": [
             {
               "institusjonsnr": 194,
               "avdnr": 66,
@@ -89,7 +89,7 @@
               "institusjonsnavn_opprinnelig": null,
               "avdelingsnavn_opprinnelig": null,
               "stednavn_opprinnelig": null,
-              "VARBEID_PERSON_STED_ROLLE": [
+              "varbeid_person_sted_rolle": [
                 {
                   "rollekode": "FORFATTER"
                 }
@@ -102,7 +102,7 @@
           "fornavn": "Elin",
           "etternavn": "Kjørsvik",
           "rekkefolgenr": 2,
-          "VARBEID_PERSON_STED": [
+          "varbeid_person_sted": [
             {
               "institusjonsnr": 194,
               "avdnr": 66,
@@ -112,7 +112,7 @@
               "institusjonsnavn_opprinnelig": null,
               "avdelingsnavn_opprinnelig": null,
               "stednavn_opprinnelig": null,
-              "VARBEID_PERSON_STED_ROLLE": [
+              "varbeid_person_sted_rolle": [
                 {
                   "rollekode": "FORFATTER"
                 }
@@ -125,7 +125,7 @@
           "fornavn": "Harald",
           "etternavn": "Kryvi",
           "rekkefolgenr": 3,
-          "VARBEID_PERSON_STED": [
+          "varbeid_person_sted": [
             {
               "institusjonsnr": 184,
               "avdnr": 0,
@@ -135,7 +135,7 @@
               "institusjonsnavn_opprinnelig": null,
               "avdelingsnavn_opprinnelig": null,
               "stednavn_opprinnelig": null,
-              "VARBEID_PERSON_STED_ROLLE": [
+              "varbeid_person_sted_rolle": [
                 {
                   "rollekode": "FORFATTER"
                 }
@@ -144,31 +144,83 @@
           ]
         }
       ],
-      "VARBEID_KILDE": [
+      "varbeid_kilde": [
         {
           "kildekode": "BIBSYS",
           "kildeid": "r00005232"
         }
       ],
-      "PRESENTASJON_VARBEID": null,
-      "VARBEID_EMNEORD": null,
-      "VARBEID_VDISIPLIN": null,
-      "VARBEID_HRCS_KLASSIFISERING": null,
-      "FINANSIERING_VARBEID": null,
-      "TYPE_BOK_RAPPORT": null,
-      "TYPE_BOK_RAPPORT_DEL": null,
-      "TYPE_FOREDRAG_POSTER": null,
-      "TYPE_KUNSTNERISKPRODUKSJON": null,
-      "TYPE_MEDIEBIDRAG": null,
-      "TYPE_PRODUKT": null,
-      "TYPE_TIDSSKRIFTPUBLIKASJON": [
-        {
-          "varbeidlopenr": 417536
+      "presentasjon_varbeid": null,
+      "varbeid_emneord": null,
+      "varbeid_vdisiplin": null,
+      "varbeid_hrcs_klassifisering": null,
+      "finansiering_varbeid": null,
+      "type_bok_rapport": {
+        "hefte": null,
+        "utgave": null,
+        "utgave_fra": null,
+        "antall_sider_totalt": 192,
+        "isbn": "9788770342827",
+        "doi": null,
+        "status_revidert": "N",
+        "status_elektronisk_publisert": null,
+        "status_utgitt_av_forlag": "J",
+        "utgivernavn": "Nyt fra Samfundsvidenskaberne",
+        "stedangivelse_utgiver": "København",
+        "landkode_utgiver": null,
+        "institusjonsnr_utgiver": null,
+        "avdnr_utgiver": null,
+        "undavdnr_utgiver": null,
+        "gruppenr_utgiver": null,
+        "tidsskriftnr_serie": null,
+        "volum_serie": null,
+        "sprakkode_oversatt_fra": null,
+        "sprakkode_oversatt_til": null,
+        "originalforfatter": null,
+        "originaltittel": null,
+        "forlag": null,
+        "fagfelt":{
+            "fagfeltkode":1081,
+            "fagomradekode":"MED",
+            "navn":"Samfunnsmedisin",
+            "navn_engelsk":"Public, Environmental and Occupational Health"
         }
-      ],
-      "TYPE_UTSTILLING": null,
-      "ARKIVFIL": null,
-      "ARKIVPOST": null
+      },
+      "type_bok_rapport_del": null,
+      "type_foredrag_poster": null,
+      "type_kunstneriskproduksjon": null,
+      "type_mediebidrag": null,
+      "type_produkt": null,
+      "type_tidsskriftpublikasjon": {
+        "tidsskrift":{
+          "tidsskriftnr":2184708,
+          "tidsskriftnavn":"Dansk Tidsskrift for Teologi og Kirke",
+          "nsdkode":479200,
+          "issn":"1903-6523",
+          "issn_elektronisk":"2446-0850",
+          "landkode_utgiver":"DK",
+          "sprakkode":"DA",
+          "status_referee_ordning":"J",
+          "dato_utgutt":null,
+          "status_serie":null
+        },
+        "antall_sider_totalt":null,
+        "publiseringsar":2011,
+        "hefte":"2",
+        "sidenr_fra":"26",
+        "sidenr_til":"36",
+        "status_referee_ordning":null,
+        "supplement":null,
+        "utbredelsesomrade":null,
+        "volum":"38",
+        "artikkelnummer":null,
+        "doi":null,
+        "arstall_trykket":null,
+        "arstall_online":null
+      },
+      "type_utstilling": null,
+      "arkivfil": null,
+      "arkivpost": null
     }
   }
 }

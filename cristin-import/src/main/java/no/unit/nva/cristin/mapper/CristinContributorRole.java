@@ -9,7 +9,7 @@ import no.unit.nva.model.Role;
 
 @Data
 @Builder(
-    builderClassName = "CristinObjectBuilder",
+    builderClassName = "CristinContributorRoleBuilder",
     toBuilder = true,
     builderMethodName = "builder",
     buildMethodName = "build",
@@ -22,7 +22,6 @@ public class CristinContributorRole {
     private CristinContributorRoleCode roleCode;
 
     public CristinContributorRole() {
-
     }
 
     public Role toNvaRole() {
