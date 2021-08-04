@@ -4,7 +4,6 @@ import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -13,8 +12,8 @@ import no.unit.nva.cristin.mapper.CristinBookReport;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
 import nva.commons.core.SingletonCollector;
 
 
@@ -58,10 +57,10 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with number of pages equal to {string}")
     public void theNvaResourceHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
-                                             .getEntityDescription()
-                                             .getReference()
-                                             .getPublicationInstance();
-        BookMonograph book = (BookMonograph) context;
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
+        PeerReviewedMonograph book = (PeerReviewedMonograph) context;
         assertThat(book.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
     }
 
@@ -104,13 +103,22 @@ public class BookFeatures {
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
     public void theNvaResourceHasANpiSubjectHeadingWithValueEqualTo(int expectedSubjectFieldCode) {
         String actuallSubjectFieldCode = scenarioContext.getNvaEntry()
-                                                        .getEntityDescription()
-                                                        .getNpiSubjectHeading();
+            .getEntityDescription()
+            .getNpiSubjectHeading();
         assertThat(actuallSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
     }
 
     @And("that the Book Report has no subjectField")
     public void thatTheBookReportHasNoSubjectField() {
         scenarioContext.getCristinEntry().getBookReport().setSubjectField(null);
+    }
+
+    @Then("the NVA Resource has a PublicationContext of type {string}")
+    public void theNVAResourceHasAPublicationContextOfType(String publicationContextType) {
+        PublicationContext context = scenarioContext.getNvaEntry()
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
+        assertThat(context.getClass().getSimpleName(), is(equalTo(publicationContextType)));
     }
 }
