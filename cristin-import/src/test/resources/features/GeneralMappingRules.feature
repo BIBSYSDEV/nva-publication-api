@@ -17,7 +17,6 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
 
-
   Scenario: NVA Resource gets as Main Title the only Cristin title annotated as Original Title when
   there are many titles but only one annotated as Original.
     Given the Cristin Result has an array of CristinTitles with values:
