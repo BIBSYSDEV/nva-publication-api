@@ -297,7 +297,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String numberOfPages = cristinImport.getBookOrReport().getNumberOfPages();
+        String numberOfPages = cristinImport.getBookOrReportMetadata().getNumberOfPages();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -316,7 +316,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String publisherName = cristinImport.getBookOrReport().getPublisherName();
+        String publisherName = cristinImport.getBookOrReportMetadata().getPublisherName();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -335,7 +335,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String isbn = cristinImport.getBookOrReport().getIsbn();
+        String isbn = cristinImport.getBookOrReportMetadata().getIsbn();
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -384,7 +384,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapperThrowsExceptionWhenIsbnValueIsNull() {
         CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookOrReport().setIsbn(null);
+        cristinInput.getBookOrReportMetadata().setIsbn(null);
 
         Executable action = cristinInput::toPublication;
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -399,7 +399,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
         CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
-        cristinObject.getBookOrReport().getSubjectField().setSubjectFieldCode(null);
+        cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
 
         System.out.println(cristinObject);
 

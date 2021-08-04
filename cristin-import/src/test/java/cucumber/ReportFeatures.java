@@ -29,6 +29,6 @@ public class ReportFeatures {
 
     @Given("that the Cristin Result has an empty publisherName field")
     public void thatTheCristinResultHasAnEmptyPublisherNameField() {
-        scenarioContext.getCristinEntry().getBookOrReport().setPublisherName(null);
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setPublisherName(null);
     }
 }

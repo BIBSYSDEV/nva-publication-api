@@ -321,9 +321,9 @@ public class CristinMapper {
                    .flatMap(Collection::stream);
     }
 
-    private CristinBookOrReport extractCristinBookReport() {
+    private CristinBookOrReportMetadata extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getBookOrReport)
+            .map(CristinObject::getBookOrReportMetadata)
             .orElse(null);
     }
 
@@ -357,7 +357,7 @@ public class CristinMapper {
             return null;
         }
         if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookOrReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
         }
         Integer code = extractSubjectField().getSubjectFieldCode();
         if (code == null) {

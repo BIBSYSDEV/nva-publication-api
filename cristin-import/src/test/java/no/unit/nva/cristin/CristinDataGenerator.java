@@ -24,7 +24,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.lambda.CristinEntryEventConsumer;
 import no.unit.nva.cristin.lambda.constants.HardcodedValues;
-import no.unit.nva.cristin.mapper.CristinBookOrReport;
+import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
@@ -271,8 +271,8 @@ public final class CristinDataGenerator {
         return RANDOM.nextInt(1000);
     }
 
-    public static CristinBookOrReport randomBookOrReport() {
-        return CristinBookOrReport
+    public static CristinBookOrReportMetadata randomBookOrReportMetadata() {
+        return CristinBookOrReportMetadata
             .builder()
             .withIsbn(randomIsbn13())
             .withPublisherName(randomString())
@@ -292,7 +292,7 @@ public final class CristinDataGenerator {
             .withPublicationYear(randomYear())
             .withPublicationOwner(randomString())
             .withContributors(randomContributors())
-            .withBookOrReport(randomBookOrReport())
+            .withBookOrReportMetadata(randomBookOrReportMetadata())
                           .build();
     }
 
@@ -322,7 +322,7 @@ public final class CristinDataGenerator {
             .withPublicationYear(randomYear())
             .withPublicationOwner(randomString())
             .withContributors(randomContributors())
-            .withBookOrReport(randomBookOrReport())
+            .withBookOrReportMetadata(randomBookOrReportMetadata())
             .build();
     }
 
@@ -355,7 +355,7 @@ public final class CristinDataGenerator {
             .withPublicationYear(randomYear())
             .withPublicationOwner(randomString())
             .withContributors(randomContributors())
-            .withBookOrReport(randomBookOrReport())
+            .withBookOrReportMetadata(randomBookOrReportMetadata())
             .build();
     }
 
@@ -369,7 +369,7 @@ public final class CristinDataGenerator {
             .withEntryCreationDate(LocalDate.now())
             .withPublicationYear(randomYear())
             .withContributors(contributors)
-            .withBookOrReport(randomBookOrReport())
+            .withBookOrReportMetadata(randomBookOrReportMetadata())
                    .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
                    .build();
     }

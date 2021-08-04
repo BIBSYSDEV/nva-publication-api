@@ -24,7 +24,7 @@ import nva.commons.core.StringUtils;
     "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
     "forlag", "tidsskrift_serie", "arkivpost"})
-public class CristinBookOrReport {
+public class CristinBookOrReportMetadata {
 
     public static final String ISBN_LIST = "isbn";
     public static final String PUBLISHER = "utgivernavn";
@@ -42,7 +42,7 @@ public class CristinBookOrReport {
     @JsonProperty(SUBJECT_FIELD)
     private CristinSubjectField subjectField;
 
-    public CristinBookOrReport() {
+    public CristinBookOrReportMetadata() {
 
     }
 
@@ -61,7 +61,7 @@ public class CristinBookOrReport {
     }
 
     @JacocoGenerated
-    public CristinBookOrReport.CristinBookReportBuilder copy() {
+    public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
         return this.toBuilder();
     }
 
