@@ -2,9 +2,12 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_EVENTS_SENT_PER_REQUEST;
+import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_REQUEST_ENTRIES;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -14,9 +17,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import nva.commons.logutils.LogUtils;
+import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
+import software.amazon.awssdk.services.eventbridge.model.EventBridgeException;
 import software.amazon.awssdk.services.eventbridge.model.EventBus;
 import software.amazon.awssdk.services.eventbridge.model.ListEventBusesRequest;
 import software.amazon.awssdk.services.eventbridge.model.ListEventBusesResponse;
@@ -63,6 +69,27 @@ public class EventEmitterTest {
 
         int expectedEmissionGroups = eventBodies.size() / desiredEmittedEntriesPetBatch;
         assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
+    }
+
+    @Test
+    public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
+        TestAppender logAppender = LogUtils.getTestingAppender(EventEmitter.class);
+        eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests();
+        EventEmitter<String> eventEmitter = newEventEmitter();
+        List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
+        eventEmitter.addEvents(eventBodies);
+        assertThrows(EventBridgeException.class, () -> eventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_PER_REQUEST));
+        assertThat(logAppender.getMessages(),
+                   containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST));
+    }
+
+    private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests() {
+        EventBridgeClient client = mock(EventBridgeClient.class);
+        when(client.listEventBuses(any(ListEventBusesRequest.class)))
+            .thenReturn(mockListEventBusesResponse());
+        when(client.putEvents(any(PutEventsRequest.class)))
+            .thenThrow(EventBridgeException.builder().message("Unimportant message").build());
+        return client;
     }
 
     private EventEmitter<String> newEventEmitter() {

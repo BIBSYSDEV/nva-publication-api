@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Failure;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,14 +46,15 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 public class EventEmitter<T> {
 
     public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
+    public static final String NUMBER_OF_REQUEST_ENTRIES = "Number of request entries:";
     protected static final int NUMBER_OF_EVENTS_SENT_PER_REQUEST = 10;
     private static final int MAX_ATTEMPTS = 10;
+    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
-    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
 
     public EventEmitter(String detailType,
                         String eventSource,
@@ -80,12 +82,10 @@ public class EventEmitter<T> {
      */
     public void addEvents(Stream<T> eventDetails) {
         List<PutEventsRequestEntry> eventRequestEntries = eventDetails
-                                                              .map(this::createPutEventRequestEntry)
-                                                              .collect(Collectors.toList());
+            .map(this::createPutEventRequestEntry)
+            .collect(Collectors.toList());
         putEventsRequests = createBatchesOfPutEventsRequests(eventRequestEntries);
     }
-
-
 
     public List<PutEventsResult> emitEvents(int numberOfEmittedEntriesPerBatch) {
         checkBus();
@@ -107,7 +107,7 @@ public class EventEmitter<T> {
     private void checkBus() {
         List<String> busNames =
             client.listEventBuses(
-                ListEventBusesRequest.builder().namePrefix(ApplicationConstants.EVENT_BUS_NAME).build())
+                    ListEventBusesRequest.builder().namePrefix(ApplicationConstants.EVENT_BUS_NAME).build())
                 .eventBuses()
                 .stream()
                 .map(EventBus::name)
@@ -120,13 +120,13 @@ public class EventEmitter<T> {
     private PutEventsRequestEntry createPutEventRequestEntry(T eventDetail) {
 
         return PutEventsRequestEntry.builder()
-                   .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
-                   .resources(invokingFunctionArn)
-                   .detailType(detailType)
-                   .time(Instant.now())
-                   .detail(toJson(eventDetail))
-                   .source(eventSource)
-                   .build();
+            .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
+            .resources(invokingFunctionArn)
+            .detailType(detailType)
+            .time(Instant.now())
+            .detail(toJson(eventDetail))
+            .source(eventSource)
+            .build();
     }
 
     private String toJson(T eventDetail) {
@@ -154,9 +154,9 @@ public class EventEmitter<T> {
 
     private List<PutEventsRequest> createBatchesOfPutEventsRequests(List<PutEventsRequestEntry> entries) {
         return ListUtils.partition(entries, NUMBER_OF_EVENTS_SENT_PER_REQUEST)
-                   .stream()
-                   .map(batch -> PutEventsRequest.builder().entries(batch).build())
-                   .collect(Collectors.toList());
+            .stream()
+            .map(batch -> PutEventsRequest.builder().entries(batch).build())
+            .collect(Collectors.toList());
     }
 
     private List<PutEventsResult> emitEventsAndCollectFailures(List<PutEventsRequest> eventRequests,
@@ -174,10 +174,11 @@ public class EventEmitter<T> {
     }
 
     private List<PutEventsResult> emitBatch(List<PutEventsRequest> batch) {
+
         return batch.stream()
-                   .map(this::emitEvent)
-                   .filter(PutEventsResult::hasFailures)
-                   .collect(Collectors.toList());
+            .map(this::emitEvent)
+            .filter(PutEventsResult::hasFailures)
+            .collect(Collectors.toList());
     }
 
     private List<List<PutEventsRequest>> createRequestBatches(List<PutEventsRequest> eventRequests,
@@ -208,7 +209,18 @@ public class EventEmitter<T> {
     }
 
     private PutEventsResult emitEvent(PutEventsRequest request) {
-        PutEventsResponse result = client.putEvents(request);
+
+        PutEventsResponse result = attempt(() -> client.putEvents(request))
+            .orElseThrow(fail -> logEmissionFailureDetails(fail, request));
         return new PutEventsResult(request, result);
+    }
+
+    private RuntimeException logEmissionFailureDetails(Failure<PutEventsResponse> fail, PutEventsRequest request) {
+        logger.info(NUMBER_OF_REQUEST_ENTRIES + request.entries().size());
+        if (fail.getException() instanceof RuntimeException) {
+            return (RuntimeException) fail.getException();
+        } else {
+            return new RuntimeException(fail.getException());
+        }
     }
 }
