@@ -72,9 +72,16 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
-:VITENSKAPELIGARBEID_LOKAL
+
+:VITENSKAPELIGARBEID_LOKAL_Class
     a            :CristinClass ;
-    rdfs:comment """"A collection of metadata regarding the current ownership status of the respective Cristin entry. """ .
+    rdfs:comment """
+        This field contains metadata relevant for NVI reporting, one set per contributing institution that is also part of the NVIU process.
+        The contained metadata are related to the users that created/updated the entry for the NVI report. For example "brukernavn_opprettet"
+        refers to the superuser that created the NVI entry and not the user that created the Cristin entry.
+
+    """ .
+
 
 :cristinfield
     a            rdf:Property ;
@@ -120,7 +127,13 @@
 
 :dato_opprettet
     a               :cristinfield ;
-    rdfs:comment    "When the domain is :Result, it is the date the resource was registered in Cristin. Otherwise UNKNOWN meaning." ;
+    rdfs:comment    """
+    When the domain is :Result, it is the date the resource was registered in Cristin or its predecessor.
+    When the domain is :VITENSKAPELIGARBEID_LOKAL, it is the date the resource was registered in NVI.
+
+    Note: there are approx 200_000 entries with dates prior to 2004 which was the year Cristin
+
+    """ ;
     rdfs:range      xsd:date ;
     rdfs:domain     :Result, :VITENSKAPELIGARBEID_LOKAL ;
     :mapstonvafield "createdDate when the domain is :Result" ;
@@ -173,7 +186,7 @@
         can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
         and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
 
-        When it is :VITENSKAPELIGARBEID_LOKAL the meaning is UNKNOWN."
+        When it is :VITENSKAPELIGARBEID_LOKAL it is the user who created the NVI entry."
         This entails that the semantics of this term are unclear, possibly even polysemous.
      """ ;
     rdfs:range   xsd:string ;
@@ -192,7 +205,7 @@
     a            :cristinfield ;
     rdfs:comment """
     When the domain is :Result the meaning is similar to brukernavn_opprettet but it indicates who made the last change.
-    When the domain is :VITENSKAPELIGARBEID_LOKAL  then the meaning in UNKNOWN.
+    When the domain is :VITENSKAPELIGARBEID_LOKAL  then it is the username of the user who updated the NVI entry.
      """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL ;
@@ -202,12 +215,11 @@
     a            :cristinfield ;
     rdfs:comment """
     When the domain is :Result, then the date of the last update of the registration.
-    When the domain is :VITENSKAPELIGARBEID_LOKAL then the meaning is UNKNOWN.
+    When the domain is :VITENSKAPELIGARBEID_LOKAL then it is date the NVI entry was last updated
         """ ;
     rdfs:range   xsd:date ;
     rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL ;
     :isignored   "true" .
-
 
 
 :publiseringstatuskode
@@ -336,6 +348,7 @@
     a            :cristinfield ;
     rdfs:comment "UNKNOWN property" ;
     rdfs:domain  :Result ;
+    rdfs:range   :VITENSKAPELIGARBEID_LOKAL_Class ;
     :isignored   "true" .
 
 :VARBEID_PERSON
@@ -506,7 +519,7 @@ a defined set of values for this property's range""" ;
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """Takes values """ ;
     :isignored   "true" .
 
 :brukernavn_kontrollert
@@ -604,10 +617,17 @@ a defined set of values for this property's range""" ;
 
 
 :utgivernavn
+<<<<<<< Updated upstream
     a            :cristinfield ;
     rdfs:comment "The name of the publisher of the respective book." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+=======
+    a               :cristinfield ;
+    rdfs:comment    "The name of the publisher of the respective book. Can be nullable" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+>>>>>>> Stashed changes
     :mapstonvafield """
             entityDescription.reference.publicationContext.publisher
         """ .
