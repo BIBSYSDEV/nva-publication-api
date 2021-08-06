@@ -6,7 +6,7 @@ Feature:
   Scenario: Map returns NVA Resource with Reference having a PublicationInstance of type
   ReportResearch when the Cristin Result's secondary category is "Rapport"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource is an instance of "ReportResearch"
+    Then the NVA Resource has a Publication Instance of type "ReportResearch"
     
   Scenario: Map returns NVA Resource with Reference having a Publisher with a value matching 
   the Cristin Result's BookReport's value of publisherName
