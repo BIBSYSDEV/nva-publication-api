@@ -72,6 +72,13 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
+:VARBEID_KILDE_Class
+    a            :CristinClass ;
+    rdfs:comment """
+         When this entry is populated, the respective entry is imported from another source.
+         E.g. FORSKDOK or SCOPUS a predecessor of Cristin
+         """ .
+
 :cristinfield
     a            rdf:Property ;
     rdfs:comment "Any property of any Cristin class" ;
@@ -241,7 +248,7 @@
     It is a string containing arbitrary codes such as "scopus" "norart" etc.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VARBEID_KILDE_Class ;
     :isignored   "true" .
 
 :kildepostid
@@ -254,6 +261,15 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
+
+:kildeid
+    a            :cristinfield ;
+    rdfs:domain  :VARBEID_KILDE_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:comment """
+        The id of the record from the source it was imported( e.g SCOPUS or FORSKDOK. Overseeds :kildepostid.
+    """ .
+
 
 :pubidnr
     a            rdf:Property ;
@@ -300,13 +316,14 @@
 
 
 :sammendragtekst
-    a            :cristinfield ;
-    rdfs:comment "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_SPRAK_Class ;
+    a               :cristinfield ;
+    rdfs:comment    "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_SPRAK_Class ;
     :mapstonvafield """
             entityDescription.abstract  if VARBEID_SPRAK.status_original is "J"
         """ .
+
 :status_original
     a            :cristinfield ;
     rdfs:comment """
@@ -334,7 +351,7 @@
     a               :cristinfield ;
     rdfs:comment    "The Cristin Person identifier of the contributor" ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
+    rdfs:domain     :Class ;
     :mapstonvafield "entityDescription.contributor.identity.id" .
 
 :fornavn
@@ -512,10 +529,10 @@
 
 
 :utgivernavn
-    a            :cristinfield ;
-    rdfs:comment "The name of the publisher of the respective book." ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    a               :cristinfield ;
+    rdfs:comment    "The name of the publisher of the respective book." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :mapstonvafield """
             entityDescription.reference.publicationContext.publisher
         """ .
@@ -525,14 +542,14 @@
     rdfs:comment "The scientific field in which the book is published" ;
     rdfs:range   :FAGFELT_Class ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-    .
+.
 
 
 :fagfeltkode
-    a            :cristinfield ;
-    rdfs:comment "The (numerical) code representing the scientific field in which the book is published" ;
-    rdfs:range   xsd:PositiveInteger ;
-    rdfs:domain  :FAGFELT_Class ;
+    a               :cristinfield ;
+    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:range      xsd:PositiveInteger ;
+    rdfs:domain     :FAGFELT_Class ;
     :mapstonvafield """
             entityDescription.npiSubjectHeading
         """ .
@@ -690,11 +707,11 @@
     """ .
 
 :emneordlopenr
-    a               :cristinfield ;
-    rdfs:comment    "UNKNOWN" ;
-    rdfs:range      xsd:Integer ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ;
-    :isignored      "true" .
+    a            :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range   xsd:Integer ;
+    rdfs:domain  :VARBEID_EMNEORD_Class ;
+    :isignored   "true" .
 
 
 
