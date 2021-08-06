@@ -1,0 +1,154 @@
+{
+  "id": 1633290,
+  "varbeidhovedkatkode": "BOK",
+  "varbeidunderkatkode": "MONOGRAFI",
+  "brukernavn_opprettet": "eda009",
+  "eierkode_opprettet": "UITO",
+  "dato_opprettet": "2018-11-21T13:32:57",
+  "brukernavn_siste_endring": "man004",
+  "eierkode_siste_endring": "UITO",
+  "dato_siste_endring": "2020-03-09T13:06:20",
+  "publiseringstatuskode": "PUBLISERT",
+  "dato_utgitt": null,
+  "arstall": 2019,
+  "arstall_rapportert": 2019,
+  "merknadtekst": null,
+  "merknadtekst_godkjenning": null,
+  "kildekode": null,
+  "kildepostid": null,
+  "pubidnr": null,
+  "varbeid_sprak": [
+    {
+      "sprakkode": "EN",
+      "titteltekst": "The Problem of Job and the Problem of Evil",
+      "sammendragtekst": null,
+      "status_original": "J"
+    }
+  ],
+  "vitenskapeligarbeid_lokal": [
+    {
+      "eierkode": "UITO",
+      "brukernavn_opprettet": null,
+      "dato_opprettet": "2018-11-21T13:32:58",
+      "brukernavn_siste_endring": null,
+      "dato_siste_endring": "2020-03-09T13:11:53",
+      "status_kontrollert": "J",
+      "brukernavn_kontrollert": "man004",
+      "dato_kontrollert": "2020-03-09T13:11:53",
+      "status_bekreftet_arkivsporsmal": "J",
+      "brukernavn_avlvrt_arkivsystem": "eda009",
+      "dato_avlvrt_arkivsystem": "2020-01-16T11:09:42",
+      "status_fulgt_medf_reg": null,
+      "brukernavn_svart_medforf_reg": null,
+      "dato_svart_medforf_regel": null
+    }
+  ],
+  "varbeid_person": [
+    {
+      "personlopenr": 14298,
+      "fornavn": "Espen",
+      "etternavn": "Dahl",
+      "rekkefolgenr": 1,
+      "varbeid_person_sted": [
+        {
+          "institusjonsnr": 186,
+          "avdnr": 33,
+          "undavdnr": 14,
+          "gruppenr": 0,
+          "stedkode_opprinnelig": null,
+          "institusjonsnavn_opprinnelig": null,
+          "avdelingsnavn_opprinnelig": null,
+          "stednavn_opprinnelig": null,
+          "varbeid_person_sted_rolle": [
+            {
+              "rollekode": "FORFATTER"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "varbeid_kilde": null,
+  "presentasjon_varbeid": null,
+  "varbeid_emneord": null,
+  "varbeid_vdisiplin": null,
+  "varbeid_hrcs_klassifisering": null,
+  "finansiering_varbeid": null,
+  "type_bok_rapport": {
+    "hefte": "Hefte",
+    "utgave": null,
+    "utgave_fra": null,
+    "antall_sider_totalt": 95,
+    "isbn": "1108723292",
+    "doi": null,
+    "status_revidert": "N",
+    "status_elektronisk_publisert": null,
+    "status_utgitt_av_forlag": "J",
+    "utgivernavn": "Cambridge University Press",
+    "stedangivelse_utgiver": "Cambridge",
+    "landkode_utgiver": null,
+    "institusjonsnr_utgiver": null,
+    "avdnr_utgiver": null,
+    "undavdnr_utgiver": null,
+    "gruppenr_utgiver": null,
+    "tidsskrift_serie": {
+      "tidsskriftnr": 2792367,
+      "tidsskriftnavn": "Elements in Religion and Violence",
+      "nsdkode": null,
+      "issn": "2514-3786",
+      "issn_elektronisk": null,
+      "landkode_utgiver": null,
+      "sprakkode": null,
+      "status_referee_ordning": "J",
+      "dato_utgutt": null,
+      "status_serie": "J"
+    },
+    "volum_serie": null,
+    "sprakkode_oversatt_fra": null,
+    "sprakkode_oversatt_til": null,
+    "originalforfatter": null,
+    "originaltittel": null,
+    "forlag": {
+      "forlagsnr": 123,
+      "forlagsnavn": "Cambridge University Press",
+      "nsdkode": 18118
+    },
+    "fagfelt": {
+      "fagfeltkode": null,
+      "fagomradekode": "HUM",
+      "navn": "Teologi og religionsvitenskap",
+      "navn_engelsk": "Theology and religion"
+    }
+  },
+  "type_bok_rapport_del": null,
+  "type_foredrag_poster": null,
+  "type_kunstneriskproduksjon": null,
+  "type_mediebidrag": null,
+  "type_produkt": null,
+  "type_tidsskriftpublikasjon": null,
+  "type_utstilling": null,
+  "arkivfil": [
+    {
+      "fillopenr": 1,
+      "filnavn": "The problem of job and the problem of evil.pdf",
+      "antall_bytes": 1888792,
+      "md5": "d0ec74978a8180d81edec81052f5e7cb",
+      "dato_opprettet": "2020-01-16T11:09:42",
+      "brukernavn": "eda009",
+      "eierkode": "UITO",
+      "status_preprint": "N",
+      "status_postprint": "N",
+      "status_original": "J",
+      "status_avtale": "N",
+      "sporsmalsvar_arkiv": null
+    }
+  ],
+  "arkivpost": [
+    {
+      "eierkode": "UITO",
+      "edit_iri": "https://w3prod-dspace01.uio.no/dspace/swordv2/edit/111168",
+      "dato_opprettet": "2020-01-16T11:09:46"
+    }
+  ]
+}
+

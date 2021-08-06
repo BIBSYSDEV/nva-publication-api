@@ -1,6 +1,6 @@
 package cucumber.utils;
 
-import cucumber.CristinContributorTransformer;
+import cucumber.utils.transformers.CristinContributorTransformer;
 import java.net.URI;
 import java.util.Map;
 import java.util.Objects;
