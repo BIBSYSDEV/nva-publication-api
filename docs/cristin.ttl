@@ -81,27 +81,44 @@
 :PRESENTASJON_VARBEID_Class
     a            :CristinClass ;
     rdfs:comment """
-    The structure of PRESENTASJON_VARBEID. UNKNOWN meaning
+    Reference to a project when :presentasjonstypekode is equal to :PRESENTASJONSTYPEKODE_PROSJEKT. UNKNONWN meaning for other values
+    of :presentasjonstypekode.
             """ .
 
-:PRESENTASJONSTYPEKODE_VALUES
+:PRESENTASJONSTYPEKODE_VALUES_Class
     a :CristinClass .
 
 :PRESENTASJONSTYPEKODE_PERSON
     a               rdfs:Class ;
     rdfs:label      "PERSON" ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+    rdfs:comment    "UNKNOWN MEANING. When :presentasjonstypekode has this value, the reference is not a project." ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
 :PRESENTASJONSTYPEKODE_GRUPPE
     a               rdfs:Class ;
     rdfs:label      "GRUPPE" ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+    rdfs:comment    "UNKNOWN MEANING. When :presentasjonstypekode has this value, the reference is not a project." ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
 
 :PRESENTASJONSTYPEKODE_PROSJEKT
     a               rdfs:Class ;
     rdfs:label      "PROSJEKT" ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES .
+    rdfs:comment    "Indicates that the respective PRESENTASJON_VARBEID_Class instance is a reference to a Cristin project" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
+:PRESENTASJONSTYPEKODE_ENHET
+    a               rdfs:Class ;
+    rdfs:label      "ENHET" ;
+    rdfs:comment    "UNKNOWN MEANING. When :presentasjonstypekode has this value, the reference is not a project." ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
+:PRESENTASJONSTYPEKODE_SENTER
+    a               rdfs:Class ;
+    rdfs:label      "SENTER" ;
+    rdfs:comment    "UNKNOWN MEANING. When :presentasjonstypekode has this value, the reference is not a project." ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
 
 :cristinfield
     a            rdf:Property ;
@@ -523,22 +540,27 @@
     a            :cristinfield ;
     rdfs:range   :PRESENTASJON_VARBEID_Class ;
     rdfs:domain  :Result ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """A project that the respective publication is part of.""" ;
     :isignored   true .
 
 :presentasjonslopenr
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :PRESENTASJON_VARBEID_Class ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """ When the value is equal to :PRESENTASJONSTYPEKODE_PROSJEKT, it contains the project's Cristin ID.
+    UNKNOWN meaning otherwise.
+    """ ;
     :isignored   true .
 
 
 :presentasjonstypekode
     a            :cristinfield ;
-    rdfs:range   :PRESENTASJONSTYPEKODE_VALUES ;
+    rdfs:range   :PRESENTASJONSTYPEKODE_VALUES_Class ;
     rdfs:domain  :PRESENTASJON_VARBEID_Class ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """
+    When the value is equal to :PRESENTASJONSTYPEKODE_PROSJEKT, then it indicates that the respective PRESENTASJON_VARBEID_Class instance
+    is a reference to a Cristin project.
+    """ ;
     :isignored   true .
 
 :personlopenr
