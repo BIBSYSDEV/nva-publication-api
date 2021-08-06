@@ -128,6 +128,8 @@ public final class CristinDataGenerator {
                 return randomResearchReport();
             case CHAPTER_ARTICLE:
                 return randomChapterArticle();
+            case JOURNAL_REVIEW:
+                return randomJournalReview();
             default:
                 break;
         }
@@ -147,6 +149,10 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomJournalArticle() {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
+    }
+
+    private static CristinObject randomJournalReview() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_REVIEW);
     }
 
     public static CristinObject randomBookAnthology() {

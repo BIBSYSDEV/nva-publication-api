@@ -7,8 +7,8 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ARTICLE_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
@@ -54,6 +54,7 @@ import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
@@ -205,6 +206,8 @@ public class CristinMapper {
             return createBookMonograph();
         } else if (isJournal() && isJournalArticle()) {
             return createJournalArticle();
+        } else if (isJournal() && isJournalReview()) {
+            return createJournalReview();
         } else if (isReport() && isResearchReport()) {
             return createReportResearch();
         } else if (isChapter() && isChapterArticle()) {
@@ -249,12 +252,22 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                   .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
+                   .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
                    .withIssue(HARDCODED_JOURNAL_PAGE)
                    .withPages(numberOfPages)
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                    .withVolume(extractVolume())
                    .build();
+    }
+
+    private PublicationInstance<? extends Pages> createJournalReview() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalReview.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {
@@ -280,6 +293,10 @@ public class CristinMapper {
 
     private boolean isJournalArticle() {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isJournalReview() {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isJournal() {
