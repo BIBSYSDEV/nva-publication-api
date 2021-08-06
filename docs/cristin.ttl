@@ -75,7 +75,12 @@
 :TYPE_BOK_RAPPORT_Class
     a           :CristinClass;
     rdfs:comment """
-         The respetive object contains metadata about a book. The Cristin secondary categories (varbeidunderkatkode)
+         The respetive object contains metadata about a book.
+         This only has a value if the varbeidhovedkatkode has one of the following values:
+         OVERSETTELSESARB
+         RAPPORT
+         BOK.
+         The Cristin secondary categories (varbeidunderkatkode)
          that are expected to have such an entry are the following:
          ANTOLOGI
          DRGRADAVH
@@ -520,10 +525,6 @@
 
 :TYPE_BOK_RAPPORT
     a               :cristinfield ;
-    rdfs:comment    """
-        Metadata about a book.
-        This only has a value if the varbeidhovedkatkode has one of the following values OVERSETTELSESARB RAPPORT BOK
-        """ ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
@@ -546,7 +547,7 @@
 
 :isbn
     a               :cristinfield ;
-    rdfs:comment    "The isbn which the respective book is registered with. Could be nullable if the class also is a tidsskriftserie" ;
+    rdfs:comment    "The isbn which the respective book is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :mapstonvafield """
@@ -706,7 +707,7 @@
 :emneordnavn_bokmal
     a               :cristinfield ;
     rdfs:comment    """
-    The bokmal version. Possibly null.
+    The bokmal version of the VARBEID_EMNEORD. Possibly null.
     """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_EMNEORD_Class ;
@@ -716,7 +717,7 @@
 
 :emneordnavn_engelsk
     a               :cristinfield ;
-    rdfs:comment    "The english version. Possibly null." ;
+    rdfs:comment    "The english version of the VARBEID_EMNEORD. Possibly null." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_EMNEORD_Class ;
     :mapstonvafield """
@@ -725,7 +726,7 @@
 
 :emneordnavn_nynorsk
     a               :cristinfield ;
-    rdfs:comment    "The nynorsk version. Possibly null." ;
+    rdfs:comment    "The nynorsk version of the the VARBEID_EMNEORD. Possibly null." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_EMNEORD_Class ;
     :mapstonvafield """
