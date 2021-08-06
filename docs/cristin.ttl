@@ -580,7 +580,7 @@
     a            :cristinfield ;
     rdfs:range   :TYPE_MEDIEBIDRAG_Class ;
     rdfs:domain  :Result ;
-    rdfs:comment """A Cristin Result will have such a field only when it's varbeidunderkatkode has one of the following values:
+    rdfs:comment """A Cristin Result will have such a field only when its :varbeidunderkatkode has one of the following values:
 	PROGLEDELSE, PROGDELTAGELSE, DOKUMENTAR, INTERVJU""" ;
     :isignored   true .
 
