@@ -1,19 +1,19 @@
 Feature:
 
-  Scenario: Map returns NVA Resource with Reference having a PublicationInstance of type
-  ChapterArticle when the Cristin Result's secondary category is "Kapittel"
+  Scenario: Cristin Result of type "Academic chapter/article/Conference paper" maps to NVA entry of type
+  "ChapterArticle"
     Given a valid Cristin Result with secondary category "KAPITTEL"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "ChapterArticle"
 
-  Scenario: Map returns NVA Resource with Reference having a PublicationInstance of type
-  ChapterArticle when the Cristin Result's secondary category is "Kapittel"
+  Scenario: Cristin Result of type "Chapter" maps to NVA entry of type
+  "ChapterArticle"
     Given a valid Cristin Result with secondary category "FAGLIG_KAPITTEL"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "ChapterArticle"
 
-  Scenario: Map returns NVA Resource with Reference having a PublicationInstance of type
-  ChapterArticle when the Cristin Result's secondary category is "Kapittel"
+  Scenario: Cristin Result of type "Popular scientific chapter/article" maps to NVA entry of type
+  "ChapterArticle"
     Given a valid Cristin Result with secondary category "POPVIT_KAPITTEL"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "ChapterArticle"

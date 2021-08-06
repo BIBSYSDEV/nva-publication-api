@@ -20,18 +20,18 @@ import nva.commons.core.StringUtils;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"hefte", "utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
-        "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
-        "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
-        "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
-        "forlag", "tidsskrift_serie", "arkivpost"})
-public class CristinBookReport {
+    "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
+    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
+    "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
+    "forlag", "tidsskrift_serie", "arkivpost"})
+public class CristinBookOrReportMetadata {
 
     public static final String ISBN_LIST = "isbn";
     public static final String PUBLISHER = "utgivernavn";
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
     public static final String SUBJECT_FIELD = "fagfelt";
     public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
-            "The subjectField value must be present for all instances of BookReport.";
+        "The subjectField value must be present for all instances of BookReport.";
 
     @JsonProperty(ISBN_LIST)
     private String isbn;
@@ -42,7 +42,7 @@ public class CristinBookReport {
     @JsonProperty(SUBJECT_FIELD)
     private CristinSubjectField subjectField;
 
-    public CristinBookReport() {
+    public CristinBookOrReportMetadata() {
 
     }
 
@@ -61,7 +61,7 @@ public class CristinBookReport {
     }
 
     @JacocoGenerated
-    public CristinBookReport.CristinBookReportBuilder copy() {
+    public CristinBookOrReportMetadata.CristinBookReportBuilder copy() {
         return this.toBuilder();
     }
 

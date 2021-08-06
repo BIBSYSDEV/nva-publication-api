@@ -23,19 +23,18 @@ public class CristinJournalPublicationJournal {
 
     public static final String ISSN = "issn";
     public static final String ISSN_ONLINE = "issn_elektronisk";
-    public static final String PUBLISHER_NAME = "tidsskriftnavn";
+    public static final String JOURNAL_TITLE = "tidsskriftnavn";
 
     @JsonProperty(ISSN)
     private String issn;
     @JsonProperty(ISSN_ONLINE)
     private String issnOnline;
-    @JsonProperty(PUBLISHER_NAME)
-    private String publisherName;
+    @JsonProperty(JOURNAL_TITLE)
+    private String journalTitle;
 
     public CristinJournalPublicationJournal() {
 
     }
-
 
     @JacocoGenerated
     public CristinJournalPublicationJournalBuilder copy() {
