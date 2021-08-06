@@ -1,4 +1,4 @@
-Feature: Book conversion features
+Feature: Book conversion rules
 
 
   Scenario: Cristin Result "Academic anthology/Conference proceedings" is converted to
@@ -66,7 +66,6 @@ Feature: Book conversion features
 
 
   Scenario Outline: NPI subject heading is copied from Cristin Result as is.
-  the Cristin Entry's Book report subjectField "subjectFieldCode" entry
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     And that the Cristin Result has a non empty Book Report
     And that the Book Report has a subjectField with the subjectFieldCode equal to 1234
