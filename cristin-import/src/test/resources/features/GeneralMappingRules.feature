@@ -8,8 +8,8 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an additional identifier with key "Cristin" and value 12345
 
-  Scenario: NVA Resource gets as Main Title the single Cristin title which is annotated as
-  "Original Title" (i.e., the Cristin entry has no more titles except for the original title).
+  Scenario: NVA Resource gets the single Cristin title which is annotated as
+  "Original Title" as Main Title. (i.e., the Cristin entry has no more titles except for the original title).
     Given the Cristin Result has an non null array of CristinTitles
     Given the Cristin Result has an array of CristinTitles with values:
       | Title Text         | Abstract Text                 | Status Original | Language Code |
@@ -17,8 +17,8 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is some title"
 
-  Scenario: NVA Resource gets as Main Title the only Cristin title annotated as Original Title when
-  there are many titles but only one annotated as Original.
+  Scenario: When there are many titles but only one annotated as Original,
+  the NVA Resource gets the Cristin title annotated as Original Title as Main Title.
     Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                 | Abstract Text                 | Status Original | Language Code |
       | This is the original title | This is the original abstract | J               | en            |
@@ -26,8 +26,8 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has an EntityDescription with mainTitle "This is the original title"
 
-  Scenario: NVA Resource get as Main Title being any Cristin Title annotated as
-  Original Title when there are two titles both annotated as Original.
+  Scenario: When there are two titles both annotated as Original the NVA Resource gets any
+  of the Cristin Titles annotated as Original Title as Main Title.
     Given the Cristin Result has an array of CristinTitles with values:
       | Title Text                     | Abstract Text                     | Status Original | Language Code |
       | This is the original title     | This is the original abstract     | J               | en            |
@@ -64,7 +64,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | "1996"          |
       | "c.a 1996"      |
 
-  Scenario: The Cristin Entry  Creation Date is set to be the Cristin entry's creation date
+  Scenario:The NVA Resource Creation Date is set to be the Cristin entry's creation date
     Given that Cristin Result has created date equal to the local date "2011-12-03"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Creation Date equal to "2011-12-03T00:00:00Z"
@@ -82,7 +82,7 @@ Feature: Mappings that hold for all types of Cristin Results
       | Loremius, C.J.B.     |
       | Surname, Have, Comma |
 
-  Scenario: THe NVA Contributor sequence is the same as the Cristin Contributor Sequence
+  Scenario: The NVA Contributor sequence is the same as the Cristin Contributor Sequence
     Given that the Cristin Result has the Contributors with names and sequence:
       | Given Name  | Family Name  | Ordinal Number |
       | FirstGiven  | FirstFamily  | 1              |
