@@ -30,8 +30,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
@@ -49,13 +53,16 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
+import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -71,7 +78,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public static final String ID_FIELD_NAME = "id";
     public static final String NOT_IMPORTANT = "someBucketName";
     public static final String UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY = "unknownProperty";
-    private CristinDataGenerator cristinDataGenerator;
+    public static final String MISSING_FIELD_ERROR_TEMPLATE = "Expected: All fields of all included "
+            + "objects need to be non empty "
+            + "but: Empty field found: %s";
 
     private CristinEntryEventConsumer handler;
     private ByteArrayOutputStream outputStream;
@@ -85,8 +94,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         s3Client = new FakeS3Client(new ConcurrentHashMap<>());
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         outputStream = new ByteArrayOutputStream();
-        cristinDataGenerator = new CristinDataGenerator();
-        super.testingData = cristinDataGenerator.singleRandomObjectAsString();
+        super.testingData = CristinDataGenerator.singleRandomObjectAsString();
     }
 
     @Test
@@ -95,8 +103,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         final TestAppender appender = LogUtils.getTestingAppender(CristinEntryEventConsumer.class);
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(event.toJsonString());
 
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
@@ -109,8 +117,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerReturnsAnNvaPublicationEntryWhenInputIsEventWithCristinResult() throws JsonProcessingException {
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(awsEvent.toJsonString());
         handler.handleRequest(input, outputStream, CONTEXT);
         String json = outputStream.toString();
@@ -125,8 +133,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() {
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(cristinObject);
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(awsEvent.toJsonString());
 
         handler.handleRequest(input, outputStream, CONTEXT);
@@ -156,8 +164,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
 
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        InputStream event = stringToStream(cristinDataGenerator.toAwsEvent(cristinObject).toJsonString());
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        InputStream event = stringToStream(CristinDataGenerator.toAwsEvent(cristinObject).toJsonString());
         Integer cristinIdentifier = Optional.of(cristinObject)
                                         .map(CristinObject::getId)
                                         .orElseThrow();
@@ -172,8 +180,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     public void handlerSavesErrorReportInS3OutsideTheInputFolderAndWithFilenameTheObjectId()
         throws JsonProcessingException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream inputStream = stringToStream(event.toJsonString());
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -187,8 +195,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerThrowsExceptionWhenMainCategoryTypeIsNotKnown() throws JsonProcessingException {
 
-        JsonNode inputData = cristinDataGenerator.objectWithCustomMainCategory(randomString());
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(inputData);
+        JsonNode inputData = CristinDataGenerator.objectWithCustomMainCategory(randomString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(inputData);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -204,8 +212,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         throws JsonProcessingException {
         resourceService = resourceServiceThrowingExceptionWhenSavingResource();
 
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = cristinDataGenerator.toAwsEvent(cristinObject);
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(event.toJsonString());
 
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
@@ -227,8 +235,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerSavesReportInS3ContainingTheOriginalInputData() throws JsonProcessingException {
 
-        JsonNode inputData = cristinDataGenerator.objectWithCustomMainCategory(randomString());
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(inputData);
+        JsonNode inputData = CristinDataGenerator.objectWithCustomMainCategory(randomString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(inputData);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -244,8 +252,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerThrowsExceptionWhenSecondaryCategoryTypeIsNotKnown() throws JsonProcessingException {
 
-        JsonNode inputData = cristinDataGenerator.objectWithCustomSecondaryCategory(randomString());
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = cristinDataGenerator.toAwsEvent(inputData);
+        JsonNode inputData = CristinDataGenerator.objectWithCustomSecondaryCategory(randomString());
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(inputData);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -258,10 +266,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerCreatesFileWithCustomNameWhenCristinIdIsNotFound() throws JsonProcessingException {
-        JsonNode cristinObjectWithoutId = cristinDataGenerator.objectWithoutId();
+        JsonNode cristinObjectWithoutId = CristinDataGenerator.objectWithoutId();
 
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
-            cristinDataGenerator.toAwsEvent(cristinObjectWithoutId);
+            CristinDataGenerator.toAwsEvent(cristinObjectWithoutId);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -283,12 +291,12 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
         throws Throwable {
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
         JsonNode cristinObjectWithCustomSecondaryCategory =
-            cristinDataGenerator.injectCustomSecondaryCategoryIntoCristinObject(
+            CristinDataGenerator.injectCustomSecondaryCategoryIntoCristinObject(
                 cristinObject, randomString());
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
-            cristinDataGenerator.toAwsEvent(cristinObjectWithCustomSecondaryCategory);
+            CristinDataGenerator.toAwsEvent(cristinObjectWithCustomSecondaryCategory);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
@@ -324,12 +332,50 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertThat(file, containsString(UNKNOWN_PROPERTY_NAME_IN_RESOURCE_FILE_WITH_UNKNOWN_PROPERTY));
     }
 
+
     @Test
     public void handleRequestDoesNotThrowExceptionWhenInputDoesNotHaveUnknownProperties() {
         String input = IoUtils.stringFromResources(Path.of("cristin_entry_of_known_type_with_all_fields.json"));
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
+
+    //This is a test-template to run local tests,
+    // the files needed to run the test has been removed
+    // and the test has been disabled.
+    @Disabled
+    @Test
+    public void runMappingsLocally() {
+        ObjectMapper mapper = new ObjectMapper();
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Kapittel.txt"));
+        var returnValue = listOfJsonObjects.stream()
+                .map(attempt(mapper::readTree))
+                .map(Try::orElseThrow)
+                .map(this::createEvent)
+                .map(eventJason -> stringToStream(eventJason.toString()))
+                .map(attempt(this::handleRequest))
+                .filter(Try::isSuccess)
+                .count();
+        System.out.println(returnValue);
+    }
+
+    private JsonNode createEvent(JsonNode actualObj) {
+        try {
+            String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
+            ObjectNode eventTemplateJson = (ObjectNode) JsonUtils.objectMapper.readTree(eventTemplateString);
+            ((ObjectNode) eventTemplateJson.at("/detail")).set("contents", actualObj);
+            return eventTemplateJson;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String handleRequest(InputStream eventJason) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        handler.handleRequest(eventJason, outputStream, CONTEXT);
+        return outputStream.toString();
+    }
+
 
     private static JavaType constructImportResultJavaType() {
 
@@ -360,6 +406,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
                    .addChild(event.getDetail().getFileUri().getPath())
                    .addChild(event.getDetail().getContents().getId() + JSON);
     }
+
+
 
     private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
         throws JsonProcessingException {
@@ -439,8 +487,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private String validEventToJsonString() {
-        CristinObject cristinObject = cristinDataGenerator.randomObject();
-        return cristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
+        CristinObject cristinObject = CristinDataGenerator.randomObject();
+        return CristinDataGenerator.toAwsEvent(cristinObject).toJsonString();
     }
 
     private UserInstance createExpectedPublicationOwner() {
@@ -455,4 +503,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assert nonNull(cristinObject.getId()); //java assertion produces Error not exception
         return cristinObject;
     }
+
+
 }
