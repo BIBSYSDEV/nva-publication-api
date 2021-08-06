@@ -77,7 +77,7 @@
 :TYPE_MEDIEBIDRAG_Class
     a            :CristinClass ;
     rdfs:comment """
-    The structure of TYPE_MEDIEBIDRAG. UNKNOWN meaning
+    The structure of TYPE_MEDIEBIDRAG.
             """ .
 
 :PRESENTASJON_VARBEID_Class
@@ -580,14 +580,15 @@
     a            :cristinfield ;
     rdfs:range   :TYPE_MEDIEBIDRAG_Class ;
     rdfs:domain  :Result ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """A Cristin Result will have such a field only when it's varbeidunderkatkode has one of the following values:
+	PROGLEDELSE, PROGDELTAGELSE, DOKUMENTAR, INTERVJU""" ;
     :isignored   true .
 
 :varbeidlopenr
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :TYPE_MEDIEBIDRAG_Class ;
-    rdfs:comment """UNKNOWN meaning""" ;
+    rdfs:comment """The Cristin Id of the respective :Result. It is a self reference.""" ;
     :isignored   true .
 
 
