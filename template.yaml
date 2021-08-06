@@ -1230,7 +1230,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
-          BATCH_EMISSION_INTERVAL_MILLIS: 500
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1291,7 +1291,7 @@ Resources:
       Handler: no.unit.nva.publication.s3imports.FilenameEventEmitter::handleRequest
       Runtime: java11
       MemorySize: 512
-      Timeout: 900 # 5 min timeout
+      Timeout: 900 # 15 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -1299,7 +1299,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
-          BATCH_EMISSION_INTERVAL_MILLIS: 500
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
 
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
