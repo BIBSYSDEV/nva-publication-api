@@ -18,7 +18,6 @@ import nva.commons.core.SingletonCollector;
 
 public class BookFeatures {
 
-    public static final int SINGLE_BOOK_REPORT = 0;
     private final ScenarioContext scenarioContext;
 
     public BookFeatures(ScenarioContext scenarioContext) {
@@ -101,10 +100,10 @@ public class BookFeatures {
 
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
     public void theNvaResourceHasANpiSubjectHeadingWithValueEqualTo(int expectedSubjectFieldCode) {
-        String actuallSubjectFieldCode = scenarioContext.getNvaEntry()
+        String actualSubjectFieldCode = scenarioContext.getNvaEntry()
             .getEntityDescription()
             .getNpiSubjectHeading();
-        assertThat(actuallSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
+        assertThat(actualSubjectFieldCode, is(equalTo(String.valueOf(expectedSubjectFieldCode))));
     }
 
     @Given("that the Book Report has no subjectField")

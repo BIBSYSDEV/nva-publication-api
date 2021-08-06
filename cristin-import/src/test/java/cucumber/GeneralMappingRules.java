@@ -316,28 +316,6 @@ public class GeneralMappingRules {
                 .setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
     }
 
-    @Given("the PresentationalWork type is set to {string} and ID set to {int}")
-    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, Integer id) {
-        scenarioContext.getCristinEntry()
-                .getPresentationalWork()
-                .forEach(work -> {
-                    work.setPresentationType(type);
-                    work.setIdentifier(id);
-                });
-    }
-
-    @Then("the NVA Resource has a Research project with the id {string}")
-    public void theNvaResourceHasAResearchProjectWithTheId(String idString) {
-        URI actuallId = scenarioContext
-                .getNvaEntry()
-                .getProjects()
-                .stream()
-                .findFirst()
-                .map(Project::getId)
-                .orElse(null);
-        URI expectedId = URI.create(idString);
-        assertThat(actuallId, is(equalTo(expectedId)));
-    }
 
     @Then("the NVA Resource has the following abstract {string}")
     public void theNvaResourceHasTheFollowingAbstract(String expectedAbstract) {
@@ -395,11 +373,11 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has Research projects with the id values:")
     public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
         List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
-        List<URI> actuallUriList = scenarioContext.getNvaEntry()
-                .getProjects()
-                .stream()
-                .map(Project::getId)
-                .collect(Collectors.toList());
-        assertThat(actuallUriList, is(equalTo(expectedUriList)));
+        List<URI> actualUriList = scenarioContext.getNvaEntry()
+            .getProjects()
+            .stream()
+            .map(Project::getId)
+            .collect(Collectors.toList());
+        assertThat(actualUriList, is(equalTo(expectedUriList)));
     }
 }
