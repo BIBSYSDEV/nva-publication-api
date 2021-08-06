@@ -4,7 +4,6 @@ handle
 identifier
 indexedDate
 modifiedDate
-projects
 publishedDate
 doiRequest
 publisher.labels
@@ -16,15 +15,15 @@ entityDescription.contributors.identity.orcId
 entityDescription.contributors.email
 entityDescription.date.day
 entityDescription.date.month
-entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationContext.seriesNumber
 entityDescription.reference.publicationContext.seriesTitle
-entityDescription.reference.doi
-entityDescription.abstract
+entityDescription.reference.publicationContext.linkedContext
+entityDescription.reference.publicationInstance.contentType
+entityDescription.reference.publicationInstance.content
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource
-entityDescription.tags
+
 
 
 

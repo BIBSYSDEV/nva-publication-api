@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -41,6 +42,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JsonUtils;
 import org.javers.core.Javers;
@@ -70,6 +72,7 @@ public class ResourceTest {
 
     public static final DoiRequest EMPTY_DOI_REQUEST = null;
     public static final boolean NON_DEFAULT_BOOLEAN_VALUE = true;
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
 
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
@@ -221,6 +224,7 @@ public class ResourceTest {
                    .withIssue(randomString())
                    .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
                    .withVolume(randomString())
+                   .withContent(randomArrayElement(JournalArticleContentType.values()))
                    .build();
     }
     
@@ -233,6 +237,7 @@ public class ResourceTest {
                    .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
                    .withPrintIssn(SAMPLE_ISSN)
                    .withUrl(randomUri().toURL())
+                   .withLinkedContext(randomUri().toString())
                    .build();
     }
     
@@ -296,13 +301,18 @@ public class ResourceTest {
         files.setFiles(List.of(file));
         return files;
     }
-    
+
     private Resource sampleResource() {
         return attempt(() -> Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
                    .orElseThrow();
     }
-    
+
     private URI randomUri() {
         return URI.create(SOME_HOST + UUID.randomUUID().toString());
+    }
+
+    private <T> T randomArrayElement(T... array) {
+        int randomIndex = RANDOM.nextInt(array.length);
+        return array[randomIndex];
     }
 }

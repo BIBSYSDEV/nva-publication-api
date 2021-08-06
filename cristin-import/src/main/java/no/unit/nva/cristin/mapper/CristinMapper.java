@@ -1,16 +1,23 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PUBLISHER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_ILLUSTRATED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NPI_SUBJECT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_ILLUSTRATED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PAGE;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PEER_REVIEWED;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_JOURNAL_ACCESS;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_TEXTBOOK_CONTENT;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_URI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,8 +25,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,18 +41,28 @@ import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
+import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalReview;
+import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 
+@SuppressWarnings("PMD.GodClass")
 public class CristinMapper {
 
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
@@ -68,18 +85,32 @@ public class CristinMapper {
                                       .withOwner(cristinObject.getPublicationOwner())
                                       .withStatus(PublicationStatus.DRAFT)
                                       .withLink(HARDCODED_SAMPLE_DOI)
+                                      .withProjects(extractProjects())
                                       .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
 
+
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
-            assertThat(publication, doesNotHaveEmptyValuesIgnoringFields(IGNORED_PUBLICATION_FIELDS));
+            assertThat(publication,
+                       doesNotHaveEmptyValuesIgnoringFields(IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS));
         } catch (Error error) {
             String message = error.getMessage();
             throw new MissingFieldsException(message);
         }
+    }
+
+    private List<ResearchProject> extractProjects() {
+        if (cristinObject.getPresentationalWork() == null) {
+            return null;
+        }
+        return cristinObject.getPresentationalWork()
+                .stream()
+                .filter(CristinPresentationalWork::isProject)
+                .map(CristinPresentationalWork::toNvaResearchProject)
+                .collect(Collectors.toList());
     }
 
     private Organization extractOrganization() {
@@ -93,7 +124,7 @@ public class CristinMapper {
     }
 
     private ZoneOffset zoneOffset() {
-        return ZoneOffset.systemDefault().getRules().getOffset(Instant.now());
+        return ZoneOffset.UTC.getRules().getOffset(Instant.now());
     }
 
     private EntityDescription generateEntityDescription() {
@@ -103,9 +134,12 @@ public class CristinMapper {
                    .withDate(extractPublicationDate())
                    .withReference(buildReference())
                    .withContributors(extractContributors())
-                   .withNpiSubjectHeading(HARDCODED_NPI_SUBJECT)
+                   .withNpiSubjectHeading(extractNpiSubjectHeading())
+                   .withAbstract(extractAbstract())
+                   .withTags(extractTags())
                    .build();
     }
+
 
     private List<Contributor> extractContributors() {
         return cristinObject.getContributors()
@@ -121,27 +155,63 @@ public class CristinMapper {
         return new Reference.Builder()
                    .withPublicationInstance(publicationInstance)
                    .withPublishingContext(publicationContext)
+                   .withDoi(extractDoi())
                    .build();
     }
 
-    private PublicationContext buildPublicationContext() throws InvalidIsbnException, MalformedURLException {
+    private PublicationContext buildPublicationContext()
+        throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
         if (isBook()) {
+            List<String> isbnList = new ArrayList<>();
+            isbnList.add(extractIsbn());
             return new Book.Builder()
-                       .withIsbnList(Collections.emptyList())
-                       .withPublisher(HARDCODED_BOOK_PUBLISHER)
-                       .withUrl(HARDCODED_URI.toURL())
-                       .withLevel(HARDCODED_LEVEL)
+                       .withIsbnList(isbnList)
+                       .withPublisher(extractPublisherName())
+                       .withUrl(HARDCODED_BOOK_URI.toURL())
+                       .withLevel(HARDCODED_BOOK_LEVEL)
                        .withOpenAccess(false)
                        .build();
         }
+        if (isJournal()) {
+            return new Journal.Builder()
+                       .withLevel(HARDCODED_JOURNAL_LEVEL)
+                       .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                       .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
+                       .withUrl(HARDCODED_JOURNAL_URI.toURL())
+                       .withOnlineIssn(extractIssnOnline())
+                       .withPrintIssn(extractIssn())
+                       .withTitle(extractPublisherTitle())
+                       .build();
+        }
+        if (isReport()) {
+            return new Report.Builder()
+                    .withLevel(HARDCODED_REPORT_LEVEL)
+                    .withPublisher(extractPublisherName())
+                    .withUrl(HARDCODED_REPORT_URL.toURL())
+                    .build();
+        }
+        if (isChapter()) {
+            return new Chapter.Builder()
+                    .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
+                    .build();
+        }
         return null;
     }
+
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook() && isAnthology()) {
             return createBookAnthology();
         } else if (isBook() && isMonograph()) {
             return createBookMonograph();
+        } else if (isJournal() && isJournalArticle()) {
+            return createJournalArticle();
+        } else if (isJournal() && isJournalReview()) {
+            return createJournalReview();
+        } else if (isReport() && isResearchReport()) {
+            return createReportResearch();
+        } else if (isChapter() && isChapterArticle()) {
+            return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
@@ -150,30 +220,64 @@ public class CristinMapper {
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
 
+
     private MonographPages createMonographPages() {
-        Range introductionRange = new Range.Builder().withBegin(HARDCODED_PAGE).withEnd(HARDCODED_PAGE).build();
+        Range introductionRange = new Range.Builder()
+                                      .withBegin(HARDCODED_BOOK_PAGE)
+                                      .withEnd(HARDCODED_BOOK_PAGE)
+                                      .build();
         return new MonographPages.Builder()
-                .withPages(HARDCODED_PAGE)
-                .withIllustrated(HARDCODED_ILLUSTRATED)
-                .withIntroduction(introductionRange)
-                .build();
+                   .withPages(extractNumberOfPages())
+                   .withIllustrated(HARDCODED_BOOK_ILLUSTRATED)
+                   .withIntroduction(introductionRange)
+                   .build();
     }
 
     private BookAnthology createBookAnthology() {
         return new BookAnthology.Builder()
-                   .withPeerReviewed(HARDCODED_PEER_REVIEWED)
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
                    .withPages(createMonographPages())
-                   .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
                    .build();
     }
 
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
-                .withPeerReviewed(HARDCODED_PEER_REVIEWED)
-                .withPages(createMonographPages())
-                .withTextbookContent(HARDCODED_TEXTBOOK_CONTENT)
+                   .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
+                   .withPages(createMonographPages())
+                   .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
+                   .build();
+    }
+
+    private PublicationInstance<? extends Pages> createJournalArticle() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalArticle.Builder()
+                   .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                   .withIssue(HARDCODED_JOURNAL_PAGE)
+                   .withPages(numberOfPages)
+                   .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                   .withVolume(extractVolume())
+                   .build();
+    }
+
+    private PublicationInstance<? extends Pages> createJournalReview() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalReview.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
                 .build();
     }
+
+    private PublicationInstance<? extends Pages> createReportResearch() {
+        return new ReportResearch.Builder().build();
+    }
+
+    private PublicationInstance<? extends Pages> createChapterArticle() {
+        return new ChapterArticle.Builder().build();
+    }
+
 
     private boolean isAnthology() {
         return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
@@ -185,6 +289,34 @@ public class CristinMapper {
 
     private boolean isBook() {
         return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
+    }
+
+    private boolean isJournalArticle() {
+        return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isJournalReview() {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isJournal() {
+        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
+    }
+
+    private boolean isResearchReport() {
+        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isReport() {
+        return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
+    }
+
+    private boolean isChapterArticle() {
+        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isChapter() {
+        return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
     }
 
     private PublicationDate extractPublicationDate() {
@@ -206,6 +338,24 @@ public class CristinMapper {
                    .flatMap(Collection::stream);
     }
 
+    private CristinBookOrReportMetadata extractCristinBookReport() {
+        return Optional.ofNullable(cristinObject)
+            .map(CristinObject::getBookOrReportMetadata)
+            .orElse(null);
+    }
+
+    private String extractNumberOfPages() {
+        return extractCristinBookReport().getNumberOfPages();
+    }
+
+    private String extractPublisherName() {
+        return extractCristinBookReport().getPublisherName();
+    }
+
+    private String extractIsbn() {
+        return extractCristinBookReport().getIsbn();
+    }
+
     private URI extractLanguage() {
         return extractCristinTitles()
                    .filter(CristinTitle::isMainTitle)
@@ -218,4 +368,93 @@ public class CristinMapper {
     private AdditionalIdentifier extractIdentifier() {
         return new AdditionalIdentifier(CristinObject.IDENTIFIER_ORIGIN, cristinObject.getId().toString());
     }
+
+    private String extractNpiSubjectHeading() {
+        if (!isBook()) {
+            return null;
+        }
+        if (extractSubjectField() == null) {
+            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+        }
+        Integer code = extractSubjectField().getSubjectFieldCode();
+        if (code == null) {
+            throw new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE);
+        }
+        return String.valueOf(code);
+    }
+
+    private CristinSubjectField extractSubjectField() {
+        return extractCristinBookReport().getSubjectField();
+    }
+
+    private CristinJournalPublication extractCristinJournalPublication() {
+        return Optional.ofNullable(cristinObject)
+                .map(CristinObject::getJournalPublication)
+                .orElse(null);
+    }
+
+    private String extractIssn() {
+        return extractCristinJournalPublication().getJournal().getIssn();
+    }
+
+    private String extractIssnOnline() {
+        return extractCristinJournalPublication().getJournal().getIssnOnline();
+    }
+
+    private String extractPublisherTitle() {
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
+    }
+
+    private String extractPagesBegin() {
+        return extractCristinJournalPublication().getPagesBegin();
+    }
+
+    private String extractPagesEnd() {
+        return extractCristinJournalPublication().getPagesEnd();
+    }
+
+    private String extractVolume() {
+        return extractCristinJournalPublication().getVolume();
+    }
+
+    private URI extractDoi() {
+        if (isJournal() && extractCristinJournalPublication().getDoi() != null) {
+            return URI.create(extractCristinJournalPublication().getDoi());
+        }
+        return null;
+    }
+
+    private List<CristinTags> extractCristinTags() {
+        return Optional.ofNullable(cristinObject)
+                .map(CristinObject::getTags)
+                .orElse(null);
+    }
+
+    private String extractAbstract() {
+        return extractCristinTitles()
+                .filter(CristinTitle::isMainTitle)
+                .findFirst()
+                .map(CristinTitle::getAbstractText)
+                .orElse(null);
+    }
+
+    private List<String> extractTags() {
+        if (extractCristinTags() == null) {
+            return null;
+        }
+        List<String> listOfTags = new ArrayList<>();
+        for (CristinTags cristinTags : extractCristinTags()) {
+            if (cristinTags.getBokmal() != null) {
+                listOfTags.add(cristinTags.getBokmal());
+            }
+            if (cristinTags.getEnglish() != null) {
+                listOfTags.add(cristinTags.getEnglish());
+            }
+            if (cristinTags.getNynorsk() != null) {
+                listOfTags.add(cristinTags.getNynorsk());
+            }
+        }
+        return listOfTags;
+    }
+
 }

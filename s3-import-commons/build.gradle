@@ -1,5 +1,3 @@
-
-
 dependencies {
     implementation project(":publication-constants")
     implementation project(":publication-commons")
@@ -24,7 +22,6 @@ dependencies {
 
     implementation libs.aws.ion
 
-
     implementation libs.apache.commons.collections
 
     runtimeOnly libs.jackson.datatype.jsr310
@@ -45,8 +42,6 @@ dependencies {
     compileOnly libs.nva.identifiers
     compileOnly libs.zalando
 
-
-
     compileOnly(libs.aws.sdk2.auth) {
         because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
     }
@@ -61,6 +56,8 @@ dependencies {
 test {
     environment "MAX_SLEEP_TIME", "1"
     environment "IMPORT_EVENT_TYPE", "importEventTypeTestingValue"
+    environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
+
 }
 
 
