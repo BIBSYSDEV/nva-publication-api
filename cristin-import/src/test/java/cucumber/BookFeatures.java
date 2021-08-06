@@ -114,7 +114,7 @@ public class BookFeatures {
     }
 
     @Then("the NVA Resource has a PublicationContext of type {string}")
-    public void theNVAResourceHasAPublicationContextOfType(String publicationContextType) {
+    public void theNvaResourceHasAPublicationContextOfType(String publicationContextType) {
         PublicationContext context = scenarioContext.getNvaEntry()
             .getEntityDescription()
             .getReference()
