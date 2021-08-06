@@ -604,7 +604,7 @@
     rdfs:range   xsd:integer ;
     rdfs:domain  :PRESENTASJON_VARBEID_Class ;
     rdfs:comment """ When the value is equal to :PRESENTASJONSTYPEKODE_PROSJEKT, it contains the project's Cristin ID.
-    UNKNOWN meaning otherwise.
+    Otherwise its value has no meaning.
     """ ;
     :isignored   false .
 
