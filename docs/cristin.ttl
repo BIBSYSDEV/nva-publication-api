@@ -6,11 +6,6 @@
 #Info about rdfs types
 #https://www.w3.org/TR/rdf-schema/#ch_resource
 
-
-:NvaClass
-    a            rdfs:Class ;
-    rdfs:comment "Any class that represents an entity or collection of values in NVA" .
-
 :CristinClass
     a            rdfs:Class ;
     rdfs:label   "CristinClass" ;
@@ -41,9 +36,9 @@
 
 
 :VARBEID_SPRAK_Class
-    a               :CristinClass ;
-    rdfs:comment    "The structure defining the VARBEID_SPRAK property." ;
-    rdfs:subClassOf :CristinClass .
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "The structure defining the VARBEID_SPRAK property." .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -55,8 +50,9 @@
 
 
 :VARBEID_PERSON_STED_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
     The structure of the VARBEID_PERSON_STED entry.
     The entry contains information about the contributor's institutional affiliation represented in the result entity
      at the time of publication, as well as the current instance of that institution, should it have evolved over time.
@@ -64,8 +60,9 @@
 
 
 :VARBEID_PERSON_STED_ROLLE_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
      The structure of VARBEID_PERSON_STED_ROLLE. It contains information about the role of
     the contributor in this publication. One contributor can have many different contribution roles from the same or different institutions.
     Example:
@@ -73,21 +70,25 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
+
 :TYPE_MEDIEBIDRAG_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
     The structure of TYPE_MEDIEBIDRAG.
             """ .
 
 :PRESENTASJON_VARBEID_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
     Reference to a project when :presentasjonstypekode is equal to :PRESENTASJONSTYPEKODE_PROSJEKT. More information in the
     description of the field :presentasjonstypekode.
     """ .
 
 :PRESENTASJONSTYPEKODE_VALUES_Class
-    a :CristinClass .
+    a rdfs:Class .
+
 
 :PRESENTASJONSTYPEKODE_PERSON
     a               rdfs:Class ;
@@ -121,19 +122,29 @@
     rdfs:comment    "UNKNOWN MEANING. When :presentasjonstypekode has this value, the reference is not a project." ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
+:VARBEID_KILDE_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
+         When this entry is populated, the respective entry is imported from another source.
+         E.g. FORSKDOK or SCOPUS a predecessor of Cristin
+         """ .
+
 :VITENSKAPELIGARBEID_LOKAL_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
         This field contains metadata relevant for NVI reporting, one set per contributing institution that is also part of the NVI process.
         The contained metadata are related to the users that created/updated the entry for the NVI report. For example "brukernavn_opprettet"
         refers to the superuser that created the NVI entry and not the user that created the Cristin entry.
     """ .
 
 :TYPE_BOK_RAPPORT_Class
-    a            :CristinClass ;
-    rdfs:comment """
-         The respective object contains metadata about a book.
-         This only has a value if the varbeidhovedkatkode has one of the following values:
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
+         The respetive object contains metadata about a book.
+         The respective field (TYPE_BOK_RAPPORT) has a value only if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
          RAPPORT
          BOK.
@@ -160,24 +171,28 @@
          """ .
 
 :FAGFELT_Class
-    a               :CristinClass ;
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
     rdfs:comment    """The scientific field in which the book is published""" ;
     rdfs:subClassOf :TYPE_BOK_RAPPORT_Class .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
         A type of publication/result published in a journal, typically articles, reviews or editorials.
-    """ .
+       """ .
+
 
 :TIDSSKRIFT_Class
-    a            :CristinClass ;
-    rdfs:comment """UNKNOWN""" .
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """UNKNOWN""" .
 
 :VARBEID_EMNEORD_Class
-    a            :CristinClass ;
-    rdfs:comment """UNKNOWN""" .
-
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """A keyword that is relative to a publication.""" .
 
 :cristinfield
     a            rdf:Property ;
@@ -236,8 +251,9 @@
 :varbeidhovedkatkode
     a               :cristinfield ;
     rdfs:comment    """
-    The general category of the resource. A collection of "varbeidunderkatkode".
-    """ ;
+    The general category of the resource. A collection of "varbeidunderkatkode" .
+
+""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :Result ;
     :mapstonvafield "practically not in use because :varbeidunderkatkode can specify the type of publication" .
@@ -248,7 +264,8 @@
         The more specific category of the resource. No specific range available at the moment.
         Each varbeidunderkatkode belongs to only one varbeidhovedkatkode and therefore the value of this field is enough
         to deduct the exact type of the publication.
-        The range of this property is found here: https://api.cristin.no/v2/results/categories?lang=nb,en
+        The range of this property is found here:
+    https://api.cristin.no/v2/results/categories?lang=nb ,  en
         """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :Result ;
@@ -259,6 +276,11 @@
          Monograph -> BookMonograph
          Rapport -> ReportResearch
          Kapittel -> ChapterArticle
+         Popvit_Kapittel -> ChapterArticle
+         Faglig_Kapittel -> ChapterArticle
+         Artikkel_Fag -> JournalArticle
+         Bokanmeldelse -> JournalReview
+         Doktorgradsavhandling -> DegreePhd
     """ .
 
 :eierkode_opprettet
@@ -360,19 +382,30 @@
     It is a string containing arbitrary codes such as "scopus" "norart", "BIBSYS" etc.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VARBEID_KILDE_Class ;
     :isignored   "true" .
 
 :kildepostid
     a            :cristinfield ;
     rdfs:comment """
-    The id of the record the result was imported from in the source system (e.g. the SCOPUS id if the result was imported from Scopus).
-     See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the identifier found in the source system and cannot be
+    The id of the record the result was imported from in the source system (e.g. the SCOPUS id if the result was imported from Scopus ) .
+
+See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the identifier found in the source system and cannot be
      de-referenced.
     """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
+
+:kildeid
+    a            :cristinfield ;
+    rdfs:domain  :VARBEID_KILDE_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:comment """
+        The id of the record from the source it was imported
+( e.g SCOPUS or FORSKDOK. Overseeds :kildepostid.
+    """ .
+
 
 :pubidnr
     a            :cristinfield ;
@@ -431,8 +464,10 @@
     a            :cristinfield ;
     rdfs:comment """
     Indicator of whether the title in the respective VARBEID_SPRAK is the original title or not.
-    Known possible values are 'J' ('true'), 'N' (false) and NULL (free to interpretation).
-    """ ;
+    Known possible values are 'J' ('true')
+        , 'N' (false) and NULL (free to interpretation ) .
+
+""" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_SPRAK_Class ;
     :isignored   "false" .
@@ -453,17 +488,25 @@
 
 :personlopenr
     a               :cristinfield ;
-    rdfs:comment    "The Cristin Person identifier of the contributor" ;
+        rdfs:comment """
+    It refers to a person's CristinId.
+    When the domain is :VARBEID_PERSON_Class then it is a reference to a contributor.
+    When the domain is "PRESENTASJON_VARBEID_Class and  the respective presentasjonstypekode is equal to "PERSON", tt refers to a contributor that has chosen
+    to show this publication as one of their "important", "significant" etc publications.
+    """;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
-    :mapstonvafield "entityDescription.contributor.identity.id" .
+    rdfs:domain     :VARBEID_PERSON_Class , :PRESENTASJON_VARBEID_Class ;
+    :mapstonvafield " when the domain is:VARBEID_PERSON_Class it maps entityDescription.contributor.identity.id" ;
+    :isignored   false.
+
 
 :fornavn
     a               :cristinfield ;
     rdfs:comment    """The first/given name of the contributor of the respective result entry.
-                                                                                This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
-                                                                                submitted the publication to the publisher (e.g. Elsevier)
-                                                                                """ ;
+                        This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
+                        submitted the publication to the publisher
+(e.g. Elsevier)
+        """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_PERSON_Class ;
     :mapstonvafield "entityDescription.contributor.identity.fullanme" .
@@ -473,8 +516,9 @@
     rdfs:comment    """
     The surname/family-name of the contributor of the respective result entry
     This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
-        submitted the publication to the publisher (e.g. Elsevier).
-    """ ;
+        submitted the publication to the publisher ( e.g. Elsevier ) .
+
+""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_PERSON_Class ;
     :mapstonvafield "entityDescription.contributor.identity.fullanme" .
@@ -494,8 +538,10 @@
     a               :cristinfield ;
     rdfs:comment    """
     The **current** Cristin institution identifier institution that the contributor of the publication was affiliated with.
-    This value may have changed from the time of entry was registered in Cristin.
-    :institusjonsnr, :avdnr, :undavdnr, and :gruppenr form a unique identifier of the Contributor's affiliation.
+    This value may have changed from the time of entry was registered in
+Cristin.
+   :institusjonsnr
+        ,   :avdnr, :undavdnr, and :gruppenr form a unique identifier of the Contributor's affiliation.
 
     """ ;
     rdfs:range      xsd:positiveInteger ;
@@ -694,7 +740,9 @@
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :TYPE_MEDIEBIDRAG_Class ;
-    rdfs:comment """The Cristin Id of the respective :Result. It is a self reference.""" ;
+    rdfs:comment """The Cristin Id of the respective :Result .
+
+It is a self reference.""" ;
     :isignored   true .
 
 
@@ -709,11 +757,10 @@
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :PRESENTASJON_VARBEID_Class ;
-    rdfs:comment """ When the value is equal to :PRESENTASJONSTYPEKODE_PROSJEKT, it contains the project's Cristin ID.
+    rdfs:comment """ When the value of "presentasjonstypekode" is equal to :PRESENTASJONSTYPEKODE_PROSJEKT, it contains the project's Cristin ID.
     Otherwise its value has no meaning.
     """ ;
     :isignored   false .
-
 
 :presentasjonstypekode
     a            :cristinfield ;
@@ -727,12 +774,6 @@
     """ ;
     :isignored   false .
 
-:personlopenr
-    a            :cristinfield ;
-    rdfs:range   xsd:integer ;
-    rdfs:domain  :PRESENTASJON_VARBEID_Class ;
-    rdfs:comment """It refers to a person's CristinId. Relevant only when :presentasjonstypekode is equal to "PERSON" """ ;
-    :isignored   true .
 
 
 :TYPE_BOK_RAPPORT
@@ -774,6 +815,7 @@
     :mapstonvafield """
             entityDescription.reference.publicationContext.publisher
         """ .
+
 
 :fagfelt
     a            :cristinfield ;
@@ -847,7 +889,6 @@
         entityDescription.reference.publicationInstance.pages.begin
     """ .
 
-
 :sidenr_til
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
@@ -906,7 +947,7 @@
 
 :VARBEID_EMNEORD
     a               :cristinfield ;
-    rdfs:comment    """ UNKNOWN.""" ;
+    rdfs:comment    """ See the range class.""" ;
     rdfs:range      :VARBEID_EMNEORD_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
@@ -940,15 +981,11 @@
     rdfs:domain     :VARBEID_EMNEORD_Class ;
     :mapstonvafield """
         entityDescription.tags
-    """ .
+        """ .
 
 :emneordlopenr
     a            :cristinfield ;
-    rdfs:comment "UNKNOWN" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment "The Cristin ID of the keyword (emneord)" ;
+    rdfs:range   xsd:integer  ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
     :isignored   "true" .
-
-
-
-
