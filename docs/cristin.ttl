@@ -40,9 +40,9 @@
 
 
 :VARBEID_SPRAK_Class
-    a               :CristinClass ;
-    rdfs:comment    "The structure defining the VARBEID_SPRAK property." ;
-    rdfs:subClassOf :CristinClass .
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "The structure defining the VARBEID_SPRAK property." .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -54,8 +54,9 @@
 
 
 :VARBEID_PERSON_STED_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
     The structure of the VARBEID_PERSON_STED entry.
     The entry contains information about the contributor's institutional affiliation represented in the result entity
      at the time of publication, as well as the current instance of that institution, should it have evolved over time.
@@ -63,8 +64,9 @@
 
 
 :VARBEID_PERSON_STED_ROLLE_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
      The structure of VARBEID_PERSON_STED_ROLLE. It contains information about the role of
     the contributor in this publication. One contributor can have many different contribution roles from the same or different institutions.
     Example:
@@ -72,9 +74,19 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
+
+:VARBEID_KILDE_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
+         When this entry is populated, the respective entry is imported from another source.
+         E.g. FORSKDOK or SCOPUS a predecessor of Cristin
+         """ .
+
 :VITENSKAPELIGARBEID_LOKAL_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
         This field contains metadata relevant for NVI reporting, one set per contributing institution that is also part of the NVI process.
         The contained metadata are related to the users that created/updated the entry for the NVI report. For example "brukernavn_opprettet"
         refers to the superuser that created the NVI entry and not the user that created the Cristin entry.
@@ -82,8 +94,9 @@
 
 
 :TYPE_BOK_RAPPORT_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
          The respetive object contains metadata about a book.
          This only has a value if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
@@ -112,24 +125,27 @@
          """ .
 
 :FAGFELT_Class
-    a               :CristinClass ;
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
     rdfs:comment    """The scientific field in which the book is published""" ;
     rdfs:subClassOf :TYPE_BOK_RAPPORT_Class .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
-    a            :CristinClass ;
-    rdfs:comment """
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
 A type of publication/result published in a journal, typically articles, reviews or editorials.
 """ .
 
 :TIDSSKRIFT_Class
-    a            :CristinClass ;
-    rdfs:comment """UNKNOWN""" .
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """UNKNOWN""" .
 
 :VARBEID_EMNEORD_Class
-    a            :CristinClass ;
-    rdfs:comment """UNKNOWN""" .
-
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """UNKNOWN""" .
 
 :cristinfield
     a            rdf:Property ;
@@ -304,7 +320,7 @@ A type of publication/result published in a journal, typically articles, reviews
 
 :merknadtekst_godkjenning
     a            :cristinfield ;
-    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved or rejectedfor NVI reporting.";
+    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved or rejectedfor NVI reporting." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
@@ -317,7 +333,7 @@ A type of publication/result published in a journal, typically articles, reviews
     It is a string containing arbitrary codes such as "scopus" "norart", "BIBSYS" etc.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :Result ;
+    rdfs:domain  :Result, :VARBEID_KILDE_Class ;
     :isignored   "true" .
 
 :kildepostid
@@ -330,6 +346,15 @@ A type of publication/result published in a journal, typically articles, reviews
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
+
+:kildeid
+    a            :cristinfield ;
+    rdfs:domain  :VARBEID_KILDE_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:comment """
+        The id of the record from the source it was imported( e.g SCOPUS or FORSKDOK. Overseeds :kildepostid.
+    """ .
+
 
 :pubidnr
     a            :cristinfield ;
@@ -412,15 +437,15 @@ A type of publication/result published in a journal, typically articles, reviews
     a               :cristinfield ;
     rdfs:comment    "The Cristin Person identifier of the contributor" ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
+    rdfs:domain     :Result ;
     :mapstonvafield "entityDescription.contributor.identity.id" .
 
 :fornavn
     a               :cristinfield ;
     rdfs:comment    """The first/given name of the contributor of the respective result entry.
-                                                                                This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
-                                                                                submitted the publication to the publisher (e.g. Elsevier)
-                                                                                """ ;
+                        This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
+                        submitted the publication to the publisher (e.g. Elsevier)
+                        """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_PERSON_Class ;
     :mapstonvafield "entityDescription.contributor.identity.fullanme" .
@@ -678,6 +703,7 @@ A type of publication/result published in a journal, typically articles, reviews
             entityDescription.reference.publicationContext.publisher
         """ .
 
+
 :fagfelt
     a            :cristinfield ;
     rdfs:comment "The scientific field in which the book is published" ;
@@ -849,8 +875,8 @@ A type of publication/result published in a journal, typically articles, reviews
 
 :emneordlopenr
     a            :cristinfield ;
-    rdfs:comment "UNKNOWN" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment "The Cristin ID of the keyword (emneord)" ;
+    rdfs:range   xsd:Integer ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
     :isignored   "true" .
 
