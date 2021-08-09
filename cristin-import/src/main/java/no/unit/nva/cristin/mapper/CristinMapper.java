@@ -7,8 +7,8 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ARTICLE_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
@@ -53,7 +53,9 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
@@ -205,8 +207,12 @@ public class CristinMapper {
             return createBookMonograph();
         } else if (isJournal() && isJournalArticle()) {
             return createJournalArticle();
+        } else if (isJournal() && isJournalReview()) {
+            return createJournalReview();
         } else if (isReport() && isResearchReport()) {
             return createReportResearch();
+        } else if (isReport() && isDegreePhd()) {
+            return createDegreePhd();
         } else if (isChapter() && isChapterArticle()) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
@@ -216,7 +222,6 @@ public class CristinMapper {
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
-
 
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder()
@@ -249,7 +254,7 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                   .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
+                   .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
                    .withIssue(HARDCODED_JOURNAL_PAGE)
                    .withPages(numberOfPages)
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
@@ -257,8 +262,22 @@ public class CristinMapper {
                    .build();
     }
 
+    private PublicationInstance<? extends Pages> createJournalReview() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalReview.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
+
     private PublicationInstance<? extends Pages> createReportResearch() {
         return new ReportResearch.Builder().build();
+    }
+
+    private PublicationInstance<? extends Pages> createDegreePhd() {
+        return new DegreePhd.Builder().build();
     }
 
     private PublicationInstance<? extends Pages> createChapterArticle() {
@@ -282,12 +301,20 @@ public class CristinMapper {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
+    private boolean isJournalReview() {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
     private boolean isJournal() {
         return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
     }
 
     private boolean isResearchReport() {
         return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isDegreePhd() {
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isReport() {
@@ -321,10 +348,10 @@ public class CristinMapper {
                    .flatMap(Collection::stream);
     }
 
-    private CristinBookReport extractCristinBookReport() {
+    private CristinBookOrReportMetadata extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getBookReport)
-                   .orElse(null);
+            .map(CristinObject::getBookOrReportMetadata)
+            .orElse(null);
     }
 
     private String extractNumberOfPages() {
@@ -357,7 +384,7 @@ public class CristinMapper {
             return null;
         }
         if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
         }
         Integer code = extractSubjectField().getSubjectFieldCode();
         if (code == null) {
@@ -385,7 +412,7 @@ public class CristinMapper {
     }
 
     private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getPublisherName();
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 
     private String extractPagesBegin() {
