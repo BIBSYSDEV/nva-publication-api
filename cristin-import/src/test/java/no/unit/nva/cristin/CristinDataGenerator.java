@@ -130,6 +130,8 @@ public final class CristinDataGenerator {
                 return randomChapterArticle();
             case JOURNAL_REVIEW:
                 return randomJournalReview();
+            case DEGREE_PHD:
+                return randomDegreePhd();
             default:
                 break;
         }
@@ -169,6 +171,10 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomChapterArticle() {
         return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    }
+
+    private static CristinObject randomDegreePhd() {
+        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_PHD);
     }
 
 

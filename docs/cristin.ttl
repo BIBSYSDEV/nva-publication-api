@@ -193,7 +193,10 @@
          Anthology -> BookAnthology
          Monograph -> BookMonograph
          Rapport -> ReportResearch
-         Kapittel -> ChapterArticle
+         Kapittel, Popvit_Kapittel, Faglig_Kapittel-> ChapterArticle
+         Artikkel_Fag -> JournalArticle
+         Bokanmeldelse -> JournalReview
+         Doktorgradsavhandling -> DegreePhd
     """ .
 
 :eierkode_opprettet
