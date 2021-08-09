@@ -866,7 +866,7 @@ A type of publication/result published in a journal, typically articles, reviews
 
 :emneordlopenr
     a            :cristinfield ;
-    rdfs:comment "UNKNOWN" ;
+    rdfs:comment "The Cristin ID of the keyword (emneord)" ;
     rdfs:range   xsd:Integer ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
     :isignored   "true" .
