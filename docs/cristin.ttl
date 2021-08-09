@@ -193,7 +193,9 @@
          Anthology -> BookAnthology
          Monograph -> BookMonograph
          Rapport -> ReportResearch
-         Kapittel, Popvit_Kapittel, Faglig_Kapittel-> ChapterArticle
+         Kapittel -> ChapterArticle
+         Popvit_Kapittel -> ChapterArticle
+         Faglig_Kapittel -> ChapterArticle
          Artikkel_Fag -> JournalArticle
          Bokanmeldelse -> JournalReview
          Doktorgradsavhandling -> DegreePhd
