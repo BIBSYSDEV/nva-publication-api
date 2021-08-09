@@ -41,8 +41,8 @@
 
 :VARBEID_SPRAK_Class
     a               rdfs:Class ;
-    rdfs:comment    "The structure defining the VARBEID_SPRAK property." ;
-    rdfs:subClassOf :CristinClass .
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "The structure defining the VARBEID_SPRAK property." .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -56,9 +56,7 @@
 :VARBEID_PERSON_STED_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-rdfs:comment
-
-        """
+    rdfs:comment    """
     The structure of the VARBEID_PERSON_STED entry.
     The entry contains information about the contributor's institutional affiliation represented in the result entity
      at the time of publication, as well as the current instance of that institution, should it have evolved over time.
@@ -97,8 +95,8 @@ rdfs:comment
 
 :TYPE_BOK_RAPPORT_Class
     a               rdfs:Class ;
-    rdfs:subClassOf :CristinClass;
-        rdfs:comment """
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
          The respetive object contains metadata about a book.
          This only has a value if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
@@ -128,26 +126,26 @@ rdfs:comment
 
 :FAGFELT_Class
     a               rdfs:Class ;
-    rdfs:subClassOf :CristinClass;
+    rdfs:subClassOf :CristinClass ;
     rdfs:comment    """The scientific field in which the book is published""" ;
     rdfs:subClassOf :TYPE_BOK_RAPPORT_Class .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a               rdfs:Class ;
-    rdfs:subClassOf :CristinClass;
-    rdfs:comment """
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
 A type of publication/result published in a journal, typically articles, reviews or editorials.
 """ .
 
 :TIDSSKRIFT_Class
     a               rdfs:Class ;
-    rdfs:subClassOf :CristinClass;
-    rdfs:comment """UNKNOWN""" .
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """UNKNOWN""" .
 
 :VARBEID_EMNEORD_Class
     a               rdfs:Class ;
-    rdfs:subClassOf :CristinClass;
-    rdfs:comment """UNKNOWN""" .
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """UNKNOWN""" .
 
 :cristinfield
     a            rdf:Property ;
