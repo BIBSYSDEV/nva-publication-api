@@ -53,6 +53,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -210,6 +211,8 @@ public class CristinMapper {
             return createJournalReview();
         } else if (isReport() && isResearchReport()) {
             return createReportResearch();
+        } else if (isReport() && isDegreePhd()) {
+            return createDegreePhd();
         } else if (isChapter() && isChapterArticle()) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
@@ -219,7 +222,6 @@ public class CristinMapper {
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
-
 
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder()
@@ -274,6 +276,10 @@ public class CristinMapper {
         return new ReportResearch.Builder().build();
     }
 
+    private PublicationInstance<? extends Pages> createDegreePhd() {
+        return new DegreePhd.Builder().build();
+    }
+
     private PublicationInstance<? extends Pages> createChapterArticle() {
         return new ChapterArticle.Builder().build();
     }
@@ -305,6 +311,10 @@ public class CristinMapper {
 
     private boolean isResearchReport() {
         return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    private boolean isDegreePhd() {
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
     }
 
     private boolean isReport() {
