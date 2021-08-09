@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_DEGREE_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
@@ -44,6 +45,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
@@ -185,6 +187,11 @@ public class CristinMapper {
                        .build();
         }
         if (isReport()) {
+            if (isDegreePhd()) {
+                return new Degree.Builder()
+                        .withUrl(HARDCODED_DEGREE_URL.toURL())
+                        .build();
+            }
             return new Report.Builder()
                     .withLevel(HARDCODED_REPORT_LEVEL)
                     .withPublisher(extractPublisherName())

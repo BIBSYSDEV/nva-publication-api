@@ -44,6 +44,11 @@
     rdfs:comment    "The structure defining the VARBEID_SPRAK property." ;
     rdfs:subClassOf :CristinClass .
 
+:VITENSKAPELIGARBEID_LOKAL_Class
+    a               :CristinClass ;
+    rdfs:comment    "UNKNOWN" ;
+    rdfs:subClassOf :CristinClass .
+
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
     rdfs:comment """
@@ -71,6 +76,10 @@
     Contributor C has contributed as "EDITOR" affiliated with InstA for publication P
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
+
+:VARBEID_VDISIPLIN_Class
+    a           :CristinClass ;
+    rdfs:comment "UNKNOWN" .
 
 :TYPE_BOK_RAPPORT_Class
     a           :CristinClass;
@@ -372,8 +381,108 @@
 :VITENSKAPELIGARBEID_LOKAL
     a            :cristinfield ;
     rdfs:comment "UNKONWN property" ;
+    rdfs:range   :VITENSKAPELIGARBEID_LOKAL_Class ;
     rdfs:domain  :Result ;
     :isignored   "true" .
+
+:EIERKODE
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:BRUKERNAVN_OPPRETTET
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:DATO_OPPRETTET
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  xsd:string ; #Date as string example format 2014-09-08T16:39:05 ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:BRUKERNAVN_SISTE_ENDRING
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:DATO_SISTE_ENDRING
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  xsd:string ; #Date as string example format 2019-01-15T10:27:19 ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:STATUS_KONTROLLERT
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:BRUKERNAVN_KONTROLLERT
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:DATO_KONTROLLERT
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:STATUS_BEKREFTET_ARKIVSPORSMAL
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:BRUKERNAVN_AVLVRT_ARKIVSYSTEM
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:DATO_AVLVRT_ARKIVSYSTEM
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:STATUS_FULGT_MEDF_REG
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:BRUKERNAVN_SVART_MEDFORF_REG
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
+:DATO_SVART_MEDFORF_REGEL
+    a           :cristinfield ;
+    rdfs:comment "UNKNOWN" ;
+    rdfs:range  rdf:nil ; #unknown range ;
+    rdfs:domain :VITENSKAPELIGARBEID_LOKAL_Class ;
+    :isignored "true" .
+
 
 :VARBEID_PERSON
     a               :cristinfield ;
@@ -527,6 +636,41 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_PERSON_STED_ROLLE_Class ;
     :isignored   "false" .
+
+:VARBEID_VDISIPLIN
+    a               :cristinfield ;
+    rdfs:range      :VARBEID_VDISIPLIN_Class ;
+    rdfs:domain     :Result .
+
+:DISIPLINKODE
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN. The code is a number in the form of a string" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:DISIPLINKODE_EIER
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN. The code is a number in the form of a string" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:DISIPLINNAVN_BOKMAL
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in bokmal" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:DISIPLINNAVN_ENGELSK
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in english" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:DISIPLINNAVN_NYNORSK
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in nynorsk" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
 
 :TYPE_BOK_RAPPORT
     a               :cristinfield ;
