@@ -75,7 +75,7 @@
 :VITENSKAPELIGARBEID_LOKAL_Class
     a            :CristinClass ;
     rdfs:comment """
-        This field contains metadata relevant for NVI reporting, one set per contributing institution that is also part of the NVIU process.
+        This field contains metadata relevant for NVI reporting, one set per contributing institution that is also part of the NVI process.
         The contained metadata are related to the users that created/updated the entry for the NVI report. For example "brukernavn_opprettet"
         refers to the superuser that created the NVI entry and not the user that created the Cristin entry.
     """ .
@@ -118,7 +118,9 @@
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a            :CristinClass ;
-    rdfs:comment """A type publication called tidsskrift""" .
+    rdfs:comment """
+A type of publication/result published in a journal, typically articles, reviews or editorials.
+""" .
 
 :TIDSSKRIFT_Class
     a            :CristinClass ;
@@ -176,9 +178,6 @@
     rdfs:comment    """
     When the domain is :Result, it is the date the resource was registered in Cristin or its predecessor.
     When the domain is :VITENSKAPELIGARBEID_LOKAL, it is the date the resource was registered in NVI.
-
-    Note: there are approx 200_000 entries with dates prior to 2004 which was the year Cristin
-
     """ ;
     rdfs:range      xsd:date ;
     rdfs:domain     :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
@@ -217,7 +216,7 @@
 :eierkode_opprettet
     a            :cristinfield ;
     rdfs:comment """
-        eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+        eierkode_opprettet and brukernavn_opprettet are the primary key for idenitfying which user created the entry. As a general rule a physical person
         can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
         and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
      """ ;
@@ -228,12 +227,11 @@
 :brukernavn_opprettet
     a            :cristinfield ;
     rdfs:comment """
-        When the domain is :Result, eierkode_opprettet and brukernavn are the primary key for idenitfying which user created the entry. As a general rule a physical person
+        When the domain is :Result, eierkode_opprettet and brukernavn_opprettet are the primary key for idenitfying which user created the entry. As a general rule a physical person
         can have many usernames (brukernavn) but only one eierkode. This holds even if a physical person moves from institution to institution
         and/or changes roles. Duplicates that violate this assumption are possible to occur but they are not expected to be the rule.
 
         When it is :VITENSKAPELIGARBEID_LOKAL_Class it is the user who created the NVI entry."
-        This entails that the semantics of this term are unclear, possibly even polysemous.
      """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
@@ -301,7 +299,7 @@
 
 :merknadtekst_godkjenning
     a            :cristinfield ;
-    rdfs:comment "Free text fore super-users to add explanations/details on why the publication was approved or rejected." ;
+    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved or rejectedfor NVI reporting.";
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
@@ -566,8 +564,10 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL_Class ;
     rdfs:comment """
-     It indicates if the respective post has been controlled or not. It receives values "J", "N".
-     It is unknown whether it refers to the Cristin entry or the NVI entry.
+     It refers to the respective institution's opinion on whether the Cristin entry should be reported to NVI and count towards RBK funding.
+    NULL = this institution has not yet given their opinion
+    J = this institution believes the current result should be included in the NVI report
+    N = this institution believes the current result should NOT be included in the NVI report (e.g. doesn't meet academic standards, or has other issues)
     """ ;
     :isignored   "true" .
 
@@ -576,9 +576,8 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL_Class ;
     rdfs:comment """
-     The username who controlled the respective entry. Unknown whether the field refers to the NVI entry or the Cristin entry.
-     Unknown whether the user belongs to NSD or to the institution that registered the entry (e.g. NTNU)
-
+     The username who controlled / judged / validated the respective entry representing  their respective institution,
+     indicated  by the field VITENSKAPELIGARBEID_LOKAL.eierkode.
     """ ;
     :isignored   "true" .
 
@@ -587,8 +586,7 @@
     rdfs:range   xsd:string ;
     rdfs:domain  :VITENSKAPELIGARBEID_LOKAL_Class ;
     rdfs:comment """
-     The date the respective entry was controlled. Unknown whether the field refers to the NVI entry or the Cristin entry.
-
+     The date the respective entry was controlled by the user defined by the fields (brukernavn_kontrollert, eierkode) in the object VITENSKAPELIGARBEID_LOKAL.
     """ ;
     :isignored   "true" .
 
