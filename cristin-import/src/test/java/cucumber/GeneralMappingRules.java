@@ -11,17 +11,14 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-
 import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -30,8 +27,8 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
-import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
+import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -39,8 +36,6 @@ import no.unit.nva.model.Identity;
 import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import nva.commons.core.SingletonCollector;
 
 public class GeneralMappingRules {
@@ -321,28 +316,6 @@ public class GeneralMappingRules {
                 .setPresentationalWork(List.of(CristinDataGenerator.randomPresentationalWork()));
     }
 
-    @And("the PresentationalWork type is set to {string} and ID set to {int}")
-    public void thePresentationalWorkTypeIsSetToAndIDSetTo(String type, Integer id) {
-        scenarioContext.getCristinEntry()
-                .getPresentationalWork()
-                .forEach(work -> {
-                    work.setPresentationType(type);
-                    work.setIdentifier(id);
-                });
-    }
-
-    @Then("the NVA Resource has a Research project with the id {string}")
-    public void theNvaResourceHasAResearchProjectWithTheId(String idString) {
-        URI actuallId = scenarioContext
-                .getNvaEntry()
-                .getProjects()
-                .stream()
-                .findFirst()
-                .map(Project::getId)
-                .orElse(null);
-        URI expectedId = URI.create(idString);
-        assertThat(actuallId, is(equalTo(expectedId)));
-    }
 
     @Then("the NVA Resource has the following abstract {string}")
     public void theNvaResourceHasTheFollowingAbstract(String expectedAbstract) {
@@ -362,7 +335,7 @@ public class GeneralMappingRules {
         assertThat(actuallAbstract, is(equalTo(null)));
     }
 
-    @And("the cristin title abstract is sett to null")
+    @Given("the cristin title abstract is sett to null")
     public void theCristinTitleAbstractIsSettToNull() {
         for (CristinTitle title : scenarioContext.getCristinEntry().getCristinTitles()) {
             title.setAbstractText(null);
@@ -400,11 +373,11 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has Research projects with the id values:")
     public void theNvaResourceHasResearchProjectsWithTheIdValues(List<String> stringUriList) {
         List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
-        List<URI> actuallUriList = scenarioContext.getNvaEntry()
-                .getProjects()
-                .stream()
-                .map(Project::getId)
-                .collect(Collectors.toList());
-        assertThat(actuallUriList, is(equalTo(expectedUriList)));
+        List<URI> actualUriList = scenarioContext.getNvaEntry()
+            .getProjects()
+            .stream()
+            .map(Project::getId)
+            .collect(Collectors.toList());
+        assertThat(actualUriList, is(equalTo(expectedUriList)));
     }
 }

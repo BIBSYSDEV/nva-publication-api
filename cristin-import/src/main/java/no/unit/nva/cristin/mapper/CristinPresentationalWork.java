@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
-
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_RESEARCH_PROJECT_NAME;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
@@ -11,25 +12,20 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
 
-
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_RESEARCH_PROJECT_NAME;
-
 @Data
 @Builder(
-        builderClassName = "CristinPresentationalWorkBuilder",
-        toBuilder = true,
-        builderMethodName = "builder",
-        buildMethodName = "build",
-        setterPrefix = "with"
+    builderClassName = "CristinPresentationalWorkBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"personlopenr"})
 
 public class CristinPresentationalWork {
 
-    private static final String API_URI_START = "https://api.";
     private static final String PROJECT = "project";
-    private static final String DOMAIN_NAME = "DOMAIN_NAME";
     private static final String PROSJEKT = "PROSJEKT";
 
     @JsonProperty("presentasjonslopenr")
@@ -52,11 +48,11 @@ public class CristinPresentationalWork {
     }
 
     public ResearchProject toNvaResearchProject() {
-        String domainName = System.getenv(DOMAIN_NAME);
-        UriWrapper idUri = new UriWrapper(API_URI_START + domainName).addChild(PROJECT, identifier.toString());
+
+        UriWrapper idUri = new UriWrapper(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
         return new ResearchProject.Builder()
-                .withId(idUri.getUri())
-                .withName(HARDCODED_RESEARCH_PROJECT_NAME)
-                .build();
+            .withId(idUri.getUri())
+            .withName(HARDCODED_RESEARCH_PROJECT_NAME)
+            .build();
     }
 }
