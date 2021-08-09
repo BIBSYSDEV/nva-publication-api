@@ -167,8 +167,8 @@
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a            :CristinClass ;
     rdfs:comment """
-A type of publication/result published in a journal, typically articles, reviews or editorials.
-""" .
+        A type of publication/result published in a journal, typically articles, reviews or editorials.
+    """ .
 
 :TIDSSKRIFT_Class
     a            :CristinClass ;
@@ -347,7 +347,7 @@ A type of publication/result published in a journal, typically articles, reviews
 
 :merknadtekst_godkjenning
     a            :cristinfield ;
-    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved or rejectedfor NVI reporting.";
+    rdfs:comment "Free text for super-users to add explanations/details on why the publication was approved or rejectedfor NVI reporting." ;
     rdfs:range   xsd:string ;
     rdfs:domain  :Result ;
     :isignored   "true" .
@@ -906,9 +906,7 @@ A type of publication/result published in a journal, typically articles, reviews
 
 :VARBEID_EMNEORD
     a               :cristinfield ;
-    rdfs:comment    """
-    UNKNOWN.
-    """ ;
+    rdfs:comment    """ UNKNOWN.""" ;
     rdfs:range      :VARBEID_EMNEORD_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
