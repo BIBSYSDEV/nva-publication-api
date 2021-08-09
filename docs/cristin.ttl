@@ -264,8 +264,7 @@
         The more specific category of the resource. No specific range available at the moment.
         Each varbeidunderkatkode belongs to only one varbeidhovedkatkode and therefore the value of this field is enough
         to deduct the exact type of the publication.
-        The range of this property is found here:
-    https://api.cristin.no/v2/results/categories?lang=nb ,  en
+        The range of this property is found here:  https://api.cristin.no/v2/results/categories?lang=nb ,  en
         """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :Result ;
