@@ -714,11 +714,6 @@ Resources:
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: AllAtOnce # Or Canary10Percent5Minutes, Linear10PercentEvery1Minute, ...
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -733,28 +728,6 @@ Resources:
             Path: /
             Method: post
             RestApiId: !Ref NvaPublicationApi
-
-  NvaCreatePublicationFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaCreatePublicationFunction}:live # You need to specify an alias or version here
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaCreatePublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
-
-  NvaCreatePublicationFucntionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaCreatePublicationScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaCreatePublicationFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
   NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
@@ -1248,8 +1221,8 @@ Resources:
       CodeUri: cristin-import
       Handler: no.unit.nva.cristin.lambda.CristinEntryEventConsumer::handleRequest
       Runtime: java11
-      MemorySize: 2048
-      Timeout: 300 # 5 min timeout
+      MemorySize: 512
+      Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
