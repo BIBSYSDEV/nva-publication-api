@@ -65,7 +65,7 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper {
 
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
@@ -165,45 +165,62 @@ public class CristinMapper {
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
         if (isBook()) {
-            List<String> isbnList = new ArrayList<>();
-            isbnList.add(extractIsbn());
-            return new Book.Builder()
-                       .withIsbnList(isbnList)
-                       .withPublisher(extractPublisherName())
-                       .withUrl(HARDCODED_BOOK_URI.toURL())
-                       .withLevel(HARDCODED_BOOK_LEVEL)
-                       .withOpenAccess(false)
-                       .build();
+            return buildBookForPublicationContext();
         }
         if (isJournal()) {
-            return new Journal.Builder()
-                       .withLevel(HARDCODED_JOURNAL_LEVEL)
-                       .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                       .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
-                       .withUrl(HARDCODED_JOURNAL_URI.toURL())
-                       .withOnlineIssn(extractIssnOnline())
-                       .withPrintIssn(extractIssn())
-                       .withTitle(extractPublisherTitle())
-                       .build();
+            return buildJournalForPublicationContext();
         }
         if (isReport()) {
-            if (isDegreePhd()) {
-                return new Degree.Builder()
-                        .withUrl(HARDCODED_DEGREE_URL.toURL())
-                        .build();
-            }
-            return new Report.Builder()
-                    .withLevel(HARDCODED_REPORT_LEVEL)
-                    .withPublisher(extractPublisherName())
-                    .withUrl(HARDCODED_REPORT_URL.toURL())
-                    .build();
+            return buildPublicationContextWhenMainCategoryIsReport();
         }
         if (isChapter()) {
-            return new Chapter.Builder()
-                    .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
-                    .build();
+            return buildChapterForPublicationContext();
         }
         return null;
+    }
+
+    private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
+        List<String> isbnList = new ArrayList<>();
+        isbnList.add(extractIsbn());
+        return new Book.Builder()
+                .withIsbnList(isbnList)
+                .withPublisher(extractPublisherName())
+                .withUrl(HARDCODED_BOOK_URI.toURL())
+                .withLevel(HARDCODED_BOOK_LEVEL)
+                .withOpenAccess(false)
+                .build();
+    }
+
+    private Journal buildJournalForPublicationContext() throws MalformedURLException, InvalidIssnException {
+        return new Journal.Builder()
+                .withLevel(HARDCODED_JOURNAL_LEVEL)
+                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
+                .withUrl(HARDCODED_JOURNAL_URI.toURL())
+                .withOnlineIssn(extractIssnOnline())
+                .withPrintIssn(extractIssn())
+                .withTitle(extractPublisherTitle())
+                .build();
+    }
+
+    private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
+            throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
+        if (isDegreePhd()) {
+            return new Degree.Builder()
+                    .withUrl(HARDCODED_DEGREE_URL.toURL())
+                    .build();
+        }
+        return new Report.Builder()
+                .withLevel(HARDCODED_REPORT_LEVEL)
+                .withPublisher(extractPublisherName())
+                .withUrl(HARDCODED_REPORT_URL.toURL())
+                .build();
+    }
+
+    private Chapter buildChapterForPublicationContext() {
+        return new Chapter.Builder()
+                .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
+                .build();
     }
 
 
