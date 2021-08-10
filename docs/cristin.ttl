@@ -743,7 +743,7 @@ Cristin.
 :disiplinkode
     a               :cristinfield ;
     rdfs:comment    """A code identifying a node in the VARBEID_VDISIPLIN tree.
-        The node is the most fine grained description of the relevant discipline.
+        The specified node is the most fine grained description of the relevant discipline.
         The code is a number in the form of a string""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_VDISIPLIN_Class .
