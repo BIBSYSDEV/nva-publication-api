@@ -139,6 +139,14 @@
         refers to the superuser that created the NVI entry and not the user that created the Cristin entry.
     """ .
 
+
+:VARBEID_VDISIPLIN_Class
+    a           :CristinClass ;
+    rdfs:comment """
+            This field contains metadata about the scientific discipline to which the publication belongs.
+            The data is structured hierarchical with gradually more fine grained discipline specifications
+            """ .
+
 :TYPE_BOK_RAPPORT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
@@ -725,6 +733,44 @@ Cristin.
     rdfs:comment """UNKNOWN meaning""" ;
     :isignored   "true" .
 
+
+:VARBEID_VDISIPLIN
+    a               :cristinfield ;
+    rdfs:comment    "See description of domain class" ;
+    rdfs:range      :VARBEID_VDISIPLIN_Class ;
+    rdfs:domain     :Result .
+
+:disiplinkode
+    a               :cristinfield ;
+    rdfs:comment    """A code identifying a node in the VARBEID_VDISIPLIN tree.
+        The specified node is the most fine grained description of the relevant discipline.
+        The code is a number in the form of a string""" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:disiplinkode_eier
+    a               :cristinfield ;
+    rdfs:comment    "A code identifying the parent node of the respective publications discipline. The code is a number in the form of a string" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:disiplinnavn_bokmal
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in bokmal" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:disiplinnavn_engelsk
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in english" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+
+:disiplinnavn_nynorsk
+    a               :cristinfield ;
+    rdfs:comment    "Name of the discipline in nynorsk" ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :VARBEID_VDISIPLIN_Class .
 
 
 :TYPE_MEDIEBIDRAG

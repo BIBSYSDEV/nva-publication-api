@@ -7,3 +7,7 @@ Feature:
   Scenario: Cristin Result "Doctoral dissertation" is converted to an NVA entry with type "DegreePhd".
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "DegreePhd"
+
+  Scenario: Cristin Result "Doctoral dissertation" is converted to an NVA entry grouped by "Degree".
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a PublicationContext of type Degree
