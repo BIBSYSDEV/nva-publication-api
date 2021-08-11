@@ -218,6 +218,7 @@ public class CristinMapper {
         if (isDegreePhd(cristinObject)) {
             return new Degree.Builder()
                     .withUrl(HARDCODED_DEGREE_URL.toURL())
+                    .withPublisher(extractPublisherName())
                     .build();
         }
         return new Report.Builder()
