@@ -10,9 +10,14 @@ import nva.commons.core.SingletonCollector;
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
-    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE", "ARTIKKEL", "ARTIKKEL_POP", "OVERSIKTSART"),
+    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
+    ARTICLE_POPULAR("ARTIKKEL_POP", "ARTICLE_POPULAR"),
+    ARTICLE("ARTIKKEL", "ARTICLE"),
+    ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
-    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE", "POPVIT_KAPITTEL", "FAGLIG_KAPITTEL"),
+    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
+    CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
+    POPULAR_ARTICLE("POPVIT_KAPITTEL", "POPULAR_ARTICLE"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -35,6 +40,33 @@ public enum CristinSecondaryCategory {
             return aliases.get(DEFAULT_VALUE);
         }
         return this.name();
+    }
+
+    public static boolean isAnthology(CristinObject cristinObject) {
+        return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isMonograph(CristinObject cristinObject) {
+        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalArticle(CristinObject cristinObject) {
+        return (CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
+                CristinSecondaryCategory.ARTICLE_POPULAR.equals(cristinObject.getSecondaryCategory()) ||
+                CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
+                CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
+        );
+    }
+
+    public static boolean isResearchReport(CristinObject cristinObject) {
+        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isChapterArticle(CristinObject cristinObject) {
+        return (CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
+                CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory()) ||
+                CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
+        );
     }
 
     public boolean isUnknownCategory() {

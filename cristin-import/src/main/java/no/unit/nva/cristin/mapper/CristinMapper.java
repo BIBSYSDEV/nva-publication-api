@@ -199,15 +199,15 @@ public class CristinMapper {
 
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
-        if (isBook() && isAnthology()) {
+        if (isBook() && CristinSecondaryCategory.isAnthology(cristinObject)) {
             return createBookAnthology();
-        } else if (isBook() && isMonograph()) {
+        } else if (isBook() && CristinSecondaryCategory.isMonograph(cristinObject)) {
             return createBookMonograph();
-        } else if (isJournal() && isJournalArticle()) {
+        } else if (isJournal() && CristinSecondaryCategory.isJournalArticle(cristinObject)) {
             return createJournalArticle();
-        } else if (isReport() && isResearchReport()) {
+        } else if (isReport() && CristinSecondaryCategory.isResearchReport(cristinObject)) {
             return createReportResearch();
-        } else if (isChapter() && isChapterArticle()) {
+        } else if (isChapter() && CristinSecondaryCategory.isChapterArticle(cristinObject)) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
@@ -266,37 +266,22 @@ public class CristinMapper {
     }
 
 
-    private boolean isAnthology() {
-        return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isMonograph() {
-        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
-    }
-
     private boolean isBook() {
         return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
     }
 
-    private boolean isJournalArticle() {
-        return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory());
-    }
 
     private boolean isJournal() {
         return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
     }
 
-    private boolean isResearchReport() {
-        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
-    }
+
 
     private boolean isReport() {
         return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
     }
 
-    private boolean isChapterArticle() {
-        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
-    }
+
 
     private boolean isChapter() {
         return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
