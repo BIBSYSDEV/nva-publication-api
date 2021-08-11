@@ -19,7 +19,7 @@ public enum CristinSecondaryCategory {
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
-    POPULAR_ARTICLE("POPVIT_KAPITTEL", "POPULAR_ARTICLE"),
+    POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_ARTICLE"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -74,7 +74,7 @@ public enum CristinSecondaryCategory {
     public static boolean isChapterArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
