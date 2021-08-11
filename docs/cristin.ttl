@@ -906,6 +906,69 @@ It is a self reference.""" ;
         entityDescription.reference.doi
     """ .
 
+:antall_sider_totalt
+    a               :cristinfield ;
+    rdfs:comment    "The total number of pages. Possibly null." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:publiseringsar
+    a               :cristinfield ;
+    rdfs:comment    "The year of publication" ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:hefte
+    a               :cristinfield ;
+    rdfs:comment    "The booklet containing the publication." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:status_referee_ordning
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:supplement
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:utbredelsesomrade
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:artikkelnummer
+    a               :cristinfield ;
+    rdfs:comment    "The article number." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:arstall_trykket
+    a               :cristinfield ;
+    rdfs:comment    "The year the publication was printed." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:arstall_online
+    a               :cristinfield ;
+    rdfs:comment    "The year the publication was released online." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
 :TIDSSKRIFT
     a               :cristinfield ;
     rdfs:comment    """
@@ -943,6 +1006,55 @@ It is a self reference.""" ;
     :mapstonvafield """
         entityDescription.reference.publicationContext.title
     """ .
+
+:tidsskriftnr
+    a               :cristinfield ;
+    rdfs:comment    "Number identifying the specific article" ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:nsdkode
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:landkode_utgiver
+    a               :cristinfield ;
+    rdfs:comment    "The code identifying the country where the publisher is located. Possibly null." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:sprakkode
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:status_referee_ordning
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      xsd:string ;
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:dato_utgatt
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:status_serie
+    a               :cristinfield ;
+    rdfs:comment    "UNKNOWN." ;
+    rdfs:range      rdf:nil ; #unknown range
+    rdfs:domain     :TIDSSKRIFT_Class ;
+    :isignored   "true" .
 
 :VARBEID_EMNEORD
     a               :cristinfield ;
