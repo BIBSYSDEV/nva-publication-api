@@ -1,4 +1,4 @@
-Feature: Mapping of "Article in business/trade/industry journal" entries
+Feature: Mapping of "Article in business/trade/industry journal", "Academic article", "Popular scientific article", "Academic literature review" entries
 
   Background:
     Given a valid Cristin Result with secondary category "ARTIKKEL_FAG"
@@ -7,6 +7,22 @@ Feature: Mapping of "Article in business/trade/industry journal" entries
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "JournalArticle"
 
+  Scenario: Cristin Result of type "Academic article" maps to "JournalArticle"
+    Given a valid Cristin Result with secondary category "ARTIKKEL"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "JournalArticle"
+
+  Scenario: Cristin Result of type "Popular scientific article" maps to "JournalArticle"
+    Given a valid Cristin Result with secondary category "ARTIKKEL_POP"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "JournalArticle"
+
+  Scenario: Cristin Result of type "Academic literature review" maps to "JournalArticle"
+    Given a valid Cristin Result with secondary category "OVERSIKTSART"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "JournalArticle"
+
+  Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
   Scenario: Cristin Entry's Journal Publication "issn" entry is copied to the NVA field  "printISSN".
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "issn" entry equal to "1903-6523"

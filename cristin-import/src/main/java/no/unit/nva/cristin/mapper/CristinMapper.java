@@ -19,6 +19,16 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REP
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -164,16 +174,16 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
-        if (isBook()) {
+        if (isBook(cristinObject)) {
             return buildBookForPublicationContext();
         }
-        if (isJournal()) {
+        if (isJournal(cristinObject)) {
             return buildJournalForPublicationContext();
         }
-        if (isReport()) {
+        if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
         }
-        if (isChapter()) {
+        if (isChapter(cristinObject)) {
             return buildChapterForPublicationContext();
         }
         return null;
@@ -205,7 +215,7 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
             throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
-        if (isDegreePhd()) {
+        if (isDegreePhd(cristinObject)) {
             return new Degree.Builder()
                     .withUrl(HARDCODED_DEGREE_URL.toURL())
                     .build();
@@ -225,19 +235,19 @@ public class CristinMapper {
 
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
-        if (isBook() && isAnthology()) {
+        if (isBook(cristinObject) && CristinSecondaryCategory.isAnthology(cristinObject)) {
             return createBookAnthology();
-        } else if (isBook() && isMonograph()) {
+        } else if (isBook(cristinObject) && isMonograph(cristinObject)) {
             return createBookMonograph();
-        } else if (isJournal() && isJournalArticle()) {
+        } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
             return createJournalArticle();
-        } else if (isJournal() && isJournalReview()) {
+        } else if (isJournal(cristinObject) && isJournalReview(cristinObject)) {
             return createJournalReview();
-        } else if (isReport() && isResearchReport()) {
+        } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
             return createReportResearch();
-        } else if (isReport() && isDegreePhd()) {
+        } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
             return createDegreePhd();
-        } else if (isChapter() && isChapterArticle()) {
+        } else if (isChapter(cristinObject) && isChapterArticle(cristinObject)) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
@@ -308,51 +318,6 @@ public class CristinMapper {
         return new ChapterArticle.Builder().build();
     }
 
-
-    private boolean isAnthology() {
-        return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isMonograph() {
-        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isBook() {
-        return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
-    }
-
-    private boolean isJournalArticle() {
-        return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isJournalReview() {
-        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isJournal() {
-        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
-    }
-
-    private boolean isResearchReport() {
-        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isDegreePhd() {
-        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isReport() {
-        return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
-    }
-
-    private boolean isChapterArticle() {
-        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
-    }
-
-    private boolean isChapter() {
-        return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
-    }
-
     private PublicationDate extractPublicationDate() {
         return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear()).build();
     }
@@ -404,7 +369,7 @@ public class CristinMapper {
     }
 
     private String extractNpiSubjectHeading() {
-        if (!isBook()) {
+        if (!isBook(cristinObject)) {
             return null;
         }
         if (extractSubjectField() == null) {
@@ -452,7 +417,7 @@ public class CristinMapper {
     }
 
     private URI extractDoi() {
-        if (isJournal() && extractCristinJournalPublication().getDoi() != null) {
+        if (isJournal(cristinObject) && extractCristinJournalPublication().getDoi() != null) {
             return URI.create(extractCristinJournalPublication().getDoi());
         }
         return null;
