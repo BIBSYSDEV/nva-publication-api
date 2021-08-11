@@ -1,49 +1,36 @@
+
 dependencies {
 
     implementation project(":storage-model")
     implementation project(":publication-commons")
 
 
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation(group: 'com.github.bibsysdev', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion) {
-        exclude group: 'com.github.BIBSYSDEV', module: 'nva-commons'
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.core
+    implementation(libs.nva.datamodel) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
-    implementation group:'com.github.BIBSYSDEV.nva-user-access-service', name:'user-access-rights', version:'0.3.0'
 
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation libs.nva.user.access.rights
 
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
+    implementation libs.aws.sdk.dynamodb
 
+    implementation libs.jackson.annotations
+    implementation libs.jackson.databind
+    runtimeOnly libs.jackson.core
+    testImplementation libs.jackson.core
 
     testImplementation project(':publication-testing')
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-    testImplementation(group: 'com.github.javafaker', name: 'javafaker', version: project.ext.javaFakerVersion) {
+    testImplementation libs.nva.testutils
+    testImplementation(libs.javafaker) {
         because('For generating test data in tests. Another alternative is jfairy')
     }
 
-    compileOnly group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
-    compileOnly group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+    compileOnly libs.zalando
+    compileOnly libs.aws.lambda.java.core
 
 }
 
-configurations.testImplementation.canBeResolved = true
 
-task copyNativeDeps(type: Copy) {
-    from(configurations.testImplementation) {
-        include "*.dylib"
-        include "*.so"
-        include "*.dll"
-    }
-    into 'build/dynamodb-local'
-}
 
-test.dependsOn copyNativeDeps
-test.doFirst {
-    systemProperty "java.library.path", 'build/dynamodb-local'
-}

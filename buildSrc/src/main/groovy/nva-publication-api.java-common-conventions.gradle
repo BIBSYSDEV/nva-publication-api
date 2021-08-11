@@ -1,0 +1,220 @@
+plugins {
+    // Apply the java Plugin to add support for Java.
+    id 'java'
+    id 'java-library'
+    id 'jacoco'
+    id 'checkstyle'
+    id 'pmd'
+    id 'base'
+    //TODO: use when this is fixed https://github.com/nebula-plugins/gradle-lint-plugin/pull/335
+    //id 'nebula.lint'
+    id 'maven-publish'
+    id "io.freefair.lombok"
+}
+
+group = 'com.github.bibsysdev'
+
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+    maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
+}
+
+def hamcrestVersion = '2.2'
+def junit5Version = '5.7.2'
+def mockitoVersion = '3.9.0'
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
+
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
+    testImplementation group: 'org.hamcrest', name: 'hamcrest', version: hamcrestVersion
+    testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: hamcrestVersion
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junit5Version
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junit5Version
+    testImplementation group: 'org.junit.vintage', name: 'junit-vintage-engine', version: junit5Version
+
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags("RemoteTest")
+    }
+    failFast = true
+    testLogging {
+        events 'skipped', 'passed', 'failed'
+    }
+
+    finalizedBy jacocoTestReport
+    //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
+    environment "API_HOST", "localhost"
+    environment "API_SCHEME", "https"
+}
+
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+    }
+}
+
+//gradleLint {
+//    rules = ['unused-dependency']
+//}
+
+pmd {
+    ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')
+    ruleSets = []
+    ignoreFailures = false
+}
+
+checkstyle {
+    configFile = rootProject.resources.text.fromFile('config/checkstyle/checkstyle.xml').asFile()
+    showViolations = true
+}
+
+tasks.withType(Checkstyle) {
+    reports {
+        xml.enabled false
+        html.enabled true
+        html.stylesheet rootProject.resources.text.fromFile('config/checkstyle/checkstyle-simple.xsl')
+    }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+jacocoTestCoverageVerification.dependsOn(jacocoTestReport)
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'METHOD'
+                value = 'COVEREDRATIO'
+                minimum = 1.000
+            }
+        }
+
+        rule {
+            limit {
+                counter = 'CLASS'
+                value = 'COVEREDRATIO'
+                minimum = 1.000
+            }
+        }
+    }
+}
+
+// publish submodules
+task sourcesJar(type: Jar, dependsOn: classes) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = project.name
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+            pom {
+                name = project.name
+                description = 'The nva publication service'
+                url = 'https://github.com/BIBSYSDEV/nva-publication-api'
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'http://www.opensource.org/licenses/mit-license.php'
+                    }
+                }
+                developers {
+                    developer {
+                        name = 'Orestis Gkorgkas'
+                        email = 'og@unit.no'
+                        organization = 'UNIT'
+                        organizationUrl = 'https://www.unit.no/'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git://github.com/BIBSYSDEV/nva-publication-api.git'
+                    developerConnection = 'scm:git:ssh://github.com/BIBSYSDEV/nva-publication-api.git'
+                    url = 'https://github.com/BIBSYSDEV/nva-publication-api/tree/main'
+                }
+            }
+        }
+    }
+}
+
+//For generating one unified coverage report
+def getProjectList() {
+    // These projects are considered. Replace with a different list as needed.
+    subprojects + project
+}
+
+def getReportTasks(JacocoReport pRootTask) {
+    getProjectList().collect {
+        it.tasks.withType(JacocoReport).findAll { it != pRootTask }
+    }.flatten()
+}
+
+task jacocoMerge(type: JacocoMerge) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = 'Merge the JaCoCo data files from all subprojects into one'
+    project.afterEvaluate {
+        // do it at the end of the config phase to be sure all information is present
+        FileCollection execFiles = project.objects.fileCollection()   // an empty FileCollection
+        getProjectList().each { Project subproject ->
+            if (subproject.pluginManager.hasPlugin('jacoco')) {
+                def testTasks = subproject.tasks.withType(Test)
+                dependsOn(testTasks)   // ensure that .exec files are actually present
+
+                testTasks.each { Test task ->
+                    // The JacocoTaskExtension is the source of truth for the location of the .exec file.
+                    JacocoTaskExtension extension = task.getExtensions().findByType(JacocoTaskExtension.class)
+                    if (extension != null) {
+                        execFiles.from extension.getDestinationFile()
+                    }
+                }
+            }
+        }
+        executionData = execFiles
+    }
+    doFirst {
+        // .exec files might be missing if a project has no tests. Filter in execution phase.
+        executionData = executionData.filter { it.canRead() }
+    }
+}
+
+task jacocoRootReport(type: JacocoReport, dependsOn: tasks.jacocoMerge) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = 'Generates an aggregate report from all subprojects'
+
+    logger.lifecycle 'Using aggregated file: ' + tasks.jacocoMerge.destinationFile
+    executionData.from tasks.jacocoMerge.destinationFile
+
+    project.afterEvaluate {
+        // The JacocoReport tasks are the source of truth for class files and sources.
+        def reportTasks = getReportTasks(tasks.jacocoRootReport)
+        classDirectories.from project.files({
+            reportTasks.collect { it.classDirectories }.findAll { it != null }
+        })
+        sourceDirectories.from project.files({
+            reportTasks.collect { it.sourceDirectories }.findAll { it != null }
+        })
+    }
+
+    reports {
+        xml.enabled true
+    }
+}

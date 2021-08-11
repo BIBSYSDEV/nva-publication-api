@@ -1,0 +1,226 @@
+{
+  "version": "0",
+  "id": "0d0f3a87-d77e-20a6-ff1e-f880e229534c",
+  "detail-type": "import.cristin.entry-event",
+  "source": "no.unit.nva.cristin.lambda.InputEntriesEventEmitter",
+  "account": "1111111111111111",
+  "time": "2021-04-29T12:43:56Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:lambda:eu-west-1:11111111111111111:function:publication-api-n-CristinEntriesEventEmitt-1111111111"
+  ],
+  "detail": {
+    "publicationsowner": "someRandomUser",
+    "fileUri": "s3://bucket/parent/child/filename.json",
+    "contents": {
+      "id": 417536,
+      "varbeidhovedkatkode": "BOK",
+      "varbeidunderkatkode": "MONOGRAFI",
+      "brukernavn_opprettet": null,
+      "eierkode_opprettet": "NTNU",
+      "dato_opprettet": "2000-01-21T00:00:00",
+      "brukernavn_siste_endring": null,
+      "eierkode_siste_endring": "NTNU",
+      "dato_siste_endring": "2013-10-21T12:12:51",
+      "publiseringstatuskode": "PUBLISERT",
+      "dato_utgitt": null,
+      "arstall": 1999,
+      "arstall_rapportert": null,
+      "merknadtekst": null,
+      "merknadtekst_godkjenning": null,
+      "kildekode": "BIBSYS",
+      "kildepostid": "r00005232",
+      "pubidnr": null,
+      "varbeid_sprak": [
+        {
+          "sprakkode": "EN",
+          "titteltekst": "Muscle growth in yolk-sac larvae of the Atlantic halibut as influenced by temperature in the egg and yolk-sac stage",
+          "sammendragtekst": "Atlantic halibut eggs and yolk sac larvae were incubated at 1, 5 and 8°C. Incubation of eggs at 1°C resulted in total mortality prior to hatching and all larvae incubated at 1°C died before 45d° (daydegrees) after hatching. Eggs incubated at 8°C gave slightly shorter larvae at hatching with a significantly smaller total cross-sectional area of white muscle fibres than eggs incubated at 5°C. Transport of eggs two days prior to hatching gave significantly longer larvae at hatching with a significantly larger red fibre cross-sectional area than when eggs were transported shortly after the blastopore closure. A higher survival until 230d° after hatching was also observed in the former group. From hatching until 230d° the total white cross-sectional area increased 3-fold in all temperature groups. The increase in white cross-sectional area was entirely due to hypertrophy between hatching and 150 d° (10 mm SL). Recruitment of new white fibres increased in germinal zones at the dorsal, ventral and lateral borders of the myotome from 150d° onwards, but at 230d° (12 to 13 mm SL) the recruitment fibre zone constituted less than 10% of the total white cross-sectional area. Larval incubation at 8°C gave slightly longer larvae with a significantly larger cross-sectional area of recruitment fibres at 230d° than incubation at 5°C. The larval group incubated at 8°C also had a significantly lower survival until 230d° than the 5°C-group. Incubation temperature regimes did not affect the volume density of myofibrils in the axial muscle fibres at 230d°. Our results thus show that hypertrophy is the predominant mechanism of axial white muscle growth in Atlantic halibut yolk sac larvae and that an increased rearing temperature during the yolk sac stage increases white muscle fibre hyperplasia.",
+          "status_original": "J"
+        }
+      ],
+      "vitenskapeligarbeid_lokal": [
+        {
+          "eierkode": "NTNU",
+          "brukernavn_opprettet": null,
+          "dato_opprettet": "2000-01-21T00:00:00",
+          "brukernavn_siste_endring": null,
+          "dato_siste_endring": "2000-01-21T00:00:00",
+          "status_kontrollert": null,
+          "brukernavn_kontrollert": null,
+          "dato_kontrollert": null,
+          "status_bekreftet_arkivsporsmal": null,
+          "brukernavn_avlvrt_arkivsystem": null,
+          "dato_avlvrt_arkivsystem": null,
+          "status_fulgt_medf_reg": null,
+          "brukernavn_svart_medforf_reg": null,
+          "dato_svart_medforf_regel": null
+        },
+        {
+          "eierkode": "UIB",
+          "brukernavn_opprettet": null,
+          "dato_opprettet": null,
+          "brukernavn_siste_endring": null,
+          "dato_siste_endring": null,
+          "status_kontrollert": null,
+          "brukernavn_kontrollert": null,
+          "dato_kontrollert": null,
+          "status_bekreftet_arkivsporsmal": null,
+          "brukernavn_avlvrt_arkivsystem": null,
+          "dato_avlvrt_arkivsystem": null,
+          "status_fulgt_medf_reg": null,
+          "brukernavn_svart_medforf_reg": null,
+          "dato_svart_medforf_regel": null
+        }
+      ],
+      "varbeid_person": [
+        {
+          "personlopenr": 30988,
+          "fornavn": "Trina Falck",
+          "etternavn": "Galloway",
+          "rekkefolgenr": 1,
+          "varbeid_person_sted": [
+            {
+              "institusjonsnr": 194,
+              "avdnr": 66,
+              "undavdnr": 10,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "varbeid_person_sted_rolle": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "personlopenr": 40365,
+          "fornavn": "Elin",
+          "etternavn": "Kjørsvik",
+          "rekkefolgenr": 2,
+          "varbeid_person_sted": [
+            {
+              "institusjonsnr": 194,
+              "avdnr": 66,
+              "undavdnr": 10,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "varbeid_person_sted_rolle": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "personlopenr": 195037,
+          "fornavn": "Harald",
+          "etternavn": "Kryvi",
+          "rekkefolgenr": 3,
+          "varbeid_person_sted": [
+            {
+              "institusjonsnr": 184,
+              "avdnr": 0,
+              "undavdnr": 0,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "varbeid_person_sted_rolle": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "varbeid_kilde": [
+        {
+          "kildekode": "BIBSYS",
+          "kildeid": "r00005232"
+        }
+      ],
+      "presentasjon_varbeid": null,
+      "varbeid_emneord": null,
+      "varbeid_vdisiplin": null,
+      "varbeid_hrcs_klassifisering": null,
+      "finansiering_varbeid": null,
+      "type_bok_rapport": {
+        "hefte": null,
+        "utgave": null,
+        "utgave_fra": null,
+        "antall_sider_totalt": 192,
+        "isbn": "9788770342827",
+        "doi": null,
+        "status_revidert": "N",
+        "status_elektronisk_publisert": null,
+        "status_utgitt_av_forlag": "J",
+        "utgivernavn": "Nyt fra Samfundsvidenskaberne",
+        "stedangivelse_utgiver": "København",
+        "landkode_utgiver": null,
+        "institusjonsnr_utgiver": null,
+        "avdnr_utgiver": null,
+        "undavdnr_utgiver": null,
+        "gruppenr_utgiver": null,
+        "tidsskriftnr_serie": null,
+        "volum_serie": null,
+        "sprakkode_oversatt_fra": null,
+        "sprakkode_oversatt_til": null,
+        "originalforfatter": null,
+        "originaltittel": null,
+        "forlag": null,
+        "fagfelt":{
+            "fagfeltkode":1081,
+            "fagomradekode":"MED",
+            "navn":"Samfunnsmedisin",
+            "navn_engelsk":"Public, Environmental and Occupational Health"
+        }
+      },
+      "type_bok_rapport_del": null,
+      "type_foredrag_poster": null,
+      "type_kunstneriskproduksjon": null,
+      "type_mediebidrag": null,
+      "type_produkt": null,
+      "type_tidsskriftpublikasjon": {
+        "tidsskrift":{
+          "tidsskriftnr":2184708,
+          "tidsskriftnavn":"Dansk Tidsskrift for Teologi og Kirke",
+          "nsdkode":479200,
+          "issn":"1903-6523",
+          "issn_elektronisk":"2446-0850",
+          "landkode_utgiver":"DK",
+          "sprakkode":"DA",
+          "status_referee_ordning":"J",
+          "dato_utgutt":null,
+          "status_serie":null
+        },
+        "antall_sider_totalt":null,
+        "publiseringsar":2011,
+        "hefte":"2",
+        "sidenr_fra":"26",
+        "sidenr_til":"36",
+        "status_referee_ordning":null,
+        "supplement":null,
+        "utbredelsesomrade":null,
+        "volum":"38",
+        "artikkelnummer":null,
+        "doi":null,
+        "arstall_trykket":null,
+        "arstall_online":null
+      },
+      "type_utstilling": null,
+      "arkivfil": null,
+      "arkivpost": null
+    }
+  }
+}

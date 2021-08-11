@@ -18,7 +18,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
+import no.unit.nva.publication.StubS3Driver;
 import no.unit.nva.s3.S3Driver;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
@@ -27,12 +29,12 @@ import org.junit.jupiter.api.function.Executable;
 class S3IonReaderTest {
 
     public static final String SOME_BUCKET = "someBucket";
-    public static final String RESOURCE_FILE = "input1.ion.gz";
+    public static final UnixPath RESOURCE_FILE = UnixPath.of("input1.ion.gz");
     public static final String UNIQUE_FIELD_FOR_EVERY_ENTRY = "SK0";
     public static final int CAPTURED_GROUP = 1;
     public static final Pattern UNIQUE_STRING_PATTERN = Pattern.compile(".*SK0:\"(.*?)\",.*");
-    public static final String EMPTY_FILE = "empty.ion.gz";
-    public static final String NON_EXISTENT_FILE = "non_existent_file";
+    public static final UnixPath EMPTY_FILE = UnixPath.of("empty.ion.gz");
+    public static final UnixPath NON_EXISTENT_FILE = UnixPath.of("non_existent_file");
 
     @Test
     public void extractJsonNodesFromS3FileReturnsListOfJsonNodesWhenInputFileisNonEmpty() throws IOException {
@@ -65,7 +67,7 @@ class S3IonReaderTest {
     }
 
     private static List<String> extractIdsFromFile() throws IOException {
-        var inputStream = new GZIPInputStream(IoUtils.inputStreamFromResources(S3IonReaderTest.RESOURCE_FILE));
+        var inputStream = new GZIPInputStream(IoUtils.inputStreamFromResources(RESOURCE_FILE.toString()));
         var bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         return bufferedReader.lines().map(S3IonReaderTest::getFieldFromString).collect(Collectors.toList());
     }

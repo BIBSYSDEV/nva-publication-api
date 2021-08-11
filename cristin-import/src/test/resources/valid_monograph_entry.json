@@ -1,0 +1,114 @@
+{
+  "id": 1173074,
+  "varbeidhovedkatkode": "BOK",
+  "varbeidunderkatkode": "MONOGRAFI",
+  "brukernavn_opprettet": "ivarj",
+  "eierkode_opprettet": "HIOF",
+  "dato_opprettet": "2014-11-14T16:54:05",
+  "brukernavn_siste_endring": "ivarj",
+  "eierkode_siste_endring": "HIOF",
+  "dato_siste_endring": "2014-11-14T16:54:05",
+  "publiseringstatuskode": "PUBLISERT",
+  "dato_utgitt": null,
+  "arstall": 1995,
+  "arstall_rapportert": null,
+  "merknadtekst": null,
+  "merknadtekst_godkjenning": null,
+  "kildekode": null,
+  "kildepostid": null,
+  "pubidnr": null,
+  "VARBEID_SPRAK": [
+    {
+      "sprakkode": "EN",
+      "titteltekst": "West-Nordic countries in crisis: neo-structuralism, collective entrepreneurship and microsocieties facing global systems of innovation",
+      "sammendragtekst": null,
+      "status_original": "J"
+    }
+  ],
+  "VITENSKAPELIGARBEID_LOKAL": [
+    {
+      "eierkode": "HIOF",
+      "brukernavn_opprettet": null,
+      "dato_opprettet": "2014-11-14T16:54:05",
+      "brukernavn_siste_endring": null,
+      "dato_siste_endring": "2014-11-14T16:54:05",
+      "status_kontrollert": null,
+      "brukernavn_kontrollert": null,
+      "dato_kontrollert": null,
+      "status_bekreftet_arkivsporsmal": null,
+      "brukernavn_avlvrt_arkivsystem": null,
+      "dato_avlvrt_arkivsystem": null,
+      "status_fulgt_medf_reg": null,
+      "brukernavn_svart_medforf_reg": null,
+      "dato_svart_medforf_regel": null
+    }
+  ],
+  "VARBEID_PERSON": [
+    {
+      "personlopenr": 515057,
+      "fornavn": "Ivar",
+      "etternavn": "Jonsson",
+      "rekkefolgenr": 1,
+      "varbeid_person_sted": [
+        {
+          "institusjonsnr": 224,
+          "avdnr": 60,
+          "undavdnr": 0,
+          "gruppenr": 0,
+          "stedkode_opprinnelig": null,
+          "institusjonsnavn_opprinnelig": null,
+          "avdelingsnavn_opprinnelig": null,
+          "stednavn_opprinnelig": null,
+          "varbeid_person_sted_rolle": [
+            {
+              "rollekode": "FORFATTER"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "VARBEID_KILDE": null,
+  "PRESENTASJON_VARBEID": null,
+  "VARBEID_EMNEORD": null,
+  "VARBEID_VDISIPLIN": null,
+  "VARBEID_HRCS_KLASSIFISERING": null,
+  "FINANSIERING_VARBEID": null,
+  "TYPE_BOK_RAPPORT": [
+    {
+      "hefte": null,
+      "utgave": null,
+      "utgave_fra": null,
+      "antall_sider_totalt": 192,
+      "isbn": "9788770342827",
+      "doi": null,
+      "status_revidert": "N",
+      "status_elektronisk_publisert": null,
+      "status_utgitt_av_forlag": "J",
+      "utgivernavn": "Nyt fra Samfundsvidenskaberne",
+      "stedangivelse_utgiver": "København",
+      "landkode_utgiver": null,
+      "institusjonsnr_utgiver": null,
+      "avdnr_utgiver": null,
+      "undavdnr_utgiver": null,
+      "gruppenr_utgiver": null,
+      "tidsskriftnr_serie": null,
+      "volum_serie": null,
+      "sprakkode_oversatt_fra": null,
+      "sprakkode_oversatt_til": null,
+      "originalforfatter": null,
+      "originaltittel": null,
+      "forlag": null,
+      "fagfelt": null
+    }
+  ],
+  "TYPE_BOK_RAPPORT_DEL": null,
+  "TYPE_FOREDRAG_POSTER": null,
+  "TYPE_KUNSTNERISKPRODUKSJON": null,
+  "TYPE_MEDIEBIDRAG": null,
+  "TYPE_PRODUKT": null,
+  "TYPE_TIDSSKRIFTPUBLIKASJON": null,
+  "TYPE_UTSTILLING": null,
+  "ARKIVFIL": null,
+  "ARKIVPOST": null
+}

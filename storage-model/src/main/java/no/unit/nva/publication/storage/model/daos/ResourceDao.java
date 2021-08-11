@@ -6,19 +6,25 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
+import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.SingletonCollector;
 
 @JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource>
-    implements JoinWithResource,
-               ResourceByIdentifier {
+        implements JoinWithResource,
+        ResourceByIdentifier,
+        WithCristinIdentifier {
 
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
+    public static final String CRISTIN_SOURCE = "Cristin";
     private Resource data;
 
     public ResourceDao() {
@@ -32,15 +38,15 @@ public class ResourceDao extends Dao<Resource>
 
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
-            userInstance.getUserIdentifier(),
-            userInstance.getOrganizationUri(),
-            resourceIdentifier);
+                userInstance.getUserIdentifier(),
+                userInstance.getOrganizationUri(),
+                resourceIdentifier);
         return new ResourceDao(resource);
     }
 
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
-            orgUriToOrgIdentifier(customerId), owner);
+                orgUriToOrgIdentifier(customerId), owner);
     }
 
     @JsonIgnore
@@ -76,6 +82,23 @@ public class ResourceDao extends Dao<Resource>
     @Override
     public SortableIdentifier getIdentifier() {
         return data.getIdentifier();
+    }
+
+
+    @Override
+    public Optional<String> getCristinIdentifier() {
+        String cristinIdentifierValue = Optional.ofNullable(data.getAdditionalIdentifiers())
+                .stream()
+                .flatMap(Collection::stream)
+                .filter(this::keyEqualsCristin)
+                .map(AdditionalIdentifier::getValue)
+                .collect(SingletonCollector.collectOrElse(null));
+        return Optional.ofNullable(cristinIdentifierValue);
+
+    }
+
+    private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
+        return identifier.getSource().equals(CRISTIN_SOURCE);
     }
 
     @Override

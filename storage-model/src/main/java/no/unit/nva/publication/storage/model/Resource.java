@@ -10,14 +10,18 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import nva.commons.core.JacocoGenerated;
 
+@SuppressWarnings("PMD.GodClass")
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
@@ -51,6 +55,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     private URI doi;
     @JsonProperty
     private URI handle;
+    @JsonProperty
+    private Set<AdditionalIdentifier> additionalIdentifiers;
 
     public Resource() {
 
@@ -94,6 +100,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withEntityDescription(publication.getEntityDescription())
                    .withDoi(publication.getDoi())
                    .withHandle(publication.getHandle())
+                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
                    .build();
     }
 
@@ -104,6 +111,50 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getOwner(), getPublisher(), getCreatedDate(),
+                            getModifiedDate(),
+                            getPublishedDate(), getIndexedDate(), getLink(), getFileSet(), getProjects(),
+                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Resource)) {
+            return false;
+        }
+        Resource resource = (Resource) o;
+        return Objects.equals(getIdentifier(), resource.getIdentifier())
+               && getStatus() == resource.getStatus()
+               && Objects.equals(getOwner(), resource.getOwner())
+               && Objects.equals(getPublisher(), resource.getPublisher())
+               && Objects.equals(getCreatedDate(), resource.getCreatedDate())
+               && Objects.equals(getModifiedDate(), resource.getModifiedDate())
+               && Objects.equals(getPublishedDate(), resource.getPublishedDate())
+               && Objects.equals(getIndexedDate(), resource.getIndexedDate())
+               && Objects.equals(getLink(), resource.getLink())
+               && Objects.equals(getFileSet(), resource.getFileSet())
+               && Objects.equals(getProjects(), resource.getProjects())
+               && Objects.equals(getEntityDescription(), resource.getEntityDescription())
+               && Objects.equals(getDoi(), resource.getDoi())
+               && Objects.equals(getHandle(), resource.getHandle())
+               && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers());
+    }
+
+    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
+    }
+
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
     }
 
     @Override
@@ -232,7 +283,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withProjects(getProjects())
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())
-                   .withHandle(getHandle());
+                   .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers());
     }
 
     @Override
@@ -253,6 +305,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withDoiRequest(null)
                    .withDoi(getDoi())
                    .withHandle(getHandle())
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
                    .build();
     }
 
@@ -269,39 +322,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public void setOwner(String owner) {
         this.owner = owner;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getOwner(), getPublisher(), getCreatedDate(),
-                            getModifiedDate(),
-                            getPublishedDate(), getIndexedDate(), getLink(), getFileSet(), getProjects(),
-                            getEntityDescription(), getDoi(), getHandle());
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Resource)) {
-            return false;
-        }
-        Resource resource = (Resource) o;
-        return Objects.equals(getIdentifier(), resource.getIdentifier())
-               && getStatus() == resource.getStatus()
-               && Objects.equals(getOwner(), resource.getOwner())
-               && Objects.equals(getPublisher(), resource.getPublisher())
-               && Objects.equals(getCreatedDate(), resource.getCreatedDate())
-               && Objects.equals(getModifiedDate(), resource.getModifiedDate())
-               && Objects.equals(getPublishedDate(), resource.getPublishedDate())
-               && Objects.equals(getIndexedDate(), resource.getIndexedDate())
-               && Objects.equals(getLink(), resource.getLink())
-               && Objects.equals(getFileSet(), resource.getFileSet())
-               && Objects.equals(getProjects(), resource.getProjects())
-               && Objects.equals(getEntityDescription(), resource.getEntityDescription())
-               && Objects.equals(getDoi(), resource.getDoi())
-               && Objects.equals(getHandle(), resource.getHandle());
     }
 }
 

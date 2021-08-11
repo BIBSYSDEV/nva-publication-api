@@ -1,0 +1,33 @@
+dependencies {
+    //This package is added by SAM template in the runtime environment
+    implementation project(':publication-commons')
+    implementation project(':storage-model')
+
+    implementation(libs.nva.datamodel) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.core
+
+    implementation group:'com.github.bibsysdev.nva-user-access-service', name:'user-access-rights', version:'6b4dd1cbdf839bba01aac9c890e31789009b00fd'
+
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.lambda.java.core
+
+    runtimeOnly libs.jackson.databind
+    testImplementation libs.jackson.databind
+    runtimeOnly libs.jackson.core
+    testImplementation libs.jackson.core
+
+    testImplementation (libs.dynamoDbHttpCoreDependency){
+        because "aws-java-sdk-dynamodb needs and we are using it indirectly"
+    }
+    testImplementation libs.zalando
+
+    testImplementation libs.logutils
+    testImplementation project(':publication-testing')
+
+    testImplementation libs.nva.testutils
+}
+

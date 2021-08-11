@@ -1,47 +1,32 @@
 dependencies {
-    //This package is added by SAM template in the runtime environment
     implementation(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
 
     implementation(project(':storage-model'))
 
-    implementation group: 'com.github.bibsysdev', name: 'apigateway', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'core', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.bibsysdev', name: 'identifiers', version: project.ext.nvaCommonsVersion
-    implementation group: 'com.github.BIBSYSDEV', name: 'nva-datamodel-java', version: project.ext.nvaDatamodelVersion
-    implementation group: 'com.amazonaws', name: 'aws-java-sdk-dynamodb', version: project.ext.awsSdkVersion
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation libs.nva.datamodel
+    implementation libs.aws.sdk.dynamodb
 
-    implementation group: 'com.amazonaws', name: 'aws-lambda-java-core', version: project.ext.awsLambdaCore
+    implementation libs.aws.lambda.java.core
 
+    runtimeOnly libs.jackson.databind
+    implementation libs.jackson.databind
+    runtimeOnly libs.jackson.core
+    testImplementation libs.jackson.core
 
-    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: project.ext.jacksonVersion
-    runtimeOnly group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-    testImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: project.ext.jacksonVersion
-
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: project.ext.mockitoVersion
-    testImplementation group: 'com.github.bibsysdev', name: 'nva-testutils', version: project.ext.nvaTestUtilsVersion
-    testImplementation group: 'org.zalando', name: 'problem', version: project.ext.zalandoProblemVersion
-    testImplementation(group: 'org.apache.httpcomponents', name: 'httpcore', version: project.ext.dynamoDbHttpCoreDependency) {
+    testImplementation libs.nva.testutils
+    testImplementation libs.zalando
+    testImplementation(libs.dynamoDbHttpCoreDependency) {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
     testImplementation project(':publication-testing')
 
+
+
 }
 
-configurations.testImplementation.canBeResolved = true
 
-task copyNativeDeps(type: Copy) {
-    from(configurations.testImplementation) {
-        include "*.dylib"
-        include "*.so"
-        include "*.dll"
-    }
-    into 'build/dynamodb-local'
-}
-
-test.dependsOn copyNativeDeps
-test.doFirst {
-    systemProperty "java.library.path", 'build/dynamodb-local'
-}

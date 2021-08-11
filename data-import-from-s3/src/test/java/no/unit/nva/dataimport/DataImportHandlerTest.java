@@ -9,7 +9,6 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.core.Is.is;
@@ -25,7 +24,6 @@ import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +33,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.publication.StubS3Driver;
+import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
@@ -52,21 +53,21 @@ import org.mockito.stubbing.Answer;
 
 class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
 
-    public static final String FAILING_TO_WRITE_FILE = "inputsWithWrongSortKey.ion.gz";
     public static final String PRIMARY_KEY_LOCATOR = "PK0\\s*:\\s*(.*?)$";
     public static final String ERROR_DUE_TO_WRONG_KEY = "One of the required keys was not given a value";
-    public static final String FIRST_SAMPLE = "input1.ion.gz";
-    public static final String SECOND_SAMPLE = "input2.ion.gz";
-    public static final String THIRD_SAMPLE = "input3.ion.gz";
-    public static final String FOURTH_SAMPLE = "input4.ion.gz";
-    public static final String FAILING_TO_READ_FILE = "input2.ion.gz";
-    public static final String SAMPLE_WITH_SOME_FAILING_ENTRIES = "input2.ion.gz";
+
+    public static final UnixPath FAILING_TO_WRITE_FILE = UnixPath.of("inputsWithWrongSortKey.ion.gz");
+    public static final UnixPath FIRST_SAMPLE = UnixPath.of("input1.ion.gz");
+    public static final UnixPath SECOND_SAMPLE = UnixPath.of("input2.ion.gz");
+    public static final UnixPath THIRD_SAMPLE = UnixPath.of("input3.ion.gz");
+    public static final UnixPath FOURTH_SAMPLE = UnixPath.of("input4.ion.gz");
+    public static final UnixPath FAILING_TO_READ_FILE = UnixPath.of("input2.ion.gz");
+    public static final UnixPath SAMPLE_WITH_SOME_FAILING_ENTRIES = UnixPath.of("input2.ion.gz");
     public static final int PARTITION_KEY_FOR_FAILING_ENTRIES = 0;
     public static final String FAILING_ENTRIES = "expectedFailingKeysFromInput2WhenDynamoFails.txt";
-
-    private AmazonDynamoDB dynamoDbClient;
     private static final String S3_LOCATION = "s3://orestis-export/some/location";
-    private List<String> resourceFiles;
+    private AmazonDynamoDB dynamoDbClient;
+    private List<UnixPath> resourceFiles;
 
     @BeforeEach
     public void init() {
@@ -81,11 +82,9 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void dataImportReadsIonFileWithResourcesAndStoresThemInDynamoDbRemote() {
 
         String s3Location = "s3://orestis-export/AWSDynamoDB/01617869890675-2abaf414/data/";
-        String tableName = "nva-resources-orestis-resources-nva-publication";
-
-        ImportRequest request = new ImportRequest(s3Location, tableName);
+        ImportRequest request = new ImportRequest(s3Location);
         DataImportHandler dataImportHandler = new DataImportHandler();
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
+        dataImportHandler.handleRequest(request.toMap());
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(greaterThan(0)));
@@ -94,9 +93,9 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void dataImportReadsIonFileWithResourcesAndStoresThemInDynamoDb() {
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
+        dataImportHandler.handleRequest(request.toMap());
 
         Integer itemCount = client.scan(new ScanRequest().withTableName(RESOURCES_TABLE_NAME)).getCount();
         assertThat(itemCount, is(equalTo(s3Driver.getAllIonItems().size())));
@@ -110,11 +109,9 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
 
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        Executable action = () -> dataImportHandler.importAllFilesFromFolder(invalidRequests);
+        Executable action = () -> dataImportHandler.handleRequest(invalidRequests);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(),
-                   either((containsString(ImportRequest.S3_LOCATION_FIELD)))
-                       .or(containsString(ImportRequest.TABLE_FIELD)));
+        assertThat(exception.getMessage(), (containsString(ImportRequest.S3_LOCATION_FIELD)));
     }
 
     @Test
@@ -123,10 +120,14 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         AtomicReference<String> failingContent = new AtomicReference<>();
 
         StubS3Driver s3Driver = failingS3Driver(failingContent);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
-        List<ImportResult> failures = Arrays.asList(dataImportHandler.importAllFilesFromFolder(request.toMap()));
-        List<String> failedFiles = failures.stream().map(ImportResult::getFilename).collect(Collectors.toList());
+        List<ImportResult<FailedDynamoEntriesReport>> failures =
+            dataImportHandler.handleRequest(request.toMap());
+        List<UnixPath> failedFiles = failures.stream()
+                                         .map(ImportResult::getInput)
+                                         .map(FailedDynamoEntriesReport::getInputFilePath)
+                                         .collect(Collectors.toList());
 
         assertThat(failedFiles, contains(FAILING_TO_READ_FILE));
     }
@@ -144,12 +145,14 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
         String failingPrimaryPartitionKey = extractPrimaryPartitionKeyForFailingEntries(expectedFailingEntries);
 
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver,
                                                                     mockAmazonDynamoDb(failingPrimaryPartitionKey));
-        List<ImportResult> result = Arrays.asList(dataImportHandler.importAllFilesFromFolder(request.toMap()));
+        List<ImportResult<FailedDynamoEntriesReport>> result =
+            dataImportHandler.handleRequest(request.toMap());
         String errorMessages = result.stream()
-                                   .map(ImportResult::getErrorMessage)
+                                   .map(ImportResult::getInput)
+                                   .map(FailedDynamoEntriesReport::getEntryKeys)
                                    .collect(Collectors.joining());
 
         for (String expectedFailingEntry : expectedFailingEntries) {
@@ -160,7 +163,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void dataImportLogsImportResultWhenFailureOccurs() throws JsonProcessingException {
         final TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
-        List<ImportResult> failures = handlerWithInputThatCannotBeWrittenToDynamo();
+        List<ImportResult<FailedDynamoEntriesReport>> failures = handlerWithInputThatCannotBeWrittenToDynamo();
 
         String resultJson = JsonUtils.objectMapper.writeValueAsString(failures);
         assertThat(appender.getMessages(), containsString(resultJson));
@@ -168,12 +171,13 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void dataImportReturnsAllFilenamesOfFailedInputsWhenWritingToDynamoDbFails() {
-        List<ImportResult> failures = handlerWithInputThatCannotBeWrittenToDynamo();
+        List<ImportResult<FailedDynamoEntriesReport>> failures = handlerWithInputThatCannotBeWrittenToDynamo();
 
-        String failingFilename = failures.stream()
-                                     .map(ImportResult::getFilename)
-                                     .collect(SingletonCollector.collect());
-        String errorMessage = failures.stream().map(ImportResult::getErrorMessage).collect(Collectors.joining());
+        UnixPath failingFilename = failures.stream()
+                                       .map(ImportResult::getInput)
+                                       .map(FailedDynamoEntriesReport::getInputFilePath)
+                                       .collect(SingletonCollector.collect());
+        String errorMessage = failures.stream().map(ImportResult::getException).collect(Collectors.joining());
 
         assertThat(failingFilename, is(equalTo(FAILING_TO_WRITE_FILE)));
         assertThat(errorMessage, containsString(ERROR_DUE_TO_WRONG_KEY));
@@ -183,10 +187,10 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void importAllFilesFromFolderThrowsExceptionWhenThereAreNoFilesInTheSpecifiedBucket() {
         resourceFiles = Collections.emptyList();
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        Executable action = () -> dataImportHandler.importAllFilesFromFolder(request.toMap());
+        Executable action = () -> dataImportHandler.handleRequest(request.toMap());
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
 
         assertThat(exception.getMessage(), is(equalTo(EMPTY_LIST_ERROR)));
@@ -196,28 +200,28 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     public void handlerLogsInput() {
         TestAppender appender = LogUtils.getTestingAppenderForRootLogger();
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        dataImportHandler.importAllFilesFromFolder(request.toMap());
-        assertThat(appender.getMessages(), containsString(request.toJsonString()));
+        dataImportHandler.handleRequest(request.toMap());
+        assertThat(appender.getMessages(), containsString(request.getS3Location()));
     }
 
+    //used as MethodSource in Parameterized Test
     private static Stream<Map<String, String>> invalidArgumentsProvider() {
-        Map<String, String> missingS3Location = new ImportRequest(null, RESOURCES_TABLE_NAME).toMap();
-        Map<String, String> missingTable = new ImportRequest(S3_LOCATION, null).toMap();
+        Map<String, String> missingS3Location = new ImportRequest(null).toMap();
         Map<String, String> wrongFields = Map.of("someField", "someValue");
-        return Stream.of(missingS3Location, missingTable, wrongFields);
+        return Stream.of(missingS3Location, wrongFields);
     }
 
-    private List<ImportResult> handlerWithInputThatCannotBeWrittenToDynamo() {
+    private List<ImportResult<FailedDynamoEntriesReport>> handlerWithInputThatCannotBeWrittenToDynamo() {
         resourceFiles = List.of(FIRST_SAMPLE, FAILING_TO_WRITE_FILE);
 
         StubS3Driver s3Driver = new StubS3Driver(S3_LOCATION, resourceFiles);
-        ImportRequest request = new ImportRequest(S3_LOCATION, RESOURCES_TABLE_NAME);
+        ImportRequest request = new ImportRequest(S3_LOCATION);
         DataImportHandler dataImportHandler = new DataImportHandler(s3Driver, dynamoDbClient);
 
-        return Arrays.asList(dataImportHandler.importAllFilesFromFolder(request.toMap()));
+        return dataImportHandler.handleRequest(request.toMap());
     }
 
     private String extractPrimaryPartitionKeyForFailingEntries(List<String> expectedFailingEntries) {
@@ -230,7 +234,7 @@ class DataImportHandlerTest extends ResourcesDynamoDbLocalTest {
     private StubS3Driver failingS3Driver(AtomicReference<String> failingContent) {
         return new StubS3Driver(S3_LOCATION, resourceFiles) {
             @Override
-            public String getFile(String filename) {
+            public String getFile(UnixPath filename) {
                 String content = super.getFile(filename);
                 if (FAILING_TO_READ_FILE.equals(filename)) {
                     failingContent.set(content);

@@ -1,0 +1,64 @@
+dependencies {
+    implementation project(":publication-constants")
+    implementation project(":publication-commons")
+
+    implementation libs.nva.s3
+    implementation libs.nva.core
+    implementation libs.nva.eventhandlers
+
+    implementation libs.jackson.annotations
+    implementation libs.jackson.databind
+    implementation libs.jackson.core
+
+    implementation libs.aws.lambda.java.core
+
+    implementation libs.aws.core
+    implementation libs.aws.sdk2.core
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.aws.sdk2.s3
+    implementation libs.aws.sdk2.regions
+    implementation libs.aws.sdk2.httpClientApi
+
+    implementation libs.aws.ion
+
+    implementation libs.apache.commons.collections
+
+    runtimeOnly libs.jackson.datatype.jsr310
+    runtimeOnly libs.jackson.datatype.jdk8
+
+    testImplementation project(":storage-model")
+    testImplementation project(":publication-testing")
+    testImplementation libs.javafaker
+    testImplementation libs.nva.testutils
+    testImplementation libs.logutils
+    testImplementation libs.aws.sdk2.utils
+    testImplementation libs.aws.sdk2.s3
+
+    compileOnly(project(":storage-model")) {
+        because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"
+    }
+    compileOnly libs.nva.apigateway
+    compileOnly libs.nva.identifiers
+    compileOnly libs.zalando
+
+    compileOnly(libs.aws.sdk2.auth) {
+        because "PMD complains about software/amazon/awssdk/auth/credentials/AwsCredentialsProvider "
+    }
+    compileOnly(libs.aws.sdk.apigateway) {
+        because "PMD complains for the com/amazonaws/regions/Regions class"
+    }
+    compileOnly(libs.commons.validator) {
+        because "PMD org/apache/commons/validator/routines/ISBNValidator"
+    }
+}
+
+test {
+    environment "MAX_SLEEP_TIME", "1"
+    environment "IMPORT_EVENT_TYPE", "importEventTypeTestingValue"
+    environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
+
+}
+
+
+

@@ -1,0 +1,120 @@
+{
+  "version": "0",
+  "id": "0d0f3a87-d77e-20a6-ff1e-f880e229534c",
+  "detail-type": "import.cristin.entry-event",
+  "source": "no.unit.nva.cristin.lambda.InputEntriesEventEmitter",
+  "account": "1111111111111111",
+  "time": "2021-04-29T12:43:56Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:lambda:eu-west-1:11111111111111111:function:publication-api-n-CristinEntriesEventEmitt-1111111111"
+  ],
+  "detail": {
+    "publicationsOwner": "someRandomUser",
+    "fileUri": "s3://bucket/parent/child/filename.json",
+    "contents": {
+      "id": 5709,
+      "varbeidhovedkatkode": "BOK",
+      "varbeidunderkatkode": "SOMETHINGTHATFAILS",
+      "brukernavn_opprettet": "someUsername",
+      "eierkode_opprettet": "NTNU",
+      "dato_opprettet": "2008-01-15T13:30:24",
+      "brukernavn_siste_endring": "bertheus",
+      "eierkode_siste_endring": "NTNU",
+      "dato_siste_endring": "2008-02-19T16:07:03",
+      "publiseringstatuskode": "PUBLISERT",
+      "dato_utgitt": null,
+      "arstall": 2007,
+      "arstall_rapportert": null,
+      "merknadtekst": null,
+      "merknadtekst_godkjenning": null,
+      "kildekode": null,
+      "kildepostid": null,
+      "pubidnr": null,
+      "VARBEID_SPRAK": [
+        {
+          "sprakkode": "EN",
+          "titteltekst": "Analysis and Simulation of Fluid Dynamics",
+          "sammendragtekst": null,
+          "status_original": "J"
+        }
+      ],
+      "VITENSKAPELIGARBEID_LOKAL": null,
+      "VARBEID_PERSON": [
+        {
+          "personlopenr": 11111111,
+          "fornavn": "anonymous",
+          "etternavn": "anonymakidis",
+          "rekkefolgenr": 1,
+          "VARBEID_PERSON_STED": [
+            {
+              "institusjonsnr": 0,
+              "avdnr": 0,
+              "undavdnr": 0,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "vekting": null,
+              "VARBEID_PERSON_STED_ROLLE": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "personlopenr": 222222,
+          "fornavn": "pseydonavn",
+          "etternavn": "papadopoulos",
+          "rekkefolgenr": 2,
+          "VARBEID_PERSON_STED": [
+            {
+              "institusjonsnr": 0,
+              "avdnr": 0,
+              "undavdnr": 0,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "vekting": null,
+              "VARBEID_PERSON_STED_ROLLE": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "personlopenr": 3333333,
+          "fornavn": "makis",
+          "etternavn": "makakis",
+          "rekkefolgenr": 3,
+          "VARBEID_PERSON_STED": [
+            {
+              "institusjonsnr": 0,
+              "avdnr": 0,
+              "undavdnr": 0,
+              "gruppenr": 0,
+              "stedkode_opprinnelig": null,
+              "institusjonsnavn_opprinnelig": null,
+              "avdelingsnavn_opprinnelig": null,
+              "stednavn_opprinnelig": null,
+              "vekting": null,
+              "VARBEID_PERSON_STED_ROLLE": [
+                {
+                  "rollekode": "FORFATTER"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "VARBEID_KILDE": null
+    }
+  }
+}

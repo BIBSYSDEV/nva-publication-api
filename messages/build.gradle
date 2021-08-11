@@ -1,0 +1,27 @@
+
+
+dependencies {
+
+    implementation project(":publication-commons")
+    implementation project(":storage-model")
+
+    implementation libs.nva.apigateway
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation libs.nva.datamodel
+
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.lambda.java.core
+
+    runtimeOnly libs.jackson.databind
+    testImplementation libs.jackson.databind
+    runtimeOnly libs.jackson.core
+    testImplementation libs.jackson.core
+
+    testImplementation project(":publication-testing")
+    testImplementation project(":doi-requests")
+    testImplementation libs.javafaker
+    testImplementation libs.zalando
+    testImplementation libs.nva.testutils
+}
+

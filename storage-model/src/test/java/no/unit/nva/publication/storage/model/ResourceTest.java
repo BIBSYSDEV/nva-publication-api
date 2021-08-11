@@ -2,6 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -12,9 +13,11 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Approval;
 import no.unit.nva.model.ApprovalStatus;
 import no.unit.nva.model.ApprovalsBody;
@@ -39,6 +42,7 @@ import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JsonUtils;
 import org.javers.core.Javers;
@@ -68,6 +72,7 @@ public class ResourceTest {
 
     public static final DoiRequest EMPTY_DOI_REQUEST = null;
     public static final boolean NON_DEFAULT_BOOLEAN_VALUE = true;
+    private static final Random RANDOM = new Random(System.currentTimeMillis());
 
     private final FileSet sampleFileSet = sampleFileSet();
     private final List<ResearchProject> sampleProjects = sampleProjects();
@@ -156,9 +161,16 @@ public class ResourceTest {
                    .withProjects(sampleProjects)
                    .withDoiRequest(EMPTY_DOI_REQUEST)
                    .withEntityDescription(sampleEntityDescription(reference))
+                   .withAdditionalIdentifiers(sampleAdditionalIdentifiers())
                    .build();
     }
-    
+
+    private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
+        AdditionalIdentifier cristinIdentifier = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
+        AdditionalIdentifier otherRandomIdentifier = new AdditionalIdentifier(randomString(), randomString());
+        return Set.of(cristinIdentifier, otherRandomIdentifier);
+    }
+
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
         return new Reference.Builder()
                    .withDoi(randomUri())
@@ -166,7 +178,7 @@ public class ResourceTest {
                    .withPublicationInstance(sampleJournalArticle())
                    .build();
     }
-    
+
     private static Identity sampleIdentity() {
         return new Identity.Builder()
                    .withId(SAMPLE_ID)
@@ -212,6 +224,7 @@ public class ResourceTest {
                    .withIssue(randomString())
                    .withPages(new Range.Builder().withBegin(randomString()).withEnd(randomString()).build())
                    .withVolume(randomString())
+                   .withContent(randomArrayElement(JournalArticleContentType.values()))
                    .build();
     }
     
@@ -224,6 +237,7 @@ public class ResourceTest {
                    .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
                    .withPrintIssn(SAMPLE_ISSN)
                    .withUrl(randomUri().toURL())
+                   .withLinkedContext(randomUri())
                    .build();
     }
     
@@ -287,13 +301,18 @@ public class ResourceTest {
         files.setFiles(List.of(file));
         return files;
     }
-    
+
     private Resource sampleResource() {
         return attempt(() -> Resource.fromPublication(samplePublication(sampleJournalArticleReference())))
                    .orElseThrow();
     }
-    
+
     private URI randomUri() {
         return URI.create(SOME_HOST + UUID.randomUUID().toString());
+    }
+
+    private <T> T randomArrayElement(T... array) {
+        int randomIndex = RANDOM.nextInt(array.length);
+        return array[randomIndex];
     }
 }
