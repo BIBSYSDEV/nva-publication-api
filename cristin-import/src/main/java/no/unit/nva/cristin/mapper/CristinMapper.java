@@ -7,8 +7,9 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_ARTICLE_NUMBER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_DEGREE_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
@@ -18,6 +19,16 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REP
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,6 +55,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
@@ -53,7 +65,9 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
@@ -61,7 +75,7 @@ import no.unit.nva.model.pages.Range;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper {
 
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
@@ -160,54 +174,80 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
-        if (isBook()) {
-            List<String> isbnList = new ArrayList<>();
-            isbnList.add(extractIsbn());
-            return new Book.Builder()
-                       .withIsbnList(isbnList)
-                       .withPublisher(extractPublisherName())
-                       .withUrl(HARDCODED_BOOK_URI.toURL())
-                       .withLevel(HARDCODED_BOOK_LEVEL)
-                       .withOpenAccess(false)
-                       .build();
+        if (isBook(cristinObject)) {
+            return buildBookForPublicationContext();
         }
-        if (isJournal()) {
-            return new Journal.Builder()
-                       .withLevel(HARDCODED_JOURNAL_LEVEL)
-                       .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                       .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
-                       .withUrl(HARDCODED_JOURNAL_URI.toURL())
-                       .withOnlineIssn(extractIssnOnline())
-                       .withPrintIssn(extractIssn())
-                       .withTitle(extractPublisherTitle())
-                       .build();
+        if (isJournal(cristinObject)) {
+            return buildJournalForPublicationContext();
         }
-        if (isReport()) {
-            return new Report.Builder()
-                    .withLevel(HARDCODED_REPORT_LEVEL)
-                    .withPublisher(extractPublisherName())
-                    .withUrl(HARDCODED_REPORT_URL.toURL())
-                    .build();
+        if (isReport(cristinObject)) {
+            return buildPublicationContextWhenMainCategoryIsReport();
         }
-        if (isChapter()) {
-            return new Chapter.Builder()
-                    .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
-                    .build();
+        if (isChapter(cristinObject)) {
+            return buildChapterForPublicationContext();
         }
         return null;
     }
 
+    private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
+        List<String> isbnList = new ArrayList<>();
+        isbnList.add(extractIsbn());
+        return new Book.Builder()
+                .withIsbnList(isbnList)
+                .withPublisher(extractPublisherName())
+                .withUrl(HARDCODED_BOOK_URI.toURL())
+                .withLevel(HARDCODED_BOOK_LEVEL)
+                .withOpenAccess(false)
+                .build();
+    }
+
+    private Journal buildJournalForPublicationContext() throws MalformedURLException, InvalidIssnException {
+        return new Journal.Builder()
+                .withLevel(HARDCODED_JOURNAL_LEVEL)
+                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
+                .withUrl(HARDCODED_JOURNAL_URI.toURL())
+                .withOnlineIssn(extractIssnOnline())
+                .withPrintIssn(extractIssn())
+                .withTitle(extractPublisherTitle())
+                .build();
+    }
+
+    private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
+            throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
+        if (isDegreePhd(cristinObject)) {
+            return new Degree.Builder()
+                    .withUrl(HARDCODED_DEGREE_URL.toURL())
+                    .build();
+        }
+        return new Report.Builder()
+                .withLevel(HARDCODED_REPORT_LEVEL)
+                .withPublisher(extractPublisherName())
+                .withUrl(HARDCODED_REPORT_URL.toURL())
+                .build();
+    }
+
+    private Chapter buildChapterForPublicationContext() {
+        return new Chapter.Builder()
+                .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
+                .build();
+    }
+
 
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
-        if (isBook() && CristinSecondaryCategory.isAnthology(cristinObject)) {
+        if (isBook(cristinObject) && CristinSecondaryCategory.isAnthology(cristinObject)) {
             return createBookAnthology();
-        } else if (isBook() && CristinSecondaryCategory.isMonograph(cristinObject)) {
+        } else if (isBook(cristinObject) && isMonograph(cristinObject)) {
             return createBookMonograph();
-        } else if (isJournal() && CristinSecondaryCategory.isJournalArticle(cristinObject)) {
+        } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
             return createJournalArticle();
-        } else if (isReport() && CristinSecondaryCategory.isResearchReport(cristinObject)) {
+        } else if (isJournal(cristinObject) && isJournalReview(cristinObject)) {
+            return createJournalReview();
+        } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
             return createReportResearch();
-        } else if (isChapter() && CristinSecondaryCategory.isChapterArticle(cristinObject)) {
+        } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
+            return createDegreePhd();
+        } else if (isChapter(cristinObject) && isChapterArticle(cristinObject)) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
@@ -216,7 +256,6 @@ public class CristinMapper {
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
-
 
     private MonographPages createMonographPages() {
         Range introductionRange = new Range.Builder()
@@ -249,7 +288,7 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                   .withArticleNumber(HARDCODED_JOURNAL_ARTICLE_NUMBER)
+                   .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
                    .withIssue(HARDCODED_JOURNAL_PAGE)
                    .withPages(numberOfPages)
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
@@ -257,34 +296,26 @@ public class CristinMapper {
                    .build();
     }
 
+    private PublicationInstance<? extends Pages> createJournalReview() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalReview.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
+
     private PublicationInstance<? extends Pages> createReportResearch() {
         return new ReportResearch.Builder().build();
     }
 
+    private PublicationInstance<? extends Pages> createDegreePhd() {
+        return new DegreePhd.Builder().build();
+    }
+
     private PublicationInstance<? extends Pages> createChapterArticle() {
         return new ChapterArticle.Builder().build();
-    }
-
-
-    private boolean isBook() {
-        return CristinMainCategory.BOOK.equals(cristinObject.getMainCategory());
-    }
-
-
-    private boolean isJournal() {
-        return CristinMainCategory.JOURNAL.equals(cristinObject.getMainCategory());
-    }
-
-
-
-    private boolean isReport() {
-        return CristinMainCategory.REPORT.equals(cristinObject.getMainCategory());
-    }
-
-
-
-    private boolean isChapter() {
-        return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
     }
 
     private PublicationDate extractPublicationDate() {
@@ -306,10 +337,10 @@ public class CristinMapper {
                    .flatMap(Collection::stream);
     }
 
-    private CristinBookReport extractCristinBookReport() {
+    private CristinBookOrReportMetadata extractCristinBookReport() {
         return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getBookReport)
-                   .orElse(null);
+            .map(CristinObject::getBookOrReportMetadata)
+            .orElse(null);
     }
 
     private String extractNumberOfPages() {
@@ -338,11 +369,11 @@ public class CristinMapper {
     }
 
     private String extractNpiSubjectHeading() {
-        if (!isBook()) {
+        if (!isBook(cristinObject)) {
             return null;
         }
         if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookReport.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
         }
         Integer code = extractSubjectField().getSubjectFieldCode();
         if (code == null) {
@@ -370,7 +401,7 @@ public class CristinMapper {
     }
 
     private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getPublisherName();
+        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 
     private String extractPagesBegin() {
@@ -386,7 +417,7 @@ public class CristinMapper {
     }
 
     private URI extractDoi() {
-        if (isJournal() && extractCristinJournalPublication().getDoi() != null) {
+        if (isJournal(cristinObject) && extractCristinJournalPublication().getDoi() != null) {
             return URI.create(extractCristinJournalPublication().getDoi());
         }
         return null;

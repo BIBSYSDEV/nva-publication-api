@@ -11,10 +11,12 @@ public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
     JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
+    JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
     ARTICLE_POPULAR("ARTIKKEL_POP", "ARTICLE_POPULAR"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
+    DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
     POPULAR_ARTICLE("POPVIT_KAPITTEL", "POPULAR_ARTICLE"),
@@ -51,22 +53,28 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isJournalArticle(CristinObject cristinObject) {
-        return (CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
-                CristinSecondaryCategory.ARTICLE_POPULAR.equals(cristinObject.getSecondaryCategory()) ||
-                CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
-                CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
-        );
+        return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ARTICLE_POPULAR.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalReview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isResearchReport(CristinObject cristinObject) {
         return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
     }
 
+    public static  boolean isDegreePhd(CristinObject cristinObject) {
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isChapterArticle(CristinObject cristinObject) {
-        return (CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory()) ||
-                CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory()) ||
-                CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
-        );
+        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
