@@ -12,7 +12,7 @@ public enum CristinSecondaryCategory {
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
     JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
-    ARTICLE_POPULAR("ARTIKKEL_POP", "ARTICLE_POPULAR"),
+    POPULAR_ARTICLE("ARTIKKEL_POP", "ARTICLE_POPULAR"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
@@ -54,7 +54,7 @@ public enum CristinSecondaryCategory {
 
     public static boolean isJournalArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.ARTICLE_POPULAR.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
     }
