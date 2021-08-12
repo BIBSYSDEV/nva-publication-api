@@ -343,11 +343,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     //This is a test-template to run local tests,
     // the files needed to run the test has been removed
     // and the test has been disabled.
-    @Disabled
+    //@Disabled
     @Test
     public void runMappingsLocally() {
         ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Doktorgrad.txt"));
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Kronikk.txt"));
         var returnValue = listOfJsonObjects.stream()
                 .map(attempt(mapper::readTree))
                 .map(Try::orElseThrow)

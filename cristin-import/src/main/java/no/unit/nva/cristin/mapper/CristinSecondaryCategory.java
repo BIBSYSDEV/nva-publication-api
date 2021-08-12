@@ -10,6 +10,7 @@ import nva.commons.core.SingletonCollector;
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
+    FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
     POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
@@ -50,6 +51,10 @@ public enum CristinSecondaryCategory {
 
     public static boolean isMonograph(CristinObject cristinObject) {
         return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isFeatureArticle(CristinObject cristinObject) {
+        return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isJournalArticle(CristinObject cristinObject) {

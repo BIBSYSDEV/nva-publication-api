@@ -18,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"tidsskriftnr", "nsdkode", "landkode_utgiver", "sprakkode", "status_referee_ordning",
-    "dato_utgutt", "status_serie"})
+    "dato_utgatt", "status_serie"})
 public class CristinJournalPublicationJournal {
 
     public static final String ISSN = "issn";
