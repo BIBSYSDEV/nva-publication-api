@@ -7,7 +7,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_DEGREE_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
@@ -217,7 +216,6 @@ public class CristinMapper {
             throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
         if (isDegreePhd(cristinObject)) {
             return new Degree.Builder()
-                    .withUrl(HARDCODED_DEGREE_URL.toURL())
                     .withPublisher(extractPublisherName())
                     .build();
         }
@@ -312,7 +310,10 @@ public class CristinMapper {
     }
 
     private PublicationInstance<? extends Pages> createDegreePhd() {
-        return new DegreePhd.Builder().build();
+        return new DegreePhd
+                .Builder()
+                .withPages(createMonographPages())
+                .build();
     }
 
     private PublicationInstance<? extends Pages> createChapterArticle() {
