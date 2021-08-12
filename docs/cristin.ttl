@@ -187,7 +187,7 @@
 :TIDSSKRIFT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """A journal""" .
+    rdfs:comment    """A journal, in this case the journal in which the publication was published.""" .
 
 :VARBEID_EMNEORD_Class
     a               rdfs:Class ;
@@ -431,7 +431,8 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 :sprakkode
     a               :cristinfield ;
     rdfs:comment    """
-    The language of the title and the abstract included in the VARARBEID_SPRAK or the TIDSSKRIFT entry.
+    When the domain in :VARARBEID_SPRAK it is the language of the title and the abstract included in the entry
+    When the domain is :TIDSSKRIFT it is the language used in the journal, this may not be the same as the article contained within.
     The range is ISO 639-1.
     Possibly null or (xx) to represent (n/a)
     """ ;
@@ -910,7 +911,7 @@ It is a self reference.""" ;
 :antall_sider_totalt
     a               :cristinfield ;
     rdfs:comment    "The total number of pages. Possibly null." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
@@ -923,7 +924,10 @@ It is a self reference.""" ;
 
 :hefte
     a               :cristinfield ;
-    rdfs:comment    "The booklet containing the publication. Data in the form of a number stored as a string" ;
+    rdfs:comment    """
+        The issue containing the publication.
+        A string holding information about the which issue it is,
+        this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
@@ -954,10 +958,7 @@ It is a self reference.""" ;
 :artikkelnummer
     a               :cristinfield ;
     rdfs:comment    """
-        A number identifying the article within the journal.
-        This might be a sequence number or the actuall ID of the article, this is decided by the journal
-        The ID consists of a combination of letters and numbers or just numbers.
-        Examples: L08802, 1588, 2.
+        A string identifying the article within the journal.
         Possibly null.
         """ ;
     rdfs:range      xsd:string ;
@@ -981,7 +982,7 @@ It is a self reference.""" ;
 :TIDSSKRIFT
     a               :cristinfield ;
     rdfs:comment    """
-    A journal, in this case the journal in which the publication was published.
+    See range class description
     """ ;
     rdfs:range      :TIDSSKRIFT_Class ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
@@ -1059,8 +1060,11 @@ It is a self reference.""" ;
 
 :status_serie
     a               :cristinfield ;
-    rdfs:comment    """Defines wheter it is a bookseries or not (in that case a Journal).
-    (J) declares it to be a bookseries something we dont want/expect to find here""" ;
+    rdfs:comment    """When the value is N, this TIDSSKRIFT object represents a journal.
+    When the value is J, this TIDSSKRIFT object represents a book series.
+    Objects with value J are not expected to be referred to from a TYPE_TIDSSKRIFTPUBLIKASJON object.
+    Objects with value J are only expected to be referred to from a TYPE_BOK_RAPPORT object.
+    """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TIDSSKRIFT_Class ;
     :isignored   "true" .
