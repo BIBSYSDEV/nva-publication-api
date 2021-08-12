@@ -6,7 +6,8 @@ import java.util.Arrays;
 
 public enum CristinContributorRoleCode {
     CREATOR("FORFATTER"),
-    EDITOR("REDAKT" + "\u00D8" + "R"); //REDAKTØR
+    EDITOR("REDAKT" + "\u00D8" + "R"), //REDAKTØR
+    SUPERVISOR("VEILEDER");
 
 
     private final String value;

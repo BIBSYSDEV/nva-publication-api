@@ -8,6 +8,7 @@ entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationInstance.pages.end
 entityDescription.reference.publicationInstance.pages.begin
 entityDescription.reference.publicationContext.printIssn
+entityDescription.reference.publicationContext.level
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

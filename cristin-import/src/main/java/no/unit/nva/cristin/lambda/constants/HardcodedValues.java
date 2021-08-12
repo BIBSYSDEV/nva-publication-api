@@ -38,6 +38,10 @@ public final class HardcodedValues {
     //CHAPTER_ARTICLE
     public static final URI HARDCODED_CHAPTER_ARTICLE_URI = URI.create("https://www.chapter-example.com/");
 
+    //Degree
+    public static final Level HARDCODED_DEGREE_LEVEL = Level.LEVEL_0;
+    public static final URI HARDCODED_DEGREE_URL = URI.create("https://www.report-example.com/");
+
 
     private HardcodedValues() {
 
