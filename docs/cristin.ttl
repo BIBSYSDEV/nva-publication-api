@@ -431,11 +431,12 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 :sprakkode
     a               :cristinfield ;
     rdfs:comment    """
-    The language of the title and the abstract included in the VARARBEID_SPRAK entry.
+    The language of the title and the abstract included in the VARARBEID_SPRAK or the TIDSSKRIFT entry.
     The range is ISO 639-1.
+    Possibly null or (xx) to represent (n/a)
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ;
+    rdfs:domain     :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ;
     :mapstonvafield """
         entityDescription.language if VARBEID_SPRAK.status_original is "J"
     """ .
@@ -915,15 +916,15 @@ It is a self reference.""" ;
 
 :publiseringsar
     a               :cristinfield ;
-    rdfs:comment    "The year of publication" ;
+    rdfs:comment    "The year of publication for the journal" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :hefte
     a               :cristinfield ;
-    rdfs:comment    "The booklet containing the publication." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:comment    "The booklet containing the publication. Data in the form of a number stored as a string" ;
+    rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
@@ -937,7 +938,7 @@ It is a self reference.""" ;
 :supplement
     a               :cristinfield ;
     rdfs:comment    "A area for adding information about possible attachments to the article." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
@@ -952,22 +953,28 @@ It is a self reference.""" ;
 
 :artikkelnummer
     a               :cristinfield ;
-    rdfs:comment    "The article number." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:comment    """
+        A number identifying the article within the journal.
+        This might be a sequence number or the actuall ID of the article, this is decided by the journal
+        The ID consists of a combination of letters and numbers or just numbers.
+        Examples: L08802, 1588, 2.
+        Possibly null.
+        """ ;
+    rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :arstall_trykket
     a               :cristinfield ;
     rdfs:comment    "The year the publication was printed." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :arstall_online
     a               :cristinfield ;
     rdfs:comment    "The year the publication was released online." ;
-    rdfs:range      rdf:nil ; #unknown range
+    rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
@@ -1011,7 +1018,7 @@ It is a self reference.""" ;
 
 :tidsskriftnr
     a               :cristinfield ;
-    rdfs:comment    "Number identifying the specific article" ;
+    rdfs:comment    "Number identifying the specific journal within Cristin" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :TIDSSKRIFT_Class ;
     :isignored   "true" .
@@ -1025,17 +1032,10 @@ It is a self reference.""" ;
 
 :landkode_utgiver
     a               :cristinfield ;
-    rdfs:comment    "The code identifying the country where the publisher is located. Possibly null." ;
-    rdfs:range      rdf:nil ; #unknown range
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :isignored   "true" .
-
-:sprakkode
-    a               :cristinfield ;
     rdfs:comment    """
-        The code representing the language the publication is written in.
-        Example ISO 639-1.
-        Possibly null or (xx) to represent (n/a)""" ;
+        The code identifying the country where the publisher is located.
+        Example: NO
+        Possibly null.""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TIDSSKRIFT_Class ;
     :isignored   "true" .
