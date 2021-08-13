@@ -12,7 +12,12 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext of type Degree
 
-  Scenario: Cristin Result's totalNumberOfPages is copied to NVA publications numberOfPages.
-    Given the Cristin entry has a total number of pages equal to "123"
+  Scenario Outline: Cristin Result's totalNumberOfPages is copied to NVA publications numberOfPages.
+    Given the Cristin entry has a total number of pages equal to "<pages>"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Degree has a PublicationContext with number of pages equal to "123"
+    Then the NVA Degree has a PublicationContext with number of pages equal to "<pages>"
+    Examples:
+      | pages        |
+      | 10-15        |
+      | 123          |
+      | some pages   |

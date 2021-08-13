@@ -35,7 +35,8 @@ public class DegreeFeatures {
 
     @Given("the Cristin entry has a total number of pages equal to {string}")
     public void theCristinEntryHasATotalNumberOfPagesEqualTo(String numberOfPages) {
-        scenarioContext.getCristinEntry().getBookOrReportMetadata()
+        scenarioContext.getCristinEntry()
+                .getBookOrReportMetadata()
                 .setNumberOfPages(numberOfPages);
     }
 
