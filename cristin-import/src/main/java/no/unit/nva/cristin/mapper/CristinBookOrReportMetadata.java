@@ -47,9 +47,6 @@ public class CristinBookOrReportMetadata {
     }
 
     public String getNumberOfPages() {
-        if (StringUtils.isBlank(numberOfPages)) {
-            throw new InvalidCristinBookReportEntryException(NUMBER_OF_PAGES, numberOfPages);
-        }
         return numberOfPages;
     }
 
