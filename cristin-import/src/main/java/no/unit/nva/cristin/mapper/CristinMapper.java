@@ -1,8 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_ILLUSTRATED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
@@ -261,14 +259,8 @@ public class CristinMapper {
     }
 
     private MonographPages createMonographPages() {
-        Range introductionRange = new Range.Builder()
-                                      .withBegin(HARDCODED_BOOK_PAGE)
-                                      .withEnd(HARDCODED_BOOK_PAGE)
-                                      .build();
         return new MonographPages.Builder()
                    .withPages(extractNumberOfPages())
-                   .withIllustrated(HARDCODED_BOOK_ILLUSTRATED)
-                   .withIntroduction(introductionRange)
                    .build();
     }
 

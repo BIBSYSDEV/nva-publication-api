@@ -15,8 +15,6 @@ public final class HardcodedValues {
     //BOOK
     public static final Level HARDCODED_BOOK_LEVEL = Level.LEVEL_0;
     public static final URI HARDCODED_BOOK_URI = URI.create("https://www.book-example.com/");
-    public static final String HARDCODED_BOOK_PAGE = "1";
-    public static final boolean HARDCODED_BOOK_ILLUSTRATED = false;
     public static final boolean HARDCODED_BOOK_PEER_REVIEWED = false;
     public static final boolean HARDCODED_BOOK_TEXTBOOK_CONTENT = false;
 
