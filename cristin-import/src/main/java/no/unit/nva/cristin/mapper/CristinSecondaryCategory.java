@@ -12,8 +12,9 @@ public enum CristinSecondaryCategory {
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
-    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
+    JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"),
+    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
@@ -62,15 +63,19 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory());
     }
 
+    public static boolean isJournalReview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalLeader(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
+    }
+
     public static boolean isJournalArticle(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
-    }
-
-    public static boolean isJournalReview(CristinObject cristinObject) {
-        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isResearchReport(CristinObject cristinObject) {
