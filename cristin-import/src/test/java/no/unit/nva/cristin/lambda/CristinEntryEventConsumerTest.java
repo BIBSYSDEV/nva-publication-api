@@ -347,7 +347,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void runMappingsLocally() {
         ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("1000BrevTilRed.txt"));
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Bokanmeldelse.txt"));
         var returnValue = listOfJsonObjects.stream()
                 .map(attempt(mapper::readTree))
                 .map(Try::orElseThrow)
