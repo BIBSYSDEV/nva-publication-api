@@ -18,6 +18,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
+import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.pages.Pages;
 
 public class JournalFeatures {
@@ -261,6 +262,42 @@ public class JournalFeatures {
                 .getPublicationInstance();
         JournalLetter journalLetter = (JournalLetter) instance;
         String actualVolume = journalLetter.getVolume();
+        assertThat(actualVolume, is(equalTo(expectedVolume)));
+    }
+
+    @Then("the Nva Resource, JournalReview, has a PublicationContext with pagesBegin equal to {string}")
+    public void theNvaResourceJournalReviewHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalReview journalReview = (JournalReview) instance;
+        String actualPagesBegin = journalReview.getPages().getBegin();
+        assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
+    }
+
+    @Then("the Nva Resource, JournalReview, has a PublicationContext with pagesEnd equal to {string}")
+    public void theNvaResourceJournalReviewHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalReview journalReview = (JournalReview) instance;
+        String actualPagesEnd = journalReview.getPages().getEnd();
+        assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
+    }
+
+    @Then("the Nva Resource, JournalReview, has a PublicationContext with volume equal to {string}")
+    public void theNvaResourceJournalReviewHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalReview journalReview = (JournalReview) instance;
+        String actualVolume = journalReview.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 }
