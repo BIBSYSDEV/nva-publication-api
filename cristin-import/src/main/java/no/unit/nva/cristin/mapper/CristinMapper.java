@@ -24,6 +24,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArtic
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
@@ -67,6 +68,7 @@ import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
@@ -244,10 +246,12 @@ public class CristinMapper {
             return createFeatureArticle();
         } else if (isJournal(cristinObject) && isJournalLetter(cristinObject)) {
             return createJournalLetter();
-        } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
-            return createJournalArticle();
+        } else if (isJournal(cristinObject) && isJournalLeader(cristinObject)) {
+            return createJournalLeader();
         } else if (isJournal(cristinObject) && isJournalReview(cristinObject)) {
             return createJournalReview();
+        } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
+            return createJournalArticle();
         } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
             return createReportResearch();
         } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
@@ -261,7 +265,6 @@ public class CristinMapper {
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
-
 
     private MonographPages createMonographPages() {
         return new MonographPages.Builder()
@@ -305,6 +308,26 @@ public class CristinMapper {
                 .build();
     }
 
+    private PublicationInstance<? extends Pages> createJournalReview() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalReview.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
+
+    private PublicationInstance<? extends Pages> createJournalLeader() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalLeader.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
+
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
@@ -315,16 +338,6 @@ public class CristinMapper {
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                    .withVolume(extractVolume())
                    .build();
-    }
-
-    private PublicationInstance<? extends Pages> createJournalReview() {
-        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        return new JournalReview.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
-                .withPages(numberOfPages)
-                .withVolume(extractVolume())
-                .build();
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {

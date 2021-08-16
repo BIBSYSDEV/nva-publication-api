@@ -126,6 +126,10 @@ public final class CristinDataGenerator {
                 return randomFeatureArticle();
             case JOURNAL_LETTER:
                 return randomJournalLetter();
+            case JOURNAL_REVIEW:
+                return randomJournalReview();
+            case JOURNAL_LEADER:
+                return randomJournalLeader();
             case JOURNAL_ARTICLE:
             case ARTICLE:
             case POPULAR_ARTICLE:
@@ -137,8 +141,7 @@ public final class CristinDataGenerator {
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
                 return randomChapterArticle();
-            case JOURNAL_REVIEW:
-                return randomJournalReview();
+
             case DEGREE_PHD:
                 return randomDegreePhd();
             default:
@@ -158,14 +161,6 @@ public final class CristinDataGenerator {
         return event;
     }
 
-    private static CristinObject randomJournalArticle() {
-        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
-    }
-
-    private static CristinObject randomJournalReview() {
-        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_REVIEW);
-    }
-
     public static CristinObject randomBookAnthology() {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
     }
@@ -180,6 +175,18 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomJournalLetter() {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LETTER);
+    }
+
+    private static CristinObject randomJournalReview() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_REVIEW);
+    }
+
+    private static CristinObject randomJournalLeader() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LEADER);
+    }
+
+    private static CristinObject randomJournalArticle() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
     }
 
     private static CristinObject randomResearchReport() {
