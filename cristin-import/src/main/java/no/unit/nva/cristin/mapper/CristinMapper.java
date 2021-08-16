@@ -24,6 +24,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArtic
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
@@ -66,6 +67,7 @@ import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
@@ -240,6 +242,8 @@ public class CristinMapper {
             return createBookMonograph();
         } else if (isJournal(cristinObject) && isFeatureArticle(cristinObject)) {
             return createFeatureArticle();
+        } else if (isJournal(cristinObject) && isJournalLetter(cristinObject)) {
+            return createJournalLetter();
         } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
             return createJournalArticle();
         } else if (isJournal(cristinObject) && isJournalReview(cristinObject)) {
@@ -257,6 +261,7 @@ public class CristinMapper {
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
+
 
     private MonographPages createMonographPages() {
         return new MonographPages.Builder()
@@ -289,6 +294,17 @@ public class CristinMapper {
                 .withVolume(extractVolume())
                 .build();
     }
+
+    private PublicationInstance<? extends Pages> createJournalLetter() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalLetter.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
+
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
