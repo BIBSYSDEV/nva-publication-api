@@ -124,6 +124,8 @@ public final class CristinDataGenerator {
                 return randomBookAnthology();
             case FEATURE_ARTICLE:
                 return randomFeatureArticle();
+            case JOURNAL_LETTER:
+                return randomJournalLetter();
             case JOURNAL_ARTICLE:
             case ARTICLE:
             case POPULAR_ARTICLE:
@@ -145,8 +147,6 @@ public final class CristinDataGenerator {
         throw new IllegalStateException(
             String.format("The secondary category %s is not covered", secondaryCategory));
     }
-
-
 
 
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
@@ -176,6 +176,10 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomFeatureArticle() {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.FEATURE_ARTICLE);
+    }
+
+    private static CristinObject randomJournalLetter() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LETTER);
     }
 
     private static CristinObject randomResearchReport() {
