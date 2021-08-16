@@ -24,6 +24,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArtic
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorrigendum;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLeader;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalLetter;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalReview;
@@ -68,6 +69,7 @@ import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
@@ -250,6 +252,8 @@ public class CristinMapper {
             return createJournalLeader();
         } else if (isJournal(cristinObject) && isJournalReview(cristinObject)) {
             return createJournalReview();
+        } else if (isJournal(cristinObject) && isJournalCorrigendum(cristinObject)) {
+            return createJournalCorrigendum();
         } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
             return createJournalArticle();
         } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
@@ -328,6 +332,15 @@ public class CristinMapper {
                 .build();
     }
 
+    private PublicationInstance<? extends Pages> createJournalCorrigendum() {
+        Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        return new JournalCorrigendum.Builder()
+                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
+                .withIssue(HARDCODED_JOURNAL_PAGE)
+                .withPages(numberOfPages)
+                .withVolume(extractVolume())
+                .build();
+    }
 
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());

@@ -14,6 +14,7 @@ public enum CristinSecondaryCategory {
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
     JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"),
+    JOURNAL_CORRIGENDUM("ERRATA", "JOURNAL_CORRIGENDUM"),
     JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
     POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
@@ -69,6 +70,10 @@ public enum CristinSecondaryCategory {
 
     public static boolean isJournalLeader(CristinObject cristinObject) {
         return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalCorrigendum(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_CORRIGENDUM.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isJournalArticle(CristinObject cristinObject) {
