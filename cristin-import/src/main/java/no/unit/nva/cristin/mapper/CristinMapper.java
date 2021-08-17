@@ -19,6 +19,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isChapterArticle;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
@@ -64,6 +65,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -218,7 +220,7 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
             throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
-        if (isDegreePhd(cristinObject)) {
+        if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
             return new Degree.Builder()
                     .withPublisher(extractPublisherName())
                     .build();
@@ -258,6 +260,8 @@ public class CristinMapper {
             return createReportResearch();
         } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
             return createDegreePhd();
+        } else if (isReport(cristinObject) && isDegreeMaster(cristinObject)) {
+            return createDegreeMaster();
         } else if (isChapter(cristinObject) && isChapterArticle(cristinObject)) {
             return createChapterArticle();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
@@ -349,6 +353,14 @@ public class CristinMapper {
                 .withPages(createMonographPages())
                 .build();
     }
+
+    private PublicationInstance<? extends Pages> createDegreeMaster() {
+        return new DegreeMaster
+                .Builder()
+                .withPages(createMonographPages())
+                .build();
+    }
+
 
     private PublicationInstance<? extends Pages> createChapterArticle() {
         return new ChapterArticle.Builder().build();

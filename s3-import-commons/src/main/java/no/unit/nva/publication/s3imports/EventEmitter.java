@@ -261,10 +261,10 @@ public class EventEmitter<T> {
     }
 
     private int requestEntrySize(PutEventsRequestEntry entry) {
-        int size = entry.source().getBytes(StandardCharsets.UTF_8).length +
-                   entry.detail().getBytes(StandardCharsets.UTF_8).length +
-                   entry.detailType().getBytes(StandardCharsets.UTF_8).length +
-                   TIMESTAMP_SIZE_IN_BYTES;
+        int size = entry.source().getBytes(StandardCharsets.UTF_8).length
+                + entry.detail().getBytes(StandardCharsets.UTF_8).length
+                + entry.detailType().getBytes(StandardCharsets.UTF_8).length
+                + TIMESTAMP_SIZE_IN_BYTES;
         if (size > REQUEST_ENTRY_SET_MAX_BYTE_SIZE) {
             throw new EntryTooBigException(entry.detail());
         }
