@@ -130,6 +130,8 @@ public final class CristinDataGenerator {
                 return randomJournalReview();
             case JOURNAL_LEADER:
                 return randomJournalLeader();
+            case JOURNAL_CORRIGENDUM:
+                return randomJournalCorrigendum();
             case JOURNAL_ARTICLE:
             case ARTICLE:
             case POPULAR_ARTICLE:
@@ -185,6 +187,10 @@ public final class CristinDataGenerator {
 
     private static CristinObject randomJournalLeader() {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LEADER);
+    }
+
+    private static CristinObject randomJournalCorrigendum() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_CORRIGENDUM);
     }
 
     private static CristinObject randomJournalArticle() {
