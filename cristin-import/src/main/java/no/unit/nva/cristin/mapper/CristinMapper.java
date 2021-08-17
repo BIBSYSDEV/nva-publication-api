@@ -7,7 +7,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_JOURNAL_ACCESS;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_LEVEL;
@@ -211,7 +210,6 @@ public class CristinMapper {
                 .withLevel(HARDCODED_JOURNAL_LEVEL)
                 .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                 .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
-                .withUrl(HARDCODED_JOURNAL_URI.toURL())
                 .withOnlineIssn(extractIssnOnline())
                 .withPrintIssn(extractIssn())
                 .withTitle(extractPublisherTitle())
