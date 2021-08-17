@@ -21,8 +21,6 @@ public final class HardcodedValues {
     //JOURNAL
     public static final Level HARDCODED_JOURNAL_LEVEL = Level.LEVEL_0;
     public static final URI HARDCODED_JOURNAL_URI = URI.create("https://www.journal-example.com/");
-    public static final String HARDCODED_JOURNAL_PAGE = "1";
-    public static final String HARDCODED_JOURNAL_NUMBER = "1234567";
     public static final boolean HARDCODED_OPEN_JOURNAL_ACCESS = false;
     public static final boolean HARDCODED_JOURNAL_PEER_REVIEWED = false;
 

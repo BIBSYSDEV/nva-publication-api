@@ -6,8 +6,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOO
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_NUMBER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PAGE;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
@@ -295,8 +293,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createFeatureArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new FeatureArticle.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
                 .withVolume(extractVolume())
                 .build();
@@ -305,8 +301,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalLetter() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLetter.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
                 .withVolume(extractVolume())
                 .build();
@@ -315,8 +309,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalReview() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalReview.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
                 .withVolume(extractVolume())
                 .build();
@@ -325,8 +317,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalLeader() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLeader.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
                 .withVolume(extractVolume())
                 .build();
@@ -335,8 +325,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalCorrigendum() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalCorrigendum.Builder()
-                .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                .withIssue(HARDCODED_JOURNAL_PAGE)
                 .withPages(numberOfPages)
                 .withVolume(extractVolume())
                 .build();
@@ -345,8 +333,6 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                   .withArticleNumber(HARDCODED_JOURNAL_NUMBER)
-                   .withIssue(HARDCODED_JOURNAL_PAGE)
                    .withPages(numberOfPages)
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                    .withVolume(extractVolume())
