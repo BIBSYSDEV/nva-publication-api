@@ -17,6 +17,7 @@ import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
@@ -335,6 +336,42 @@ public class JournalFeatures {
                 .getPublicationInstance();
         JournalLeader journalLeader = (JournalLeader) instance;
         String actualVolume = journalLeader.getVolume();
+        assertThat(actualVolume, is(equalTo(expectedVolume)));
+    }
+
+    @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with pagesBegin equal to {string}")
+    public void theNvaResourceJournalCorrigendumHasAPublicationContextWithPagesBeginEqualTo(String expectedPagesBegin) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
+        String actualPagesBegin = journalCorrigendum.getPages().getBegin();
+        assertThat(actualPagesBegin, is(equalTo(expectedPagesBegin)));
+    }
+
+    @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with pagesEnd equal to {string}")
+    public void theNvaResourceJournalCorrigendumHasAPublicationContextWithPagesEndEqualTo(String expectedPagesEnd) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
+        String actualPagesEnd = journalCorrigendum.getPages().getEnd();
+        assertThat(actualPagesEnd, is(equalTo(expectedPagesEnd)));
+    }
+
+    @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with volume equal to {string}")
+    public void theNvaResourceJournalCorrigendumHasAPublicationContextWithVolumeEqualTo(String expectedVolume) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
+        String actualVolume = journalCorrigendum.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
     }
 }
