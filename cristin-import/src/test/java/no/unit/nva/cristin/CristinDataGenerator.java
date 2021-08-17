@@ -137,20 +137,22 @@ public final class CristinDataGenerator {
                 return randomJournalArticle();
             case RESEARCH_REPORT:
                 return randomResearchReport();
+            case DEGREE_PHD:
+                return randomDegreePhd();
+            case DEGREE_MASTER:
+                return randomDegreeMaster();
             case CHAPTER_ARTICLE:
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
                 return randomChapterArticle();
 
-            case DEGREE_PHD:
-                return randomDegreePhd();
+
             default:
                 break;
         }
         throw new IllegalStateException(
             String.format("The secondary category %s is not covered", secondaryCategory));
     }
-
 
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
@@ -193,14 +195,19 @@ public final class CristinDataGenerator {
         return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.RESEARCH_REPORT);
     }
 
-    private static CristinObject randomChapterArticle() {
-        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
-    }
-
     private static CristinObject randomDegreePhd() {
         return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_PHD);
     }
 
+    private static CristinObject randomDegreeMaster() {
+        return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_MASTER);
+    }
+
+
+
+    private static CristinObject randomChapterArticle() {
+        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    }
 
     public static CristinObject objectWithRandomBookReport() {
         return createRandomBookWithBookReportValues();

@@ -7,6 +7,7 @@ import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,7 +30,6 @@ public class DegreeFeatures {
                 .getEntityDescription()
                 .getReference()
                 .getPublicationContext();
-        Book book = (Book) context;
         assertThat(context, is(instanceOf(Degree.class)));
     }
 
@@ -40,13 +40,23 @@ public class DegreeFeatures {
                 .setNumberOfPages(numberOfPages);
     }
 
-    @Then("the NVA Degree has a PublicationContext with number of pages equal to {string}")
-    public void theNvaDegreeHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
+    @Then("the NVA DegreePhd has a PublicationContext with number of pages equal to {string}")
+    public void theNvaDegreePhdHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
         PublicationInstance<?> instance = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()
                 .getPublicationInstance();
         DegreePhd degree = (DegreePhd) instance;
+        assertThat(degree.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
+    }
+
+    @Then("the NVA DegreeMaster has a PublicationContext with number of pages equal to {string}")
+    public void theNvaDegreeMasterHasAPublicationContextWithNumberOfPagesEqualTo(String expectedNumberOfPages) {
+        PublicationInstance<?> instance = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        DegreeMaster degree = (DegreeMaster) instance;
         assertThat(degree.getPages().getPages(), is(equalTo(expectedNumberOfPages)));
     }
 }
