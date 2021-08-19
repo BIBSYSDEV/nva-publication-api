@@ -1,12 +1,17 @@
 entityDescription.reference.publicationContext.publisher
 entityDescription.reference.publicationContext.isbnList
 entityDescription.reference.publicationInstance.pages
+entityDescription.reference.publicationInstance.submittedDate
+entityDescription.reference.publicationInstance.articleNumber
+entityDescription.reference.publicationInstance.issue
 entityDescription.reference.doi
 entityDescription.reference.publicationInstance.volume
 entityDescription.reference.publicationContext.onlineIssn
 entityDescription.reference.publicationInstance.pages.end
 entityDescription.reference.publicationInstance.pages.begin
 entityDescription.reference.publicationContext.printIssn
+entityDescription.reference.publicationContext.level
+entityDescription.reference.publicationContext.url
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

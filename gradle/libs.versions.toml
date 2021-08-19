@@ -1,11 +1,11 @@
 [versions]
-nva = { strictly = "1.7.5" }
-nvaDatamodelVersion = { strictly = "0.11.19" }
-jacksonVersion = { strictly = "2.12.3" }
-awsSdkVersion = { strictly = "1.11.973" }
-awsSdk2Version = { strictly = "2.16.46" }
+nva = { strictly = "1.7.7" }
+nvaDatamodelVersion = { strictly = "0.12.4" }
+jacksonVersion = { strictly = "2.12.4" }
+awsSdkVersion = { strictly = "1.12.42" }
+awsSdk2Version = { strictly = "2.17.14" }
 log4jApiVersion = { require = "2.14.1" }
-zalandoProblemVersion = { strictly = "0.25.0" }
+zalandoProblemVersion = { strictly = "0.26.0" }
 awsLambdaCore = { stictly = "1.2.1" }
 awsLambdaEvents = { strictly = '3.9.0' }
 dynamoDbHttpCoreDependency = { strictly = "4.4.13" }
@@ -16,7 +16,7 @@ commonsValidator = { strictly = "1.7" }
 apacheCommons = { strictly = "4.4" }
 testUtils = { strictly = "0.1.22" }
 hamcrest = { strictly = '2.2' }
-cucumber = { strictly = '6.10.4' }
+cucumber = { strictly = '6.11.0' }
 
 [libraries]
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }

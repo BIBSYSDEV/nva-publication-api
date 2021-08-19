@@ -29,6 +29,8 @@ public class CristinContributorRole {
             return Role.CREATOR;
         } else if (CristinContributorRoleCode.EDITOR.equals(roleCode)) {
             return Role.EDITOR;
+        } else if (CristinContributorRoleCode.SUPERVISOR.equals(roleCode)) {
+            return Role.SUPERVISOR;
         } else {
             return Role.OTHER;
         }

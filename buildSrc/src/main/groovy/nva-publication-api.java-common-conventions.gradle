@@ -59,9 +59,7 @@ jacocoTestReport {
     }
 }
 
-//gradleLint {
-//    rules = ['unused-dependency']
-//}
+
 
 pmd {
     ruleSetConfig = rootProject.resources.text.fromFile('config/pmd/ruleset.xml')

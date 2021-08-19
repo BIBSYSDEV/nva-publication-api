@@ -10,10 +10,21 @@ import nva.commons.core.SingletonCollector;
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
-    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
+    FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
+    JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
+    JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"),
+    JOURNAL_CORRIGENDUM("ERRATA", "JOURNAL_CORRIGENDUM"),
+    JOURNAL_ARTICLE("ARTIKKEL_FAG", "JOURNAL_ARTICLE"),
+    POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
+    ARTICLE("ARTIKKEL", "ARTICLE"),
+    ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
-    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE", "POPVIT_KAPITTEL", "FAGLIG_KAPITTEL"),
+    DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
+    DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
+    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
+    CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
+    POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_CHAPTER_ARTICLE"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -36,6 +47,59 @@ public enum CristinSecondaryCategory {
             return aliases.get(DEFAULT_VALUE);
         }
         return this.name();
+    }
+
+    public static boolean isAnthology(CristinObject cristinObject) {
+        return CristinSecondaryCategory.ANTHOLOGY.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isMonograph(CristinObject cristinObject) {
+        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isFeatureArticle(CristinObject cristinObject) {
+        return CristinSecondaryCategory.FEATURE_ARTICLE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalLetter(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalReview(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalLeader(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_LEADER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalCorrigendum(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_CORRIGENDUM.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isJournalArticle(CristinObject cristinObject) {
+        return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isResearchReport(CristinObject cristinObject) {
+        return CristinSecondaryCategory.RESEARCH_REPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static  boolean isDegreePhd(CristinObject cristinObject) {
+        return CristinSecondaryCategory.DEGREE_PHD.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static  boolean isDegreeMaster(CristinObject cristinObject) {
+        return CristinSecondaryCategory.DEGREE_MASTER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isChapterArticle(CristinObject cristinObject) {
+        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
