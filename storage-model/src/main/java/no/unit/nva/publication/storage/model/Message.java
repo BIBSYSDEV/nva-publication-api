@@ -35,7 +35,6 @@ public class Message implements WithIdentifier,
     private String resourceTitle;
     private MessageType messageType;
 
-
     @JacocoGenerated
     public Message() {
 
