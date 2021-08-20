@@ -1024,74 +1024,74 @@ It is a self reference.""" ;
     """ .
 
 :antall_sider_totalt
-    a               :cristinfield ;
-    rdfs:comment    "The total number of pages. Possibly null." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "The total number of pages. Possibly null." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :publiseringsar
-    a               :cristinfield ;
-    rdfs:comment    "The year of publication for the journal" ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "The year of publication for the journal" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :hefte
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
         The issue containing the publication.
         A string holding information about the which issue it is,
         this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :status_referee_ordning
-    a               :cristinfield ;
-    rdfs:comment    "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :supplement
-    a               :cristinfield ;
-    rdfs:comment    "A area for adding information about possible attachments to the article." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "A area for adding information about possible attachments to the article." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :utbredelsesomrade
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
         Information about where or to what extent the article has been published.
         Examples: NORSK, NORDISK, INTERNASJ, NASJONALT, UKJENT""" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :artikkelnummer
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
         A string identifying the article within the journal.
         Possibly null.
         """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :arstall_trykket
-    a               :cristinfield ;
-    rdfs:comment    "The year the publication was printed." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "The year the publication was printed." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :arstall_online
-    a               :cristinfield ;
-    rdfs:comment    "The year the publication was released online." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    a            :cristinfield ;
+    rdfs:comment "The year the publication was released online." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
 
 :TIDSSKRIFT
@@ -1128,55 +1128,55 @@ It is a self reference.""" ;
     """ .
 
 :tidsskriftnr
-    a               :cristinfield ;
-    rdfs:comment    "Number identifying the specific journal within Cristin" ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    a            :cristinfield ;
+    rdfs:comment "Number identifying the specific journal within Cristin" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :nsdkode
-    a               :cristinfield ;
-    rdfs:comment    "A code representing the id in NSD-channelregistry " ;
-    rdfs:range      rdf:nil ; #unknown range
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    a            :cristinfield ;
+    rdfs:comment "A code representing the id in NSD-channelregistry " ;
+    rdfs:range   rdf:nil ; #unknown range
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :landkode_utgiver
-    a               :cristinfield ;
-    rdfs:comment    """
+    a            :cristinfield ;
+    rdfs:comment """
         The code identifying the country where the publisher is located.
         Example: NO
         Possibly null.""" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :status_referee_ordning
-    a               :cristinfield ;
-    rdfs:comment    "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no, (U)=uncertain and NULL." ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    a            :cristinfield ;
+    rdfs:comment "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no, (U)=uncertain and NULL." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :dato_utgatt
-    a               :cristinfield ;
-    rdfs:comment    """If the journal no longer exists this is the date when it disapeared.
+    a            :cristinfield ;
+    rdfs:comment """If the journal no longer exists this is the date when it disapeared.
     Information about what if any: replaced it, it merged into, or what it developed into.
     Info can be found with NSD and Cristin but is not exported as of today.
     """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :status_serie
-    a               :cristinfield ;
-    rdfs:comment    """When the value is N, this TIDSSKRIFT object represents a journal.
+    a            :cristinfield ;
+    rdfs:comment """When the value is N, this TIDSSKRIFT object represents a journal.
     When the value is J, this TIDSSKRIFT object represents a book series.
     Objects with value J are not expected to be referred to from a TYPE_TIDSSKRIFTPUBLIKASJON object.
     Objects with value J are only expected to be referred to from a TYPE_BOK_RAPPORT object.
     """ ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
     :isignored   "true" .
 
 :VARBEID_EMNEORD
