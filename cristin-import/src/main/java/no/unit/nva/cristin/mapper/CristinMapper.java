@@ -68,6 +68,7 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
@@ -86,6 +87,7 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
+
 
     private final CristinObject cristinObject;
 
@@ -253,7 +255,7 @@ public class CristinMapper {
         } else if (isJournal(cristinObject) && isJournalCorrigendum(cristinObject)) {
             return createJournalCorrigendum();
         } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
-            return createJournalArticle();
+            return createJournalArticle(cristinObject.getSecondaryCategory());
         } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
             return createReportResearch();
         } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
@@ -332,9 +334,13 @@ public class CristinMapper {
                 .build();
     }
 
-    private PublicationInstance<? extends Pages> createJournalArticle() {
+    private PublicationInstance<? extends Pages> createJournalArticle(CristinSecondaryCategory secondaryCategory) {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
+        ContentType contentTypeEnum = ContentType.fromString(secondaryCategory.getValue());
+        JournalArticleContentType contentType = JournalArticleContentType
+                .lookup(contentTypeEnum.retrieveContentTypeValue());
         return new JournalArticle.Builder()
+                   .withContent(contentType)
                    .withPages(numberOfPages)
                    .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                    .withVolume(extractVolume())
