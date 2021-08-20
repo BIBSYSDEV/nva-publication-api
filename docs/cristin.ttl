@@ -246,6 +246,11 @@
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """A keyword that is relative to a publication.""" .
 
+:VARBEID_HRCS_KLASSIFISERING_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """Biodata related entries.UNKNOWN details""" .
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -1222,4 +1227,20 @@ It is a self reference.""" ;
     rdfs:comment "The Cristin ID of the keyword (emneord)" ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
+    :isignored   "true" .
+
+
+:helsekategorikode
+    a            :cristinfield ;
+    rdfs:comment "The Cristin ID of a Health category. Reference to UNKONWN entry" ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
+    :isignored   "true" .
+
+
+:aktivitetskode
+    a            :cristinfield ;
+    rdfs:comment "The Cristin ID of a Biodata related activity category. Reference to UNKONWN entry" ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
