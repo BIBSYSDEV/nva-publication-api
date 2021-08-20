@@ -155,6 +155,25 @@
     rdfs:domain     :Result ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
+:TYPE_BOK_RAPPORT_DEL_Class
+    a               :CristinClass ;
+    rdfs:comment    """
+    Indicates that the respective  publication is a part of book or report and the fieldT YPE_BOK_RAPPORT instance contains
+    a reference to the Cristin entry  about that book or report.
+    The secondary categories that have such a field are
+    	ANNET
+	    INNLEDNING
+	    FORORD
+	    OVERSETTELSE_KAP
+	    KAPITTEL
+	    LEKSIKAL_INNF
+        POPVIT_KAPITTEL
+	    FAGLIG_KAPITTEL
+    """ ;
+    rdfs:domain     :Result ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
+
 :PRESENTASJONSTYPEKODE_ENHET
     a               rdfs:Class ;
     rdfs:label      "ENHET" ;
@@ -226,8 +245,10 @@
 :FAGFELT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """The scientific field in which the book is published""" ;
-    rdfs:subClassOf :TYPE_BOK_RAPPORT_Class .
+    rdfs:comment    """The scientific field in which the book/chapter is published
+    When the domain is TYPE_BOK_RAPPORT_DEL the respective field is always null.
+    """ ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class  .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a               rdfs:Class ;
@@ -911,10 +932,12 @@ It is a self reference.""" ;
 :antall_sider_totalt
     a               :cristinfield ;
     rdfs:comment    """
-    The total number of pages.
+    The total number of pages of the specific entry.
+    When the the entry represents a part of another entry (e.g. a Chapter in a Book) then the total number of pages
+    refers to the entry (e.g Chapter) and not the to parent entry (e.g. Book).
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
     :mapstonvafield """
         entityDescription.reference.publicationInstance.pages
     """ .
@@ -1021,19 +1044,14 @@ It is a self reference.""" ;
 
 :doi
     a               :cristinfield ;
-    rdfs:comment    "The doi connected to the respective article. Possibly null." ;
+    rdfs:comment    "The doi connected to the respective entry. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
     :mapstonvafield """
         entityDescription.reference.doi
     """ .
 
-:antall_sider_totalt
-    a            :cristinfield ;
-    rdfs:comment "The total number of pages. Possibly null." ;
-    rdfs:range   xsd:positiveInteger ;
-    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :isignored   "true" .
+
 
 :publiseringsar
     a            :cristinfield ;
@@ -1244,3 +1262,67 @@ It is a self reference.""" ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
+
+:TYPE_BOK_RAPPORT_DEL
+    a            :cristinfield ;
+    rdfs:comment """Reference to a Cristin entry that is a Book or report some info about which part of the referenced entry this entry is.""" ;
+    rdfs:range   :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain  :Result .
+
+:varbeidlopenr_inngar_i
+    a            :cristinfield ;
+    rdfs:comment """The CristinID of the referenced bok or report.""" ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:range   xsd:integer .
+
+
+
+:status_utgitt_av_forlag
+    a            :cristinfield ;
+    rdfs:comment """UNKNOWN meaning. It takes values "J" and "N" corresponding to the values true and false.""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+
+:delangivelse
+    a            :cristinfield ;
+    rdfs:comment """A free text comment describing the relation of the respective Result to the parent entry.
+    Example values: Session 2   Chapter 2, Introduction, Del I: Kunsten som metodisk univers/Kapittel 3
+    Suggestion: to be ignored.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    :isignored   true .
+
+:delangivelse
+    a            :cristinfield ;
+    rdfs:comment """A free text comment describing the relation of the respective Result to the parent entry.
+    Example values: Session 2   Chapter 2, Introduction, Del I: Kunsten som metodisk univers/Kapittel 3
+    Suggestion: to be ignored.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    :isignored   true .
+
+:sidenr_fra
+    a            :cristinfield ;
+    rdfs:comment """The starting page of the part in the respective parent entry.""" ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+:sidenr_til
+    a            :cristinfield ;
+    rdfs:comment """The ending page of the part in the respective parent entry.""" ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+:sprakkode_oversatt_fra
+    a            :cristinfield ;
+    rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP.
+ It is the language of the original document. UNKNOWN why it is necessary since tha language of the original document can be
+ extracted through the referenced Cristin entry.
+ The have been found 190 cases our of 390 entries of OVERSETTELSE_KAP  where there is a contradiction
+ between the language defined in sprakkode_oversatt_fra and the language of the original document.
+  """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
