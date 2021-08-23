@@ -68,7 +68,6 @@ import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
 import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;

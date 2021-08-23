@@ -128,7 +128,7 @@ public enum CristinSecondaryCategory {
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
-        return String.format(CONVERSION_ERROR_MESSAGE ,category, publicatoinInstanceClass.getSimpleName());
+        return String.format(CONVERSION_ERROR_MESSAGE, category, publicatoinInstanceClass.getSimpleName());
     }
 
 }
