@@ -4,7 +4,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+
+import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
 public enum CristinSecondaryCategory {
@@ -29,6 +32,9 @@ public enum CristinSecondaryCategory {
 
     public static final int DEFAULT_VALUE = 0;
     private final List<String> aliases;
+    private static final String CONVERSION_ERROR_MESSAGE = "Secondary category %s cannot be transformed to %s";
+    public static final Map<CristinSecondaryCategory, JournalArticleContentType> mapToJournalContentType =
+            createMapToJournalContentType();
 
     CristinSecondaryCategory(String... aliases) {
         this.aliases = Arrays.asList(aliases);
@@ -104,6 +110,25 @@ public enum CristinSecondaryCategory {
 
     public boolean isUnknownCategory() {
         return UNMAPPED.equals(this);
+    }
+
+    public JournalArticleContentType toJournalArticleContentType() {
+        if (mapToJournalContentType.containsKey(this)) {
+            return mapToJournalContentType.get(this);
+        } else {
+            throw new IllegalStateException(conversionError(this, JournalArticleContentType.class));
+        }
+    }
+
+    private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
+        return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
+                POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
+                ARTICLE, JournalArticleContentType.RESEARCH_ARTICLE,
+                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE);
+    }
+
+    private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {
+        return String.format(CONVERSION_ERROR_MESSAGE ,category, publicatoinInstanceClass.getSimpleName());
     }
 
 }

@@ -336,15 +336,12 @@ public class CristinMapper {
 
     private PublicationInstance<? extends Pages> createJournalArticle(CristinSecondaryCategory secondaryCategory) {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
-        ContentType contentTypeEnum = ContentType.fromString(secondaryCategory.getValue());
-        JournalArticleContentType contentType = JournalArticleContentType
-                .lookup(contentTypeEnum.retrieveContentTypeValue());
         return new JournalArticle.Builder()
-                   .withContent(contentType)
-                   .withPages(numberOfPages)
-                   .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                   .withVolume(extractVolume())
-                   .build();
+                .withContent(secondaryCategory.toJournalArticleContentType())
+                .withPages(numberOfPages)
+                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                .withVolume(extractVolume())
+                .build();
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {
