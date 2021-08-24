@@ -1236,15 +1236,19 @@ It is a self reference.""" ;
 
 :helsekategorikode
     a            :cristinfield ;
-    rdfs:comment "The Cristin ID of a Health category. Reference to UNKONWN entry" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment """Health Category Code in the UKCRC Health Research Classification System (HRCS).
+    See https://hrcsonline.net/health-categories/.
+    """ ;
+    rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
 
 
 :aktivitetskode
     a            :cristinfield ;
-    rdfs:comment "The Cristin ID of a Biodata related activity category. Reference to UNKONWN entry" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
+                     See https://hrcsonline.net/research-activities/.
+                     """ ;
+    rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
