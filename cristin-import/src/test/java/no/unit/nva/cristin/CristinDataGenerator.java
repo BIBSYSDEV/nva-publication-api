@@ -136,7 +136,7 @@ public final class CristinDataGenerator {
             case ARTICLE:
             case POPULAR_ARTICLE:
             case ACADEMIC_REVIEW:
-                return randomJournalArticle();
+                return randomJournalArticle(category);
             case RESEARCH_REPORT:
                 return randomResearchReport();
             case DEGREE_PHD:
@@ -193,8 +193,8 @@ public final class CristinDataGenerator {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_CORRIGENDUM);
     }
 
-    private static CristinObject randomJournalArticle() {
-        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
+    private static CristinObject randomJournalArticle(CristinSecondaryCategory secondaryCategory) {
+        return createRandomJournalWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static CristinObject randomResearchReport() {

@@ -87,6 +87,7 @@ public class CristinMapper {
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
 
+
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -335,10 +336,11 @@ public class CristinMapper {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                   .withPages(numberOfPages)
-                   .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                   .withVolume(extractVolume())
-                   .build();
+                .withContent(cristinObject.getSecondaryCategory().toJournalArticleContentType())
+                .withPages(numberOfPages)
+                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+                .withVolume(extractVolume())
+                .build();
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {
