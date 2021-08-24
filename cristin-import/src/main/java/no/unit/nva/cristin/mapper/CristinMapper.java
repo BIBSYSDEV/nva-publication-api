@@ -254,7 +254,7 @@ public class CristinMapper {
         } else if (isJournal(cristinObject) && isJournalCorrigendum(cristinObject)) {
             return createJournalCorrigendum();
         } else if (isJournal(cristinObject) && isJournalArticle(cristinObject)) {
-            return createJournalArticle(cristinObject.getSecondaryCategory());
+            return createJournalArticle();
         } else if (isReport(cristinObject) && isResearchReport(cristinObject)) {
             return createReportResearch();
         } else if (isReport(cristinObject) && isDegreePhd(cristinObject)) {
@@ -333,10 +333,10 @@ public class CristinMapper {
                 .build();
     }
 
-    private PublicationInstance<? extends Pages> createJournalArticle(CristinSecondaryCategory secondaryCategory) {
+    private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-                .withContent(secondaryCategory.toJournalArticleContentType())
+                .withContent(cristinObject.getSecondaryCategory().toJournalArticleContentType())
                 .withPages(numberOfPages)
                 .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
                 .withVolume(extractVolume())
