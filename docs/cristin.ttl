@@ -251,7 +251,7 @@
 :VARBEID_HRCS_KLASSIFISERING_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """Biodata related entries.UNKNOWN details""" .
+    rdfs:comment    """Classification of the publication with respect to the UKCRC Health Research Classification System (HRCS).""" .
 
 :id
     a               :cristinfield ;
