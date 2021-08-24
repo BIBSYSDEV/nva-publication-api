@@ -142,11 +142,13 @@
 :FINANSIERING_VARBEID_Class
     a            :CristinClass ;
     rdfs:comment """
-    UNKNOWN meaning.
-    The structure of FINANSIERING_VARBEID. Information about the financing of the project that this result is part of.
-    Open questions:
-    1. Is there a URI that connects a Cristin entry with some external entry describing this financing?
-    2. Is there a URI in Cristin that we can refer to for getting information about this financing project?
+    The structure of FINANSIERING_VARBEID. Information about funding (research grants) underlying this result.
+    This field resolves only grants specifically attached to this result.
+
+    Note that funding / research grants attached to Cristin projects claiming this result must be resolved through the
+    project at https://api.cristin.no/v2/projects/<project_id>
+
+    Owing to the number of funding bodies, there is no uniform way to dereference grants externally.
     """ .
 
 :TYPE_BOK_RAPPORT_Class
@@ -849,16 +851,18 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """Internal Cristin ID of a project-financing entry.""" ;
+    rdfs:comment """Internal Cristin ID of a funding entry / research grant.
+    Can be dereferenced at https://api.cristin.no/v2/fundings/<finansieringslopenr>
+    """ ;
     :isignored   true .
 
 :finansieringskildekode
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """Code representing who is the provider of the money. Possible values include "EU","NFR.
-    Open questions:
-    1. Is this a limited list or is it free text?
+    rdfs:comment """Code representing the funding body that awarded the research grant.
+    Possible values include "EU","NFR".
+    A list of possible values can be found at https://api.cristin.no/v2/fundings/sources?lang=en,nb,nn
     """ ;
     :isignored   true .
 
@@ -866,28 +870,28 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """The external entry id of the project financing where Cristin copied the data from. """ ;
+    rdfs:comment """The external entry id of the research grant, used by the funding body.""" ;
     :isignored   true .
 
 :belop
     a            :cristinfield ;
     rdfs:range   xsd:nil ; # Always empty
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """Probably the amount of money for this project financing. This field is always empty.""" ;
+    rdfs:comment """The amount of money awarded in this grant. This field is always empty.""" ;
     :isignored   true .
 
 :arstall_fra
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """Year the project financing started""" ;
+    rdfs:comment """Year the funding / research grant started""" ;
     :isignored   true .
 
 :arstall_til
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
-    rdfs:comment """Year the project financing ended.""" ;
+    rdfs:comment """Year the funding / research grant ended.""" ;
     :isignored   true .
 
 
