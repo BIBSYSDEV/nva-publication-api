@@ -94,7 +94,6 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
-
 :TYPE_MEDIEBIDRAG_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
@@ -138,6 +137,22 @@
 :PRESENTASJONSTYPEKODE_PROSJEKT
     a               rdfs:Class ;
     rdfs:label      "PROSJEKT" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
+:FINANSIERING_VARBEID_Class
+    a            :CristinClass ;
+    rdfs:comment """
+    The structure of FINANSIERING_VARBEID. Information about funding (research grants) underlying this result.
+    This field resolves only grants specifically attached to this result.
+
+    Note that funding / research grants attached to Cristin projects claiming this result must be resolved through the
+    project at https://api.cristin.no/v2/projects/<project_id>
+
+    Owing to the number of funding bodies, there is no uniform way to dereference grants externally.
+    """ .
+
+:TYPE_BOK_RAPPORT_Class
+    a               :CristinClass ;
     rdfs:comment    "Indicates that the respective PRESENTASJON_VARBEID_Class instance is a reference to a Cristin project" ;
     rdfs:domain     :Result ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
@@ -830,6 +845,54 @@ It is a self reference.""" ;
     publications of the author.
     """ ;
     :isignored   false .
+
+
+:finansieringslopenr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Internal Cristin ID of a funding entry / research grant.
+    Can be dereferenced at https://api.cristin.no/v2/fundings/<finansieringslopenr>
+    """ ;
+    :isignored   true .
+
+:finansieringskildekode
+    a            :cristinfield ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Code representing the funding body that awarded the research grant.
+    Possible values include "EU","NFR".
+    A list of possible values can be found at https://api.cristin.no/v2/fundings/sources?lang=en,nb,nn
+    """ ;
+    :isignored   true .
+
+:finansieringsreferanse
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """The external entry id of the research grant, used by the funding body.""" ;
+    :isignored   true .
+
+:belop
+    a            :cristinfield ;
+    rdfs:range   xsd:nil ; # Always empty
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """The amount of money awarded in this grant. This field is always empty.""" ;
+    :isignored   true .
+
+:arstall_fra
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Year the funding / research grant started""" ;
+    :isignored   true .
+
+:arstall_til
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Year the funding / research grant ended.""" ;
+    :isignored   true .
 
 
 
