@@ -52,6 +52,7 @@ public class PublicationInstanceBuilder {
         this.mapper = new CristinMapper(cristinObject);
     }
 
+    @SuppressWarnings("PMD.CognitiveComplexity")
     public PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook(cristinObject) && CristinSecondaryCategory.isAnthology(cristinObject)) {
             return createBookAnthology();
