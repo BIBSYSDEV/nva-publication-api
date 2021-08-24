@@ -41,6 +41,7 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinMapper;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.PublicationInstanceBuilder;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -204,7 +205,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Throwable cause = exception.getCause();
         assertThat(cause, is(instanceOf(UnsupportedOperationException.class)));
-        assertThat(cause.getMessage(), is(equalTo(CristinMapper.ERROR_PARSING_MAIN_CATEGORY)));
+        assertThat(cause.getMessage(), is(equalTo(PublicationInstanceBuilder.ERROR_PARSING_MAIN_CATEGORY)));
     }
 
     @Test
@@ -261,7 +262,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Throwable cause = exception.getCause();
         assertThat(cause, is(instanceOf(UnsupportedOperationException.class)));
-        assertThat(cause.getMessage(), is(containsString(CristinMapper.ERROR_PARSING_SECONDARY_CATEGORY)));
+        assertThat(cause.getMessage(), is(containsString(PublicationInstanceBuilder.ERROR_PARSING_SECONDARY_CATEGORY)));
     }
 
     @Test
