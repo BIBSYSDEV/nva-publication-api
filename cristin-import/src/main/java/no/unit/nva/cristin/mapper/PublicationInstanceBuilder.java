@@ -16,6 +16,7 @@ import no.unit.nva.model.instancetypes.report.ReportResearch;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import software.amazon.awssdk.utils.Validate;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
@@ -39,17 +40,17 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchRepo
 @SuppressWarnings("PMD.GodClass")
 public class PublicationInstanceBuilder {
 
+    public static final String ERROR_CRISTIN_OBJECT_IS_NULL = "CristinObject can not be null";
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
     public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
             + "categories";
 
     private final CristinObject cristinObject;
-    private final CristinMapper mapper;
 
     public PublicationInstanceBuilder(CristinObject cristinObject) {
+        Validate.notNull(cristinObject, ERROR_CRISTIN_OBJECT_IS_NULL);
         this.cristinObject = cristinObject;
-        this.mapper = new CristinMapper(cristinObject);
     }
 
     @SuppressWarnings("PMD.CognitiveComplexity")
@@ -181,19 +182,19 @@ public class PublicationInstanceBuilder {
     }
 
     private String extractPagesBegin() {
-        return mapper.extractCristinJournalPublication().getPagesBegin();
+        return cristinObject.getJournalPublication().getPagesBegin();
     }
 
     private String extractPagesEnd() {
-        return mapper.extractCristinJournalPublication().getPagesEnd();
+        return cristinObject.getJournalPublication().getPagesEnd();
     }
 
     private String extractVolume() {
-        return mapper.extractCristinJournalPublication().getVolume();
+        return cristinObject.getJournalPublication().getVolume();
     }
 
     private String extractNumberOfPages() {
-        return mapper.extractCristinBookReport().getNumberOfPages();
+        return cristinObject.getBookOrReportMetadata().getNumberOfPages();
     }
 
 }
