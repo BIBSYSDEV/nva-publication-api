@@ -137,9 +137,9 @@ public class CristinMapper {
     }
 
     private Reference buildReference() {
-        PublicationInstanceBuilder publicationInstanceBuilder = new PublicationInstanceBuilder(cristinObject);
+        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
-                = publicationInstanceBuilder.buildPublicationInstance();
+                = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow();
         return new Reference.Builder()
                    .withPublicationInstance(publicationInstance)
@@ -274,7 +274,7 @@ public class CristinMapper {
         return extractCristinBookReport().getSubjectField();
     }
 
-    public CristinJournalPublication extractCristinJournalPublication() {
+    private CristinJournalPublication extractCristinJournalPublication() {
         return Optional.ofNullable(cristinObject)
                 .map(CristinObject::getJournalPublication)
                 .orElse(null);

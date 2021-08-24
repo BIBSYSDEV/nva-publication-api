@@ -9,15 +9,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class PublicationInstanceBuilderTest {
+public class PublicationInstanceBuilderImplTest {
 
     @Test
     public void publicationInstanceBuilderConstructorThrowsNullPointerExceptionIfParameterIsNull() {
         CristinObject cristinObjectThatIsNull = null;
-        AtomicReference<PublicationInstanceBuilder> publicationInstanceBuilder = null;
+        AtomicReference<PublicationInstanceBuilderImpl> publicationInstanceBuilder = null;
         Executable action = () ->
-                publicationInstanceBuilder.set(new PublicationInstanceBuilder(cristinObjectThatIsNull));
+                publicationInstanceBuilder.set(new PublicationInstanceBuilderImpl(cristinObjectThatIsNull));
         NullPointerException exception = assertThrows(NullPointerException.class, action);
-        assertThat(exception.getMessage(),containsString(PublicationInstanceBuilder.ERROR_CRISTIN_OBJECT_IS_NULL));
+        assertThat(exception.getMessage(),containsString(PublicationInstanceBuilderImpl.ERROR_CRISTIN_OBJECT_IS_NULL));
     }
 }
