@@ -119,6 +119,10 @@ public final class CristinDataGenerator {
         CristinSecondaryCategory category = CristinSecondaryCategory.fromString(secondaryCategory);
         switch (category) {
             case MONOGRAPH:
+            case TEXTBOOK:
+            case NON_FICTION_BOOK:
+            case ENCYCLOPEDIA:
+            case POPULAR_BOOK:
                 return randomBookMonograph();
             case ANTHOLOGY:
                 return randomBookAnthology();
@@ -147,8 +151,6 @@ public final class CristinDataGenerator {
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
                 return randomChapterArticle();
-
-
             default:
                 break;
         }

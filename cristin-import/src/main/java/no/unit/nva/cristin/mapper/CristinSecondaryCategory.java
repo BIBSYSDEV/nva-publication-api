@@ -13,6 +13,10 @@ import nva.commons.core.SingletonCollector;
 public enum CristinSecondaryCategory {
     ANTHOLOGY("ANTOLOGI", "ANTHOLOGY"),
     MONOGRAPH("MONOGRAFI", "MONOGRAPH"),
+    TEXTBOOK("LÆREBOK", "TEXTBOOK"),
+    NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
+    ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
+    POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
@@ -60,7 +64,11 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isMonograph(CristinObject cristinObject) {
-        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.MONOGRAPH.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.TEXTBOOK.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
