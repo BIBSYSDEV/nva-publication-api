@@ -262,6 +262,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Throwable cause = exception.getCause();
         assertThat(cause, is(instanceOf(UnsupportedOperationException.class)));
         assertThat(cause.getMessage(), containsString(PublicationInstanceBuilderImpl.ERROR_PARSING_SECONDARY_CATEGORY));
+
     }
 
     @Test
