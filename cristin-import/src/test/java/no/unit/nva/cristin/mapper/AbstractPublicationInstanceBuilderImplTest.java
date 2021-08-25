@@ -9,7 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class PublicationInstanceBuilderImplTest {
+public class AbstractPublicationInstanceBuilderImplTest {
 
     @Test
     public void publicationInstanceBuilderConstructorThrowsNullPointerExceptionIfParameterIsNull() {

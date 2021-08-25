@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorrigendum;
@@ -18,38 +17,34 @@ import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 
-public class JournalBuilder implements PublicationInstanceBuilder {
-
-    public static final String MAIN_CATEGORY_JOURNAL = "Journal (TIDSSKRIFTPUBL)";
-
-    private final CristinObject cristinObject;
+public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     public JournalBuilder(CristinObject cristinObject) {
-        if (!isJournal(cristinObject)) {
-            throw new IllegalStateException(
-                    String.format(ERROR_NOT_CORRECT_TYPE, this.getClass().getSimpleName(), MAIN_CATEGORY_JOURNAL)
-            );
-        }
-        this.cristinObject = cristinObject;
+        super(cristinObject);
     }
 
     @Override
     public PublicationInstance<? extends Pages> build() {
-        if (isFeatureArticle(cristinObject)) {
+        if (isFeatureArticle(getCristinObject())) {
             return createFeatureArticle();
-        } else if (isJournalLetter(cristinObject)) {
+        } else if (isJournalLetter(getCristinObject())) {
             return createJournalLetter();
-        } else if (isJournalLeader(cristinObject)) {
+        } else if (isJournalLeader(getCristinObject())) {
             return createJournalLeader();
-        } else if (isJournalReview(cristinObject)) {
+        } else if (isJournalReview(getCristinObject())) {
             return createJournalReview();
-        } else if (isJournalCorrigendum(cristinObject)) {
+        } else if (isJournalCorrigendum(getCristinObject())) {
             return createJournalCorrigendum();
-        } else if (isJournalArticle(cristinObject)) {
+        } else if (isJournalArticle(getCristinObject())) {
             return createJournalArticle();
         } else {
             throw unknownSecondaryCategory();
         }
+    }
+
+    @Override
+    protected CristinMainCategory getExpectedType() {
+        return CristinMainCategory.JOURNAL;
     }
 
     private PublicationInstance<? extends Pages> createFeatureArticle() {
@@ -95,7 +90,7 @@ public class JournalBuilder implements PublicationInstanceBuilder {
     private PublicationInstance<? extends Pages> createJournalArticle() {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalArticle.Builder()
-            .withContent(cristinObject.getSecondaryCategory().toJournalArticleContentType())
+            .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
             .withPages(numberOfPages)
             .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
             .withVolume(extractVolume())
@@ -103,14 +98,14 @@ public class JournalBuilder implements PublicationInstanceBuilder {
     }
 
     private String extractPagesBegin() {
-        return cristinObject.getJournalPublication().getPagesBegin();
+        return getCristinObject().getJournalPublication().getPagesBegin();
     }
 
     private String extractPagesEnd() {
-        return cristinObject.getJournalPublication().getPagesEnd();
+        return getCristinObject().getJournalPublication().getPagesEnd();
     }
 
     private String extractVolume() {
-        return cristinObject.getJournalPublication().getVolume();
+        return getCristinObject().getJournalPublication().getVolume();
     }
 }

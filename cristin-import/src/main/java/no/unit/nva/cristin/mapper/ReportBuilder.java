@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isResearchReport;
@@ -12,27 +11,17 @@ import no.unit.nva.model.pages.Pages;
 
 public class ReportBuilder extends AbstractBookReportBuilder {
 
-    public static final String MAIN_CATEGORY_REPORT = "Report (RAPPORT)";
-
-    private final CristinObject cristinObject;
-
     public ReportBuilder(CristinObject cristinObject) {
-        super();
-        if (!isReport(cristinObject)) {
-            throw new IllegalStateException(
-                    String.format(ERROR_NOT_CORRECT_TYPE, this.getClass().getSimpleName(), MAIN_CATEGORY_REPORT)
-            );
-        }
-        this.cristinObject = cristinObject;
+        super(cristinObject);
     }
 
     @Override
     public PublicationInstance<? extends Pages> build() {
-        if (isResearchReport(cristinObject)) {
+        if (isResearchReport(getCristinObject())) {
             return createReportResearch();
-        } else if (isDegreePhd(cristinObject)) {
+        } else if (isDegreePhd(getCristinObject())) {
             return createDegreePhd();
-        } else if (isDegreeMaster(cristinObject)) {
+        } else if (isDegreeMaster(getCristinObject())) {
             return createDegreeMaster();
         } else {
             throw unknownSecondaryCategory();
@@ -40,8 +29,8 @@ public class ReportBuilder extends AbstractBookReportBuilder {
     }
 
     @Override
-    protected CristinObject getCristinObject() {
-        return this.cristinObject;
+    protected CristinMainCategory getExpectedType() {
+        return CristinMainCategory.REPORT;
     }
 
     private PublicationInstance<? extends Pages> createReportResearch() {

@@ -2,7 +2,6 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -11,25 +10,15 @@ import no.unit.nva.model.pages.Pages;
 
 public class BookBuilder extends AbstractBookReportBuilder {
 
-    public static final String MAIN_CATEGORY_BOOK = "Book (BOK)";
-
-    private final CristinObject cristinObject;
-
     public BookBuilder(CristinObject cristinObject) {
-        super();
-        if (!isBook(cristinObject)) {
-            throw new IllegalStateException(
-                    String.format(ERROR_NOT_CORRECT_TYPE, this.getClass().getSimpleName(), MAIN_CATEGORY_BOOK)
-            );
-        }
-        this.cristinObject = cristinObject;
+        super(cristinObject);
     }
 
     @Override
     public PublicationInstance<? extends Pages> build() {
-        if (CristinSecondaryCategory.isAnthology(cristinObject)) {
+        if (CristinSecondaryCategory.isAnthology(getCristinObject())) {
             return createBookAnthology();
-        } else if (isMonograph(cristinObject)) {
+        } else if (isMonograph(getCristinObject())) {
             return createBookMonograph();
         } else {
             throw unknownSecondaryCategory();
@@ -37,8 +26,8 @@ public class BookBuilder extends AbstractBookReportBuilder {
     }
 
     @Override
-    protected CristinObject getCristinObject() {
-        return cristinObject;
+    protected CristinMainCategory getExpectedType() {
+        return CristinMainCategory.BOOK;
     }
 
     private BookAnthology createBookAnthology() {

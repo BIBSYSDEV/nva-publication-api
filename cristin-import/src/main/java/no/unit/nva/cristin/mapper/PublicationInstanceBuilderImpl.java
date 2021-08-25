@@ -8,7 +8,7 @@ import java.util.Objects;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 
-public class PublicationInstanceBuilderImpl implements PublicationInstanceBuilder {
+public class PublicationInstanceBuilderImpl  {
 
     public static final String ERROR_CRISTIN_OBJECT_IS_NULL = "CristinObject can not be null";
     public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
@@ -23,12 +23,8 @@ public class PublicationInstanceBuilderImpl implements PublicationInstanceBuilde
         this.cristinObject = cristinObject;
     }
 
-    @Override
-    public PublicationInstance<? extends Pages> build() {
-        return buildPublicationInstance();
-    }
 
-    private PublicationInstance<? extends Pages> buildPublicationInstance() {
+    public PublicationInstance<? extends Pages> build() {
         if (isBook(cristinObject)) {
             return new BookBuilder(cristinObject).build();
         } else if (isReport(cristinObject)) {
