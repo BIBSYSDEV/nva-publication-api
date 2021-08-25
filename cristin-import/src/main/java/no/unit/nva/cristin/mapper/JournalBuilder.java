@@ -20,11 +20,15 @@ import no.unit.nva.model.pages.Range;
 
 public class JournalBuilder implements PublicationInstanceBuilder {
 
+    public static final String MAIN_CATEGORY_JOURNAL = "Journal (TIDSSKRIFTPUBL)";
+
     private final CristinObject cristinObject;
 
     public JournalBuilder(CristinObject cristinObject) {
         if (!isJournal(cristinObject)) {
-            throw new IllegalStateException("Not a journal");
+            throw new IllegalStateException(
+                    String.format(ERROR_NOT_CORRECT_TYPE, this.getClass().getSimpleName(), MAIN_CATEGORY_JOURNAL)
+            );
         }
         this.cristinObject = cristinObject;
     }

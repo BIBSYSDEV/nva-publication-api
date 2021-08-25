@@ -137,7 +137,8 @@ public class CristinMapper {
     }
 
     private Reference buildReference() {
-        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl = new PublicationInstanceBuilderImpl(cristinObject);
+        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl
+                = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
                 = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow();

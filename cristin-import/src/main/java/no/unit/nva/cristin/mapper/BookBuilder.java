@@ -11,12 +11,16 @@ import no.unit.nva.model.pages.Pages;
 
 public class BookBuilder extends AbstractBookReportBuilder {
 
+    public static final String MAIN_CATEGORY_BOOK = "Book (BOK)";
+
     private final CristinObject cristinObject;
 
     public BookBuilder(CristinObject cristinObject) {
         super();
         if (!isBook(cristinObject)) {
-            throw new IllegalStateException("Not a book");
+            throw new IllegalStateException(
+                    String.format(ERROR_NOT_CORRECT_TYPE, this.getClass().getSimpleName(), MAIN_CATEGORY_BOOK)
+            );
         }
         this.cristinObject = cristinObject;
     }

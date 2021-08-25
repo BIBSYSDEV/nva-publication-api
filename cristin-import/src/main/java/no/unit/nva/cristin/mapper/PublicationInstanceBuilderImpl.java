@@ -8,7 +8,6 @@ import java.util.Objects;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 
-//@SuppressWarnings("PMD.GodClass")
 public class PublicationInstanceBuilderImpl implements PublicationInstanceBuilder {
 
     public static final String ERROR_CRISTIN_OBJECT_IS_NULL = "CristinObject can not be null";
@@ -29,7 +28,6 @@ public class PublicationInstanceBuilderImpl implements PublicationInstanceBuilde
         return buildPublicationInstance();
     }
 
-    @SuppressWarnings("PMD.CognitiveComplexity")
     private PublicationInstance<? extends Pages> buildPublicationInstance() {
         if (isBook(cristinObject)) {
             return new BookBuilder(cristinObject).build();
