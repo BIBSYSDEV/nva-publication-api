@@ -14,35 +14,19 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext of type "Book"
 
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "MONOGRAFI"
+  Scenario Outline: Cristin Result "Academic Monograph, Non-fiction Monograph, Popular Science Monograph,
+  Textbook, Encyclopedia" is converted to NVA Resource type BookMonograph and correct sub-type
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "Academic Monograph"
-
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "LÆREBOK"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "Textbook"
-
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "FAGBOK"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "Non-fiction Monograph"
-
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "LEKSIKON"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "Encyclopedia"
-
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "POPVIT_BOK"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "BookMonograph"
-    And the NVA BookMonograph Resource has a Content type of type "Popular Science Monograph"
+    And the NVA BookMonograph Resource has a Content type of type "<contentType>"
+    Examples:
+      | secondaryCategory | contentType               |
+      | MONOGRAFI         | Academic Monograph        |
+      | LÆREBOK           | Textbook                  |
+      | FAGBOK            | Non-fiction Monograph     |
+      | LEKSIKON          | Encyclopedia              |
+      | POPVIT_BOK        | Popular Science Monograph |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
