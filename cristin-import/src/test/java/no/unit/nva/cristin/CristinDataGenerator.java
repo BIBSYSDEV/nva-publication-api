@@ -123,7 +123,7 @@ public final class CristinDataGenerator {
             case NON_FICTION_BOOK:
             case ENCYCLOPEDIA:
             case POPULAR_BOOK:
-                return randomBookMonograph();
+                return randomBookMonograph(category);
             case ANTHOLOGY:
                 return randomBookAnthology();
             case FEATURE_ARTICLE:
@@ -171,8 +171,8 @@ public final class CristinDataGenerator {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
     }
 
-    public static CristinObject randomBookMonograph() {
-        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
+    public static CristinObject randomBookMonograph(CristinSecondaryCategory secondaryCategory) {
+        return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static CristinObject randomFeatureArticle() {

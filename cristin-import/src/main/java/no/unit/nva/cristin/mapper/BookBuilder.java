@@ -40,6 +40,7 @@ public class BookBuilder extends AbstractBookReportBuilder {
 
     private BookMonograph createBookMonograph() {
         return new BookMonograph.Builder()
+            .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
             .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
             .withPages(createMonographPages())
             .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
