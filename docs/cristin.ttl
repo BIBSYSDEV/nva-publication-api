@@ -248,6 +248,11 @@
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """A keyword that is relative to a publication.""" .
 
+:VARBEID_HRCS_KLASSIFISERING_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """Classification of the publication with respect to the UKCRC Health Research Classification System (HRCS).""" .
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -1226,4 +1231,24 @@ It is a self reference.""" ;
     rdfs:comment "The Cristin ID of the keyword (emneord)" ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
+    :isignored   "true" .
+
+
+:helsekategorikode
+    a            :cristinfield ;
+    rdfs:comment """Health Category Code in the UKCRC Health Research Classification System (HRCS).
+    See https://hrcsonline.net/health-categories/.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
+    :isignored   "true" .
+
+
+:aktivitetskode
+    a            :cristinfield ;
+    rdfs:comment """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
+                     See https://hrcsonline.net/research-activities/.
+                     """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
