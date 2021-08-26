@@ -165,7 +165,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookMonographWhenInputHasMainTypeBookAndSecondaryTypeMonograph() {
-        testingData = Stream.of(CristinDataGenerator.randomBookMonograph())
+        testingData = Stream.of(CristinDataGenerator.randomBookMonograph(CristinSecondaryCategory.MONOGRAPH))
                           .map(JsonSerializable::toJsonString)
                           .collect(SingletonCollector.collect());
 

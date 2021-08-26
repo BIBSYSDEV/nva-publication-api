@@ -18,26 +18,31 @@ Feature: Book conversion rules
     Given a valid Cristin Result with secondary category "MONOGRAFI"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
+    And the NVA BookMonograph Resource has a Content type of type "Academic Monograph"
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
     Given a valid Cristin Result with secondary category "LÆREBOK"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
+    And the NVA BookMonograph Resource has a Content type of type "Textbook"
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
     Given a valid Cristin Result with secondary category "FAGBOK"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
+    And the NVA BookMonograph Resource has a Content type of type "Non-fiction Monograph"
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
     Given a valid Cristin Result with secondary category "LEKSIKON"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
+    And the NVA BookMonograph Resource has a Content type of type "Encyclopedia"
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
     Given a valid Cristin Result with secondary category "POPVIT_BOK"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
+    And the NVA BookMonograph Resource has a Content type of type "Popular Science Monograph"
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
