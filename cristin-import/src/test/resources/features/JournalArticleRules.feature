@@ -64,6 +64,17 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource has a PublicationContext with volume equal to "1"
 
+  Scenario Outline: Cristin Entry's Journal Publication "issue" entry. is copied to Journal Article's  "issue" field.
+    Given that the Cristin Result has a non empty Journal Publication
+    And the Journal Publication has a "issue" entry equal to "<issue>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva Resource, Journal Article, has a PublicationContext with issue equal to "<issue>"
+    Examples:
+      | issue        |
+      | VI           |
+      | 123          |
+      | some volume  |
+
   Scenario: Cristin Entry's Journal Publication "doi" entry is copied as is in the Reference's doi entry.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "doi" entry equal to "10.1093/ajae/aaq063"

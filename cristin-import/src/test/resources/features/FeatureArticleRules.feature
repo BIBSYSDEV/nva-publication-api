@@ -39,3 +39,14 @@ Feature: Mapping of "Feature article" entries
       | VI           |
       | 123          |
       | some volume  |
+
+  Scenario Outline: Cristin Entry's Journal Publication "issue" entry. is copied to Feature Article's  "issue" field.
+    Given that the Cristin Result has a non empty Journal Publication
+    And the Journal Publication has a "issue" entry equal to "<issue>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva Resource, FeatureArticle, has a PublicationContext with issue equal to "<issue>"
+    Examples:
+      | issue        |
+      | VI           |
+      | 123          |
+      | some volume  |

@@ -52,6 +52,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         return new FeatureArticle.Builder()
             .withPages(numberOfPages)
             .withVolume(extractVolume())
+            .withIssue(extractIssue())
             .build();
     }
 
@@ -59,6 +60,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLetter.Builder()
             .withPages(numberOfPages)
+            .withIssue(extractIssue())
             .withVolume(extractVolume())
             .build();
     }
@@ -67,6 +69,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalReview.Builder()
             .withPages(numberOfPages)
+            .withIssue(extractIssue())
             .withVolume(extractVolume())
             .build();
     }
@@ -75,6 +78,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalLeader.Builder()
             .withPages(numberOfPages)
+            .withIssue(extractIssue())
             .withVolume(extractVolume())
             .build();
     }
@@ -83,6 +87,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         Range numberOfPages = new Range(extractPagesBegin(), extractPagesEnd());
         return new JournalCorrigendum.Builder()
             .withPages(numberOfPages)
+            .withIssue(extractIssue())
             .withVolume(extractVolume())
             .build();
     }
@@ -92,6 +97,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
         return new JournalArticle.Builder()
             .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
             .withPages(numberOfPages)
+            .withIssue(extractIssue())
             .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
             .withVolume(extractVolume())
             .build();
@@ -107,5 +113,9 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
 
     private String extractVolume() {
         return getCristinObject().getJournalPublication().getVolume();
+    }
+
+    private String extractIssue() {
+        return getCristinObject().getJournalPublication().getIssue();
     }
 }
