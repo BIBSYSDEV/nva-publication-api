@@ -1259,7 +1259,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
-          BATCH_EMISSION_INTERVAL_MILLIS: 500
+          BATCH_EMISSION_INTERVAL_MILLIS: 350
 
 
   #============================ Deploy API ============================================================================#
