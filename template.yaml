@@ -1261,6 +1261,7 @@ Resources:
           IMPORT_EVENT_TYPE: import.cristin.entry-event
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
+
   #============================ Deploy API ============================================================================#
   # This solves the problem described here:
   # https://stackoverflow.com/questions/41423439/cloudformation-doesnt-deploy-to-api-gateway-stages-on-update
