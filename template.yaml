@@ -1195,7 +1195,7 @@ Resources:
       CodeUri: s3-import-commons
       Handler: no.unit.nva.publication.s3imports.FileEntriesEventEmitter::handleRequest
       Runtime: java11
-      MemorySize: 512
+      MemorySize: 2048
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
       Environment:
@@ -1259,7 +1259,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
-          BATCH_EMISSION_INTERVAL_MILLIS: 350
+          BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 
   #============================ Deploy API ============================================================================#
