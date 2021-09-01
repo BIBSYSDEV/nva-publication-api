@@ -825,7 +825,6 @@ Cristin.
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
-
 :TYPE_MEDIEBIDRAG
     a            :cristinfield ;
     rdfs:range   :TYPE_MEDIEBIDRAG_Class ;
@@ -871,7 +870,6 @@ It is a self reference.""" ;
     publications of the author.
     """ ;
     :isignored   false .
-
 
 :finansieringslopenr
     a            :cristinfield ;
@@ -919,8 +917,6 @@ It is a self reference.""" ;
     rdfs:domain  :FINANSIERING_VARBEID_Class ;
     rdfs:comment """Year the funding / research grant ended.""" ;
     :isignored   true .
-
-
 
 :TYPE_BOK_RAPPORT
     a               :cristinfield ;
@@ -971,7 +967,6 @@ It is a self reference.""" ;
     rdfs:range   :FAGFELT_Class ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
 .
-
 
 :fagfeltkode
     a               :cristinfield ;
@@ -1054,8 +1049,6 @@ It is a self reference.""" ;
     :mapstonvafield """
         entityDescription.reference.doi
     """ .
-
-
 
 :publiseringsar
     a            :cristinfield ;
@@ -1251,7 +1244,6 @@ It is a self reference.""" ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
     :isignored   "true" .
 
-
 :helsekategorikode
     a            :cristinfield ;
     rdfs:comment """Health Category Code in the UKCRC Health Research Classification System (HRCS).
@@ -1260,7 +1252,6 @@ It is a self reference.""" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .
-
 
 :aktivitetskode
     a            :cristinfield ;
@@ -1282,8 +1273,6 @@ It is a self reference.""" ;
     rdfs:comment """The CristinID of the referenced bok or report.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
     rdfs:range   xsd:integer .
-
-
 
 :status_utgitt_av_forlag
     a            :cristinfield ;
