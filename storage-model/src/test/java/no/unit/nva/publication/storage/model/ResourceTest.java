@@ -28,7 +28,6 @@ import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Grant;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.Level;
 import no.unit.nva.model.License;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
@@ -162,6 +161,7 @@ public class ResourceTest {
                    .withDoiRequest(EMPTY_DOI_REQUEST)
                    .withEntityDescription(sampleEntityDescription(reference))
                    .withAdditionalIdentifiers(sampleAdditionalIdentifiers())
+                   .withSubjects(List.of(randomUri()))
                    .build();
     }
 
@@ -228,16 +228,11 @@ public class ResourceTest {
                    .build();
     }
     
-    private Journal sampleJournalInstance() throws InvalidIssnException, MalformedURLException {
+    private Journal sampleJournalInstance() throws InvalidIssnException {
         return new Journal.Builder()
-                   .withLevel(Level.LEVEL_2)
                    .withOnlineIssn(SAMPLE_ISSN)
                    .withTitle(randomString())
-                   .withOpenAccess(NON_DEFAULT_BOOLEAN_VALUE)
-                   .withPeerReviewed(NON_DEFAULT_BOOLEAN_VALUE)
                    .withPrintIssn(SAMPLE_ISSN)
-                   .withUrl(randomUri().toURL())
-                   .withLinkedContext(randomUri())
                    .build();
     }
     
