@@ -29,13 +29,24 @@ Feature: Mapping of "Letter to the editor" entries
       | 123          |
       | some page    |
 
-  Scenario Outline: Cristin Entry's Journal Publication "volume" entry. is copied to Journal Article's  "volume" field.
+  Scenario Outline: Cristin Entry's Journal Publication "volume" entry. is copied to Journal Letter's  "volume" field.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "volume" entry equal to "<volume>"
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, JournalLetter, has a PublicationContext with volume equal to "<volume>"
     Examples:
       | volume       |
+      | VI           |
+      | 123          |
+      | some volume  |
+
+  Scenario Outline: Cristin Entry's Journal Publication "issue" entry. is copied to Journal Letter's  "issue" field.
+    Given that the Cristin Result has a non empty Journal Publication
+    And the Journal Publication has a "issue" entry equal to "<issue>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the Nva Resource, Journal Letter, has a PublicationContext with issue equal to "<issue>"
+    Examples:
+      | issue        |
       | VI           |
       | 123          |
       | some volume  |

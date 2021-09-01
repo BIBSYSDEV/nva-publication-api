@@ -6,6 +6,8 @@ import static no.unit.nva.cristin.CristinDataGenerator.smallRandomNumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
@@ -41,6 +43,7 @@ public class JournalFeatures {
             .withPagesEnd(String.valueOf(smallRandomNumber()))
             .withVolume(String.valueOf(smallRandomNumber()))
             .withDoi(String.valueOf(smallRandomNumber()))
+            .withIssue(String.valueOf(smallRandomNumber()))
             .build();
         scenarioContext.getCristinEntry().setJournalPublication(journalPublication);
     }
@@ -373,5 +376,84 @@ public class JournalFeatures {
         JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
         String actualVolume = journalCorrigendum.getVolume();
         assertThat(actualVolume, is(equalTo(expectedVolume)));
+    }
+
+    @And("the Journal Publication has a \"issue\" entry equal to {string}")
+    public void theJournalPublicationHasAIssueEntryEqualTo(String issue) {
+        scenarioContext.getCristinEntry()
+                .getJournalPublication()
+                .setIssue(issue);
+    }
+
+    @Then("the Nva Resource, FeatureArticle, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceFeatureArticleHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        FeatureArticle featureArticle = (FeatureArticle) instance;
+        String actualIssue = featureArticle.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @Then("the Nva Resource, Journal Article, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceJournalArticleHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalArticle journalArticle = (JournalArticle) instance;
+        String actualIssue = journalArticle.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @Then("the Nva Resource, JournalCorrigendum, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceJournalCorrigendumHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalCorrigendum journalCorrigendum = (JournalCorrigendum) instance;
+        String actualIssue = journalCorrigendum.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @Then("the Nva Resource, Journal Leader, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceJournalLeaderHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalLeader journalLeader = (JournalLeader) instance;
+        String actualIssue = journalLeader.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @Then("the Nva Resource, Journal Letter, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceJournalLetterHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalLetter journalLetter = (JournalLetter) instance;
+        String actualIssue = journalLetter.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
+    }
+
+    @Then("the Nva Resource, Journal Review, has a PublicationContext with issue equal to {string}")
+    public void theNvaResourceJournalReviewHasAPublicationContextWithIssueEqualTo(String expectedIssue) {
+        PublicationInstance<? extends Pages> instance = scenarioContext
+                .getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalReview journalReview = (JournalReview) instance;
+        String actualIssue = journalReview.getIssue();
+        assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
 }
