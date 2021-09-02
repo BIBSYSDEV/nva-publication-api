@@ -109,7 +109,7 @@ Feature: Book conversion rules
 
   Scenario: Mapping does not fail when a Cristin Result that is a "Book" has a null value for isbn.
     Given a valid Cristin Result with secondary category "MONOGRAFI"
-    And the cristin result's isbn is set to null
+    And the Cristin Result does not have an ISBN
     When the Cristin Result is converted to an NVA Resource
     Then no error is reported.
 
