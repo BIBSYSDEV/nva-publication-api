@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
@@ -169,9 +169,7 @@ public class CristinMapper {
 
     private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
         List<String> isbnList = new ArrayList<>();
-        if (isNull(extractIsbn())) {
-            isbnList = null;
-        } else {
+        if (nonNull(extractIsbn())) {
             isbnList.add(extractIsbn());
         }
         return new Book.Builder()

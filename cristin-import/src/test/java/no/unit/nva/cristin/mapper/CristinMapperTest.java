@@ -382,21 +382,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapperThrowsExceptionWhenIsbnValueIsNull() {
-        CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookOrReportMetadata().setIsbn(null);
-
-        Executable action = cristinInput::toPublication;
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-
-        Throwable cause = exception.getCause();
-
-        assertThat(cause.getClass().getSimpleName(),
-                   is(equalTo(InvalidIsbnException.class.getSimpleName())));
-        assertThat(cause.getMessage(), is(equalTo(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY))));
-    }
-
-    @Test
     public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
         CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
         cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
