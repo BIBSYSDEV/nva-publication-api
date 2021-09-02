@@ -131,4 +131,9 @@ public class BookFeatures {
     public void theCristinResultDoesNotHaveAnIsbn() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(null);
     }
+
+    @And("the Book Report has an ISBN with value {string}")
+    public void theBookReportHasAnIsbnWithValue(String isbnWithHyphens) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbnWithHyphens);
+    }
 }

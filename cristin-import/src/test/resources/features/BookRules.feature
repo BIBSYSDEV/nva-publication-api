@@ -46,6 +46,17 @@ Feature: Book conversion rules
       | MONOGRAFI         |
       | ANTOLOGI          |
 
+  Scenario Outline: Hyphens are removed from ISBN.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And that the Cristin Result has a non empty Book Report
+    And the Book Report has an ISBN with value "978-824-7-15-146-4"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a PublicationContext with an ISBN list containing the value "9788247151464"
+    Examples:
+      | secondaryCategory |
+      | MONOGRAFI         |
+      | ANTOLOGI          |
+
 
   Scenario Outline: "Pages" value is copied as is.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"

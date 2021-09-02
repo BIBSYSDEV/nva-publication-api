@@ -167,7 +167,7 @@ public class CristinMapper {
     }
 
     private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
-        List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
+        List<String> isbnList = extractIsbn().stream().map(this::removeHyphens).collect(Collectors.toList());
         return new Book.Builder()
                 .withIsbnList(isbnList)
                 .withPublisher(extractPublisherName())
@@ -330,6 +330,10 @@ public class CristinMapper {
             }
         }
         return listOfTags;
+    }
+
+    private String removeHyphens(String stringWithHyphens) {
+        return stringWithHyphens.replace("-", "");
     }
 
 }
