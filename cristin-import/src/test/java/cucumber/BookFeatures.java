@@ -126,4 +126,9 @@ public class BookFeatures {
             .getPublicationContext();
         assertThat(context.getClass().getSimpleName(), is(equalTo(publicationContextType)));
     }
+
+    @Then("the Cristin Result does not have an ISBN")
+    public void theCristinResultDoesNotHaveAnIsbn() {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(null);
+    }
 }
