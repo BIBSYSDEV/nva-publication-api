@@ -380,4 +380,9 @@ public class GeneralMappingRules {
             .collect(Collectors.toList());
         assertThat(actualUriList, is(equalTo(expectedUriList)));
     }
+
+    @Then("no error is reported.")
+    public void noErrorIsReported() {
+        assertThat(this.scenarioContext.mappingIsSuccessful(), is(true));
+    }
 }

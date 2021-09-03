@@ -95,6 +95,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withSubjects(List<URI> subjects) {
+        resource.setSubjects(subjects);
+        return this;
+    }
+
     public Resource build() {
         return resource;
     }

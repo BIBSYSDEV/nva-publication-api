@@ -1,6 +1,6 @@
 [versions]
 nva = { strictly = "1.7.7" }
-nvaDatamodelVersion = { strictly = "0.12.4" }
+nvaDatamodelVersion = { strictly = "0.12.5" }
 jacksonVersion = { strictly = "2.12.4" }
 awsSdkVersion = { strictly = "1.12.42" }
 awsSdk2Version = { strictly = "2.17.14" }
@@ -14,7 +14,7 @@ nvaUserAccessService = { require = "0.3.0" }
 awsIon = { strictly = "1.5.1" }
 commonsValidator = { strictly = "1.7" }
 apacheCommons = { strictly = "4.4" }
-testUtils = { strictly = "0.1.22" }
+testUtils = { strictly = "0.1.24" }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 

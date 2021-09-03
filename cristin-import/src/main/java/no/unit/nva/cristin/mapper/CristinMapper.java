@@ -1,14 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_CHAPTER_ARTICLE_URI;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OPEN_JOURNAL_ACCESS;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_LEVEL;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_REPORT_URL;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
@@ -167,22 +159,15 @@ public class CristinMapper {
     }
 
     private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
-        List<String> isbnList = new ArrayList<>();
-        isbnList.add(extractIsbn());
+        List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         return new Book.Builder()
                 .withIsbnList(isbnList)
                 .withPublisher(extractPublisherName())
-                .withUrl(HARDCODED_BOOK_URI.toURL())
-                .withLevel(HARDCODED_BOOK_LEVEL)
-                .withOpenAccess(false)
                 .build();
     }
 
     private Journal buildJournalForPublicationContext() throws InvalidIssnException {
         return new Journal.Builder()
-                .withLevel(HARDCODED_JOURNAL_LEVEL)
-                .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
-                .withOpenAccess(HARDCODED_OPEN_JOURNAL_ACCESS)
                 .withOnlineIssn(extractIssnOnline())
                 .withPrintIssn(extractIssn())
                 .withTitle(extractPublisherTitle())
@@ -197,15 +182,12 @@ public class CristinMapper {
                     .build();
         }
         return new Report.Builder()
-                .withLevel(HARDCODED_REPORT_LEVEL)
                 .withPublisher(extractPublisherName())
-                .withUrl(HARDCODED_REPORT_URL.toURL())
                 .build();
     }
 
     private Chapter buildChapterForPublicationContext() {
         return new Chapter.Builder()
-                .withLinkedContext(HARDCODED_CHAPTER_ARTICLE_URI)
                 .build();
     }
 
@@ -240,8 +222,8 @@ public class CristinMapper {
         return extractCristinBookReport().getPublisherName();
     }
 
-    private String extractIsbn() {
-        return extractCristinBookReport().getIsbn();
+    private Optional<String> extractIsbn() {
+        return Optional.ofNullable(extractCristinBookReport().getIsbn());
     }
 
     private URI extractLanguage() {

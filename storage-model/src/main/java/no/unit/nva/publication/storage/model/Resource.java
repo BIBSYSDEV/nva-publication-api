@@ -21,7 +21,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
@@ -57,6 +57,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     private URI handle;
     @JsonProperty
     private Set<AdditionalIdentifier> additionalIdentifiers;
+    @JsonProperty
+    private List<URI> subjects;
 
     public Resource() {
 
@@ -101,6 +103,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withDoi(publication.getDoi())
                    .withHandle(publication.getHandle())
                    .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+                   .withSubjects(publication.getSubjects())
                    .build();
     }
 
@@ -119,7 +122,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
         return Objects.hash(getIdentifier(), getStatus(), getOwner(), getPublisher(), getCreatedDate(),
                             getModifiedDate(),
                             getPublishedDate(), getIndexedDate(), getLink(), getFileSet(), getProjects(),
-                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers());
+                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
+                            getSubjects());
     }
 
     @JacocoGenerated
@@ -146,7 +150,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                && Objects.equals(getEntityDescription(), resource.getEntityDescription())
                && Objects.equals(getDoi(), resource.getDoi())
                && Objects.equals(getHandle(), resource.getHandle())
-               && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers());
+               && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
+               && Objects.equals(getSubjects(), resource.getSubjects());
     }
 
     public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
@@ -284,7 +289,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withEntityDescription(getEntityDescription())
                    .withDoi(getDoi())
                    .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers());
+                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects());
     }
 
     @Override
@@ -306,6 +312,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
                    .withDoi(getDoi())
                    .withHandle(getHandle())
                    .withAdditionalIdentifiers(getAdditionalIdentifiers())
+                   .withSubjects(getSubjects())
                    .build();
     }
 
@@ -322,6 +329,14 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public void setOwner(String owner) {
         this.owner = owner;
+    }
+
+    public List<URI> getSubjects() {
+        return subjects;
+    }
+
+    public void setSubjects(List<URI> subjects) {
+        this.subjects = subjects;
     }
 }
 
