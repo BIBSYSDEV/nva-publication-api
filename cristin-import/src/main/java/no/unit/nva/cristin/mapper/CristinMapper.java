@@ -150,7 +150,7 @@ public class CristinMapper {
             return buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return buildConfirmedJournalForPublicationContext();
+            return buildUnconfirmedJournalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -170,7 +170,7 @@ public class CristinMapper {
         return new UnconfirmedPublisher(extractPublisherName());
     }
 
-    private UnconfirmedJournal buildConfirmedJournalForPublicationContext() throws InvalidIssnException {
+    private UnconfirmedJournal buildUnconfirmedJournalForPublicationContext() throws InvalidIssnException {
         return new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline());
     }
 
