@@ -12,6 +12,7 @@ entityDescription.reference.publicationInstance.pages.begin
 entityDescription.reference.publicationContext.printIssn
 entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationContext.url
+entityDescription.reference.publicationContext.linkedContext
 entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading

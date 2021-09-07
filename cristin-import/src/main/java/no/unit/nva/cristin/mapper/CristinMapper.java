@@ -176,13 +176,16 @@ public class CristinMapper {
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
             throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
+        List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
             return new Degree.Builder()
                     .withPublisher(buildUnconfirmedPublisher())
+                    .withIsbnList(isbnList)
                     .build();
         }
         return new Report.Builder()
                 .withPublisher(buildUnconfirmedPublisher())
+                .withIsbnList(isbnList)
                 .build();
     }
 
