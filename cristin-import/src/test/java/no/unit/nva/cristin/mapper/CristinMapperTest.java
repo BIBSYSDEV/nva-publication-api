@@ -42,6 +42,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -316,7 +318,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        String publisherName = cristinImport.getBookOrReportMetadata().getPublisherName();
+        UnconfirmedPublisher publisherName =
+                new UnconfirmedPublisher(cristinImport.getBookOrReportMetadata().getPublisherName());
 
         Publication actualPublication = cristinImport.toPublication();
 
@@ -326,9 +329,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                           .getPublicationContext();
 
         Book bookSubType = (Book) actualPublicationContext;
-        String actuallPublisher = bookSubType.getPublisher();
+        PublishingHouse actualPublisher = bookSubType.getPublisher();
 
-        assertThat(actuallPublisher, is(equalTo(publisherName)));
+        assertThat(actualPublisher, is(equalTo(publisherName)));
     }
 
     @Test
@@ -345,9 +348,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
                                                           .getPublicationContext();
 
         Book bookSubType = (Book) actualPublicationContext;
-        List<String> actuallIsbnList = bookSubType.getIsbnList();
+        List<String> actualIsbnList = bookSubType.getIsbnList();
 
-        assertThat(actuallIsbnList.get(0), is(equalTo(isbn)));
+        assertThat(actualIsbnList.get(0), is(equalTo(isbn)));
     }
 
     @Test

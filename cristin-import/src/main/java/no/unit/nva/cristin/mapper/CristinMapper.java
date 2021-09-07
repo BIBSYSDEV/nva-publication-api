@@ -1,28 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -36,15 +13,41 @@ import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
-import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
+import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
+
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper {
@@ -142,12 +145,12 @@ public class CristinMapper {
     }
 
     private PublicationContext buildPublicationContext()
-        throws InvalidIsbnException, MalformedURLException, InvalidIssnException {
+            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
             return buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return buildJournalForPublicationContext();
+            return buildConfirmedJournalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -158,31 +161,28 @@ public class CristinMapper {
         return null;
     }
 
-    private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
+    private Book buildBookForPublicationContext() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
-        return new Book.Builder()
-                .withIsbnList(isbnList)
-                .withPublisher(extractPublisherName())
-                .build();
+        return new Book(null, null, null, buildUnconfirmedPublisher(), isbnList);
     }
 
-    private Journal buildJournalForPublicationContext() throws InvalidIssnException {
-        return new Journal.Builder()
-                .withOnlineIssn(extractIssnOnline())
-                .withPrintIssn(extractIssn())
-                .withTitle(extractPublisherTitle())
-                .build();
+    private UnconfirmedPublisher buildUnconfirmedPublisher() {
+        return new UnconfirmedPublisher(extractPublisherName());
+    }
+
+    private UnconfirmedJournal buildConfirmedJournalForPublicationContext() throws InvalidIssnException {
+        return new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline());
     }
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
-            throws MalformedURLException, InvalidIsbnException, InvalidIssnException {
+            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
             return new Degree.Builder()
-                    .withPublisher(extractPublisherName())
+                    .withPublisher(buildUnconfirmedPublisher())
                     .build();
         }
         return new Report.Builder()
-                .withPublisher(extractPublisherName())
+                .withPublisher(buildUnconfirmedPublisher())
                 .build();
     }
 

@@ -21,6 +21,7 @@ import no.unit.nva.model.pages.Pages;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
+import org.junit.Ignore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

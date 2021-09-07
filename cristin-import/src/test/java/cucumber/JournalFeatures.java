@@ -16,6 +16,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -71,7 +72,7 @@ public class JournalFeatures {
                                     .getEntityDescription()
                                     .getReference()
                                     .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualIssn = journal.getPrintIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
@@ -91,7 +92,7 @@ public class JournalFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualIssn = journal.getOnlineIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
@@ -115,7 +116,7 @@ public class JournalFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualTitle = journal.getTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }

@@ -13,6 +13,8 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -81,7 +83,8 @@ public class BookFeatures {
                                          .getReference()
                                          .getPublicationContext();
         Book book = (Book) context;
-        assertThat(book.getPublisher(), is(equalTo(expectedPublisherName)));
+        PublishingHouse expectedPublisher = new UnconfirmedPublisher(expectedPublisherName);
+        assertThat(book.getPublisher(), is(equalTo(expectedPublisher)));
     }
 
     @Given("that the Book Report entry has an empty \"numberOfPages\" field")
