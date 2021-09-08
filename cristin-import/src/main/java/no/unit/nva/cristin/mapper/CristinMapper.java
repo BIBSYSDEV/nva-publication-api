@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
@@ -49,6 +50,7 @@ import nva.commons.core.language.LanguageMapper;
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper {
 
+    public static final String EMPTY_STRING = "";
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -158,7 +160,7 @@ public class CristinMapper {
         return null;
     }
 
-    private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
+    private Book buildBookForPublicationContext() throws InvalidIsbnException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         return new Book.Builder()
                 .withIsbnList(isbnList)
@@ -243,21 +245,37 @@ public class CristinMapper {
     }
 
     private String extractNpiSubjectHeading() {
-        if (!isBook(cristinObject)) {
-            return null;
+        CristinSubjectField subjectField = extractSubjectField();
+        if (isNull(subjectField)) {
+            return EMPTY_STRING;
+        } else {
+            return extractSubjectFieldCode(subjectField);
         }
-        if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
-        }
-        Integer code = extractSubjectField().getSubjectFieldCode();
-        if (code == null) {
-            throw new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE);
-        }
-        return String.valueOf(code);
+    }
+
+    private String extractSubjectFieldCode(CristinSubjectField subjectField) {
+        return Optional.ofNullable(subjectField.getSubjectFieldCode())
+                .map(String::valueOf)
+                .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
+    }
+
+    private boolean resourceShouldAlwaysHaveAnNpiSubjectHeading() {
+        return cristinObject.getSecondaryCategory().equals(CristinSecondaryCategory.MONOGRAPH);
+    }
+
+    private boolean resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading() {
+        return !(isBook(cristinObject) || isReport(cristinObject));
     }
 
     private CristinSubjectField extractSubjectField() {
-        return extractCristinBookReport().getSubjectField();
+        if (resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading()) {
+            return null;
+        }
+        CristinSubjectField subjectField = extractCristinBookReport().getSubjectField();
+        if (resourceShouldAlwaysHaveAnNpiSubjectHeading() && isNull(subjectField)) {
+            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+        }
+        return subjectField;
     }
 
     private CristinJournalPublication extractCristinJournalPublication() {
