@@ -85,23 +85,33 @@ Feature: Book conversion rules
       | ANTOLOGI          |
 
 
-  Scenario Outline: Map fails when a Cristin Result that is a "Book" has no subjectField
-    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+  Scenario: Map fails when a Cristin Result that is a "Monografi" has no subjectField
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
     And that the Cristin Result has a non empty Book Report
     And that the Book Report has no subjectField
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+  Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And that the Cristin Result has a non empty Book Report
+    And that the Book Report has no subjectField
+    When the Cristin Result is converted to an NVA Resource
+    Then no error is reported.
     Examples:
       | secondaryCategory |
-      | MONOGRAFI         |
       | ANTOLOGI          |
+      | LÆREBOK           |
+      | FAGBOK            |
+      | LEKSIKON          |
+      | POPVIT_BOK        |
 
 
-  Scenario Outline: Mapping fails when a Cristin Result that is a "Book" has no information about the number of pages.
+  Scenario Outline: Mapping does not fail when a Cristin Result that is a "Book" has no information about the number of pages.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     Given that the Book Report entry has an empty "numberOfPages" field
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then no error is reported.
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |

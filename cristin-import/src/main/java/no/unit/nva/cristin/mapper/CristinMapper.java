@@ -158,7 +158,7 @@ public class CristinMapper {
         return null;
     }
 
-    private Book buildBookForPublicationContext() throws MalformedURLException, InvalidIsbnException {
+    private Book buildBookForPublicationContext() throws InvalidIsbnException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         return new Book.Builder()
                 .withIsbnList(isbnList)
@@ -243,11 +243,14 @@ public class CristinMapper {
     }
 
     private String extractNpiSubjectHeading() {
-        if (!isBook(cristinObject)) {
+        if (!isBook(cristinObject) && !isReport(cristinObject)) {
             return null;
         }
         if (extractSubjectField() == null) {
-            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            if (cristinObject.getSecondaryCategory().equals(CristinSecondaryCategory.MONOGRAPH)) {
+                throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
+            }
+            return null;
         }
         Integer code = extractSubjectField().getSubjectFieldCode();
         if (code == null) {

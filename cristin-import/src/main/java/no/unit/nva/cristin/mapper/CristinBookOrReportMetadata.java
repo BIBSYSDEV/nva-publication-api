@@ -31,7 +31,7 @@ public class CristinBookOrReportMetadata {
     public static final String NUMBER_OF_PAGES = "antall_sider_totalt";
     public static final String SUBJECT_FIELD = "fagfelt";
     public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
-        "The subjectField value must be present for all instances of BookReport.";
+        "The subjectField value must be present for all instances of Monography.";
 
     @JsonProperty(ISBN_LIST)
     private String isbn;

@@ -17,8 +17,21 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Report has a PublicationContext with publisher equal to "some Publisher"
 
+
   Scenario: Mapping fails when a Cristin Entry has no publisher name
     Given that the Cristin Result has an empty publisherName field
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
-    
+
+  Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And that the Cristin Result has a non empty Book Report
+    And that the Book Report has no subjectField
+    When the Cristin Result is converted to an NVA Resource
+    Then no error is reported.
+    Examples:
+      | secondaryCategory |
+      | RAPPORT           |
+      | DRGRADAVH         |
+      | MASTERGRADSOPPG   |
+   
