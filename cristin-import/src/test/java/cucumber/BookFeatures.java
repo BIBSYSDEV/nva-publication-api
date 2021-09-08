@@ -89,11 +89,8 @@ public class BookFeatures {
 
     @Given("that the Book Report entry has an empty \"numberOfPages\" field")
     public void thatTheBookReportEntryHasAnEmptyNumberOfPagesField() {
-        CristinBookOrReportMetadata bookReport = CristinBookOrReportMetadata.builder()
-            .withNumberOfPages(null)
-            .withPublisherName(randomString())
-            .withIsbn(CristinDataGenerator.randomIsbn13())
-            .build();
+        CristinBookOrReportMetadata bookReport = CristinDataGenerator.randomBookOrReportMetadata();
+        bookReport.setNumberOfPages(null);
         scenarioContext.getCristinEntry().setBookOrReportMetadata(bookReport);
     }
 
