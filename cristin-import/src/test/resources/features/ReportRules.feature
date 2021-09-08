@@ -34,4 +34,6 @@ Feature:
       | RAPPORT           |
       | DRGRADAVH         |
       | MASTERGRADSOPPG   |
+      | HOVEDFAGSOPPGAVE  |
+      | FORSKERLINJEOPPG  |
    

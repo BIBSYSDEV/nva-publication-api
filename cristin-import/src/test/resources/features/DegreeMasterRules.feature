@@ -3,9 +3,15 @@ Feature: Mapping rules for Master thesis
   Background:
     Given a valid Cristin Result with secondary category "MASTERGRADSOPPG"
 
-  Scenario: Cristin Result "Master thesis" is converted to an NVA entry with type "DegreeMaster".
+  Scenario Outline: Cristin Result "Master thesis", "Second thesis " or "Medical thesis" is converted to an NVA entry with type "DegreeMaster".
+    Given a valid Cristin Result with secondary category "<secondarycategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "DegreeMaster"
+    Examples:
+      | secondarycategory |
+      | MASTERGRADSOPPG   |
+      | HOVEDFAGSOPPGAVE  |
+      | FORSKERLINJEOPPG  |
 
   Scenario: Cristin Result "Master thesis" is converted to an NVA entry grouped by "Degree".
     When the Cristin Result is converted to an NVA Resource
