@@ -151,17 +151,12 @@
     Owing to the number of funding bodies, there is no uniform way to dereference grants externally.
     """ .
 
-:TYPE_BOK_RAPPORT_Class
-    a               :CristinClass ;
-    rdfs:comment    "Indicates that the respective PRESENTASJON_VARBEID_Class instance is a reference to a Cristin project" ;
-    rdfs:domain     :Result ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
-
 :TYPE_BOK_RAPPORT_DEL_Class
-    a               :CristinClass ;
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-    Indicates that the respective  publication is a part of book or report and the fieldT YPE_BOK_RAPPORT instance contains
-    a reference to the Cristin entry  about that book or report.
+    Indicates that the respective  publication is a part of book or report.
+    The field TYPE_BOK_RAPPORT_DEL.inngar_i contains the reference to the parent Cristin entry about that book or report.
     The secondary categories that have such a field are
     	ANNET
 	    INNLEDNING
@@ -172,8 +167,7 @@
         POPVIT_KAPITTEL
 	    FAGLIG_KAPITTEL
     """ ;
-    rdfs:domain     :Result ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+    rdfs:domain     :Result .
 
 
 :PRESENTASJONSTYPEKODE_ENHET
@@ -1264,13 +1258,13 @@ It is a self reference.""" ;
 
 :TYPE_BOK_RAPPORT_DEL
     a            :cristinfield ;
-    rdfs:comment """Reference to a Cristin entry that is a Book or report some info about which part of the referenced entry this entry is.""" ;
+    rdfs:comment """Reference to a Cristin entry that is a part of a book or report.""" ;
     rdfs:range   :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain  :Result .
 
 :varbeidlopenr_inngar_i
     a            :cristinfield ;
-    rdfs:comment """The CristinID of the referenced bok or report.""" ;
+    rdfs:comment """The CristinID of the current TYPE_BOK_RAPPORT_DEL_Class entry's parent TYPE_BOK_RAPPORT_Class entry.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
     rdfs:range   xsd:integer .
 
@@ -1279,17 +1273,6 @@ It is a self reference.""" ;
     rdfs:comment """UNKNOWN meaning. It takes values "J" and "N" corresponding to the values true and false.""" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
-
-
-:delangivelse
-    a            :cristinfield ;
-    rdfs:comment """A free text comment describing the relation of the respective Result to the parent entry.
-    Example values: Session 2   Chapter 2, Introduction, Del I: Kunsten som metodisk univers/Kapittel 3
-    Suggestion: to be ignored.
-    """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
-    :isignored   true .
 
 :delangivelse
     a            :cristinfield ;
@@ -1303,23 +1286,26 @@ It is a self reference.""" ;
 
 :sidenr_fra
     a            :cristinfield ;
-    rdfs:comment """The starting page of the part in the respective parent entry.""" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment """The starting page of the part in the respective parent entry.
+    Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
+    """ ;
+    rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
 
 :sidenr_til
     a            :cristinfield ;
-    rdfs:comment """The ending page of the part in the respective parent entry.""" ;
-    rdfs:range   xsd:integer ;
+    rdfs:comment """The ending page of the part in the respective parent entry.
+    Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
+    """ ;
+    rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
 
 :sprakkode_oversatt_fra
     a            :cristinfield ;
-    rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP.
- It is the language of the original document. UNKNOWN why it is necessary since tha language of the original document can be
- extracted through the referenced Cristin entry.
- The have been found 190 cases our of 390 entries of OVERSETTELSE_KAP  where there is a contradiction
- between the language defined in sprakkode_oversatt_fra and the language of the original document.
+    rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP
+    or OVERSETTELSE_BOK, indicating that the current entry is a translation of a book or chapter.
+ The value represents the language of the original document as an ISO 639-1 code. The original document is not
+ referenced further as it may not be in the scope of Cristin.
   """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class .
