@@ -344,7 +344,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     //This is a test-template to run local tests,
     // the files needed to run the test has been removed
     // and the test has been disabled.
-    //@Disabled
+    @Disabled
     @Test
     public void runMappingsLocally() {
         ObjectMapper mapper = new ObjectMapper();
