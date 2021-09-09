@@ -11,6 +11,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
@@ -54,6 +55,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class CristinMapper {
 
     public static final String EMPTY_STRING = "";
+    public static final BookSeries EMPTY_SERIES = null;
+    public static final String EMPTY_SERIES_NUMBER = null;
+
     private final CristinObject cristinObject;
 
     public CristinMapper(CristinObject cristinObject) {
@@ -165,7 +169,7 @@ public class CristinMapper {
 
     private Book buildBookForPublicationContext() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
-        return new Book(null, null, null, buildUnconfirmedPublisher(), isbnList);
+        return new Book(EMPTY_SERIES, EMPTY_SERIES_NUMBER, buildUnconfirmedPublisher(), isbnList);
     }
 
     private UnconfirmedPublisher buildUnconfirmedPublisher() {
