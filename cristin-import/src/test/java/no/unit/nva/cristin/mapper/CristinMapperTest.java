@@ -318,7 +318,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
         CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
 
-        UnconfirmedPublisher publisherName =
+        UnconfirmedPublisher expectedPublisher =
                 new UnconfirmedPublisher(cristinImport.getBookOrReportMetadata().getPublisherName());
 
         Publication actualPublication = cristinImport.toPublication();
@@ -331,7 +331,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Book bookSubType = (Book) actualPublicationContext;
         PublishingHouse actualPublisher = bookSubType.getPublisher();
 
-        assertThat(actualPublisher, is(equalTo(publisherName)));
+        assertThat(actualPublisher, is(equalTo(expectedPublisher)));
     }
 
     @Test
