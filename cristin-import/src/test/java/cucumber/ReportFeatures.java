@@ -1,6 +1,7 @@
 package cucumber;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import io.cucumber.java.en.Given;
@@ -18,8 +19,8 @@ public class ReportFeatures {
         this.scenarioContext = scenarioContext;
     }
 
-    @Then("the NVA Resource Report has a PublicationContext with publisher equal to {string}")
-    public void theNvaResourceReportHasAPublicationContextWithPublisherEqualTo(String expectedPublisherName) {
+    @Then("the NVA Resource Report has a PublicationContext with a publisher with name equal to {string}")
+    public void theNvaResourceReportHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()
@@ -33,5 +34,16 @@ public class ReportFeatures {
     @Given("that the Cristin Result has an empty publisherName field")
     public void thatTheCristinResultHasAnEmptyPublisherNameField() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setPublisherName(null);
+    }
+
+    @Then("the NVA Resource Report has a Publisher that cannot be verified through a URI")
+    public void theNVAResourceReportHasAPublisherThatCannotBeVerifiedThroughAURI() {
+        PublicationContext context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationContext();
+        Report reportContext = (Report) context;
+        PublishingHouse publisher = reportContext.getPublisher();
+        assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
     }
 }

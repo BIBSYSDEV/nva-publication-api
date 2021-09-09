@@ -2,6 +2,8 @@ package cucumber;
 
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
@@ -14,6 +16,7 @@ import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -23,6 +26,9 @@ import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.SingletonCollector;
+import org.hamcrest.Matchers;
+
+import java.net.URI;
 
 
 public class BookFeatures {
@@ -76,8 +82,8 @@ public class BookFeatures {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setPublisherName(publisherName);
     }
 
-    @Then("the NVA Resource has a PublicationContext with publisher equal to {string}")
-    public void theNvaResourceHasAPublicationContextWithPublisherEqualTo(String expectedPublisherName) {
+    @Then("the NVA Resource has a PublicationContext with publisher with name equal to {string}")
+    public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
                                          .getEntityDescription()
                                          .getReference()
@@ -130,5 +136,16 @@ public class BookFeatures {
     @Then("the Cristin Result does not have an ISBN")
     public void theCristinResultDoesNotHaveAnIsbn() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(null);
+    }
+
+    @Then("NVA Resource has a Publisher that cannot be verified through a URI")
+    public void nvaResourceHasAPublisherThatCannotBeVerifiedThroughAURI() {
+        PublicationContext context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationContext();
+        Book bookContext = (Book) context;
+        PublishingHouse publisher = bookContext.getPublisher();
+        assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
     }
 }
