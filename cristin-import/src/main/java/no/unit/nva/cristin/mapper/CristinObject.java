@@ -29,7 +29,7 @@ import nva.commons.core.JsonSerializable;
 @JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
-    "type_foredrag_poster", "kildepostid", "type_bok_rapport_del", "eierkode_opprettet", "arkivpost",
+    "type_foredrag_poster", "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
     "arstall_rapportert", "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
     "merknadtekst", "dato_siste_endring"})
@@ -63,6 +63,8 @@ public class CristinObject implements JsonSerializable {
     private List<CristinTags> tags;
     @JsonProperty("type_bok_rapport")
     private CristinBookOrReportMetadata bookOrReportMetadata;
+    @JsonProperty("type_bok_rapport_del")
+    private CristinBookOrReportPartMetadata bookOrReportPartMetadata;
     @JsonProperty("type_tidsskriftpublikasjon")
     private CristinJournalPublication journalPublication;
     private String publicationOwner;

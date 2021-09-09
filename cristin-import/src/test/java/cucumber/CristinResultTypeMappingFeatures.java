@@ -52,7 +52,7 @@ public class CristinResultTypeMappingFeatures {
         assertThat(actuallType, is(equalTo(expectedType)));
     }
 
-    @And("the NVA BookMonograph Resource has a Content type of type {string}")
+    @Then("the NVA BookMonograph Resource has a Content type of type {string}")
     public void theNvaBookMonographResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
                 .getEntityDescription()
@@ -64,7 +64,7 @@ public class CristinResultTypeMappingFeatures {
         assertThat(actuallType, is(equalTo(expectedType)));
     }
 
-    @And("the NVA ChapterArticle Resource has a Content type of type {string}")
+    @Then("the NVA ChapterArticle Resource has a Content type of type {string}")
     public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
                 .getEntityDescription()
@@ -75,4 +75,5 @@ public class CristinResultTypeMappingFeatures {
         String actuallType = contentType.getValue();
         assertThat(actuallType, is(equalTo(expectedContentType)));
     }
+
 }
