@@ -14,7 +14,9 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
     @Override
     public PublicationInstance<? extends Pages> build() {
         if (isChapterArticle(getCristinObject())) {
-            return new ChapterArticle.Builder().build();
+            return new ChapterArticle.Builder()
+                    .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
+                    .build();
         } else {
             throw unknownSecondaryCategory();
         }

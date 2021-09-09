@@ -11,6 +11,8 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
@@ -60,5 +62,17 @@ public class CristinResultTypeMappingFeatures {
         BookMonographContentType contentType = bookMonograph.getContentType();
         String actuallType = contentType.getValue();
         assertThat(actuallType, is(equalTo(expectedType)));
+    }
+
+    @And("the NVA ChapterArticle Resource has a Content type of type {string}")
+    public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
+        PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        ChapterArticle chapterArticle = (ChapterArticle) instance;
+        ChapterArticleContentType contentType = chapterArticle.getContentType();
+        String actuallType = contentType.getValue();
+        assertThat(actuallType, is(equalTo(expectedContentType)));
     }
 }

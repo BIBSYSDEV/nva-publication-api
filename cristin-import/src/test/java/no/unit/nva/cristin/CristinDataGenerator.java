@@ -149,10 +149,11 @@ public final class CristinDataGenerator {
             case SECOND_THESIS:
             case MEDICAL_THESIS:
                 return randomDegreeMaster(category);
-            case CHAPTER_ARTICLE:
+            case CHAPTER_ACADEMIC:
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
-                return randomChapterArticle();
+            case LEXICAL_IMPORT:
+                return randomChapterArticle(category);
             default:
                 break;
         }
@@ -213,8 +214,8 @@ public final class CristinDataGenerator {
         return createRandomReportWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-    private static CristinObject randomChapterArticle() {
-        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
+        return createRandomChapterWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     public static CristinObject objectWithRandomBookReport() {
