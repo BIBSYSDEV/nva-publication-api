@@ -146,7 +146,7 @@ public final class CristinDataGenerator {
             case DEGREE_PHD:
                 return randomDegreePhd();
             case DEGREE_MASTER:
-            case SECOND_THESIS:
+            case SECOND_DEGREE_THESIS:
             case MEDICAL_THESIS:
                 return randomDegreeMaster(category);
             case CHAPTER_ARTICLE:
