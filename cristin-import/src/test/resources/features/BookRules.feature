@@ -66,7 +66,8 @@ Feature: Book conversion rules
     Given that the Cristin Result has a non empty Book Report
     And the Book Report has a "publisher name" entry equal to "House of Publishing"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a PublicationContext with publisher equal to "House of Publishing"
+    Then the NVA Resource has a PublicationContext with publisher with name equal to "House of Publishing"
+    Then NVA Resource has a Publisher that cannot be verified through a URI
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |

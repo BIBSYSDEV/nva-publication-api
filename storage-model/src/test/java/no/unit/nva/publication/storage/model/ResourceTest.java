@@ -38,7 +38,7 @@ import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResearchProject.Builder;
 import no.unit.nva.model.Role;
-import no.unit.nva.model.contexttypes.Journal;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
@@ -174,7 +174,7 @@ public class ResourceTest {
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
         return new Reference.Builder()
                    .withDoi(randomUri())
-                   .withPublishingContext(sampleJournalInstance())
+                   .withPublishingContext(sampleUnconfirmedJournalInstance())
                    .withPublicationInstance(sampleJournalArticle())
                    .build();
     }
@@ -228,12 +228,8 @@ public class ResourceTest {
                    .build();
     }
     
-    private Journal sampleJournalInstance() throws InvalidIssnException {
-        return new Journal.Builder()
-                   .withOnlineIssn(SAMPLE_ISSN)
-                   .withTitle(randomString())
-                   .withPrintIssn(SAMPLE_ISSN)
-                   .build();
+    private UnconfirmedJournal sampleUnconfirmedJournalInstance() throws InvalidIssnException {
+        return new UnconfirmedJournal(randomString(), SAMPLE_ISSN, SAMPLE_ISSN);
     }
     
     private PublicationDate randomPublicationDate() {

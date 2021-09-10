@@ -31,7 +31,7 @@ public enum CristinSecondaryCategory {
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
-    SECOND_THESIS("HOVEDFAGSOPPGAVE", "SECOND_THESIS"),
+    SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
     MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
     CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
@@ -115,7 +115,7 @@ public enum CristinSecondaryCategory {
 
     public static  boolean isDegreeMaster(CristinObject cristinObject) {
         return CristinSecondaryCategory.DEGREE_MASTER.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.SECOND_THESIS.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.SECOND_DEGREE_THESIS.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.MEDICAL_THESIS.equals(cristinObject.getSecondaryCategory());
     }
 

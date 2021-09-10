@@ -79,23 +79,11 @@
                     },
                     "publicationContext": {
                       "m": {
-                        "level": {
-                          "s": "NO_LEVEL"
-                        },
-                        "openAccess": {
-                          "bool": false
-                        },
-                        "peerReviewed": {
-                          "bool": false
-                        },
                         "type": {
-                          "s": "Journal"
+                          "s": "UnconfirmedJournal"
                         },
                         "title": {
                           "s": "Proceedings of the VLDB Endowment"
-                        },
-                        "url": {
-                          "s": "http://www.eecs.umich.edu/db/pvldb/"
                         }
                       }
                     }
