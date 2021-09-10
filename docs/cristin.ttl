@@ -322,6 +322,9 @@
          Artikkel_Fag -> JournalArticle
          Bokanmeldelse -> JournalReview
          Doktorgradsavhandling -> DegreePhd
+         Mastergradsoppgave -> DegreeMaster
+         Hovedfagsoppgave -> DegreeMaster
+         Forskerlinjeoppgave -> DegreeMaster
     """ .
 
 :eierkode_opprettet
