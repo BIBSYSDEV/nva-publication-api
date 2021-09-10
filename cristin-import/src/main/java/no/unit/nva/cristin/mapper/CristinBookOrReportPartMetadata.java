@@ -30,12 +30,21 @@ public class CristinBookOrReportPartMetadata {
     @JsonProperty(PAGES_END)
     private String pagesEnd;
 
+    @JacocoGenerated
     public CristinBookOrReportPartMetadata() {
 
     }
 
+    public String getPagesStart() {
+        return pagesStart;
+    }
+
+    public String getPagesEnd() {
+        return pagesEnd;
+    }
+
     @JacocoGenerated
-    public CristinBookOrReportPartMetadata.CristinBookReportPartBuilder copy() {
+    public CristinBookReportPartBuilder copy() {
         return this.toBuilder();
     }
 }

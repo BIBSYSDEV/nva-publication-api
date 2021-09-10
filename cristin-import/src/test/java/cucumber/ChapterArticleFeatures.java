@@ -1,10 +1,8 @@
 package cucumber;
 
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
-import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 
@@ -27,7 +25,8 @@ public class ChapterArticleFeatures {
     }
 
     @Then("the NVA Resource has a PublicationInstance with pages starting at {string} and ending at {string}")
-    public void theNvaResourceHasAPublicationInstanceWithPagesStartingAtAndEndingAt(String expectedStart, String expectedEnd) {
+    public void theNvaResourceHasAPublicationInstanceWithPagesStartingAtAndEndingAt(
+            String expectedStart, String expectedEnd) {
         PublicationInstance<?> instance = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()
@@ -41,7 +40,8 @@ public class ChapterArticleFeatures {
 
     @Given("the Cristin Result has a non empty Book Report Part")
     public void theCristinResultHasANonEmptyBookReportPart() {
-        CristinBookOrReportPartMetadata cristinBookOrReportPartMetadata = CristinBookOrReportPartMetadata.builder().build();
+        CristinBookOrReportPartMetadata cristinBookOrReportPartMetadata =
+                CristinBookOrReportPartMetadata.builder().build();
         this.scenarioContext.getCristinEntry().setBookOrReportPartMetadata(cristinBookOrReportPartMetadata);
     }
 }
