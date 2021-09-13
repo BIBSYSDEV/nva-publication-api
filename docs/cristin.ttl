@@ -327,6 +327,7 @@
          Faglig_Kapittel -> ChapterArticle
          Leksikalinnforing -> ChapterArticle
          Artikkel_Fag -> JournalArticle
+         Short_communication -> JournalArticle
          Bokanmeldelse -> JournalReview
          Doktorgradsavhandling -> DegreePhd
          Mastergradsoppgave -> DegreeMaster
