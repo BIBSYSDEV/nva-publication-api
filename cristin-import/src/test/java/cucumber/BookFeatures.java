@@ -1,13 +1,9 @@
 package cucumber;
 
-import static no.unit.nva.cristin.CristinDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -16,20 +12,10 @@ import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.Report;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.book.BookMonograph;
-import no.unit.nva.model.instancetypes.journal.JournalArticle;
-import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
-import no.unit.nva.model.pages.MonographPages;
-import no.unit.nva.model.pages.Pages;
 import nva.commons.core.SingletonCollector;
-import org.hamcrest.Matchers;
-
-import java.net.URI;
-
 
 public class BookFeatures {
 
@@ -53,9 +39,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
     public void theNvaResourceHasAPublicationContextWithAnIsbnListContainingTheValues(String expectedIsbn) {
         PublicationContext publicationContext = scenarioContext.getNvaEntry()
-                                                    .getEntityDescription()
-                                                    .getReference()
-                                                    .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book bookContext = (Book) publicationContext;
         String singleIsbn = bookContext.getIsbnList().stream().collect(SingletonCollector.collect());
         assertThat(singleIsbn, is(equalTo(expectedIsbn)));
@@ -85,9 +71,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with publisher with name equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book book = (Book) context;
         PublishingHouse expectedPublisher = new UnconfirmedPublisher(expectedPublisherName);
         assertThat(book.getPublisher(), is(equalTo(expectedPublisher)));
@@ -104,10 +90,10 @@ public class BookFeatures {
     public void thatTheBookReportHasASubjectFieldWithTheSubjectFieldCodeEqualTo(int subjectFieldCode) {
         scenarioContext.getCristinEntry()
             .getBookOrReportMetadata()
-                        .setSubjectField(CristinSubjectField
-                                        .builder()
-                                        .withSubjectFieldCode(subjectFieldCode)
-                                        .build()
+            .setSubjectField(CristinSubjectField
+                                 .builder()
+                                 .withSubjectFieldCode(subjectFieldCode)
+                                 .build()
             );
     }
 
@@ -139,11 +125,11 @@ public class BookFeatures {
     }
 
     @Then("NVA Resource has a Publisher that cannot be verified through a URI")
-    public void nvaResourceHasAPublisherThatCannotBeVerifiedThroughAURI() {
+    public void nvaResourceHasAPublisherThatCannotBeVerifiedThroughAUri() {
         PublicationContext context = scenarioContext.getNvaEntry()
-                .getEntityDescription()
-                .getReference()
-                .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book bookContext = (Book) context;
         PublishingHouse publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));

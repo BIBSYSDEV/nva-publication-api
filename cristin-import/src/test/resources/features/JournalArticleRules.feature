@@ -79,7 +79,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "doi" entry equal to "10.1093/ajae/aaq063"
     When the Cristin Result is converted to an NVA Resource
-    Then the Nva Resource has a Reference object with doi equal to "10.1093/ajae/aaq063"
+    Then the Nva Resource has a Reference object with doi equal to "https://doi.org/10.1093/ajae/aaq063"
 
   Scenario: Mapping fails when a Cristin Result of type JournalArticle has no information about the Journal title.
     Given that the Journal Article entry has an empty "publisherName" field

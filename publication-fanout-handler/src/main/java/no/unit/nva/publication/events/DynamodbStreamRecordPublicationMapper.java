@@ -88,7 +88,7 @@ public final class DynamodbStreamRecordPublicationMapper {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked","PMD.CognitiveComplexity"})
     private  static <T> T toSimpleValue(com.amazonaws.services.dynamodbv2.model.AttributeValue value) {
         if (value == null) {
             return null;
