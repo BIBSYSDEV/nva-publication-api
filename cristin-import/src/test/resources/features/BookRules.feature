@@ -14,11 +14,19 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationContext of type "Book"
 
-  Scenario: Cristin Result "Academic monograph" is converted to NVA Resource of type BookMonograph
-    Given a valid Cristin Result with secondary category "MONOGRAFI"
+  Scenario Outline: Cristin Result "Academic Monograph, Non-fiction Monograph, Popular Science Monograph,
+  Textbook, Encyclopedia" is converted to NVA Resource type BookMonograph and correct sub-type
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "BookMonograph"
-
+    And the NVA BookMonograph Resource has a Content type of type "<contentType>"
+    Examples:
+      | secondaryCategory | contentType               |
+      | MONOGRAFI         | Academic Monograph        |
+      | LÆREBOK           | Textbook                  |
+      | FAGBOK            | Non-fiction Monograph     |
+      | LEKSIKON          | Encyclopedia              |
+      | POPVIT_BOK        | Popular Science Monograph |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
@@ -58,7 +66,8 @@ Feature: Book conversion rules
     Given that the Cristin Result has a non empty Book Report
     And the Book Report has a "publisher name" entry equal to "House of Publishing"
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a PublicationContext with publisher equal to "House of Publishing"
+    Then the NVA Resource has a PublicationContext with publisher with name equal to "House of Publishing"
+    Then NVA Resource has a Publisher that cannot be verified through a URI
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |
@@ -77,25 +86,41 @@ Feature: Book conversion rules
       | ANTOLOGI          |
 
 
-  Scenario Outline: Map fails when a Cristin Result that is a "Book" has no subjectField
-    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+  Scenario: Map fails when a Cristin Result that is a "Monografi" has no subjectField
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
     And that the Cristin Result has a non empty Book Report
     And that the Book Report has no subjectField
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+  Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And that the Cristin Result has a non empty Book Report
+    And that the Book Report has no subjectField
+    When the Cristin Result is converted to an NVA Resource
+    Then no error is reported.
     Examples:
       | secondaryCategory |
-      | MONOGRAFI         |
       | ANTOLOGI          |
+      | LÆREBOK           |
+      | FAGBOK            |
+      | LEKSIKON          |
+      | POPVIT_BOK        |
 
 
-  Scenario Outline: Mapping fails when a Cristin Result that is a "Book" has no information about the number of pages.
+  Scenario Outline: Mapping does not fail when a Cristin Result that is a "Book" has no information about the number of pages.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     Given that the Book Report entry has an empty "numberOfPages" field
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then no error is reported.
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |
       | ANTOLOGI          |
+
+  Scenario: Mapping does not fail when a Cristin Result that is a "Book" has a null value for isbn.
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And the Cristin Result does not have an ISBN
+    When the Cristin Result is converted to an NVA Resource
+    Then no error is reported.
 

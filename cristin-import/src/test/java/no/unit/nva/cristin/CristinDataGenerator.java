@@ -40,6 +40,7 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JsonUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
 
@@ -60,6 +61,12 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_TAGS = "tags";
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
+    public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
+    public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
+    public static final String DOI_SUBPART_DELIMITER = ".";
+    public static final String DOI_PREFIX_SUFFIX_SEPARATOR = "/";
+    public static final String DOI_PREFIX_FIRST_SUBPART = "10";
+    public static final int MIN_SUFFIX_PARTS_NUMBER = 2;
 
     private CristinDataGenerator() {
 
@@ -119,26 +126,46 @@ public final class CristinDataGenerator {
         CristinSecondaryCategory category = CristinSecondaryCategory.fromString(secondaryCategory);
         switch (category) {
             case MONOGRAPH:
-                return randomBookMonograph();
+            case TEXTBOOK:
+            case NON_FICTION_BOOK:
+            case ENCYCLOPEDIA:
+            case POPULAR_BOOK:
+                return randomBookMonograph(category);
             case ANTHOLOGY:
                 return randomBookAnthology();
-            case JOURNAL_ARTICLE:
-                return randomJournalArticle();
-            case RESEARCH_REPORT:
-                return randomResearchReport();
-            case CHAPTER_ARTICLE:
-                return randomChapterArticle();
+            case FEATURE_ARTICLE:
+                return randomFeatureArticle();
+            case JOURNAL_LETTER:
+                return randomJournalLetter();
             case JOURNAL_REVIEW:
                 return randomJournalReview();
+            case JOURNAL_LEADER:
+                return randomJournalLeader();
+            case JOURNAL_CORRIGENDUM:
+                return randomJournalCorrigendum();
+            case JOURNAL_ARTICLE:
+            case ARTICLE:
+            case POPULAR_ARTICLE:
+            case ACADEMIC_REVIEW:
+                return randomJournalArticle(category);
+            case RESEARCH_REPORT:
+                return randomResearchReport();
             case DEGREE_PHD:
                 return randomDegreePhd();
+            case DEGREE_MASTER:
+            case SECOND_DEGREE_THESIS:
+            case MEDICAL_THESIS:
+                return randomDegreeMaster(category);
+            case CHAPTER_ARTICLE:
+            case CHAPTER:
+            case POPULAR_CHAPTER_ARTICLE:
+                return randomChapterArticle();
             default:
                 break;
         }
         throw new IllegalStateException(
             String.format("The secondary category %s is not covered", secondaryCategory));
     }
-
 
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
@@ -149,34 +176,53 @@ public final class CristinDataGenerator {
         return event;
     }
 
-    private static CristinObject randomJournalArticle() {
-        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_ARTICLE);
+    public static CristinObject randomBookAnthology() {
+        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
+    }
+
+    public static CristinObject randomBookMonograph(CristinSecondaryCategory secondaryCategory) {
+        return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
+    }
+
+    private static CristinObject randomFeatureArticle() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.FEATURE_ARTICLE);
+    }
+
+    private static CristinObject randomJournalLetter() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LETTER);
     }
 
     private static CristinObject randomJournalReview() {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_REVIEW);
     }
 
-    public static CristinObject randomBookAnthology() {
-        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
+    private static CristinObject randomJournalLeader() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LEADER);
     }
 
-    public static CristinObject randomBookMonograph() {
-        return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.MONOGRAPH);
+    private static CristinObject randomJournalCorrigendum() {
+        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_CORRIGENDUM);
+    }
+
+    private static CristinObject randomJournalArticle(CristinSecondaryCategory secondaryCategory) {
+        return createRandomJournalWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static CristinObject randomResearchReport() {
         return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.RESEARCH_REPORT);
     }
 
-    private static CristinObject randomChapterArticle() {
-        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
-    }
-
     private static CristinObject randomDegreePhd() {
         return createRandomReportWithSpecifiedSecondaryCategory(CristinSecondaryCategory.DEGREE_PHD);
     }
 
+    private static CristinObject randomDegreeMaster(CristinSecondaryCategory secondaryCategory) {
+        return createRandomReportWithSpecifiedSecondaryCategory(secondaryCategory);
+    }
+
+    private static CristinObject randomChapterArticle() {
+        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    }
 
     public static CristinObject objectWithRandomBookReport() {
         return createRandomBookWithBookReportValues();
@@ -398,7 +444,7 @@ public final class CristinDataGenerator {
                 .withPagesBegin("1")
                 .withPagesEnd(String.valueOf(smallRandomNumber()))
                 .withVolume(String.valueOf(smallRandomNumber()))
-                .withDoi(String.valueOf(smallRandomNumber()))
+                .withDoi(randomDoiString())
                 .build();
     }
 
@@ -513,6 +559,25 @@ public final class CristinDataGenerator {
                 + "-"
                 + issnWithChecksum.substring(MIDDLE_INDEX_OF_ISSN_STRING);
     }
+
+    private static String randomDoiString() {
+        String prefixSecondPart = RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
+                                                                       MAX_DOI_PREFIX_SUBPART_LENGTH);
+        String suffix = randomDoiSuffix();
+        return DOI_PREFIX_FIRST_SUBPART
+               + DOI_SUBPART_DELIMITER
+               + prefixSecondPart
+               + DOI_PREFIX_SUFFIX_SEPARATOR
+               + suffix;
+    }
+
+    private static String randomDoiSuffix() {
+        return IntStream.range(1, MIN_SUFFIX_PARTS_NUMBER + RANDOM.nextInt(4)).boxed()
+            .map(ignored -> RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
+                                                                 MAX_DOI_PREFIX_SUBPART_LENGTH))
+            .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
+    }
+
 
 
 }

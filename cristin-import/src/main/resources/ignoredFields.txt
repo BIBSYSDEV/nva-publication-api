@@ -6,6 +6,7 @@ indexedDate
 modifiedDate
 publishedDate
 doiRequest
+subjects
 publisher.labels
 entityDescription.contributors.affiliations.labels
 entityDescription.contributors.identity.id
@@ -15,11 +16,13 @@ entityDescription.contributors.identity.orcId
 entityDescription.contributors.email
 entityDescription.date.day
 entityDescription.date.month
+entityDescription.reference.publicationContext.series
+entityDescription.reference.publicationContext.unconfirmedSeriesTitle
 entityDescription.reference.publicationContext.seriesNumber
-entityDescription.reference.publicationContext.seriesTitle
-entityDescription.reference.publicationContext.linkedContext
+entityDescription.reference.publicationContext.partOf
 entityDescription.reference.publicationInstance.contentType
 entityDescription.reference.publicationInstance.content
+entityDescription.reference.publicationInstance.corrigendumFor
 entityDescription.alternativeTitles
 entityDescription.description
 entityDescription.metadataSource

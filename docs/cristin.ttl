@@ -16,6 +16,28 @@
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
 
+:cristinfield
+    a            rdf:Property ;
+    rdfs:comment "Any property of any Cristin class" ;
+    rdfs:domain  :CristinClass ;
+    rdfs:range   rdfs:Class .
+
+:mapstonvafield
+    a            rdf:Property ;
+    rdfs:comment """ A short description on how we save this information to NVA.""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :cristinfield .
+
+:isignored
+    a            rdf:Property ;
+    rdfs:comment """Indicates whether at present we are using this field or not. Used for keeping track of the fields that
+            we are mapping to NVA and the ones that we are not. It does not mean that the ignored fields will not be included,
+            it mean that currently we have not included them""" ;
+    rdfs:range   xsd:boolean ;
+    rdfs:domain  :cristinfield .
+
+
+
 :PublicationStatus
     a :CristinClass .
 
@@ -34,11 +56,13 @@
     rdfs:label      "TEST" ;
     rdfs:subClassOf :PublicationStatus .
 
-
 :VARBEID_SPRAK_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "The structure defining the VARBEID_SPRAK property." .
+    rdfs:comment    """
+    The structure defining the VARBEID_SPRAK property.
+    A language that this work has been published in, the respective title, and the respective abstract
+    and an indication whether it is the original language or a translation.""" .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -70,13 +94,19 @@
     and they have contributed as "ILLUSTRATOR" affiliated with InstB for the same publication.
     """ .
 
-
 :TYPE_MEDIEBIDRAG_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-    The structure of TYPE_MEDIEBIDRAG.
-            """ .
+    The structure of TYPE_MEDIEBIDRAG. It contains information for publications in one of the following media.
+    Newspaper(AVIS),
+    TV ,
+    Internet (INTERNETT)
+    Radio(RADIO)
+    Journal (TIDSSKRIFT)
+    FAGBLAD.
+    The  categories of publications are Documentary(DOKUMENTAR), Interview (INTERVJU), PROGDELTAGELSE, PROGLEDELSE
+    """ .
 
 :PRESENTASJON_VARBEID_Class
     a               rdfs:Class ;
@@ -87,13 +117,14 @@
     """ .
 
 :PRESENTASJONSTYPEKODE_VALUES_Class
-    a rdfs:Class .
+    a            rdfs:Class ;
+    rdfs:comment """Values for the enum of PRESENTASJONSTYPEKODE """ .
 
 
 :PRESENTASJONSTYPEKODE_PERSON
     a               rdfs:Class ;
     rdfs:label      "PERSON" ;
-    rdfs:comment    "Indicates reference to a Cristin person Id. " ;
+    rdfs:comment    "Indicates reference to a Cristin person profile, which in turn refers to a Cristin person id." ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
 :PRESENTASJONSTYPEKODE_GRUPPE
@@ -106,6 +137,22 @@
 :PRESENTASJONSTYPEKODE_PROSJEKT
     a               rdfs:Class ;
     rdfs:label      "PROSJEKT" ;
+    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+
+:FINANSIERING_VARBEID_Class
+    a            :CristinClass ;
+    rdfs:comment """
+    The structure of FINANSIERING_VARBEID. Information about funding (research grants) underlying this result.
+    This field resolves only grants specifically attached to this result.
+
+    Note that funding / research grants attached to Cristin projects claiming this result must be resolved through the
+    project at https://api.cristin.no/v2/projects/<project_id>
+
+    Owing to the number of funding bodies, there is no uniform way to dereference grants externally.
+    """ .
+
+:TYPE_BOK_RAPPORT_Class
+    a               :CristinClass ;
     rdfs:comment    "Indicates that the respective PRESENTASJON_VARBEID_Class instance is a reference to a Cristin project" ;
     rdfs:domain     :Result ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
@@ -141,7 +188,7 @@
 
 
 :VARBEID_VDISIPLIN_Class
-    a           :CristinClass ;
+    a            :CristinClass ;
     rdfs:comment """
             This field contains metadata about the scientific discipline to which the publication belongs.
             The data is structured hierarchical with gradually more fine grained discipline specifications
@@ -151,7 +198,7 @@
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-         The respetive object contains metadata about a book.
+         The respective object contains metadata about a book.
          The respective field (TYPE_BOK_RAPPORT) has a value only if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
          RAPPORT
@@ -191,33 +238,20 @@
         A type of publication/result published in a journal, typically articles, reviews or editorials.
        """ .
 
-
 :TIDSSKRIFT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """UNKNOWN""" .
+    rdfs:comment    """Metadata about a scientific journal.""" .
 
 :VARBEID_EMNEORD_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """A keyword that is relative to a publication.""" .
 
-:cristinfield
-    a            rdf:Property ;
-    rdfs:comment "Any property of any Cristin class" ;
-    rdfs:domain  :CristinClass ;
-    rdfs:range   rdfs:Class .
-
-
-:mapstonvafield
-    a           rdf:Property ;
-    rdfs:range  xsd:string ;
-    rdfs:domain :cristinfield .
-
-:isignored
-    a           rdf:Property ;
-    rdfs:range  xsd:boolean ;
-    rdfs:domain :cristinfield .
+:VARBEID_HRCS_KLASSIFISERING_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """Classification of the publication with respect to the UKCRC Health Research Classification System (HRCS).""" .
 
 :id
     a               :cristinfield ;
@@ -288,6 +322,9 @@
          Artikkel_Fag -> JournalArticle
          Bokanmeldelse -> JournalReview
          Doktorgradsavhandling -> DegreePhd
+         Mastergradsoppgave -> DegreeMaster
+         Hovedfagsoppgave -> DegreeMaster
+         Forskerlinjeoppgave -> DegreeMaster
     """ .
 
 :eierkode_opprettet
@@ -426,10 +463,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 
 :VARBEID_SPRAK
     a               :cristinfield ;
-    rdfs:comment    """
-    A language that this work has been published in, the respective title, and the respective abstract
-    and an indication whether it is the original language or a translation.
-    """ ;
+    rdfs:comment    """See the description of the range class. """ ;
     rdfs:range      :VARBEID_SPRAK_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
@@ -439,11 +473,13 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 :sprakkode
     a               :cristinfield ;
     rdfs:comment    """
-    The language of the title and the abstract included in the VARARBEID_SPRAK entry.
+    When the domain in :VARARBEID_SPRAK it is the language of the title and the abstract included in the entry
+    When the domain is :TIDSSKRIFT it is the language used in the journal, this may not be the same as the article contained within.
     The range is ISO 639-1.
+    Possibly null or (xx) to represent (n/a)
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ;
+    rdfs:domain     :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ;
     :mapstonvafield """
         entityDescription.language if VARBEID_SPRAK.status_original is "J"
     """ .
@@ -495,16 +531,16 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 
 :personlopenr
     a               :cristinfield ;
-        rdfs:comment """
+    rdfs:comment    """
     It refers to a person's CristinId.
     When the domain is :VARBEID_PERSON_Class then it is a reference to a contributor.
     When the domain is "PRESENTASJON_VARBEID_Class and  the respective presentasjonstypekode is equal to "PERSON", tt refers to a contributor that has chosen
     to show this publication as one of their "important", "significant" etc publications.
-    """;
+    """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_Class , :PRESENTASJON_VARBEID_Class ;
+    rdfs:domain     :VARBEID_PERSON_Class, :PRESENTASJON_VARBEID_Class ;
     :mapstonvafield " when the domain is:VARBEID_PERSON_Class it maps entityDescription.contributor.identity.id" ;
-    :isignored   false.
+    :isignored      false .
 
 
 :fornavn
@@ -524,7 +560,6 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     The surname/family-name of the contributor of the respective result entry
     This value is submitted manually by the user, in order to reflect what the user submitted as their first name when they
         submitted the publication to the publisher ( e.g. Elsevier ) .
-
 """ ;
     rdfs:range      xsd:string ;
     rdfs:domain     :VARBEID_PERSON_Class ;
@@ -735,42 +770,42 @@ Cristin.
 
 
 :VARBEID_VDISIPLIN
-    a               :cristinfield ;
-    rdfs:comment    "See description of domain class" ;
-    rdfs:range      :VARBEID_VDISIPLIN_Class ;
-    rdfs:domain     :Result .
+    a            :cristinfield ;
+    rdfs:comment "See description of domain class" ;
+    rdfs:range   :VARBEID_VDISIPLIN_Class ;
+    rdfs:domain  :Result .
 
 :disiplinkode
-    a               :cristinfield ;
-    rdfs:comment    """A code identifying a node in the VARBEID_VDISIPLIN tree.
+    a            :cristinfield ;
+    rdfs:comment """A code identifying a node in the VARBEID_VDISIPLIN tree.
         The specified node is the most fine grained description of the relevant discipline.
         The code is a number in the form of a string""" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 :disiplinkode_eier
-    a               :cristinfield ;
-    rdfs:comment    "A code identifying the parent node of the respective publications discipline. The code is a number in the form of a string" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+    a            :cristinfield ;
+    rdfs:comment "A code identifying the parent node of the respective publications discipline. The code is a number in the form of a string" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 :disiplinnavn_bokmal
-    a               :cristinfield ;
-    rdfs:comment    "Name of the discipline in bokmal" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+    a            :cristinfield ;
+    rdfs:comment "Name of the discipline in bokmal" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 :disiplinnavn_engelsk
-    a               :cristinfield ;
-    rdfs:comment    "Name of the discipline in english" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+    a            :cristinfield ;
+    rdfs:comment "Name of the discipline in english" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 :disiplinnavn_nynorsk
-    a               :cristinfield ;
-    rdfs:comment    "Name of the discipline in nynorsk" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_VDISIPLIN_Class .
+    a            :cristinfield ;
+    rdfs:comment "Name of the discipline in nynorsk" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
 
 :TYPE_MEDIEBIDRAG
@@ -818,6 +853,54 @@ It is a self reference.""" ;
     publications of the author.
     """ ;
     :isignored   false .
+
+
+:finansieringslopenr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Internal Cristin ID of a funding entry / research grant.
+    Can be dereferenced at https://api.cristin.no/v2/fundings/<finansieringslopenr>
+    """ ;
+    :isignored   true .
+
+:finansieringskildekode
+    a            :cristinfield ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Code representing the funding body that awarded the research grant.
+    Possible values include "EU","NFR".
+    A list of possible values can be found at https://api.cristin.no/v2/fundings/sources?lang=en,nb,nn
+    """ ;
+    :isignored   true .
+
+:finansieringsreferanse
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """The external entry id of the research grant, used by the funding body.""" ;
+    :isignored   true .
+
+:belop
+    a            :cristinfield ;
+    rdfs:range   xsd:nil ; # Always empty
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """The amount of money awarded in this grant. This field is always empty.""" ;
+    :isignored   true .
+
+:arstall_fra
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Year the funding / research grant started""" ;
+    :isignored   true .
+
+:arstall_til
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FINANSIERING_VARBEID_Class ;
+    rdfs:comment """Year the funding / research grant ended.""" ;
+    :isignored   true .
 
 
 
@@ -952,16 +1035,82 @@ It is a self reference.""" ;
         entityDescription.reference.doi
     """ .
 
+:antall_sider_totalt
+    a            :cristinfield ;
+    rdfs:comment "The total number of pages. Possibly null." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:publiseringsar
+    a            :cristinfield ;
+    rdfs:comment "The year of publication for the journal" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:hefte
+    a            :cristinfield ;
+    rdfs:comment """
+        The issue containing the publication.
+        A string holding information about the which issue it is,
+        this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:status_referee_ordning
+    a            :cristinfield ;
+    rdfs:comment "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:supplement
+    a            :cristinfield ;
+    rdfs:comment "A area for adding information about possible attachments to the article." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:utbredelsesomrade
+    a            :cristinfield ;
+    rdfs:comment """
+        Information about where or to what extent the article has been published.
+        Examples: NORSK, NORDISK, INTERNASJ, NASJONALT, UKJENT""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:artikkelnummer
+    a            :cristinfield ;
+    rdfs:comment """
+        A string identifying the article within the journal.
+        Possibly null.
+        """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:arstall_trykket
+    a            :cristinfield ;
+    rdfs:comment "The year the publication was printed." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
+:arstall_online
+    a            :cristinfield ;
+    rdfs:comment "The year the publication was released online." ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :isignored   "true" .
+
 :TIDSSKRIFT
-    a               :cristinfield ;
-    rdfs:comment    """
-    UNKNOWN.
-    """ ;
-    rdfs:range      :TIDSSKRIFT_Class ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationContext.printIssn
-    """ .
+    a            :cristinfield ;
+    rdfs:comment """See description in range class.""" ;
+    rdfs:range   :TIDSSKRIFT_Class ;
+    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class .
 
 :issn
     a               :cristinfield ;
@@ -990,9 +1139,61 @@ It is a self reference.""" ;
         entityDescription.reference.publicationContext.title
     """ .
 
+:tidsskriftnr
+    a            :cristinfield ;
+    rdfs:comment "Number identifying the specific journal within Cristin" ;
+    rdfs:range   xsd:positiveInteger ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:nsdkode
+    a            :cristinfield ;
+    rdfs:comment "A code representing the id in NSD-channelregistry " ;
+    rdfs:range   rdf:nil ; #unknown range
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:landkode_utgiver
+    a            :cristinfield ;
+    rdfs:comment """
+        The code identifying the country where the publisher is located.
+        Example: NO
+        Possibly null.""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:status_referee_ordning
+    a            :cristinfield ;
+    rdfs:comment "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no, (U)=uncertain and NULL." ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:dato_utgatt
+    a            :cristinfield ;
+    rdfs:comment """If the journal no longer exists this is the date when it disapeared.
+    Information about what if any: replaced it, it merged into, or what it developed into.
+    Info can be found with NSD and Cristin but is not exported as of today.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
+:status_serie
+    a            :cristinfield ;
+    rdfs:comment """When the value is N, this TIDSSKRIFT object represents a journal.
+    When the value is J, this TIDSSKRIFT object represents a book series.
+    Objects with value J are not expected to be referred to from a TYPE_TIDSSKRIFTPUBLIKASJON object.
+    Objects with value J are only expected to be referred to from a TYPE_BOK_RAPPORT object.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TIDSSKRIFT_Class ;
+    :isignored   "true" .
+
 :VARBEID_EMNEORD
     a               :cristinfield ;
-    rdfs:comment    """ See the range class.""" ;
+    rdfs:comment    """See the range class.""" ;
     rdfs:range      :VARBEID_EMNEORD_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
@@ -1031,6 +1232,26 @@ It is a self reference.""" ;
 :emneordlopenr
     a            :cristinfield ;
     rdfs:comment "The Cristin ID of the keyword (emneord)" ;
-    rdfs:range   xsd:integer  ;
+    rdfs:range   xsd:integer ;
     rdfs:domain  :VARBEID_EMNEORD_Class ;
+    :isignored   "true" .
+
+
+:helsekategorikode
+    a            :cristinfield ;
+    rdfs:comment """Health Category Code in the UKCRC Health Research Classification System (HRCS).
+    See https://hrcsonline.net/health-categories/.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
+    :isignored   "true" .
+
+
+:aktivitetskode
+    a            :cristinfield ;
+    rdfs:comment """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
+                     See https://hrcsonline.net/research-activities/.
+                     """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :isignored   "true" .

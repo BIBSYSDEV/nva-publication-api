@@ -11,8 +11,9 @@ dependencies {
 
     implementation libs.nva.s3
     implementation libs.nva.core
-
     implementation libs.nva.eventhandlers
+    implementation libs.nva.doi
+
 
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
@@ -31,6 +32,7 @@ dependencies {
     implementation libs.aws.sdk2.urlconnectionclient
     implementation libs.aws.sdk2.regions
 
+    implementation libs.typesafe.config
 
     testImplementation project(":storage-model")
     testImplementation project(":publication-testing")
