@@ -14,7 +14,7 @@
 :Result
     a               :CristinClass ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
+    rdfs:comment    "The equivalent of an NVA Resource in Cristin. An database entry as being exported especially for importing in NVA" .
 
 :cristinfield
     a            rdf:Property ;
@@ -241,8 +241,7 @@
 :FAGFELT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """The scientific field in which the book/chapter is published
-    When the domain is TYPE_BOK_RAPPORT_DEL the respective field is always null.
+    rdfs:comment    """A reference to the NSD scientific field in which the book/chapter is published. All NSD fields are listed here: https://npi.nsd.no/fagfeltoversikt/
     """ ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class  .
 
@@ -967,7 +966,7 @@ It is a self reference.""" ;
 
 :fagfeltkode
     a               :cristinfield ;
-    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:comment    "The NSD code representing the scientific field in which the book is published." ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
     :mapstonvafield """
@@ -976,21 +975,21 @@ It is a self reference.""" ;
 
 :fagomradekode
     a            :cristinfield ;
-    rdfs:comment "The (abriviation) code representing the scientific field in which the book is published" ;
+    rdfs:comment "The (abbreviation) code representing the scientific field in which the book is published" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FAGFELT_Class ;
     :isignored   "true" .
 
 :navn
     a            :cristinfield ;
-    rdfs:comment "The name of the scientific field in which the book is published" ;
+    rdfs:comment "The NSD name of the scientific field in which the book is published" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FAGFELT_Class ;
     :isignored   "true" .
 
 :navn_engelsk
     a            :cristinfield ;
-    rdfs:comment "The english name of the scientific field in which the book is published" ;
+    rdfs:comment "The NSD english name of the scientific field in which the book is published" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FAGFELT_Class ;
     :isignored   "true" .
