@@ -16,9 +16,9 @@ entityDescription.contributors.identity.orcId
 entityDescription.contributors.email
 entityDescription.date.day
 entityDescription.date.month
+entityDescription.reference.publicationContext.series
+entityDescription.reference.publicationContext.unconfirmedSeriesTitle
 entityDescription.reference.publicationContext.seriesNumber
-entityDescription.reference.publicationContext.seriesTitle
-entityDescription.reference.publicationContext.seriesUri
 entityDescription.reference.publicationContext.partOf
 entityDescription.reference.publicationInstance.contentType
 entityDescription.reference.publicationInstance.content

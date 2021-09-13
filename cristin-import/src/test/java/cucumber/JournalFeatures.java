@@ -6,6 +6,8 @@ import static no.unit.nva.cristin.CristinDataGenerator.smallRandomNumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -16,6 +18,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
@@ -37,15 +40,7 @@ public class JournalFeatures {
 
     @Given("that the Cristin Result has a non empty Journal Publication")
     public void thatTheCristinResultHasANonEmptyJournalPublication() {
-        CristinJournalPublication journalPublication = CristinJournalPublication.builder()
-            .withJournal(createCristinJournalPublicationJournal())
-            .withPagesBegin("1")
-            .withPagesEnd(String.valueOf(smallRandomNumber()))
-            .withVolume(String.valueOf(smallRandomNumber()))
-            .withDoi(String.valueOf(smallRandomNumber()))
-            .withIssue(String.valueOf(smallRandomNumber()))
-            .build();
-        scenarioContext.getCristinEntry().setJournalPublication(journalPublication);
+       assertThat(this.scenarioContext.getCristinEntry().getJournalPublication(),is(not(nullValue())));
     }
 
     @Given("the Journal Publication has a \"journalName\" entry equal to {string}")
@@ -71,7 +66,7 @@ public class JournalFeatures {
                                     .getEntityDescription()
                                     .getReference()
                                     .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualIssn = journal.getPrintIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
@@ -91,7 +86,7 @@ public class JournalFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualIssn = journal.getOnlineIssn();
         assertThat(actualIssn, is(equalTo(expectedIssn)));
     }
@@ -115,7 +110,7 @@ public class JournalFeatures {
             .getEntityDescription()
             .getReference()
             .getPublicationContext();
-        Journal journal = (Journal) context;
+        UnconfirmedJournal journal = (UnconfirmedJournal) context;
         String actualTitle = journal.getTitle();
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
