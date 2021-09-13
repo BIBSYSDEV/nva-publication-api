@@ -76,4 +76,8 @@ public class CristinResultTypeMappingFeatures {
         assertThat(actuallType, is(equalTo(expectedContentType)));
     }
 
+    @And("the Cristin Result has a value for the arstall_rapportert.")
+    public void theCristinResultHasAValueForTheArstall_rapportert() {
+        this.scenarioContext.getCristinEntry().setYearReported(2020);
+    }
 }
