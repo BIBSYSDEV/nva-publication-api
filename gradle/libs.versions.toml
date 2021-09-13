@@ -32,7 +32,7 @@ nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', ve
 nva-testutils = { group = 'com.github.bibsysdev', name = 'nva-testutils', version.ref = 'testUtils' }
 nva-user-access-rights = { group = 'com.github.bibsysdev.nva-user-access-service', name = 'user-access-rights', version.ref = 'nvaUserAccessService' }
 nva-datamodel = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
-nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
+nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
 
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson' }
@@ -74,11 +74,11 @@ commons-validator = { group = 'commons-validator', name = 'commons-validator', v
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 
-dynamodDbLocal = { group = "com.amazonaws", name = "DynamoDBLocal", version.ref = "dynamoDbLocal" }
-javafaker = { group = "com.github.javafaker", name = "javafaker", version = { strictly = "1.0.2" } }
-javers = { group = "org.javers", name = "javers-core", version = { strictly = "6.0.1" } }
-zalando = { group = "org.zalando", name = "problem", version.ref = "zalandoProblem" }
-typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = "configTypesafe" }
+dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
+javafaker = { group = 'com.github.javafaker', name = 'javafaker', version = { strictly = '1.0.2' } }
+javers = { group = 'org.javers', name = 'javers-core', version = { strictly = '6.0.1' } }
+zalando = { group = 'org.zalando', name = 'problem', version.ref = 'zalandoProblem' }
+typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
 
 junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit' }
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
@@ -87,7 +87,7 @@ junit-jupiter-engine = { group = 'org.junit.jupiter', name = 'junit-jupiter-engi
 
 mockito-core = { group = 'org.mockito', name = 'mockito-core', version.ref = 'mockito' }
 
-cucumber-java = { group = 'io.cucumber', name = 'cucumber-java', version.ref = "cucumber" }
-cucumber-java8 = { group = 'io.cucumber', name = 'cucumber-java8', version.ref = "cucumber" }
-cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = "cucumber" }
-cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = "cucumber" }
+cucumber-java = { group = 'io.cucumber', name = 'cucumber-java', version.ref = 'cucumber' }
+cucumber-java8 = { group = 'io.cucumber', name = 'cucumber-java8', version.ref = 'cucumber' }
+cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = 'cucumber' }
+cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = 'cucumber' }
