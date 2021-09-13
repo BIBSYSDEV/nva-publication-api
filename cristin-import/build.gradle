@@ -15,9 +15,9 @@ dependencies {
     implementation libs.nva.eventhandlers
 
     implementation libs.jackson.annotations
-implementation libs.jackson.databind
+    implementation libs.jackson.databind
 
-    implementation libs.hamcrest
+    implementation libs.hamcrest.base
     implementation libs.nva.testutils
 
     runtimeOnly libs.jackson.core
