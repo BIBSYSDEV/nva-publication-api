@@ -1,7 +1,23 @@
-Feature: Mapping of "Article in business/trade/industry journal", "Academic article", "Popular scientific article", "Academic literature review" entries
+Feature: Mapping of "Article in business/trade/industry journal", "Academic article",
+  "Popular scientific article", "Academic literature review", "Short communication" entries
 
   Background:
     Given a valid Cristin Result with secondary category "ARTIKKEL_FAG"
+
+
+  Scenario Outline: Cristin Result of type "Academic chapter/article/Conference paper", "Chapter",
+  "Popular scientific chapter/article" and "Encyclopedia article" mapps to NVA entry type "ChapterArticle" and correct sub-type.
+    Given a valid Cristin Result with secondary category "<secondarycategory>"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Publication Instance of type "JournalArticle"
+    And the NVA JournalArticle Resource has a Content type of type "<contentType>"
+    Examples:
+      | secondarycategory | contentType             |
+      | ARTIKKEL_FAG      | Professional article    |
+      | ARTIKKEL          | Research article        |
+      | SHORTCOMM         | Research article        |
+      | ARTIKKEL_POP      | Popular science article |
+      | OVERSIKTSART      | Review article          |
 
   Scenario: Cristin Result of type "Article in business/trade/industry journal" maps to "JournalArticle"
     When the Cristin Result is converted to an NVA Resource
