@@ -6,6 +6,8 @@ import static no.unit.nva.cristin.CristinDataGenerator.smallRandomNumber;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.core.IsNull.nullValue;
 
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -38,15 +40,7 @@ public class JournalFeatures {
 
     @Given("that the Cristin Result has a non empty Journal Publication")
     public void thatTheCristinResultHasANonEmptyJournalPublication() {
-        CristinJournalPublication journalPublication = CristinJournalPublication.builder()
-            .withJournal(createCristinJournalPublicationJournal())
-            .withPagesBegin("1")
-            .withPagesEnd(String.valueOf(smallRandomNumber()))
-            .withVolume(String.valueOf(smallRandomNumber()))
-            .withDoi(String.valueOf(smallRandomNumber()))
-            .withIssue(String.valueOf(smallRandomNumber()))
-            .build();
-        scenarioContext.getCristinEntry().setJournalPublication(journalPublication);
+       assertThat(this.scenarioContext.getCristinEntry().getJournalPublication(),is(not(nullValue())));
     }
 
     @Given("the Journal Publication has a \"journalName\" entry equal to {string}")
