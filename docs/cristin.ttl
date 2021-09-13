@@ -157,12 +157,6 @@
     rdfs:domain     :Result ;
     rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
 
-:TYPE_BOK_RAPPORT_DEL_Class
-    a               :CristinClass ;
-    rdfs:comment    "Indicates that the respective publication is a part of a book or report." ;
-    rdfs:domain     :Result ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
-
 :PRESENTASJONSTYPEKODE_ENHET
     a               rdfs:Class ;
     rdfs:label      "ENHET" ;
@@ -928,7 +922,7 @@ It is a self reference.""" ;
     The total number of pages.
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :mapstonvafield """
         entityDescription.reference.publicationInstance.pages
     """ .
@@ -951,47 +945,12 @@ It is a self reference.""" ;
             entityDescription.reference.publicationContext.publisher
         """ .
 
-:TYPE_BOK_RAPPORT_DEL
-    a               :cristinfield ;
-    rdfs:range      :TYPE_BOK_RAPPORT_DEL_Class  ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages,
-    """ .
-
-:varbeidlopenr_inngar_i
-    a               :cristinfield ;
-    rdfs:comment    "Reference to the book or report that the piece is part of." ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_DEL_Class ;
-    :isignored   "true" .
-
-:status_utgitt_av_forlag
-    a               :cristinfield ;
-    rdfs:comment    "A yes-no value indication whether or not the piece has been published by a publishing-house. 'J' for yes and 'N' for no" ;
-    rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_DEL_Class ;
-    :isignored   "true" .
-
-:delangivelse
-    a               :cristinfield ;
-    rdfs:comment    "UNKNOWN" ;
-    rdfs:range      rdf:nil ; #unknown range
-    rdfs:domain     :TYPE_BOK_RAPPORT_DEL_Class ;
-    :isignored   "true" .
-
-:sprakkode_oversatt_fra
-    a               :cristinfield ;
-    rdfs:comment    "The code referring to the language in which the original piece was written." ;
-    rdfs:range      rdf:nil ; #unknown range
-    rdfs:domain     :TYPE_BOK_RAPPORT_DEL_Class ;
-    :isignored   "true" .
 
 :fagfelt
     a            :cristinfield ;
     rdfs:comment "The scientific field in which the book is published" ;
     rdfs:range   :FAGFELT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
 .
 
 
@@ -1054,7 +1013,7 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the start of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :mapstonvafield """
         entityDescription.reference.publicationInstance.pages.begin
     """ .
@@ -1063,16 +1022,16 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :mapstonvafield """
         entityDescription.reference.publicationInstance.pages.end
     """ .
 
 :doi
     a               :cristinfield ;
-    rdfs:comment    "The doi connected to the respective article, book or report. Possibly null." ;
+    rdfs:comment    "The doi connected to the respective article. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :mapstonvafield """
         entityDescription.reference.doi
     """ .
