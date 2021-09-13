@@ -40,7 +40,7 @@ public class JournalFeatures {
 
     @Given("that the Cristin Result has a non empty Journal Publication")
     public void thatTheCristinResultHasANonEmptyJournalPublication() {
-        assertThat(scenarioContext.getCristinEntry().getJournalPublication(),is(not(nullValue())));
+        assertThat(this.scenarioContext.getCristinEntry().getJournalPublication(),is(not(nullValue())));
     }
 
     @Given("the Journal Publication has a \"journalName\" entry equal to {string}")
