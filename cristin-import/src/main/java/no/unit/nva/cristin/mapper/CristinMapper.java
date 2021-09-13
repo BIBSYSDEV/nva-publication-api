@@ -317,7 +317,6 @@ public class CristinMapper {
     }
 
     private URI extractDoi() {
-        System.out.println("*****************************************************");
         if (isJournal(cristinObject)) {
             return Optional.of(extractCristinJournalPublication())
                 .map(CristinJournalPublication::getDoi)
