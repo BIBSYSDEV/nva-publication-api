@@ -456,8 +456,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     private PublicationDate yearStringToPublicationDate(String yearString) {
-        return new PublicationDate.Builder().withYear(
-            yearString).build();
+        return new PublicationDate.Builder().withYear(yearString).build();
     }
 
     //We do not use any more complex logic to make the tests fail if anything changes

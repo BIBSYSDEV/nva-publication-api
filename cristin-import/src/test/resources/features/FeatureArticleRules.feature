@@ -29,7 +29,7 @@ Feature: Mapping of "Feature article" entries
       | 123          |
       | some page    |
 
-  Scenario Outline: Cristin Entry's Journal Publication "volume" entry. is copied to Journal Article's  "volume" field.
+  Scenario Outline: Cristin Entry's Journal Publication "volume" entry is copied to Journal Article's  "volume" field.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "volume" entry equal to "<volume>"
     When the Cristin Result is converted to an NVA Resource
@@ -40,7 +40,7 @@ Feature: Mapping of "Feature article" entries
       | 123          |
       | some volume  |
 
-  Scenario Outline: Cristin Entry's Journal Publication "issue" entry. is copied to Feature Article's  "issue" field.
+  Scenario Outline: Cristin Entry's Journal Publication "issue" entry is copied to Feature Article's  "issue" field.
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "issue" entry equal to "<issue>"
     When the Cristin Result is converted to an NVA Resource
@@ -50,3 +50,12 @@ Feature: Mapping of "Feature article" entries
       | VI           |
       | 123          |
       | some volume  |
+
+  Scenario: When the the Cristin entry has a reference to an NSD publisher or journal that
+  then the NVA Entry contains a URI that is a reference to that NSD journal or publisher
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    And the Journal Publication has publishing year equal to 2003
+    And the year the Cristin Result was published is equal to 2003
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy
+    And the Journal URI specifies the Journal by the NSD ID 12345 and the year 2003.

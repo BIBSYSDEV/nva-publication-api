@@ -18,6 +18,8 @@ public final class MappingConstants {
         IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS = readAllIngnoredAndPossiblyEmptyFields();
 
     public static final String NVA_API_DOMAIN = "https://api." + readDomainName();
+    public static final String NSD_PROXY_PATH = "publication-channels";
+    public static final String NSD_PROXY_PATH_JOURNAL = "journal";
 
     private MappingConstants() {
 

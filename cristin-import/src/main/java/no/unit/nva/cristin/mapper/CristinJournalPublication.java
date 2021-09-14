@@ -18,7 +18,7 @@ import nva.commons.core.JacocoGenerated;
         setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"antall_sider_totalt", "publiseringsar", "status_referee_ordning",
+@JsonIgnoreProperties({"antall_sider_totalt","publiseringsar", "status_referee_ordning",
     "supplement", "utbredelsesomrade", "artikkelnummer", "arstall_trykket", "arstall_online"})
 public class CristinJournalPublication {
 
