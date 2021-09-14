@@ -962,7 +962,10 @@ It is a self reference.""" ;
 
 :tidsskrift_serie
     a :cristinfield ;
-    rdfs:comment """A Publisher's series that is modeled by NSD as Journal. Probably not exactly a journal since the respective Cristin Results are Books or Reports. """;
+    rdfs:comment """
+        A Publisher's series that is modeled by NSD as Journal. Probably not exactly a journal since the respective Cristin Results are Books or Reports.
+        This field has the exact same structure as the field "tidskrift" in the field "type_tidsskriftpublikasjon"
+     """;
     rdfs:range :TIDSSKRIFT_Class;
     rdfs:domain :TYPE_BOK_RAPPORT_Class .
 
@@ -996,7 +999,7 @@ It is a self reference.""" ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
-:TYPE_TIDSSKRIFTPUBLIKASJON
+:type_tidsskriftpublikasjon
     a               :cristinfield ;
     rdfs:comment    """
     A type publication called tidsskrift.
@@ -1124,7 +1127,7 @@ It is a self reference.""" ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored "true" .
 
-:TIDSSKRIFT
+:tidskrift
     a            :cristinfield ;
     rdfs:comment """See description in range class.""" ;
     rdfs:range   :TIDSSKRIFT_Class ;
