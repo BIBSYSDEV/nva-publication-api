@@ -1059,21 +1059,19 @@ It is a self reference.""" ;
      """ ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
-
-:should_ignore
-         "true"
+    :currently_ignored "true" ;
+    :should_ignore     "true" .
 
 
 :hefte
-    a            :cristinfield ;
-    rdfs:comment """
+    a                  :cristinfield ;
+    rdfs:comment       """
         The issue containing the publication.
         A string holding information about the which issue it is,
         this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored   "true" .
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :currently_ignored "true" .
 
 :status_referee_ordning
     a                  :cristinfield ;
