@@ -1044,7 +1044,10 @@ It is a self reference.""" ;
 
 :publiseringsar
     a            :cristinfield ;
-    rdfs:comment "The year of publication for the journal" ;
+    rdfs:comment """
+    The year of publication for the journal. In 99% of the results it is the same as the "arstall".
+    It can be safely IGNORED.
+     """ ;
     rdfs:range   xsd:positiveInteger ;
     rdfs:domain  :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :isignored   "true" .
