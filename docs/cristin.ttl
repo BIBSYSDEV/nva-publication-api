@@ -913,7 +913,7 @@ It is a self reference.""" ;
 
 
 
-:TYPE_BOK_RAPPORT
+:type_bok_rapport
     a               :cristinfield ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain     :Result ;
@@ -958,16 +958,20 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:comment "The scientific field in which the book is published" ;
     rdfs:range   :FAGFELT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-.
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
 
+:tidsskrift_serie
+    a :cristinfield ;
+    rdfs:comment """A Publisher's series that is modeled by NSD as Journal. Probably not exactly a journal since the respective Cristin Results are Books or Reports. """;
+    rdfs:range :TIDSSKRIFT_Class;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class .
 
-:fagfeltkode
-    a               :cristinfield ;
+    :fagfeltkode
+        a               :cristinfield ;
     rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
-    :mapstonvafield """
+        :mapstonvafield """
             entityDescription.npiSubjectHeading
         """ .
 
