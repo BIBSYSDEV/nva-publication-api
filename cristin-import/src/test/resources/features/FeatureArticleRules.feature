@@ -51,8 +51,8 @@ Feature: Mapping of "Feature article" entries
       | 123          |
       | some volume  |
 
-  Scenario: When the the Cristin entry has a reference to an NSD publisher or journal that
-  then the NVA Entry contains a URI that is a reference to that NSD journal or publisher
+  Scenario: When the the Cristin entry has a reference to an NSD journal then the
+  NVA Entry contains a URI that is a reference to that NSD journal.
     Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
     And the Journal Publication has publishing year equal to 2003
     And the year the Cristin Result was published is equal to 2003
