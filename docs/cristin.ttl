@@ -328,6 +328,7 @@
          Kapittel -> ChapterArticle
          Popvit_Kapittel -> ChapterArticle
          Faglig_Kapittel -> ChapterArticle
+         Leksikalinnforing -> ChapterArticle
          Artikkel_Fag -> JournalArticle
          Bokanmeldelse -> JournalReview
          Doktorgradsavhandling -> DegreePhd

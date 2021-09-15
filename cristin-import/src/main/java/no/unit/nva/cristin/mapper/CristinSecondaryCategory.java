@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
@@ -32,9 +33,10 @@ public enum CristinSecondaryCategory {
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
     SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
     MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
-    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
+    CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
     POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_CHAPTER_ARTICLE"),
+    LEXICAL_IMPORT("LEKSIKAL_INNF", "LEXICAL_IMPORT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -118,9 +120,10 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isChapterArticle(CristinObject cristinObject) {
-        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+        return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
@@ -143,6 +146,14 @@ public enum CristinSecondaryCategory {
         }
     }
 
+    public ChapterArticleContentType toChapterArticleContentType() {
+        if (createMapToChapterContentType().containsKey(this)) {
+            return createMapToChapterContentType().get(this);
+        } else {
+            throw new IllegalStateException(conversionError(this, ChapterArticleContentType.class));
+        }
+    }
+
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
                 POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
@@ -156,6 +167,13 @@ public enum CristinSecondaryCategory {
                 TEXTBOOK, BookMonographContentType.TEXTBOOK,
                 ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
                 NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH);
+    }
+
+    private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
+        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
+                POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
+                CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
+                LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {

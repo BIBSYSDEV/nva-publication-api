@@ -37,7 +37,7 @@ public class ReportFeatures {
     }
 
     @Then("the NVA Resource Report has a Publisher that cannot be verified through a URI")
-    public void theNVAResourceReportHasAPublisherThatCannotBeVerifiedThroughAUri() {
+    public void theNvaResourceReportHasAPublisherThatCannotBeVerifiedThroughAUri() {
         PublicationContext context = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()
