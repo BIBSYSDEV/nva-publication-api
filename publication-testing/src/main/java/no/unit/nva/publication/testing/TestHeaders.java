@@ -10,8 +10,8 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class TestHeaders {
 
-    public static String APPLICATION_PROBLEM_JSON = "application/problem+json";
-    public static String WILDCARD = "*";
+    public static final String APPLICATION_PROBLEM_JSON = "application/problem+json";
+    public static final String WILDCARD = "*";
 
     /**
      * Request headers for testing.

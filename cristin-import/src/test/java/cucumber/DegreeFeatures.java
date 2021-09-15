@@ -2,10 +2,8 @@ package cucumber;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
-import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.degree.DegreeMaster;
 import no.unit.nva.model.instancetypes.degree.DegreePhd;

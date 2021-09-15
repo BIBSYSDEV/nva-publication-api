@@ -19,12 +19,12 @@ import nva.commons.core.SingletonCollector;
 @JsonTypeName("Resource")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource>
-        implements JoinWithResource,
-        ResourceByIdentifier,
-        WithCristinIdentifier {
+    implements JoinWithResource,
+               ResourceByIdentifier,
+               WithCristinIdentifier {
 
-    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     public static final String CRISTIN_SOURCE = "Cristin";
+    private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     private Resource data;
 
     public ResourceDao() {
@@ -38,15 +38,15 @@ public class ResourceDao extends Dao<Resource>
 
     public static ResourceDao queryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         Resource resource = Resource.emptyResource(
-                userInstance.getUserIdentifier(),
-                userInstance.getOrganizationUri(),
-                resourceIdentifier);
+            userInstance.getUserIdentifier(),
+            userInstance.getOrganizationUri(),
+            resourceIdentifier);
         return new ResourceDao(resource);
     }
 
     public static String constructPrimaryPartitionKey(URI customerId, String owner) {
         return String.format(PRIMARY_KEY_PARTITION_KEY_FORMAT, Resource.TYPE,
-                orgUriToOrgIdentifier(customerId), owner);
+                             orgUriToOrgIdentifier(customerId), owner);
     }
 
     @JsonIgnore
@@ -84,26 +84,20 @@ public class ResourceDao extends Dao<Resource>
         return data.getIdentifier();
     }
 
+    @Override
+    protected String getOwner() {
+        return data.getOwner();
+    }
 
     @Override
     public Optional<String> getCristinIdentifier() {
         String cristinIdentifierValue = Optional.ofNullable(data.getAdditionalIdentifiers())
-                .stream()
-                .flatMap(Collection::stream)
-                .filter(this::keyEqualsCristin)
-                .map(AdditionalIdentifier::getValue)
-                .collect(SingletonCollector.collectOrElse(null));
+            .stream()
+            .flatMap(Collection::stream)
+            .filter(this::keyEqualsCristin)
+            .map(AdditionalIdentifier::getValue)
+            .collect(SingletonCollector.collectOrElse(null));
         return Optional.ofNullable(cristinIdentifierValue);
-
-    }
-
-    private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
-        return identifier.getSource().equals(CRISTIN_SOURCE);
-    }
-
-    @Override
-    protected String getOwner() {
-        return data.getOwner();
     }
 
     @Override
@@ -132,5 +126,12 @@ public class ResourceDao extends Dao<Resource>
         }
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
+    }
+
+    private boolean keyEqualsCristin(AdditionalIdentifier identifier) {
+        return Optional.ofNullable(identifier)
+            .map(AdditionalIdentifier::getSource)
+            .map(CRISTIN_SOURCE::equals)
+            .orElse(false);
     }
 }
