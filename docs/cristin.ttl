@@ -14,7 +14,7 @@
 :Result
     a               :CristinClass ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "The equivalent of an NVA Resource in Cristin. An entry as being exported especially for importing in NVA" .
+    rdfs:comment    "The equivalent of an NVA Resource in Cristin. An database entry as being exported especially for importing in NVA" .
 
 :cristinfield
     a            rdf:Property ;
@@ -160,11 +160,24 @@
     Owing to the number of funding bodies, there is no uniform way to dereference grants externally.
     """ .
 
-:TYPE_BOK_RAPPORT_Class
-    a               :CristinClass ;
-    rdfs:comment    "Indicates that the respective PRESENTASJON_VARBEID_Class instance is a reference to a Cristin project" ;
-    rdfs:domain     :Result ;
-    rdfs:subClassOf :PRESENTASJONSTYPEKODE_VALUES_Class .
+:TYPE_BOK_RAPPORT_DEL_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
+    Indicates that the respective  publication is a part of book or report.
+    The field TYPE_BOK_RAPPORT_DEL.inngar_i contains the reference to the parent Cristin entry about that book or report.
+    The secondary categories that have such a field are
+    	ANNET
+	    INNLEDNING
+	    FORORD
+	    OVERSETTELSE_KAP
+	    KAPITTEL
+	    LEKSIKAL_INNF
+        POPVIT_KAPITTEL
+	    FAGLIG_KAPITTEL
+    """ ;
+    rdfs:domain     :Result .
+
 
 :PRESENTASJONSTYPEKODE_ENHET
     a               rdfs:Class ;
@@ -237,8 +250,9 @@
 :FAGFELT_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """The scientific field in which the book is published""" ;
-    rdfs:subClassOf :TYPE_BOK_RAPPORT_Class .
+    rdfs:comment    """A reference to the NSD scientific field in which the book/chapter is published. All NSD fields are listed here: https://npi.nsd.no/fagfeltoversikt/
+    """ ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class  .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a               rdfs:Class ;
@@ -818,7 +832,6 @@ Cristin.
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
-
 :TYPE_MEDIEBIDRAG
     a                  :cristinfield ;
     rdfs:range         :TYPE_MEDIEBIDRAG_Class ;
@@ -864,7 +877,6 @@ It is a self reference.""" ;
     publications of the author.
     """ ;
     :currently_ignored false .
-
 
 :finansieringslopenr
     a                  :cristinfield ;
@@ -913,8 +925,6 @@ It is a self reference.""" ;
     rdfs:comment       """Year the funding / research grant ended.""" ;
     :currently_ignored true .
 
-
-
 :TYPE_BOK_RAPPORT
     a               :cristinfield ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
@@ -926,16 +936,7 @@ It is a self reference.""" ;
         entityDescription.npiSubjectHeading
     """ .
 
-:antall_sider_totalt
-    a               :cristinfield ;
-    rdfs:comment    """
-    The total number of pages.
-    """ ;
-    rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages
-    """ .
+
 
 :isbn
     a               :cristinfield ;
@@ -963,10 +964,9 @@ It is a self reference.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
 .
 
-
 :fagfeltkode
     a               :cristinfield ;
-    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:comment    "The NSD code representing the scientific field in which the book is published." ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
     :mapstonvafield """
@@ -974,15 +974,15 @@ It is a self reference.""" ;
         """ .
 
 :fagomradekode
-    a                  :cristinfield ;
-    rdfs:comment       "The (abriviation) code representing the scientific field in which the book is published" ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :FAGFELT_Class ;
-    :currently_ignored "true" .
+    a            :cristinfield ;
+    rdfs:comment "The (abbreviation) code representing the scientific field in which the book is published" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :FAGFELT_Class ;
+    :currently_ignored   "true" .
 
 :navn
     a                  :cristinfield ;
-    rdfs:comment       "The name of the scientific field in which the book is published" ;
+    rdfs:comment       "The NSD name of the scientific field in which the book is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
@@ -1039,19 +1039,25 @@ It is a self reference.""" ;
 
 :doi
     a               :cristinfield ;
-    rdfs:comment    "The doi connected to the respective article. Possibly null." ;
+    rdfs:comment    "The doi connected to the respective entry. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
     :mapstonvafield """
         entityDescription.reference.doi
     """ .
 
 :antall_sider_totalt
-    a                  :cristinfield ;
-    rdfs:comment       "The total number of pages. Possibly null." ;
-    rdfs:range         xsd:positiveInteger ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    a               :cristinfield ;
+    rdfs:comment    """
+    The total number of pages of the specific entry.
+    When the the entry represents a part of another entry (e.g. a Chapter in a Book) then the total number of pages
+    refers to the entry (e.g Chapter) and not the to parent entry (e.g. Book).
+    """ ;
+    rdfs:range      xsd:positiveInteger ;
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    :mapstonvafield """
+        entityDescription.reference.publicationInstance.pages
+    """ .
 
 :publiseringsar
     a                  :cristinfield ;
@@ -1252,7 +1258,6 @@ It is a self reference.""" ;
     rdfs:domain        :VARBEID_EMNEORD_Class ;
     :currently_ignored "true" .
 
-
 :helsekategorikode
     a                  :cristinfield ;
     rdfs:comment       """Health Category Code in the UKCRC Health Research Classification System (HRCS).
@@ -1262,12 +1267,65 @@ It is a self reference.""" ;
     rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
     :currently_ignored "true" .
 
-
 :aktivitetskode
     a                  :cristinfield ;
     rdfs:comment       """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
                      See https://hrcsonline.net/research-activities/.
                      """ ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
     :currently_ignored "true" .
+
+:TYPE_BOK_RAPPORT_DEL
+    a            :cristinfield ;
+    rdfs:comment """Reference to a Cristin entry that is a part of a book or report.""" ;
+    rdfs:range   :TYPE_BOK_RAPPORT_Class ;
+    rdfs:domain  :Result .
+
+:varbeidlopenr_inngar_i
+    a            :cristinfield ;
+    rdfs:comment """The CristinID of the current TYPE_BOK_RAPPORT_DEL_Class entry's parent TYPE_BOK_RAPPORT_Class entry.""" ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:range   xsd:integer .
+
+:status_utgitt_av_forlag
+    a            :cristinfield ;
+    rdfs:comment """UNKNOWN meaning. It takes values "J" and "N" corresponding to the values true and false.""" ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+:delangivelse
+    a            :cristinfield ;
+    rdfs:comment """A free text comment describing the relation of the respective Result to the parent entry.
+    Example values: Session 2   Chapter 2, Introduction, Del I: Kunsten som metodisk univers/Kapittel 3
+    Suggestion: to be ignored.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored   true .
+
+:sidenr_fra
+    a            :cristinfield ;
+    rdfs:comment """The starting page of the part in the respective parent entry.
+    Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+:sidenr_til
+    a            :cristinfield ;
+    rdfs:comment """The ending page of the part in the respective parent entry.
+    Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
+    """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+
+:sprakkode_oversatt_fra
+    a            :cristinfield ;
+    rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP
+    or OVERSETTELSE_BOK, indicating that the current entry is a translation of a book or chapter.
+ The value represents the language of the original document as an ISO 639-1 code. The original document is not
+ referenced further as it may not be in the scope of Cristin.
+  """ ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class .
