@@ -41,7 +41,6 @@ import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -54,24 +53,20 @@ import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
-public class CristinMapper {
+public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
     public static final BookSeries EMPTY_SERIES = null;
     public static final String EMPTY_SERIES_NUMBER = null;
     private static final Config config = loadConfiguration();
     private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
-    private final CristinObject cristinObject;
+
     private final DoiConverter doiConverter;
 
     public CristinMapper(CristinObject cristinObject) {
-        this.cristinObject = cristinObject;
+        super(cristinObject);
         DoiValidator doiValidator = new DoiValidator();
         doiConverter = new DoiConverter(doiUri -> validateDoi(doiValidator, doiUri));
-    }
-
-    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
-        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
     }
 
     public Publication generatePublication() {
@@ -95,6 +90,10 @@ public class CristinMapper {
             .orElse(null);
     }
 
+    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
+        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
+    }
+
     private static boolean parseValidateDoiOnline() {
         return config.getBoolean("doi.validation.online");
     }
@@ -102,8 +101,6 @@ public class CristinMapper {
     private static Config loadConfiguration() {
         return ConfigFactory.load(ConfigFactory.defaultApplication());
     }
-
-
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
         try {
@@ -180,7 +177,7 @@ public class CristinMapper {
             return buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
-            return buildUnconfirmedJournalForPublicationContext();
+            return new PeriodicalBuilder(cristinObject).buildPeriodicalForPublicationContext();
         }
         if (isReport(cristinObject)) {
             return buildPublicationContextWhenMainCategoryIsReport();
@@ -198,10 +195,6 @@ public class CristinMapper {
 
     private UnconfirmedPublisher buildUnconfirmedPublisher() {
         return new UnconfirmedPublisher(extractPublisherName());
-    }
-
-    private UnconfirmedJournal buildUnconfirmedJournalForPublicationContext() throws InvalidIssnException {
-        return new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline());
     }
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
@@ -296,24 +289,6 @@ public class CristinMapper {
             throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
         }
         return subjectField;
-    }
-
-    private CristinJournalPublication extractCristinJournalPublication() {
-        return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getJournalPublication)
-            .orElse(null);
-    }
-
-    private String extractIssn() {
-        return extractCristinJournalPublication().getJournal().getIssn();
-    }
-
-    private String extractIssnOnline() {
-        return extractCristinJournalPublication().getJournal().getIssnOnline();
-    }
-
-    private String extractPublisherTitle() {
-        return extractCristinJournalPublication().getJournal().getJournalTitle();
     }
 
     private URI extractDoi() {

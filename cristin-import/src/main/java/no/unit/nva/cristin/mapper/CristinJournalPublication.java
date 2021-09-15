@@ -8,14 +8,13 @@ import lombok.Builder;
 import lombok.Data;
 import nva.commons.core.JacocoGenerated;
 
-
 @Data
 @Builder(
-        builderClassName = "CristinJournalPublicationBuilder",
-        toBuilder = true,
-        builderMethodName = "builder",
-        buildMethodName = "build",
-        setterPrefix = "with"
+    builderClassName = "CristinJournalPublicationBuilder",
+    toBuilder = true,
+    builderMethodName = "builder",
+    buildMethodName = "build",
+    setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"antall_sider_totalt", "publiseringsar", "status_referee_ordning",
