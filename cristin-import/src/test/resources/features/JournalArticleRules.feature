@@ -85,3 +85,13 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given that the Journal Article entry has an empty "publisherName" field
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+
+  Scenario: When the the Cristin entry has a reference to an NSD journal then the
+  NVA Entry contains a URI that is a reference to that NSD journal.
+    Given the Journal Publication has a reference to an NSD journal or publisher with identifier 12345
+    And the Journal Publication has publishing year equal to 2003
+    And the year the Cristin Result was published is equal to 2003
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy
+    And the Journal URI specifies the Journal by the NSD ID 12345 and the year 2003.
