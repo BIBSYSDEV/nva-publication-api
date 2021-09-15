@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_JOURNAL_PEER_REVIEWED;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isFeatureArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalArticle;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isJournalCorrigendum;
@@ -98,7 +97,7 @@ public class JournalBuilder extends AbstractPublicationInstanceBuilder {
             .withContent(getCristinObject().getSecondaryCategory().toJournalArticleContentType())
             .withPages(numberOfPages)
             .withIssue(extractIssue())
-            .withPeerReviewed(HARDCODED_JOURNAL_PEER_REVIEWED)
+            .withPeerReviewed(getCristinObject().isPeerReviewed())
             .withVolume(extractVolume())
             .build();
     }

@@ -47,7 +47,7 @@ public class ChapterArticleFeatures {
     }
 
     @Then("the Chapter Article has a \"isPeerReview\" equal to True")
-    public void theChapterArticleHasAEqualToTrue() {
+    public void theChapterArticleHasAIsPeerReviewEqualToTrue() {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()
