@@ -5,8 +5,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Given a valid Cristin Result with secondary category "ARTIKKEL_FAG"
 
 
-  Scenario Outline: Cristin Result of type "Academic chapter/article/Conference paper", "Chapter",
-  "Popular scientific chapter/article" and "Encyclopedia article" mapps to NVA entry type "ChapterArticle" and correct sub-type.
+  Scenario Outline: Cristin Result of listed secondarycategory maps to NVA entry type "ChapterArticle" and correct sub-type.
     Given a valid Cristin Result with secondary category "<secondarycategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "JournalArticle"
