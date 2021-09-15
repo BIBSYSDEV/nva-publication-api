@@ -80,4 +80,5 @@ public class CristinResultTypeMappingFeatures {
     public void theCristinResultHasAValueForTheArstall_rapportert() {
         this.scenarioContext.getCristinEntry().setYearReported(2020);
     }
+
 }

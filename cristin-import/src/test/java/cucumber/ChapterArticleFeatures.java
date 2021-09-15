@@ -3,6 +3,7 @@ package cucumber;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
+import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 
@@ -43,5 +44,15 @@ public class ChapterArticleFeatures {
         CristinBookOrReportPartMetadata cristinBookOrReportPartMetadata =
                 CristinBookOrReportPartMetadata.builder().build();
         this.scenarioContext.getCristinEntry().setBookOrReportPartMetadata(cristinBookOrReportPartMetadata);
+    }
+
+    @Then("the Chapter Article has a \"isPeerReview\" equal to True")
+    public void theChapterArticleHasAEqualToTrue() {
+        PublicationInstance<?> context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        ChapterArticle chapterArticle = (ChapterArticle) context;
+        assertThat(chapterArticle.isPeerReviewed(), is(true));
     }
 }
