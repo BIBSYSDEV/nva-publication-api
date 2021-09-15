@@ -1,30 +1,22 @@
-Feature: Mapping of "Article in business/trade/industry journal", "Academic article", "Popular scientific article", "Academic literature review" entries
+Feature: Mapping of "Article in business/trade/industry journal", "Academic article",
+  "Popular scientific article", "Academic literature review", "Short communication" entries
 
   Background:
     Given a valid Cristin Result with secondary category "ARTIKKEL_FAG"
 
-  Scenario: Cristin Result of type "Article in business/trade/industry journal" maps to "JournalArticle"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "JournalArticle"
-    And the NVA JournalArticle Resource has a Content type of type "Professional article"
 
-  Scenario: Cristin Result of type "Academic article" maps to "JournalArticle"
-    Given a valid Cristin Result with secondary category "ARTIKKEL"
+  Scenario Outline: Cristin Result of listed secondarycategory maps to NVA entry type "ChapterArticle" and correct sub-type.
+    Given a valid Cristin Result with secondary category "<secondarycategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "JournalArticle"
-    And the NVA JournalArticle Resource has a Content type of type "Research article"
-
-  Scenario: Cristin Result of type "Popular scientific article" maps to "JournalArticle"
-    Given a valid Cristin Result with secondary category "ARTIKKEL_POP"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "JournalArticle"
-    And the NVA JournalArticle Resource has a Content type of type "Popular science article"
-
-  Scenario: Cristin Result of type "Academic literature review" maps to "JournalArticle"
-    Given a valid Cristin Result with secondary category "OVERSIKTSART"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Instance of type "JournalArticle"
-    And the NVA JournalArticle Resource has a Content type of type "Review article"
+    And the NVA JournalArticle Resource has a Content type of type "<contentType>"
+    Examples:
+      | secondarycategory | contentType             |
+      | ARTIKKEL_FAG      | Professional article    |
+      | ARTIKKEL          | Research article        |
+      | SHORTCOMM         | Research article        |
+      | ARTIKKEL_POP      | Popular science article |
+      | OVERSIKTSART      | Review article          |
 
   Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
   Scenario: Cristin Entry's Journal Publication "issn" entry is copied to the NVA field  "printISSN".

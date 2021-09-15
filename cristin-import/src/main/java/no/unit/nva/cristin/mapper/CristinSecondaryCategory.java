@@ -28,6 +28,7 @@ public enum CristinSecondaryCategory {
     POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
+    SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
@@ -102,7 +103,8 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.SHORT_COMMUNICATION.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isResearchReport(CristinObject cristinObject) {
@@ -158,7 +160,8 @@ public enum CristinSecondaryCategory {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
                 POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
                 ARTICLE, JournalArticleContentType.RESEARCH_ARTICLE,
-                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE);
+                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE,
+                SHORT_COMMUNICATION, JournalArticleContentType.RESEARCH_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {

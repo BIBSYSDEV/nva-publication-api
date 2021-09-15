@@ -148,6 +148,7 @@ public final class CristinDataGenerator {
             case ARTICLE:
             case POPULAR_ARTICLE:
             case ACADEMIC_REVIEW:
+            case SHORT_COMMUNICATION:
                 return randomJournalArticle(category);
             case RESEARCH_REPORT:
                 return randomResearchReport();
