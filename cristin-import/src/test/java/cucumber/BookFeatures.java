@@ -42,9 +42,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
     public void theNvaResourceHasAPublicationContextWithAnIsbnListContainingTheValues(String expectedIsbn) {
         PublicationContext publicationContext = scenarioContext.getNvaEntry()
-                                                    .getEntityDescription()
-                                                    .getReference()
-                                                    .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book bookContext = (Book) publicationContext;
         String singleIsbn = bookContext.getIsbnList().stream().collect(SingletonCollector.collect());
         assertThat(singleIsbn, is(equalTo(expectedIsbn)));
@@ -74,9 +74,9 @@ public class BookFeatures {
     @Then("the NVA Resource has a PublicationContext with publisher with name equal to {string}")
     public void theNvaResourceHasAPublicationContextWithPublisherWithNameEqualTo(String expectedPublisherName) {
         PublicationContext context = scenarioContext.getNvaEntry()
-                                         .getEntityDescription()
-                                         .getReference()
-                                         .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book book = (Book) context;
         PublishingHouse expectedPublisher = new UnconfirmedPublisher(expectedPublisherName);
         assertThat(book.getPublisher(), is(equalTo(expectedPublisher)));
@@ -93,10 +93,10 @@ public class BookFeatures {
     public void thatTheBookReportHasASubjectFieldWithTheSubjectFieldCodeEqualTo(int subjectFieldCode) {
         scenarioContext.getCristinEntry()
             .getBookOrReportMetadata()
-                        .setSubjectField(CristinSubjectField
-                                        .builder()
-                                        .withSubjectFieldCode(subjectFieldCode)
-                                        .build()
+            .setSubjectField(CristinSubjectField
+                                 .builder()
+                                 .withSubjectFieldCode(subjectFieldCode)
+                                 .build()
             );
     }
 
@@ -130,9 +130,9 @@ public class BookFeatures {
     @Then("NVA Resource has a Publisher that cannot be verified through a URI")
     public void nvaResourceHasAPublisherThatCannotBeVerifiedThroughAUri() {
         PublicationContext context = scenarioContext.getNvaEntry()
-                .getEntityDescription()
-                .getReference()
-                .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
         Book bookContext = (Book) context;
         PublishingHouse publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));

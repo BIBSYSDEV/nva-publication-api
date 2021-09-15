@@ -1,5 +1,30 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Objects.isNull;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static nva.commons.core.attempt.Try.attempt;
+import static org.hamcrest.MatcherAssert.assertThat;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import java.net.URI;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -25,31 +50,8 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
-
-import java.net.URI;
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.Objects.isNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static nva.commons.core.attempt.Try.attempt;
-import static org.hamcrest.MatcherAssert.assertThat;
+import nva.commons.doi.DoiConverter;
+import nva.commons.doi.DoiValidator;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper {
@@ -57,27 +59,50 @@ public class CristinMapper {
     public static final String EMPTY_STRING = "";
     public static final BookSeries EMPTY_SERIES = null;
     public static final String EMPTY_SERIES_NUMBER = null;
-
+    private static final Config config = loadConfiguration();
+    private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
     private final CristinObject cristinObject;
+    private final DoiConverter doiConverter;
 
     public CristinMapper(CristinObject cristinObject) {
         this.cristinObject = cristinObject;
+        DoiValidator doiValidator = new DoiValidator();
+        doiConverter = new DoiConverter(doiUri -> validateDoi(doiValidator, doiUri));
+    }
+
+    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
+        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
     }
 
     public Publication generatePublication() {
         Publication publication = new Builder()
-                                      .withAdditionalIdentifiers(Set.of(extractIdentifier()))
-                                      .withEntityDescription(generateEntityDescription())
-                                      .withCreatedDate(extractEntryCreationDate())
-                                      .withPublisher(extractOrganization())
-                                      .withOwner(cristinObject.getPublicationOwner())
-                                      .withStatus(PublicationStatus.DRAFT)
-                                      .withLink(HARDCODED_SAMPLE_DOI)
-                                      .withProjects(extractProjects())
-                                      .build();
+            .withAdditionalIdentifiers(Set.of(extractIdentifier()))
+            .withEntityDescription(generateEntityDescription())
+            .withCreatedDate(extractEntryCreationDate())
+            .withPublisher(extractOrganization())
+            .withOwner(cristinObject.getPublicationOwner())
+            .withStatus(PublicationStatus.DRAFT)
+            .withLink(HARDCODED_SAMPLE_DOI)
+            .withProjects(extractProjects())
+            .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
     }
+
+    public CristinBookOrReportMetadata extractCristinBookReport() {
+        return Optional.ofNullable(cristinObject)
+            .map(CristinObject::getBookOrReportMetadata)
+            .orElse(null);
+    }
+
+    private static boolean parseValidateDoiOnline() {
+        return config.getBoolean("doi.validation.online");
+    }
+
+    private static Config loadConfiguration() {
+        return ConfigFactory.load(ConfigFactory.defaultApplication());
+    }
+
 
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
@@ -95,10 +120,10 @@ public class CristinMapper {
             return null;
         }
         return cristinObject.getPresentationalWork()
-                .stream()
-                .filter(CristinPresentationalWork::isProject)
-                .map(CristinPresentationalWork::toNvaResearchProject)
-                .collect(Collectors.toList());
+            .stream()
+            .filter(CristinPresentationalWork::isProject)
+            .map(CristinPresentationalWork::toNvaResearchProject)
+            .collect(Collectors.toList());
     }
 
     private Organization extractOrganization() {
@@ -107,8 +132,8 @@ public class CristinMapper {
 
     private Instant extractEntryCreationDate() {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
-                   .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-                   .orElse(null);
+            .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
+            .orElse(null);
     }
 
     private ZoneOffset zoneOffset() {
@@ -117,41 +142,40 @@ public class CristinMapper {
 
     private EntityDescription generateEntityDescription() {
         return new EntityDescription.Builder()
-                   .withLanguage(extractLanguage())
-                   .withMainTitle(extractMainTitle())
-                   .withDate(extractPublicationDate())
-                   .withReference(buildReference())
-                   .withContributors(extractContributors())
-                   .withNpiSubjectHeading(extractNpiSubjectHeading())
-                   .withAbstract(extractAbstract())
-                   .withTags(extractTags())
-                   .build();
+            .withLanguage(extractLanguage())
+            .withMainTitle(extractMainTitle())
+            .withDate(extractPublicationDate())
+            .withReference(buildReference())
+            .withContributors(extractContributors())
+            .withNpiSubjectHeading(extractNpiSubjectHeading())
+            .withAbstract(extractAbstract())
+            .withTags(extractTags())
+            .build();
     }
-
 
     private List<Contributor> extractContributors() {
         return cristinObject.getContributors()
-                   .stream()
-                   .map(attempt(CristinContributor::toNvaContributor))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .stream()
+            .map(attempt(CristinContributor::toNvaContributor))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private Reference buildReference() {
         PublicationInstanceBuilderImpl publicationInstanceBuilderImpl
-                = new PublicationInstanceBuilderImpl(cristinObject);
+            = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
-                = publicationInstanceBuilderImpl.build();
+            = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow();
         return new Reference.Builder()
-                   .withPublicationInstance(publicationInstance)
-                   .withPublishingContext(publicationContext)
-                   .withDoi(extractDoi())
-                   .build();
+            .withPublicationInstance(publicationInstance)
+            .withPublishingContext(publicationContext)
+            .withDoi(extractDoi())
+            .build();
     }
 
     private PublicationContext buildPublicationContext()
-            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
             return buildBookForPublicationContext();
         }
@@ -167,7 +191,7 @@ public class CristinMapper {
         return null;
     }
 
-    private Book buildBookForPublicationContext() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    private Book buildBookForPublicationContext() throws InvalidIsbnException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         return new Book(EMPTY_SERIES, EMPTY_SERIES_NUMBER, buildUnconfirmedPublisher(), isbnList);
     }
@@ -181,26 +205,24 @@ public class CristinMapper {
     }
 
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
-            throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
+        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
             return new Degree.Builder()
-                    .withPublisher(buildUnconfirmedPublisher())
-                    .withIsbnList(isbnList)
-                    .build();
-        }
-        return new Report.Builder()
                 .withPublisher(buildUnconfirmedPublisher())
                 .withIsbnList(isbnList)
                 .build();
+        }
+        return new Report.Builder()
+            .withPublisher(buildUnconfirmedPublisher())
+            .withIsbnList(isbnList)
+            .build();
     }
 
     private Chapter buildChapterForPublicationContext() {
         return new Chapter.Builder()
-                .build();
+            .build();
     }
-
-
 
     private PublicationDate extractPublicationDate() {
         return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear()).build();
@@ -208,23 +230,17 @@ public class CristinMapper {
 
     private String extractMainTitle() {
         return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .map(CristinTitle::getTitle)
-                   .orElseThrow();
+            .filter(CristinTitle::isMainTitle)
+            .findFirst()
+            .map(CristinTitle::getTitle)
+            .orElseThrow();
     }
 
     private Stream<CristinTitle> extractCristinTitles() {
         return Optional.ofNullable(cristinObject)
-                   .map(CristinObject::getCristinTitles)
-                   .stream()
-                   .flatMap(Collection::stream);
-    }
-
-    public CristinBookOrReportMetadata extractCristinBookReport() {
-        return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getBookOrReportMetadata)
-            .orElse(null);
+            .map(CristinObject::getCristinTitles)
+            .stream()
+            .flatMap(Collection::stream);
     }
 
     private String extractPublisherName() {
@@ -237,11 +253,11 @@ public class CristinMapper {
 
     private URI extractLanguage() {
         return extractCristinTitles()
-                   .filter(CristinTitle::isMainTitle)
-                   .findFirst()
-                   .map(CristinTitle::getLanguagecode)
-                   .map(LanguageMapper::toUri)
-                   .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
+            .filter(CristinTitle::isMainTitle)
+            .findFirst()
+            .map(CristinTitle::getLanguagecode)
+            .map(LanguageMapper::toUri)
+            .orElse(LanguageMapper.LEXVO_URI_UNDEFINED);
     }
 
     private AdditionalIdentifier extractIdentifier() {
@@ -259,8 +275,8 @@ public class CristinMapper {
 
     private String extractSubjectFieldCode(CristinSubjectField subjectField) {
         return Optional.ofNullable(subjectField.getSubjectFieldCode())
-                .map(String::valueOf)
-                .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
+            .map(String::valueOf)
+            .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
     }
 
     private boolean resourceShouldAlwaysHaveAnNpiSubjectHeading() {
@@ -284,8 +300,8 @@ public class CristinMapper {
 
     private CristinJournalPublication extractCristinJournalPublication() {
         return Optional.ofNullable(cristinObject)
-                .map(CristinObject::getJournalPublication)
-                .orElse(null);
+            .map(CristinObject::getJournalPublication)
+            .orElse(null);
     }
 
     private String extractIssn() {
@@ -301,24 +317,27 @@ public class CristinMapper {
     }
 
     private URI extractDoi() {
-        if (isJournal(cristinObject) && extractCristinJournalPublication().getDoi() != null) {
-            return URI.create(extractCristinJournalPublication().getDoi());
+        if (isJournal(cristinObject)) {
+            return Optional.of(extractCristinJournalPublication())
+                .map(CristinJournalPublication::getDoi)
+                .map(doiConverter::toUri)
+                .orElse(null);
         }
         return null;
     }
 
     private List<CristinTags> extractCristinTags() {
         return Optional.ofNullable(cristinObject)
-                .map(CristinObject::getTags)
-                .orElse(null);
+            .map(CristinObject::getTags)
+            .orElse(null);
     }
 
     private String extractAbstract() {
         return extractCristinTitles()
-                .filter(CristinTitle::isMainTitle)
-                .findFirst()
-                .map(CristinTitle::getAbstractText)
-                .orElse(null);
+            .filter(CristinTitle::isMainTitle)
+            .findFirst()
+            .map(CristinTitle::getAbstractText)
+            .orElse(null);
     }
 
     private List<String> extractTags() {
@@ -339,5 +358,4 @@ public class CristinMapper {
         }
         return listOfTags;
     }
-
 }

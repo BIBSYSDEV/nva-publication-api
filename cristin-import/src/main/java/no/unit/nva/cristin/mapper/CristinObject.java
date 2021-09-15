@@ -40,7 +40,7 @@ public class CristinObject implements JsonSerializable {
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
     public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
-    public static String IDENTIFIER_ORIGIN = "Cristin";
+    public static final String IDENTIFIER_ORIGIN = "Cristin";
     private static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
         objectMapperWithEmpty.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
