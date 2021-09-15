@@ -44,7 +44,7 @@ public class CristinPresentationalWork {
     }
 
     public boolean isProject() {
-        return presentationType.equals(PROSJEKT);
+        return PROSJEKT.equals(presentationType);
     }
 
     public ResearchProject toNvaResearchProject() {

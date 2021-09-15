@@ -40,6 +40,7 @@ import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import nva.commons.core.JsonUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
 
@@ -61,6 +62,12 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
     private static final String CRISTIN_BOOK_REPORT_PART = "bookOrReportPartMetadata";
+    public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
+    public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
+    public static final String DOI_SUBPART_DELIMITER = ".";
+    public static final String DOI_PREFIX_SUFFIX_SEPARATOR = "/";
+    public static final String DOI_PREFIX_FIRST_SUBPART = "10";
+    public static final int MIN_SUFFIX_PARTS_NUMBER = 2;
 
     private CristinDataGenerator() {
 
@@ -439,7 +446,7 @@ public final class CristinDataGenerator {
                 .withPagesBegin("1")
                 .withPagesEnd(String.valueOf(smallRandomNumber()))
                 .withVolume(String.valueOf(smallRandomNumber()))
-                .withDoi(String.valueOf(smallRandomNumber()))
+                .withDoi(randomDoiString())
                 .build();
     }
 
@@ -554,6 +561,25 @@ public final class CristinDataGenerator {
                 + "-"
                 + issnWithChecksum.substring(MIDDLE_INDEX_OF_ISSN_STRING);
     }
+
+    private static String randomDoiString() {
+        String prefixSecondPart = RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
+                                                                       MAX_DOI_PREFIX_SUBPART_LENGTH);
+        String suffix = randomDoiSuffix();
+        return DOI_PREFIX_FIRST_SUBPART
+               + DOI_SUBPART_DELIMITER
+               + prefixSecondPart
+               + DOI_PREFIX_SUFFIX_SEPARATOR
+               + suffix;
+    }
+
+    private static String randomDoiSuffix() {
+        return IntStream.range(1, MIN_SUFFIX_PARTS_NUMBER + RANDOM.nextInt(4)).boxed()
+            .map(ignored -> RandomStringUtils.randomAlphanumeric(MIN_DOI_PREFIX_SUBPART_LENGTH,
+                                                                 MAX_DOI_PREFIX_SUBPART_LENGTH))
+            .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
+    }
+
 
 
 }
