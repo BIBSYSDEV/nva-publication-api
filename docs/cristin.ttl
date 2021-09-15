@@ -257,7 +257,11 @@
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-    Information about the Publishing House that published a Book or a Report """ .
+    Information about the Publishing House that published a Book or a Report. It is important to note that when a Book belongs to a series,
+    then it is possible that a series will have a different publisher than the book. I.e., one publishing house is publishing the series but another
+    publishing house is publishing the book belonging to the series.
+
+    """ .
 
 :id
     a               :cristinfield ;
