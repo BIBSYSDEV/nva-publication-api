@@ -34,6 +34,5 @@ entityDescription.npiSubjectHeading
 entityDescription.reference.publicationContext.url
 entityDescription.reference.publicationContext.level
 entityDescription.reference.publicationInstance.illustrated
-entityDescription.reference.publicationInstance.peerReviewed
 entityDescription.reference.publicationInstance.textBookContent
 

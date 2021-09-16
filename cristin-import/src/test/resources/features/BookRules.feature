@@ -93,6 +93,13 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
+  Scenario: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And that the Cristin Result has a non empty Book Report
+    And the Cristin Result has a value for the date when it was reported in NVI.
+    When the Cristin Result is converted to an NVA Resource
+    Then the Book Report has a "isPeerReviewed" equal to True
+
   Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     And that the Cristin Result has a non empty Book Report
@@ -124,16 +131,34 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then no error is reported.
 
-  Scenario Outline: Mapping creates a reference to an NSD publisher when the Cristin entry contains
+  Scenario Outline: Mapping creates a reference to an NSD Series when the Cristin entry contains
     an NSD code for the publisher
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     And the Cristin Result refers to a Series with NSD code 12345
-    And the Cristin Result has publication year "2002"
+    And the Cristin Result has publication year 2002
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Reference to a Publisher that is a URI pointing to the NVA NSD proxy
+    Then the NVA Resource has a Reference to a Series that is a URI pointing to the NVA NSD proxy
     And the URI contains the NSD code 12345 and the publication year 2002
     Examples:
       | secondaryCategory |
       | MONOGRAFI         |
       | ANTOLOGI          |
 
+
+    Scenario Outline: Mapping crates an Unconfirmed series when a Cristin Book has a references to
+      Book series but there is no NSD code.
+      Given a valid Cristin Result with secondary category "<secondaryCategory>"
+      And the Cristin Result belongs to a Series
+      And the Series does not include an NSD code
+      And the Series mentions a title "SomeSeries"
+      And the Series mentions an issn "0028-0836"
+      And  the Series mentions online issn "0028-0836"
+      And the Series mentions a volume "Vol 1"
+      And the Series mentions an issue "Issue 2"
+      When the Cristin Result is converted to an NVA Resource
+      Then  the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "0028-0836", online issn "0028-0836" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
+
+      Examples:
+        | secondaryCategory |
+        | MONOGRAFI         |
+        | ANTOLOGI          |

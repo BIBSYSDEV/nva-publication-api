@@ -4,7 +4,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -76,4 +75,8 @@ public class CristinResultTypeMappingFeatures {
         assertThat(actuallType, is(equalTo(expectedContentType)));
     }
 
+    @Given("the Cristin Result has a value for the date when it was reported in NVI.")
+    public void theCristinResultHasAValueForTheDateWhenItWasReportedInNVI() {
+        this.scenarioContext.getCristinEntry().setYearReported(2020);
+    }
 }

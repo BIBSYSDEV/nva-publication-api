@@ -20,6 +20,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -491,4 +492,15 @@ public class JournalFeatures {
         String actualIssue = journalReview.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
+
+    @Then("the Journal Article has a \"isPeerReviewed\" equal to True")
+    public void theJournalChapterArticleHasIsPeerReviewedAEqualToTrue() {
+        PublicationInstance<?> context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalArticle journalArticle = (JournalArticle) context;
+        assertThat(journalArticle.isPeerReviewed(), is(true));
+    }
+
 }

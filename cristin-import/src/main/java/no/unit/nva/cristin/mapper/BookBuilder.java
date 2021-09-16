@@ -44,6 +44,8 @@ public class BookBuilder extends AbstractBookReportBuilder {
             .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
             .withPages(createMonographPages())
             .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
+            .withPeerReviewed(getCristinObject().isPeerReviewed())
             .build();
     }
+
 }

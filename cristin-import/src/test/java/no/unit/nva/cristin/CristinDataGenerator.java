@@ -67,6 +67,8 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_TAGS = "tags";
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
+    private static final String BOOK_OR_REPORT_PART_METADATA = "bookOrReportPartMetadata";
+    private static final String BOOK_OR_REPORT_METADATA_FIELD = "bookOrReportMetadata";
 
     private CristinDataGenerator() {
 
@@ -190,7 +192,6 @@ public final class CristinDataGenerator {
         return createRandomChapterWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-
     public static CristinObject objectWithRandomBookReport() {
         return createRandomBookWithBookReportValues();
     }
@@ -252,7 +253,8 @@ public final class CristinDataGenerator {
             .withNumberOfPages(randomString())
             .withSubjectField(randomSubjectField())
             .withBookSeries(randomBookSeries())
-            .withSequentialDesignation(Integer.toString(smallRandomNumber()))
+            .withIssue(randomString())
+            .withVolume(randomString())
             .build();
     }
 
@@ -315,7 +317,6 @@ public final class CristinDataGenerator {
     private static CristinObject randomDegreeMaster(CristinSecondaryCategory secondaryCategory) {
         return createRandomReportWithSpecifiedSecondaryCategory(secondaryCategory);
     }
-
 
     private static <T> T randomElement(List<T> elements) {
         return elements.get(RANDOM.nextInt(elements.size()));
@@ -499,7 +500,8 @@ public final class CristinDataGenerator {
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
-                   CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD)));
+                   CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
+                   BOOK_OR_REPORT_PART_METADATA)));
 
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }

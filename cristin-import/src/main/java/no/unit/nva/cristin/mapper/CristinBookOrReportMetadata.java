@@ -21,7 +21,7 @@ import nva.commons.core.StringUtils;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @JsonIgnoreProperties({"utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
     "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
-    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
+    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie",
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
     "forlag",  "arkivpost"})
 public class CristinBookOrReportMetadata {
@@ -33,7 +33,8 @@ public class CristinBookOrReportMetadata {
     public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
         "The subjectField value must be present for all instances of Monography.";
     public static final String BOOK_SERIES = "tidsskrift_serie";
-    public static final String SEQUENTIAL_DESIGNATION = "hefte";
+    public static final String ISSUE = "hefte";
+    public static final String VOLUME = "volum_serie";
 
     @JsonProperty(ISBN_LIST)
     private String isbn;
@@ -46,8 +47,10 @@ public class CristinBookOrReportMetadata {
     @JsonProperty(BOOK_SERIES)
     //TODO rename class to something more appropriate.
     private CristinJournalPublicationJournal bookSeries;
-    @JsonProperty(SEQUENTIAL_DESIGNATION)
-    public String sequentialDesignation;
+    @JsonProperty(ISSUE)
+    private String issue;
+    @JsonProperty(VOLUME)
+    private String volume;
 
     public CristinBookOrReportMetadata() {
 
