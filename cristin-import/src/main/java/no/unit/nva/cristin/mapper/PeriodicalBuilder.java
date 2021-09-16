@@ -37,7 +37,7 @@ public class PeriodicalBuilder extends CristinMappingModule {
         URI journalUri = new UriWrapper(NVA_API_DOMAIN).addChild(MappingConstants.NSD_PROXY_PATH)
             .addChild(MappingConstants.NSD_PROXY_PATH_JOURNAL)
             .addChild(cristinObject.getJournalPublication().getJournal().getNsdCode().toString())
-            .addChild(cristinObject.getPublicationYear())
+            .addChild(cristinObject.getPublicationYear().toString())
             .getUri();
         return new Journal(journalUri.toString());
     }

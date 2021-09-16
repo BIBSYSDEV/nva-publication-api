@@ -218,7 +218,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private PublicationDate extractPublicationDate() {
-        return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear()).build();
+        return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear().toString()).build();
     }
 
     private String extractMainTitle() {
