@@ -30,6 +30,7 @@ public class ChapterArticleBuilder extends AbstractPublicationInstanceBuilder {
             return new ChapterArticle.Builder()
                     .withContentType(getCristinObject().getSecondaryCategory().toChapterArticleContentType())
                     .withPages(createChapterPages())
+                    .withPeerReviewed(getCristinObject().isPeerReviewed())
                     .build();
         } else {
             throw unknownSecondaryCategory();

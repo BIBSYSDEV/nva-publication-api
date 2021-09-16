@@ -18,6 +18,17 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
       | ARTIKKEL_POP      | Popular science article |
       | OVERSIKTSART      | Review article          |
 
+  Scenario Outline: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
+    Given a valid Cristin Result with secondary category "<secondarycategory>"
+    And the Cristin Result has a value for the date when it was reported in NVI.
+    When the Cristin Result is converted to an NVA Resource
+    Then the Journal Article has a "isPeerReviewed" equal to True
+    Examples:
+      | secondarycategory |
+      | ARTIKKEL          |
+      | SHORTCOMM         |
+      | OVERSIKTSART      |
+
   Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
   Scenario: Cristin Entry's Journal Publication "issn" entry is copied to the NVA field  "printISSN".
     Given that the Cristin Result has a non empty Journal Publication
