@@ -62,6 +62,7 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
     private static final String CRISTIN_BOOK_REPORT_PART = "bookOrReportPartMetadata";
+    private static final String CRISTIN_MODIFIED_DATE = "entryLastModifiedDate";
     public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
     public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
     public static final String DOI_SUBPART_DELIMITER = ".";
@@ -467,7 +468,8 @@ public final class CristinDataGenerator {
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
-                        CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, CRISTIN_BOOK_REPORT_PART)));
+                        CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD,
+                        CRISTIN_BOOK_REPORT_PART, CRISTIN_MODIFIED_DATE)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 

@@ -11,7 +11,6 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -95,6 +94,12 @@ public class GeneralMappingRules {
         scenarioContext.getCristinEntry().setEntryCreationDate(localDate);
     }
 
+    @Given("that Cristin Result has modified date equal to the local date {string}")
+    public void thatCristinResultHasModifiedDateEqualToTheLocalDate(String dateString) {
+        LocalDate localDate = LocalDate.parse(dateString);
+        scenarioContext.getCristinEntry().setEntryLastModifiedDate(localDate);
+    }
+
     @When("the Cristin Result is converted to an NVA Resource")
     public void is_converted_to_an_nva_entry() {
         scenarioContext.convertToNvaEntry();
@@ -130,6 +135,18 @@ public class GeneralMappingRules {
     public void theNvaResourceHasACreationDateEqualTo(String expectedIsoInstant) {
         Instant expectedInstant = Instant.parse(expectedIsoInstant);
         assertThat(scenarioContext.getNvaEntry().getCreatedDate(), is(equalTo(expectedInstant)));
+    }
+
+    @Then("the NVA Resource has a Published Date equal to {string}")
+    public void theNvaResourceHasAPublishedDateEqualTo(String expectedIsoInstant) {
+        Instant expectedInstant = Instant.parse(expectedIsoInstant);
+        assertThat(scenarioContext.getNvaEntry().getPublishedDate(), is(equalTo(expectedInstant)));
+    }
+
+    @Then("the NVA Resource has a Modified Date equal to {string}")
+    public void theNvaResourceHasAModifiedDateEqualTo(String expectedIsoInstant) {
+        Instant expectedInstant = Instant.parse(expectedIsoInstant);
+        assertThat(scenarioContext.getNvaEntry().getModifiedDate(), is(equalTo(expectedInstant)));
     }
 
     @Given("the Cristin Result has an array of CristinTitles with values:")
@@ -387,7 +404,7 @@ public class GeneralMappingRules {
         assertThat(this.scenarioContext.mappingIsSuccessful(), is(true));
     }
 
-    @And("the Cristin Result has an valid ISBN with the value {string}")
+    @Given("the Cristin Result has an valid ISBN with the value {string}")
     public void theCristinResultHasAnValidIsbnWithTheValue(String isbn) {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
     }
