@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
@@ -40,8 +41,11 @@ import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
+import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.Report;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
+import no.unit.nva.model.contexttypes.UnconfirmedSeries;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -190,10 +194,40 @@ public class CristinMapper extends CristinMappingModule {
 
     private Book buildBookForPublicationContext() throws InvalidIsbnException {
         List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
-        return new Book(EMPTY_SERIES, EMPTY_SERIES_NUMBER, buildUnconfirmedPublisher(), isbnList);
+        String seriesNumber = cristinObject.getBookOrReportMetadata().getSequentialDesignation();
+        return new Book(createBookSeries(), seriesNumber, buildUnconfirmedPublisher(), isbnList);
     }
 
-    private UnconfirmedPublisher buildUnconfirmedPublisher() {
+    private BookSeries createBookSeries() {
+        return Optional.of(cristinObject)
+            .map(CristinObject::getBookOrReportMetadata)
+            .map(CristinBookOrReportMetadata::getBookSeries)
+            .map(this::toNvaBookSeries)
+            .orElse(null);
+    }
+
+    private BookSeries toNvaBookSeries(CristinJournalPublicationJournal bookSeries) {
+        if (nonNull(bookSeries.getNsdCode())) {
+            return createConfirmedBookSeries(bookSeries);
+        } else {
+            return createUnconfirmedBookSeries(bookSeries);
+        }
+    }
+
+    private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal b) {
+        return attempt(() -> new UnconfirmedSeries(b.getJournalTitle(), b.getIssn(), b.getIssnOnline()))
+            .orElseThrow();
+    }
+
+    private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {
+        int nsdCode = b.getNsdCode();
+        int publicationYear = Integer.parseInt(cristinObject.getPublicationYear());
+        URI seriesUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
+        return new Series(seriesUri);
+    }
+
+    private PublishingHouse buildUnconfirmedPublisher() {
+
         return new UnconfirmedPublisher(extractPublisherName());
     }
 

@@ -20,6 +20,7 @@ public final class MappingConstants {
     public static final String NVA_API_DOMAIN = "https://api." + readDomainName();
     public static final String NSD_PROXY_PATH = "publication-channels";
     public static final String NSD_PROXY_PATH_JOURNAL = "journal";
+    public static final String NSD_PROXY_PATH_PUBLISHER = "publisher";
 
     private MappingConstants() {
 

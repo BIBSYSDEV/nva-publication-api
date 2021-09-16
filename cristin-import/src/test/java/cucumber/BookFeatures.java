@@ -1,18 +1,24 @@
 package cucumber;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
+import java.net.URI;
+import java.util.Optional;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.model.contexttypes.Book;
+import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.PublishingHouse;
+import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
@@ -100,6 +106,12 @@ public class BookFeatures {
             );
     }
 
+
+    @Given("the Cristin Result refers to a Series with NSD code {int}")
+    public void theCristinResultRefersToSeriesWithNSDCode(Integer nsdCode) {
+        scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(nsdCode);
+    }
+
     @Then("the NVA Resource has a npiSubjectHeading with value equal to {int}")
     public void theNvaResourceHasANpiSubjectHeadingWithValueEqualTo(int expectedSubjectFieldCode) {
         String actualSubjectFieldCode = scenarioContext.getNvaEntry()
@@ -136,5 +148,36 @@ public class BookFeatures {
         Book bookContext = (Book) context;
         PublishingHouse publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
+    }
+
+
+
+    @Then("the NVA Resource has a Reference to a Publisher that is a URI pointing to the NVA NSD proxy")
+    public void theNvaResourceHasAReferenceToAPublisherThatIsAUriPointingToTheNvaNsdProxy() {
+        URI seriesId = extractSeriesId();
+        String expectedHost = URI.create(MappingConstants.NVA_API_DOMAIN).getHost();
+        assertThat(seriesId.getHost(), is(equalTo(expectedHost)));
+        assertThat(seriesId.getPath(),containsString(MappingConstants.NSD_PROXY_PATH));
+
+
+
+    }
+
+    private URI extractSeriesId() {
+        Series bookSeries = Optional.of(
+                this.scenarioContext.getNvaEntry().getEntityDescription().getReference().getPublicationContext())
+            .map(context -> (Book) context)
+            .map(Book::getSeries)
+            .filter(BookSeries::isConfirmed)
+            .map(series -> (Series) series)
+            .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
+        return bookSeries.getId();
+    }
+
+    @Then("the URI contains the NSD code {int} and the publication year {int}")
+    public void theURIContainsTheNSDCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
+        URI seriesId = extractSeriesId();
+        assertThat(seriesId.getPath(),containsString(nsdCode.toString()));
+        assertThat(seriesId.getPath(),containsString(publicationYear.toString()));
     }
 }

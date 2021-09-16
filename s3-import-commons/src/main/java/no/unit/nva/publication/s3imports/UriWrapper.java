@@ -7,6 +7,9 @@ import java.util.Optional;
 import no.unit.nva.s3.UnixPath;
 import nva.commons.core.attempt.Try;
 
+/**
+ *
+ */
 public class UriWrapper {
 
     public static final String EMPTY_FRAGMENT = null;

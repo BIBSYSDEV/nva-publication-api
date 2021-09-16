@@ -15,6 +15,7 @@ plugins {
 group = 'com.github.bibsysdev'
 
 repositories {
+    mavenLocal()
     mavenCentral()
     maven { url "https://jitpack.io" }
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }

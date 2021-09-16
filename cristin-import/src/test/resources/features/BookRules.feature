@@ -124,3 +124,16 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then no error is reported.
 
+  Scenario Outline: Mapping creates a reference to an NSD publisher when the Cristin entry contains
+    an NSD code for the publisher
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And the Cristin Result refers to a Series with NSD code 12345
+    And the Cristin Result has publication year "2002"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Reference to a Publisher that is a URI pointing to the NVA NSD proxy
+    And the URI contains the NSD code 12345 and the publication year 2002
+    Examples:
+      | secondaryCategory |
+      | MONOGRAFI         |
+      | ANTOLOGI          |
+
