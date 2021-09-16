@@ -481,12 +481,11 @@ public final class CristinDataGenerator {
         return randomArrayElement(CristinSecondaryCategory.values(), NUMBER_OF_KNOWN_SECONDARY_CATEGORIES);
     }
 
-    private static String randomYear() {
+    private static int randomYear() {
         Date date = FAKER.date().birthday();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
-        int year = calendar.get(Calendar.YEAR);
-        return Integer.toString(year);
+        return calendar.get(Calendar.YEAR);
     }
 
     private static JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject,

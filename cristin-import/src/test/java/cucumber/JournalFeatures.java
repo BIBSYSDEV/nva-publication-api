@@ -183,12 +183,12 @@ public class JournalFeatures {
 
     @Given("the Journal Publication has publishing year equal to {int}")
     public void theJournalPublicationHasPublishingYearEqualTo(int yearPublishedInJournal) {
-        scenarioContext.getCristinEntry().setPublicationYear(Integer.toString(yearPublishedInJournal));
+        scenarioContext.getCristinEntry().setPublicationYear(yearPublishedInJournal);
     }
 
     @Given("the year the Cristin Result was published is equal to {int}")
     public void theYearTheCristinResultWasPublishedIsEqualTo(int publicationYear) {
-        scenarioContext.getCristinEntry().setPublicationYear(Integer.toString(publicationYear));
+        scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
     }
 
     @Then("the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy")

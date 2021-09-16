@@ -46,7 +46,7 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("id")
     private Integer id;
     @JsonProperty("arstall")
-    private String publicationYear;
+    private Integer publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
     @JsonProperty("varbeid_sprak")

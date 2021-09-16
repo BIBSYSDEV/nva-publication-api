@@ -56,13 +56,10 @@ Feature: Mappings that hold for all types of Cristin Results
 
 
   Scenario Outline: The Resources Publication Date is set  the Cristin Result's Publication Year
-    Given the Cristin Result has publication year <publicationYear>
+    Given the Cristin Result has publication year 1996
     When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Publication Date with year equal to <publicationYear>, month equal to null and day equal to null
-    Examples:
-      | publicationYear |
-      | "1996"          |
-      | "c.a 1996"      |
+    Then the NVA Resource has a Publication Date with year equal to 1996, month equal to null and day equal to null
+
 
   Scenario:The NVA Resource Creation Date is set to be the Cristin entry's creation date
     Given that Cristin Result has created date equal to the local date "2011-12-03"
