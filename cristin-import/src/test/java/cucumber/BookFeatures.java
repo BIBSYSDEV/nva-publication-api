@@ -137,4 +137,14 @@ public class BookFeatures {
         PublishingHouse publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
     }
+
+    @Then("the Book Report has a \"isPeerReviewed\" equal to True")
+    public void theBookReportHasAIsPeerReviewedEqualToTrue() {
+        PublicationInstance<?> context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        PeerReviewedMonograph book = (PeerReviewedMonograph) context;
+        assertThat(book.isPeerReviewed(), is(true));
+    }
 }
