@@ -20,10 +20,9 @@ Feature:
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a PublicationInstance with pages starting at "1" and ending at "9"
 
-  Scenario: When the Cristin Result has a value for "arstall_rapportert"
-  the NVA Resource's PublicationInstance's value for isPeerReviewed is set to true.
+  Scenario: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
     Given a valid Cristin Result with secondary category "KAPITTEL"
     And the Cristin Result has a non empty Book Report Part
-    And the Cristin Result has a value for the arstall_rapportert.
+    And the Cristin Result has a value for the date when it was reported in NVI.
     When the Cristin Result is converted to an NVA Resource
-    Then the Chapter Article has a "isPeerReview" equal to True
+    Then the Chapter Article has a "isPeerReviewed" equal to True

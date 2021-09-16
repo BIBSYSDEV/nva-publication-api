@@ -46,8 +46,8 @@ public class ChapterArticleFeatures {
         this.scenarioContext.getCristinEntry().setBookOrReportPartMetadata(cristinBookOrReportPartMetadata);
     }
 
-    @Then("the Chapter Article has a \"isPeerReview\" equal to True")
-    public void theChapterArticleHasAIsPeerReviewEqualToTrue() {
+    @Then("the Chapter Article has a \"isPeerReviewed\" equal to True")
+    public void theChapterArticleHasAIsPeerReviewedEqualToTrue() {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
                 .getEntityDescription()
                 .getReference()

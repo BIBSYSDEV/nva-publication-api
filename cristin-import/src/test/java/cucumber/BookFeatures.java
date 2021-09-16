@@ -138,7 +138,7 @@ public class BookFeatures {
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
     }
 
-    @Then("the Book Report has a \"isPeerReview\" equal to True")
+    @Then("the Book Report has a \"isPeerReviewed\" equal to True")
     public void theBookReportHasAIsPeerReviewedEqualToTrue() {
         PublicationInstance<?> context = scenarioContext.getNvaEntry()
                 .getEntityDescription()

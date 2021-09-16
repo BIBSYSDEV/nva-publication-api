@@ -93,13 +93,12 @@ Feature: Book conversion rules
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
 
-  Scenario: When the Cristin Result has a value for "arstall_rapportert"
-  the NVA Resource's PublicationInstance's value for isPeerReviewed is set to true.
+  Scenario: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
     Given a valid Cristin Result with secondary category "MONOGRAFI"
     And that the Cristin Result has a non empty Book Report
-    And the Cristin Result has a value for the arstall_rapportert.
+    And the Cristin Result has a value for the date when it was reported in NVI.
     When the Cristin Result is converted to an NVA Resource
-    Then the Book Report has a "isPeerReview" equal to True
+    Then the Book Report has a "isPeerReviewed" equal to True
 
   Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
