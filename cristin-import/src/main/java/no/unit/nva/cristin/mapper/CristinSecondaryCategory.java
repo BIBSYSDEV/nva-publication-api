@@ -19,6 +19,7 @@ public enum CristinSecondaryCategory {
     NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
     ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
     POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
+    REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
@@ -76,7 +77,8 @@ public enum CristinSecondaryCategory {
                 || CristinSecondaryCategory.TEXTBOOK.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
@@ -169,7 +171,8 @@ public enum CristinSecondaryCategory {
                 POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
                 TEXTBOOK, BookMonographContentType.TEXTBOOK,
                 ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
-                NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH);
+                NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
+                REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
     }
 
     private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
