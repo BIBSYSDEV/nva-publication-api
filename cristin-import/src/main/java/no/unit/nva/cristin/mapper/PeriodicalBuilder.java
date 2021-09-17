@@ -1,14 +1,12 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
-import no.unit.nva.cristin.lambda.constants.MappingConstants;
+import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
-import no.unit.nva.publication.s3imports.UriWrapper;
 
 public class PeriodicalBuilder extends CristinMappingModule {
 
@@ -34,12 +32,15 @@ public class PeriodicalBuilder extends CristinMappingModule {
     }
 
     private Periodical createJournal() {
-        URI journalUri = new UriWrapper(NVA_API_DOMAIN).addChild(MappingConstants.NSD_PROXY_PATH)
-            .addChild(MappingConstants.NSD_PROXY_PATH_JOURNAL)
-            .addChild(cristinObject.getJournalPublication().getJournal().getNsdCode().toString())
-            .addChild(cristinObject.getPublicationYear().toString())
-            .getUri();
+        Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
+        int publicationYear = getYearReportedInNvi();
+        URI journalUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
         return new Journal(journalUri.toString());
+    }
+
+    private Integer getYearReportedInNvi() {
+        return Optional.ofNullable(cristinObject.getYearReported())
+            .orElseGet(cristinObject::getPublicationYear);
     }
 
     private String extractIssn() {

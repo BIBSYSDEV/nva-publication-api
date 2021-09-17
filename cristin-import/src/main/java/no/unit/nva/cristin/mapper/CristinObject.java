@@ -44,6 +44,7 @@ public class CristinObject implements JsonSerializable {
     private static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
         objectMapperWithEmpty.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+    public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
 
     @JsonProperty("id")
     private Integer id;
@@ -52,7 +53,7 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
     @JsonProperty("arstall_rapportert")
-    private int yearReported;
+    private Integer yearReported;
     @JsonProperty("varbeid_sprak")
     private List<CristinTitle> cristinTitles;
     @JsonProperty(MAIN_CATEGORY_FIELD)
@@ -65,7 +66,7 @@ public class CristinObject implements JsonSerializable {
     private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
-    @JsonProperty("type_bok_rapport")
+    @JsonProperty(BOOK_OR_REPORT_METADATA)
     private CristinBookOrReportMetadata bookOrReportMetadata;
     @JsonProperty("type_bok_rapport_del")
     private CristinBookOrReportPartMetadata bookOrReportPartMetadata;

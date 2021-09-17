@@ -25,6 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
+import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
+import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
+import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -35,13 +39,8 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.contexttypes.Book;
-import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Degree;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.Report;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
@@ -56,8 +55,6 @@ import nva.commons.doi.DoiValidator;
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
-    public static final BookSeries EMPTY_SERIES = null;
-    public static final String EMPTY_SERIES_NUMBER = null;
     private static final Config config = loadConfiguration();
     private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
 
@@ -82,12 +79,6 @@ public class CristinMapper extends CristinMappingModule {
             .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
-    }
-
-    public CristinBookOrReportMetadata extractCristinBookReport() {
-        return Optional.ofNullable(cristinObject)
-            .map(CristinObject::getBookOrReportMetadata)
-            .orElse(null);
     }
 
     private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
@@ -174,7 +165,7 @@ public class CristinMapper extends CristinMappingModule {
     private PublicationContext buildPublicationContext()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
         if (isBook(cristinObject)) {
-            return buildBookForPublicationContext();
+            return new NvaBookBuilder(cristinObject).buildBookForPublicationContext();
         }
         if (isJournal(cristinObject)) {
             return new PeriodicalBuilder(cristinObject).buildPeriodicalForPublicationContext();
@@ -188,33 +179,16 @@ public class CristinMapper extends CristinMappingModule {
         return null;
     }
 
-    private Book buildBookForPublicationContext() throws InvalidIsbnException {
-        List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
-        return new Book(EMPTY_SERIES, EMPTY_SERIES_NUMBER, buildUnconfirmedPublisher(), isbnList);
-    }
-
-    private UnconfirmedPublisher buildUnconfirmedPublisher() {
-        return new UnconfirmedPublisher(extractPublisherName());
-    }
-
     private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
         throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
-        List<String> isbnList = extractIsbn().stream().collect(Collectors.toList());
         if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
-            return new Degree.Builder()
-                .withPublisher(buildUnconfirmedPublisher())
-                .withIsbnList(isbnList)
-                .build();
+            return new NvaDegreeBuilder(cristinObject).buildDegree();
         }
-        return new Report.Builder()
-            .withPublisher(buildUnconfirmedPublisher())
-            .withIsbnList(isbnList)
-            .build();
+        return new NvaReportBuilder(cristinObject).buildNvaReport();
     }
 
     private Chapter buildChapterForPublicationContext() {
-        return new Chapter.Builder()
-            .build();
+        return new Chapter.Builder().build();
     }
 
     private PublicationDate extractPublicationDate() {
@@ -234,14 +208,6 @@ public class CristinMapper extends CristinMappingModule {
             .map(CristinObject::getCristinTitles)
             .stream()
             .flatMap(Collection::stream);
-    }
-
-    private String extractPublisherName() {
-        return extractCristinBookReport().getPublisherName();
-    }
-
-    private Optional<String> extractIsbn() {
-        return Optional.ofNullable(extractCristinBookReport().getIsbn());
     }
 
     private URI extractLanguage() {
