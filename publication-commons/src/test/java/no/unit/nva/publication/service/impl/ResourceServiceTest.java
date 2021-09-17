@@ -136,6 +136,30 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
+    public void createResourceWilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
+            throws TransactionFailedException, NotFoundException {
+        Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        Instant predefinedPublishTime = Instant.now();
+        Instant predefinedCreatedTime = RESOURCE_CREATION_TIME;
+        Instant predefinedModifiedTime = RESOURCE_MODIFICATION_TIME;
+
+        inputPublication.setPublishedDate(predefinedPublishTime);
+        inputPublication.setCreatedDate(predefinedCreatedTime);
+        inputPublication.setModifiedDate(predefinedModifiedTime);
+
+        SortableIdentifier savedPublicationIdentifier =
+                resourceService
+                        .createPublicationWhilePersistingEntryFromLegacySystems(inputPublication)
+                        .getIdentifier();
+        Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
+
+        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
+        inputPublication.setIdentifier(savedPublicationIdentifier);
+
+        assertThat(savedPublication, is(equalTo(inputPublication)));
+    }
+
+    @Test
     public void createResourceCreatesResource() throws NotFoundException, TransactionFailedException {
 
         Publication resource = publicationWithIdentifier();

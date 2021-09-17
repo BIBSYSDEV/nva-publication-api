@@ -96,6 +96,16 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    public Publication createPublicationWhilePersistingEntryFromLegacySystems(Publication inputData)
+            throws TransactionFailedException {
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setPublishedDate(inputData.getPublishedDate());
+        newResource.setCreatedDate(inputData.getCreatedDate());
+        newResource.setModifiedDate(inputData.getModifiedDate());
+        return insertResource(newResource);
+    }
+
     public Publication insertPreexistingPublication(Publication publication)
         throws TransactionFailedException {
         Resource resource = Resource.fromPublication(publication);
