@@ -252,7 +252,7 @@
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """A reference to the NSD scientific field in which the book/chapter is published. All NSD fields are listed here: https://npi.nsd.no/fagfeltoversikt/
     """ ;
-    rdfs:domain :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class  .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class .
 
 :TYPE_TIDSSKRIFTPUBLIKASJON_Class
     a               rdfs:Class ;
@@ -906,7 +906,7 @@ It is a self reference.""" ;
 
 :belop
     a                  :cristinfield ;
-    rdfs:range         xsd:nil ; # Always empty
+    rdfs:range         rdf:nil ; # Always empty
     rdfs:domain        :FINANSIERING_VARBEID_Class ;
     rdfs:comment       """The amount of money awarded in this grant. This field is always empty.""" ;
     :currently_ignored true .
@@ -925,7 +925,9 @@ It is a self reference.""" ;
     rdfs:comment       """Year the funding / research grant ended.""" ;
     :currently_ignored true .
 
-:TYPE_BOK_RAPPORT
+
+
+:type_bok_rapport
     a               :cristinfield ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain     :Result ;
@@ -961,12 +963,20 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:comment "The scientific field in which the book is published" ;
     rdfs:range   :FAGFELT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
-.
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
+
+:tidsskrift_serie
+    a            :cristinfield ;
+    rdfs:comment """
+        A Publisher's series that is modeled by NSD as Journal. Probably not exactly a journal since the respective Cristin Results are Books or Reports.
+        This field has the exact same structure as the field "tidskrift" in the field "type_tidsskriftpublikasjon"
+     """ ;
+    rdfs:range   :TIDSSKRIFT_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
 
 :fagfeltkode
     a               :cristinfield ;
-    rdfs:comment    "The NSD code representing the scientific field in which the book is published." ;
+    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
     :mapstonvafield """
@@ -974,11 +984,11 @@ It is a self reference.""" ;
         """ .
 
 :fagomradekode
-    a            :cristinfield ;
-    rdfs:comment "The (abbreviation) code representing the scientific field in which the book is published" ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :FAGFELT_Class ;
-    :currently_ignored   "true" .
+    a                  :cristinfield ;
+    rdfs:comment       "The (abbreviation) code representing the scientific field in which the book is published" ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :FAGFELT_Class ;
+    :currently_ignored "true" .
 
 :navn
     a                  :cristinfield ;
@@ -994,7 +1004,7 @@ It is a self reference.""" ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
-:TYPE_TIDSSKRIFTPUBLIKASJON
+:type_tidsskriftpublikasjon
     a               :cristinfield ;
     rdfs:comment    """
     A type publication called tidsskrift.
@@ -1128,7 +1138,7 @@ It is a self reference.""" ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored "true" .
 
-:TIDSSKRIFT
+:tidskrift
     a            :cristinfield ;
     rdfs:comment """See description in range class.""" ;
     rdfs:range   :TIDSSKRIFT_Class ;
@@ -1272,8 +1282,8 @@ It is a self reference.""" ;
     rdfs:comment       """Research Activity Code in the UKCRC Health Research Classification System (HRCS).
                      See https://hrcsonline.net/research-activities/.
                      """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :VARBEID_HRCS_KLASSIFISERING_Class ;
+    rdfs:range         xsd:string ;
+    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
     :currently_ignored "true" .
 
 :TYPE_BOK_RAPPORT_DEL
@@ -1295,14 +1305,14 @@ It is a self reference.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
 
 :delangivelse
-    a            :cristinfield ;
-    rdfs:comment """A free text comment describing the relation of the respective Result to the parent entry.
+    a                  :cristinfield ;
+    rdfs:comment       """A free text comment describing the relation of the respective Result to the parent entry.
     Example values: Session 2   Chapter 2, Introduction, Del I: Kunsten som metodisk univers/Kapittel 3
     Suggestion: to be ignored.
     """ ;
-    rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
-    :currently_ignored   true .
+    rdfs:range         xsd:string ;
+    rdfs:domain        :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored true .
 
 :sidenr_fra
     a            :cristinfield ;
