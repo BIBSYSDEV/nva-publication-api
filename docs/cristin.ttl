@@ -983,11 +983,8 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The issue number of the specific Book or Report in the series""" .
-
-         "Spartacus",
-      "nsdkode": 18424
-
+    rdfs:comment """The internal Cristin number of the specific Book  series.""" ;
+    :isignored  true.
 
 :fagfeltkode
     a               :cristinfield ;
