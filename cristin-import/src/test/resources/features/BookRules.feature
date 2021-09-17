@@ -27,6 +27,7 @@ Feature: Book conversion rules
       | FAGBOK            | Non-fiction Monograph     |
       | LEKSIKON          | Encyclopedia              |
       | POPVIT_BOK        | Popular Science Monograph |
+      | OPPSLAGSVERK      | Encyclopedia             |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
