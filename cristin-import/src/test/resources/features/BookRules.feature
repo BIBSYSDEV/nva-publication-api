@@ -144,9 +144,16 @@ Feature: Book conversion rules
       | secondaryCategory |
       | MONOGRAFI         |
       | ANTOLOGI          |
+      | RAPPORT           |
+      | DRGRADAVH         |
+      | MASTERGRADSOPPG   |
+      | HOVEDFAGSOPPGAVE  |
+      | FORSKERLINJEOPPG  |
 
 
-    Scenario Outline: Mapping crates an Unconfirmed series when a Cristin Book has a references to
+
+
+  Scenario Outline: Mapping crates an Unconfirmed series when a Cristin Book has a references to
       Book series but there is no NSD code.
       Given a valid Cristin Result with secondary category "<secondaryCategory>"
       And the Cristin Result belongs to a Series
@@ -163,3 +170,8 @@ Feature: Book conversion rules
         | secondaryCategory |
         | MONOGRAFI         |
         | ANTOLOGI          |
+        | RAPPORT           |
+        | DRGRADAVH         |
+        | MASTERGRADSOPPG   |
+        | HOVEDFAGSOPPGAVE  |
+        | FORSKERLINJEOPPG  |

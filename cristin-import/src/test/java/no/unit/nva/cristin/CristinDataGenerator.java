@@ -189,10 +189,6 @@ public final class CristinDataGenerator {
         return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-    private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
-        return createRandomChapterWithSpecifiedSecondaryCategory(secondaryCategory);
-    }
-
     public static CristinObject objectWithRandomBookReport() {
         return createRandomBookWithBookReportValues();
     }
@@ -257,6 +253,10 @@ public final class CristinDataGenerator {
             .withIssue(randomString())
             .withVolume(randomString())
             .build();
+    }
+
+    private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
+        return createRandomChapterWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static String random7DigitNumber() {
@@ -463,6 +463,7 @@ public final class CristinDataGenerator {
             .withId(index)
             .withEntryCreationDate(LocalDate.now())
             .withPublicationYear(randomYear())
+            .withYearReported(randomYear())
             .withContributors(contributors)
             .withBookOrReportMetadata(randomBookOrReportMetadata())
             .withPublicationOwner(HardcodedValues.HARDCODED_PUBLICATIONS_OWNER)
@@ -480,7 +481,7 @@ public final class CristinDataGenerator {
         return CristinJournalPublication.builder()
             .withJournal(randomCristinJournalPublicationJournal())
             .withPagesBegin(String.valueOf(pagesBegin))
-            .withPagesEnd(String.valueOf(pagesBegin+smallRandomNumber()))
+            .withPagesEnd(String.valueOf(pagesBegin + smallRandomNumber()))
             .withVolume(String.valueOf(smallRandomNumber()))
             .withDoi(randomDoiString())
             .build();
