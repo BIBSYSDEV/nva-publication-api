@@ -162,7 +162,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceCreatesResource() throws NotFoundException, TransactionFailedException {
+    public void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatoform() throws NotFoundException,
+                                                                          TransactionFailedException {
 
         Publication resource = publicationWithIdentifier();
         Publication savedResource = resourceService.createPublication(resource);
@@ -947,7 +948,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         return sampleResource.copy()
                    .withIdentifier(savedResource.getIdentifier())
-                   .withCreatedDate(savedResource.getCreatedDate())
+                   .withCreatedDate(RESOURCE_CREATION_TIME)
+                   .withModifiedDate(RESOURCE_CREATION_TIME)
                    .build();
     }
 
