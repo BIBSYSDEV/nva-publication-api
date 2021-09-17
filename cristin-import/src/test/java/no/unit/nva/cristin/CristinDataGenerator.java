@@ -476,10 +476,11 @@ public final class CristinDataGenerator {
     }
 
     private static CristinJournalPublication randomJournalPublictaion() {
+        int pagesBegin = smallRandomNumber();
         return CristinJournalPublication.builder()
             .withJournal(randomCristinJournalPublicationJournal())
-            .withPagesBegin("1")
-            .withPagesEnd(String.valueOf(smallRandomNumber()))
+            .withPagesBegin(String.valueOf(pagesBegin))
+            .withPagesEnd(String.valueOf(pagesBegin+smallRandomNumber()))
             .withVolume(String.valueOf(smallRandomNumber()))
             .withDoi(randomDoiString())
             .build();

@@ -8,8 +8,8 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 
 /**
- * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries
- * to NVA entries.
+ * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to
+ * NVA entries.
  */
 public class CristinMappingModule {
 
@@ -39,10 +39,7 @@ public class CristinMappingModule {
         return new UnconfirmedPublisher(extractPublisherName());
     }
 
-
     private String extractPublisherName() {
         return extractCristinBookReport().getPublisherName();
     }
-
-
 }

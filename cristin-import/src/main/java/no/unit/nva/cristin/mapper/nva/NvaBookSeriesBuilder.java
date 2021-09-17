@@ -16,7 +16,6 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
 
     public NvaBookSeriesBuilder(CristinObject cristinObject) {
         super(cristinObject);
-
     }
 
     public BookSeries createBookSeries() {
@@ -36,7 +35,8 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     }
 
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
-        return attempt(() -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
+        return attempt(
+            () -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
             .orElseThrow();
     }
 
@@ -46,5 +46,4 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
         URI seriesUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
         return new Series(seriesUri);
     }
-
 }

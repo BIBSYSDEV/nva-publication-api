@@ -133,7 +133,7 @@ Feature: Book conversion rules
     Then no error is reported.
 
   Scenario Outline: Mapping creates a reference to an NSD Series when the Cristin entry contains
-    an NSD code for the publisher
+    an NSD code for the series
     Given a valid Cristin Result with secondary category "<secondaryCategory>"
     And the Cristin Result refers to a Series with NSD code 12345
     And the Cristin Result has publication year 2002
