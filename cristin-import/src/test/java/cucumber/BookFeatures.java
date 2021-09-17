@@ -106,7 +106,7 @@ public class BookFeatures {
     }
 
     @Given("the Cristin Result refers to a Series with NSD code {int}")
-    public void theCristinResultRefersToSeriesWithNSDCode(Integer nsdCode) {
+    public void theCristinResultRefersToSeriesWithNsdCode(Integer nsdCode) {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(nsdCode);
     }
 
@@ -158,7 +158,7 @@ public class BookFeatures {
     }
 
     @Then("the URI contains the NSD code {int} and the publication year {int}")
-    public void theURIContainsTheNSDCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
+    public void theUriContainsTheNsdCodeAndThePublicationYear(Integer nsdCode, Integer publicationYear) {
         URI seriesId = extractSeriesId();
         assertThat(seriesId.getPath(), containsString(nsdCode.toString()));
         assertThat(seriesId.getPath(), containsString(publicationYear.toString()));
@@ -206,7 +206,7 @@ public class BookFeatures {
 
     @Then("the NVA Resource contains an Unconfirmed Series with title {string}, issn {string}, online issn {string} "
           + "and seriesNumber {string}")
-    public void theNVAResourceContainsAnUnconfirmedSeriesWithTitleIssnOnlineIssnAndSeriesNumber(String title,
+    public void theNvaResourceContainsAnUnconfirmedSeriesWithTitleIssnOnlineIssnAndSeriesNumber(String title,
                                                                                                 String issn,
                                                                                                 String onlineIssn,
                                                                                                 String seriesNumber) {
