@@ -19,4 +19,3 @@ entityDescription.tags
 entityDescription.npiSubjectHeading
 entityDescription.reference.doi
 projects
-modifiedDate

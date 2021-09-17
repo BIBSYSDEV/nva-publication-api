@@ -138,7 +138,7 @@ public class CristinMapper extends CristinMappingModule {
     private Instant extractEntryLastModifiedDate() {
         return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
                 .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-                .orElse(null);
+                .orElse(extractEntryCreationDate());
     }
 
     private ZoneOffset zoneOffset() {

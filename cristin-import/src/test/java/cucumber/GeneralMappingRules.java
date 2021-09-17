@@ -11,6 +11,7 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -407,5 +408,10 @@ public class GeneralMappingRules {
     @Given("the Cristin Result has an valid ISBN with the value {string}")
     public void theCristinResultHasAnValidIsbnWithTheValue(String isbn) {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
+    }
+
+    @And("that the Cristin Result has no last modified value.")
+    public void thatTheCristinResultHasNoLastModifiedValue() {
+        this.scenarioContext.getCristinEntry().setEntryLastModifiedDate(null);
     }
 }

@@ -146,6 +146,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         inputPublication.setPublishedDate(predefinedPublishTime);
         inputPublication.setCreatedDate(predefinedCreatedTime);
         inputPublication.setModifiedDate(predefinedModifiedTime);
+        inputPublication.setStatus(PublicationStatus.PUBLISHED);
 
         SortableIdentifier savedPublicationIdentifier =
                 resourceService
@@ -157,6 +158,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         inputPublication.setIdentifier(savedPublicationIdentifier);
 
         assertThat(savedPublication, is(equalTo(inputPublication)));
+        assertThat(savedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
     }
 
     @Test
