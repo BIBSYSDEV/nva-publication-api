@@ -84,8 +84,8 @@ public class GeneralMappingRules {
         scenarioContext.getLatestCristinTitle().setStatusOriginal(statusOriginal);
     }
 
-    @Given("the Cristin Result has publication year {string}")
-    public void theCristinEntryHasPublicationYear(String publicationYear) {
+    @Given("the Cristin Result has publication year {int}")
+    public void theCristinEntryHasPublicationYear(int publicationYear) {
         scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
     }
 
@@ -117,11 +117,11 @@ public class GeneralMappingRules {
         assertThat(actualTitle, is(equalTo(expectedTitle)));
     }
 
-    @Then("the NVA Resource has a Publication Date with year equal to {string}, month equal to null and "
+    @Then("the NVA Resource has a Publication Date with year equal to {int}, month equal to null and "
           + "day equal to null")
-    public void theNvaResourceHasPublicationDateWithTheCristinYear(String expectedPublicationYear) {
+    public void theNvaResourceHasPublicationDateWithTheCristinYear(Integer expectedPublicationYear) {
         PublicationDate actualDate = scenarioContext.getNvaEntry().getEntityDescription().getDate();
-        assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear)));
+        assertThat(actualDate.getYear(), is(equalTo(expectedPublicationYear.toString())));
         assertThat(actualDate.getMonth(), is(nullValue()));
         assertThat(actualDate.getDay(), is(nullValue()));
     }

@@ -27,6 +27,7 @@ Feature: Book conversion rules
       | FAGBOK            | Non-fiction Monograph     |
       | LEKSIKON          | Encyclopedia              |
       | POPVIT_BOK        | Popular Science Monograph |
+      | OPPSLAGSVERK      | Encyclopedia             |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"
@@ -92,6 +93,13 @@ Feature: Book conversion rules
     And that the Book Report has no subjectField
     When the Cristin Result is converted to an NVA Resource
     Then an error is reported.
+
+  Scenario: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
+    Given a valid Cristin Result with secondary category "MONOGRAFI"
+    And that the Cristin Result has a non empty Book Report
+    And the Cristin Result has a value for the date when it was reported in NVI.
+    When the Cristin Result is converted to an NVA Resource
+    Then the Book Report has a "isPeerReviewed" equal to True
 
   Scenario Outline: Map does not fail for a Cristin Result without subjectField when the secondary category does not require it.
     Given a valid Cristin Result with secondary category "<secondaryCategory>"

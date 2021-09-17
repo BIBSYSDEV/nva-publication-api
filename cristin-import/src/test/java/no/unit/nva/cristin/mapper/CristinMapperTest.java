@@ -111,17 +111,18 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     @DisplayName("map returns resource with date equal to \"arstall\"")
     public void mapReturnsResourceWithDateEqualToArstall() {
-        List<String> expectedPublicationYear = cristinObjects()
+        List<Integer> expectedPublicationYear = cristinObjects()
             .map(CristinObject::getPublicationYear)
             .collect(Collectors.toList());
 
-        List<String> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
+        List<Integer> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
             .map(Publication::getEntityDescription)
             .map(EntityDescription::getDate)
             .map(PublicationDate::getYear)
+            .map(Integer::parseInt)
             .collect(Collectors.toList());
         assertThat(expectedPublicationYear, is(not(empty())));
-        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(String[]::new)));
+        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(Integer[]::new)));
     }
 
     @Test
@@ -252,7 +253,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationYear() {
         List<PublicationDate> expectedPublicationDates = cristinObjects()
             .map(CristinObject::getPublicationYear)
-            .map(this::yearStringToPublicationDate)
+            .map(this::yearToPublicationDate)
             .collect(Collectors.toList());
         List<PublicationDate> actualPublicationDates = cristinObjects()
             .map(CristinObject::toPublication)
@@ -455,8 +456,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
             .build();
     }
 
-    private PublicationDate yearStringToPublicationDate(String yearString) {
-        return new PublicationDate.Builder().withYear(yearString).build();
+    private PublicationDate yearToPublicationDate(Integer year) {
+        return new PublicationDate.Builder().withYear(year.toString()).build();
     }
 
     //We do not use any more complex logic to make the tests fail if anything changes

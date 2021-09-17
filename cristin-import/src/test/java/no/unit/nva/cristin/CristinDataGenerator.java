@@ -61,6 +61,7 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_TAGS = "tags";
     private static final String CRISTIN_PRESENTATIONAL_WORK = "presentationalWork";
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
+    private static final String CRISTIN_BOOK_REPORT_PART = "bookOrReportPartMetadata";
     public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
     public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
     public static final String DOI_SUBPART_DELIMITER = ".";
@@ -130,6 +131,7 @@ public final class CristinDataGenerator {
             case NON_FICTION_BOOK:
             case ENCYCLOPEDIA:
             case POPULAR_BOOK:
+            case REFERENCE_MATERIAL:
                 return randomBookMonograph(category);
             case ANTHOLOGY:
                 return randomBookAnthology();
@@ -147,6 +149,7 @@ public final class CristinDataGenerator {
             case ARTICLE:
             case POPULAR_ARTICLE:
             case ACADEMIC_REVIEW:
+            case SHORT_COMMUNICATION:
                 return randomJournalArticle(category);
             case RESEARCH_REPORT:
                 return randomResearchReport();
@@ -156,10 +159,11 @@ public final class CristinDataGenerator {
             case SECOND_DEGREE_THESIS:
             case MEDICAL_THESIS:
                 return randomDegreeMaster(category);
-            case CHAPTER_ARTICLE:
+            case CHAPTER_ACADEMIC:
             case CHAPTER:
             case POPULAR_CHAPTER_ARTICLE:
-                return randomChapterArticle();
+            case LEXICAL_IMPORT:
+                return randomChapterArticle(category);
             default:
                 break;
         }
@@ -220,8 +224,8 @@ public final class CristinDataGenerator {
         return createRandomReportWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
-    private static CristinObject randomChapterArticle() {
-        return createRandomChapterWithSpecifiedSecondaryCategory(CristinSecondaryCategory.CHAPTER_ARTICLE);
+    private static CristinObject randomChapterArticle(CristinSecondaryCategory secondaryCategory) {
+        return createRandomChapterWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     public static CristinObject objectWithRandomBookReport() {
@@ -464,7 +468,7 @@ public final class CristinDataGenerator {
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
                 Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
-                        CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD)));
+                        CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, CRISTIN_BOOK_REPORT_PART)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 
@@ -478,12 +482,11 @@ public final class CristinDataGenerator {
         return randomArrayElement(CristinSecondaryCategory.values(), NUMBER_OF_KNOWN_SECONDARY_CATEGORIES);
     }
 
-    private static String randomYear() {
+    private static int randomYear() {
         Date date = FAKER.date().birthday();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
-        int year = calendar.get(Calendar.YEAR);
-        return Integer.toString(year);
+        return calendar.get(Calendar.YEAR);
     }
 
     private static JsonNode cristinObjectWithUnexpectedValue(CristinObject cristinObject,

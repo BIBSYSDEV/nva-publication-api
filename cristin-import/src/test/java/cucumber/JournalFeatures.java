@@ -20,6 +20,7 @@ import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalCorrigendum;
@@ -183,12 +184,12 @@ public class JournalFeatures {
 
     @Given("the Journal Publication has publishing year equal to {int}")
     public void theJournalPublicationHasPublishingYearEqualTo(int yearPublishedInJournal) {
-        scenarioContext.getCristinEntry().setPublicationYear(Integer.toString(yearPublishedInJournal));
+        scenarioContext.getCristinEntry().setPublicationYear(yearPublishedInJournal);
     }
 
     @Given("the year the Cristin Result was published is equal to {int}")
     public void theYearTheCristinResultWasPublishedIsEqualTo(int publicationYear) {
-        scenarioContext.getCristinEntry().setPublicationYear(Integer.toString(publicationYear));
+        scenarioContext.getCristinEntry().setPublicationYear(publicationYear);
     }
 
     @Then("the NVA Resource has a Reference object with a journal URI that points to NVAs NSD proxy")
@@ -491,4 +492,15 @@ public class JournalFeatures {
         String actualIssue = journalReview.getIssue();
         assertThat(actualIssue, is(equalTo(expectedIssue)));
     }
+
+    @Then("the Journal Article has a \"isPeerReviewed\" equal to True")
+    public void theJournalChapterArticleHasIsPeerReviewedAEqualToTrue() {
+        PublicationInstance<?> context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        JournalArticle journalArticle = (JournalArticle) context;
+        assertThat(journalArticle.isPeerReviewed(), is(true));
+    }
+
 }

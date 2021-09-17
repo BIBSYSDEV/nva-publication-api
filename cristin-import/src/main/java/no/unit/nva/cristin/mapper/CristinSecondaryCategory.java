@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import nva.commons.core.SingletonCollector;
 
@@ -18,6 +19,7 @@ public enum CristinSecondaryCategory {
     NON_FICTION_BOOK("FAGBOK", "NON_FICTION_BOOK"),
     ENCYCLOPEDIA("LEKSIKON", "ENCYCLOPEDIA"),
     POPULAR_BOOK("POPVIT_BOK", "POPULAR_BOOK"),
+    REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
@@ -27,14 +29,16 @@ public enum CristinSecondaryCategory {
     POPULAR_ARTICLE("ARTIKKEL_POP", "POPULAR_ARTICLE"),
     ARTICLE("ARTIKKEL", "ARTICLE"),
     ACADEMIC_REVIEW("OVERSIKTSART", "ACADEMIC_REVIEW"),
+    SHORT_COMMUNICATION("SHORTCOMM", "SHORT_COMMUNICATION"),
     RESEARCH_REPORT("RAPPORT", "RESEARCH_REPORT"),
     DEGREE_PHD("DRGRADAVH", "DEGREE_PHD"),
     DEGREE_MASTER("MASTERGRADSOPPG", "DEGREE_MASTER"),
     SECOND_DEGREE_THESIS("HOVEDFAGSOPPGAVE", "SECOND_DEGREE_THESIS"),
     MEDICAL_THESIS("FORSKERLINJEOPPG", "MEDICAL_THESIS"),
-    CHAPTER_ARTICLE("KAPITTEL", "CHAPTER_ARTICLE"),
+    CHAPTER_ACADEMIC("KAPITTEL", "CHAPTER_ACADEMIC"),
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
     POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_CHAPTER_ARTICLE"),
+    LEXICAL_IMPORT("LEKSIKAL_INNF", "LEXICAL_IMPORT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -73,7 +77,8 @@ public enum CristinSecondaryCategory {
                 || CristinSecondaryCategory.TEXTBOOK.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.NON_FICTION_BOOK.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ENCYCLOPEDIA.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.POPULAR_BOOK.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.REFERENCE_MATERIAL.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isFeatureArticle(CristinObject cristinObject) {
@@ -100,7 +105,8 @@ public enum CristinSecondaryCategory {
         return CristinSecondaryCategory.JOURNAL_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.POPULAR_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.ARTICLE.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.ACADEMIC_REVIEW.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.SHORT_COMMUNICATION.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isResearchReport(CristinObject cristinObject) {
@@ -118,9 +124,10 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isChapterArticle(CristinObject cristinObject) {
-        return CristinSecondaryCategory.CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+        return CristinSecondaryCategory.CHAPTER_ACADEMIC.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
-                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory());
+                || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {
@@ -143,11 +150,20 @@ public enum CristinSecondaryCategory {
         }
     }
 
+    public ChapterArticleContentType toChapterArticleContentType() {
+        if (createMapToChapterContentType().containsKey(this)) {
+            return createMapToChapterContentType().get(this);
+        } else {
+            throw new IllegalStateException(conversionError(this, ChapterArticleContentType.class));
+        }
+    }
+
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
                 POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
                 ARTICLE, JournalArticleContentType.RESEARCH_ARTICLE,
-                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE);
+                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE,
+                SHORT_COMMUNICATION, JournalArticleContentType.RESEARCH_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {
@@ -155,7 +171,15 @@ public enum CristinSecondaryCategory {
                 POPULAR_BOOK, BookMonographContentType.POPULAR_SCIENCE_MONOGRAPH,
                 TEXTBOOK, BookMonographContentType.TEXTBOOK,
                 ENCYCLOPEDIA, BookMonographContentType.ENCYCLOPEDIA,
-                NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH);
+                NON_FICTION_BOOK, BookMonographContentType.NON_FICTION_MONOGRAPH,
+                REFERENCE_MATERIAL, BookMonographContentType.ENCYCLOPEDIA);
+    }
+
+    private static Map<CristinSecondaryCategory, ChapterArticleContentType> createMapToChapterContentType() {
+        return Map.of(CHAPTER_ACADEMIC, ChapterArticleContentType.ACADEMIC_CHAPTER,
+                POPULAR_CHAPTER_ARTICLE, ChapterArticleContentType.POPULAR_SCIENCE_CHAPTER,
+                CHAPTER, ChapterArticleContentType.NON_FICTION_CHAPTER,
+                LEXICAL_IMPORT, ChapterArticleContentType.ENCYCLOPEDIA_CHAPTER);
     }
 
     private static String conversionError(CristinSecondaryCategory category, Class<?> publicatoinInstanceClass) {

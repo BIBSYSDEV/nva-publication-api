@@ -4,6 +4,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -15,7 +16,9 @@ import no.unit.nva.model.contexttypes.PublishingHouse;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
+
 import nva.commons.core.SingletonCollector;
+
 
 public class BookFeatures {
 
@@ -133,5 +136,15 @@ public class BookFeatures {
         Book bookContext = (Book) context;
         PublishingHouse publisher = bookContext.getPublisher();
         assertThat(publisher, is(instanceOf(UnconfirmedPublisher.class)));
+    }
+
+    @Then("the Book Report has a \"isPeerReviewed\" equal to True")
+    public void theBookReportHasAIsPeerReviewedEqualToTrue() {
+        PublicationInstance<?> context = scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        PeerReviewedMonograph book = (PeerReviewedMonograph) context;
+        assertThat(book.isPeerReviewed(), is(true));
     }
 }
