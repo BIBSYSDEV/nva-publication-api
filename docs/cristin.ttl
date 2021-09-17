@@ -276,6 +276,16 @@
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """Classification of the publication with respect to the UKCRC Health Research Classification System (HRCS).""" .
 
+:FORLAG_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """
+    Information about the Publishing House that published a Book or a Report. It is important to note that when a Book belongs to a series,
+    then it is possible that a series will have a different publisher than the book. I.e., one publishing house is publishing the series but another
+    publishing house is publishing the book belonging to the series.
+
+    """ .
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -958,12 +968,38 @@ It is a self reference.""" ;
             entityDescription.reference.publicationContext.publisher
         """ .
 
+:forlag
+    a            :cristinfield ;
+    rdfs:comment """
+        Information about the Publishing House of the respective Book or Report.
+        The connection between the subfields forlag.forlagsnavn and utgivernavn is UNKNONWN.
+         There are 353 cases where forlag.forlagsnavn and utgivernavn are not the same and there is no NSD code for reference.
+         There are also about 140 000 cases where there is no forlag entry but there is utgivernavn.
+
+        """ ;
+    rdfs:range   :FORLAG_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
+
+:forlagsnavn
+    a            :cristinfield ;
+    rdfs:range   xsd:string ;
+    rdfs:domain  :FORLAG_Class ;
+    rdfs:comment """The name of the Publishing House that published the book""" .
+
+:forlagsnr
+    a            :cristinfield ;
+    rdfs:range   xsd:integer ;
+    rdfs:domain  :FORLAG_Class ;
+    rdfs:comment """The internal Cristin number of the specific Book  series.""" ;
+    :should_ignore   true.
+
 
 :fagfelt
     a            :cristinfield ;
     rdfs:comment "The scientific field in which the book is published" ;
     rdfs:range   :FAGFELT_Class ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class .
+
 
 :tidsskrift_serie
     a            :cristinfield ;
@@ -979,7 +1015,7 @@ It is a self reference.""" ;
     rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
-    :mapstonvafield """
+        :mapstonvafield """
             entityDescription.npiSubjectHeading
         """ .
 
@@ -1179,11 +1215,12 @@ It is a self reference.""" ;
     :currently_ignored "true" .
 
 :nsdkode
-    a                  :cristinfield ;
-    rdfs:comment       "A code representing the id in NSD-channelregistry " ;
-    rdfs:range         rdf:nil ; #unknown range
-    rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
+
+    a            :cristinfield ;
+    rdfs:comment "A code representing the id of a Journal, Series (also viewed as a Journal in NSD) or Publishing House in NSD-channel registry " ;
+    rdfs:range   rdf:nil ; #unknown range
+    rdfs:domain  :TIDSSKRIFT_Class, :FORLAG_Class  ;
+    :currently_ignored   "false" .
 
 :landkode_utgiver
     a                  :cristinfield ;
