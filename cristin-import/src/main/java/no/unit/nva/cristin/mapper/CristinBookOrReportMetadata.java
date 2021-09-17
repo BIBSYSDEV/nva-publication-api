@@ -19,11 +19,11 @@ import nva.commons.core.StringUtils;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"hefte", "utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
+@JsonIgnoreProperties({"utgave", "utgave_fra", "doi", "status_revidert", "status_elektronisk_publisert",
     "status_utgitt_av_forlag", "stedangivelse_utgiver", "landkode_utgiver", "institusjonsnr_utgiver",
-    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie", "volum_serie",
+    "avdnr_utgiver", "undavdnr_utgiver", "gruppenr_utgiver", "tidsskriftnr_serie",
     "sprakkode_oversatt_fra", "sprakkode_oversatt_til", "originalforfatter", "originaltittel",
-    "forlag", "tidsskrift_serie", "arkivpost"})
+    "forlag",  "arkivpost"})
 public class CristinBookOrReportMetadata {
 
     public static final String ISBN_LIST = "isbn";
@@ -32,6 +32,9 @@ public class CristinBookOrReportMetadata {
     public static final String SUBJECT_FIELD = "fagfelt";
     public static final String SUBJECT_FIELD_IS_A_REQUIRED_FIELD =
         "The subjectField value must be present for all instances of Monography.";
+    public static final String BOOK_SERIES = "tidsskrift_serie";
+    public static final String ISSUE = "hefte";
+    public static final String VOLUME = "volum_serie";
 
     @JsonProperty(ISBN_LIST)
     private String isbn;
@@ -41,6 +44,13 @@ public class CristinBookOrReportMetadata {
     private String numberOfPages;
     @JsonProperty(SUBJECT_FIELD)
     private CristinSubjectField subjectField;
+    @JsonProperty(BOOK_SERIES)
+    //TODO rename class to something more appropriate.
+    private CristinJournalPublicationJournal bookSeries;
+    @JsonProperty(ISSUE)
+    private String issue;
+    @JsonProperty(VOLUME)
+    private String volume;
 
     public CristinBookOrReportMetadata() {
 
