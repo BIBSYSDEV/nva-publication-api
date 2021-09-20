@@ -136,7 +136,34 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceCreatesResource() throws NotFoundException, TransactionFailedException {
+    public void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
+            throws TransactionFailedException, NotFoundException {
+        Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        Instant predefinedPublishTime = Instant.now();
+        Instant predefinedCreatedTime = RESOURCE_CREATION_TIME;
+        Instant predefinedModifiedTime = RESOURCE_MODIFICATION_TIME;
+
+        inputPublication.setPublishedDate(predefinedPublishTime);
+        inputPublication.setCreatedDate(predefinedCreatedTime);
+        inputPublication.setModifiedDate(predefinedModifiedTime);
+        inputPublication.setStatus(PublicationStatus.PUBLISHED);
+
+        SortableIdentifier savedPublicationIdentifier =
+                resourceService
+                        .createPublicationWhilePersistingEntryFromLegacySystems(inputPublication)
+                        .getIdentifier();
+        Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
+
+        // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
+        inputPublication.setIdentifier(savedPublicationIdentifier);
+
+        assertThat(savedPublication, is(equalTo(inputPublication)));
+        assertThat(savedPublication.getStatus(), is(equalTo(PublicationStatus.PUBLISHED)));
+    }
+
+    @Test
+    public void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatoform() throws NotFoundException,
+                                                                          TransactionFailedException {
 
         Publication resource = publicationWithIdentifier();
         Publication savedResource = resourceService.createPublication(resource);
@@ -921,7 +948,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         return sampleResource.copy()
                    .withIdentifier(savedResource.getIdentifier())
-                   .withCreatedDate(savedResource.getCreatedDate())
+                   .withCreatedDate(RESOURCE_CREATION_TIME)
+                   .withModifiedDate(RESOURCE_CREATION_TIME)
                    .build();
     }
 

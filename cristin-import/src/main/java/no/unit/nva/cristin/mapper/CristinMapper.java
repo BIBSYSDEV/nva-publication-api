@@ -71,9 +71,11 @@ public class CristinMapper extends CristinMappingModule {
             .withAdditionalIdentifiers(Set.of(extractIdentifier()))
             .withEntityDescription(generateEntityDescription())
             .withCreatedDate(extractEntryCreationDate())
+            .withModifiedDate(extractEntryLastModifiedDate())
+            .withPublishedDate(extractEntryCreationDate())
             .withPublisher(extractOrganization())
             .withOwner(cristinObject.getPublicationOwner())
-            .withStatus(PublicationStatus.DRAFT)
+            .withStatus(PublicationStatus.PUBLISHED)
             .withLink(HARDCODED_SAMPLE_DOI)
             .withProjects(extractProjects())
             .build();
@@ -122,6 +124,12 @@ public class CristinMapper extends CristinMappingModule {
         return Optional.ofNullable(cristinObject.getEntryCreationDate())
             .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
             .orElse(null);
+    }
+
+    private Instant extractEntryLastModifiedDate() {
+        return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
+                .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
+                .orElseGet(() -> extractEntryCreationDate());
     }
 
     private ZoneOffset zoneOffset() {

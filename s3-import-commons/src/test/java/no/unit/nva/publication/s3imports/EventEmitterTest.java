@@ -78,8 +78,8 @@ public class EventEmitterTest {
 
     @Test
     public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
-        TestAppender logAppender = LogUtils.getTestingAppender(EventEmitter.class);
         eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests();
+        TestAppender logAppender = LogUtils.getTestingAppender(EventEmitter.class);
         EventEmitter<String> eventEmitter = newEventEmitter();
         List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
         eventEmitter.addEvents(eventBodies);
