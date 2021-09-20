@@ -14,6 +14,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,9 +83,11 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublication(Publication inputData) throws TransactionFailedException {
+        Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
-        newResource.setCreatedDate(clockForTimestamps.instant());
+        newResource.setCreatedDate(currentTime);
+        newResource.setModifiedDate(currentTime);
         return insertResource(newResource);
     }
 
@@ -93,6 +96,17 @@ public class ResourceService extends ServiceWithTransactions {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(inputData.getCreatedDate());
+        return insertResource(newResource);
+    }
+
+    public Publication createPublicationWhilePersistingEntryFromLegacySystems(Publication inputData)
+            throws TransactionFailedException {
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setPublishedDate(inputData.getPublishedDate());
+        newResource.setCreatedDate(inputData.getCreatedDate());
+        newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResource(newResource);
     }
 

@@ -69,6 +69,7 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
     private static final String BOOK_OR_REPORT_PART_METADATA = "bookOrReportPartMetadata";
     private static final String BOOK_OR_REPORT_METADATA_FIELD = "bookOrReportMetadata";
+    private static final String CRISTIN_MODIFIED_DATE = "entryLastModifiedDate";
 
     private CristinDataGenerator() {
 
@@ -504,8 +505,7 @@ public final class CristinDataGenerator {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
-                   BOOK_OR_REPORT_PART_METADATA)));
-
+                   BOOK_OR_REPORT_PART_METADATA, CRISTIN_MODIFIED_DATE)));
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
 

@@ -25,9 +25,7 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
@@ -137,25 +135,17 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return attemptSave;
     }
 
-    private Publication publishPublication(Publication publication)
-        throws ApiGatewayException {
-        UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
-        resourceService.publishPublication(userInstance, publication.getIdentifier());
-        return resourceService.getPublication(publication);
-    }
-
     private boolean shouldTryAgain(Try<Publication> attemptSave, int efforts) {
         return attemptSave.isFailure() && efforts < MAX_EFFORTS;
     }
 
     private Try<Publication> tryPersistingInDatabase(Publication publication) {
-        return attempt(() -> createPublicationDraft(publication))
-                   .map(this::publishPublication);
+        return attempt(() -> createPublication(publication));
     }
 
-    private Publication createPublicationDraft(Publication publication)
+    private Publication createPublication(Publication publication)
         throws TransactionFailedException {
-        return resourceService.createPublicationWithPredefinedCreationDate(publication);
+        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(publication);
     }
 
     private void avoidCongestionInDatabase() {
