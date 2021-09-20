@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
@@ -46,14 +45,11 @@ public class BookFeatures {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(cristinIsbn);
     }
 
-
-
     @Given("the Book Report has a \"total number of pages\" entry equal to {string}")
     public void theBookReportHasAEqualTo(String numberOfPages) {
         scenarioContext.getCristinEntry().getBookOrReportMetadata()
             .setNumberOfPages(numberOfPages);
     }
-
 
     @Given("the Book Report has a \"publisher name\" entry equal to {string}")
     public void theBookReportHasAPublisherNameEntryEqualTo(String publisherName) {
@@ -90,12 +86,10 @@ public class BookFeatures {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(nsdCode);
     }
 
-
     @Given("that the Book Report has no subjectField")
     public void thatTheBookReportHasNoSubjectField() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setSubjectField(null);
     }
-
 
     @Given("the Cristin Result belongs to a Series")
     public void theCristinResultBelongsToASeries() {
@@ -127,8 +121,6 @@ public class BookFeatures {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIssue(issue);
     }
 
-
-
     @Given("the Series does not include an NSD code")
     public void theSeriesDoesNotIncludeAnNsdCode() {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().getBookSeries().setNsdCode(null);
@@ -154,7 +146,6 @@ public class BookFeatures {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().getCristinPublisher().setNsdCode(null);
     }
 
-
     @Given("the Cristin Result does not a primary Publisher entry")
     public void theCristinResultDoesNotAPrimaryPublisherEntry() {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setCristinPublisher(null);
@@ -164,7 +155,6 @@ public class BookFeatures {
     public void theCristinResultsHasAnAlternativeMentionToAPublisherNameWithValue(String publisherName) {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setPublisherName(publisherName);
     }
-
 
     @Then("the NVA Resource has a PublicationContext with an ISBN list containing the value {string}")
     public void theNvaResourceHasAPublicationContextWithAnIsbnListContainingTheValues(String expectedIsbn) {
@@ -196,7 +186,6 @@ public class BookFeatures {
         Publisher publisher = extractConfirmedPublisher();
         assertThat(publisher.getId().toString(), containsString(MappingConstants.NVA_API_DOMAIN));
     }
-
 
     @Then("the NVA Resource contains an Unconfirmed Series with title {string}, issn {string}, online issn {string} "
           + "and seriesNumber {string}")
