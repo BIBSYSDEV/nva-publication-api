@@ -3,6 +3,12 @@ package no.unit.nva.cristin;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ENCYCLOPEDIA;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MONOGRAPH;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.NON_FICTION_BOOK;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,6 +40,7 @@ import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
+import no.unit.nva.cristin.mapper.CristinPublisher;
 import no.unit.nva.cristin.mapper.CristinSecondaryCategory;
 import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -69,6 +76,14 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
     private static final String BOOK_OR_REPORT_PART_METADATA = "bookOrReportPartMetadata";
     private static final String BOOK_OR_REPORT_METADATA_FIELD = "bookOrReportMetadata";
+
+    private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
+        MONOGRAPH,
+        TEXTBOOK,
+        NON_FICTION_BOOK,
+        ENCYCLOPEDIA,
+        POPULAR_BOOK,
+        REFERENCE_MATERIAL};
 
     private CristinDataGenerator() {
 
@@ -133,7 +148,7 @@ public final class CristinDataGenerator {
             case ENCYCLOPEDIA:
             case POPULAR_BOOK:
             case REFERENCE_MATERIAL:
-                return randomBookMonograph(category);
+                return randomBook(category);
             case ANTHOLOGY:
                 return randomBookAnthology();
             case FEATURE_ARTICLE:
@@ -185,12 +200,13 @@ public final class CristinDataGenerator {
         return createRandomBookWithSpecifiedSecondaryCategory(CristinSecondaryCategory.ANTHOLOGY);
     }
 
-    public static CristinObject randomBookMonograph(CristinSecondaryCategory secondaryCategory) {
-        return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
+    public static CristinObject randomBook() {
+        CristinSecondaryCategory category = randomArrayElement(BOOK_SECONDARY_CATEGORIES, USE_WHOLE_ARRAY);
+        return randomBook(category);
     }
 
-    public static CristinObject objectWithRandomBookReport() {
-        return createRandomBookWithBookReportValues();
+    public static CristinObject randomBook(CristinSecondaryCategory secondaryCategory) {
+        return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     public static String singleRandomObjectAsString() {
@@ -252,6 +268,14 @@ public final class CristinDataGenerator {
             .withBookSeries(randomBookSeries())
             .withIssue(randomString())
             .withVolume(randomString())
+            .withCristinPublisher(randomPublisher())
+            .build();
+    }
+
+    private static CristinPublisher randomPublisher() {
+        return CristinPublisher.builder()
+            .withPublisherName(randomString())
+            .withNsdCode(largeRandomNumber())
             .build();
     }
 
@@ -412,7 +436,7 @@ public final class CristinDataGenerator {
             .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
             .withEntryCreationDate(LocalDate.now())
             .withMainCategory(CristinMainCategory.BOOK)
-            .withSecondaryCategory(CristinSecondaryCategory.MONOGRAPH)
+            .withSecondaryCategory(MONOGRAPH)
             .withId(largeRandomNumber())
             .withPublicationYear(randomYear())
             .withPublicationOwner(randomString())

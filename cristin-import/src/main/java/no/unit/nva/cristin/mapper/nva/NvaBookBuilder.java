@@ -11,7 +11,7 @@ public class NvaBookBuilder extends NvaBookLikeBuilder {
     }
 
     public Book buildBookForPublicationContext() throws InvalidIsbnException {
-        return new Book(buildSeries(), constructSeriesNumber(), buildUnconfirmedPublisher(), createIsbnList());
+        return new Book(buildSeries(), constructSeriesNumber(), buildPublisher(), createIsbnList());
     }
 
 

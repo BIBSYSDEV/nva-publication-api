@@ -33,15 +33,12 @@ public class PeriodicalBuilder extends CristinMappingModule {
 
     private Periodical createJournal() {
         Integer nsdCode = cristinObject.getJournalPublication().getJournal().getNsdCode();
-        int publicationYear = getYearReportedInNvi();
+        int publicationYear = extractYearReportedInNvi();
         URI journalUri = new Nsd(nsdCode, publicationYear).createJournalOrSeriesUri();
         return new Journal(journalUri.toString());
     }
 
-    private Integer getYearReportedInNvi() {
-        return Optional.ofNullable(cristinObject.getYearReported())
-            .orElseGet(cristinObject::getPublicationYear);
-    }
+
 
     private String extractIssn() {
         return extractCristinJournalPublication().getJournal().getIssn();
