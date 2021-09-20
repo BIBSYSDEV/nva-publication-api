@@ -62,7 +62,7 @@ public class NvaBookLikeBuilder extends CristinMappingModule {
 
     private Optional<PublishingHouse> createConfirmedPublisherIfPublisherReferenceHasNsdCode() {
         return extractPublishersNsdCode()
-            .map(n -> new Nsd(n, extractYearReportedInNvi()))
+            .map(nsdCode -> new Nsd(nsdCode, extractYearReportedInNvi()))
             .map(Nsd::getPublisherUri)
             .map(this::createConfirmedPublisher);
     }
