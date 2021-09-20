@@ -4,59 +4,6 @@ Feature: Rules that apply for both Books and Reports
   #TODO: replace the examples with a List of Cristin Results and the Scenario Outlines with
   # simple Scenarios.
 
-  Scenario Outline: Mapping creates a reference to an NSD Series when the Cristin entry contains
-  an NSD code for the series
-    Given a valid Cristin Result with secondary category "<secondaryCategory>"
-    And the Cristin Result refers to a Series with NSD code 12345
-    And the Cristin Result has publication year 2002
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource has a Reference to a Series that is a URI pointing to the NVA NSD proxy
-    And the Series URI contains the NSD code 12345 and the publication year 2002
-    Examples:
-      | secondaryCategory |
-      | MONOGRAFI         |
-      | ANTOLOGI          |
-      | FAGBOK            |
-      | LÆREBOK           |
-      | LEKSIKON          |
-      | POPVIT_BOK        |
-      | OPPSLAGSVERK      |
-      | ANTOLOGI          |
-      | RAPPORT           |
-      | DRGRADAVH         |
-      | MASTERGRADSOPPG   |
-      | HOVEDFAGSOPPGAVE  |
-      | FORSKERLINJEOPPG  |
-
-
-  Scenario Outline: Mapping creates an Unconfirmed series when a Cristin Book has a references to
-  Book series but there is no NSD code.
-    Given a valid Cristin Result with secondary category "<secondaryCategory>"
-    And the Cristin Result belongs to a Series
-    And the Series does not include an NSD code
-    And the Series mentions a title "SomeSeries"
-    And the Series mentions an issn "0028-0836"
-    And  the Series mentions online issn "0028-0836"
-    And the Series mentions a volume "Vol 1"
-    And the Series mentions an issue "Issue 2"
-    When the Cristin Result is converted to an NVA Resource
-    Then the NVA Resource contains an Unconfirmed Series with title "SomeSeries", issn "0028-0836", online issn "0028-0836" and seriesNumber "Volume:Vol 1;Issue:Issue 2"
-
-    Examples:
-      | secondaryCategory |
-      | MONOGRAFI         |
-      | ANTOLOGI          |
-      | FAGBOK            |
-      | LÆREBOK           |
-      | LEKSIKON          |
-      | POPVIT_BOK        |
-      | OPPSLAGSVERK      |
-      | ANTOLOGI          |
-      | RAPPORT           |
-      | DRGRADAVH         |
-      | MASTERGRADSOPPG   |
-      | HOVEDFAGSOPPGAVE  |
-      | FORSKERLINJEOPPG  |
 
   Scenario Outline: Mapping creates a reference to an NSD publisher when a Cristin Result mentions
   a Publisher with an NSD code.
