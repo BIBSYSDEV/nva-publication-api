@@ -136,7 +136,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceWilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
+    public void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
             throws TransactionFailedException, NotFoundException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
         Instant predefinedPublishTime = Instant.now();

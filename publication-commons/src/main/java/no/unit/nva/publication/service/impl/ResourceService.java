@@ -106,6 +106,7 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setPublishedDate(inputData.getPublishedDate());
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
+        newResource.setStatus(PublicationStatus.PUBLISHED);
         return insertResource(newResource);
     }
 
