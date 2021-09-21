@@ -17,13 +17,14 @@ import nva.commons.core.JacocoGenerated;
         setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"tidsskriftnr", "nsdkode", "landkode_utgiver", "sprakkode", "status_referee_ordning",
-    "dato_utgutt", "status_serie"})
+@JsonIgnoreProperties({"tidsskriftnr", "landkode_utgiver", "sprakkode", "status_referee_ordning",
+    "dato_utgatt", "status_serie"})
 public class CristinJournalPublicationJournal {
 
     public static final String ISSN = "issn";
     public static final String ISSN_ONLINE = "issn_elektronisk";
     public static final String JOURNAL_TITLE = "tidsskriftnavn";
+    public static final String NSD_JOURNAL_IDENTIFIER = "nsdkode";
 
     @JsonProperty(ISSN)
     private String issn;
@@ -31,6 +32,8 @@ public class CristinJournalPublicationJournal {
     private String issnOnline;
     @JsonProperty(JOURNAL_TITLE)
     private String journalTitle;
+    @JsonProperty(NSD_JOURNAL_IDENTIFIER)
+    private Integer nsdCode;
 
     public CristinJournalPublicationJournal() {
 

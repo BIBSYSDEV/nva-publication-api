@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Objects.nonNull;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -26,29 +27,34 @@ import nva.commons.core.JsonSerializable;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet",
+@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "peerReviewed",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
-    "type_foredrag_poster", "kildepostid", "type_bok_rapport_del", "eierkode_opprettet", "arkivpost",
+    "type_foredrag_poster", "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
-    "arstall_rapportert", "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
-    "merknadtekst", "dato_siste_endring"})
+    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
+    "merknadtekst"})
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
     public static final String MAIN_CATEGORY_FIELD = "varbeidhovedkatkode";
     public static final String SECONDARY_CATEGORY_FIELD = "varbeidunderkatkode";
-    public static String IDENTIFIER_ORIGIN = "Cristin";
+    public static final String IDENTIFIER_ORIGIN = "Cristin";
     private static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
         objectMapperWithEmpty.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+    public static final String BOOK_OR_REPORT_METADATA = "type_bok_rapport";
 
     @JsonProperty("id")
     private Integer id;
     @JsonProperty("arstall")
-    private String publicationYear;
+    private Integer publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
+    @JsonProperty("dato_siste_endring")
+    private LocalDate entryLastModifiedDate;
+    @JsonProperty("arstall_rapportert")
+    private Integer yearReported;
     @JsonProperty("varbeid_sprak")
     private List<CristinTitle> cristinTitles;
     @JsonProperty(MAIN_CATEGORY_FIELD)
@@ -61,8 +67,10 @@ public class CristinObject implements JsonSerializable {
     private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
-    @JsonProperty("type_bok_rapport")
+    @JsonProperty(BOOK_OR_REPORT_METADATA)
     private CristinBookOrReportMetadata bookOrReportMetadata;
+    @JsonProperty("type_bok_rapport_del")
+    private CristinBookOrReportPartMetadata bookOrReportPartMetadata;
     @JsonProperty("type_tidsskriftpublikasjon")
     private CristinJournalPublication journalPublication;
     private String publicationOwner;
@@ -82,6 +90,9 @@ public class CristinObject implements JsonSerializable {
         this.setPublicationOwner(publicationsOwner);
     }
 
+    public boolean isPeerReviewed() {
+        return nonNull(yearReported);
+    }
 
     public static CristinObject fromJson(JsonNode json) {
         return attempt(() -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(json, CristinObject.class)).orElseThrow();

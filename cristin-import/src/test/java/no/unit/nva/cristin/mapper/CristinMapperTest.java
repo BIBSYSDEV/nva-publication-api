@@ -1,6 +1,5 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.CristinDataGenerator.NULL_KEY;
 import static no.unit.nva.cristin.CristinDataGenerator.largeRandomNumber;
 import static no.unit.nva.cristin.CristinDataGenerator.randomAffiliation;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
@@ -12,6 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -42,7 +42,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -59,11 +58,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
-    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included "
-                                                              + "objects need to be non empty\n     "
-                                                              + "but: Empty field found: %s";
-    public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
-    public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
 
     @BeforeEach
     public void init() {
@@ -76,12 +70,12 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Set<Integer> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
 
         Set<Integer> actualIds = cristinObjects()
-                                     .map(CristinObject::toPublication)
-                                     .map(Publication::getAdditionalIdentifiers)
-                                     .flatMap(Collection::stream)
-                                     .map(AdditionalIdentifier::getValue)
-                                     .map(Integer::parseInt)
-                                     .collect(Collectors.toSet());
+            .map(CristinObject::toPublication)
+            .map(Publication::getAdditionalIdentifiers)
+            .flatMap(Collection::stream)
+            .map(AdditionalIdentifier::getValue)
+            .map(Integer::parseInt)
+            .collect(Collectors.toSet());
 
         assertThat(expectedIds.size(), is(equalTo(NUMBER_OF_LINES_IN_RESOURCES_FILE)));
         assertThat(actualIds, is(equalTo(expectedIds)));
@@ -92,16 +86,16 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
         List<CristinObject> cristinObjects = cristinObjects().collect(Collectors.toList());
         List<String> expectedTitles = cristinObjects.stream()
-                                          .map(CristinObject::getCristinTitles)
-                                          .map(this::mainTitle)
-                                          .map(CristinTitle::getTitle)
-                                          .collect(Collectors.toList());
+            .map(CristinObject::getCristinTitles)
+            .map(this::mainTitle)
+            .map(CristinTitle::getTitle)
+            .collect(Collectors.toList());
 
         List<String> actualTitles = cristinObjects.stream()
-                                        .map(CristinObject::toPublication)
-                                        .map(Publication::getEntityDescription)
-                                        .map(EntityDescription::getMainTitle)
-                                        .collect(Collectors.toList());
+            .map(CristinObject::toPublication)
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getMainTitle)
+            .collect(Collectors.toList());
         assertThat(expectedTitles, is(not(empty())));
         assertThat(actualTitles, containsInAnyOrder(expectedTitles.toArray(String[]::new)));
         assertThat(actualTitles.size(), is(equalTo(cristinObjects.size())));
@@ -110,17 +104,18 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     @DisplayName("map returns resource with date equal to \"arstall\"")
     public void mapReturnsResourceWithDateEqualToArstall() {
-        List<String> expectedPublicationYear = cristinObjects()
-                                                   .map(CristinObject::getPublicationYear)
-                                                   .collect(Collectors.toList());
+        List<Integer> expectedPublicationYear = cristinObjects()
+            .map(CristinObject::getPublicationYear)
+            .collect(Collectors.toList());
 
-        List<String> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
-                                                  .map(Publication::getEntityDescription)
-                                                  .map(EntityDescription::getDate)
-                                                  .map(PublicationDate::getYear)
-                                                  .collect(Collectors.toList());
+        List<Integer> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getDate)
+            .map(PublicationDate::getYear)
+            .map(Integer::parseInt)
+            .collect(Collectors.toList());
         assertThat(expectedPublicationYear, is(not(empty())));
-        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(String[]::new)));
+        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(Integer[]::new)));
     }
 
     @Test
@@ -128,14 +123,14 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsResourceWithCreatedDateEqualToCristinDateAssumedToBeUtcDate() {
         ZoneOffset utc = ZoneId.of("UTC").getRules().getOffset(Instant.now());
         List<Instant> expectedCreatedDates = cristinObjects()
-                                                 .map(CristinObject::getEntryCreationDate)
-                                                 .map(LocalDate::atStartOfDay)
-                                                 .map(time -> time.toInstant(utc))
-                                                 .collect(Collectors.toList());
+            .map(CristinObject::getEntryCreationDate)
+            .map(LocalDate::atStartOfDay)
+            .map(time -> time.toInstant(utc))
+            .collect(Collectors.toList());
 
         List<Instant> actualCreatedDates = cristinObjects().map(CristinObject::toPublication)
-                                               .map(Publication::getCreatedDate)
-                                               .collect(Collectors.toList());
+            .map(Publication::getCreatedDate)
+            .collect(Collectors.toList());
 
         assertThat(actualCreatedDates, containsInAnyOrder(expectedCreatedDates.toArray(Instant[]::new)));
     }
@@ -143,21 +138,21 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapReturnsBookAnthologyWhenInputHasMainTypeBookAndSecondaryTypeAnthology() {
         testingData = Stream.of(CristinDataGenerator.randomBookAnthology())
-                          .map(JsonSerializable::toJsonString)
-                          .collect(SingletonCollector.collect());
+            .map(JsonSerializable::toJsonString)
+            .collect(SingletonCollector.collect());
 
         Publication actualPublication = cristinObjects()
-                                            .map(CristinObject::toPublication)
-                                            .collect(SingletonCollector.collect());
+            .map(CristinObject::toPublication)
+            .collect(SingletonCollector.collect());
 
         PublicationInstance<?> actualPublicationInstance = actualPublication
-                                                               .getEntityDescription()
-                                                               .getReference()
-                                                               .getPublicationInstance();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
         PublicationContext actualPublicationContext = actualPublication
-                                                          .getEntityDescription()
-                                                          .getReference()
-                                                          .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
 
         assertThat(actualPublicationInstance, is(instanceOf(BookAnthology.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));
@@ -165,22 +160,22 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookMonographWhenInputHasMainTypeBookAndSecondaryTypeMonograph() {
-        testingData = Stream.of(CristinDataGenerator.randomBookMonograph())
-                          .map(JsonSerializable::toJsonString)
-                          .collect(SingletonCollector.collect());
+        testingData = Stream.of(CristinDataGenerator.randomBook(CristinSecondaryCategory.MONOGRAPH))
+            .map(JsonSerializable::toJsonString)
+            .collect(SingletonCollector.collect());
 
         Publication actualPublication = cristinObjects()
-                                            .map(CristinObject::toPublication)
-                                            .collect(SingletonCollector.collect());
+            .map(CristinObject::toPublication)
+            .collect(SingletonCollector.collect());
 
         PublicationInstance<?> actualPublicationInstance = actualPublication
-                                                               .getEntityDescription()
-                                                               .getReference()
-                                                               .getPublicationInstance();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
         PublicationContext actualPublicationContext = actualPublication
-                                                          .getEntityDescription()
-                                                          .getReference()
-                                                          .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
 
         assertThat(actualPublicationInstance, is(instanceOf(BookMonograph.class)));
         assertThat(actualPublicationContext, is(instanceOf(Book.class)));
@@ -190,19 +185,19 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsResourceWhereNvaContributorsNamesAreConcatenationsOfCristinFirstAndFamilyNames() {
 
         List<String> expectedContributorNames = cristinObjects()
-                                                    .map(CristinObject::getContributors)
-                                                    .flatMap(Collection::stream)
-                                                    .map(this::formatNameAccordingToNvaPattern)
-                                                    .collect(Collectors.toList());
+            .map(CristinObject::getContributors)
+            .flatMap(Collection::stream)
+            .map(this::formatNameAccordingToNvaPattern)
+            .collect(Collectors.toList());
 
         List<String> actualContributorNames = cristinObjects()
-                                                  .map(CristinObject::toPublication)
-                                                  .map(Publication::getEntityDescription)
-                                                  .map(EntityDescription::getContributors)
-                                                  .flatMap(Collection::stream)
-                                                  .map(Contributor::getIdentity)
-                                                  .map(Identity::getName)
-                                                  .collect(Collectors.toList());
+            .map(CristinObject::toPublication)
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getContributors)
+            .flatMap(Collection::stream)
+            .map(Contributor::getIdentity)
+            .map(Identity::getName)
+            .collect(Collectors.toList());
 
         assertThat(actualContributorNames, containsInAnyOrder(expectedContributorNames.toArray(String[]::new)));
     }
@@ -211,15 +206,15 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsResourceWhereNvaContributorSequenceIsEqualToCristinContributorSequence() {
 
         Set<ContributionReference> expectedContributions = cristinObjects()
-                                                               .map(this::extractContributions)
-                                                               .flatMap(Collection::stream)
-                                                               .collect(Collectors.toSet());
+            .map(this::extractContributions)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet());
 
         Set<ContributionReference> actualContributions = cristinObjects()
-                                                             .map(CristinObject::toPublication)
-                                                             .map(this::extractContributions)
-                                                             .flatMap(Collection::stream)
-                                                             .collect(Collectors.toSet());
+            .map(CristinObject::toPublication)
+            .map(this::extractContributions)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet());
 
         assertThat(expectedContributions, is(equalTo(actualContributions)));
     }
@@ -228,21 +223,21 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsResourceWhereNvaContributorHasAffiliationsWithUriCreatedBasedOnReferenceUriAndUnitNumbers() {
 
         List<URI> expectedAffiliations = cristinObjects()
-                                             .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
-                                             .flatMap(contributor -> contributor.getAffiliations().stream())
-                                             .map(this::explicitFormattingOfCristinAffiliationCode)
-                                             .map(this::addCristinOrgHostPrefix)
-                                             .map(URI::create)
-                                             .collect(Collectors.toList());
+            .flatMap(cristinEntries -> cristinEntries.getContributors().stream())
+            .flatMap(contributor -> contributor.getAffiliations().stream())
+            .map(this::explicitFormattingOfCristinAffiliationCode)
+            .map(this::addCristinOrgHostPrefix)
+            .map(URI::create)
+            .collect(Collectors.toList());
 
         List<URI> actualAffiliations = cristinObjects().map(CristinObject::toPublication)
-                                           .map(Publication::getEntityDescription)
-                                           .map(EntityDescription::getContributors)
-                                           .flatMap(Collection::stream)
-                                           .map(Contributor::getAffiliations)
-                                           .flatMap(Collection::stream)
-                                           .map(Organization::getId)
-                                           .collect(Collectors.toList());
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getContributors)
+            .flatMap(Collection::stream)
+            .map(Contributor::getAffiliations)
+            .flatMap(Collection::stream)
+            .map(Organization::getId)
+            .collect(Collectors.toList());
 
         assertThat(actualAffiliations, containsInAnyOrder(expectedAffiliations.toArray(URI[]::new)));
     }
@@ -250,14 +245,14 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationYear() {
         List<PublicationDate> expectedPublicationDates = cristinObjects()
-                                                             .map(CristinObject::getPublicationYear)
-                                                             .map(this::yearStringToPublicationDate)
-                                                             .collect(Collectors.toList());
+            .map(CristinObject::getPublicationYear)
+            .map(this::yearToPublicationDate)
+            .collect(Collectors.toList());
         List<PublicationDate> actualPublicationDates = cristinObjects()
-                                                           .map(CristinObject::toPublication)
-                                                           .map(Publication::getEntityDescription)
-                                                           .map(EntityDescription::getDate)
-                                                           .collect(Collectors.toList());
+            .map(CristinObject::toPublication)
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getDate)
+            .collect(Collectors.toList());
 
         assertThat(actualPublicationDates,
                    containsInAnyOrder(expectedPublicationDates.toArray(PublicationDate[]::new)));
@@ -266,9 +261,9 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapReturnsPublicationWithHardcodedLink() {
         Set<URI> actualLicenseIdentifiers = cristinObjects()
-                                                .map(CristinObject::toPublication)
-                                                .map(Publication::getLink)
-                                                .collect(Collectors.toSet());
+            .map(CristinObject::toPublication)
+            .map(Publication::getLink)
+            .collect(Collectors.toSet());
 
         Set<URI> expectedLinks = Set.of(HARDCODED_SAMPLE_DOI);
 
@@ -284,27 +279,27 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         CristinObject objectWithEditor = createObjectWithRoleCode(actualCristinRole);
 
         Optional<Contributor> contributor = objectWithEditor.toPublication()
-                                                .getEntityDescription()
-                                                .getContributors()
-                                                .stream()
-                                                .filter(c -> c.getRole().equals(expectedNvaRole))
-                                                .findAny();
+            .getEntityDescription()
+            .getContributors()
+            .stream()
+            .filter(c -> c.getRole().equals(expectedNvaRole))
+            .findAny();
         assertThat(contributor.isPresent(), is(true));
         assertThat(contributor.orElseThrow().getRole(), is(equalTo(expectedNvaRole)));
     }
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String numberOfPages = cristinImport.getBookOrReportMetadata().getNumberOfPages();
 
         Publication actualPublication = cristinImport.toPublication();
 
         PublicationInstance<?> actualPublicationInstance = actualPublication
-                                                               .getEntityDescription()
-                                                               .getReference()
-                                                               .getPublicationInstance();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationInstance();
 
         MonographPages monographPages = (MonographPages) actualPublicationInstance.getPages();
         String actualNumberOfPages = monographPages.getPages();
@@ -313,41 +308,22 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
-
-        String publisherName = cristinImport.getBookOrReportMetadata().getPublisherName();
-
-        Publication actualPublication = cristinImport.toPublication();
-
-        PublicationContext actualPublicationContext = actualPublication
-                                                          .getEntityDescription()
-                                                          .getReference()
-                                                          .getPublicationContext();
-
-        Book bookSubType = (Book) actualPublicationContext;
-        String actuallPublisher = bookSubType.getPublisher();
-
-        assertThat(actuallPublisher, is(equalTo(publisherName)));
-    }
-
-    @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String isbn = cristinImport.getBookOrReportMetadata().getIsbn();
 
         Publication actualPublication = cristinImport.toPublication();
 
         PublicationContext actualPublicationContext = actualPublication
-                                                          .getEntityDescription()
-                                                          .getReference()
-                                                          .getPublicationContext();
+            .getEntityDescription()
+            .getReference()
+            .getPublicationContext();
 
         Book bookSubType = (Book) actualPublicationContext;
-        List<String> actuallIsbnList = bookSubType.getIsbnList();
+        List<String> actualIsbnList = bookSubType.getIsbnList();
 
-        assertThat(actuallIsbnList.get(0), is(equalTo(isbn)));
+        assertThat(actualIsbnList.get(0), is(equalTo(isbn)));
     }
 
     @Test
@@ -367,10 +343,10 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     public void mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing() {
         CristinContributor contributorWithMissingName = CristinContributor.builder()
-                                                            .withIdentifier(largeRandomNumber())
-                                                            .withContributorOrder(1)
-                                                            .withAffiliations(List.of(randomAffiliation()))
-                                                            .build();
+            .withIdentifier(largeRandomNumber())
+            .withContributorOrder(1)
+            .withAffiliations(List.of(randomAffiliation()))
+            .build();
         CristinObject cristinObjectWithContributorsWithoutRole =
             CristinDataGenerator.randomObject().copy()
                 .withPublicationOwner(randomString())
@@ -382,23 +358,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapperThrowsExceptionWhenIsbnValueIsNull() {
-        CristinObject cristinInput = CristinDataGenerator.objectWithRandomBookReport();
-        cristinInput.getBookOrReportMetadata().setIsbn(null);
-
-        Executable action = cristinInput::toPublication;
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-
-        Throwable cause = exception.getCause();
-
-        assertThat(cause.getClass().getSimpleName(),
-                   is(equalTo(InvalidIsbnException.class.getSimpleName())));
-        assertThat(cause.getMessage(), is(equalTo(String.format(InvalidIsbnException.ERROR_TEMPLATE, NULL_KEY))));
-    }
-
-    @Test
     public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
-        CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
 
         System.out.println(cristinObject);
@@ -413,28 +374,63 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         mapSetsNameToNullWhenBothFamilyNameAndGivenNameAreMissing();
     }
 
+    @ParameterizedTest(name = "map returns journal with DOI URI when input is Journal with DOI:{0}")
+    @CsvSource({
+        "http://dx.doi.org/10.5750/ejpch.v5i1.1209, https://doi.org/10.5750/ejpch.v5i1.1209",
+        "https://doi.org/10.1016/j.toxlet.2020.09.006, https://doi.org/10.1016/j.toxlet.2020.09.006",
+        "DOI:10.1080/02699052.2017.1312145, https://doi.org/10.1080/02699052.2017.1312145",
+        "doi:10.1080/02699052.2017.1312145, https://doi.org/10.1080/02699052.2017.1312145",
+        "10.1016/j.toxlet.2020.09.006, https://doi.org/10.1016/j.toxlet.2020.09.006"
+    })
+    public void mapReturnsJournalWithDoiWhenInputIsJournalResultWithDoi(String inputDoi, String expectedDoiUri) {
+        CristinObject cristinObject =
+            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+        cristinObject.getJournalPublication().setDoi(inputDoi);
+        Publication publication = cristinObject.toPublication();
+        assertThat(publication.getEntityDescription().getReference().getDoi(), is(equalTo(URI.create(expectedDoiUri))));
+    }
+
+    @Test
+    public void mapReturnsJournalWithDoiUriWhenInputIsANonExistingDoiAndOnlineValidationIsDisabled() {
+        String inputDoi = "10.1234/non.existin.doi";
+        URI expectedDoiUri = URI.create("https://doi.org/" + inputDoi);
+        CristinObject cristinObject =
+            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+        cristinObject.getJournalPublication().setDoi(inputDoi);
+        Publication publication = cristinObject.toPublication();
+        assertThat(publication.getEntityDescription().getReference().getDoi(), is(equalTo(expectedDoiUri)));
+    }
+
+    @Test
+    public void mapReturnsJournalWithoutDoiUriWhenInputIsAJournalArticleWihoutDoi() {
+        CristinObject cristinObject =
+            CristinDataGenerator.randomObject(CristinSecondaryCategory.JOURNAL_ARTICLE.toString());
+        cristinObject.getJournalPublication().setDoi(null);
+        Publication publication = cristinObject.toPublication();
+        assertThat(publication.getEntityDescription().getReference().getDoi(), is(nullValue()));
+    }
+
     private CristinObject createObjectWithRoleCode(CristinContributorRoleCode actualCristinRoleCode) {
         return CristinDataGenerator.newCristinObjectWithRoleCode(actualCristinRoleCode);
     }
 
     private CristinContributor contributorWithoutRoles() {
         CristinContributorsAffiliation affiliation = randomAffiliation()
-                                                         .copy()
-                                                         .withRoles(Collections.emptyList())
-                                                         .build();
+            .copy()
+            .withRoles(Collections.emptyList())
+            .build();
 
         return CristinContributor.builder()
-                   .withFamilyName(randomString())
-                   .withIdentifier(largeRandomNumber())
-                   .withContributorOrder(1)
-                   .withGivenName(randomString())
-                   .withAffiliations(List.of((affiliation)))
-                   .build();
+            .withFamilyName(randomString())
+            .withIdentifier(largeRandomNumber())
+            .withContributorOrder(1)
+            .withGivenName(randomString())
+            .withAffiliations(List.of((affiliation)))
+            .build();
     }
 
-    private PublicationDate yearStringToPublicationDate(String yearString) {
-        return new PublicationDate.Builder().withYear(
-            yearString).build();
+    private PublicationDate yearToPublicationDate(Integer year) {
+        return new PublicationDate.Builder().withYear(year.toString()).build();
     }
 
     //We do not use any more complex logic to make the tests fail if anything changes
@@ -451,22 +447,22 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     private List<ContributionReference> extractContributions(Publication publication) {
 
         AdditionalIdentifier cristinIdentifier = publication.getAdditionalIdentifiers().stream()
-                                                     .filter(this::isCristinIdentifier)
-                                                     .collect(SingletonCollector.collect());
+            .filter(this::isCristinIdentifier)
+            .collect(SingletonCollector.collect());
         Integer cristinIdentifierValue = Integer.parseInt(cristinIdentifier.getValue());
 
         return publication.getEntityDescription()
-                   .getContributors().stream()
-                   .map(contributor -> extractContributionReference(cristinIdentifierValue, contributor))
-                   .collect(Collectors.toList());
+            .getContributors().stream()
+            .map(contributor -> extractContributionReference(cristinIdentifierValue, contributor))
+            .collect(Collectors.toList());
     }
 
     private List<ContributionReference> extractContributions(CristinObject cristinObject) {
         final Integer cristinResourceIdentifier = cristinObject.getId();
         return cristinObject.getContributors().stream()
-                   .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
-                                                       c.getContributorOrder()))
-                   .collect(Collectors.toList());
+            .map(c -> new ContributionReference(cristinResourceIdentifier, c.getIdentifier(),
+                                                c.getContributorOrder()))
+            .collect(Collectors.toList());
     }
 
     private boolean isCristinIdentifier(AdditionalIdentifier identifier) {

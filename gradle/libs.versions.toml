@@ -1,9 +1,9 @@
 [versions]
-nva = { strictly = "1.7.5" }
-nvaDatamodelVersion = { strictly = "0.12.1" }
+nva = { strictly = "1.8.1" }
+nvaDatamodelVersion = { strictly = "0.13.5" }
 jacksonVersion = { strictly = "2.12.4" }
-awsSdkVersion = { strictly = "1.12.42" }
-awsSdk2Version = { strictly = "2.17.14" }
+awsSdkVersion = { strictly = "1.12.52" }
+awsSdk2Version = { strictly = "2.17.24" }
 log4jApiVersion = { require = "2.14.1" }
 zalandoProblemVersion = { strictly = "0.26.0" }
 awsLambdaCore = { stictly = "1.2.1" }
@@ -14,9 +14,10 @@ nvaUserAccessService = { require = "0.3.0" }
 awsIon = { strictly = "1.5.1" }
 commonsValidator = { strictly = "1.7" }
 apacheCommons = { strictly = "4.4" }
-testUtils = { strictly = "0.1.22" }
+testUtils = { strictly = "0.1.24" }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
+config-typesafe-version = { strictly = '1.4.1' }
 
 [libraries]
 nva-core = { group = "com.github.bibsysdev", name = "core", version.ref = "nva" }
@@ -28,7 +29,7 @@ nva-eventhandlers = { group = "com.github.bibsysdev", name = "eventhandlers", ve
 nva-testutils = { group = "com.github.bibsysdev", name = "nva-testutils", version.ref = "testUtils" }
 nva-user-access-rights = { group = "com.github.bibsysdev.nva-user-access-service", name = "user-access-rights", version.ref = "nvaUserAccessService" }
 nva-datamodel = { group = "com.github.bibsysdev", name = "nva-datamodel-java", version.ref = "nvaDatamodelVersion" }
-
+nva-doi = { group = "com.github.bibsysdev", name = "doi", version.ref = "nva" }
 
 
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations", version.ref = "jacksonVersion" }
@@ -70,6 +71,9 @@ dynamodDbLocal = { group = "com.amazonaws", name = "DynamoDBLocal", version.ref 
 javafaker = { group = "com.github.javafaker", name = "javafaker", version = { strictly = "1.0.2" } }
 javers = { group = "org.javers", name = "javers-core", version = { strictly = "6.0.1" } }
 zalando = { group = "org.zalando", name = "problem", version.ref = "zalandoProblemVersion" }
+typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = "config-typesafe-version" }
+
+
 
 commons-validator = { group = "commons-validator", name = "commons-validator", version.ref = "commonsValidator" }
 

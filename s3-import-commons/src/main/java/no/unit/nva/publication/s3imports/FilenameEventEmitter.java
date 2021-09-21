@@ -57,12 +57,12 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
-    public static final String CANONICAL_NAME = FilenameEventEmitter.class.getCanonicalName();
+    public static final String RUNNING_CLASS_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
     public static final String IMPORT_EVENT_TYPE_ENV_VARIABLE = "IMPORT_EVENT_TYPE";
     public static final String IMPORT_EVENT_TYPE = fetchImportEventTypeFromEnvironment();
     private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
-    public static final int NUMBER_OF_EMITTED_FILNAMES_PER_BATCH = 10;
+    public static final int NUMBER_OF_EMITTED_FILENAMES_PER_BATCH = 10;
 
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
@@ -155,7 +155,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
         EventEmitter<ImportRequest> eventEmitter =
             new EventEmitter<>(EVENT_DETAIL_TYPE,
-                               CANONICAL_NAME,
+                               RUNNING_CLASS_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);
 
@@ -163,7 +163,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                                  .map(this::newImportRequestForSingleFile)
                                                  .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
-        return eventEmitter.emitEvents(NUMBER_OF_EMITTED_FILNAMES_PER_BATCH);
+        return eventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {

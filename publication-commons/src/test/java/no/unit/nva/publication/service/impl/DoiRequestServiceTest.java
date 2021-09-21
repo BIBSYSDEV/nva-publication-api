@@ -346,6 +346,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
             .withResourceStatus(PublicationStatus.DRAFT)
             .withCreatedDate(DOI_REQUEST_CREATION_TIME)
             .withModifiedDate(DOI_REQUEST_CREATION_TIME)
+            .withResourceModifiedDate(PUBLICATION_CREATION_TIME)
             .build();
     }
 
