@@ -15,7 +15,7 @@ public class NvaReportBuilder extends NvaBookLikeBuilder {
     public Report buildNvaReport()
         throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
         return new Report.Builder()
-            .withPublisher(buildUnconfirmedPublisher())
+            .withPublisher(buildPublisher())
             .withIsbnList(createIsbnList())
             .withSeries(buildSeries())
             .withSeriesNumber(constructSeriesNumber())

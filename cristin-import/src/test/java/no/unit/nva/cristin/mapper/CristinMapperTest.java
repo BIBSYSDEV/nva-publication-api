@@ -42,8 +42,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -60,11 +58,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
-    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included "
-                                                              + "objects need to be non empty\n     "
-                                                              + "but: Empty field found: %s";
-    public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
-    public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
 
     @BeforeEach
     public void init() {
@@ -167,7 +160,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookMonographWhenInputHasMainTypeBookAndSecondaryTypeMonograph() {
-        testingData = Stream.of(CristinDataGenerator.randomBookMonograph(CristinSecondaryCategory.MONOGRAPH))
+        testingData = Stream.of(CristinDataGenerator.randomBook(CristinSecondaryCategory.MONOGRAPH))
             .map(JsonSerializable::toJsonString)
             .collect(SingletonCollector.collect());
 
@@ -297,7 +290,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String numberOfPages = cristinImport.getBookOrReportMetadata().getNumberOfPages();
 
@@ -315,28 +308,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
-
-        UnconfirmedPublisher expectedPublisher =
-            new UnconfirmedPublisher(cristinImport.getBookOrReportMetadata().getPublisherName());
-
-        Publication actualPublication = cristinImport.toPublication();
-
-        PublicationContext actualPublicationContext = actualPublication
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
-
-        Book bookSubType = (Book) actualPublicationContext;
-        PublishingHouse actualPublisher = bookSubType.getPublisher();
-
-        assertThat(actualPublisher, is(equalTo(expectedPublisher)));
-    }
-
-    @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String isbn = cristinImport.getBookOrReportMetadata().getIsbn();
 
@@ -386,7 +359,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
-        CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
 
         System.out.println(cristinObject);

@@ -31,7 +31,7 @@ public class ReportFeatures {
         assertThat(actualPublisher, is(equalTo(expectedPublisher)));
     }
 
-    @Given("that the Cristin Result has an empty publisherName field")
+    @Given("the Cristin Result does not mention a publisher in the alternative field")
     public void thatTheCristinResultHasAnEmptyPublisherNameField() {
         scenarioContext.getCristinEntry().getBookOrReportMetadata().setPublisherName(null);
     }
