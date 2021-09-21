@@ -270,7 +270,7 @@ public class EventEmitter<T> {
     }
 
     private void log(PutEventsRequestEntry eventEntry) {
-        logger.info("EmittingEvent: "+eventEntry.detail());
+        logger.info("EmittingEvent: " + eventEntry.detail());
     }
 
     private int requestEntrySize(PutEventsRequestEntry entry) {

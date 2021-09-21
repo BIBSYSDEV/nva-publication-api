@@ -66,6 +66,23 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Creation Date equal to "2011-12-03T00:00:00Z"
 
+  Scenario: The NVA Resource Published Date is set to be the Cristin entry's creation date
+    Given that Cristin Result has created date equal to the local date "2011-12-03"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Published Date equal to "2011-12-03T00:00:00Z"
+
+  Scenario: The NVA Resource Modified Date is set to be the Cristin entry's last modified date
+    Given that Cristin Result has modified date equal to the local date "2011-12-03"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Modified Date equal to "2011-12-03T00:00:00Z"
+
+  Scenario: When the Cristin Result has no last modified date the NVA resource's modified date will be copied
+  from the Cristin Results created date
+    Given that Cristin Result has created date equal to the local date "2011-12-03"
+    And that the Cristin Result has no last modified value.
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a Modified Date equal to "2011-12-03T00:00:00Z"
+
   Scenario: The NVA Contributor names are concatenations of Cristin's Cristin First and Family names.
     Given that the Cristin Result has Contributors with names:
       | Given Name  | Family Name |

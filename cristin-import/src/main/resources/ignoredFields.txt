@@ -3,8 +3,6 @@ fileSet
 handle
 identifier
 indexedDate
-modifiedDate
-publishedDate
 doiRequest
 publisher.labels
 entityDescription.contributors.affiliations.labels

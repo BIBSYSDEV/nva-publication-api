@@ -4,8 +4,6 @@ import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 
 /**
  * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to
@@ -35,11 +33,7 @@ public class CristinMappingModule {
             .orElse(null);
     }
 
-    protected PublishingHouse buildUnconfirmedPublisher() {
-        return new UnconfirmedPublisher(extractPublisherName());
-    }
-
-    private String extractPublisherName() {
-        return extractCristinBookReport().getPublisherName();
+    protected Integer extractYearReportedInNvi() {
+        return Optional.ofNullable(cristinObject.getYearReported()).orElseGet(cristinObject::getPublicationYear);
     }
 }

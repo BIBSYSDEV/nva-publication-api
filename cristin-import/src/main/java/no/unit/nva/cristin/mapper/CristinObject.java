@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,8 +32,9 @@ import nva.commons.core.JsonSerializable;
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "type_foredrag_poster", "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal",
-    "merknadtekst", "dato_siste_endring"})
+    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst"})
+
+@SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
@@ -52,6 +52,8 @@ public class CristinObject implements JsonSerializable {
     private Integer publicationYear;
     @JsonProperty("dato_opprettet")
     private LocalDate entryCreationDate;
+    @JsonProperty("dato_siste_endring")
+    private LocalDate entryLastModifiedDate;
     @JsonProperty("arstall_rapportert")
     private Integer yearReported;
     @JsonProperty("varbeid_sprak")
