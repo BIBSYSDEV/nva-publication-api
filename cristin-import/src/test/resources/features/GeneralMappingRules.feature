@@ -55,7 +55,7 @@ Feature: Mappings that hold for all types of Cristin Results
       |                   | http://lexvo.org/id/iso639-3/und |
 
 
-  Scenario Outline: The Resources Publication Date is set  the Cristin Result's Publication Year
+  Scenario: The Resources Publication Date is set  the Cristin Result's Publication Year
     Given the Cristin Result has publication year 1996
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Date with year equal to 1996, month equal to null and day equal to null
@@ -193,6 +193,19 @@ Feature: Mappings that hold for all types of Cristin Results
     Given that the Cristin Result has a ResearchProject set to null
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has no projects
+
+  Scenario: The Cristin Result's HRCS values are used to generate the URIs for the NVA Resource
+    Given a valid Cristin Result
+    And the Cristin Result has the HRCS values:
+      | helsekategorikode | aktivitetskode |
+      | 4                 | 6.4            |
+      | 13                | 3.1            |
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has the following subjects:
+      | https://nva.unit.no/hrcs/category/003 |
+      | https://nva.unit.no/hrcs/category/012 |
+      | https://nva.unit.no/hrcs/activity/6.4 |
+      | https://nva.unit.no/hrcs/activity/3.1 |
 
   Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role

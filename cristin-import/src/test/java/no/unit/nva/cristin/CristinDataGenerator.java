@@ -29,6 +29,7 @@ import no.unit.nva.cristin.mapper.CristinContributor;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActiveties;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinMainCategory;
@@ -69,6 +70,7 @@ public final class CristinDataGenerator {
     private static final String CRISTIN_SUBJECT_FIELD = "bookReport.subjectField";
     private static final String BOOK_OR_REPORT_PART_METADATA = "bookOrReportPartMetadata";
     private static final String BOOK_OR_REPORT_METADATA_FIELD = "bookOrReportMetadata";
+    private static final String HRCS_CATEGORIES_AND_ACTIVITES = ".hrcsCategoriesAndActiveties";
 
     private CristinDataGenerator() {
 
@@ -470,6 +472,7 @@ public final class CristinDataGenerator {
             .build();
     }
 
+
     private static CristinSubjectField randomSubjectField() {
         return CristinSubjectField.builder()
             .withSubjectFieldCode(smallRandomNumber())
@@ -504,7 +507,7 @@ public final class CristinDataGenerator {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
-                   BOOK_OR_REPORT_PART_METADATA)));
+                   BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITES)));
 
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }

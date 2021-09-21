@@ -33,7 +33,7 @@ import nva.commons.core.JsonSerializable;
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "type_foredrag_poster", "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
+    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal",
     "merknadtekst", "dato_siste_endring"})
 public class CristinObject implements JsonSerializable {
 
@@ -66,6 +66,8 @@ public class CristinObject implements JsonSerializable {
     private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
+    @JsonProperty("varbeid_hrcs_klassifisering")
+    private List<CristinHrcsCategoriesAndActiveties> hrcsCategoriesAndActiveties;
     @JsonProperty(BOOK_OR_REPORT_METADATA)
     private CristinBookOrReportMetadata bookOrReportMetadata;
     @JsonProperty("type_bok_rapport_del")

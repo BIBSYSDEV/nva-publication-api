@@ -28,6 +28,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActiveties;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -390,5 +391,17 @@ public class GeneralMappingRules {
     @And("the Cristin Result has an valid ISBN with the value {string}")
     public void theCristinResultHasAnValidIsbnWithTheValue(String isbn) {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
+    }
+
+    @When("the Cristin Result has the HRCS values:")
+    public void theCristinResultHasTheHrcsValues(List<CristinHrcsCategoriesAndActiveties> hrcsCategoriesAndActiveties) {
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActiveties(hrcsCategoriesAndActiveties);
+    }
+
+    @Then("the NVA Resource has the following subjects:")
+    public void theNvaResourceHasTheFollowingSubjects(List<String> stringUriList) {
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> actualSubjectList = this.scenarioContext.getNvaEntry().getSubjects();
+        assertThat(actualSubjectList, is(equalTo(expectedUriList)));
     }
 }
