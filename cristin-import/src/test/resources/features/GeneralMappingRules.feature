@@ -224,6 +224,19 @@ Feature: Mappings that hold for all types of Cristin Results
       | https://nva.unit.no/hrcs/activity/6.4 |
       | https://nva.unit.no/hrcs/activity/3.1 |
 
+  Scenario Outline: The Cristin Result's HRCS values are used to generate the URIs for the NVA Resource
+    Given a valid Cristin Result
+    And the Cristin Result has the HRCS values "<helsekategorikode>" and "<aktivitetskode>"
+    When the Cristin Result is converted to an NVA Resource
+    Then an error is reported.
+    Examples:
+    | helsekategorikode | aktivitetskode |
+    | 4                 | 0.0            |
+    | notANumber        | 1.1            |
+    | 100               | 1.3            |
+    | 7                 | 1.12           |
+    | 8                 | NotANumber     |
+
   Scenario: Mapping reports error when Cristin affiliation has no role
     Given that the Cristin Result has a Contributor with no role
     When the Cristin Result is converted to an NVA Resource

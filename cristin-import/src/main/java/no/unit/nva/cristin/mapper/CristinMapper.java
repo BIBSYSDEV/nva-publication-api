@@ -177,15 +177,16 @@ public class CristinMapper extends CristinMappingModule {
         return extractCristinHrcsCategoriesAndActivities()
                 .stream()
                 .map(CristinHrcsCategoriesAndActiveties::getCategory)
+                .filter(CristinHrcsCategoriesAndActiveties::validateCategory)
                 .map(CristinHrcsCategoriesAndActiveties::insertCategoryIdIntoUriString)
-                .map(URI::create)
                 .collect(Collectors.toList());
     }
 
     private Collection<URI> extractHrcsActivities() {
-        return cristinObject.getHrcsCategoriesAndActiveties()
+        return extractCristinHrcsCategoriesAndActivities()
                 .stream()
                 .map(CristinHrcsCategoriesAndActiveties::getActivity)
+                .filter(CristinHrcsCategoriesAndActiveties::validateActivity)
                 .map(activityId -> HRCS_ACTIVITY_URI + activityId)
                 .map(URI::create)
                 .collect(Collectors.toList());

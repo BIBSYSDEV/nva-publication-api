@@ -423,8 +423,17 @@ public class GeneralMappingRules {
         assertThat(actualSubjectList, is(equalTo(expectedUriList)));
     }
 
-    @And("that the Cristin Result has no last modified value.")
+    @When("that the Cristin Result has no last modified value.")
     public void thatTheCristinResultHasNoLastModifiedValue() {
         this.scenarioContext.getCristinEntry().setEntryLastModifiedDate(null);
+    }
+
+    @When("the Cristin Result has the HRCS values {string} and {string}")
+    public void theCristinResultHasTheHrcsValuesAnd(String category, String activity) {
+        CristinHrcsCategoriesAndActiveties hrcsCategoriesAndActiveties = CristinHrcsCategoriesAndActiveties.builder()
+                .withCategory(category)
+                .withActivity(activity)
+                .build();
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActiveties(List.of(hrcsCategoriesAndActiveties));
     }
 }
