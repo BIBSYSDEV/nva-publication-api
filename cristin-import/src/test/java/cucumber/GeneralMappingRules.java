@@ -11,7 +11,6 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -28,7 +27,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
-import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActiveties;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -412,8 +411,8 @@ public class GeneralMappingRules {
     }
 
     @When("the Cristin Result has the HRCS values:")
-    public void theCristinResultHasTheHrcsValues(List<CristinHrcsCategoriesAndActiveties> hrcsCategoriesAndActiveties) {
-        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActiveties(hrcsCategoriesAndActiveties);
+    public void theCristinResultHasTheHrcsValues(List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities) {
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(hrcsCategoriesAndActivities);
     }
 
     @Then("the NVA Resource has the following subjects:")
@@ -430,10 +429,10 @@ public class GeneralMappingRules {
 
     @When("the Cristin Result has the HRCS values {string} and {string}")
     public void theCristinResultHasTheHrcsValuesAnd(String category, String activity) {
-        CristinHrcsCategoriesAndActiveties hrcsCategoriesAndActiveties = CristinHrcsCategoriesAndActiveties.builder()
+        CristinHrcsCategoriesAndActivities hrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder()
                 .withCategory(category)
                 .withActivity(activity)
                 .build();
-        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActiveties(List.of(hrcsCategoriesAndActiveties));
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(List.of(hrcsCategoriesAndActivities));
     }
 }

@@ -4,7 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
-import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActiveties.HRCS_ACTIVITY_URI;
+import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
@@ -160,7 +160,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {
-        if (extractCristinHrcsCategoriesAndActivities() == null) {
+        if (isNull(extractCristinHrcsCategoriesAndActivities())) {
             return null;
         }
         List<URI> listOfCategoriesAndActivities = new ArrayList<>();
@@ -169,24 +169,24 @@ public class CristinMapper extends CristinMappingModule {
         return listOfCategoriesAndActivities;
     }
 
-    private List<CristinHrcsCategoriesAndActiveties> extractCristinHrcsCategoriesAndActivities() {
-        return cristinObject.getHrcsCategoriesAndActiveties();
+    private List<CristinHrcsCategoriesAndActivities> extractCristinHrcsCategoriesAndActivities() {
+        return cristinObject.getHrcsCategoriesAndActivities();
     }
 
     private List<URI> extractHrcsCategories() {
         return extractCristinHrcsCategoriesAndActivities()
                 .stream()
-                .map(CristinHrcsCategoriesAndActiveties::getCategory)
-                .filter(CristinHrcsCategoriesAndActiveties::validateCategory)
-                .map(CristinHrcsCategoriesAndActiveties::insertCategoryIdIntoUriString)
+                .map(CristinHrcsCategoriesAndActivities::getCategory)
+                .filter(CristinHrcsCategoriesAndActivities::validateCategory)
+                .map(CristinHrcsCategoriesAndActivities::insertCategoryIdIntoUriString)
                 .collect(Collectors.toList());
     }
 
     private Collection<URI> extractHrcsActivities() {
         return extractCristinHrcsCategoriesAndActivities()
                 .stream()
-                .map(CristinHrcsCategoriesAndActiveties::getActivity)
-                .filter(CristinHrcsCategoriesAndActiveties::validateActivity)
+                .map(CristinHrcsCategoriesAndActivities::getActivity)
+                .filter(CristinHrcsCategoriesAndActivities::validateActivity)
                 .map(activityId -> HRCS_ACTIVITY_URI + activityId)
                 .map(URI::create)
                 .collect(Collectors.toList());

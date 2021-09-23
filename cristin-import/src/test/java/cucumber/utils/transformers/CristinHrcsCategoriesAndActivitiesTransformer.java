@@ -1,7 +1,7 @@
 package cucumber.utils.transformers;
 
 import io.cucumber.java.DataTableType;
-import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActiveties;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 
 import java.util.Map;
 
@@ -15,13 +15,13 @@ public class CristinHrcsCategoriesAndActivitiesTransformer {
     private static final String ACTIVITY = "aktivitetskode";
 
     @DataTableType
-    public CristinHrcsCategoriesAndActiveties toCristinHrcsCategoriesAndActivities(Map<String, String> entry) {
+    public CristinHrcsCategoriesAndActivities toCristinHrcsCategoriesAndActivities(Map<String, String> entry) {
         if (entry.keySet().size() != CURRENTLY_MAPPED_FIELDS) {
             throw new UnsupportedOperationException(WRONG_NUMBER_OF_FIELDS_FOR_CRISTIN_TAGS);
         }
         String category = entry.get(CATEGORY);
         String activity = entry.get(ACTIVITY);
-        return CristinHrcsCategoriesAndActiveties
+        return CristinHrcsCategoriesAndActivities
                 .builder()
                 .withCategory(category)
                 .withActivity(activity)

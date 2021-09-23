@@ -69,7 +69,7 @@ public class CristinObject implements JsonSerializable {
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
     @JsonProperty("varbeid_hrcs_klassifisering")
-    private List<CristinHrcsCategoriesAndActiveties> hrcsCategoriesAndActiveties;
+    private List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities;
     @JsonProperty(BOOK_OR_REPORT_METADATA)
     private CristinBookOrReportMetadata bookOrReportMetadata;
     @JsonProperty("type_bok_rapport_del")
