@@ -216,13 +216,13 @@ Feature: Mappings that hold for all types of Cristin Results
     And the Cristin Result has the HRCS values:
       | helsekategorikode | aktivitetskode |
       | 4                 | 6.4            |
-      | 13                | 3.1            |
+      | 13                | 4            |
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has the following subjects:
-      | https://nva.unit.no/hrcs/category/003 |
-      | https://nva.unit.no/hrcs/category/012 |
-      | https://nva.unit.no/hrcs/activity/6.4 |
-      | https://nva.unit.no/hrcs/activity/3.1 |
+      | https://nva.unit.no/hrcs/category/hrcs_hc_12mus |
+      | https://nva.unit.no/hrcs/category/hrcs_hc_20gen |
+      | https://nva.unit.no/hrcs/activity/hrcs_ra_6_4   |
+      | https://nva.unit.no/hrcs/activity/hrcs_rag_4    |
 
   Scenario Outline: The Cristin Result's HRCS values are used to generate the URIs for the NVA Resource
     Given a valid Cristin Result
