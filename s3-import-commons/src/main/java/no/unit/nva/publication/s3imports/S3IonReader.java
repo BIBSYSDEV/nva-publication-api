@@ -10,6 +10,7 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Try;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
@@ -28,11 +29,13 @@ public class S3IonReader {
 
     }
 
-    public Stream<JsonNode> extractJsonNodesFromIonContent(String content) throws IOException {
-        String jsonString = toJsonObjectsString(content);
-        String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
-        ArrayNode arrayNode = toArrayNode(jsonArrayString);
-        return convertToJsonNodeStream(arrayNode);
+    public Stream<JsonNode> extractJsonNodesFromIonContent(String content) {
+        return Try.of(content)
+            .map(S3IonReader::toJsonObjectsString)
+            .map(S3IonReader::transformMultipleJsonObjectsToJsonArrayWithObjects)
+            .map(S3IonReader::toArrayNode)
+            .map(this::convertToJsonNodeStream)
+            .orElseThrow();
     }
 
     private static String toJsonObjectsString(String ion) throws IOException {
@@ -82,6 +85,6 @@ public class S3IonReader {
 
     private Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
         return StreamSupport
-                   .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
+            .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
     }
 }
