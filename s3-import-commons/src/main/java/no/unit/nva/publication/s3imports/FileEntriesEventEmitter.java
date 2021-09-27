@@ -10,7 +10,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
@@ -222,9 +221,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         return result.orElseThrow();
     }
 
-    private List<JsonNode> parseContentsAsIonFormat(String content) throws IOException {
-        S3IonReader s3IonReader = new S3IonReader();
-        return s3IonReader.extractJsonNodesFromIonContent(content).collect(Collectors.toList());
+    private List<JsonNode> parseContentsAsIonFormat(String content)  {
+        return S3IonReader.extractJsonNodesFromIonContent(content).collect(Collectors.toList());
     }
 
     private List<JsonNode> parseContentAsListOfJsonObjects(String content) {
