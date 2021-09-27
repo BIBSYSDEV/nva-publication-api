@@ -135,7 +135,7 @@ public class BookFeatures {
     }
 
     @Given("the Cristin Result was reported in NVI the year {int}")
-    public void theCristinResultWasReportedInNVITheYear(Integer yearReported) {
+    public void theCristinResultWasReportedInNviTheYear(Integer yearReported) {
         this.scenarioContext.getCristinEntry().setYearReported(yearReported);
     }
 
@@ -182,7 +182,7 @@ public class BookFeatures {
     }
 
     @Then("the NVA Resource contains a Publisher reference that is a URI pointing to the NVA NSD proxy")
-    public void theNbaResourceContainsAPublisherReferenceThatIsAURIPointingToTheNvaNsdProxy() {
+    public void theNbaResourceContainsAPublisherReferenceThatIsAUriPointingToTheNvaNsdProxy() {
         Publisher publisher = extractConfirmedPublisher();
         assertThat(publisher.getId().toString(), containsString(MappingConstants.NVA_API_DOMAIN));
     }

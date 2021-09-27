@@ -18,4 +18,5 @@ entityDescription.abstract
 entityDescription.tags
 entityDescription.npiSubjectHeading
 entityDescription.reference.doi
+subjects
 projects
