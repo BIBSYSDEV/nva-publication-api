@@ -1,9 +1,10 @@
 [versions]
+
 nva = { strictly = '1.8.1' }
-nvaDatamodel = { strictly = '0.13.1' }
+nvaDatamodel = { strictly = '0.13.5' }
 jackson = { strictly = '2.12.4' }
 awsSdk = { strictly = '1.12.52' }
-awsSdk2 = { strictly = '2.17.14' }
+awsSdk2 = { strictly = '2.17.24' }
 log4jApi = { require = '2.14.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }

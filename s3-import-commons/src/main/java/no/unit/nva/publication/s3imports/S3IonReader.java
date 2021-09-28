@@ -10,12 +10,13 @@ import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.attempt.Try;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
 import software.amazon.ion.system.IonReaderBuilder;
 import software.amazon.ion.system.IonTextWriterBuilder;
 
-public class S3IonReader {
+public final class S3IonReader {
 
     // Looking for Strings '<end_of_previous_object>}<possible_white_space>{
     public static final String CONSECUTIVE_JSON_OBJECTS = "(})\\s*(\\{)";
@@ -24,15 +25,17 @@ public class S3IonReader {
     public static final String END_ARRAY_DELIMITER = "]";
     public static final boolean SEQUENTIAL = false;
 
-    public S3IonReader() {
+    private S3IonReader() {
 
     }
 
-    public Stream<JsonNode> extractJsonNodesFromIonContent(String content) throws IOException {
-        String jsonString = toJsonObjectsString(content);
-        String jsonArrayString = transformMultipleJsonObjectsToJsonArrayWithObjects(jsonString);
-        ArrayNode arrayNode = toArrayNode(jsonArrayString);
-        return convertToJsonNodeStream(arrayNode);
+    public static Stream<JsonNode> extractJsonNodesFromIonContent(String content) {
+        return Try.of(content)
+            .map(S3IonReader::toJsonObjectsString)
+            .map(S3IonReader::transformMultipleJsonObjectsToJsonArrayWithObjects)
+            .map(S3IonReader::toArrayNode)
+            .map(S3IonReader::convertToJsonNodeStream)
+            .orElseThrow();
     }
 
     private static String toJsonObjectsString(String ion) throws IOException {
@@ -60,11 +63,7 @@ public class S3IonReader {
     private static String addArrayDelimiters(String arrayElements) {
         return jsonStringIsAlreadyAnArray(arrayElements)
                    ? arrayElements
-                   : transformListOfCommaSeparatedJsonObjectToArray(arrayElements);
-    }
-
-    private static String transformListOfCommaSeparatedJsonObjectToArray(String arrayElements) {
-        return BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
+                   : BEGIN_ARRAY_DELIMITER + arrayElements + END_ARRAY_DELIMITER;
     }
 
     private static boolean jsonStringIsAlreadyAnArray(String arrayElements) {
@@ -80,8 +79,8 @@ public class S3IonReader {
         return (ArrayNode) JsonUtils.objectMapperNoEmpty.readTree(jsonString);
     }
 
-    private Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
+    private static  Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {
         return StreamSupport
-                   .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
+            .stream(Spliterators.spliteratorUnknownSize(arrayNode.iterator(), Spliterator.ORDERED), SEQUENTIAL);
     }
 }

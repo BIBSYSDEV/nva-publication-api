@@ -348,7 +348,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void runMappingsLocally() {
         ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Doktorgrad.txt"));
+        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100Shortcomm.txt"));
         var returnValue = listOfJsonObjects.stream()
                 .map(attempt(mapper::readTree))
                 .map(Try::orElseThrow)
@@ -472,7 +472,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
         return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
-            public Publication createPublicationWithPredefinedCreationDate(Publication publication) {
+            public Publication createPublicationWhilePersistingEntryFromLegacySystems(Publication publication) {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
             }
         };

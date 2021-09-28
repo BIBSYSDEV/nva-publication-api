@@ -3,10 +3,7 @@ fileSet
 handle
 identifier
 indexedDate
-modifiedDate
-publishedDate
 doiRequest
-subjects
 publisher.labels
 entityDescription.contributors.affiliations.labels
 entityDescription.contributors.identity.id

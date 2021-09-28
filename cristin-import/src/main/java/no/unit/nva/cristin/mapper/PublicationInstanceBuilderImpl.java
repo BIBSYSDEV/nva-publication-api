@@ -23,7 +23,6 @@ public class PublicationInstanceBuilderImpl  {
         this.cristinObject = cristinObject;
     }
 
-
     public PublicationInstance<? extends Pages> build() {
         if (isBook(cristinObject)) {
             return new BookBuilder(cristinObject).build();

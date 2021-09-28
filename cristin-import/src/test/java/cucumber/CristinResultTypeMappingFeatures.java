@@ -4,13 +4,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Pages;
@@ -50,7 +51,7 @@ public class CristinResultTypeMappingFeatures {
         assertThat(actuallType, is(equalTo(expectedType)));
     }
 
-    @And("the NVA BookMonograph Resource has a Content type of type {string}")
+    @Then("the NVA BookMonograph Resource has a Content type of type {string}")
     public void theNvaBookMonographResourceHasAContentTypeOfType(String expectedType) {
         PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
                 .getEntityDescription()
@@ -60,5 +61,22 @@ public class CristinResultTypeMappingFeatures {
         BookMonographContentType contentType = bookMonograph.getContentType();
         String actuallType = contentType.getValue();
         assertThat(actuallType, is(equalTo(expectedType)));
+    }
+
+    @Then("the NVA ChapterArticle Resource has a Content type of type {string}")
+    public void theNvaChapterArticleResourceHasAContentTypeOfType(String expectedContentType) {
+        PublicationInstance<? extends Pages> instance = this.scenarioContext.getNvaEntry()
+                .getEntityDescription()
+                .getReference()
+                .getPublicationInstance();
+        ChapterArticle chapterArticle = (ChapterArticle) instance;
+        ChapterArticleContentType contentType = chapterArticle.getContentType();
+        String actuallType = contentType.getValue();
+        assertThat(actuallType, is(equalTo(expectedContentType)));
+    }
+
+    @Given("the Cristin Result has a value for the date when it was reported in NVI.")
+    public void theCristinResultHasAValueForTheDateWhenItWasReportedInNVI() {
+        this.scenarioContext.getCristinEntry().setYearReported(2020);
     }
 }

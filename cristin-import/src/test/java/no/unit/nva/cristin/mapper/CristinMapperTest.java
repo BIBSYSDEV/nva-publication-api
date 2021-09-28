@@ -42,8 +42,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.Role;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.contexttypes.PublishingHouse;
-import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -60,11 +58,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 public class CristinMapperTest extends AbstractCristinImportTest {
 
     public static final String NAME_DELIMITER = ", ";
-    public static final String MISSING_FIELD_ERROR_TEMPLATE = "\nExpected: All fields of all included "
-                                                              + "objects need to be non empty\n     "
-                                                              + "but: Empty field found: %s";
-    public static final String PUBLISHER_NVA_LOCATION = ".entityDescription.reference.publicationContext.publisher";
-    public static final String PAGES_NVA_LOCATION = ".entityDescription.reference.publicationInstance.pages.pages";
 
     @BeforeEach
     public void init() {
@@ -111,17 +104,18 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     @Test
     @DisplayName("map returns resource with date equal to \"arstall\"")
     public void mapReturnsResourceWithDateEqualToArstall() {
-        List<String> expectedPublicationYear = cristinObjects()
+        List<Integer> expectedPublicationYear = cristinObjects()
             .map(CristinObject::getPublicationYear)
             .collect(Collectors.toList());
 
-        List<String> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
+        List<Integer> actualPublicationDates = cristinObjects().map(CristinObject::toPublication)
             .map(Publication::getEntityDescription)
             .map(EntityDescription::getDate)
             .map(PublicationDate::getYear)
+            .map(Integer::parseInt)
             .collect(Collectors.toList());
         assertThat(expectedPublicationYear, is(not(empty())));
-        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(String[]::new)));
+        assertThat(actualPublicationDates, containsInAnyOrder(expectedPublicationYear.toArray(Integer[]::new)));
     }
 
     @Test
@@ -166,7 +160,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsBookMonographWhenInputHasMainTypeBookAndSecondaryTypeMonograph() {
-        testingData = Stream.of(CristinDataGenerator.randomBookMonograph(CristinSecondaryCategory.MONOGRAPH))
+        testingData = Stream.of(CristinDataGenerator.randomBook(CristinSecondaryCategory.MONOGRAPH))
             .map(JsonSerializable::toJsonString)
             .collect(SingletonCollector.collect());
 
@@ -252,7 +246,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     public void mapReturnsPublicationWithPublicationDateEqualToCristinPublicationYear() {
         List<PublicationDate> expectedPublicationDates = cristinObjects()
             .map(CristinObject::getPublicationYear)
-            .map(this::yearStringToPublicationDate)
+            .map(this::yearToPublicationDate)
             .collect(Collectors.toList());
         List<PublicationDate> actualPublicationDates = cristinObjects()
             .map(CristinObject::toPublication)
@@ -296,7 +290,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void mapReturnsPublicationWhereCristinTotalNumberOfPagesIsMappedToNvaPages() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String numberOfPages = cristinImport.getBookOrReportMetadata().getNumberOfPages();
 
@@ -314,28 +308,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void mapReturnsPublicationWhereCristinPublisherNameIsMappedToNvaPublisher() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
-
-        UnconfirmedPublisher expectedPublisher =
-            new UnconfirmedPublisher(cristinImport.getBookOrReportMetadata().getPublisherName());
-
-        Publication actualPublication = cristinImport.toPublication();
-
-        PublicationContext actualPublicationContext = actualPublication
-            .getEntityDescription()
-            .getReference()
-            .getPublicationContext();
-
-        Book bookSubType = (Book) actualPublicationContext;
-        PublishingHouse actualPublisher = bookSubType.getPublisher();
-
-        assertThat(actualPublisher, is(equalTo(expectedPublisher)));
-    }
-
-    @Test
     public void mapReturnsPublicationWhereCristinIsbnIsMappedToNvaIsbnList() {
-        CristinObject cristinImport = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinImport = CristinDataGenerator.randomBook();
 
         String isbn = cristinImport.getBookOrReportMetadata().getIsbn();
 
@@ -385,7 +359,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
 
     @Test
     public void constructorThrowsExceptionWhenABookReportHasASubjectFieldButSubjectFieldCodeIsNull() {
-        CristinObject cristinObject = CristinDataGenerator.objectWithRandomBookReport();
+        CristinObject cristinObject = CristinDataGenerator.randomBook();
         cristinObject.getBookOrReportMetadata().getSubjectField().setSubjectFieldCode(null);
 
         System.out.println(cristinObject);
@@ -455,9 +429,8 @@ public class CristinMapperTest extends AbstractCristinImportTest {
             .build();
     }
 
-    private PublicationDate yearStringToPublicationDate(String yearString) {
-        return new PublicationDate.Builder().withYear(
-            yearString).build();
+    private PublicationDate yearToPublicationDate(Integer year) {
+        return new PublicationDate.Builder().withYear(year.toString()).build();
     }
 
     //We do not use any more complex logic to make the tests fail if anything changes

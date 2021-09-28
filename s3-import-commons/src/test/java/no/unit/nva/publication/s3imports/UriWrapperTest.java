@@ -23,7 +23,6 @@ class UriWrapperTest {
 
     @Test
     public void getParentReturnsParentPathIfParentExists() {
-
         UriWrapper uriWrapper = new UriWrapper(HOST + "/level1/level2/file.json");
         UriWrapper parent = uriWrapper.getParent().orElseThrow();
         assertThat(parent.getPath().toString(), is(equalTo("/level1/level2")));
