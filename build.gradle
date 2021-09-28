@@ -22,12 +22,8 @@ subprojects {
         dependsOn copyNativeDeps
         systemProperty "java.library.path", 'build/dynamodb-local'
     }
-
-
 }
-
 
 build {
     dependsOn jacocoRootReport
 }
-

@@ -20,21 +20,16 @@ repositories {
     maven { url "https://s3.eu-central-1.amazonaws.com/dynamodb-local-frankfurt/release" }
 }
 
-def hamcrestVersion = '2.2'
-def junit5Version = '5.7.2'
-def mockitoVersion = '3.9.0'
-
 dependencies {
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.8.0-beta4'
+    implementation libs.slf4j.api
 
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: mockitoVersion
-    testImplementation group: 'org.hamcrest', name: 'hamcrest', version: hamcrestVersion
-    testImplementation group: 'org.hamcrest', name: 'hamcrest-core', version: hamcrestVersion
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: junit5Version
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: junit5Version
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: junit5Version
-    testImplementation group: 'org.junit.vintage', name: 'junit-vintage-engine', version: junit5Version
-
+    testImplementation libs.mockito.core
+    testImplementation libs.hamcrest.base
+    testImplementation libs.hamcrest.core
+    testRuntimeOnly libs.junit.jupiter.engine
+    testImplementation libs.junit.jupiter.api
+    testImplementation libs.junit.vintage.engine
+    testImplementation libs.junit.jupiter.params
 }
 
 test {
