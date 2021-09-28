@@ -32,8 +32,9 @@ import nva.commons.core.JsonSerializable;
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "type_foredrag_poster", "kildepostid", "eierkode_opprettet", "arkivpost",
     "type_kunstneriskproduksjon", "type_utstilling", "pubidnr", "varbeid_kilde", "eierkode_siste_endring",
-    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "varbeid_hrcs_klassifisering",
-    "merknadtekst"})
+    "varbeid_vdisiplin", "arkivfil", "vitenskapeligarbeid_lokal", "merknadtekst"})
+
+@SuppressWarnings({"PMD.TooManyFields"})
 public class CristinObject implements JsonSerializable {
 
     public static final String PUBLICATION_OWNER_FIELD = "publicationOwner";
@@ -67,6 +68,8 @@ public class CristinObject implements JsonSerializable {
     private List<CristinPresentationalWork> presentationalWork;
     @JsonProperty("varbeid_emneord")
     private List<CristinTags> tags;
+    @JsonProperty("varbeid_hrcs_klassifisering")
+    private List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities;
     @JsonProperty(BOOK_OR_REPORT_METADATA)
     private CristinBookOrReportMetadata bookOrReportMetadata;
     @JsonProperty("type_bok_rapport_del")

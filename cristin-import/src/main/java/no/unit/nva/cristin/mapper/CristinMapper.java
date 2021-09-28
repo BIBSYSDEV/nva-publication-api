@@ -3,7 +3,11 @@ package no.unit.nva.cristin.mapper;
 import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
+import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
@@ -21,6 +25,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -78,6 +83,7 @@ public class CristinMapper extends CristinMappingModule {
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(HARDCODED_SAMPLE_DOI)
             .withProjects(extractProjects())
+            .withSubjects(generateNvaHrcsCategoriesAndActivities())
             .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
@@ -155,6 +161,40 @@ public class CristinMapper extends CristinMappingModule {
             .map(attempt(CristinContributor::toNvaContributor))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
+    }
+
+    private List<URI> generateNvaHrcsCategoriesAndActivities() {
+        if (isNull(extractCristinHrcsCategoriesAndActivities())) {
+            return null;
+        }
+        List<URI> listOfCategoriesAndActivities = new ArrayList<>();
+        listOfCategoriesAndActivities.addAll(extractHrcsCategories());
+        listOfCategoriesAndActivities.addAll(extractHrcsActivities());
+        return listOfCategoriesAndActivities;
+    }
+
+    private List<CristinHrcsCategoriesAndActivities> extractCristinHrcsCategoriesAndActivities() {
+        return cristinObject.getHrcsCategoriesAndActivities();
+    }
+
+    private List<URI> extractHrcsCategories() {
+        return extractCristinHrcsCategoriesAndActivities()
+                .stream()
+                .map(CristinHrcsCategoriesAndActivities::getCategory)
+                .filter(CristinHrcsCategoriesAndActivities::validateCategory)
+                .map(categoryId -> HRCS_CATEGORY_URI + HRCS_CATEGORIES_MAP.get(categoryId).toLowerCase(Locale.ROOT))
+                .map(URI::create)
+                .collect(Collectors.toList());
+    }
+
+    private Collection<URI> extractHrcsActivities() {
+        return extractCristinHrcsCategoriesAndActivities()
+                .stream()
+                .map(CristinHrcsCategoriesAndActivities::getActivity)
+                .filter(CristinHrcsCategoriesAndActivities::validateActivity)
+                .map(activityId -> HRCS_ACTIVITY_URI + HRCS_ACTIVITIES_MAP.get(activityId).toLowerCase(Locale.ROOT))
+                .map(URI::create)
+                .collect(Collectors.toList());
     }
 
     private Reference buildReference() {
@@ -307,4 +347,6 @@ public class CristinMapper extends CristinMappingModule {
         }
         return listOfTags;
     }
+
+
 }

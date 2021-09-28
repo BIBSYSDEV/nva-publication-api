@@ -11,7 +11,6 @@ import cucumber.utils.ContributorFlattenedDetails;
 import cucumber.utils.exceptions.MisformattedScenarioException;
 import cucumber.utils.transformers.CristinContributorTransformer;
 import io.cucumber.datatable.DataTable;
-import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -28,6 +27,7 @@ import no.unit.nva.cristin.mapper.CristinContributor.CristinContributorBuilder;
 import no.unit.nva.cristin.mapper.CristinContributorRole;
 import no.unit.nva.cristin.mapper.CristinContributorRoleCode;
 import no.unit.nva.cristin.mapper.CristinContributorsAffiliation;
+import no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities;
 import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 import no.unit.nva.cristin.mapper.CristinTags;
 import no.unit.nva.cristin.mapper.CristinTitle;
@@ -410,8 +410,29 @@ public class GeneralMappingRules {
         this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
     }
 
-    @And("that the Cristin Result has no last modified value.")
+    @When("the Cristin Result has the HRCS values:")
+    public void theCristinResultHasTheHrcsValues(List<CristinHrcsCategoriesAndActivities> hrcsCategoriesAndActivities) {
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(hrcsCategoriesAndActivities);
+    }
+
+    @Then("the NVA Resource has the following subjects:")
+    public void theNvaResourceHasTheFollowingSubjects(List<String> stringUriList) {
+        List<URI> expectedUriList = stringUriList.stream().map(URI::create).collect(Collectors.toList());
+        List<URI> actualSubjectList = this.scenarioContext.getNvaEntry().getSubjects();
+        assertThat(actualSubjectList, is(equalTo(expectedUriList)));
+    }
+
+    @When("that the Cristin Result has no last modified value.")
     public void thatTheCristinResultHasNoLastModifiedValue() {
         this.scenarioContext.getCristinEntry().setEntryLastModifiedDate(null);
+    }
+
+    @When("the Cristin Result has the HRCS values {string} and {string}")
+    public void theCristinResultHasTheHrcsValuesAnd(String category, String activity) {
+        CristinHrcsCategoriesAndActivities hrcsCategoriesAndActivities = CristinHrcsCategoriesAndActivities.builder()
+                .withCategory(category)
+                .withActivity(activity)
+                .build();
+        this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(List.of(hrcsCategoriesAndActivities));
     }
 }

@@ -1312,7 +1312,9 @@ It is a self reference.""" ;
     """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
-    :currently_ignored "true" .
+        :mapstonvafield """
+        subjects
+        """ .
 
 :aktivitetskode
     a                  :cristinfield ;
@@ -1321,7 +1323,9 @@ It is a self reference.""" ;
                      """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
-    :currently_ignored "true" .
+        :mapstonvafield """
+        subjects
+        """ .
 
 :TYPE_BOK_RAPPORT_DEL
     a            :cristinfield ;
