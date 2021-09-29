@@ -286,10 +286,6 @@ public class CristinMapper extends CristinMappingModule {
             .orElseThrow(() -> new MissingFieldsException(CristinSubjectField.MISSING_SUBJECT_FIELD_CODE));
     }
 
-    private boolean resourceShouldAlwaysHaveAnNpiSubjectHeading() {
-        return cristinObject.getSecondaryCategory().equals(CristinSecondaryCategory.MONOGRAPH);
-    }
-
     private boolean resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading() {
         return !(isBook(cristinObject) || isReport(cristinObject));
     }
@@ -298,11 +294,7 @@ public class CristinMapper extends CristinMappingModule {
         if (resourceTypeIsNotExpectedToHaveAnNpiSubjectHeading()) {
             return null;
         }
-        CristinSubjectField subjectField = extractCristinBookReport().getSubjectField();
-        if (resourceShouldAlwaysHaveAnNpiSubjectHeading() && isNull(subjectField)) {
-            throw new MissingFieldsException(CristinBookOrReportMetadata.SUBJECT_FIELD_IS_A_REQUIRED_FIELD);
-        }
-        return subjectField;
+        return extractCristinBookReport().getSubjectField();
     }
 
     private URI extractDoi() {
