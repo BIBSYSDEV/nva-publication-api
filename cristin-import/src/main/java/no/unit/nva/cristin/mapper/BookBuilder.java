@@ -1,7 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_PEER_REVIEWED;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_BOOK_TEXTBOOK_CONTENT;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isMonograph;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
@@ -34,7 +33,6 @@ public class BookBuilder extends AbstractBookReportBuilder {
         return new BookAnthology.Builder()
             .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
             .withPages(createMonographPages())
-            .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
             .build();
     }
 
@@ -43,7 +41,6 @@ public class BookBuilder extends AbstractBookReportBuilder {
             .withContentType(getCristinObject().getSecondaryCategory().toBookMonographContentType())
             .withPeerReviewed(HARDCODED_BOOK_PEER_REVIEWED)
             .withPages(createMonographPages())
-            .withTextbookContent(HARDCODED_BOOK_TEXTBOOK_CONTENT)
             .withPeerReviewed(getCristinObject().isPeerReviewed())
             .build();
     }
