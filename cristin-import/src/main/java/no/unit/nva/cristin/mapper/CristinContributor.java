@@ -16,7 +16,6 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -54,7 +53,7 @@ public class CristinContributor {
         return this.toBuilder();
     }
 
-    public Contributor toNvaContributor() throws MalformedContributorException {
+    public Contributor toNvaContributor() {
 
         String fullName = constructFullName();
         Identity identity = new Identity.Builder()

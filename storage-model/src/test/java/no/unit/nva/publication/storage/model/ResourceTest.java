@@ -240,14 +240,12 @@ public class ResourceTest {
     }
     
     private List<Contributor> sampleContributor() {
-        Contributor contributor = attempt(() -> new Contributor.Builder()
+        Contributor contributor = new Contributor.Builder()
                                                     .withIdentity(sampleIdentity())
-                                                    .withEmail(randomString())
                                                     .withAffiliations(List.of(SAMPLE_ORG))
                                                     .withRole(Role.CREATOR)
                                                     .withSequence(1)
-                                                    .build())
-                                      .orElseThrow();
+                                                    .build();
         return List.of(contributor);
     }
     

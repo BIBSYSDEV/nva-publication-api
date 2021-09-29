@@ -24,7 +24,6 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
-import no.unit.nva.model.exceptions.MalformedContributorException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
@@ -79,11 +78,10 @@ public final class PublicationGenerator {
                    .build();
     }
 
-    public static Contributor sampleContributor() throws MalformedContributorException {
+    public static Contributor sampleContributor() {
         return new Contributor.Builder()
                    .withIdentity(sampleIdentity())
                    .withAffiliations(sampleOrganization())
-                   .withEmail("some@email.org")
                    .withSequence(1)
                    .withRole(Role.CREATOR)
                    .build();
