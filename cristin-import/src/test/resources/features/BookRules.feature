@@ -74,12 +74,12 @@ Feature: Book conversion rules
       | ANTOLOGI          |
 
 
-  Scenario: Map fails when a Cristin Result that is a "Monografi" has no subjectField
+  Scenario: Map does not fail when a Cristin Result that is a "Monografi" has no subjectField
     Given a valid Cristin Result with secondary category "MONOGRAFI"
     And that the Cristin Result has a non empty Book Report
     And that the Book Report has no subjectField
     When the Cristin Result is converted to an NVA Resource
-    Then an error is reported.
+    Then no error is reported.
 
   Scenario: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
     Given a valid Cristin Result with secondary category "MONOGRAFI"
