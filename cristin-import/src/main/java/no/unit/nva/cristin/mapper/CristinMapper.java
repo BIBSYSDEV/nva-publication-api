@@ -10,6 +10,7 @@ import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
@@ -45,6 +46,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.contexttypes.Chapter;
+import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -224,6 +226,9 @@ public class CristinMapper extends CristinMappingModule {
         if (isChapter(cristinObject)) {
             return buildChapterForPublicationContext();
         }
+        if (isEvent(cristinObject)) {
+            return buildEventForPublicationContext();
+        }
         return null;
     }
 
@@ -237,6 +242,10 @@ public class CristinMapper extends CristinMappingModule {
 
     private Chapter buildChapterForPublicationContext() {
         return new Chapter.Builder().build();
+    }
+
+    private PublicationContext buildEventForPublicationContext() {
+        return new Event.Builder().build();
     }
 
     private PublicationDate extractPublicationDate() {

@@ -2,6 +2,7 @@ package no.unit.nva.cristin.mapper;
 
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import java.util.Objects;
@@ -32,6 +33,8 @@ public class PublicationInstanceBuilderImpl  {
             return new JournalBuilder(cristinObject).build();
         } else if (isChapter(cristinObject)) {
             return new ChapterArticleBuilder(cristinObject).build();
+        } else if (isEvent(cristinObject)) {
+            return new EventBuilder(cristinObject).build();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
             throw new UnsupportedOperationException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {

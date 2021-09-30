@@ -10,6 +10,7 @@ public enum CristinMainCategory {
     JOURNAL("TIDSSKRIFTPUBL", "JOURNAL"),
     REPORT("RAPPORT", "REPORT"),
     CHAPTER("BOKRAPPORTDEL", "CHAPTER"),
+    EVENT("FOREDRAG", "EVENT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -40,6 +41,10 @@ public enum CristinMainCategory {
 
     public static boolean isChapter(CristinObject cristinObject) {
         return CristinMainCategory.CHAPTER.equals(cristinObject.getMainCategory());
+    }
+
+    public static boolean isEvent(CristinObject cristinObject) {
+        return CristinMainCategory.EVENT.equals(cristinObject.getMainCategory());
     }
 
 
