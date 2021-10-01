@@ -30,10 +30,6 @@ public class CristinLectureOrPosterMetaData {
     public CristinLectureOrPosterMetaData() {
     }
 
-    public String getNumberOfPages() {
-        return numberOfPages;
-    }
-
     @JacocoGenerated
     public CristinLectureOrPosterMetaData.CristinLectureOrPosterMetaDataBuilder copy() {
         return this.toBuilder();
