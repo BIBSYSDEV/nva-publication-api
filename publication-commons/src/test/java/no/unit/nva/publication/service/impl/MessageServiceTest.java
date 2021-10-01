@@ -31,6 +31,7 @@ import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -95,7 +96,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
             messageIdentifier,
             publication,
             messageText);
-        assertThat(savedMessage.isDoiRequestRelated(), is(true));
+
+        assertThat(savedMessage.getMessageType(), is(MessageType.DOI_REQUEST));
 
         assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
