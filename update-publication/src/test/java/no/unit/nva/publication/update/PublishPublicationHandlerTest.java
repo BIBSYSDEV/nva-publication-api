@@ -20,7 +20,6 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -66,9 +65,7 @@ public class PublishPublicationHandlerTest {
 
         PublishPublicationHandler handler = callPublishPublicationHandler(identifier);
 
-        GatewayResponse<PublishPublicationStatusResponse> actual = objectMapper.readValue(
-            output.toByteArray(),
-            new TypeReference<>() {});
+        GatewayResponse<PublishPublicationStatusResponse> actual = GatewayResponse.fromOutputStream(output);
 
         GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
             objectMapper.writeValueAsString(status),
