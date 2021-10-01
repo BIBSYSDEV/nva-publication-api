@@ -4,10 +4,7 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.ConferenceLecture;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
-import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
-
-import java.util.Optional;
 
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferenceLecture;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferencePoster;
@@ -40,24 +37,14 @@ public class EventBuilder extends AbstractPublicationInstanceBuilder {
     }
 
     private PublicationInstance<? extends Pages> createConferenceLecture() {
-        return new ConferenceLecture(createMonographPages());
+        return new ConferenceLecture();
     }
 
     private PublicationInstance<? extends Pages> createConferencePoster() {
-        return new ConferencePoster(createMonographPages());
+        return new ConferencePoster();
     }
 
     private PublicationInstance<? extends Pages> createLecture() {
-        return new Lecture(createMonographPages());
-    }
-
-    private MonographPages createMonographPages() {
-        return new MonographPages.Builder()
-                .withPages(extractNumberOfPages())
-                .build();
-    }
-
-    private String extractNumberOfPages() {
-        return Optional.ofNullable(getCristinObject().getLectureOrPosterMetaData().getNumberOfPages()).orElse(null);
+        return new Lecture();
     }
 }
