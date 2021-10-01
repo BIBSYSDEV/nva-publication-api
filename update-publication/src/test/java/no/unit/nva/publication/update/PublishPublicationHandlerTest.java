@@ -59,7 +59,7 @@ public class PublishPublicationHandlerTest {
     }
 
     @Test
-    public void canPublishPublication() throws Exception {
+    public void publishPublicationHandlerReturnsGatewayResponseWhenInputIsValid() throws Exception {
         SortableIdentifier identifier = SortableIdentifier.next();
         PublishPublicationStatusResponse status = mockPublishPublicationStatusResponse();
 
