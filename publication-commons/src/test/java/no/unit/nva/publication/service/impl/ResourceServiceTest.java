@@ -49,6 +49,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
@@ -140,12 +142,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             throws TransactionFailedException, NotFoundException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
         Instant predefinedPublishTime = Instant.now();
-        Instant predefinedCreatedTime = RESOURCE_CREATION_TIME;
-        Instant predefinedModifiedTime = RESOURCE_MODIFICATION_TIME;
 
         inputPublication.setPublishedDate(predefinedPublishTime);
-        inputPublication.setCreatedDate(predefinedCreatedTime);
-        inputPublication.setModifiedDate(predefinedModifiedTime);
+        inputPublication.setCreatedDate(RESOURCE_CREATION_TIME);
+        inputPublication.setModifiedDate(RESOURCE_MODIFICATION_TIME);
         inputPublication.setStatus(PublicationStatus.PUBLISHED);
 
         SortableIdentifier savedPublicationIdentifier =
@@ -310,7 +310,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
-        resourceUpdate.setPublisher(newOrganization(SOME_OTHER_ORG));
+        resourceUpdate.setPublisher(newOrganization());
         assertThatUpdateFails(resourceUpdate);
     }
 
@@ -403,7 +403,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     public void getResourcesByOwnerPropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
-        QueryResult responseWithInvalidItem = new QueryResult().withItems(ItemUtils.toAttributeValues(invalidItem));
+        QueryResult responseWithInvalidItem = new QueryResult()
+                .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
         ResourceService failingResourceService = new ResourceService(mockClient, clock);
@@ -830,8 +831,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         when(client.getItem(any(GetItemRequest.class)))
             .thenReturn(new GetItemResult().withItem(Collections.emptyMap()));
 
-        ResourceService resourceService = new ResourceService(client, clock);
-        return resourceService;
+        return new ResourceService(client, clock);
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
@@ -971,8 +971,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private Set<Publication> createSamplePublications() {
 
         return
-            Set.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
-                .stream()
+            Stream.of(publicationWithIdentifier(), publicationWithIdentifier(), publicationWithIdentifier())
                 .map(attempt(res -> resourceService.createPublication(res)))
                 .map(Try::orElseThrow)
                 .collect(Collectors.toSet());
@@ -1038,7 +1037,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         return new Organization.Builder().withId(SOME_OTHER_ORG).build();
     }
 
-    private Organization newOrganization(URI customerId) {
-        return new Organization.Builder().withId(customerId).build();
+    private Organization newOrganization() {
+        return new Organization.Builder().withId(ResourceServiceTest.SOME_OTHER_ORG).build();
     }
 }
