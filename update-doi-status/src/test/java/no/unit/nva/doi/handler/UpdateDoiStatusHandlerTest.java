@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Instant;
 import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
@@ -37,8 +36,7 @@ import org.mockito.ArgumentCaptor;
 
 class UpdateDoiStatusHandlerTest {
 
-    public static final Path BAD_EVENT_WITH_DATE_IN_FUTURE = Path.of(
-        "update_doi_status_event_bad_date_in_the_future.json");
+    public static final String BAD_EVENT_WITH_DATE_IN_FUTURE = "update_doi_status_event_bad_date_in_the_future.json";
     public static final String NULL_OBJECT = "{}";
     public static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
@@ -46,7 +44,7 @@ class UpdateDoiStatusHandlerTest {
         new SortableIdentifier("41076d56-2839-11eb-b644-1bb5be85c01b");
     private static final String BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO =
         "update_doi_status_event_bad_input_not_matching_pojo.json";
-    private static final Path OK_EVENT = Path.of("update_doi_status_event.json");
+    private static final String OK_EVENT = "update_doi_status_event.json";
     private UpdateDoiStatusHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
@@ -143,7 +141,7 @@ class UpdateDoiStatusHandlerTest {
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
 
-        stubSuccessfullDoiStatusUpdate(publication, expectedPublicationUpdate);
+        stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         handler.handleRequest(eventInputStream, outputStream, context);
@@ -163,7 +161,7 @@ class UpdateDoiStatusHandlerTest {
             .withModifiedDate(EXAMPLE_DOI_MODIFIED_DATE)
             .build();
 
-        stubSuccessfullDoiStatusUpdate(publication, expectedPublicationUpdate);
+        stubSuccessfulDoiStatusUpdate(publication, expectedPublicationUpdate);
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         handler.handleRequest(eventInputStream, outputStream, context);
@@ -183,7 +181,7 @@ class UpdateDoiStatusHandlerTest {
         assertThat(actualPublicationUpdate, is(equalTo(expectedPublicationUpdate)));
     }
 
-    private void stubSuccessfullDoiStatusUpdate(Publication publication, Publication expectedPublicationUpdate)
+    private void stubSuccessfulDoiStatusUpdate(Publication publication, Publication expectedPublicationUpdate)
         throws ApiGatewayException {
         when(resourceService.getPublicationByIdentifier(PUBLICATION_IDENTIFIER_IN_RESOURCES)).thenReturn(publication);
         when(resourceService.updatePublication(any(Publication.class))).thenReturn(expectedPublicationUpdate);
