@@ -39,6 +39,10 @@ public enum CristinSecondaryCategory {
     CHAPTER("FAGLIG_KAPITTEL", "CHAPTER"),
     POPULAR_CHAPTER_ARTICLE("POPVIT_KAPITTEL", "POPULAR_CHAPTER_ARTICLE"),
     LEXICAL_IMPORT("LEKSIKAL_INNF", "LEXICAL_IMPORT"),
+    CONFERENCE_LECTURE("VIT_FOREDRAG", "CONFERENCE_LECTURE"),
+    CONFERENCE_POSTER("POSTER", "CONFERENCE_POSTER"),
+    LECTURE("FOREDRAG_FAG", "LECTURE"),
+    POPULAR_SCIENTIFIC_LECTURE("POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -128,6 +132,19 @@ public enum CristinSecondaryCategory {
                 || CristinSecondaryCategory.CHAPTER.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.POPULAR_CHAPTER_ARTICLE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.LEXICAL_IMPORT.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isConferenceLecture(CristinObject cristinObject) {
+        return CristinSecondaryCategory.CONFERENCE_LECTURE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isConferencePoster(CristinObject cristinObject) {
+        return CristinSecondaryCategory.CONFERENCE_POSTER.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isLecture(CristinObject cristinObject) {
+        return CristinSecondaryCategory.LECTURE.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.POPULAR_SCIENTIFIC_LECTURE.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {

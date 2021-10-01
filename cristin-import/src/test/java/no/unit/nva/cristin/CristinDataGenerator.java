@@ -78,6 +78,7 @@ public final class CristinDataGenerator {
     private static final String BOOK_OR_REPORT_METADATA_FIELD = "bookOrReportMetadata";
     private static final String HRCS_CATEGORIES_AND_ACTIVITIES = ".hrcsCategoriesAndActivities";
     private static final String CRISTIN_MODIFIED_DATE = "entryLastModifiedDate";
+    private static final String LECTURE_OR_POSTER_METADATA = ".lectureOrPosterMetaData";
 
     private static final CristinSecondaryCategory[] BOOK_SECONDARY_CATEGORIES = new CristinSecondaryCategory[]{
         MONOGRAPH,
@@ -182,6 +183,11 @@ public final class CristinDataGenerator {
             case POPULAR_CHAPTER_ARTICLE:
             case LEXICAL_IMPORT:
                 return randomChapterArticle(category);
+            case CONFERENCE_LECTURE:
+            case CONFERENCE_POSTER:
+            case POPULAR_SCIENTIFIC_LECTURE:
+            case LECTURE:
+                return randomEvent(category);
             default:
                 break;
         }
@@ -209,6 +215,10 @@ public final class CristinDataGenerator {
 
     public static CristinObject randomBook(CristinSecondaryCategory secondaryCategory) {
         return createRandomBookWithSpecifiedSecondaryCategory(secondaryCategory);
+    }
+
+    private static CristinObject randomEvent(CristinSecondaryCategory secondaryCategory) {
+        return createRandomEventWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     public static String singleRandomObjectAsString() {
@@ -461,6 +471,20 @@ public final class CristinDataGenerator {
             .build();
     }
 
+    private static CristinObject createRandomEventWithSpecifiedSecondaryCategory(
+            CristinSecondaryCategory secondaryCategory) {
+        return CristinObject.builder()
+                .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
+                .withEntryCreationDate(LocalDate.now())
+                .withMainCategory(CristinMainCategory.EVENT)
+                .withSecondaryCategory(secondaryCategory)
+                .withId(largeRandomNumber())
+                .withPublicationYear(randomYear())
+                .withPublicationOwner(randomString())
+                .withContributors(randomContributors())
+                .build();
+    }
+
     private static CristinObject newCristinObject(Integer index) {
         return createObjectWithCristinContributorRoleCode(index, randomContributors());
     }
@@ -531,7 +555,8 @@ public final class CristinDataGenerator {
         assertThat(cristinObject, doesNotHaveEmptyValuesIgnoringFields(
             Set.of(PUBLICATION_OWNER_FIELD, JOURNAL_PUBLICATION_FIELD, CRISTIN_TAGS,
                    CRISTIN_PRESENTATIONAL_WORK, CRISTIN_SUBJECT_FIELD, BOOK_OR_REPORT_METADATA_FIELD,
-                   BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE)));
+                   BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
+                    LECTURE_OR_POSTER_METADATA)));
 
         return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
     }
