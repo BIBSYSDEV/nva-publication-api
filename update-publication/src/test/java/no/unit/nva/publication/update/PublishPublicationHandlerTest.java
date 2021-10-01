@@ -14,17 +14,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Collections;
 import java.util.Map;
+
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,24 +59,13 @@ public class PublishPublicationHandlerTest {
     }
 
     @Test
-    public void canPublishPublication() throws Exception {
+    public void publishPublicationHandlerReturnsGatewayResponseWhenInputIsValid() throws Exception {
         SortableIdentifier identifier = SortableIdentifier.next();
-        PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
-            PUBLISH_IN_PROGRESS, SC_ACCEPTED);
-        when(publicationService.publishPublication(any(UserInstance.class), any(SortableIdentifier.class)))
-            .thenReturn(status);
+        PublishPublicationStatusResponse status = mockPublishPublicationStatusResponse();
 
-        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
-        InputStream input = new HandlerUtils(objectMapper).requestObjectToApiGatewayRequestInputSteam(
-            null,
-            getRequestHeaders(),
-            Map.of(RequestUtil.IDENTIFIER, identifier.toString()),
-            Map.of());
-        handler.handleRequest(input, output, context);
+        PublishPublicationHandler handler = callPublishPublicationHandler(identifier);
 
-        GatewayResponse<PublishPublicationStatusResponse> actual = objectMapper.readValue(
-            output.toByteArray(),
-            GatewayResponse.class);
+        GatewayResponse<PublishPublicationStatusResponse> actual = GatewayResponse.fromOutputStream(output);
 
         GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
             objectMapper.writeValueAsString(status),
@@ -81,6 +74,33 @@ public class PublishPublicationHandlerTest {
         );
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void getLocationReturnsUri() {
+        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
+        URI location = handler.getLocation(SortableIdentifier.next());
+
+        assertNotNull(location);
+    }
+
+    private PublishPublicationHandler callPublishPublicationHandler(SortableIdentifier identifier) throws IOException {
+        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
+        InputStream input = new HandlerRequestBuilder<InputStream>(objectMapper)
+                .withHeaders(getRequestHeaders())
+                .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
+                .withQueryParameters(Collections.emptyMap())
+                .build();
+        handler.handleRequest(input, output, context);
+        return handler;
+    }
+
+    private PublishPublicationStatusResponse mockPublishPublicationStatusResponse() throws ApiGatewayException {
+        PublishPublicationStatusResponse status = new PublishPublicationStatusResponse(
+            PUBLISH_IN_PROGRESS, SC_ACCEPTED);
+        when(publicationService.publishPublication(any(UserInstance.class), any(SortableIdentifier.class)))
+            .thenReturn(status);
+        return status;
     }
 
     private Map<String, String> getResponseHeaders(String location) {
@@ -95,13 +115,5 @@ public class PublishPublicationHandlerTest {
         return Map.of(
             CONTENT_TYPE, APPLICATION_JSON.getMimeType()
         );
-    }
-
-    @Test
-    public void getLocationReturnsUri() {
-        PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
-        URI location = handler.getLocation(SortableIdentifier.next());
-
-        assertNotNull(location);
     }
 }
