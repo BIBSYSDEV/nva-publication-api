@@ -17,6 +17,8 @@ Metadata:
 Globals:
   Function:
     Timeout: 20
+    Architectures:
+      - arm64
   Api:
     Cors:
       AllowMethods: "'PUT, GET,OPTIONS,DELETE,POST'"
