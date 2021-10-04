@@ -435,4 +435,13 @@ public class GeneralMappingRules {
                 .build();
         this.scenarioContext.getCristinEntry().setHrcsCategoriesAndActivities(List.of(hrcsCategoriesAndActivities));
     }
+
+    @Then("the NVA Resource Publishers id is {string}")
+    public void theNvaResourcePublishersIdIs(String expectedPublisherId) {
+        URI actuallPublisherId = this.scenarioContext
+                .getNvaEntry()
+                .getPublisher()
+                .getId();
+        assertThat(actuallPublisherId.toString(), is(equalTo(expectedPublisherId)));
+    }
 }
