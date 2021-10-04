@@ -157,7 +157,8 @@ public final class CristinDataGenerator {
             case FEATURE_ARTICLE:
                 return randomFeatureArticle();
             case JOURNAL_LETTER:
-                return randomJournalLetter();
+            case READER_OPINION:
+                return randomJournalLetter(category);
             case JOURNAL_REVIEW:
                 return randomJournalReview();
             case JOURNAL_LEADER:
@@ -323,8 +324,8 @@ public final class CristinDataGenerator {
         return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.FEATURE_ARTICLE);
     }
 
-    private static CristinObject randomJournalLetter() {
-        return createRandomJournalWithSpecifiedSecondaryCategory(CristinSecondaryCategory.JOURNAL_LETTER);
+    private static CristinObject randomJournalLetter(CristinSecondaryCategory secondaryCategory) {
+        return createRandomJournalWithSpecifiedSecondaryCategory(secondaryCategory);
     }
 
     private static CristinObject randomJournalReview() {
