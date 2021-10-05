@@ -6,8 +6,10 @@ import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -493,7 +495,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private UserInstance createExpectedPublicationOwner() {
-        return new UserInstance(HARDCODED_PUBLICATIONS_OWNER, HARDCODED_NVA_CUSTOMER);
+        UriWrapper customerId = new UriWrapper(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        return new UserInstance(HARDCODED_PUBLICATIONS_OWNER, customerId.getUri());
     }
 
     private CristinObject generatePublicationFromResource(String input) throws JsonProcessingException {

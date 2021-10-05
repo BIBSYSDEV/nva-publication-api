@@ -1,11 +1,13 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_NVA_CUSTOMER;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.IGNORED_AND_POSSIBLY_EMPTY_PUBLICATION_FIELDS;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
@@ -53,6 +55,7 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.doi.DoiConverter;
@@ -125,7 +128,8 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private Organization extractOrganization() {
-        return new Organization.Builder().withId(HARDCODED_NVA_CUSTOMER).build();
+        UriWrapper customerId = new UriWrapper(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        return new Organization.Builder().withId(customerId.getUri()).build();
     }
 
     private Instant extractEntryCreationDate() {

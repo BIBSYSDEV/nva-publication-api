@@ -22,6 +22,7 @@ public final class MappingConstants {
     public static final String NSD_PROXY_PATH = "publication-channels";
     public static final String NSD_PROXY_PATH_JOURNAL = "journal";
     public static final String NSD_PROXY_PATH_PUBLISHER = "publisher";
+    public static final String PATH_CUSTOMER = "customer";
 
     public static final Map<String, String> HRCS_CATEGORIES_MAP = Map.ofEntries(Map.entry("1", "HRCS_HC_01BLO"),
             Map.entry("2", "HRCS_HC_10MEN"), Map.entry("3", "HRCS_HC_11MET"),
