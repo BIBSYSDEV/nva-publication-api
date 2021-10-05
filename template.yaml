@@ -1357,7 +1357,7 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: "rate(10 minutes)"
-            Input: {}
+            Input: "{}"
 
 
   #=============================Event Buses =============================================================
