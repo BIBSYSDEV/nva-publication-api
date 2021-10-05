@@ -237,7 +237,8 @@ Feature: Mappings that hold for all types of Cristin Results
     | 7                 | 1.12           |
     | 8                 | NotANumber     |
 
-  Scenario: Mapping a Cristin Result to an NVA Resource creates the correct publisher id based on environment.
+  Scenario: Mapping a Cristin Result to an NVA Resource creates a publisher id based on environment
+  and a hardcoded organization id.
     Given a valid Cristin Result
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource Publishers id is "https://api.test.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
