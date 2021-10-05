@@ -1333,6 +1333,33 @@ Resources:
       Timestamp: '${BUILD_TIMESTAMP}'
       AuthorizerArn: !Ref CognitoAuthorizerArn
 
+
+  #==============================Init function===========================================================
+  InitFunction:
+    Type: AWS::Serverless::Function
+    DependsOn:
+      - NvaResourcesTable
+    Properties:
+      CodeUri: cristin-import
+      Handler: no.unit.nva.cristin.lambda.InitFunction::handleRequest
+      Runtime: java11
+      MemorySize: 512
+      Timeout: 30 #  30 sec timeout
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          TABLE_NAME: !Ref NvaResourcesTable
+          BATCH_EMISSION_INTERVAL_MILLIS: 0
+          DOMAIN_NAME: !Ref CustomDomain
+      Events:
+        ScheduledEvent:
+          Type: Schedule
+          Properties:
+            Schedule: "rate(10 minutes)"
+            Input: {}
+
+
   #=============================Event Buses =============================================================
   ImportRequestsEventBus:
     Type: AWS::Events::EventBus
