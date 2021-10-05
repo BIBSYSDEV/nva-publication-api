@@ -22,6 +22,7 @@ public enum CristinSecondaryCategory {
     REFERENCE_MATERIAL("OPPSLAGSVERK", "REFERENCE_MATERIAL"),
     FEATURE_ARTICLE("KRONIKK", "FEATURE_ARTICLE"),
     JOURNAL_LETTER("BREV_TIL_RED", "JOURNAL_LETTER"),
+    READER_OPINION("LESERINNLEGG", "READER_OPINIION"),
     JOURNAL_REVIEW("BOKANMELDELSE", "JOURNAL_REVIEW"),
     JOURNAL_LEADER("LEDER", "JOURNAL_LEADER"),
     JOURNAL_CORRIGENDUM("ERRATA", "JOURNAL_CORRIGENDUM"),
@@ -90,7 +91,8 @@ public enum CristinSecondaryCategory {
     }
 
     public static boolean isJournalLetter(CristinObject cristinObject) {
-        return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory());
+        return CristinSecondaryCategory.JOURNAL_LETTER.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.READER_OPINION.equals(cristinObject.getSecondaryCategory());
     }
 
     public static boolean isJournalReview(CristinObject cristinObject) {

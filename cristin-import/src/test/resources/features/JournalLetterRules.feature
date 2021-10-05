@@ -3,9 +3,14 @@ Feature: Mapping of "Letter to the editor" entries
   Background:
     Given a valid Cristin Result with secondary category "BREV_TIL_RED"
 
-  Scenario: Cristin Result of type "Letter to the editor" maps to "JournalLetter"
+  Scenario Outline: Cristin Result of type "Letter to the editor" and "Reader opinion piece" maps to "JournalLetter"
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Resource has a Publication Instance of type "JournalLetter"
+    Examples:
+      | secondaryCategory |
+      | BREV_TIL_RED      |
+      | LESERINNLEGG      |
 
   Scenario Outline: Cristin Entry's Journal Publication "pagesBegin" is copied as is with in NVA's field  "pagesBegin".
     Given that the Cristin Result has a non empty Journal Publication
