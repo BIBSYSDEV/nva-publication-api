@@ -33,10 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,7 +175,7 @@ public class FilenameEventEmitterTest {
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
 
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(LIST_ALL_FILES));
+        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(LIST_ALL_FILES));
         assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(UnixPath[]::new)));
     }
 

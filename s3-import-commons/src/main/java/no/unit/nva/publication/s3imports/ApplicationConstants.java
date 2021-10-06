@@ -1,6 +1,5 @@
 package no.unit.nva.publication.s3imports;
 
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
