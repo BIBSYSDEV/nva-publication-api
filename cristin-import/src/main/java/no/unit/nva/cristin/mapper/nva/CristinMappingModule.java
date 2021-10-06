@@ -5,11 +5,15 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
 
+import static java.util.Objects.isNull;
+
 /**
  * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to
  * NVA entries.
  */
 public class CristinMappingModule {
+
+    private static final String NOT_DIGITS_OR_X_REGEX = "[^\\dxX]";
 
     protected final CristinObject cristinObject;
 
@@ -24,7 +28,11 @@ public class CristinMappingModule {
     }
 
     protected Optional<String> extractIsbn() {
-        return Optional.ofNullable(extractCristinBookReport().getIsbn());
+        return Optional.ofNullable(cleanCristinIsbn(extractCristinBookReport().getIsbn()));
+    }
+
+    private String cleanCristinIsbn(String isbn) {
+        return isNull(isbn) ? null : isbn.replaceAll(NOT_DIGITS_OR_X_REGEX, "");
     }
 
     protected CristinBookOrReportMetadata extractCristinBookReport() {

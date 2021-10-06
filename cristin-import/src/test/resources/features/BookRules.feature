@@ -162,3 +162,20 @@ Feature: Book conversion rules
         | MASTERGRADSOPPG   |
         | HOVEDFAGSOPPGAVE  |
         | FORSKERLINJEOPPG  |
+
+  Scenario Outline: A Cristin Result with a valid isbn littered with special characters will have them removed
+  when mapped to the NVA Resource
+    Given a valid Cristin Result with secondary category "<secondaryCategory>"
+    And the Cristin Result has an valid ISBN littered with special characters "9*7^8-3/16-1+4?8_4()1|0-0"
+    When the Cristin Result is converted to an NVA Resource
+    Then the NVA Resource has a PublicationContext with an ISBN list containing the value "9783161484100"
+    Examples:
+      | secondaryCategory |
+      | MONOGRAFI         |
+      | ANTOLOGI          |
+      | FAGBOK            |
+      | LÆREBOK           |
+      | LEKSIKON          |
+      | POPVIT_BOK        |
+      | OPPSLAGSVERK      |
+      | ANTOLOGI          |

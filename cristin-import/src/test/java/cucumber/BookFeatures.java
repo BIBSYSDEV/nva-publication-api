@@ -6,6 +6,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+
+import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import java.net.URI;
@@ -287,5 +289,10 @@ public class BookFeatures {
             .map(series -> (Series) series)
             .orElseThrow(() -> new IllegalStateException("BookSeries is not confirmed"));
         return bookSeries.getId();
+    }
+
+    @And("the Cristin Result has an valid ISBN littered with special characters {string}")
+    public void theCristinResultHasAnValidIsbnLitteredWithSpecialCharactersString(String isbn) {
+        this.scenarioContext.getCristinEntry().getBookOrReportMetadata().setIsbn(isbn);
     }
 }
