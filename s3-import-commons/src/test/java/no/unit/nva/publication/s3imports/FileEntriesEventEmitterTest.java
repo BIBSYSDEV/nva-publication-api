@@ -207,7 +207,7 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<UnixPath> files = s3Driver.listFiles(ERRORS_FOLDER);
+        List<UnixPath> files = s3Driver.listAllFiles(ERRORS_FOLDER);
         assertThat(files, is(not(empty())));
     }
 
@@ -259,7 +259,7 @@ public class FileEntriesEventEmitterTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(ALL_FILES));
+        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(ALL_FILES));
         UnixPath expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
 
         assertThat(allFiles, containsInAnyOrder(expectedFile));

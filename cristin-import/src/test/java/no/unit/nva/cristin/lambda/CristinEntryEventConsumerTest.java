@@ -279,7 +279,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         runWithoutThrowingException(action);
 
         S3Driver s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
-        UnixPath errorReportFile = s3Driver.listFiles(LIST_ALL_FILES)
+        UnixPath errorReportFile = s3Driver.listAllFiles(LIST_ALL_FILES)
                                        .stream()
                                        .collect(SingletonCollector.collect());
         String errorReport = s3Driver.getFile(errorReportFile);

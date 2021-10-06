@@ -26,7 +26,7 @@ public class StubS3Driver extends S3Driver {
     }
 
     @Override
-    public List<UnixPath> listFiles(UnixPath folder) {
+    public List<UnixPath> listAllFiles(UnixPath folder) {
         return filesInBucket;
     }
 
@@ -37,7 +37,7 @@ public class StubS3Driver extends S3Driver {
     }
 
     public List<String> getAllIonItems() {
-        return listFiles(null)
+        return listAllFiles(null)
                    .stream()
                    .map(this::fileContent)
                    .flatMap(Collection::stream)

@@ -2,6 +2,7 @@ package no.unit.nva.publication.update;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
@@ -11,7 +12,6 @@ import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
-import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
@@ -60,7 +60,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
         String user = requestInfo.getFeideId().orElse(null);
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         UserInstance userInstance = new UserInstance(user, customerId);
-        setAdditionalHeadersSupplier(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
+        addAdditionalHeaders(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
 
         return resourceService.publishPublication(userInstance, identifier);
     }

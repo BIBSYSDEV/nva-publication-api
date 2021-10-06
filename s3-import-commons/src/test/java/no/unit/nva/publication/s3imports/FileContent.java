@@ -3,7 +3,7 @@ package no.unit.nva.publication.s3imports;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
-import no.unit.nva.s3.UnixPath;
+import nva.commons.core.paths.UnixPath;
 
 public class FileContent {
 
