@@ -8,6 +8,8 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.time.Clock;
+
 public final class ApplicationConstants {
 
     public static final String EMPTY_STRING = "";
@@ -44,6 +46,11 @@ public final class ApplicationConstants {
                    .region(ApplicationConstants.AWS_REGION)
                    .httpClient(UrlConnectionHttpClient.create())
                    .build();
+    }
+
+    @JacocoGenerated
+    public static Clock defaultClock() {
+        return Clock.systemDefaultZone();
     }
 
     private static Integer setupMaxSleepTime() {

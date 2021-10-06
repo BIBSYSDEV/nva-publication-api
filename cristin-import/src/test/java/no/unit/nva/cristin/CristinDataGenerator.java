@@ -10,6 +10,7 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -63,6 +65,7 @@ public final class CristinDataGenerator {
     public static final String NULL_KEY = "null";
     public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
     public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
+    public static final Instant TIMESTAMP = Instant.parse("2017-02-03T11:25:30.00Z");
     public static final String DOI_SUBPART_DELIMITER = ".";
     public static final String DOI_PREFIX_SUFFIX_SEPARATOR = "/";
     public static final String DOI_PREFIX_FIRST_SUBPART = "10";
@@ -199,7 +202,7 @@ public final class CristinDataGenerator {
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), cristinData);
+        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), TIMESTAMP, cristinData);
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;

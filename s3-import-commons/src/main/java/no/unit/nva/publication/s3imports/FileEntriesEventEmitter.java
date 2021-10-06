@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -141,9 +142,14 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                                : failedEntries.getException().getClass().getSimpleName();
         return bucket
                    .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(input.getTimestamp()))
                    .addChild(errorType)
                    .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
                    .addChild(makeFileExtensionError(inputUri.getFilename()));
+    }
+
+    public static String timestampToString(Instant timestamp) {
+        return timestamp.toString().replaceAll(" ", "_");
     }
 
     private String makeFileExtensionError(String filename) {
@@ -152,7 +158,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
         URI fileUri = URI.create(input.getS3Location());
-        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, json));
+        Instant timestamp = input.getTimestamp();
+        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, timestamp, json));
     }
 
     private List<PutEventsResult> emitEvents(Context context,

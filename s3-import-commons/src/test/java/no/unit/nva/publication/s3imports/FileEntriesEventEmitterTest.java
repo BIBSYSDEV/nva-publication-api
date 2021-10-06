@@ -4,6 +4,7 @@ import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -23,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -63,12 +65,13 @@ public class FileEntriesEventEmitterTest {
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(INPUT_FILENAME).getUri();
     public static final String IMPORT_EVENT_TYPE = "importEventType";
     public static final String NON_EXISTING_FILE = "nonexisting.file";
+    public static final Instant TIMESTAMP = Instant.parse("2017-02-03T11:25:30.00Z");
     public static final URI NON_EXISTING_FILE_URI =
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(NON_EXISTING_FILE).getUri();
     public static final ImportRequest IMPORT_REQUEST_FOR_EXISTING_FILE =
-        new ImportRequest(INPUT_URI, IMPORT_EVENT_TYPE);
+        new ImportRequest(INPUT_URI, IMPORT_EVENT_TYPE, TIMESTAMP);
     public static final ImportRequest IMPORT_REQUEST_FOR_NON_EXISTING_FILE =
-        new ImportRequest(NON_EXISTING_FILE_URI, IMPORT_EVENT_TYPE);
+        new ImportRequest(NON_EXISTING_FILE_URI, IMPORT_EVENT_TYPE, TIMESTAMP);
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
     public static final Context CONTEXT = Mockito.mock(Context.class);
@@ -124,6 +127,16 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
+    public void handlerEmitsEventWithTimestampInformation() {
+        InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
+        handler.handleRequest(input, outputStream, CONTEXT);
+        List<Instant> emittedResourceObjects = collectTimestampFromEmittedObjects(eventBridgeClient);
+        for (Instant timestamp : emittedResourceObjects) {
+            assertThat(timestamp, is(equalTo(TIMESTAMP)));
+        }
+    }
+
+    @Test
     public void handlerThrowsExceptionWhenTryingToEmitToNonExistingEventBus() {
         eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
         handler = newHandler();
@@ -143,6 +156,7 @@ public class FileEntriesEventEmitterTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         String expectedErrorFileLocation = ERRORS_FOLDER
+                                               .addChild(timestampToString(TIMESTAMP))
                                                .addChild(exception.getClass().getSimpleName())
                                                .addChild(INPUT_PATH)
                                                .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
@@ -167,6 +181,7 @@ public class FileEntriesEventEmitterTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         String expectedErrorFileLocation = ERRORS_FOLDER
+                                               .addChild(timestampToString(TIMESTAMP))
                                                .addChild(exception.getClass().getSimpleName())
                                                .addChild(INPUT_PATH)
                                                .addChild(NON_EXISTING_FILE + FILE_EXTENSION_ERROR)
@@ -184,6 +199,7 @@ public class FileEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
         String expectedErrorFileLocation =
             ERRORS_FOLDER
+                .addChild(timestampToString(TIMESTAMP))
                 .addChild(PARTIAL_FAILURE)
                 .addChild(INPUT_PATH)
                 .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
@@ -220,6 +236,7 @@ public class FileEntriesEventEmitterTest {
         Exception exception = assertThrows(RuntimeException.class, action);
 
         String expectedErrorFileLocation = ERRORS_FOLDER
+                                               .addChild(timestampToString(TIMESTAMP))
                                                .addChild(exception.getClass().getSimpleName())
                                                .addChild(INPUT_PATH)
                                                .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
@@ -230,13 +247,14 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerSavesFileInErrorsExceptionNameFilePathWhenFailingToEmitSomeEntries() {
+    public void handlerSavesFileInErrorsTimestampExceptionNameFilePathWhenFailingToEmitSomeEntries() {
         eventBridgeClient = eventBridgeClientThatFailsToEmitMessages();
         handler = new FileEntriesEventEmitter(s3Client, eventBridgeClient);
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
 
         String expectedErrorFileLocation = ERRORS_FOLDER
+                                               .addChild(timestampToString(TIMESTAMP))
                                                .addChild(PARTIAL_FAILURE)
                                                .addChild(INPUT_PATH)
                                                .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
@@ -293,8 +311,10 @@ public class FileEntriesEventEmitterTest {
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
     }
 
+
+
     private static ImportRequest newImportRequest(String customImportRequestEventType) {
-        return new ImportRequest(IMPORT_REQUEST_FOR_EXISTING_FILE.getS3Location(),
+        return new ImportRequest(URI.create(IMPORT_REQUEST_FOR_EXISTING_FILE.getS3Location()),
                                  customImportRequestEventType);
     }
 
@@ -430,6 +450,16 @@ public class FileEntriesEventEmitterTest {
                    .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
                    .map(FileContentsEvent::getContents)
                    .collect(Collectors.toList());
+    }
+
+    private List<Instant> collectTimestampFromEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
+        return eventBridgeClient.getEvenRequests()
+                .stream()
+                .flatMap(e -> e.entries().stream())
+                .map(PutEventsRequestEntry::detail)
+                .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
+                .map(FileContentsEvent::getTimestamp)
+                .collect(Collectors.toList());
     }
 
     private InputStream toInputStream(AwsEventBridgeEvent<ImportRequest> request) {
