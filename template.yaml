@@ -722,6 +722,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -772,6 +773,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -817,6 +819,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -931,6 +934,7 @@ Resources:
           API_SCHEME: https
           API_HOST: !Ref CustomDomain
           TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:

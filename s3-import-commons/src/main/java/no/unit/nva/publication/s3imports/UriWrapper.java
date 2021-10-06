@@ -4,8 +4,8 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UnixPath;
 
 public class UriWrapper {
 
