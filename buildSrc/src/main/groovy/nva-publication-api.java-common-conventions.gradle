@@ -45,8 +45,8 @@ test {
     //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin
     environment "API_HOST", "localhost"
     environment "API_SCHEME", "https"
+    environment "ID_NAMESPACE", "https://www.example.org"
 }
-
 
 jacocoTestReport {
     reports {

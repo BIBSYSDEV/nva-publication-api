@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UnixPath;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 public class StubS3Driver extends S3Driver {
@@ -26,7 +26,7 @@ public class StubS3Driver extends S3Driver {
     }
 
     @Override
-    public List<UnixPath> listFiles(UnixPath folder) {
+    public List<UnixPath> listAllFiles(UnixPath folder) {
         return filesInBucket;
     }
 
@@ -37,7 +37,7 @@ public class StubS3Driver extends S3Driver {
     }
 
     public List<String> getAllIonItems() {
-        return listFiles(null)
+        return listAllFiles(null)
                    .stream()
                    .map(this::fileContent)
                    .flatMap(Collection::stream)

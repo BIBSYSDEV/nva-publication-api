@@ -31,12 +31,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -207,7 +207,7 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(IMPORT_REQUEST_FOR_EXISTING_FILE);
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<UnixPath> files = s3Driver.listFiles(ERRORS_FOLDER);
+        List<UnixPath> files = s3Driver.listAllFiles(ERRORS_FOLDER);
         assertThat(files, is(not(empty())));
     }
 
@@ -259,7 +259,7 @@ public class FileEntriesEventEmitterTest {
 
         handler.handleRequest(input, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
-        List<UnixPath> allFiles = s3Driver.listFiles(UnixPath.of(ALL_FILES));
+        List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(ALL_FILES));
         UnixPath expectedFile = IMPORT_REQUEST_FOR_EXISTING_FILE.extractPathFromS3Location();
 
         assertThat(allFiles, containsInAnyOrder(expectedFile));

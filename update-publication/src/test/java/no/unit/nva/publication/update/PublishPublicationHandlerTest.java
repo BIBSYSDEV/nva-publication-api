@@ -1,9 +1,9 @@
 package no.unit.nva.publication.update;
 
+import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.HttpHeaders.LOCATION;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
-import static nva.commons.apigateway.ApiGatewayHandler.ACCESS_CONTROL_ALLOW_ORIGIN;
-import static nva.commons.apigateway.ApiGatewayHandler.CONTENT_TYPE;
-import static nva.commons.apigateway.HttpHeaders.LOCATION;
 import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -13,13 +13,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.google.common.net.MediaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Map;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -87,10 +87,10 @@ public class PublishPublicationHandlerTest {
     private PublishPublicationHandler callPublishPublicationHandler(SortableIdentifier identifier) throws IOException {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(objectMapper)
-                .withHeaders(getRequestHeaders())
-                .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
-                .withQueryParameters(Collections.emptyMap())
-                .build();
+            .withHeaders(getRequestHeaders())
+            .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
+            .withQueryParameters(Collections.emptyMap())
+            .build();
         handler.handleRequest(input, output, context);
         return handler;
     }
@@ -105,7 +105,7 @@ public class PublishPublicationHandlerTest {
 
     private Map<String, String> getResponseHeaders(String location) {
         return Map.of(
-            CONTENT_TYPE, APPLICATION_JSON.getMimeType(),
+            CONTENT_TYPE, MediaType.JSON_UTF_8.toString(),
             ACCESS_CONTROL_ALLOW_ORIGIN, WILDCARD,
             LOCATION, location
         );

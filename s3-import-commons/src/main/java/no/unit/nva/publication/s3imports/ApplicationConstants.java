@@ -1,8 +1,8 @@
 package no.unit.nva.publication.s3imports;
 
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UnixPath;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
