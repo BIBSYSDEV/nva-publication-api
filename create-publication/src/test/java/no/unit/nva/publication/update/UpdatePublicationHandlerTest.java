@@ -154,7 +154,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
-        MatcherAssert.assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
+        assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
     }
 
     @Test
