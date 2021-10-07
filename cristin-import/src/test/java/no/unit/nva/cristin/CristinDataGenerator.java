@@ -65,7 +65,6 @@ public final class CristinDataGenerator {
     public static final String NULL_KEY = "null";
     public static final int MIN_DOI_PREFIX_SUBPART_LENGTH = 3;
     public static final int MAX_DOI_PREFIX_SUBPART_LENGTH = 10;
-    public static final Instant TIMESTAMP = Instant.parse("2017-02-03T11:25:30.00Z");
     public static final String DOI_SUBPART_DELIMITER = ".";
     public static final String DOI_PREFIX_SUFFIX_SEPARATOR = "/";
     public static final String DOI_PREFIX_FIRST_SUBPART = "10";
@@ -202,7 +201,7 @@ public final class CristinDataGenerator {
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), TIMESTAMP, cristinData);
+        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), Instant.now(), cristinData);
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;

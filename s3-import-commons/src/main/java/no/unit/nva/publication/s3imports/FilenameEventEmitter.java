@@ -5,6 +5,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -113,6 +114,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
                    .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(clock.instant()))
                    .addChild(inputFolderUri.getPath())
                    .addChild(ERROR_REPORT_FILENAME);
     }

@@ -3,6 +3,7 @@ package no.unit.nva.publication.s3imports;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.EXPECTED_BODY_MESSAGE;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
@@ -65,7 +66,6 @@ public class FilenameEventEmitterTest {
     private static final Context CONTEXT = mock(Context.class);
     public static final String LIST_ALL_FILES = ".";
     public static final URI EMPTY_URI = null;
-    public static final Instant FIXED_INSTANT = Instant.parse("2017-02-03T11:25:30.00Z");
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -77,7 +77,7 @@ public class FilenameEventEmitterTest {
     public void init() {
         outputStream = new ByteArrayOutputStream();
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
-        clock = Clock.fixed(FIXED_INSTANT, ZoneId.systemDefault());
+        clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
@@ -158,7 +158,8 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerSavesInS3FolderErrorReportContainingAllFilenamesThatFailedToBeEmitted() throws IOException {
+    public void handlerSavesInS3FolderErrorTimestampPathFilenameAReportContainingAllFilenamesThatFailedToBeEmitted()
+            throws IOException {
         handler = handlerThatFailsToEmitMessages();
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
@@ -166,6 +167,7 @@ public class FilenameEventEmitterTest {
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
         UnixPath errorReportFile = ERRORS_FOLDER
+                                       .addChild(timestampToString(clock.instant()))
                                        .addChild(importRequest.extractPathFromS3Location())
                                        .addChild(ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile);
@@ -229,8 +231,8 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsEventIncludingATimestamp() throws IOException {
-        Instant expectedTimestamp = FIXED_INSTANT;
+    public void handlerEmitsEventIncludingATimestampBasedOnWhenItWasTriggered() throws IOException {
+        Instant expectedTimestamp = clock.instant();
         ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION),null);
 
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
@@ -269,7 +271,7 @@ public class FilenameEventEmitterTest {
                 return NON_ZERO_NUMBER_OF_FAILURES;
             }
         };
-        return new FilenameEventEmitter(s3Client, eventBridgeClient, defaultClock());
+        return new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
     }
 
     private FilenameEventEmitter handlerThatReceivesEmptyS3Location() {

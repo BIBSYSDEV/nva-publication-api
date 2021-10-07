@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URI;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -149,7 +150,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     public static String timestampToString(Instant timestamp) {
-        return timestamp.toString().replaceAll(" ", "_");
+        return DateTimeFormatter.ISO_INSTANT.format(timestamp);
     }
 
     private String makeFileExtensionError(String filename) {
