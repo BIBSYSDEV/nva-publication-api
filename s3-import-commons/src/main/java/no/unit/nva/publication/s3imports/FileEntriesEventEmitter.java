@@ -4,6 +4,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRIN
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -12,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URI;
 import java.time.Instant;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -147,10 +147,6 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                    .addChild(errorType)
                    .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
                    .addChild(makeFileExtensionError(inputUri.getFilename()));
-    }
-
-    public static String timestampToString(Instant timestamp) {
-        return DateTimeFormatter.ISO_INSTANT.format(timestamp);
     }
 
     private String makeFileExtensionError(String filename) {

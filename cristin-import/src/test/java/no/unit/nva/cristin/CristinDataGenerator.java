@@ -10,7 +10,6 @@ import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.REFERENCE_MATERIAL;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.TEXTBOOK;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;

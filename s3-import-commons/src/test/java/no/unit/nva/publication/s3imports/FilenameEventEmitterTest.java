@@ -3,7 +3,7 @@ package no.unit.nva.publication.s3imports;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
-import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.timestampToString;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.EXPECTED_BODY_MESSAGE;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
