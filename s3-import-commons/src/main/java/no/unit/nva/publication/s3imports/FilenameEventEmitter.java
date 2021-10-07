@@ -23,13 +23,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
+import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -131,7 +131,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private List<URI> listFiles(ImportRequest importRequest) {
         URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
-        List<UnixPath> filenames = s3Driver.listFiles(importRequest.extractPathFromS3Location());
+        List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
         logger.info(attempt(() -> JsonUtils.objectMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
                    .map(filename -> createUri(s3Location, filename))

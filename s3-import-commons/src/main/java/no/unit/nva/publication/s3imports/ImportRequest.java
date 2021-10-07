@@ -7,10 +7,10 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
-import no.unit.nva.s3.UnixPath;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.paths.UnixPath;
 
 /**
  * An {@link ImportRequest} contains 3 fields.

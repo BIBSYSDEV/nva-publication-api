@@ -54,12 +54,12 @@ import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
-import no.unit.nva.s3.UnixPath;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.javers.core.Javers;
@@ -281,7 +281,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         runWithoutThrowingException(action);
 
         S3Driver s3Driver = new S3Driver(s3Client, IGNORED_VALUE);
-        UnixPath errorReportFile = s3Driver.listFiles(LIST_ALL_FILES)
+        UnixPath errorReportFile = s3Driver.listAllFiles(LIST_ALL_FILES)
                                        .stream()
                                        .collect(SingletonCollector.collect());
         String errorReport = s3Driver.getFile(errorReportFile);

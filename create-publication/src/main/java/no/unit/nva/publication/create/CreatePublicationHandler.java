@@ -5,6 +5,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+
+import com.google.common.net.HttpHeaders;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
@@ -15,7 +17,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.ApiGatewayHandler;
-import nva.commons.apigateway.HttpHeaders;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
