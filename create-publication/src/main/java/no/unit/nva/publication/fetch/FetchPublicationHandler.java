@@ -56,7 +56,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, Publication
     }
 
     @Override
-    protected PublicationResponse processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected PublicationResponse processInput(Void input, RequestInfo requestInfo, Context context)
+        throws ApiGatewayException {
 
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublicationByIdentifier(identifier);
