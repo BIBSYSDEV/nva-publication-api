@@ -1,19 +1,17 @@
 package no.unit.nva.publication.fetch;
 
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.JsonNode;
 import java.net.HttpURLConnection;
 import java.time.Clock;
+import no.unit.nva.PublicationMapper;
+import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.util.ContextUtil;
-import no.unit.nva.publication.JsonLdContextUtil;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -24,7 +22,7 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
-public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
+public class FetchPublicationHandler extends ApiGatewayHandler<Void, PublicationResponse> {
 
     public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
 
@@ -58,17 +56,17 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
     }
 
     @Override
-    protected JsonNode processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+    protected PublicationResponse processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
 
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublicationByIdentifier(identifier);
         DoiRequest doiRequest = fetchDoiRequest(publication);
         publication.setDoiRequest(doiRequest);
-        return toJsonNodeWithContext(publication);
+        return PublicationMapper.convertValue(publication, PublicationResponse.class);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, JsonNode output) {
+    protected Integer getSuccessStatusCode(Void input, PublicationResponse output) {
         return HttpURLConnection.HTTP_OK;
     }
 
@@ -89,13 +87,5 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, JsonNode> {
                    .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)
                    .map(Publication::getDoiRequest)
                    .orElse(fail -> null);
-    }
-
-    private JsonNode toJsonNodeWithContext(Publication publication) {
-        JsonNode publicationJson = objectMapper.valueToTree(publication);
-        new JsonLdContextUtil(objectMapper)
-            .getPublicationContext(PUBLICATION_CONTEXT_JSON)
-            .ifPresent(publicationContext -> ContextUtil.injectContext(publicationJson, publicationContext));
-        return publicationJson;
     }
 }
