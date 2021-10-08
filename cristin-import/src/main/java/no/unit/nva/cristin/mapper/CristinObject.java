@@ -15,11 +15,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidUnconfirmedSeriesRuntimeException;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import nva.commons.core.JsonSerializable;
 
 @Data

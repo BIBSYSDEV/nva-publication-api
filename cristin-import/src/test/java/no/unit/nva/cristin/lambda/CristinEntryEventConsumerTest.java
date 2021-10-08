@@ -290,7 +290,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerThrowsInvalidIssnExceptionWhenTheIssnIsInvalid() throws JsonProcessingException {
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheIssnIsInvalid() throws JsonProcessingException {
         JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.objectWithInvalidIssn();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
                 CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
