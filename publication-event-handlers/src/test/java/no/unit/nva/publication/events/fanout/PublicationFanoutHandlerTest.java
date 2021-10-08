@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.fanout;
 
+import static org.hamcrest.MatcherAssert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -60,10 +61,10 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
-        MatcherAssert.assertThat(response.getNewPublication().getIdentifier(), is(equalTo(IDENTIFIER_IN_RESOURCE)));
+        assertThat(response.getNewPublication().getIdentifier(), is(equalTo(IDENTIFIER_IN_RESOURCE)));
     }
 
     @Test
@@ -77,8 +78,8 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(notNullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(nullValue()));
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(nullValue()));
     }
 
     @Test
@@ -92,10 +93,10 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(notNullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
-        MatcherAssert.assertThat(response.getNewPublication().getEntityDescription(), is(notNullValue()));
+        assertThat(response.getNewPublication().getEntityDescription(), is(notNullValue()));
     }
 
     @Test
@@ -121,13 +122,13 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
         Publication publication = response.getNewPublication();
 
-        MatcherAssert.assertThat(publication.getEntityDescription(), is(notNullValue()));
-        MatcherAssert.assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
+        assertThat(publication.getEntityDescription(), is(notNullValue()));
+        assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
 
         assertThat(fieldWithValueEmptyObject(publication), is(nullValue()));
         assertThat(fieldWithValueEmptyString(publication), is(nullValue()));
@@ -144,8 +145,8 @@ public class PublicationFanoutHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getNewPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(nullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
     }
 
     private Pages fieldWithValueEmptyMap(Publication publication) {
