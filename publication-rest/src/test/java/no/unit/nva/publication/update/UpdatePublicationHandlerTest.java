@@ -265,14 +265,6 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         return LogUtils.getTestingAppenderForRootLogger();
     }
 
-//    private void publicationServiceThrowsException() {
-//        publicationService = new ResourceService(client, Clock.systemDefaultZone()) {
-//            @Override
-//            public Publication updatePublication(Publication publication) {
-//                throw new RuntimeException(SOME_MESSAGE);
-//            }
-//        };
-//    }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         return new ResourceService(client, Clock.systemDefaultZone()) {
