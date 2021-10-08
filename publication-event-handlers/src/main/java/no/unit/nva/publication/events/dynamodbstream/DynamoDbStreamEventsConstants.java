@@ -4,7 +4,7 @@ import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
-public final class DynamoDBStreamEventsConstants {
+public final class DynamoDbStreamEventsConstants {
 
     public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String DLQ_URL = "DLQ_URL";
@@ -12,7 +12,7 @@ public final class DynamoDBStreamEventsConstants {
     private static final Environment ENVIRONMENT = new Environment();
 
     @JacocoGenerated
-    private DynamoDBStreamEventsConstants() {
+    private DynamoDbStreamEventsConstants() {
     }
 
     @JacocoGenerated

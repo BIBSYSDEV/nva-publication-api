@@ -41,13 +41,13 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements Reque
         return new EventBridgePublisher(
             defaultEventBridgeRetryClient(),
             defaultFailedEventPublisher(),
-            DynamoDBStreamEventsConstants.getEventBusName()
+            DynamoDbStreamEventsConstants.getEventBusName()
         );
     }
 
     @JacocoGenerated
     private static EventPublisher defaultFailedEventPublisher() {
-        return new SqsEventPublisher(defaultSqsClient(), DynamoDBStreamEventsConstants.getDlqUrl());
+        return new SqsEventPublisher(defaultSqsClient(), DynamoDbStreamEventsConstants.getDlqUrl());
     }
 
     @JacocoGenerated
@@ -61,7 +61,7 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements Reque
 
     @JacocoGenerated
     private static EventBridgeRetryClient defaultEventBridgeRetryClient() {
-        return new EventBridgeRetryClient(defaultEventBridgeClient(), DynamoDBStreamEventsConstants.getMaxAttempt());
+        return new EventBridgeRetryClient(defaultEventBridgeClient(), DynamoDbStreamEventsConstants.getMaxAttempt());
     }
 
     @JacocoGenerated
