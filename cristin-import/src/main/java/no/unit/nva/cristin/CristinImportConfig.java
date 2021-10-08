@@ -8,6 +8,7 @@ import nva.commons.core.JsonUtils;
 public final class CristinImportConfig {
 
     public static final ObjectMapper eventHandlerObjectMapper = JsonUtils.dtoObjectMapper;
+    //ObjectMapper that allows us to keep track of the Cristin fields that we have not yet done something with them.
     public static final ObjectMapper cristinEntryMapper = objectMapperFailingOnUnknown();
     public static final ObjectMapper singleLineObjectMapper = JsonUtils.singleLineObjectMapper;
 
