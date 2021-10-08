@@ -712,7 +712,7 @@ Resources:
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: create-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -758,7 +758,7 @@ Resources:
   NvaFetchPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: fetch-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -809,7 +809,7 @@ Resources:
   NvaUpdatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: update-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.UpdatePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -832,7 +832,7 @@ Resources:
   NvaDeletePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: delete-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.delete.DeletePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -853,7 +853,7 @@ Resources:
   NvaPublicationsByOwnerFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: fetch-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.fetch.PublicationsByOwnerHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
@@ -924,7 +924,7 @@ Resources:
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: update-publication
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.update.PublishPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408

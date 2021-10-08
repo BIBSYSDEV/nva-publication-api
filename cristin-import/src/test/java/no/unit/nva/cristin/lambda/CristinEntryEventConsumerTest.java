@@ -10,6 +10,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUB
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
@@ -32,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -326,7 +328,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void savesFileInInputFolderErrorExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
+    public void savesFileInInputFolderErrorTimestampExceptionNameInputFileLocationInputFileWhenFailingToSaveInDynamo()
         throws Throwable {
         CristinObject cristinObject = CristinDataGenerator.randomObject();
         JsonNode cristinObjectWithCustomSecondaryCategory =
@@ -341,9 +343,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
         String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
+        Instant expectedTimestamp = awsEvent.getDetail().getTimestamp();
         String exceptionName = exception.getCause().getClass().getSimpleName();
         String fileIdWithEnding = cristinObject.getId().toString() + JSON;
         UnixPath expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER,
+                                                         timestampToString(expectedTimestamp),
                                                          exceptionName,
                                                          expectedFilePath,
                                                          fileIdWithEnding);
@@ -439,6 +443,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event,
         RuntimeException exception) {
         return UnixPath.of(ERRORS_FOLDER)
+                   .addChild(timestampToString(event.getDetail().getTimestamp()))
                    .addChild(exception.getCause().getClass().getSimpleName())
                    .addChild(event.getDetail().getFileUri().getPath())
                    .addChild(event.getDetail().getContents().getId() + JSON);
@@ -480,8 +485,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
         String errorReportFilename = cristinObjectId + JSON;
         UriWrapper inputFile = new UriWrapper(awsEvent.getDetail().getFileUri());
+        Instant timestamp = awsEvent.getDetail().getTimestamp();
         UriWrapper bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(timestamp))
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(inputFile.getPath())
                    .addChild(errorReportFilename);
