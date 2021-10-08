@@ -2,6 +2,7 @@ package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -9,7 +10,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,7 +44,6 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private Environment environment;
     private ByteArrayOutputStream outputStream;
     private Context context;
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     @BeforeEach
     public void setUp() {

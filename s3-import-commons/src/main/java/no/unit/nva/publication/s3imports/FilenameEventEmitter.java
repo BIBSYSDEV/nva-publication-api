@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -22,7 +23,6 @@ import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -124,7 +124,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         URI s3Location = URI.create(importRequest.getS3Location());
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
         List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
-        logger.info(attempt(() -> JsonUtils.objectMapper.writeValueAsString(filenames)).orElseThrow());
+        logger.info(attempt(() -> s3ImportsMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
                    .map(filename -> createUri(s3Location, filename))
                    .collect(Collectors.toList());
@@ -193,6 +193,6 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private <T> String toJson(T results) throws JsonProcessingException {
-        return JsonUtils.objectMapper.writeValueAsString(results);
+        return s3ImportsMapper.writeValueAsString(results);
     }
 }

@@ -994,8 +994,8 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: delete-publication-event-producer
-      Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
+      CodeUri: delete-draft-publication
+      Handler: no.unit.nva.publication.delete.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
@@ -1091,7 +1091,7 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: delete-draft-publication-handler
+      CodeUri: delete-draft-publication
       Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512

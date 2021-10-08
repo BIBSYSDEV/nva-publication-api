@@ -1,11 +1,12 @@
 package no.unit.nva.publication.create;
 
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
 import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-import static nva.commons.core.JsonUtils.objectMapper;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,7 +14,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,10 +49,6 @@ public class CreatePublicationHandlerTest {
     public static final String REQUEST_CONTEXT = "requestContext";
     public static final String HEADERS = "headers";
     public static final String BODY = "body";
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
-                                                                           .constructParametricType(
-                                                                               GatewayResponse.class,
-                                                                               PublicationResponse.class);
     private ResourceService publicationServiceMock;
     private CreatePublicationHandler handler;
     private ByteArrayOutputStream outputStream;
@@ -84,8 +80,7 @@ public class CreatePublicationHandlerTest {
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
-                                                                             PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
 
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
             PublicationMapper.convertValue(publication, PublicationResponse.class),
@@ -103,9 +98,7 @@ public class CreatePublicationHandlerTest {
 
         InputStream inputStream = emptyCreatePublicationRequest();
         handler.handleRequest(inputStream, outputStream, context);
-        GatewayResponse<PublicationResponse> actual = objectMapper.readValue(outputStream.toByteArray(),
-                                                                             PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
-
+        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
         assertEquals(HttpStatus.SC_CREATED, actual.getStatusCode());
         assertNotNull(actual.getBodyObject(PublicationResponse.class));
     }

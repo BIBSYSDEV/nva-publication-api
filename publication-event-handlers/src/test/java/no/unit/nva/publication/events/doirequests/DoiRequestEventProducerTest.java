@@ -1,8 +1,8 @@
 package no.unit.nva.publication.events.doirequests;
 
+import static no.unit.nva.publication.events.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.publication.events.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -231,13 +231,13 @@ class DoiRequestEventProducerTest {
     }
 
     private boolean hasDoiField(String eventInput) {
-        JsonNode event = attempt(() -> objectMapper.readTree(eventInput)).orElseThrow();
+        JsonNode event = attempt(() -> dynamoImageSerializerRemovingEmptyFields.readTree(eventInput)).orElseThrow();
         return event.at(PUBLICATION_DATA_FIELD).has(DOI_FIELD);
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();
-        return objectMapper.readValue(outputString, PublicationHolder.class);
+        return dynamoImageSerializerRemovingEmptyFields.readValue(outputString, PublicationHolder.class);
     }
 }

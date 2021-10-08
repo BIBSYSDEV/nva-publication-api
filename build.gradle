@@ -6,6 +6,12 @@ allprojects {
     apply plugin: 'nva-publication-api.java-library-conventions'
 }
 
+wrapper {
+    distributionType = Wrapper.DistributionType.ALL
+    gradleVersion = "7.2"
+}
+
+
 subprojects {
     // For using DynamoDB locally
     configurations.testImplementation.canBeResolved = true

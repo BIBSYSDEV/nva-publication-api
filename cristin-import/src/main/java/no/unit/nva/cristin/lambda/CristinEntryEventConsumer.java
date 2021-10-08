@@ -1,8 +1,8 @@
 package no.unit.nva.cristin.lambda;
 
+import static no.unit.nva.cristin.CristinImportConfig.objectMapper;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
-import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -103,7 +103,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
         return attempt(() -> event.getDetail().getContents())
                    .map(jsonNode ->
-                            objectMapperWithEmpty.convertValue(jsonNode, Identifiable.class))
+                            objectMapper.convertValue(jsonNode, Identifiable.class))
                    .orElseThrow();
     }
 

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.fanout;
 
+import static no.unit.nva.publication.events.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -19,6 +20,7 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.PublicationEventsConfig;
 import no.unit.nva.publication.events.fanout.PublicationFanoutHandler;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
@@ -30,7 +32,6 @@ import org.mockito.Mockito;
 
 public class PublicationFanoutHandlerTest {
 
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final String DYNAMODBEVENT_NEW_IMAGE_JSON = "dynamodbevent_new_image.json";
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
     public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
@@ -165,7 +166,8 @@ public class PublicationFanoutHandlerTest {
     }
 
     private DynamoEntryUpdateEvent parseResponse() {
-        return Try.attempt(() -> objectMapper.readValue(outputStream.toString(), DynamoEntryUpdateEvent.class))
+        return Try.attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(outputStream.toString(),
+                                                                    DynamoEntryUpdateEvent.class))
             .orElseThrow();
     }
 }

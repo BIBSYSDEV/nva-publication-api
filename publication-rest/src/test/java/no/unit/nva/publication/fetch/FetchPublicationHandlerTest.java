@@ -2,10 +2,10 @@ package no.unit.nva.publication.fetch;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;

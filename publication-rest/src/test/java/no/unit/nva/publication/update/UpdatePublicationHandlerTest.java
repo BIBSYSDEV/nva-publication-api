@@ -4,11 +4,11 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -221,7 +221,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        return new HandlerRequestBuilder<Publication>(JsonUtils.objectMapperNoEmpty)
+        return new HandlerRequestBuilder<Publication>(objectMapper)
                    .withFeideId(SOME_CURATOR)
                    .withPathParameters(pathParameters)
                    .withCustomerId(randomUri().toString())
@@ -233,7 +233,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        return new HandlerRequestBuilder<Publication>(JsonUtils.objectMapperNoEmpty)
+        return new HandlerRequestBuilder<Publication>(objectMapper)
                    .withFeideId(SOME_CURATOR)
                    .withPathParameters(pathParameters)
                    .withCustomerId(publicationUpdate.getPublisher().getId().toString())
@@ -247,7 +247,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
 
-        return new HandlerRequestBuilder<Publication>(JsonUtils.objectMapperNoEmpty)
+        return new HandlerRequestBuilder<Publication>(objectMapper)
                    .withFeideId(publicationUpdate.getOwner())
                    .withCustomerId(publicationUpdate.getPublisher().getId().toString())
                    .withBody(publicationUpdate)
@@ -265,14 +265,14 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         return LogUtils.getTestingAppenderForRootLogger();
     }
 
-    private void publicationServiceThrowsException() {
-        publicationService = new ResourceService(client, Clock.systemDefaultZone()) {
-            @Override
-            public Publication updatePublication(Publication publication) {
-                throw new RuntimeException(SOME_MESSAGE);
-            }
-        };
-    }
+//    private void publicationServiceThrowsException() {
+//        publicationService = new ResourceService(client, Clock.systemDefaultZone()) {
+//            @Override
+//            public Publication updatePublication(Publication publication) {
+//                throw new RuntimeException(SOME_MESSAGE);
+//            }
+//        };
+//    }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         return new ResourceService(client, Clock.systemDefaultZone()) {
