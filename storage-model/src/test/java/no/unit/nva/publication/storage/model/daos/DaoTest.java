@@ -10,9 +10,9 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KE
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.STATUS_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.toPutItemRequest;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -202,7 +202,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
     }
 
     private JsonNode serializeInstance(Dao<?> daoInstance) throws JsonProcessingException {
-        String json = objectMapper.writeValueAsString(daoInstance);
-        return objectMapper.readTree(json);
+        String json = dynamoDbObjectMapper.writeValueAsString(daoInstance);
+        return dynamoDbObjectMapper.readTree(json);
     }
 }

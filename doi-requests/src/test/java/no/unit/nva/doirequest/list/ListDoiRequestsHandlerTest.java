@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
@@ -47,7 +48,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -324,7 +324,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private InputStream createRequest(URI customerId, String userIdentifier, String userRole)
         throws com.fasterxml.jackson.core.JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<Void>(doiRequestsObjectMapper)
                    .withCustomerId(customerId.toString())
                    .withFeideId(userIdentifier)
                    .withRoles(userRole)

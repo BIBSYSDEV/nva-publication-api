@@ -2,6 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,7 +44,6 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.instancetypes.journal.JournalArticle;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;
 import no.unit.nva.model.pages.Range;
-import nva.commons.core.JsonUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
@@ -88,8 +88,8 @@ public class ResourceTest {
     public void copyContainsAllFields() {
         Resource resource = sampleResource();
         Resource copy = resource.copy().build();
-        JsonNode resourceJson = JsonUtils.objectMapper.convertValue(resource, JsonNode.class);
-        JsonNode copyJson = JsonUtils.objectMapper.convertValue(copy, JsonNode.class);
+        JsonNode resourceJson = dynamoDbObjectMapper.convertValue(resource, JsonNode.class);
+        JsonNode copyJson = dynamoDbObjectMapper.convertValue(copy, JsonNode.class);
         assertThat(resource, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(resource)));
         assertThat(resourceJson, is(equalTo(copyJson)));

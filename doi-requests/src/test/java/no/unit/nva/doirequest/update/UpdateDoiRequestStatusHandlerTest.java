@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.update;
 
+import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
@@ -35,7 +36,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
@@ -169,7 +169,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
         throws JsonProcessingException {
         ApiUpdateDoiRequest body = createUpdateRequest(doiRequestStatus);
         Map<String, String> pathParameters = createPathParameters(identifier);
-        return new HandlerRequestBuilder<ApiUpdateDoiRequest>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
                    .withCustomerId(publication.getPublisher().getId().toString())
                    .withFeideId(SOME_CURATOR)
                    .withAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
@@ -182,7 +182,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
         ApiUpdateDoiRequest body = createUpdateRequest(DoiRequestStatus.APPROVED);
         Map<String, String> pathParameters = createPathParameters(publication.getIdentifier().toString());
-        return new HandlerRequestBuilder<ApiUpdateDoiRequest>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
                    .withCustomerId(publication.getPublisher().getId().toString())
                    .withFeideId(SOME_CURATOR)
                    .withPathParameters(pathParameters)

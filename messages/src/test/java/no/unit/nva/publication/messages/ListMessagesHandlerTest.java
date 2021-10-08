@@ -1,6 +1,7 @@
 package no.unit.nva.publication.messages;
 
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
+import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -46,7 +47,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -275,7 +275,7 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private InputStream userRequest(String userIdentifier, URI organizationUri, String requestedRole)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
                    .withFeideId(userIdentifier)
                    .withCustomerId(organizationUri.toString())
                    .withRoles(requestedRole)

@@ -1,9 +1,9 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
@@ -88,7 +88,7 @@ public abstract class ServiceWithTransactions {
     }
 
     protected String nowAsString() {
-        String jsonString = attempt(() -> objectMapper.writeValueAsString(getClock().instant()))
+        String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(getClock().instant()))
             .orElseThrow();
         return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
     }
