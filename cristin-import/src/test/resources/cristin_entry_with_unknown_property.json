@@ -12,6 +12,7 @@
   "detail": {
     "publicationsowner": "someRandomUser",
     "fileUri": "s3://bucket/parent/child/filename.json",
+    "timestamp": "2017-02-03T11:25:30.00Z",
     "contents": {
       "unknownProperty": "helloworld",
       "id": 417536,

@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
@@ -25,6 +26,7 @@ public class ImportRequest implements JsonSerializable {
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String IMPORT_EVENT_TYPE = "importEventType";
+    public static final String TIMESTAMP = "timestamp";
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
@@ -32,21 +34,30 @@ public class ImportRequest implements JsonSerializable {
     // and it will be expected by the specialized handler that will process the entry. E.g. DataMigrationHandler.
     @JsonProperty(IMPORT_EVENT_TYPE)
     private final String importEventType;
+    @JsonProperty(TIMESTAMP)
+    private final Instant timestamp;
 
     @JsonCreator
     public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location,
-                         @JsonProperty(IMPORT_EVENT_TYPE) String importEventType) {
+                         @JsonProperty(IMPORT_EVENT_TYPE) String importEventType,
+                         @JsonProperty(TIMESTAMP) Instant timestamp) {
         this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
         this.importEventType = importEventType;
-    }
-
-    public ImportRequest(URI s3location, String importEventType) {
-        this.s3Location = s3location;
-        this.importEventType = importEventType;
+        this.timestamp = timestamp;
     }
 
     public ImportRequest(URI s3Location) {
-        this(s3Location, null);
+        this(s3Location, null, null);
+    }
+
+    public ImportRequest(URI s3location, String importEventType) {
+        this(s3location, importEventType, null);
+    }
+
+    public ImportRequest(URI s3location, String importEventType, Instant timestamp) {
+        this.s3Location = s3location;
+        this.importEventType = importEventType;
+        this.timestamp = timestamp;
     }
 
     public static ImportRequest fromJson(String jsonString) {
@@ -61,6 +72,10 @@ public class ImportRequest implements JsonSerializable {
     @JacocoGenerated
     public String getS3Location() {
         return Optional.ofNullable(s3Location).map(URI::toString).orElse(null);
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
     }
 
     public String extractBucketFromS3Location() {

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
@@ -199,7 +200,7 @@ public final class CristinDataGenerator {
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), cristinData);
+        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), Instant.now(), cristinData);
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;
