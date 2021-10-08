@@ -1,7 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.cristin.CristinImportConfig.OBJECT_MAPPER_FAIL_ON_UNKNOWN;
+import static no.unit.nva.cristin.CristinImportConfig.cristinEntryMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -95,6 +95,6 @@ public class CristinObject implements JsonSerializable {
     }
 
     public static CristinObject fromJson(JsonNode json) {
-        return attempt(() -> OBJECT_MAPPER_FAIL_ON_UNKNOWN.convertValue(json, CristinObject.class)).orElseThrow();
+        return attempt(() -> cristinEntryMapper.convertValue(json, CristinObject.class)).orElseThrow();
     }
 }

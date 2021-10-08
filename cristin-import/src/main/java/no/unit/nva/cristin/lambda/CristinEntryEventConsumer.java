@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.lambda;
 
-import static no.unit.nva.cristin.CristinImportConfig.objectMapper;
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -75,24 +75,24 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
                                        Context context) {
         validateEvent(event);
         return attempt(() -> parseCristinObject(event))
-                   .map(CristinObject::toPublication)
-                   .flatMap(this::persistInDatabase)
-                   .orElseThrow(fail -> handleSavingError(fail, event));
+            .map(CristinObject::toPublication)
+            .flatMap(this::persistInDatabase)
+            .orElseThrow(fail -> handleSavingError(fail, event));
     }
 
     @JacocoGenerated
     private static S3Client defaultS3Client() {
         return S3Client.builder()
-                   .httpClient(UrlConnectionHttpClient.create())
-                   .build();
+            .httpClient(UrlConnectionHttpClient.create())
+            .build();
     }
 
     @JacocoGenerated
     private static AmazonDynamoDB defaultDynamoDbClient() {
         return AmazonDynamoDBClientBuilder
-                   .standard()
-                   .withRegion(ApplicationConstants.AWS_REGION.id())
-                   .build();
+            .standard()
+            .withRegion(ApplicationConstants.AWS_REGION.id())
+            .build();
     }
 
     private CristinObject parseCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -102,17 +102,15 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private Identifiable parseIdentifiableObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-
         return attempt(() -> event.getDetail().getContents())
-                   .map(jsonNode ->
-                            objectMapper.convertValue(jsonNode, Identifiable.class))
-                   .orElseThrow();
+            .map(jsonNode -> eventHandlerObjectMapper.convertValue(jsonNode, Identifiable.class))
+            .orElseThrow();
     }
 
     private CristinObject jsonNodeToCristinObject(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> event.getDetail().getContents())
-                   .map(CristinObject::fromJson)
-                   .orElseThrow();
+            .map(CristinObject::fromJson)
+            .orElseThrow();
     }
 
     private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
@@ -190,24 +188,24 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         Instant timestamp = event.getDetail().getTimestamp();
         UriWrapper bucket = fileUri.getHost();
         return bucket
-                   .addChild(ERRORS_FOLDER)
-                   .addChild(timestampToString(timestamp))
-                   .addChild(exception.getClass().getSimpleName())
-                   .addChild(fileUri.getPath())
-                   .addChild(createErrorReportFilename(event));
+            .addChild(ERRORS_FOLDER)
+            .addChild(timestampToString(timestamp))
+            .addChild(exception.getClass().getSimpleName())
+            .addChild(fileUri.getPath())
+            .addChild(createErrorReportFilename(event));
     }
 
     private String createErrorReportFilename(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return extractCristinObjectId(event)
-                   .map(idString -> idString + JSON)
-                   .orElseGet(this::unknownCristinIdReportFilename);
+            .map(idString -> idString + JSON)
+            .orElseGet(this::unknownCristinIdReportFilename);
     }
 
     private Optional<String> extractCristinObjectId(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
         return attempt(() -> parseIdentifiableObject(event))
-                   .map(Identifiable::getId)
-                   .toOptional()
-                   .map(Objects::toString);
+            .map(Identifiable::getId)
+            .toOptional()
+            .map(Objects::toString);
     }
 
     private String unknownCristinIdReportFilename() {

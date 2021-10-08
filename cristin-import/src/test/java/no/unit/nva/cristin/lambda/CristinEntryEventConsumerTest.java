@@ -2,7 +2,7 @@ package no.unit.nva.cristin.lambda;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.cristin.CristinDataGenerator.randomString;
-import static no.unit.nva.cristin.CristinImportConfig.objectMapper;
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERRORS_FOLDER;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.ERROR_SAVING_CRISTIN_RESULT;
 import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.JSON;
@@ -56,7 +56,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -126,7 +125,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream input = stringToStream(awsEvent.toJsonString());
         handler.handleRequest(input, outputStream, CONTEXT);
         String json = outputStream.toString();
-        Publication actualPublication = objectMapper.readValue(json, Publication.class);
+        Publication actualPublication = eventHandlerObjectMapper.readValue(json, Publication.class);
 
         Publication expectedPublication = generatePublicationFromResource(awsEvent.toJsonString()).toPublication();
         injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
@@ -231,8 +230,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
             extractActualReportFromS3Client(event, thrownException);
 
-        JsonNode expectedReportJson = objectMapper.convertValue(expectedReport, JsonNode.class);
-        JsonNode actualReportJson = objectMapper.convertValue(actualReport, JsonNode.class);
+        JsonNode expectedReportJson = eventHandlerObjectMapper.convertValue(expectedReport, JsonNode.class);
+        JsonNode actualReportJson = eventHandlerObjectMapper.convertValue(actualReport, JsonNode.class);
         assertThat(actualReportJson, is(equalTo(expectedReportJson)));
     }
 
@@ -287,7 +286,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         String errorReport = s3Driver.getFile(errorReportFile);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
-            objectMapper.readValue(errorReport, IMPORT_RESULT_JAVA_TYPE);
+            eventHandlerObjectMapper.readValue(errorReport, IMPORT_RESULT_JAVA_TYPE);
 
         assertThat(errorReportFile.toString(), containsString(UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX));
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(cristinObjectWithoutId)));
@@ -369,7 +368,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private JsonNode createEvent(JsonNode actualObj) {
         try {
             String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
-            ObjectNode eventTemplateJson = (ObjectNode) objectMapper.readTree(eventTemplateString);
+            ObjectNode eventTemplateJson = (ObjectNode) eventHandlerObjectMapper.readTree(eventTemplateString);
             ((ObjectNode) eventTemplateJson.at("/detail")).set("contents", actualObj);
             return eventTemplateJson;
         } catch (Exception e) {
@@ -386,21 +385,21 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private static JavaType constructImportResultJavaType() {
 
-        JavaType fileContentsType = objectMapper.getTypeFactory()
+        JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
                                         .constructParametricType(FileContentsEvent.class, JsonNode.class);
-        JavaType eventType = objectMapper.getTypeFactory()
+        JavaType eventType = eventHandlerObjectMapper.getTypeFactory()
                                  .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
-        return objectMapper.getTypeFactory()
+        return eventHandlerObjectMapper.getTypeFactory()
                    .constructParametricType(ImportResult.class, eventType);
     }
 
     private static AwsEventBridgeEvent<FileContentsEvent<JsonNode>> parseEvent(String input) {
-        JavaType detailType = objectMapper.getTypeFactory().constructParametricType(FileContentsEvent.class,
-                                                                                           JsonNode.class);
+        JavaType detailType = eventHandlerObjectMapper.getTypeFactory().constructParametricType(FileContentsEvent.class,
+                                                                                                JsonNode.class);
 
-        JavaType eventType = objectMapper.getTypeFactory()
+        JavaType eventType = eventHandlerObjectMapper.getTypeFactory()
                                  .constructParametricType(AwsEventBridgeEvent.class, detailType);
-        return attempt(() -> objectMapper
+        return attempt(() -> eventHandlerObjectMapper
                                  .<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>>
                                       readValue(input, eventType)).orElseThrow();
     }
@@ -419,11 +418,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private AwsEventBridgeEvent<FileContentsEvent<Identifiable>> parseEventAsIdentifieableObject(String input)
         throws JsonProcessingException {
-        JavaType fileContentsType = objectMapper.getTypeFactory()
+        JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
                                         .constructParametricType(FileContentsEvent.class, Identifiable.class);
-        JavaType eventType = objectMapper.getTypeFactory().constructParametricType(AwsEventBridgeEvent.class,
-                                                                                          fileContentsType);
-        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = objectMapper.readValue(input, eventType);
+        JavaType eventType = eventHandlerObjectMapper.getTypeFactory().constructParametricType(AwsEventBridgeEvent.class,
+                                                                                               fileContentsType);
+        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = eventHandlerObjectMapper.readValue(input, eventType);
         return event;
     }
 
@@ -469,7 +468,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         UriWrapper errorFileUri = constructErrorFileUri(event, exception);
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         String content = s3Driver.getFile(errorFileUri.toS3bucketPath());
-        return objectMapper.readValue(content, IMPORT_RESULT_JAVA_TYPE);
+        return eventHandlerObjectMapper.readValue(content, IMPORT_RESULT_JAVA_TYPE);
     }
 
     private ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> constructExpectedErrorReport(
@@ -492,7 +491,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = parseEvent(input);
 
         event.setDetailType(invalidDetailType);
-        input = objectMapper.writeValueAsString(event);
+        input = eventHandlerObjectMapper.writeValueAsString(event);
         return input;
     }
 
@@ -507,7 +506,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private CristinObject generatePublicationFromResource(String input) throws JsonProcessingException {
-        JsonNode jsonNode = objectMapper.readTree(input);
+        JsonNode jsonNode = eventHandlerObjectMapper.readTree(input);
         String detail = jsonNode.get(DETAIL_FIELD).toString();
         FileContentsEvent<CristinObject> eventDetails = FileContentsEvent.fromJson(detail, CristinObject.class);
         CristinObject cristinObject = eventDetails.getContents();

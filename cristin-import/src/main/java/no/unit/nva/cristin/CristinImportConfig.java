@@ -7,14 +7,17 @@ import nva.commons.core.JsonUtils;
 
 public final class CristinImportConfig {
 
-    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
-    public static final ObjectMapper OBJECT_MAPPER_FAIL_ON_UNKNOWN =
-        objectMapper.copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+    public static final ObjectMapper eventHandlerObjectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper cristinEntryMapper = objectMapperFailingOnUnknown();
     public static final ObjectMapper singleLineObjectMapper = JsonUtils.singleLineObjectMapper;
 
-    private CristinImportConfig(){
+    private CristinImportConfig() {
 
     }
 
+    private static ObjectMapper objectMapperFailingOnUnknown() {
+        return JsonUtils.dtoObjectMapper.
+            copy().configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+    }
 }

@@ -1,6 +1,6 @@
 package no.unit.nva.cristin;
 
-import static no.unit.nva.cristin.CristinImportConfig.objectMapper;
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.CristinImportConfig.singleLineObjectMapper;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
@@ -16,8 +16,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
@@ -49,7 +47,6 @@ import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
-import nva.commons.core.JsonUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
@@ -559,13 +556,13 @@ public final class CristinDataGenerator {
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
                     LECTURE_OR_POSTER_METADATA)));
 
-        return (ObjectNode) objectMapper.readTree(cristinObject.toJsonString());
+        return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
 
     private static <T> JsonNode convertToJsonNode(T inputData) {
         return inputData instanceof JsonNode
                    ? (JsonNode) inputData
-                   : objectMapper.convertValue(inputData, JsonNode.class);
+                   : eventHandlerObjectMapper.convertValue(inputData, JsonNode.class);
     }
 
     private static CristinSecondaryCategory randomSecondaryCategory() {
