@@ -114,7 +114,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
                    .addChild(ERRORS_FOLDER)
-                   .addChild(timestampToString(clock.instant()))
+                   .addChild(timestampToString(timestamp))
                    .addChild(inputFolderUri.getPath())
                    .addChild(ERROR_REPORT_FILENAME);
     }
