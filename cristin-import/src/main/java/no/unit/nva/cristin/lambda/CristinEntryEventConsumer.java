@@ -2,6 +2,7 @@ package no.unit.nva.cristin.lambda;
 
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_PUBLICATIONS_OWNER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.MAX_SLEEP_TIME;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -9,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -185,9 +187,11 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
                                              Exception exception) {
         UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
+        Instant timestamp = event.getDetail().getTimestamp();
         UriWrapper bucket = fileUri.getHost();
         return bucket
                    .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(timestamp))
                    .addChild(exception.getClass().getSimpleName())
                    .addChild(fileUri.getPath())
                    .addChild(createErrorReportFilename(event));

@@ -2,8 +2,10 @@ package no.unit.nva.publication.s3imports;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -15,6 +17,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -66,19 +69,23 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
+    private final Clock clock;
+    private Instant timestamp;
 
     @JacocoGenerated
     public FilenameEventEmitter() {
-        this(defaultS3Client(), defaultEventBridgeClient());
+        this(defaultS3Client(), defaultEventBridgeClient(), defaultClock());
     }
 
-    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient, Clock clock) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
+        this.clock = clock;
     }
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        timestamp = clock.instant();
         ImportRequest importRequest = parseInput(input);
         List<URI> files = listFiles(importRequest);
         validateImportRequest(importRequest, files);
@@ -107,6 +114,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
                    .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(timestamp))
                    .addChild(inputFolderUri.getPath())
                    .addChild(ERROR_REPORT_FILENAME);
     }
@@ -167,7 +175,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {
-        return new ImportRequest(uri, IMPORT_EVENT_TYPE);
+        return new ImportRequest(uri, IMPORT_EVENT_TYPE, timestamp);
     }
 
     private void validateImportRequest(ImportRequest importRequest, List<URI> files) {
