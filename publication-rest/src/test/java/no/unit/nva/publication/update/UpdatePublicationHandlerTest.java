@@ -44,7 +44,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.apache.http.entity.ContentType;
@@ -222,24 +221,24 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(objectMapper)
-                   .withFeideId(SOME_CURATOR)
-                   .withPathParameters(pathParameters)
-                   .withCustomerId(randomUri().toString())
-                   .withBody(publicationUpdate)
-                   .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
-                   .build();
+            .withFeideId(SOME_CURATOR)
+            .withPathParameters(pathParameters)
+            .withCustomerId(randomUri().toString())
+            .withBody(publicationUpdate)
+            .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+            .build();
     }
 
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(objectMapper)
-                   .withFeideId(SOME_CURATOR)
-                   .withPathParameters(pathParameters)
-                   .withCustomerId(publicationUpdate.getPublisher().getId().toString())
-                   .withBody(publicationUpdate)
-                   .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
-                   .build();
+            .withFeideId(SOME_CURATOR)
+            .withPathParameters(pathParameters)
+            .withCustomerId(publicationUpdate.getPublisher().getId().toString())
+            .withBody(publicationUpdate)
+            .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+            .build();
     }
 
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
@@ -248,11 +247,11 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
 
         return new HandlerRequestBuilder<Publication>(objectMapper)
-                   .withFeideId(publicationUpdate.getOwner())
-                   .withCustomerId(publicationUpdate.getPublisher().getId().toString())
-                   .withBody(publicationUpdate)
-                   .withPathParameters(pathParameters)
-                   .build();
+            .withFeideId(publicationUpdate.getOwner())
+            .withCustomerId(publicationUpdate.getPublisher().getId().toString())
+            .withBody(publicationUpdate)
+            .withPathParameters(pathParameters)
+            .build();
     }
 
     private Publication updateTitle(Publication savedPublication) {
@@ -265,7 +264,6 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         return LogUtils.getTestingAppenderForRootLogger();
     }
 
-
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
         return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
@@ -277,8 +275,8 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
         return new HandlerRequestBuilder<Publication>(objectMapper)
-                   .withBody(createPublication())
-                   .withHeaders(generateHeaders());
+            .withBody(createPublication())
+            .withHeaders(generateHeaders());
     }
 
     private Map<String, String> generateHeaders() {
