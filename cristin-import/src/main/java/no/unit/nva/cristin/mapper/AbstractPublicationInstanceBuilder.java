@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryRuntimeException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.core.JacocoGenerated;
@@ -21,8 +22,8 @@ public abstract class AbstractPublicationInstanceBuilder {
     public abstract PublicationInstance<? extends Pages> build();
 
     @JacocoGenerated
-    public UnsupportedOperationException unknownSecondaryCategory() {
-        return new UnsupportedOperationException(ERROR_PARSING_SECONDARY_CATEGORY);
+    public UnsupportedSecondaryCategoryRuntimeException unknownSecondaryCategory() {
+        return new UnsupportedSecondaryCategoryRuntimeException(ERROR_PARSING_SECONDARY_CATEGORY);
     }
 
     @JacocoGenerated

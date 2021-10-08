@@ -37,6 +37,9 @@ import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidUnconfirmedSeriesRuntimeException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -56,6 +59,7 @@ import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.s3imports.UriWrapper;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
 import nva.commons.doi.DoiConverter;
@@ -208,12 +212,29 @@ public class CristinMapper extends CristinMappingModule {
             = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
             = publicationInstanceBuilderImpl.build();
-        PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow();
+        PublicationContext publicationContext = attempt(this::buildPublicationContext)
+                .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
             .withDoi(extractDoi())
             .build();
+    }
+
+    private RuntimeException handlePublicationContextFailure(Exception exception) {
+        if(exception instanceof InvalidIssnException ) {
+            return new InvalidIssnRuntimeException(exception);
+        }
+        if(exception instanceof InvalidIsbnException ) {
+            return new InvalidIsbnRuntimeException(exception);
+        }
+        if(exception instanceof InvalidUnconfirmedSeriesException ) {
+            return new InvalidUnconfirmedSeriesRuntimeException(exception);
+        }
+        if(exception instanceof RuntimeException ) {
+            return (RuntimeException) exception;
+        }
+        return new RuntimeException(exception);
     }
 
     private PublicationContext buildPublicationContext()

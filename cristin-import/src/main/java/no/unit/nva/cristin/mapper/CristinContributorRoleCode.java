@@ -2,6 +2,8 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedRoleRuntimeException;
+
 import java.util.Arrays;
 
 public enum CristinContributorRoleCode {
@@ -23,7 +25,7 @@ public enum CristinContributorRoleCode {
         return Arrays.stream(CristinContributorRoleCode.values())
             .filter(role -> role.getStringValue().equalsIgnoreCase(roleCode))
             .findAny()
-            .orElseThrow(() -> new RuntimeException(UNKNOWN_ROLE_ERROR + roleCode));
+            .orElseThrow(() -> new UnsupportedRoleRuntimeException(UNKNOWN_ROLE_ERROR + roleCode));
     }
 
     @JsonValue

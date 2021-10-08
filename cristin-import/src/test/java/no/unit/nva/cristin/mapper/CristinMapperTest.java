@@ -70,7 +70,7 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         Set<Integer> expectedIds = cristinObjects().map(CristinObject::getId).collect(Collectors.toSet());
 
         Set<Integer> actualIds = cristinObjects()
-            .map(CristinObject::toPublication)
+            .map(cristinObject -> cristinObject.toPublication())
             .map(Publication::getAdditionalIdentifiers)
             .flatMap(Collection::stream)
             .map(AdditionalIdentifier::getValue)
@@ -92,10 +92,11 @@ public class CristinMapperTest extends AbstractCristinImportTest {
             .collect(Collectors.toList());
 
         List<String> actualTitles = cristinObjects.stream()
-            .map(CristinObject::toPublication)
-            .map(Publication::getEntityDescription)
-            .map(EntityDescription::getMainTitle)
-            .collect(Collectors.toList());
+                .map(cristinObject -> cristinObject.toPublication())
+                .map(Publication::getEntityDescription)
+                .map(EntityDescription::getMainTitle)
+                .collect(Collectors.toList());
+
         assertThat(expectedTitles, is(not(empty())));
         assertThat(actualTitles, containsInAnyOrder(expectedTitles.toArray(String[]::new)));
         assertThat(actualTitles.size(), is(equalTo(cristinObjects.size())));
