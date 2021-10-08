@@ -45,7 +45,6 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidUnconfirmedSeriesRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryRuntimeException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -126,9 +125,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerReturnsAnNvaPublicationEntryWhenInputIsEventWithCristinResult()
-            throws JsonProcessingException, InvalidIssnException, InvalidIsbnException,
-            InvalidUnconfirmedSeriesException {
+    public void handlerReturnsAnNvaPublicationEntryWhenInputIsEventWithCristinResult() throws JsonProcessingException {
         CristinObject cristinObject = CristinDataGenerator.randomObject();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(awsEvent.toJsonString());
@@ -144,8 +141,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult()
-            throws InvalidIssnException, InvalidIsbnException, InvalidUnconfirmedSeriesException {
+    public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() {
         CristinObject cristinObject = CristinDataGenerator.randomObject();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(awsEvent.toJsonString());
@@ -207,7 +203,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerThrowsExceptionWhenMainCategoryTypeIsNotKnown() throws JsonProcessingException {
-
         JsonNode inputData = CristinDataGenerator.objectWithCustomMainCategory(randomString());
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(inputData);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
