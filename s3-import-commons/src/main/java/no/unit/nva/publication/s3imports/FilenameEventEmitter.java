@@ -2,8 +2,10 @@ package no.unit.nva.publication.s3imports;
 
 import static java.util.Objects.isNull;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -16,6 +18,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -61,24 +64,27 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
     public static final String IMPORT_EVENT_TYPE_ENV_VARIABLE = "IMPORT_EVENT_TYPE";
     public static final String IMPORT_EVENT_TYPE = fetchImportEventTypeFromEnvironment();
-    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     public static final int NUMBER_OF_EMITTED_FILENAMES_PER_BATCH = 10;
-
+    private static final Logger logger = LoggerFactory.getLogger(FilenameEventEmitter.class);
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
+    private final Clock clock;
+    private Instant timestamp;
 
     @JacocoGenerated
     public FilenameEventEmitter() {
-        this(defaultS3Client(), defaultEventBridgeClient());
+        this(defaultS3Client(), defaultEventBridgeClient(), defaultClock());
     }
 
-    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient) {
+    public FilenameEventEmitter(S3Client s3Client, EventBridgeClient eventBridgeClient, Clock clock) {
         this.s3Client = s3Client;
         this.eventBridgeClient = eventBridgeClient;
+        this.clock = clock;
     }
 
     @Override
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+        timestamp = clock.instant();
         ImportRequest importRequest = parseInput(input);
         List<URI> files = listFiles(importRequest);
         validateImportRequest(importRequest, files);
@@ -106,18 +112,19 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         UriWrapper inputFolderUri = new UriWrapper(request.getS3Location());
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
-                   .addChild(ERRORS_FOLDER)
-                   .addChild(inputFolderUri.getPath())
-                   .addChild(ERROR_REPORT_FILENAME);
+            .addChild(ERRORS_FOLDER)
+            .addChild(timestampToString(timestamp))
+            .addChild(inputFolderUri.getPath())
+            .addChild(ERROR_REPORT_FILENAME);
     }
 
     private URI createUri(URI s3Location, UnixPath filename) {
         return Try.of(s3Location)
-                   .map(UriWrapper::new)
-                   .map(UriWrapper::getHost)
-                   .map(uri -> uri.addChild(filename))
-                   .map(UriWrapper::getUri)
-                   .orElseThrow();
+            .map(UriWrapper::new)
+            .map(UriWrapper::getHost)
+            .map(uri -> uri.addChild(filename))
+            .map(UriWrapper::getUri)
+            .orElseThrow();
     }
 
     private List<URI> listFiles(ImportRequest importRequest) {
@@ -126,29 +133,29 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
         logger.info(attempt(() -> s3ImportsMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
-                   .map(filename -> createUri(s3Location, filename))
-                   .collect(Collectors.toList());
+            .map(filename -> createUri(s3Location, filename))
+            .collect(Collectors.toList());
     }
 
     private void logWarningForNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         if (!failedRequests.isEmpty()) {
             String failedRequestsString = failedRequests
-                                              .stream()
-                                              .map(PutEventsResult::toString)
-                                              .collect(Collectors.joining(LINE_SEPARATOR));
+                .stream()
+                .map(PutEventsResult::toString)
+                .collect(Collectors.joining(LINE_SEPARATOR));
             logger.warn(NON_EMITTED_FILENAMES_WARNING_PREFIX + failedRequestsString);
         }
     }
 
     private List<String> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         return failedRequests.stream()
-                   .map(PutEventsResult::getRequest)
-                   .map(PutEventsRequest::entries)
-                   .flatMap(Collection::stream)
-                   .map(PutEventsRequestEntry::detail)
-                   .map(ImportRequest::fromJson)
-                   .map(ImportRequest::getS3Location)
-                   .collect(Collectors.toList());
+            .map(PutEventsResult::getRequest)
+            .map(PutEventsRequest::entries)
+            .flatMap(Collection::stream)
+            .map(PutEventsRequestEntry::detail)
+            .map(ImportRequest::fromJson)
+            .map(ImportRequest::getS3Location)
+            .collect(Collectors.toList());
     }
 
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
@@ -160,14 +167,14 @@ public class FilenameEventEmitter implements RequestStreamHandler {
                                eventBridgeClient);
 
         List<ImportRequest> filenameEvents = files.stream()
-                                                 .map(this::newImportRequestForSingleFile)
-                                                 .collect(Collectors.toList());
+            .map(this::newImportRequestForSingleFile)
+            .collect(Collectors.toList());
         eventEmitter.addEvents(filenameEvents);
         return eventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {
-        return new ImportRequest(uri, IMPORT_EVENT_TYPE);
+        return new ImportRequest(uri, IMPORT_EVENT_TYPE, timestamp);
     }
 
     private void validateImportRequest(ImportRequest importRequest, List<URI> files) {
@@ -183,7 +190,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private ImportRequest parseInput(InputStream input) {
         String inputString = IoUtils.streamToString(input);
         return attempt(() -> ImportRequest.fromJson(inputString))
-                   .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
+            .orElseThrow(fail -> new IllegalArgumentException(EXPECTED_BODY_MESSAGE + inputString));
     }
 
     private <T> void writeOutput(OutputStream output, List<T> results) throws IOException {

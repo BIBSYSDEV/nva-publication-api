@@ -5,6 +5,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -141,6 +143,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
                                : failedEntries.getException().getClass().getSimpleName();
         return bucket
                    .addChild(ERRORS_FOLDER)
+                   .addChild(timestampToString(input.getTimestamp()))
                    .addChild(errorType)
                    .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
                    .addChild(makeFileExtensionError(inputUri.getFilename()));
@@ -152,7 +155,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
         URI fileUri = URI.create(input.getS3Location());
-        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, json));
+        Instant timestamp = input.getTimestamp();
+        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, timestamp, json));
     }
 
     private List<PutEventsResult> emitEvents(Context context,

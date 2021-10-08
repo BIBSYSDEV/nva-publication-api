@@ -2,6 +2,8 @@ package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
+import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.EXPECTED_BODY_MESSAGE;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
@@ -26,6 +28,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,14 +71,16 @@ public class FilenameEventEmitterTest {
 
     private FakeEventBridgeClient eventBridgeClient;
     private FakeS3Client s3Client;
+    private Clock clock;
 
     @BeforeEach
     public void init() {
         outputStream = new ByteArrayOutputStream();
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
+        clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
 
         s3Client = new FakeS3Client(FILE_CONTENTS);
-        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
     }
 
     @Test
@@ -151,7 +158,8 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerSavesInS3FolderErrorReportContainingAllFilenamesThatFailedToBeEmitted() throws IOException {
+    public void handlerSavesInS3FolderErrorTimestampPathFilenameAReportContainingAllFilenamesThatFailedToBeEmitted()
+            throws IOException {
         handler = handlerThatFailsToEmitMessages();
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
@@ -159,6 +167,7 @@ public class FilenameEventEmitterTest {
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
         UnixPath errorReportFile = ERRORS_FOLDER
+                                       .addChild(timestampToString(clock.instant()))
                                        .addChild(importRequest.extractPathFromS3Location())
                                        .addChild(ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile);
@@ -182,7 +191,7 @@ public class FilenameEventEmitterTest {
     @Test
     public void handlerThrowsExceptionWhenEventBusCannotBeFound() {
         eventBridgeClient = new FakeEventBridgeClient(SOME_OTHER_BUS);
-        handler = new FilenameEventEmitter(s3Client, eventBridgeClient);
+        handler = new FilenameEventEmitter(s3Client, eventBridgeClient, defaultClock());
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
@@ -221,6 +230,18 @@ public class FilenameEventEmitterTest {
         assertThat(exception.getMessage(), containsString(EXPECTED_BODY_MESSAGE));
     }
 
+    @Test
+    public void handlerEmitsEventIncludingATimestampBasedOnWhenItWasTriggered() throws IOException {
+        Instant expectedTimestamp = clock.instant();
+        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION),null);
+
+        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
+        for (ImportRequest emittedImportRequest : emittedImportRequests) {
+            assertThat(emittedImportRequest.getTimestamp(), is(equalTo(expectedTimestamp)));
+        }
+    }
+
     private static Map<String, InputStream> fileContents() {
         return INPUT_FILE_LIST.stream()
                    .map(file -> new SimpleEntry<>(file.toString(), fileContent()))
@@ -250,12 +271,12 @@ public class FilenameEventEmitterTest {
                 return NON_ZERO_NUMBER_OF_FAILURES;
             }
         };
-        return new FilenameEventEmitter(s3Client, eventBridgeClient);
+        return new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
     }
 
     private FilenameEventEmitter handlerThatReceivesEmptyS3Location() {
         S3Client s3Client = new FakeS3Client(Collections.emptyMap());
-        return new FilenameEventEmitter(s3Client, eventBridgeClient);
+        return new FilenameEventEmitter(s3Client, eventBridgeClient, defaultClock());
     }
 
     private <T> InputStream toJsonStream(T importRequest) {

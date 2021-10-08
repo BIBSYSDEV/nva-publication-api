@@ -1,14 +1,17 @@
-def log4jVersion = "2.13.2"
 
 dependencies {
 
-    implementation project(':publication-events')
-    implementation project(':publication-doi-commons')
+    implementation project(':publication-commons')
+    implementation project(":publication-events")
+    implementation project(":storage-model")
 
-    implementation libs.nva.datamodel
+    implementation(libs.nva.datamodel)
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.nva.apigateway
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
     implementation libs.nva.identifiers
+
     implementation libs.aws.lambda.java.core
 
     runtimeOnly libs.jackson.databind
@@ -16,10 +19,11 @@ dependencies {
     runtimeOnly libs.jackson.core
     testImplementation libs.jackson.core
 
-
-
     compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
 
+    testImplementation project(":publication-testing")
 }
+
+

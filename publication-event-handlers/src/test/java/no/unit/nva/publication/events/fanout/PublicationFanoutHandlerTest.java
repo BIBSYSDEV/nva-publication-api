@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,12 +19,8 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
-import no.unit.nva.publication.events.PublicationEventsConfig;
-import no.unit.nva.publication.events.fanout.PublicationFanoutHandler;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -61,10 +56,10 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
-        MatcherAssert.assertThat(response.getNewPublication().getIdentifier(), is(equalTo(IDENTIFIER_IN_RESOURCE)));
+        assertThat(response.getNewPublication().getIdentifier(), is(equalTo(IDENTIFIER_IN_RESOURCE)));
     }
 
     @Test
@@ -78,8 +73,8 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(notNullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(nullValue()));
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(nullValue()));
     }
 
     @Test
@@ -93,10 +88,10 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(notNullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(notNullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
-        MatcherAssert.assertThat(response.getNewPublication().getEntityDescription(), is(notNullValue()));
+        assertThat(response.getNewPublication().getEntityDescription(), is(notNullValue()));
     }
 
     @Test
@@ -122,13 +117,13 @@ public class PublicationFanoutHandlerTest {
 
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getNewPublication(), is(notNullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(notNullValue()));
 
         Publication publication = response.getNewPublication();
 
-        MatcherAssert.assertThat(publication.getEntityDescription(), is(notNullValue()));
-        MatcherAssert.assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
+        assertThat(publication.getEntityDescription(), is(notNullValue()));
+        assertThat(publication.getEntityDescription().getReference(), is(notNullValue()));
 
         assertThat(fieldWithValueEmptyObject(publication), is(nullValue()));
         assertThat(fieldWithValueEmptyString(publication), is(nullValue()));
@@ -145,8 +140,8 @@ public class PublicationFanoutHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
         DynamoEntryUpdateEvent response = parseResponse();
 
-        MatcherAssert.assertThat(response.getNewPublication(), is(nullValue()));
-        MatcherAssert.assertThat(response.getOldPublication(), is(nullValue()));
+        assertThat(response.getNewPublication(), is(nullValue()));
+        assertThat(response.getOldPublication(), is(nullValue()));
     }
 
     private Pages fieldWithValueEmptyMap(Publication publication) {

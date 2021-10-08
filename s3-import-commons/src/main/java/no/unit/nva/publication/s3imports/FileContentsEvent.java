@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JavaType;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
 
@@ -28,18 +29,26 @@ public class FileContentsEvent<T> {
     protected static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
     @JsonIgnore
     public static final String FILE_URI = "fileUri";
+    @JsonIgnore
+    public static final String TIMESTAMP = "timestamp";
 
     @JsonProperty(FILE_URI)
     private final URI fileUri;
+    @JsonProperty(TIMESTAMP)
+    private final Instant timestamp;
     @JsonProperty(CONTENTS_FIELD)
     private final T contents;
+
 
     @JacocoGenerated
     @JsonCreator
     public FileContentsEvent(@JsonProperty(FILE_URI) URI fileUri,
+                             @JsonProperty(TIMESTAMP) Instant timestamp,
                              @JsonProperty(CONTENTS_FIELD) T contents) {
         this.fileUri = fileUri;
+        this.timestamp = timestamp;
         this.contents = contents;
+
     }
 
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
@@ -50,6 +59,10 @@ public class FileContentsEvent<T> {
 
     public URI getFileUri() {
         return fileUri;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
     }
 
     public T getContents() {
