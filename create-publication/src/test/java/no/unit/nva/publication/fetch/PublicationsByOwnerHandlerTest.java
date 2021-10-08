@@ -30,7 +30,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.testutils.HandlerUtils;
+import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
@@ -85,11 +85,9 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream input = new HandlerUtils(objectMapper)
-                                .requestObjectToApiGatewayRequestInputSteam(null, null);
+        InputStream input = new HandlerRequestBuilder<Void>(objectMapper).build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
-
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(output);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
