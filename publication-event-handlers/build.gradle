@@ -1,0 +1,44 @@
+dependencies {
+    implementation project(":publication-events")
+    implementation project(":publication-doi-commons")
+    implementation project(":storage-model")
+
+    implementation(libs.nva.datamodel) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+    implementation libs.nva.eventhandlers
+    implementation libs.nva.core
+
+
+    implementation libs.aws.core
+    implementation libs.aws.lambda.java.core
+    implementation libs.aws.sdk2.eventbridge
+    implementation libs.aws.lambda.events
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.java.sdk.core
+
+    implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.aws.sdk2.sqs
+    implementation libs.aws.sdk2.httpClientApi
+    implementation libs.aws.sdk2.auth
+    implementation libs.aws.sdk2.regions
+    implementation libs.aws.sdk2.core
+
+    implementation libs.jackson.annotations
+    implementation libs.jackson.databind
+    implementation libs.jackson.core
+
+
+    testImplementation(libs.javers) {
+        because "For comparing java objects and detailing the differences in readable way"
+    }
+    testImplementation libs.nva.identifiers
+
+    compileOnly(libs.nva.identifiers){
+        because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"
+    }
+
+}
+
+
+

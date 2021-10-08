@@ -17,9 +17,6 @@ dependencies {
     testImplementation libs.jackson.core
 
 
-    testImplementation(libs.javers) {
-        because "For comparing java objects and detailing the differences in readable way"
-    }
 
     compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
