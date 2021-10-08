@@ -4,7 +4,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -56,9 +56,9 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE =
-        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
+        restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
-        objectMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
+        restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
 
     public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
@@ -220,7 +220,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        return new HandlerRequestBuilder<Publication>(objectMapper)
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withFeideId(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withCustomerId(randomUri().toString())
@@ -232,7 +232,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
-        return new HandlerRequestBuilder<Publication>(objectMapper)
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withFeideId(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withCustomerId(publicationUpdate.getPublisher().getId().toString())
@@ -246,7 +246,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
 
-        return new HandlerRequestBuilder<Publication>(objectMapper)
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withFeideId(publicationUpdate.getOwner())
             .withCustomerId(publicationUpdate.getPublisher().getId().toString())
             .withBody(publicationUpdate)
@@ -274,7 +274,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private HandlerRequestBuilder<Publication> generateInputStreamMissingPathParameters() throws IOException {
-        return new HandlerRequestBuilder<Publication>(objectMapper)
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withBody(createPublication())
             .withHeaders(generateHeaders());
     }
@@ -290,8 +290,8 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private GatewayResponse<Problem> toGatewayResponseProblem() throws JsonProcessingException {
-        return objectMapper.readValue(output.toString(),
-                                      PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
+        return restApiMapper.readValue(output.toString(),
+                                       PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE);
     }
 
     private String getProblemDetail(GatewayResponse<Problem> gatewayResponse) throws JsonProcessingException {

@@ -5,7 +5,7 @@ import nva.commons.core.JsonUtils;
 
 public final class PublicationRestHandlersTestConfig {
 
-    public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    public static final ObjectMapper restApiMapper = JsonUtils.dtoObjectMapper;
 
     private PublicationRestHandlersTestConfig() {
 

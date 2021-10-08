@@ -2,7 +2,7 @@ package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
-import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -26,7 +26,6 @@ import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,7 +63,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, ApiGatewayException {
         Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withFeideId(publication.getOwner())
@@ -83,7 +82,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
         publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withFeideId(publication.getOwner())
@@ -104,7 +103,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     void handleRequestReturnsErrorWhenNonExistingPublication() throws IOException {
         UUID identifier = UUID.randomUUID();
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
             .withCustomerId(SOME_CUSTOMER.toString())
@@ -121,7 +120,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
         Publication createdPublication = publicationService.createPublication(publicationWithoutIdentifier());
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, createdPublication.getIdentifier().toString()))
             .withFeideId(SOME_USER)
@@ -142,7 +141,7 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
         markForDeletion(publication);
 
-        InputStream inputStream = new HandlerRequestBuilder<Publication>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withFeideId(publication.getOwner())

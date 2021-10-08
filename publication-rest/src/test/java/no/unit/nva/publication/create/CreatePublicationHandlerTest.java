@@ -1,6 +1,6 @@
 package no.unit.nva.publication.create;
 
-import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
@@ -115,7 +115,7 @@ public class CreatePublicationHandlerTest {
             HEADERS, getRequestHeaders(),
             BODY, request
         );
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(map));
+        return new ByteArrayInputStream(restApiMapper.writeValueAsBytes(map));
     }
 
     private InputStream emptyCreatePublicationRequest() throws JsonProcessingException {
@@ -123,7 +123,7 @@ public class CreatePublicationHandlerTest {
             REQUEST_CONTEXT, createRequestContext(),
             HEADERS, getRequestHeaders()
         );
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(map));
+        return new ByteArrayInputStream(restApiMapper.writeValueAsBytes(map));
     }
 
     private Map<String, Map<String, Map<String, String>>> createRequestContext() {

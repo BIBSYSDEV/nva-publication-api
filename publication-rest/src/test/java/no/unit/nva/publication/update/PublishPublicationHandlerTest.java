@@ -3,7 +3,7 @@ package no.unit.nva.publication.update;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
-import static no.unit.nva.publication.PublicationRestHandlersTestConfig.objectMapper;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
@@ -68,7 +68,7 @@ public class PublishPublicationHandlerTest {
         GatewayResponse<PublishPublicationStatusResponse> actual = GatewayResponse.fromOutputStream(output);
 
         GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
-            objectMapper.writeValueAsString(status),
+            restApiMapper.writeValueAsString(status),
             getResponseHeaders(handler.getLocation(identifier).toString()),
             SC_ACCEPTED
         );
@@ -86,7 +86,7 @@ public class PublishPublicationHandlerTest {
 
     private PublishPublicationHandler callPublishPublicationHandler(SortableIdentifier identifier) throws IOException {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
-        InputStream input = new HandlerRequestBuilder<InputStream>(objectMapper)
+        InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(getRequestHeaders())
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
