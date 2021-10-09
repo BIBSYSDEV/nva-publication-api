@@ -1022,7 +1022,7 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-events
+      CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.doirequests.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
