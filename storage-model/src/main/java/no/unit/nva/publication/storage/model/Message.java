@@ -1,7 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
 import static java.util.Objects.nonNull;
-import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -14,14 +13,15 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
+import nva.commons.core.JsonSerializable;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 public class Message implements WithIdentifier,
                                 WithStatus,
                                 RowLevelSecurity,
                                 ResourceUpdate,
-                                ConnectedToResource {
+                                ConnectedToResource,
+                                JsonSerializable {
 
     public static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.SUPPORT;
     private SortableIdentifier identifier;
@@ -50,8 +50,8 @@ public class Message implements WithIdentifier,
                                             SortableIdentifier messageIdentifier,
                                             Clock clock) {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-                   .withMessageType(MessageType.DOI_REQUEST)
-                   .build();
+            .withMessageType(MessageType.DOI_REQUEST)
+            .build();
     }
 
     public static Message supportMessage(UserInstance sender,
@@ -60,8 +60,8 @@ public class Message implements WithIdentifier,
                                          SortableIdentifier messageIdentifier,
                                          Clock clock) {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-                   .withMessageType(MessageType.SUPPORT)
-                   .build();
+            .withMessageType(MessageType.SUPPORT)
+            .build();
     }
 
     @Deprecated
@@ -195,12 +195,6 @@ public class Message implements WithIdentifier,
 
     @Override
     @JacocoGenerated
-    public String toString() {
-        return attempt(() -> JsonUtils.objectMapper.writeValueAsString(this)).orElseThrow();
-    }
-
-    @Override
-    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
                             isDoiRequestRelated(),
@@ -229,25 +223,31 @@ public class Message implements WithIdentifier,
                && getMessageType() == message.getMessageType();
     }
 
+    @Override
+    @JacocoGenerated
+    public String toString() {
+        return toJsonString();
+    }
+
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
                                                String messageText, SortableIdentifier messageIdentifier,
                                                Clock clock) {
         return Message.builder()
-                   .withStatus(MessageStatus.UNREAD)
-                   .withResourceIdentifier(publication.getIdentifier())
-                   .withCustomerId(sender.getOrganizationUri())
-                   .withText(messageText)
-                   .withSender(sender.getUserIdentifier())
-                   .withOwner(publication.getOwner())
-                   .withResourceTitle(extractTitle(publication))
-                   .withCreatedTime(clock.instant())
-                   .withIdentifier(messageIdentifier);
+            .withStatus(MessageStatus.UNREAD)
+            .withResourceIdentifier(publication.getIdentifier())
+            .withCustomerId(sender.getOrganizationUri())
+            .withText(messageText)
+            .withSender(sender.getUserIdentifier())
+            .withOwner(publication.getOwner())
+            .withResourceTitle(extractTitle(publication))
+            .withCreatedTime(clock.instant())
+            .withIdentifier(messageIdentifier);
     }
 
     private static String extractTitle(Publication publication) {
         return Optional.of(publication)
-                   .map(Publication::getEntityDescription)
-                   .map(EntityDescription::getMainTitle)
-                   .orElse(null);
+            .map(Publication::getEntityDescription)
+            .map(EntityDescription::getMainTitle)
+            .orElse(null);
     }
 }

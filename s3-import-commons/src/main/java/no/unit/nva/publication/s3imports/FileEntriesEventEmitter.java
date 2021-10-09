@@ -4,6 +4,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRIN
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
@@ -25,7 +26,6 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -233,7 +233,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
         return attempt(() -> content.replaceAll(CONSECUTIVE_JSON_OBJECTS, NODES_IN_ARRAY))
                    .map(jsonObjectStrings -> BEGINNING_OF_ARRAY + jsonObjectStrings + END_OF_ARRAY)
-                   .map(jsonArrayString -> (ArrayNode) JsonUtils.objectMapper.readTree(jsonArrayString))
+                   .map(jsonArrayString -> (ArrayNode) s3ImportsMapper.readTree(jsonArrayString))
                    .map(array -> toStream(array).collect(Collectors.toList()))
                    .orElseThrow();
     }
@@ -248,7 +248,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private ArrayNode parseAsArrayNode(String content) throws JsonProcessingException {
-        JsonNode jsonNode = JsonUtils.objectMapperNoEmpty.readTree(content);
+        JsonNode jsonNode = s3ImportsMapper.readTree(content);
         if (jsonNode.isArray()) {
             return (ArrayNode) jsonNode;
         } else {

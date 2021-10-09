@@ -1,6 +1,6 @@
 package no.unit.nva.cristin;
 
-import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.BufferedReader;
@@ -19,7 +19,7 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
 
     public static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;
     public static final CollectionType CRISTIN_OBJECTS_LIST_JAVATYPE =
-        objectMapperWithEmpty.getTypeFactory().constructCollectionType(List.class, CristinObject.class);
+        eventHandlerObjectMapper.getTypeFactory().constructCollectionType(List.class, CristinObject.class);
     public static final String TESTING_DATA_INITIALIZATION_ERROR =
         "Set the field testingData before calling this method";
     public static final String INVALID_DATA_ERROR_MESSAGE = "The 'testingData' field does not contain valid data";
@@ -51,14 +51,14 @@ public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
     }
 
     private List<CristinObject> parseCristinObjectsArray(String jsonString) {
-        return attempt(() -> objectMapperWithEmpty.<List<CristinObject>>readValue(jsonString,
-                                                                                  CRISTIN_OBJECTS_LIST_JAVATYPE))
+        return attempt(() -> eventHandlerObjectMapper.<List<CristinObject>>readValue(jsonString,
+                                                                                     CRISTIN_OBJECTS_LIST_JAVATYPE))
                    .orElseThrow();
     }
 
     private Stream<CristinObject> readSeriesOfJsonObjects() {
         return newContentReader().lines()
-                   .map(attempt(line -> objectMapperWithEmpty.readValue(line, CristinObject.class)))
+                   .map(attempt(line -> eventHandlerObjectMapper.readValue(line, CristinObject.class)))
                    .map(attempt -> attempt.orElseThrow(this::handleError));
     }
 

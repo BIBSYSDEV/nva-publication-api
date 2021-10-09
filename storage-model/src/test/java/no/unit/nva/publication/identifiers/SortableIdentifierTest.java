@@ -1,5 +1,6 @@
 package no.unit.nva.publication.identifiers;
 
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -13,7 +14,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.identifiers.SortableIdentifier;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class SortableIdentifierTest {
@@ -46,13 +46,13 @@ public class SortableIdentifierTest {
     public void sortableIdentifierSerializesAsString() throws JsonProcessingException {
         ExampleClass exampleClass = new ExampleClass();
         exampleClass.setId(SAMPLE_IDENTIFIER);
-        String json = JsonUtils.objectMapper.writeValueAsString(exampleClass);
+        String json = dynamoDbObjectMapper.writeValueAsString(exampleClass);
         assertThat(json, containsString(SAMPLE_CLASS_ID_FIELD));
     }
 
     @Test
     public void sortableIdentifierDeserializesFromString() throws JsonProcessingException {
-        ExampleClass actual = JsonUtils.objectMapper.readValue(SAMPLE_EXAMPLE_CLASS_JSON, ExampleClass.class);
+        ExampleClass actual = dynamoDbObjectMapper.readValue(SAMPLE_EXAMPLE_CLASS_JSON, ExampleClass.class);
         SortableIdentifier actualIdentifier = actual.getId();
         assertThat(actualIdentifier, is(equalTo(SAMPLE_IDENTIFIER)));
     }

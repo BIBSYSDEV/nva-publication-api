@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -28,7 +29,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.report.ReportBasic;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class DoiRequestTest {
@@ -51,8 +51,8 @@ public class DoiRequestTest {
     
     @Test
     public void doiRequestHasTypeDoiRequest() {
-        
-        JsonNode json = JsonUtils.objectMapper.convertValue(sampleDoiRequest, JsonNode.class);
+
+        JsonNode json = dynamoDbObjectMapper.convertValue(sampleDoiRequest, JsonNode.class);
         assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
         assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(DoiRequest.TYPE)));
     }

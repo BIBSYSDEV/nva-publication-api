@@ -1,10 +1,10 @@
 package no.unit.nva.publication.events.fanout;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
+import static no.unit.nva.publication.events.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -19,11 +19,9 @@ import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 
 public final class DynamodbStreamRecordPublicationMapper {
 
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
 
     private DynamodbStreamRecordPublicationMapper() {
 
@@ -40,7 +38,7 @@ public final class DynamodbStreamRecordPublicationMapper {
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
-        DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
+        DynamoEntry dynamoEntry = dynamoImageSerializerRemovingEmptyFields.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
             .filter(entry -> isDao(dynamoEntry))
             .map(dao -> ((Dao<?>) dao).getData())
@@ -65,10 +63,14 @@ public final class DynamodbStreamRecordPublicationMapper {
 
     private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
         Map<String, AttributeValue> recordImage) throws JsonProcessingException {
-        var jsonString = objectMapper.writeValueAsString(recordImage);
-        var javaType = objectMapper.getTypeFactory().constructParametricType(Map.class, String.class,
-                com.amazonaws.services.dynamodbv2.model.AttributeValue.class);
-        return objectMapper.readValue(jsonString, javaType);
+        var jsonString = dynamoImageSerializerRemovingEmptyFields.writeValueAsString(recordImage);
+        var javaType =
+            dynamoImageSerializerRemovingEmptyFields.getTypeFactory()
+                .constructParametricType(Map.class,
+                                         String.class,
+                                         com.amazonaws.services.dynamodbv2.model.AttributeValue.class
+                );
+        return dynamoImageSerializerRemovingEmptyFields.readValue(jsonString, javaType);
     }
 
 

@@ -1,5 +1,7 @@
 package no.unit.nva.cristin;
 
+import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
+import static no.unit.nva.cristin.CristinImportConfig.singleLineObjectMapper;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
@@ -14,8 +16,6 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.github.javafaker.Faker;
 import java.net.URI;
@@ -47,7 +47,6 @@ import no.unit.nva.cristin.mapper.CristinSubjectField;
 import no.unit.nva.cristin.mapper.CristinTitle;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
-import nva.commons.core.JsonUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public final class CristinDataGenerator {
@@ -56,8 +55,6 @@ public final class CristinDataGenerator {
     public static final Random RANDOM = new Random(System.currentTimeMillis());
     public static final Faker FAKER = Faker.instance();
     public static final int FIRST_TITLE = 0;
-    public static final ObjectMapper OBJECT_MAPPER = JsonUtils.objectMapperSingleLine.configure(
-        SerializationFeature.INDENT_OUTPUT, false);
     public static final int USE_WHOLE_ARRAY = -1;
     public static final int NUMBER_OF_KNOWN_SECONDARY_CATEGORIES = 1;
     public static final String ID_FIELD = "id";
@@ -548,9 +545,8 @@ public final class CristinDataGenerator {
             .build();
     }
 
-    private static String toJsonString(CristinObject c) {
-        return attempt(() -> OBJECT_MAPPER.writeValueAsString(c))
-            .orElseThrow();
+    private static String toJsonString(CristinObject cristinObject) {
+        return attempt(() -> singleLineObjectMapper.writeValueAsString(cristinObject)).orElseThrow();
     }
 
     private static ObjectNode cristinObjectAsObjectNode(CristinObject cristinObject) throws JsonProcessingException {
@@ -560,13 +556,13 @@ public final class CristinDataGenerator {
                    BOOK_OR_REPORT_PART_METADATA, HRCS_CATEGORIES_AND_ACTIVITIES, CRISTIN_MODIFIED_DATE,
                     LECTURE_OR_POSTER_METADATA)));
 
-        return (ObjectNode) JsonUtils.objectMapperNoEmpty.readTree(cristinObject.toJsonString());
+        return (ObjectNode) eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
 
     private static <T> JsonNode convertToJsonNode(T inputData) {
         return inputData instanceof JsonNode
                    ? (JsonNode) inputData
-                   : JsonUtils.objectMapperNoEmpty.convertValue(inputData, JsonNode.class);
+                   : eventHandlerObjectMapper.convertValue(inputData, JsonNode.class);
     }
 
     private static CristinSecondaryCategory randomSecondaryCategory() {

@@ -4,8 +4,9 @@ import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
+
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
-import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,7 +37,6 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -340,7 +340,8 @@ public class FileEntriesEventEmitterTest {
     private static FileContent fileWithContentAsIonObjectsList(Collection<SampleObject> sampleObjects) {
         String ionObjectsList = createNewIonObjectsList(sampleObjects);
         //verify that this is not a list of json objects.
-        assertThrows(Exception.class, () -> objectMapperNoEmpty.readTree(ionObjectsList));
+
+        assertThrows(Exception.class, () -> s3ImportsMapper.readTree(ionObjectsList));
         return new FileContent(importRequestForExistingFile.extractPathFromS3Location(),
                                IoUtils.stringToStream(ionObjectsList));
     }
@@ -353,15 +354,15 @@ public class FileEntriesEventEmitterTest {
 
     private static InputStream contentsAsJsonArray() {
         List<JsonNode> nodes = contentAsJsonNodes();
-        ArrayNode root = JsonUtils.objectMapperNoEmpty.createArrayNode();
+        ArrayNode root = s3ImportsMapper.createArrayNode();
         root.addAll(nodes);
-        String jsonArrayString = attempt(() -> objectMapperNoEmpty.writeValueAsString(root)).orElseThrow();
+        String jsonArrayString = attempt(() -> s3ImportsMapper.writeValueAsString(root)).orElseThrow();
         return IoUtils.stringToStream(jsonArrayString);
     }
 
     private static InputStream contentsAsJsonObjectsList() {
         ObjectMapper objectMapperWithoutLineBreaks =
-            objectMapperNoEmpty.configure(SerializationFeature.INDENT_OUTPUT, false);
+            s3ImportsMapper.configure(SerializationFeature.INDENT_OUTPUT, false);
         String nodesInLines = contentAsJsonNodes()
                                   .stream()
                                   .map(attempt(objectMapperWithoutLineBreaks::writeValueAsString))
@@ -373,21 +374,21 @@ public class FileEntriesEventEmitterTest {
     private static List<JsonNode> contentAsJsonNodes() {
         return Stream.of(FILE_01_CONTENTS)
                    .map(JsonSerializable::toJsonString)
-                   .map(attempt(objectMapperNoEmpty::readTree))
+                   .map(attempt(s3ImportsMapper::readTree))
                    .map(Try::orElseThrow)
                    .collect(Collectors.toList());
     }
 
     private static String createNewIonObjectsList(Collection<SampleObject> sampleObjects) {
         return sampleObjects.stream()
-                   .map(attempt(objectMapperNoEmpty::writeValueAsString))
+                   .map(attempt(s3ImportsMapper::writeValueAsString))
                    .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
                    .map(Try::orElseThrow)
                    .collect(Collectors.joining(System.lineSeparator()));
     }
 
     private static String createNewIonArray(Collection<SampleObject> sampleObjects) throws IOException {
-        String jsonString = objectMapperNoEmpty.writeValueAsString(sampleObjects);
+        String jsonString = s3ImportsMapper.writeValueAsString(sampleObjects);
         return jsonToIon(jsonString);
     }
 
@@ -464,7 +465,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     private InputStream toInputStream(AwsEventBridgeEvent<ImportRequest> request) {
-        return attempt(() -> objectMapperNoEmpty.writeValueAsString(request))
+        return attempt(() -> s3ImportsMapper.writeValueAsString(request))
                    .map(IoUtils::stringToStream)
                    .orElseThrow();
     }

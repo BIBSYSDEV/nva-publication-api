@@ -2,10 +2,10 @@ package no.unit.nva.publication.fetch;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -57,7 +57,7 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = objectMapper.getTypeFactory()
+    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
                                                                            .constructParametricType(
                                                                                GatewayResponse.class,
                                                                                PublicationResponse.class);
@@ -119,7 +119,7 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream inputStream = new HandlerRequestBuilder<InputStream>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withBody(null)
             .withHeaders(null)
             .withPathParameters(null)
@@ -181,20 +181,20 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private GatewayResponse<PublicationResponse> parseHandlerResponse() throws JsonProcessingException {
-        return objectMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
+        return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
         Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier);
-        return new HandlerRequestBuilder<InputStream>(objectMapper)
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
                    .withHeaders(headers)
                    .withPathParameters(pathParameters)
                    .build();
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
-        return new HandlerRequestBuilder<InputStream>(objectMapper)
+        return new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType()))
             .build();
     }
@@ -204,9 +204,9 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private GatewayResponse<Problem> parseFailureResponse() throws JsonProcessingException {
-        JavaType responseWithProblemType = objectMapper.getTypeFactory()
+        JavaType responseWithProblemType = restApiMapper.getTypeFactory()
                                                .constructParametricType(GatewayResponse.class, Problem.class);
-        return objectMapper.readValue(output.toString(), responseWithProblemType);
+        return restApiMapper.readValue(output.toString(), responseWithProblemType);
     }
 
     private Publication createPublication() throws TransactionFailedException, NotFoundException {

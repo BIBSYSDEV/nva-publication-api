@@ -1,8 +1,8 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.publication.storage.model.daos.DaoUtils.sampleResourceDao;
-import static nva.commons.core.JsonUtils.objectMapperNoEmpty;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -64,8 +64,8 @@ public class ResourceDaoTest {
     public void resourceDaoOnlySerializesTypeDataPKAndSKFields()
             throws MalformedURLException, InvalidIssnException, JsonProcessingException {
         ResourceDao dao = sampleResourceDao();
-        String stringValue = objectMapperNoEmpty.writeValueAsString(dao);
-        ObjectNode jsonNode = (ObjectNode) objectMapperNoEmpty.readTree(stringValue);
+        String stringValue = dynamoDbObjectMapper.writeValueAsString(dao);
+        ObjectNode jsonNode = (ObjectNode) dynamoDbObjectMapper.readTree(stringValue);
         Iterator<String> fieldNames = jsonNode.fieldNames();
         List<String> fieldNamelist = new ArrayList<>();
         fieldNames.forEachRemaining(fieldNamelist::add);

@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -9,7 +10,6 @@ import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import software.amazon.ion.IonReader;
 import software.amazon.ion.IonWriter;
@@ -76,7 +76,7 @@ public final class S3IonReader {
     }
 
     private static ArrayNode toArrayNode(String jsonString) throws JsonProcessingException {
-        return (ArrayNode) JsonUtils.objectMapperNoEmpty.readTree(jsonString);
+        return (ArrayNode) s3ImportsMapper.readTree(jsonString);
     }
 
     private static  Stream<JsonNode> convertToJsonNodeStream(ArrayNode arrayNode) {

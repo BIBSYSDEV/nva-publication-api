@@ -18,11 +18,8 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDoiRequest, Void> {
 
@@ -32,7 +29,6 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     public static final String API_HOST_ENV_VARIABLE = "API_HOST";
     private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
 
-    private static final Logger logger = LoggerFactory.getLogger(UpdateDoiRequestStatusHandler.class);
     private final String apiScheme;
     private final String apiHost;
     private final DoiRequestService doiRequestService;
@@ -55,9 +51,6 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
                                 RequestInfo requestInfo,
                                 Context context)
         throws ApiGatewayException {
-
-        String requestInfoJson = attempt(() -> JsonUtils.objectMapper.writeValueAsString(requestInfo)).orElseThrow();
-        logger.info("RequestInfo:\n" + requestInfoJson);
 
         try {
             input.validate();
@@ -115,9 +108,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
 
     private void updateContentLocationHeader(SortableIdentifier publicationIdentifier) {
-        setAdditionalHeadersSupplier(
-            () -> Collections.singletonMap(HttpHeaders.LOCATION,
-                                           getContentLocation(publicationIdentifier)));
+        addAdditionalHeaders(
+            () -> Collections.singletonMap(HttpHeaders.LOCATION, getContentLocation(publicationIdentifier)));
     }
 
     private String getContentLocation(SortableIdentifier publicationID) {
@@ -127,7 +119,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
         String publicationIdentifierString = requestInfo.getPathParameter(API_PUBLICATION_PATH_IDENTIFIER);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
-                   .orElseThrow(
-                       fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
+            .orElseThrow(
+                fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
     }
 }

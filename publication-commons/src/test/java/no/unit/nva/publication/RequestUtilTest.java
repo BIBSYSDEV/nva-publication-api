@@ -1,6 +1,6 @@
 package no.unit.nva.publication;
 
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -145,11 +145,9 @@ public class RequestUtilTest {
     
     private JsonNode getRequestContextWithMissingNode() throws JsonProcessingException {
         Map<String, Map<String, JsonNode>> map = Map.of(
-            AUTHORIZER, Map.of(
-                CLAIMS, objectMapper.createObjectNode().nullNode()
-            )
+            AUTHORIZER, Map.of(CLAIMS, dtoObjectMapper.createObjectNode().nullNode())
         );
-        return objectMapper.readTree(objectMapper.writeValueAsString(map));
+        return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
     }
     
     private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
@@ -162,6 +160,6 @@ public class RequestUtilTest {
                 CLAIMS, claimKeyValuePairs
             )
         );
-        return objectMapper.readTree(objectMapper.writeValueAsString(map));
+        return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
     }
 }

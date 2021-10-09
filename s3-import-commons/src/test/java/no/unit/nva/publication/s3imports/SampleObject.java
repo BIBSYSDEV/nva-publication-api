@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -7,7 +8,6 @@ import com.github.javafaker.Faker;
 import java.util.Objects;
 import java.util.Random;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
 
 public class SampleObject implements JsonSerializable {
 
@@ -34,7 +34,7 @@ public class SampleObject implements JsonSerializable {
     }
 
     public static SampleObject fromJson(String json) {
-        return attempt(() -> JsonUtils.objectMapperNoEmpty.readValue(json, SampleObject.class)).orElseThrow();
+        return attempt(() -> s3ImportsMapper.readValue(json, SampleObject.class)).orElseThrow();
     }
 
     @Override

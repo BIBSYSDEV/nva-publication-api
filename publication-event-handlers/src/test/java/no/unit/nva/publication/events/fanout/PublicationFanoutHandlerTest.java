@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.fanout;
 
-import static org.hamcrest.MatcherAssert.*;
+import static no.unit.nva.publication.events.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -9,7 +9,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,18 +19,14 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
-import no.unit.nva.publication.events.fanout.PublicationFanoutHandler;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
-import org.hamcrest.MatcherAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 public class PublicationFanoutHandlerTest {
 
-    private static final ObjectMapper objectMapper = JsonUtils.objectMapper;
     public static final String DYNAMODBEVENT_NEW_IMAGE_JSON = "dynamodbevent_new_image.json";
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
     public static final String DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON = "dynamodbevent_new_and_old_images.json";
@@ -166,7 +161,8 @@ public class PublicationFanoutHandlerTest {
     }
 
     private DynamoEntryUpdateEvent parseResponse() {
-        return Try.attempt(() -> objectMapper.readValue(outputStream.toString(), DynamoEntryUpdateEvent.class))
+        return Try.attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(outputStream.toString(),
+                                                                    DynamoEntryUpdateEvent.class))
             .orElseThrow();
     }
 }

@@ -2,6 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.StorageModelTestUtils.randomString;
+import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -16,7 +17,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.Test;
 
 public class MessageTest {
@@ -50,7 +50,7 @@ public class MessageTest {
                               .withIdentifier(SortableIdentifier.next())
                               .build();
         String json = message.toString();
-        Message recreatedMessage = JsonUtils.objectMapper.readValue(json, Message.class);
+        Message recreatedMessage = dynamoDbObjectMapper.readValue(json, Message.class);
         assertThat(recreatedMessage, is(equalTo(message)));
     }
 

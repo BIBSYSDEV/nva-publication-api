@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -9,7 +10,6 @@ import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UnixPath;
 
 /**
@@ -61,7 +61,7 @@ public class ImportRequest implements JsonSerializable {
     }
 
     public static ImportRequest fromJson(String jsonString) {
-        return attempt(() -> JsonUtils.objectMapperWithEmpty.readValue(jsonString, ImportRequest.class))
+        return attempt(() -> s3ImportsMapper.readValue(jsonString, ImportRequest.class))
                    .orElseThrow(fail -> handleNotParsableInputError(jsonString));
     }
 
