@@ -6,7 +6,6 @@ import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME
 import static no.unit.nva.publication.testing.TestHeaders.getRequestHeaders;
 import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -85,7 +84,8 @@ public class CreatePublicationHandlerTest {
         GatewayResponse<PublicationResponse> expected = new GatewayResponse<>(
             PublicationMapper.convertValue(publication, PublicationResponse.class),
             getResponseHeadersWithLocation(publication.getIdentifier()),
-            HttpStatus.SC_CREATED
+            HttpStatus.SC_CREATED,
+            restApiMapper
         );
 
         assertEquals(expected, actual);
@@ -139,13 +139,13 @@ public class CreatePublicationHandlerTest {
 
     private Publication createPublication() {
         return new Publication.Builder()
-                   .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
-                   .withModifiedDate(Instant.now())
-                   .withOwner("owner")
-                   .withPublisher(new Organization.Builder()
-                                      .withId(URI.create("http://example.org/publisher/1"))
-                                      .build()
-                   )
-                   .build();
+            .withIdentifier(new SortableIdentifier(UUID.randomUUID().toString()))
+            .withModifiedDate(Instant.now())
+            .withOwner("owner")
+            .withPublisher(new Organization.Builder()
+                               .withId(URI.create("http://example.org/publisher/1"))
+                               .build()
+            )
+            .build();
     }
 }
