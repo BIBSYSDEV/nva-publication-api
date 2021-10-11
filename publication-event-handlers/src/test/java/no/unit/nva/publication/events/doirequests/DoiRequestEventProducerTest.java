@@ -26,6 +26,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.PublicationEventsConfig;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -225,7 +226,7 @@ class DoiRequestEventProducerTest {
     @SuppressWarnings("unchecked")
     private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String event) {
         EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventEventParser =
-            new EventParser<>(event);
+            new EventParser<>(event, dynamoImageSerializerRemovingEmptyFields);
         return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
                    eventEventParser.parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
     }
