@@ -47,15 +47,12 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryRuntimeException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
 import no.unit.nva.publication.s3imports.UriWrapper;
@@ -315,7 +312,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(MissingContributorsRuntimeException.class)));
+        assertThat(cause, is(instanceOf(MissingContributorsException.class)));
     }
 
     @Test

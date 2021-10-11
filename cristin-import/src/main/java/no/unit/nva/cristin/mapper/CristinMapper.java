@@ -39,7 +39,7 @@ import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -172,7 +172,7 @@ public class CristinMapper extends CristinMappingModule {
                     .map(Try::orElseThrow)
                     .collect(Collectors.toList());
         } catch(NullPointerException exception) {
-            throw new MissingContributorsRuntimeException(exception);
+            throw new MissingContributorsException(exception);
         }
     }
 
