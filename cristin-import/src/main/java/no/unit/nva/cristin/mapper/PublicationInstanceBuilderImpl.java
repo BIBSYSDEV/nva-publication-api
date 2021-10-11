@@ -7,8 +7,8 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import java.util.Objects;
 
-import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 
@@ -39,9 +39,9 @@ public class PublicationInstanceBuilderImpl  {
         } else if (isEvent(cristinObject)) {
             return new EventBuilder(cristinObject).build();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
-            throw new UnsupportedMainCategoryRuntimeException(ERROR_PARSING_MAIN_CATEGORY);
+            throw new UnsupportedMainCategoryException(ERROR_PARSING_MAIN_CATEGORY);
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
-            throw new UnsupportedSecondaryCategoryRuntimeException(ERROR_PARSING_SECONDARY_CATEGORY);
+            throw new UnsupportedSecondaryCategoryException(ERROR_PARSING_SECONDARY_CATEGORY);
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }
