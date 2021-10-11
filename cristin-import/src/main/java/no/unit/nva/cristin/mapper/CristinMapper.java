@@ -37,6 +37,8 @@ import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -208,12 +210,26 @@ public class CristinMapper extends CristinMappingModule {
             = new PublicationInstanceBuilderImpl(cristinObject);
         PublicationInstance<? extends Pages> publicationInstance
             = publicationInstanceBuilderImpl.build();
-        PublicationContext publicationContext = attempt(this::buildPublicationContext).orElseThrow();
+        PublicationContext publicationContext = attempt(this::buildPublicationContext)
+                .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
             .withDoi(extractDoi())
             .build();
+    }
+
+    private RuntimeException handlePublicationContextFailure(Exception exception) {
+        if (exception instanceof InvalidIssnException) {
+            return new InvalidIssnRuntimeException(exception);
+        }
+        if (exception instanceof InvalidIsbnException) {
+            return new InvalidIsbnRuntimeException(exception);
+        }
+        if (exception instanceof RuntimeException) {
+            return (RuntimeException) exception;
+        }
+        return new RuntimeException(exception);
     }
 
     private PublicationContext buildPublicationContext()

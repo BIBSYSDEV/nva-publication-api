@@ -45,6 +45,10 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -197,7 +201,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     @Test
     public void handlerThrowsExceptionWhenMainCategoryTypeIsNotKnown() throws JsonProcessingException {
-
         JsonNode inputData = CristinDataGenerator.objectWithCustomMainCategory(randomString());
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(inputData);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
@@ -206,7 +209,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
 
         Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(cause, is(instanceOf(UnsupportedMainCategoryException.class)));
         assertThat(cause.getMessage(), is(equalTo(PublicationInstanceBuilderImpl.ERROR_PARSING_MAIN_CATEGORY)));
     }
 
@@ -263,9 +266,37 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
 
         Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(UnsupportedOperationException.class)));
+        assertThat(cause, is(instanceOf(UnsupportedSecondaryCategoryException.class)));
         assertThat(cause.getMessage(), containsString(PublicationInstanceBuilderImpl.ERROR_PARSING_SECONDARY_CATEGORY));
 
+    }
+
+    @Test
+    public void handlerThrowsInvalidIsbnRuntimeExceptionWhenTheIsbnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIsbn = CristinDataGenerator.objectWithInvalidIsbn();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIsbn);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, is(instanceOf(InvalidIsbnRuntimeException.class)));
+    }
+
+    @Test
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheIssnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.objectWithInvalidIssn();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, is(instanceOf(InvalidIssnRuntimeException.class)));
     }
 
     @Test

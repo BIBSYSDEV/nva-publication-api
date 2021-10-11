@@ -250,6 +250,19 @@ public final class CristinDataGenerator {
         return cristinObject;
     }
 
+    public static JsonNode objectWithInvalidIsbn() throws JsonProcessingException {
+        CristinObject cristinObject = randomBook();
+        cristinObject.getBookOrReportMetadata().setIsbn("123");
+        return cristinObjectAsObjectNode(cristinObject);
+    }
+
+    public static JsonNode objectWithInvalidIssn() throws JsonProcessingException {
+        CristinObject cristinObject = randomBook();
+        cristinObject.getBookOrReportMetadata().getBookSeries().setIssn("123-123-123-132-123");
+        cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
+        return cristinObjectAsObjectNode(cristinObject);
+    }
+
     public static CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
         return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
     }
@@ -414,6 +427,7 @@ public final class CristinDataGenerator {
     private static CristinObject createRandomBookWithSpecifiedSecondaryCategory(
         CristinSecondaryCategory secondaryCategory) {
         return CristinObject.builder()
+            .withYearReported(2001)
             .withCristinTitles(List.of(randomCristinTitle(FIRST_TITLE)))
             .withEntryCreationDate(LocalDate.now())
             .withMainCategory(CristinMainCategory.BOOK)
