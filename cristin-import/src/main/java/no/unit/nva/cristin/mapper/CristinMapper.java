@@ -39,6 +39,7 @@ import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
+import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsRuntimeException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -164,11 +165,15 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        return cristinObject.getContributors()
-            .stream()
-            .map(attempt(CristinContributor::toNvaContributor))
-            .map(Try::orElseThrow)
-            .collect(Collectors.toList());
+        try {
+            return cristinObject.getContributors()
+                    .stream()
+                    .map(attempt(CristinContributor::toNvaContributor))
+                    .map(Try::orElseThrow)
+                    .collect(Collectors.toList());
+        } catch(NullPointerException exception) {
+            throw new MissingContributorsRuntimeException(exception);
+        }
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {
