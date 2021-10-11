@@ -4,7 +4,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.model.PublicationStatus.DRAFT;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_OK;
@@ -85,7 +85,7 @@ public class PublicationsByOwnerHandlerTest {
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
     public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
-        InputStream input = new HandlerRequestBuilder<Void>(objectMapper).build();
+        InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
         GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(output);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -100,7 +100,7 @@ public class PublicationsByOwnerHandlerTest {
 
         publicationsByOwnerHandler.handleRequest(inputStream(), output, context);
 
-        GatewayResponse gatewayResponse = objectMapper.readValue(output.toString(), GatewayResponse.class);
+        GatewayResponse gatewayResponse = restApiMapper.readValue(output.toString(), GatewayResponse.class);
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
     }
 
@@ -114,7 +114,7 @@ public class PublicationsByOwnerHandlerTest {
                                                    VALID_ORG_NUMBER))));
         event.put("headers", singletonMap(CONTENT_TYPE,
                                           ContentType.APPLICATION_JSON.getMimeType()));
-        return new ByteArrayInputStream(objectMapper.writeValueAsBytes(event));
+        return new ByteArrayInputStream(restApiMapper.writeValueAsBytes(event));
     }
 
     private List<Publication> publicationSummaries() {

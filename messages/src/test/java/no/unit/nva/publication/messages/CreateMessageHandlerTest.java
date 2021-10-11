@@ -1,8 +1,9 @@
 package no.unit.nva.publication.messages;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;
-import static no.unit.nva.publication.ServiceEnvironmentConstants.URI_EMPTY_FRAGMENT;
+import static no.unit.nva.publication.PublicationServiceConfig.PATH_SEPARATOR;
+import static no.unit.nva.publication.PublicationServiceConfig.URI_EMPTY_FRAGMENT;
+import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -26,7 +27,8 @@ import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
+
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
@@ -41,7 +43,6 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -166,7 +167,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
-        String expectedPath = ServiceEnvironmentConstants.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
+        String expectedPath = PublicationServiceConfig.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
         return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
     }
 
@@ -188,7 +189,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private InputStream createListDoiRequestsHttpQuery() throws JsonProcessingException {
         UserInstance publicationOwner = extractOwner(samplePublication);
-        return new HandlerRequestBuilder<Void>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
                    .withFeideId(publicationOwner.getUserIdentifier())
                    .withCustomerId(publicationOwner.getOrganizationUri().toString())
                    .withQueryParameters(Map.of("role", "Creator"))
@@ -230,7 +231,7 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private InputStream createInput(CreateMessageRequest requestBody)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<CreateMessageRequest>(JsonUtils.objectMapper)
+        return new HandlerRequestBuilder<CreateMessageRequest>(messageTestsObjectMapper)
                    .withBody(requestBody)
                    .withFeideId(SOME_CURATOR)
                    .withCustomerId(samplePublication.getPublisher().getId().toString())

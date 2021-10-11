@@ -1,6 +1,6 @@
 package no.unit.nva.publication;
 
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Optional;
@@ -17,7 +17,7 @@ public class JsonLdContextUtilTest {
 
     @BeforeEach
     public void setUp() {
-        contextUtil = new JsonLdContextUtil(objectMapper);
+        contextUtil = new JsonLdContextUtil(dtoObjectMapper);
     }
 
     @Test

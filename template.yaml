@@ -994,8 +994,8 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: delete-publication-event-producer
-      Handler: no.unit.nva.publication.DeletePublicationEventProducerHandler::handleRequest
+      CodeUri: delete-draft-publication
+      Handler: no.unit.nva.publication.delete.DeletePublicationEventProducerHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
@@ -1022,8 +1022,8 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-event-dtopublicationdoi-producer
-      Handler: no.unit.nva.doi.event.producer.DoiRequestEventProducer::handleRequest
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.doirequests.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -1061,8 +1061,8 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-fanout-handler
-      Handler: no.unit.nva.publication.events.PublicationFanoutHandler::handleRequest
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.fanout.PublicationFanoutHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -1091,7 +1091,7 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: delete-draft-publication-handler
+      CodeUri: delete-draft-publication
       Handler: no.unit.nva.publication.delete.DeleteDraftPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
@@ -1126,9 +1126,9 @@ Resources:
   DynamodbEventFanoutStreamRecordsEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: dynamodb-event-emitter
+      CodeUri: publication-event-handlers
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
-      Handler: no.unit.nva.doi.lambda.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
+      Handler: no.unit.nva.publication.events.dynamodbstream.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11

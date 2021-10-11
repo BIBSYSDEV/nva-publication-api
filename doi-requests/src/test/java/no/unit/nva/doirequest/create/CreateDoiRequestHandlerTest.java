@@ -1,8 +1,8 @@
 package no.unit.nva.doirequest.create;
 
+import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
-import static nva.commons.core.JsonUtils.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -110,7 +110,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     @Test
     public void createDoiRequestReturnsBadRequestWhenPublicationIdIsEmpty() throws IOException {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
-        InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
+        InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                                       .withBody(request)
                                       .withFeideId(NOT_THE_RESOURCE_OWNER)
                                       .withCustomerId(SOME_PUBLISHER.toString())
@@ -171,7 +171,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     private InputStream createRequest(Publication publication, String user, String message)
         throws com.fasterxml.jackson.core.JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
-        return new HandlerRequestBuilder<CreateDoiRequest>(objectMapper)
+        return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                    .withCustomerId(publication.getPublisher().getId().toString())
                    .withFeideId(user)
                    .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))

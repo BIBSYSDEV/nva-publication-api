@@ -165,15 +165,15 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private List<Contributor> extractContributors() {
-        try {
-            return cristinObject.getContributors()
-                    .stream()
-                    .map(attempt(CristinContributor::toNvaContributor))
-                    .map(Try::orElseThrow)
-                    .collect(Collectors.toList());
-        } catch(NullPointerException exception) {
-            throw new MissingContributorsException(exception);
+        if (isNull(cristinObject.getContributors())) {
+            throw new MissingContributorsException();
         }
+        return cristinObject.getContributors()
+                .stream()
+                .map(attempt(CristinContributor::toNvaContributor))
+                .map(Try::orElseThrow)
+                .collect(Collectors.toList());
+
     }
 
     private List<URI> generateNvaHrcsCategoriesAndActivities() {

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static nva.commons.core.JsonUtils.objectMapper;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -21,9 +21,9 @@ public class PublicationSummaryTest {
     @DisplayName("objectMapper Can Write And Read PublicationSummary")
     public void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
         PublicationSummary publicationSummary = publicationSummary();
-        String content = objectMapper.writeValueAsString(publicationSummary);
+        String content = dtoObjectMapper.writeValueAsString(publicationSummary);
         PublicationSummary processedPublicationSummary =
-            objectMapper.readValue(content, PublicationSummary.class);
+            dtoObjectMapper.readValue(content, PublicationSummary.class);
         
         assertEquals(publicationSummary, processedPublicationSummary);
     }

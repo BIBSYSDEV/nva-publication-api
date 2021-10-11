@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -9,7 +10,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Map;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 
 /**
  * Event containing the contents of a file and additional information that are necessary for processing the file
@@ -53,7 +53,7 @@ public class FileContentsEvent<T> {
 
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
         JavaType javaType = constructJavaType(contentsClass);
-        return attempt(() -> JsonUtils.objectMapperNoEmpty
+        return attempt(() -> s3ImportsMapper
                                  .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
     }
 
@@ -70,7 +70,6 @@ public class FileContentsEvent<T> {
     }
 
     private static <T> JavaType constructJavaType(Class<T> contentsClass) {
-        return JsonUtils.objectMapperNoEmpty.getTypeFactory()
-                   .constructParametricType(FileContentsEvent.class, contentsClass);
+        return s3ImportsMapper.getTypeFactory().constructParametricType(FileContentsEvent.class, contentsClass);
     }
 }

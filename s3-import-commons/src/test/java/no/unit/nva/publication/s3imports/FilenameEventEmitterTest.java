@@ -10,7 +10,7 @@ import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVEN
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.PATH_SEPARATOR;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
-import static nva.commons.core.JsonUtils.objectMapperWithEmpty;
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -121,7 +121,7 @@ public class FilenameEventEmitterTest {
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         PutEventsResult[] failedResultsArray =
-            objectMapperWithEmpty.readValue(outputStream.toString(), PutEventsResult[].class);
+            s3ImportsMapper.readValue(outputStream.toString(), PutEventsResult[].class);
         var failedResults = Arrays.asList(failedResultsArray);
 
         assertThat(failedResults, is(empty()));
@@ -147,7 +147,7 @@ public class FilenameEventEmitterTest {
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
-        String[] failedResultsArray = objectMapperWithEmpty.readValue(outputStream.toString(), String[].class);
+        String[] failedResultsArray = s3ImportsMapper.readValue(outputStream.toString(), String[].class);
         List<String> failedResults = Arrays.asList(failedResultsArray);
 
         String[] expectedFileUris = expectedFileUris();
@@ -280,14 +280,14 @@ public class FilenameEventEmitterTest {
     }
 
     private <T> InputStream toJsonStream(T importRequest) {
-        return attempt(() -> objectMapperWithEmpty.writeValueAsString(importRequest))
+        return attempt(() -> s3ImportsMapper.writeValueAsString(importRequest))
                    .map(IoUtils::stringToStream)
                    .orElseThrow();
     }
 
     private String invalidBody() throws JsonProcessingException {
-        ObjectNode root = objectMapperWithEmpty.createObjectNode();
+        ObjectNode root = s3ImportsMapper.createObjectNode();
         root.put("someField", "someValue");
-        return objectMapperWithEmpty.writeValueAsString(root);
+        return s3ImportsMapper.writeValueAsString(root);
     }
 }

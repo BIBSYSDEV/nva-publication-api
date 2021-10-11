@@ -1,8 +1,8 @@
 package no.unit.nva.publication.model;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.ServiceEnvironmentConstants.MESSAGE_PATH;
-import static no.unit.nva.publication.ServiceEnvironmentConstants.PATH_SEPARATOR;
+import static no.unit.nva.publication.PublicationServiceConfig.MESSAGE_PATH;
+import static no.unit.nva.publication.PublicationServiceConfig.PATH_SEPARATOR;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
@@ -10,7 +10,7 @@ import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.ServiceEnvironmentConstants;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
@@ -46,8 +46,8 @@ public class MessageDto implements JsonSerializable {
 
     public static URI constructMessageId(SortableIdentifier messageIdentifier) {
         if (nonNull(messageIdentifier)) {
-            String scheme = ServiceEnvironmentConstants.API_SCHEME;
-            String host = ServiceEnvironmentConstants.API_HOST;
+            String scheme = PublicationServiceConfig.API_SCHEME;
+            String host = PublicationServiceConfig.API_HOST;
             String messagePath = MESSAGE_PATH + PATH_SEPARATOR + messageIdentifier.toString();
             return attempt(() -> newUri(scheme, host, messagePath)).orElseThrow();
         }
@@ -162,6 +162,6 @@ public class MessageDto implements JsonSerializable {
     }
 
     private static URI newUri(String scheme, String host, String messagesPath) throws URISyntaxException {
-        return new URI(scheme, host, messagesPath, ServiceEnvironmentConstants.URI_EMPTY_FRAGMENT);
+        return new URI(scheme, host, messagesPath, PublicationServiceConfig.URI_EMPTY_FRAGMENT);
     }
 }

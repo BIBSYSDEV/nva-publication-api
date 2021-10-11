@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -10,7 +11,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Failure;
 import org.apache.commons.collections4.ListUtils;
 import org.slf4j.Logger;
@@ -148,7 +148,7 @@ public class EventEmitter<T> {
     }
 
     private String toJson(T eventDetail) {
-        return attempt(() -> JsonUtils.objectMapperNoEmpty.writeValueAsString(eventDetail)).orElseThrow();
+        return attempt(() -> s3ImportsMapper.writeValueAsString(eventDetail)).orElseThrow();
     }
 
     private List<PutEventsResult> tryManyTimesToEmitTheEventRequests(int numberOfEntriesEmittedPerBatch) {
