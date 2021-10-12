@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -87,24 +88,24 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
-                   .withIdentifier(publication.getIdentifier())
-                   .withOwner(publication.getOwner())
-                   .withCreatedDate(publication.getCreatedDate())
-                   .withModifiedDate(publication.getModifiedDate())
-                   .withIndexedDate(publication.getIndexedDate())
-                   .withPublishedDate(publication.getPublishedDate())
-                   .withStatus(publication.getStatus())
-                   .withPublishedDate(publication.getPublishedDate())
-                   .withFileSet(publication.getFileSet())
-                   .withPublisher(publication.getPublisher())
-                   .withLink(publication.getLink())
-                   .withProjects(publication.getProjects())
-                   .withEntityDescription(publication.getEntityDescription())
-                   .withDoi(publication.getDoi())
-                   .withHandle(publication.getHandle())
-                   .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
-                   .withSubjects(publication.getSubjects())
-                   .build();
+            .withIdentifier(publication.getIdentifier())
+            .withOwner(publication.getOwner())
+            .withCreatedDate(publication.getCreatedDate())
+            .withModifiedDate(publication.getModifiedDate())
+            .withIndexedDate(publication.getIndexedDate())
+            .withPublishedDate(publication.getPublishedDate())
+            .withStatus(publication.getStatus())
+            .withPublishedDate(publication.getPublishedDate())
+            .withFileSet(publication.getFileSet())
+            .withPublisher(publication.getPublisher())
+            .withLink(publication.getLink())
+            .withProjects(publication.getProjects())
+            .withEntityDescription(publication.getEntityDescription())
+            .withDoi(publication.getDoi())
+            .withHandle(publication.getHandle())
+            .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
+            .withSubjects(publication.getSubjects())
+            .build();
     }
 
     @JsonIgnore
@@ -155,7 +156,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     }
 
     public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
-        return additionalIdentifiers;
+        return nonNull(additionalIdentifiers) ? additionalIdentifiers : Collections.emptySet();
     }
 
     public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
@@ -237,7 +238,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     }
 
     public List<ResearchProject> getProjects() {
-        return projects;
+        return nonNull(projects) ? projects : Collections.emptyList();
     }
 
     public void setProjects(List<ResearchProject> projects) {
@@ -275,45 +276,45 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public ResourceBuilder copy() {
         return Resource.builder()
-                   .withIdentifier(getIdentifier())
-                   .withStatus(getStatus())
-                   .withOwner(getOwner())
-                   .withPublisher(getPublisher())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withPublishedDate(getPublishedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withLink(getLink())
-                   .withFileSet(getFileSet())
-                   .withProjects(getProjects())
-                   .withEntityDescription(getEntityDescription())
-                   .withDoi(getDoi())
-                   .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects());
+            .withIdentifier(getIdentifier())
+            .withStatus(getStatus())
+            .withOwner(getOwner())
+            .withPublisher(getPublisher())
+            .withCreatedDate(getCreatedDate())
+            .withModifiedDate(getModifiedDate())
+            .withPublishedDate(getPublishedDate())
+            .withIndexedDate(getIndexedDate())
+            .withLink(getLink())
+            .withFileSet(getFileSet())
+            .withProjects(getProjects())
+            .withEntityDescription(getEntityDescription())
+            .withDoi(getDoi())
+            .withHandle(getHandle())
+            .withAdditionalIdentifiers(getAdditionalIdentifiers())
+            .withSubjects(getSubjects());
     }
 
     @Override
     public Publication toPublication() {
         return new Publication.Builder()
-                   .withIdentifier(getIdentifier())
-                   .withOwner(getOwner())
-                   .withStatus(this.getStatus())
-                   .withCreatedDate(getCreatedDate())
-                   .withModifiedDate(getModifiedDate())
-                   .withIndexedDate(getIndexedDate())
-                   .withPublisher(getPublisher())
-                   .withPublishedDate(getPublishedDate())
-                   .withLink(getLink())
-                   .withFileSet(getFileSet())
-                   .withProjects(getProjects())
-                   .withEntityDescription(getEntityDescription())
-                   .withDoiRequest(null)
-                   .withDoi(getDoi())
-                   .withHandle(getHandle())
-                   .withAdditionalIdentifiers(getAdditionalIdentifiers())
-                   .withSubjects(getSubjects())
-                   .build();
+            .withIdentifier(getIdentifier())
+            .withOwner(getOwner())
+            .withStatus(this.getStatus())
+            .withCreatedDate(getCreatedDate())
+            .withModifiedDate(getModifiedDate())
+            .withIndexedDate(getIndexedDate())
+            .withPublisher(getPublisher())
+            .withPublishedDate(getPublishedDate())
+            .withLink(getLink())
+            .withFileSet(getFileSet())
+            .withProjects(getProjects())
+            .withEntityDescription(getEntityDescription())
+            .withDoiRequest(null)
+            .withDoi(getDoi())
+            .withHandle(getHandle())
+            .withAdditionalIdentifiers(getAdditionalIdentifiers())
+            .withSubjects(getSubjects())
+            .build();
     }
 
     @Override
@@ -332,7 +333,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     }
 
     public List<URI> getSubjects() {
-        return subjects;
+        return nonNull(subjects) ? subjects : Collections.emptyList();
     }
 
     public void setSubjects(List<URI> subjects) {

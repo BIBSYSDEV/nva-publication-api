@@ -7,6 +7,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
+import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
@@ -127,7 +129,8 @@ public class PublicationFanoutHandlerTest {
 
         assertThat(fieldWithValueEmptyObject(publication), is(nullValue()));
         assertThat(fieldWithValueEmptyString(publication), is(nullValue()));
-        assertThat(fieldWithValueEmptyArray(publication), is(nullValue()));
+        assertThat(fieldWithValueEmptyArray(publication), is(not(nullValue())));
+        assertThat(fieldWithValueEmptyArray(publication), is(empty()));
         assertThat(fieldWithValueEmptyMap(publication), is(nullValue()));
     }
 

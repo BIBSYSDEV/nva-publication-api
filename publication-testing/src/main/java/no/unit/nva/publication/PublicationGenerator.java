@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -75,6 +76,7 @@ public final class PublicationGenerator {
                    .withPublisher(samplePublisher())
                    .withEntityDescription(entityDescription)
                    .withFileSet(sampleFileSet())
+                   .withSubjects(Collections.emptyList())
                    .build();
     }
 
