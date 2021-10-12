@@ -263,6 +263,12 @@ public final class CristinDataGenerator {
         return cristinObjectAsObjectNode(cristinObject);
     }
 
+    public static JsonNode objectWithoutContributors() throws JsonProcessingException {
+        CristinObject cristinObject = randomBook();
+        cristinObject.setContributors(null);
+        return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
+    }
+
     public static CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
         return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
     }
@@ -665,4 +671,5 @@ public final class CristinDataGenerator {
                                                                  MAX_DOI_PREFIX_SUBPART_LENGTH))
             .collect(Collectors.joining(DOI_SUBPART_DELIMITER));
     }
+
 }

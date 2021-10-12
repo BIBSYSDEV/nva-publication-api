@@ -49,6 +49,7 @@ import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedSecondaryCategoryException;
+import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -300,6 +301,21 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
+    public void handlerThrowsMissingContributorsRuntimeExceptionWhenTheCristinObjectHasNoContributors()
+            throws JsonProcessingException {
+        JsonNode cristinObjectWithoutContributors = CristinDataGenerator.objectWithoutContributors();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithoutContributors);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, is(instanceOf(MissingContributorsException.class)));
+    }
+
+    @Test
     public void handlerCreatesFileWithCustomNameWhenCristinIdIsNotFound() throws JsonProcessingException {
         JsonNode cristinObjectWithoutId = CristinDataGenerator.objectWithoutId();
 
@@ -451,9 +467,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         throws JsonProcessingException {
         JavaType fileContentsType = eventHandlerObjectMapper.getTypeFactory()
                                         .constructParametricType(FileContentsEvent.class, Identifiable.class);
-        JavaType eventType = eventHandlerObjectMapper.getTypeFactory().constructParametricType(AwsEventBridgeEvent.class,
-                                                                                               fileContentsType);
-        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = eventHandlerObjectMapper.readValue(input, eventType);
+        JavaType eventType = eventHandlerObjectMapper.getTypeFactory()
+                .constructParametricType(AwsEventBridgeEvent.class, fileContentsType);
+        AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event =
+                eventHandlerObjectMapper.readValue(input, eventType);
         return event;
     }
 
