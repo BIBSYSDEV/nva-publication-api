@@ -20,6 +20,7 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -71,6 +72,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -105,7 +107,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
-    private final Javers javers = JaversBuilder.javers().build();
+    public static final Javers JAVERS = JaversBuilder.javers().build();
+
     private ResourceService resourceService;
     private Clock clock;
     private DoiRequestService doiRequestService;
@@ -120,8 +123,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     public void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
-        throws TransactionFailedException, NotFoundException {
+        throws TransactionFailedException, NotFoundException, JsonProcessingException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        assertThat(inputPublication.getSubjects(),is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
         Instant publicationPredefinedTime = Instant.now();
 
@@ -132,9 +136,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
-
+        Diff diff=JAVERS.compare(inputPublication,savedPublication);
         assertThat(publicationPredefinedTime, is(not(equalTo(RESOURCE_CREATION_TIME))));
-        assertThat(savedPublication, is(equalTo(inputPublication)));
+        assertThat(diff.prettyPrint(),savedPublication, is(equalTo(inputPublication)));
     }
 
     @Test
@@ -170,7 +174,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Publication readResource = resourceService.getPublication(savedResource);
         Publication expectedResource = expectedResourceFromSampleResource(resource, savedResource);
 
-        Diff diff = javers.compare(expectedResource, savedResource);
+        Diff diff = JAVERS.compare(expectedResource, savedResource);
         assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
 
         assertThat(savedResource, is(equalTo(expectedResource)));
@@ -708,7 +712,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
-        Diff diff = javers.compare(updatedDoiRequest, expectedDoiRequest);
+        Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
@@ -1015,7 +1019,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private void assertThatNewEntityDescriptionDiffersOnlyInTitle(EntityDescription oldEntityDescription,
                                                                   EntityDescription newEntityDescription) {
         String mainTitleFieldName = fetchMainTitleFieldName();
-        Diff diff = javers.compare(oldEntityDescription, newEntityDescription);
+        Diff diff = JAVERS.compare(oldEntityDescription, newEntityDescription);
         int mainTitleChanges = diff.getPropertyChanges(mainTitleFieldName).size();
         assertThat(mainTitleChanges, is(equalTo(1)));
     }

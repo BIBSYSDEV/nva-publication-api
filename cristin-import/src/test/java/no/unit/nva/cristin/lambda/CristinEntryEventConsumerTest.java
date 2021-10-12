@@ -23,6 +23,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -34,6 +35,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,6 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.CristinImportConfig;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
@@ -61,6 +64,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.IoUtils;
+import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -140,7 +144,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() {
+    public void handlerSavesPublicationToDynamoDbWhenInputIsEventWithCristinResult() throws JsonProcessingException {
         CristinObject cristinObject = CristinDataGenerator.randomObject();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent = CristinDataGenerator.toAwsEvent(cristinObject);
         InputStream input = stringToStream(awsEvent.toJsonString());
@@ -150,9 +154,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         UserInstance userInstance = createExpectedPublicationOwner();
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
+        //TODO remove this line after upgrade of datamodel to 0.14.1 or later
+        expectedPublication.setSubjects(Collections.emptyList());
         injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
 
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);
+        String actualJson = JsonUtils.dtoObjectMapper.writeValueAsString(actualPublication);
+        String expectedJson = JsonUtils.dtoObjectMapper.writeValueAsString(expectedPublication);
+        assertEquals(expectedJson,actualJson);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
 

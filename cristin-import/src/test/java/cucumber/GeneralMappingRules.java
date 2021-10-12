@@ -2,6 +2,7 @@ package cucumber;
 
 import static cucumber.utils.transformers.CristinContributorAffiliationTransformer.parseContributorAffiliationsFromMap;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
@@ -38,6 +39,7 @@ import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import nva.commons.core.SingletonCollector;
+import org.hamcrest.collection.IsEmptyCollection;
 
 public class GeneralMappingRules {
 
@@ -380,7 +382,7 @@ public class GeneralMappingRules {
     @Then("the NVA Resource has no projects")
     public void theNvaResourceHasNoProjects() {
         List<ResearchProject> actuallProjects = scenarioContext.getNvaEntry().getProjects();
-        assertThat(actuallProjects, is(equalTo(null)));
+        assertThat(actuallProjects, is(empty()));
     }
 
     @Given("that the Cristin Result has PresentationalWork objects with the values:")
