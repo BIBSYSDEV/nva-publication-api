@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
+import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.model.contexttypes.Journal;
 import no.unit.nva.model.contexttypes.Periodical;
 import no.unit.nva.model.contexttypes.UnconfirmedJournal;
@@ -28,7 +29,7 @@ public class PeriodicalBuilder extends CristinMappingModule {
 
     private Periodical createUnconfirmedJournal() {
         return attempt(() -> new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline()))
-            .orElseThrow();
+            .orElseThrow(failure -> new InvalidIssnRuntimeException(failure.getException()));
     }
 
     private Periodical createJournal() {

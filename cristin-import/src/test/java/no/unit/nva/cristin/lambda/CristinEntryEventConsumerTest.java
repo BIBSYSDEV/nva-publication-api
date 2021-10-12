@@ -287,8 +287,22 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheIssnIsInvalid() throws JsonProcessingException {
-        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.objectWithInvalidIssn();
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheBookIssnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.bookObjectWithInvalidIssn();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, is(instanceOf(InvalidIssnRuntimeException.class)));
+    }
+
+    @Test
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheJournalIssnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.journalObjectWithInvalidIssn();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
                 CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
