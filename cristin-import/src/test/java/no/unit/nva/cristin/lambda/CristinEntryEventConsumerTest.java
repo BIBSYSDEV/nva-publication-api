@@ -154,14 +154,9 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         UserInstance userInstance = createExpectedPublicationOwner();
         Publication actualPublication = fetchPublicationDirectlyFromDatabase(userInstance);
         Publication expectedPublication = cristinObject.toPublication();
-        //TODO remove this line after upgrade of datamodel to 0.14.1 or later
-        expectedPublication.setSubjects(Collections.emptyList());
         injectValuesThatAreCreatedWhenSavingInDynamo(awsEvent, actualPublication, expectedPublication);
 
         Diff diff = JAVERS.compare(expectedPublication, actualPublication);
-        String actualJson = JsonUtils.dtoObjectMapper.writeValueAsString(actualPublication);
-        String expectedJson = JsonUtils.dtoObjectMapper.writeValueAsString(expectedPublication);
-        assertEquals(expectedJson,actualJson);
         assertThat(diff.prettyPrint(), actualPublication, is(equalTo(expectedPublication)));
     }
 
