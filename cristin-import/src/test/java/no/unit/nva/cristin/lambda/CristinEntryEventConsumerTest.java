@@ -48,6 +48,7 @@ import no.unit.nva.cristin.CristinImportConfig;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
@@ -317,6 +318,21 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         RuntimeException exception = assertThrows(RuntimeException.class, action);
         Throwable cause = exception.getCause();
         assertThat(cause, is(instanceOf(MissingContributorsException.class)));
+    }
+
+    @Test
+    public void handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
+            throws JsonProcessingException {
+        JsonNode cristinObjectWithoutContributors = CristinDataGenerator.objectWithContributorsWithoutAffiliation();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithoutContributors);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        Throwable cause = exception.getCause();
+        assertThat(cause, is(instanceOf(ContributorWithoutAffiliationException.class)));
     }
 
     @Test
