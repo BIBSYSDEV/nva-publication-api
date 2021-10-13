@@ -224,7 +224,7 @@ public class CristinMapper extends CristinMappingModule {
             .build();
     }
 
-    private RuntimeException handlePublicationContextFailure(Exception exception) {
+    public static RuntimeException handlePublicationContextFailure(Exception exception) {
         if (exception instanceof InvalidIssnException) {
             return new InvalidIssnRuntimeException(exception);
         }
