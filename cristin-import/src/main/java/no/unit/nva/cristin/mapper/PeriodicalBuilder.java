@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.cristin.mapper.CristinMapper.handlePublicationContextFailure;
+import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
