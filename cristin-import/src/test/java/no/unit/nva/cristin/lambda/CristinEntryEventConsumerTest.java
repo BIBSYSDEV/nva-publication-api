@@ -15,9 +15,9 @@ import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToStrin
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.StringContains.containsString;
@@ -179,14 +179,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         CristinObject cristinObject = CristinDataGenerator.randomObject();
         InputStream event = stringToStream(CristinDataGenerator.toAwsEvent(cristinObject).toJsonString());
-        Integer cristinIdentifier = Optional.of(cristinObject)
-                                        .map(CristinObject::getId)
-                                        .orElseThrow();
         Executable action = () -> handler.handleRequest(event, outputStream, CONTEXT);
 
         RuntimeException exception = assertThrows(RuntimeException.class, action);
-        assertThat(exception.getMessage(), containsString(ERROR_SAVING_CRISTIN_RESULT + cristinIdentifier));
-        assertThat(exception.getCause().getMessage(), containsString(RESOURCE_EXCEPTION_MESSAGE));
+        assertThat(exception.getMessage(), containsString(RESOURCE_EXCEPTION_MESSAGE));
     }
 
     @Test
@@ -212,11 +208,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(UnsupportedMainCategoryException.class)));
-        assertThat(cause.getMessage(), is(equalTo(PublicationInstanceBuilderImpl.ERROR_PARSING_MAIN_CATEGORY)));
+        UnsupportedMainCategoryException exception = assertThrows(UnsupportedMainCategoryException.class, action);
+        assertThat(exception.getMessage(), is(equalTo(UnsupportedMainCategoryException.ERROR_PARSING_MAIN_CATEGORY)));
     }
 
     @Test
@@ -232,9 +225,8 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
 
         RuntimeException thrownException = assertThrows(RuntimeException.class, action);
-        Exception cause = (Exception) thrownException.getCause();
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> expectedReport =
-            constructExpectedErrorReport(cause, event);
+            constructExpectedErrorReport(thrownException, event);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
             extractActualReportFromS3Client(event, thrownException);
@@ -252,11 +244,10 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
-        Exception thrownException = assertThrows(RuntimeException.class, action);
-        Exception cause = (Exception) thrownException.getCause();
+        UnsupportedMainCategoryException thrownException = assertThrows(UnsupportedMainCategoryException.class, action);
 
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> actualReport =
-            extractActualReportFromS3Client(awsEvent, cause);
+            extractActualReportFromS3Client(awsEvent, thrownException);
 
         assertThat(actualReport.getInput().getDetail().getContents(), is(equalTo(inputData)));
     }
@@ -269,11 +260,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
+        UnsupportedSecondaryCategoryException exception =
+                assertThrows(UnsupportedSecondaryCategoryException.class, action);
 
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(UnsupportedSecondaryCategoryException.class)));
-        assertThat(cause.getMessage(), containsString(PublicationInstanceBuilderImpl.ERROR_PARSING_SECONDARY_CATEGORY));
+        assertThat(exception.getMessage(),
+                containsString(UnsupportedSecondaryCategoryException.ERROR_PARSING_SECONDARY_CATEGORY));
 
     }
 
@@ -286,23 +277,31 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(InvalidIsbnRuntimeException.class)));
+        assertThrows(InvalidIsbnRuntimeException.class, action);
     }
 
     @Test
-    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheIssnIsInvalid() throws JsonProcessingException {
-        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.objectWithInvalidIssn();
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheBookIssnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.bookObjectWithInvalidIssn();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
                 CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(InvalidIssnRuntimeException.class)));
+        assertThrows(InvalidIssnRuntimeException.class, action);
+    }
+
+    @Test
+    public void handlerThrowsInvalidIssnRuntimeExceptionWhenTheJournalIssnIsInvalid() throws JsonProcessingException {
+        JsonNode cristinObjectWithInvalidIssn = CristinDataGenerator.journalObjectWithInvalidIssn();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        assertThrows(InvalidIssnRuntimeException.class, action);
     }
 
     @Test
@@ -315,9 +314,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(MissingContributorsException.class)));
+        assertThrows(MissingContributorsException.class, action);
     }
 
     @Test
@@ -330,9 +327,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        Throwable cause = exception.getCause();
-        assertThat(cause, is(instanceOf(ContributorWithoutAffiliationException.class)));
+        assertThrows(ContributorWithoutAffiliationException.class, action);
     }
 
     @Test
@@ -371,12 +366,13 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
-        Exception exception = assertThrows(RuntimeException.class, action);
+        UnsupportedSecondaryCategoryException exception =
+                assertThrows(UnsupportedSecondaryCategoryException.class, action);
 
         S3Driver s3Driver = new S3Driver(s3Client, "bucket");
         String expectedFilePath = awsEvent.getDetail().getFileUri().getPath();
         Instant expectedTimestamp = awsEvent.getDetail().getTimestamp();
-        String exceptionName = exception.getCause().getClass().getSimpleName();
+        String exceptionName = exception.getClass().getSimpleName();
         String fileIdWithEnding = cristinObject.getId().toString() + JSON;
         UnixPath expectedErrorFileLocation = UnixPath.of(ERRORS_FOLDER,
                                                          timestampToString(expectedTimestamp),
@@ -476,7 +472,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         RuntimeException exception) {
         return UnixPath.of(ERRORS_FOLDER)
                    .addChild(timestampToString(event.getDetail().getTimestamp()))
-                   .addChild(exception.getCause().getClass().getSimpleName())
+                   .addChild(exception.getClass().getSimpleName())
                    .addChild(event.getDetail().getFileUri().getPath())
                    .addChild(event.getDetail().getContents().getId() + JSON);
     }

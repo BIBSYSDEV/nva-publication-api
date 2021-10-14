@@ -96,7 +96,7 @@ public class CristinContributor {
     }
 
     private List<Organization> extractAffiliations() {
-        if(isNull(affiliations)) {
+        if (isNull(affiliations)) {
             throw new ContributorWithoutAffiliationException();
         }
         return affiliations.stream()

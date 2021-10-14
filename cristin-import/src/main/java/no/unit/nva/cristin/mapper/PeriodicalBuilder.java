@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
@@ -28,7 +29,7 @@ public class PeriodicalBuilder extends CristinMappingModule {
 
     private Periodical createUnconfirmedJournal() {
         return attempt(() -> new UnconfirmedJournal(extractPublisherTitle(), extractIssn(), extractIssnOnline()))
-            .orElseThrow();
+            .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
     }
 
     private Periodical createJournal() {
