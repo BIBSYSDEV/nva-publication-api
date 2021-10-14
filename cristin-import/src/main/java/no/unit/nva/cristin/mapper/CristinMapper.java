@@ -17,6 +17,7 @@ import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,8 +38,6 @@ import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
 import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
 import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -216,25 +215,12 @@ public class CristinMapper extends CristinMappingModule {
         PublicationInstance<? extends Pages> publicationInstance
             = publicationInstanceBuilderImpl.build();
         PublicationContext publicationContext = attempt(this::buildPublicationContext)
-                .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
+                .orElseThrow(failure -> castToCorrectRuntimeException(failure.getException()));
         return new Reference.Builder()
             .withPublicationInstance(publicationInstance)
             .withPublishingContext(publicationContext)
             .withDoi(extractDoi())
             .build();
-    }
-
-    private RuntimeException handlePublicationContextFailure(Exception exception) {
-        if (exception instanceof InvalidIssnException) {
-            return new InvalidIssnRuntimeException(exception);
-        }
-        if (exception instanceof InvalidIsbnException) {
-            return new InvalidIsbnRuntimeException(exception);
-        }
-        if (exception instanceof RuntimeException) {
-            return (RuntimeException) exception;
-        }
-        return new RuntimeException(exception);
     }
 
     private PublicationContext buildPublicationContext()

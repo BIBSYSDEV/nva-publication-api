@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper.nva;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.handlePublicationContextFailure;
 import static nva.commons.core.attempt.Try.attempt;
 import java.net.URI;
 import java.util.Optional;
@@ -8,7 +9,6 @@ import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublicationJournal;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Nsd;
-import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.model.contexttypes.BookSeries;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.contexttypes.UnconfirmedSeries;
@@ -38,7 +38,7 @@ public class NvaBookSeriesBuilder extends CristinMappingModule {
     private BookSeries createUnconfirmedBookSeries(CristinJournalPublicationJournal bookSeries) {
         return attempt(
             () -> new UnconfirmedSeries(bookSeries.getJournalTitle(), bookSeries.getIssn(), bookSeries.getIssnOnline()))
-            .orElseThrow(failure -> new InvalidIssnRuntimeException(failure.getException()));
+            .orElseThrow(failure -> handlePublicationContextFailure(failure.getException()));
     }
 
     private BookSeries createConfirmedBookSeries(CristinJournalPublicationJournal b) {

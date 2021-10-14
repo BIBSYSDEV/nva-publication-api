@@ -15,8 +15,7 @@ import no.unit.nva.model.pages.Pages;
 public class PublicationInstanceBuilderImpl  {
 
     public static final String ERROR_CRISTIN_OBJECT_IS_NULL = "CristinObject can not be null";
-    public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
-    public static final String ERROR_PARSING_MAIN_CATEGORY = "Error parsing main category";
+
     public static final String ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES = "Error parsing main or secondary "
                                                                             + "categories";
 
@@ -39,9 +38,9 @@ public class PublicationInstanceBuilderImpl  {
         } else if (isEvent(cristinObject)) {
             return new EventBuilder(cristinObject).build();
         } else if (cristinObject.getMainCategory().isUnknownCategory()) {
-            throw new UnsupportedMainCategoryException(ERROR_PARSING_MAIN_CATEGORY);
+            throw new UnsupportedMainCategoryException();
         } else if (cristinObject.getSecondaryCategory().isUnknownCategory()) {
-            throw new UnsupportedSecondaryCategoryException(ERROR_PARSING_SECONDARY_CATEGORY);
+            throw new UnsupportedSecondaryCategoryException();
         }
         throw new RuntimeException(ERROR_PARSING_MAIN_OR_SECONDARY_CATEGORIES);
     }

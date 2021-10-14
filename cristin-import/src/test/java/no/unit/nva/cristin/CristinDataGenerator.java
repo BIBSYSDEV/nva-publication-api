@@ -6,6 +6,7 @@ import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.ENCYCLOPEDIA;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.JOURNAL_ARTICLE;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.MONOGRAPH;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.NON_FICTION_BOOK;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.POPULAR_BOOK;
@@ -256,11 +257,18 @@ public final class CristinDataGenerator {
         return cristinObjectAsObjectNode(cristinObject);
     }
 
-    public static JsonNode objectWithInvalidIssn() throws JsonProcessingException {
+    public static JsonNode bookObjectWithInvalidIssn() throws JsonProcessingException {
         CristinObject cristinObject = randomBook();
         cristinObject.getBookOrReportMetadata().getBookSeries().setIssn("123-123-123-132-123");
         cristinObject.getBookOrReportMetadata().getBookSeries().setNsdCode(null);
         return cristinObjectAsObjectNode(cristinObject);
+    }
+
+    public static JsonNode journalObjectWithInvalidIssn() throws JsonProcessingException {
+        CristinObject cristinObject = randomJournalArticle(JOURNAL_ARTICLE);
+        cristinObject.getJournalPublication().getJournal().setIssn("123-123-123-132-123");
+        cristinObject.getJournalPublication().getJournal().setNsdCode(null);
+        return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
 
     public static JsonNode objectWithoutContributors() throws JsonProcessingException {

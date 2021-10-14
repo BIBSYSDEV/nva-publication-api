@@ -8,7 +8,6 @@ import nva.commons.core.JacocoGenerated;
 public abstract class AbstractPublicationInstanceBuilder {
 
     private final CristinObject cristinObject;
-    public static final String ERROR_PARSING_SECONDARY_CATEGORY = "Error parsing secondary category";
     public static final String ERROR_NOT_CORRECT_TYPE
         = "The cristin object can not be accepted by the %s constructor as it is not of type %s";
 
@@ -23,7 +22,7 @@ public abstract class AbstractPublicationInstanceBuilder {
 
     @JacocoGenerated
     public UnsupportedSecondaryCategoryException unknownSecondaryCategory() {
-        return new UnsupportedSecondaryCategoryException(ERROR_PARSING_SECONDARY_CATEGORY);
+        return new UnsupportedSecondaryCategoryException();
     }
 
     @JacocoGenerated
