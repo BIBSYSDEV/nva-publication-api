@@ -15,6 +15,7 @@ import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToStrin
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -46,6 +47,8 @@ import no.unit.nva.cristin.CristinDataGenerator;
 import no.unit.nva.cristin.CristinImportConfig;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
+import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedMainCategoryException;
@@ -312,6 +315,19 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         assertThrows(MissingContributorsException.class, action);
+    }
+
+    @Test
+    public void handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
+            throws JsonProcessingException {
+        JsonNode cristinObjectWithoutContributors = CristinDataGenerator.objectWithContributorsWithoutAffiliation();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithoutContributors);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        assertThrows(ContributorWithoutAffiliationException.class, action);
     }
 
     @Test

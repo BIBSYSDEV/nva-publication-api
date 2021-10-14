@@ -1,5 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_PERSONS_URI;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.SHOULD_CREATE_CONTRIBUTOR_ID;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
@@ -94,6 +96,9 @@ public class CristinContributor {
     }
 
     private List<Organization> extractAffiliations() {
+        if (isNull(affiliations)) {
+            throw new ContributorWithoutAffiliationException();
+        }
         return affiliations.stream()
                    .map(CristinContributorsAffiliation::toNvaOrganization)
                    .collect(Collectors.toList());
