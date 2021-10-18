@@ -26,8 +26,8 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "MODIFY",
-      "oldPublication": {
-        "type": "Publication",
+      "oldData": {
+        "type": "Resource",
         "identifier": "017768664574-6236cf35-a0a9-4eaf-84ea-fbcd9d7cf413",
         "status": "DRAFT",
         "owner": "og@unit.no",
@@ -48,8 +48,8 @@
           "mainTitle": "Title01D"
         }
       },
-      "newPublication": {
-        "type": "Publication",
+      "newData": {
+        "type": "Resource",
         "identifier": "017768664574-6236cf35-a0a9-4eaf-84ea-fbcd9d7cf413",
         "status": "DRAFT",
         "owner": "og@unit.no",

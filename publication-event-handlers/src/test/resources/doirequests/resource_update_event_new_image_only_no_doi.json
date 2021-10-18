@@ -20,8 +20,8 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "INSERT",
-      "newPublication": {
-        "type": "Publication",
+      "newData": {
+        "type": "Resource",
         "identifier": "017768664574-6236cf35-a0a9-4eaf-84ea-fbcd9d7cf413",
         "status": "DRAFT",
         "owner": "og@unit.no",

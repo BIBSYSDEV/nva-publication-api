@@ -26,8 +26,8 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "INSERT",
-      "newPublication": {
-        "type": "Publication",
+      "newData": {
+        "type": "Resource",
         "identifier": null,
         "status": "DRAFT",
         "owner": "og@unit.no",

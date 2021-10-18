@@ -14,9 +14,11 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@Disabled
 public class DeletePublicationEventProducerHandlerTest {
 
     public static final String NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON = "new_publication_draft_for_deletion.json";

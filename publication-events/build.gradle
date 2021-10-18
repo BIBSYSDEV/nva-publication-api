@@ -2,6 +2,7 @@ dependencies {
     implementation(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation(project(':storage-model'))
     implementation libs.nva.identifiers
     implementation libs.nva.core
 

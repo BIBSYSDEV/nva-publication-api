@@ -27,8 +27,8 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "MODIFY",
-      "oldPublication": {
-        "type": "Publication",
+      "oldData": {
+        "type": "Resource",
         "identifier": "01781777ac5a-2e27ea4e-6a59-4fb1-8f47-8d0917819fc6",
         "status": "PUBLISHED",
         "owner": "og@unit.no",
@@ -84,8 +84,8 @@
           }
         }
       },
-      "newPublication": {
-        "type": "Publication",
+      "newData": {
+        "type": "Resource",
         "identifier": "01781777ac5a-2e27ea4e-6a59-4fb1-8f47-8d0917819fc6",
         "status": "PUBLISHED",
         "owner": "og@unit.no",
