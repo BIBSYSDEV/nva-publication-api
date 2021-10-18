@@ -11,18 +11,10 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOME
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_ACTIVITY_URI;
 import static no.unit.nva.cristin.mapper.CristinHrcsCategoriesAndActivities.HRCS_CATEGORY_URI;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
 import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
-import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import java.net.URI;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -35,9 +27,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.nva.CristinMappingModule;
-import no.unit.nva.cristin.mapper.nva.NvaBookBuilder;
-import no.unit.nva.cristin.mapper.nva.NvaDegreeBuilder;
-import no.unit.nva.cristin.mapper.nva.NvaReportBuilder;
+import no.unit.nva.cristin.mapper.nva.ReferenceBuilder;
 import no.unit.nva.cristin.mapper.nva.exceptions.MissingContributorsException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
@@ -47,35 +37,20 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Event;
-import no.unit.nva.model.contexttypes.PublicationContext;
-import no.unit.nva.model.exceptions.InvalidIsbnException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
-import nva.commons.doi.DoiConverter;
-import nva.commons.doi.DoiValidator;
+
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
-    private static final Config config = loadConfiguration();
-    private static final boolean VALIDATE_DOI_ONLINE = parseValidateDoiOnline();
-
-    private final DoiConverter doiConverter;
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
-        DoiValidator doiValidator = new DoiValidator();
-        doiConverter = new DoiConverter(doiUri -> validateDoi(doiValidator, doiUri));
+
     }
 
     public Publication generatePublication() {
@@ -94,18 +69,6 @@ public class CristinMapper extends CristinMappingModule {
             .build();
         assertPublicationDoesNotHaveEmptyFields(publication);
         return publication;
-    }
-
-    private static boolean validateDoi(DoiValidator doiValidator, URI doiUri) {
-        return VALIDATE_DOI_ONLINE ? doiValidator.validateOnline(doiUri) : DoiValidator.validateOffline(doiUri);
-    }
-
-    private static boolean parseValidateDoiOnline() {
-        return config.getBoolean("doi.validation.online");
-    }
-
-    private static Config loadConfiguration() {
-        return ConfigFactory.load(ConfigFactory.defaultApplication());
     }
 
     private void assertPublicationDoesNotHaveEmptyFields(Publication publication) {
@@ -155,7 +118,7 @@ public class CristinMapper extends CristinMappingModule {
             .withLanguage(extractLanguage())
             .withMainTitle(extractMainTitle())
             .withDate(extractPublicationDate())
-            .withReference(buildReference())
+            .withReference(new ReferenceBuilder(cristinObject).buildReference())
             .withContributors(extractContributors())
             .withNpiSubjectHeading(extractNpiSubjectHeading())
             .withAbstract(extractAbstract())
@@ -209,55 +172,6 @@ public class CristinMapper extends CristinMappingModule {
                 .collect(Collectors.toList());
     }
 
-    private Reference buildReference() {
-        PublicationInstanceBuilderImpl publicationInstanceBuilderImpl
-            = new PublicationInstanceBuilderImpl(cristinObject);
-        PublicationInstance<? extends Pages> publicationInstance
-            = publicationInstanceBuilderImpl.build();
-        PublicationContext publicationContext = attempt(this::buildPublicationContext)
-                .orElseThrow(failure -> castToCorrectRuntimeException(failure.getException()));
-        return new Reference.Builder()
-            .withPublicationInstance(publicationInstance)
-            .withPublishingContext(publicationContext)
-            .withDoi(extractDoi())
-            .build();
-    }
-
-    private PublicationContext buildPublicationContext()
-        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
-        if (isBook(cristinObject)) {
-            return new NvaBookBuilder(cristinObject).buildBookForPublicationContext();
-        }
-        if (isJournal(cristinObject)) {
-            return new PeriodicalBuilder(cristinObject).buildPeriodicalForPublicationContext();
-        }
-        if (isReport(cristinObject)) {
-            return buildPublicationContextWhenMainCategoryIsReport();
-        }
-        if (isChapter(cristinObject)) {
-            return buildChapterForPublicationContext();
-        }
-        if (isEvent(cristinObject)) {
-            return buildEventForPublicationContext();
-        }
-        return null;
-    }
-
-    private PublicationContext buildPublicationContextWhenMainCategoryIsReport()
-        throws InvalidIsbnException, InvalidIssnException, InvalidUnconfirmedSeriesException {
-        if (isDegreePhd(cristinObject) || isDegreeMaster(cristinObject)) {
-            return new NvaDegreeBuilder(cristinObject).buildDegree();
-        }
-        return new NvaReportBuilder(cristinObject).buildNvaReport();
-    }
-
-    private Chapter buildChapterForPublicationContext() {
-        return new Chapter.Builder().build();
-    }
-
-    private PublicationContext buildEventForPublicationContext() {
-        return new Event.Builder().build();
-    }
 
     private PublicationDate extractPublicationDate() {
         return new PublicationDate.Builder().withYear(cristinObject.getPublicationYear().toString()).build();
@@ -315,16 +229,6 @@ public class CristinMapper extends CristinMappingModule {
             return null;
         }
         return extractCristinBookReport().getSubjectField();
-    }
-
-    private URI extractDoi() {
-        if (isJournal(cristinObject)) {
-            return Optional.of(extractCristinJournalPublication())
-                .map(CristinJournalPublication::getDoi)
-                .map(doiConverter::toUri)
-                .orElse(null);
-        }
-        return null;
     }
 
     private List<CristinTags> extractCristinTags() {
