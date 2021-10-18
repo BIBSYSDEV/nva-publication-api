@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
@@ -91,7 +92,7 @@ public class CristinContributor {
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException(MISSING_ROLE_ERROR));
+                .orElseThrow(() -> new AffiliationWithoutRoleException());
         return firstRole.toNvaRole();
     }
 
