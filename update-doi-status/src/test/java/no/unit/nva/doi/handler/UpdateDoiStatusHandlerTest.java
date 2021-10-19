@@ -66,7 +66,7 @@ class UpdateDoiStatusHandlerTest {
     }
 
     @Test
-    void handleRequestThrowsIllegalSateExceptionWhereRequestedDoiModificationTimeIsInTheFuture() {
+    void handleRequestThrowsIllegalStateExceptionWhereRequestedDoiModificationTimeIsInTheFuture() {
         var eventInputStream = IoUtils.inputStreamFromResources(BAD_EVENT_WITH_DATE_IN_FUTURE);
 
         var actualException = assertThrows(RuntimeException.class,
