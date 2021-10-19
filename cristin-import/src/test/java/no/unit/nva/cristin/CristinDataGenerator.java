@@ -283,6 +283,14 @@ public final class CristinDataGenerator {
         return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
     }
 
+    public static JsonNode objectWithAffiliationWithoutRole() throws JsonProcessingException {
+        CristinObject cristinObject = randomBook();
+        cristinObject.getContributors().stream()
+                .flatMap(contributor -> contributor.getAffiliations().stream())
+                .forEach(affiliation -> affiliation.setRoles(null));
+        return eventHandlerObjectMapper.readTree(cristinObject.toJsonString());
+    }
+
     public static CristinObject newCristinObjectWithRoleCode(CristinContributorRoleCode roleCode) {
         return createObjectWithCristinContributorRoleCode(0, createContributors(roleCode));
     }

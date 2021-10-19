@@ -48,6 +48,7 @@ import no.unit.nva.cristin.CristinImportConfig;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
+import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIssnRuntimeException;
@@ -320,14 +321,27 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     @Test
     public void handlerThrowContributorWithoutAffiliationExceptionWhenTheCristinObjectHasContributorWithoutAffiliation()
             throws JsonProcessingException {
-        JsonNode cristinObjectWithoutContributors = CristinDataGenerator.objectWithContributorsWithoutAffiliation();
+        JsonNode cristinObjectWithoutAffiliations = CristinDataGenerator.objectWithContributorsWithoutAffiliation();
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
-                CristinDataGenerator.toAwsEvent(cristinObjectWithoutContributors);
+                CristinDataGenerator.toAwsEvent(cristinObjectWithoutAffiliations);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
 
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         assertThrows(ContributorWithoutAffiliationException.class, action);
+    }
+
+    @Test
+    public void handlerThrowsAffiliationWithoutARoleExceptionWhenTheCristinObjectHasAffiliationsWithoutRoles()
+            throws JsonProcessingException {
+        JsonNode cristinObjectWithAffiliationWithoutRoles = CristinDataGenerator.objectWithAffiliationWithoutRole();
+        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
+                CristinDataGenerator.toAwsEvent(cristinObjectWithAffiliationWithoutRoles);
+        InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
+
+        Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
+
+        assertThrows(AffiliationWithoutRoleException.class, action);
     }
 
     @Test

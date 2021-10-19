@@ -7,6 +7,7 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAM
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.CRISTIN_ORG_URI;
 import static no.unit.nva.cristin.mapper.CristinContributor.MISSING_ROLE_ERROR;
 import static no.unit.nva.cristin.mapper.CristinObject.IDENTIFIER_ORIGIN;
+import static no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException.ERROR_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
+import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -325,20 +327,6 @@ public class CristinMapperTest extends AbstractCristinImportTest {
         List<String> actualIsbnList = bookSubType.getIsbnList();
 
         assertThat(actualIsbnList.get(0), is(equalTo(isbn)));
-    }
-
-    @Test
-    public void mapThrowsExceptionWhenACristinAffiliationDoesNotHaveARole() {
-        CristinObject cristinObjectWithContributorsWithoutRole =
-            CristinDataGenerator.randomObject()
-                .copy()
-                .withContributors(List.of(contributorWithoutRoles()))
-                .build();
-
-        Executable action = cristinObjectWithContributorsWithoutRole::toPublication;
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, action);
-        assertThat(exception.getMessage(), is(equalTo(MISSING_ROLE_ERROR)));
     }
 
     @Test
