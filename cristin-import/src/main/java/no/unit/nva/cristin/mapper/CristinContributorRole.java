@@ -31,6 +31,8 @@ public class CristinContributorRole {
             return Role.EDITOR;
         } else if (CristinContributorRoleCode.SUPERVISOR.equals(roleCode)) {
             return Role.SUPERVISOR;
+        } else if (CristinContributorRoleCode.ACADEMIC_COORDINATOR.equals(roleCode)) {
+            return Role.ACADEMIC_COORDINATOR;
         } else {
             return Role.OTHER;
         }

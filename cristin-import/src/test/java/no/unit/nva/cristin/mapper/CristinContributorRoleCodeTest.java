@@ -30,6 +30,13 @@ class CristinContributorRoleCodeTest {
     }
 
     @Test
+    public void fromStringShouldReturnAcademicCoordinatorWhenTheInputIsFagligAnsvarlig() {
+        String roldeCode = "FAGLIG_ANSVARLIG";
+        CristinContributorRoleCode role = CristinContributorRoleCode.fromString(roldeCode);
+        assertThat(role, is(equalTo(CristinContributorRoleCode.ACADEMIC_COORDINATOR)));
+    }
+
+    @Test
     public void fromStringReturnsEnumValueWhenInputIsValidAndIsUtf8() {
         List<String> roleCodes = IoUtils.linesfromResource(Path.of("contributer_role_codes.txt"));
         for (String roleCode : roleCodes) {

@@ -9,7 +9,8 @@ import java.util.Arrays;
 public enum CristinContributorRoleCode {
     CREATOR("FORFATTER"),
     EDITOR("REDAKT" + "\u00D8" + "R"), //REDAKTØR
-    SUPERVISOR("VEILEDER");
+    SUPERVISOR("VEILEDER"),
+    ACADEMIC_COORDINATOR("FAGLIG_ANSVARLIG");
 
 
     private final String value;
