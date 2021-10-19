@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
  * `publication.doirequest`.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
+        extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
 
     public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "publication.doiupdate.newdraftdoirequest";
     public static final String TYPE_UPDATE_EXISTING_DOI = "publication.doiupdate.updateexistingdoi";
