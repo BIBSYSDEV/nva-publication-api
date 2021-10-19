@@ -14,7 +14,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
