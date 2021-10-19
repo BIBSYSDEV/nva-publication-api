@@ -30,8 +30,8 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "REMOVE",
-      "newPublication": null,
-      "oldPublication": null
+      "newData": null,
+      "oldData": null
     }
   }
 }

@@ -1,145 +1,120 @@
 {
   "version": "0",
-  "id": "7ee6afcb-a35d-6c1c-09f1-36b04e2fa95c",
+  "id": "76f4d9e9-4084-84a5-4062-3a9711b85ba7",
   "detail-type": "Lambda Function Invocation Result - Success",
   "source": "lambda",
   "account": "884807050265",
-  "time": "2021-03-09T14:52:22Z",
+  "time": "2021-02-03T15:01:05Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:events:eu-west-1:111111111:event-bus/default",
-    "arn:aws:lambda:eu-west-1:11111111111:function:nva-publication-api-nva-p-PublicationFanoutHandler-O3WUKJKSLP8P:$LATEST"
+    "arn:aws:events:eu-west-1:884807050265:event-bus/default",
+    "arn:aws:lambda:eu-west-1:884807050265:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST"
   ],
   "detail": {
     "version": "1.0",
-    "timestamp": "2021-03-09T14:52:22.633Z",
-    "requestContext": {
-      "requestId": "7814e824-c699-45a0-a4cd-0a03894790d6",
-      "functionArn": "arn:aws:lambda:eu-west-1:1111111111111:function:nva-publication-api-nva-p-PublicationFanoutHandler-O3WUKJKSLP8P:$LATEST",
-      "condition": "Success",
-      "approximateInvokeCount": 1
-    },
-    "requestPayload": {},
+    "timestamp": "2021-02-03T15:01:05.418Z",
     "responseContext": {
       "statusCode": 200,
       "executedVersion": "$LATEST"
     },
     "responsePayload": {
-      "type": "publication.update",
-      "updateType": "MODIFY",
-      "oldData": {
-        "type": "Resource",
-        "identifier": "01781777ac5a-2e27ea4e-6a59-4fb1-8f47-8d0917819fc6",
-        "status": "PUBLISHED",
-        "owner": "og@unit.no",
-        "publisher": {
-          "type": "Organization",
-          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-        },
-        "modifiedDate": "2021-03-09T14:51:03.798358Z",
-        "doi": "https://doi.org/10.16903/s6mr-r169",
-        "doiRequest": {
-          "type": "DoiRequest",
-          "status": "REQUESTED",
-          "modifiedDate": "2021-03-09T14:51:49.804422Z",
-          "createdDate": "2021-03-09T14:50:46.568244Z"
-        },
-        "entityDescription": {
-          "type": "EntityDescription",
-          "mainTitle": "Title early morning, not any more",
-          "date": {
-            "type": "PublicationDate",
-            "year": "2021",
-            "month": "2",
-            "day": "2"
-          },
-          "contributors": [
-            {
-              "type": "Contributor",
-              "identity": {
-                "type": "Identity",
-                "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
-                "name": "Gkorgkas,Orestis Stylianos",
-                "orcId": "0000-0001-8310-5489"
-              },
-              "affiliations": [
-                {
-                  "type": "Organization",
-                  "id": "https://api.cristin.no/v2/institutions/20202"
-                }
-              ],
-              "sequence": 1,
-              "correspondingAuthor": false
-            }
-          ],
-          "reference": {
-            "type": "Reference",
-            "publicationInstance": {
-              "type": "JournalArticle",
-              "peerReviewed": true,
-              "pages": {
-                "type": "Range"
-              }
-            }
-          }
-        }
-      },
+      "type": "doirequest.update",
+      "updateType": "INSERT",
       "newData": {
-        "type": "Resource",
-        "identifier": "01781777ac5a-2e27ea4e-6a59-4fb1-8f47-8d0917819fc6",
-        "status": "PUBLISHED",
-        "owner": "og@unit.no",
-        "publisher": {
-          "type": "Organization",
-          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934"
-        },
-        "modifiedDate": "2021-03-09T14:51:03.798358Z",
-        "doi": "https://doi.org/10.16903/s6mr-r169",
-        "doiRequest": {
-          "type": "DoiRequest",
-          "status": "APPROVED",
-          "modifiedDate": "2021-03-09T14:52:20.703717Z",
-          "createdDate": "2021-03-09T14:50:46.568244Z"
-        },
-        "entityDescription": {
-          "type": "EntityDescription",
-          "mainTitle": "Title early morning, not any more",
-          "date": {
-            "type": "PublicationDate",
-            "year": "2021",
-            "month": "2",
-            "day": "2"
-          },
-          "contributors": [
-            {
-              "type": "Contributor",
-              "identity": {
-                "type": "Identity",
-                "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
-                "name": "Gkorgkas,Orestis Stylianos",
-                "orcId": "0000-0001-8310-5489"
-              },
-              "affiliations": [
-                {
-                  "type": "Organization",
-                  "id": "https://api.cristin.no/v2/institutions/20202"
-                }
-              ],
-              "sequence": 1,
-              "correspondingAuthor": false
-            }
-          ],
-          "reference": {
-            "type": "Reference",
-            "publicationInstance": {
-              "type": "JournalArticle",
-              "peerReviewed": true,
-              "pages": {
-                "type": "Range"
-              }
-            }
+        "type": "DoiRequest",
+        "identifier": "017c93559df0-541e2774-d27f-49c9-a234-a26cde19d204",
+        "resourceIdentifier": "017c9354dc9e-3c5d73e2-0cce-45ce-802a-b3443e198401",
+        "modifiedDate": "2021-10-18T12:17:14.224946Z",
+        "createdDate": "2021-10-18T12:17:14.224946Z",
+        "resourceModifiedDate": "2021-10-18T12:16:34.785459Z",
+        "resourcePublicationInstance": {
+          "type": "JournalArticle",
+          "peerReviewed": true,
+          "originalResearch": false,
+          "pages": {
+            "type": "Range"
           }
-        }
+        },
+        "resourcePublicationDate": {
+          "type": "PublicationDate",
+          "year": "2021",
+          "month": "2",
+          "day": "2"
+        },
+        "resourcePublicationYear": "2021",
+        "doi": null,
+        "contributors": [
+          {
+            "type": "Contributor",
+            "identity": {
+              "type": "Identity",
+              "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
+              "name": "Gkorgkas,Orestis Stylianos",
+              "orcId": "0000-0001-8310-5489"
+            },
+            "affiliations": [
+              {
+                "type": "Organization",
+                "id": "https://api.cristin.no/v2/institutions/20202"
+              }
+            ],
+            "sequence": 1,
+            "correspondingAuthor": false
+          }
+        ],
+        "status": "APPROVED",
+        "resourceStatus": "PUBLISHED",
+        "customerId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+        "owner": "jb@unit.no",
+        "resourceTitle": "My test 20210226_B"
+      },
+      "oldData": {
+        "type": "DoiRequest",
+        "identifier": "017c93559df0-541e2774-d27f-49c9-a234-a26cde19d204",
+        "resourceIdentifier": "017c9354dc9e-3c5d73e2-0cce-45ce-802a-b3443e198401",
+        "modifiedDate": "2021-10-18T12:17:14.224946Z",
+        "createdDate": "2021-10-18T12:17:14.224946Z",
+        "resourceModifiedDate": "2021-10-18T12:16:34.785459Z",
+        "resourcePublicationInstance": {
+          "type": "JournalArticle",
+          "peerReviewed": true,
+          "originalResearch": false,
+          "pages": {
+            "type": "Range"
+          }
+        },
+        "resourcePublicationDate": {
+          "type": "PublicationDate",
+          "year": "2021",
+          "month": "2",
+          "day": "2"
+        },
+        "resourcePublicationYear": "2021",
+        "doi": null,
+        "contributors": [
+          {
+            "type": "Contributor",
+            "identity": {
+              "type": "Identity",
+              "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
+              "name": "Gkorgkas,Orestis Stylianos",
+              "orcId": "0000-0001-8310-5489"
+            },
+            "affiliations": [
+              {
+                "type": "Organization",
+                "id": "https://api.cristin.no/v2/institutions/20202"
+              }
+            ],
+            "sequence": 1,
+            "correspondingAuthor": false
+          }
+        ],
+        "status": "REQUESTED",
+        "resourceStatus": "DRAFT",
+        "customerId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+        "owner": "jb@unit.no",
+        "resourceTitle": "My test 20210226_B"
       }
     }
   }

@@ -1,5 +1,27 @@
 package no.unit.nva.publication.events.doirequests;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.events.handlers.EventParser;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.doi.update.dto.PublicationHolder;
+import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import nva.commons.core.ioutils.IoUtils;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.nio.file.Path;
+
 import static no.unit.nva.publication.events.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.publication.events.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
@@ -9,55 +31,27 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.core.IsNot.not;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.ByteArrayOutputStream;
-import java.net.URI;
-import java.nio.file.Path;
-import no.unit.nva.events.handlers.EventParser;
-import no.unit.nva.events.models.AwsEventBridgeDetail;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
-import no.unit.nva.publication.events.PublicationEventsConfig;
-import nva.commons.core.ioutils.IoUtils;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 
-@Disabled
 class DoiRequestEventProducerTest {
 
     private static final String DOI_FIELD = "doi";
     private static final JsonPointer PUBLICATION_DATA_FIELD = JsonPointer.compile(
-        "/detail/responsePayload/newPublication");
+        "/detail/responsePayload/newData");
     private static final String EVENT_PUBLICATION_WITH_DOI_IS_UPDATED =
         "doirequests/resource_update_event_updated_metadata_with_existing_doi.json";
     private static final String RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NEW_HAS_DOI =
         "doirequests/resource_update_event_old_and_new_present_different_new_has_doi.json";
     private static final String RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NO_DOI =
-        "doirequests/resource_update_event_old_and_new_present_different_new_has_doi.json";
+        "doirequests/resource_update_event_old_and_new_present_different_no_doi.json";
     private static final String RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_EQUAL =
         "doirequests/resource_update_event_old_and_new_present_equal.json";
     private static final String RESOURCE_UPDATE_EVENT_OLD_ONLY =
         "doirequests/resource_update_event_old_only.json";
-    private static final String RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITHOUT_DOI =
-        "doirequests/resource_update_event_new_image_only_no_doi.json";
     private static final String RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITH_DOI =
         "doirequests/resource_update_event_new_image_only_with_doi.json";
-    private static final String PUBLICATION_WITHOUT_DOI_REQUEST =
-        "doirequests/resource_update_event_publication_without_doi_request.json";
     private static final String PUBLICATION_WITHOUT_IDENTIFIER =
         "doirequests/resource_update_event_publication_without_id.json";
     private static final String RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED =
@@ -81,31 +75,11 @@ class DoiRequestEventProducerTest {
     }
 
     @Test
-    public void handleRequestReturnsEmptyEventWhenThereIsNoDoiRequest() throws JsonProcessingException {
-        var eventInputStream = IoUtils.inputStreamFromResources(PUBLICATION_WITHOUT_DOI_REQUEST);
-        handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder output = outputToPublicationHolder(outputStream);
-        assertThat(output, is(equalTo(EMPTY_EVENT)));
-    }
-
-    @Test
     public void handleRequestThrowsExceptionWhenEventContainsPublicationWithoutIdentifier() {
         var eventInputStream = IoUtils.inputStreamFromResources(PUBLICATION_WITHOUT_IDENTIFIER);
         Executable action = () -> handler.handleRequest(eventInputStream, outputStream, context);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getMessage(), is(equalTo(NO_RESOURCE_IDENTIFIER_ERROR)));
-    }
-
-    @Test
-    void handlerCreatesNewDraftDoiEventWhenThereIsNoPreviousDoiRequestAndThereIsNoDoi()
-        throws JsonProcessingException {
-        String eventInput = IoUtils.stringFromResources(Path.of(RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITHOUT_DOI));
-        assertFalse(hasDoiField(eventInput));
-
-        handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_REQUEST_FOR_NEW_DRAFT_DOI)));
-        assertThat(actual.getItem(), notNullValue());
     }
 
     @Test
@@ -148,7 +122,7 @@ class DoiRequestEventProducerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(EVENT_PUBLICATION_WITH_DOI_IS_UPDATED);
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        URI doiInResourceFile = URI.create("https://doi.org/10.1103/physrevd.100.085005");
+        URI doiInResourceFile = URI.create("https://10.10000/100/12");
         URI actualDoi = actual.getItem().getDoi();
         assertThat(actualDoi, is(equalTo(doiInResourceFile)));
     }

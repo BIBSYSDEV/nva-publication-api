@@ -4,15 +4,16 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.util.Optional;
+
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class DoiRequestEventProducer
     }
 
     private static PublicationHolder emptyEvent() {
-        return new PublicationHolder(EMPTY_EVENT_TYPE, null);
+        return toPublicationHolder(null, EMPTY_EVENT_TYPE);
     }
 
     private void validate(PublicationHolder updatedDoiInformationEvent) {
@@ -69,10 +70,18 @@ public class DoiRequestEventProducer
         return Optional.of(updateEvent)
                    .filter(this::shouldPropagateEvent)
                    .map(DynamoEntryUpdateEvent::getNewData)
-                   .filter(data -> data instanceof Publication)
-                   .map(data -> (Publication) data)
-                   .map(pub -> new PublicationHolder(calculateEventType(updateEvent), pub))
+                   .filter(data -> data instanceof DoiRequest)
+                   .map(data -> (DoiRequest) data)
+                   .map(pub -> toPublicationHolder(pub, calculateEventType(updateEvent)))
                    .orElse(EMPTY_EVENT);
+    }
+
+    private static PublicationHolder toPublicationHolder(DoiRequest doiRequest, String eventType) {
+        Publication publication = null;
+        if (doiRequest != null) {
+            publication = doiRequest.toPublication();
+        }
+        return new PublicationHolder(eventType, publication);
     }
 
     private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
@@ -117,9 +126,8 @@ public class DoiRequestEventProducer
     private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
                    .map(DynamoEntryUpdateEvent::getNewData)
-                   .filter(data -> data instanceof Publication)
-                   .map(data -> (Publication) data)
-                   .map(Publication::getDoiRequest)
+                   .filter(data -> data instanceof DoiRequest)
+                   .map(data -> (DoiRequest) data)
                    .isPresent();
     }
 
@@ -150,9 +158,8 @@ public class DoiRequestEventProducer
     private DoiRequestStatus extractNewPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
                    .map(DynamoEntryUpdateEvent::getNewData)
-                   .filter(data -> data instanceof Publication)
-                   .map(data -> (Publication) data)
-                   .map(Publication::getDoiRequest)
+                   .filter(data -> data instanceof DoiRequest)
+                   .map(data -> (DoiRequest) data)
                    .map(DoiRequest::getStatus)
                    .orElse(null);
     }
@@ -160,9 +167,8 @@ public class DoiRequestEventProducer
     private DoiRequestStatus extractOldPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
                    .map(DynamoEntryUpdateEvent::getOldData)
-                   .filter(data -> data instanceof Publication)
-                   .map(data -> (Publication) data)
-                   .map(Publication::getDoiRequest)
+                   .filter(data -> data instanceof DoiRequest)
+                   .map(data -> (DoiRequest) data)
                    .map(DoiRequest::getStatus)
                    .orElse(DoiRequestStatus.REQUESTED);
     }
