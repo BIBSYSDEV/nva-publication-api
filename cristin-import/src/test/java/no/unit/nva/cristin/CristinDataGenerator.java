@@ -187,6 +187,8 @@ public final class CristinDataGenerator {
             case CONFERENCE_POSTER:
             case POPULAR_SCIENTIFIC_LECTURE:
             case LECTURE:
+            case OTHER_PRESENTATION:
+            case INTERNET_EXHIBIT:
                 return randomEvent(category);
             default:
                 break;
