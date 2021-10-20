@@ -1043,9 +1043,8 @@ Resources:
               detail:
                 responsePayload:
                   type: [ "doirequest.update" ]
-                  newPublication:
-                    doiRequest:
-                      type: [ { "exists": true } ] # "exists" works only in leaf nodes.
+                  newData:
+                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
 
       EventInvokeConfig:
         DestinationConfig:
