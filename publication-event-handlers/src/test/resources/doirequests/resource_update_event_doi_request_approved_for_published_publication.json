@@ -3,12 +3,12 @@
   "id": "76f4d9e9-4084-84a5-4062-3a9711b85ba7",
   "detail-type": "Lambda Function Invocation Result - Success",
   "source": "lambda",
-  "account": "884807050265",
+  "account": "11111111111",
   "time": "2021-02-03T15:01:05Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:events:eu-west-1:884807050265:event-bus/default",
-    "arn:aws:lambda:eu-west-1:884807050265:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST"
+    "arn:aws:events:eu-west-1:11111111111:event-bus/default",
+    "arn:aws:lambda:eu-west-1:11111111111:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST"
   ],
   "detail": {
     "version": "1.0",
@@ -42,7 +42,7 @@
           "day": "2"
         },
         "resourcePublicationYear": "2021",
-        "doi": null,
+        "doi": "https://doi.org/10.1103/physrevd.100.085005",
         "contributors": [
           {
             "type": "Contributor",
@@ -90,7 +90,7 @@
           "day": "2"
         },
         "resourcePublicationYear": "2021",
-        "doi": null,
+        "doi": "https://doi.org/10.1103/physrevd.100.085005",
         "contributors": [
           {
             "type": "Contributor",

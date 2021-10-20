@@ -30,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,7 +39,7 @@ import static org.mockito.Mockito.mock;
 class DoiRequestEventProducerTest {
 
     private static final String DOI_FIELD = "doi";
-    private static final JsonPointer PUBLICATION_DATA_FIELD = JsonPointer.compile(
+    private static final JsonPointer NEW_DATA_FIELD = JsonPointer.compile(
         "/detail/responsePayload/newData");
     private static final String EVENT_PUBLICATION_WITH_DOI_IS_UPDATED =
         "doirequests/resource_update_event_updated_metadata_with_existing_doi.json";
@@ -52,10 +53,10 @@ class DoiRequestEventProducerTest {
         "doirequests/resource_update_event_old_only.json";
     private static final String RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITH_DOI =
         "doirequests/resource_update_event_new_image_only_with_doi.json";
-    private static final String PUBLICATION_WITHOUT_IDENTIFIER =
-        "doirequests/resource_update_event_publication_without_id.json";
+    private static final String RESOURCE_UPDATE_EVENT_WITHOUT_IDENTIFIER =
+            "doirequests/resource_update_event_without_identifier.json";
     private static final String RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED =
-        "doirequests/resource_update_event_doi_request_approved_for_publishe_publication.json";
+            "doirequests/resource_update_event_doi_request_approved_for_published_publication.json";
     private static final String EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE =
         "doirequests/resource_update_event_old_and_new_present_with_doi_and_different_modified_date.json";
 
@@ -75,8 +76,8 @@ class DoiRequestEventProducerTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenEventContainsPublicationWithoutIdentifier() {
-        var eventInputStream = IoUtils.inputStreamFromResources(PUBLICATION_WITHOUT_IDENTIFIER);
+    public void handleRequestThrowsExceptionWhenEventContainsResourceUpdateWithoutIdentifier() {
+        var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_WITHOUT_IDENTIFIER);
         Executable action = () -> handler.handleRequest(eventInputStream, outputStream, context);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         assertThat(exception.getMessage(), is(equalTo(NO_RESOURCE_IDENTIFIER_ERROR)));
@@ -89,8 +90,10 @@ class DoiRequestEventProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
-        assertThat(actual.getItem(), notNullValue());
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.EMPTY_EVENT_TYPE)));
+        assertThat(actual.getItem(), nullValue());
+        //assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        //assertThat(actual.getItem(), notNullValue());
     }
 
     @Test
@@ -122,7 +125,7 @@ class DoiRequestEventProducerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(EVENT_PUBLICATION_WITH_DOI_IS_UPDATED);
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        URI doiInResourceFile = URI.create("https://10.10000/100/12");
+        URI doiInResourceFile = URI.create("https://doi.org/10.1103/physrevd.100.085005");
         URI actualDoi = actual.getItem().getDoi();
         assertThat(actualDoi, is(equalTo(doiInResourceFile)));
     }
@@ -209,7 +212,7 @@ class DoiRequestEventProducerTest {
 
     private boolean hasDoiField(String eventInput) {
         JsonNode event = attempt(() -> dynamoImageSerializerRemovingEmptyFields.readTree(eventInput)).orElseThrow();
-        return event.at(PUBLICATION_DATA_FIELD).has(DOI_FIELD);
+        return event.at(NEW_DATA_FIELD).has(DOI_FIELD);
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)

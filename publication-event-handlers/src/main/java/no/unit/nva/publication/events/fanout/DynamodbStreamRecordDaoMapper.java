@@ -19,6 +19,7 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 
+//TODO: rename class to DynamoJsonToInternalModelEventHandler
 public final class DynamodbStreamRecordDaoMapper {
 
 

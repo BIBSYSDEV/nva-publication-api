@@ -10,9 +10,6 @@ import java.util.Map;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
-import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -35,37 +32,22 @@ public class PublicationFanoutHandler
         DynamodbEvent.DynamodbStreamRecord input,
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
-        String eventJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(event)).orElseThrow();
+        String eventJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields
+                .writeValueAsString(event))
+                .orElseThrow();
         logger.info("event:" + eventJson);
-        ResourceUpdate oldDao = getDao(input.getDynamodb().getOldImage());
-        ResourceUpdate newDao = getDao(input.getDynamodb().getNewImage());
-        String eventType = getEventType(oldDao, newDao);
-        String updateType = input.getEventName();
 
         DynamoEntryUpdateEvent output = new DynamoEntryUpdateEvent(
-                eventType,
-                updateType,
-                oldDao,
-                newDao
+                input.getEventName(),
+                getDao(input.getDynamodb().getOldImage()),
+                getDao(input.getDynamodb().getNewImage())
         );
 
-        String outputJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(output)).orElseThrow();
+        String outputJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields
+                .writeValueAsString(output))
+                .orElseThrow();
         logger.info("output" + outputJson);
         return output;
-    }
-
-    private String getEventType(ResourceUpdate oldDao, ResourceUpdate newDao) {
-        String eventType = null;
-        if (oldDao instanceof Resource || newDao instanceof Resource) {
-            eventType = DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
-        }
-        if (oldDao instanceof Message || newDao instanceof Message) {
-            eventType = DynamoEntryUpdateEvent.MESSAGE_UPDATE_TYPE;
-        }
-        if (oldDao instanceof DoiRequest || newDao instanceof DoiRequest) {
-            eventType = DynamoEntryUpdateEvent.DOI_REQUEST_UPDATE_TYPE;
-        }
-        return eventType;
     }
 
     private ResourceUpdate getDao(Map<String, AttributeValue> image) {

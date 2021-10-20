@@ -30,7 +30,7 @@ public class DoiRequestEventProducer
     public static final String TYPE_UPDATE_EXISTING_DOI = "publication.doiupdate.updateexistingdoi";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
 
-    private static final String EMPTY_EVENT_TYPE = "empty";
+    protected static final String EMPTY_EVENT_TYPE = "empty";
     public static final PublicationHolder EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
 
@@ -94,7 +94,7 @@ public class DoiRequestEventProducer
     }
 
     private boolean isDoiRequestUpdate(DynamoEntryUpdateEvent updateEvent) {
-        return resourceHasDoiRequest(updateEvent) || resourceHasDoi(updateEvent);
+        return resourceHasDoi(updateEvent) || resourceHasDoiRequest(updateEvent);
     }
 
     private boolean resourceHasDoi(DynamoEntryUpdateEvent updateEvent) {
