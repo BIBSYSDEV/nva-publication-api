@@ -92,19 +92,8 @@ public class DoiRequestEventProducer
         }
     }
 
-    private boolean resourceHasDoi(DynamoEntryUpdateEvent updateEvent) {
-        Publication publication = toPublication(updateEvent.getNewData());
-        return nonNull(publication) && nonNull(publication.getDoi());
-    }
-
     private Publication toPublication(ResourceUpdate resourceUpdate) {
         return resourceUpdate != null ? resourceUpdate.toPublication() : null;
-    }
-
-    private boolean resourceHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
-        return nonNull(toPublication(updateEvent.getOldData()))
-               && nonNull(toPublication(updateEvent.getNewData()))
-               && nonNull(toPublication(updateEvent.getNewData()).getDoiRequest());
     }
 
     private boolean isFirstDoiRequest(DynamoEntryUpdateEvent updateEvent) {
