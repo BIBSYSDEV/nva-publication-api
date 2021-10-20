@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, Void> {
 
-    private static final Logger logger= LoggerFactory.getLogger(ExpandResourcesHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExpandResourcesHandler.class);
 
     protected ExpandResourcesHandler() {
         super(DynamoEntryUpdateEvent.class);
@@ -20,9 +20,9 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
 
     @Override
     protected Void processInputPayload(DynamoEntryUpdateEvent input,
-                                                    AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
-                                                    Context context) {
-        String json = attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(event)).orElseThrow();
+                                       AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+                                       Context context) {
+        String json = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(event)).orElseThrow();
         logger.info(json);
         return null;
     }
