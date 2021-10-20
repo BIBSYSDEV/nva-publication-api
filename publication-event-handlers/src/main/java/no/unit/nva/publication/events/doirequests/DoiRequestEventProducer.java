@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import com.amazonaws.services.lambda.runtime.Context;
 
-import java.util.Objects;
 import java.util.Optional;
 
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -80,7 +79,6 @@ public class DoiRequestEventProducer
 
     private static PublicationHolder toPublicationHolder(DoiRequest doiRequest, String eventType) {
         Publication publication = Optional.ofNullable(doiRequest)
-                .filter(Objects::nonNull)
                 .map(DoiRequest::toPublication)
                 .orElse(null);
 
