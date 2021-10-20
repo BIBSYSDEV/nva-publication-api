@@ -6,11 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.file.Path;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +29,7 @@ public class ExpandResourcesHandlerTest {
         var testingAppender = LogUtils.getTestingAppender(ExpandResourcesHandler.class);
         var request = IoUtils.stringToStream(sampleEvent);
         var expandResourceHandler = new ExpandResourcesHandler();
-        assertDoesNotThrow(()->expandResourceHandler.handleRequest(request, output, CONTEXT));
-        assertThat(testingAppender.getMessages(),containsString(RESOURCE_IDENTIFIER_IN_SAMPLE_FILE));
+        assertDoesNotThrow(() -> expandResourceHandler.handleRequest(request, output, CONTEXT));
+        assertThat(testingAppender.getMessages(), containsString(RESOURCE_IDENTIFIER_IN_SAMPLE_FILE));
     }
 }
