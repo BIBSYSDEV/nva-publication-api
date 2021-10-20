@@ -92,6 +92,7 @@ class DoiRequestEventProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.EMPTY_EVENT_TYPE)));
         assertThat(actual.getItem(), nullValue());
+        //TODO: revert assertions when bug is resolved https://unit.atlassian.net/browse/NP-3308
         //assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
         //assertThat(actual.getItem(), notNullValue());
     }
