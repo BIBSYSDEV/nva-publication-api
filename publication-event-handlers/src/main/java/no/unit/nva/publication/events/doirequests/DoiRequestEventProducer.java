@@ -87,14 +87,9 @@ public class DoiRequestEventProducer
     private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
         if (isFirstDoiRequest(updateEvent)) {
             return TYPE_REQUEST_FOR_NEW_DRAFT_DOI;
-        } else if (isDoiRequestUpdate(updateEvent)) {
+        } else {
             return TYPE_UPDATE_EXISTING_DOI;
         }
-        return null;
-    }
-
-    private boolean isDoiRequestUpdate(DynamoEntryUpdateEvent updateEvent) {
-        return resourceHasDoi(updateEvent) || resourceHasDoiRequest(updateEvent);
     }
 
     private boolean resourceHasDoi(DynamoEntryUpdateEvent updateEvent) {
