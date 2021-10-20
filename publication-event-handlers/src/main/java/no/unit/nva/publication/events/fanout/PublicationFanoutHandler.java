@@ -33,7 +33,8 @@ public class PublicationFanoutHandler
         DynamodbEvent.DynamodbStreamRecord input,
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
-        String eventJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(event)).orElseThrow();
+        String eventJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(event))
+                .orElseThrow();
         logger.info("event:" + eventJson);
         Optional<Publication> oldPublication = getPublication(input.getDynamodb().getOldImage());
         Optional<Publication> newPublication = getPublication(input.getDynamodb().getNewImage());
@@ -46,7 +47,8 @@ public class PublicationFanoutHandler
             newPublication.orElse(NO_VALUE)
         );
 
-        String outputJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(output)).orElseThrow();
+        String outputJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(output))
+                .orElseThrow();
         logger.info("output" + outputJson);
         return output;
     }
