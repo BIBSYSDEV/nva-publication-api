@@ -94,6 +94,5 @@ cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref =
 cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = 'cucumber' }
 
 [bundles]
-testing = ["junit-jupiter-params","junit-jupiter-api","junit-vintage-engine","junit-jupiter-engine","mockito-core","hamcrest-base",
-    "hamcrest-core","logutils","nva-testutils","javers","zalando"]
+testing = ["junit-jupiter-params","junit-jupiter-api","junit-vintage-engine","junit-jupiter-engine","mockito-core","hamcrest-base", "hamcrest-core","logutils","nva-testutils","javers","zalando"]
 
