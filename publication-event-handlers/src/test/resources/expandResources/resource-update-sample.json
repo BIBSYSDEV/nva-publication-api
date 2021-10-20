@@ -1,0 +1,72 @@
+{
+  "version": "0",
+  "id": "76f4d9e9-4084-84a5-4062-3a9711b85ba7",
+  "detail-type": "Lambda Function Invocation Result - Success",
+  "source": "lambda",
+  "account": "11111111111",
+  "time": "2021-02-03T15:01:05Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:events:eu-west-1:11111111111:event-bus/default",
+    "arn:aws:lambda:eu-west-1:11111111111:function:orestis-resources-nva-pub-PublicationFanoutHandler-6U4G0DNRXTDJ:$LATEST"
+  ],
+  "detail": {
+    "version": "1.0",
+    "timestamp": "2021-02-03T15:01:05.418Z",
+    "responseContext": {
+      "statusCode": 200,
+      "executedVersion": "$LATEST"
+    },
+    "responsePayload": {
+      "type": "resource.update",
+      "updateType": "INSERT",
+      "newData": {
+        "type": "Resource",
+        "identifier": "017c93559df0-541e2774-d27f-49c9-a234-a26cde19d204",
+        "resourceIdentifier": "017c9354dc9e-3c5d73e2-0cce-45ce-802a-b3443e198401",
+        "modifiedDate": "2021-10-18T12:17:14.224946Z",
+        "createdDate": "2021-10-18T12:17:14.224946Z",
+        "resourceModifiedDate": "2021-10-18T12:16:34.785459Z",
+        "resourcePublicationInstance": {
+          "type": "JournalArticle",
+          "peerReviewed": true,
+          "originalResearch": false,
+          "pages": {
+            "type": "Range"
+          }
+        },
+        "resourcePublicationDate": {
+          "type": "PublicationDate",
+          "year": "2021",
+          "month": "2",
+          "day": "2"
+        },
+        "resourcePublicationYear": "2021",
+        "doi": "https://doi.org/10.1103/physrevd.100.085005",
+        "contributors": [
+          {
+            "type": "Contributor",
+            "identity": {
+              "type": "Identity",
+              "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
+              "name": "Gkorgkas,Orestis Stylianos",
+              "orcId": "0000-0001-8310-5489"
+            },
+            "affiliations": [
+              {
+                "type": "Organization",
+                "id": "https://api.cristin.no/v2/institutions/20202"
+              }
+            ],
+            "sequence": 1,
+            "correspondingAuthor": false
+          }
+        ],
+        "status": "DRAFT",
+        "customerId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+        "owner": "jb@unit.no",
+        "resourceTitle": "My test 20210226_B"
+      }
+    }
+  }
+}
