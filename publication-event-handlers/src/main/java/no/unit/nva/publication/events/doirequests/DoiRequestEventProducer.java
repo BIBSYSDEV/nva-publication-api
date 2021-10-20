@@ -78,10 +78,7 @@ public class DoiRequestEventProducer
     }
 
     private static PublicationHolder toPublicationHolder(DoiRequest doiRequest, String eventType) {
-        Publication publication = Optional.ofNullable(doiRequest)
-                .map(DoiRequest::toPublication)
-                .orElse(null);
-
+        Publication publication = nonNull(doiRequest) ? doiRequest.toPublication(): null;
         return new PublicationHolder(eventType, publication);
     }
 
