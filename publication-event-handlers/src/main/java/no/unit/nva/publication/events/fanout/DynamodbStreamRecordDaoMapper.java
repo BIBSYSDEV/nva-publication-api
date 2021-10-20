@@ -14,16 +14,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 
-public final class DynamodbStreamRecordPublicationMapper {
+//TODO: rename class to DynamoJsonToInternalModelEventHandler
+public final class DynamodbStreamRecordDaoMapper {
 
 
-    private DynamodbStreamRecordPublicationMapper() {
+    private DynamodbStreamRecordDaoMapper() {
 
     }
 
@@ -31,19 +31,19 @@ public final class DynamodbStreamRecordPublicationMapper {
      * Map a DynamodbStreamRecordImage to Publication.
      *
      * @param recordImage the record image (old or new)
-     * @return a Publication instance if it is a {@link ResourceUpdate}
+     * @return a Dao instance
      * @throws JsonProcessingException JsonProcessingException
      */
-    public static Optional<Publication> toPublication(Map<String, AttributeValue> recordImage)
+    public static Optional<ResourceUpdate> toDao(Map<String, AttributeValue> recordImage)
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
         DynamoEntry dynamoEntry = dynamoImageSerializerRemovingEmptyFields.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
-            .filter(entry -> isDao(dynamoEntry))
-            .map(dao -> ((Dao<?>) dao).getData())
-            .filter(DynamodbStreamRecordPublicationMapper::isResourceUpdate)
-            .map(ResourceUpdate::toPublication);
+                .filter(entry -> isDao(dynamoEntry))
+                .map(dao -> ((Dao<?>) dao).getData())
+                .filter(data -> isResourceUpdate(data))
+                .map(data -> (ResourceUpdate) data);
     }
 
     private static boolean isDao(DynamoEntry dynamoEntry) {

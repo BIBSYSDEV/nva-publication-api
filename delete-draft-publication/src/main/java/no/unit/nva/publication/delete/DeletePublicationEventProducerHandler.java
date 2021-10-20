@@ -8,6 +8,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletePublicationEventProducerHandler
@@ -23,7 +25,7 @@ public class DeletePublicationEventProducerHandler
         DynamoEntryUpdateEvent input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
         Context context) {
-        Publication publication = input.getNewPublication();
+        Publication publication = toPublication(input.getNewData());
         if (isDraftForDeletion(publication)) {
             return toDeletePublicationEvent(publication);
         }
@@ -33,6 +35,14 @@ public class DeletePublicationEventProducerHandler
     private boolean isDraftForDeletion(Publication publication) {
         return publication != null
                 && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
+    }
+
+    private Publication toPublication(ResourceUpdate resourceUpdate) {
+        Publication publication = null;
+        if (resourceUpdate instanceof DoiRequest) {
+            publication = ((DoiRequest)resourceUpdate).toPublication();
+        }
+        return publication;
     }
 
     private DeletePublicationEvent toDeletePublicationEvent(Publication publication) {
