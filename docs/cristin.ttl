@@ -714,7 +714,12 @@ Cristin.
     a                  :cristinfield ;
     rdfs:comment       """
         The role of the respective Contributor for the respective publication affiliated for this role with the respective institution.
-        This entry is immutable and does not change in time.
+        This entry is immutable and does not change in time.'
+        Mapped values:
+        Forfatter -> Creator
+        Redaktør -> Editor
+        Veileder -> Supervisor
+        Faglig_Ansvarlig -> Academic_Coordinator
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_PERSON_STED_ROLLE_Class ;
