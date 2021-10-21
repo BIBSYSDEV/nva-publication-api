@@ -71,7 +71,8 @@
     rdfs:comment    """
     The structure defining the VARBEID_SPRAK property.
     A language that this work has been published in, the respective title, and the respective abstract
-    and an indication whether it is the original language or a translation.""" .
+    and an indication whether it is the original language or a translation.
+    The Cristin Result can have multiple varbeid_sprak objects, only the object with original language will be used""" .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -502,7 +503,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     rdfs:range      :VARBEID_SPRAK_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield """
-        entityDescription.mainTitle, entityDescription.language
+        entityDescription.mainTitle, entityDescription.language, entityDescription.mainLanguageAbstract;
     """ .
 
 :sprakkode
@@ -541,7 +542,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 :status_original
     a                  :cristinfield ;
     rdfs:comment       """
-    Indicator of whether the title in the respective VARBEID_SPRAK is the original title or not.
+    Indicator of whether the title and the abstract in the respective VARBEID_SPRAK is in the original language and if so the original title and abstract.
     Known possible values are 'J' ('true')
         , 'N' (false) and NULL (free to interpretation ) .
 
