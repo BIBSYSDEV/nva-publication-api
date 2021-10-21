@@ -721,6 +721,16 @@ Cristin.
     rdfs:comment       """
         The role of the respective Contributor for the respective publication affiliated for this role with the respective institution.
         This entry is immutable and does not change in time.
+        Mapped Cristin to NVA roles:
+        REDAKTØR -> EDITOR
+        FORFATTER -> CREATOR
+        PROGRAMDELTAGER -> PROGRAMME_PARTICIPANT
+        PROGRAMLEDER -> PROGRAMME_LEADER
+        OPPHAVSMANN -> RIGHTS_HOLDER
+        JOURNALIST -> JOURNALIST
+        REDAKSJONSKOM -> EDITORIAL_BOARD_MEMBER
+        INTERVJUOBJEKT -> INTERVIEW_SUBJECT
+        FAGLIG_ANSVARLIG -> ACADEMIC_COORDINATOR
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_PERSON_STED_ROLLE_Class ;
