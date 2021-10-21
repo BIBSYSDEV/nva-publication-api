@@ -4,11 +4,13 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.instancetypes.event.ConferenceLecture;
 import no.unit.nva.model.instancetypes.event.ConferencePoster;
 import no.unit.nva.model.instancetypes.event.Lecture;
+import no.unit.nva.model.instancetypes.event.OtherPresentation;
 import no.unit.nva.model.pages.Pages;
 
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferenceLecture;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isConferencePoster;
 import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isLecture;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isOtherPresentation;
 
 public class EventBuilder extends AbstractPublicationInstanceBuilder {
 
@@ -31,6 +33,9 @@ public class EventBuilder extends AbstractPublicationInstanceBuilder {
         }
         if (isLecture(getCristinObject())) {
             return createLecture();
+        }
+        if (isOtherPresentation(getCristinObject())) {
+            return createOtherPresentation();
         } else {
             throw unknownSecondaryCategory();
         }
@@ -46,5 +51,9 @@ public class EventBuilder extends AbstractPublicationInstanceBuilder {
 
     private PublicationInstance<? extends Pages> createLecture() {
         return new Lecture();
+    }
+
+    private PublicationInstance<? extends Pages> createOtherPresentation() {
+        return new OtherPresentation();
     }
 }
