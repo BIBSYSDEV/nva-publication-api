@@ -360,6 +360,12 @@
          Mastergradsoppgave -> DegreeMaster
          Hovedfagsoppgave -> DegreeMaster
          Forskerlinjeoppgave -> DegreeMaster
+         Vit_Foredrag -> ConferenceLecture
+         Poster -> ConferencePoster
+         Foredrag_Fag -> Lecture
+         Popvit_Foredrag -> Lecture
+         Annen_Presentasj -> Other_Presentation
+         Utst_Web -> Other_Presentation
     """ .
 
 :eierkode_opprettet

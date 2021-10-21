@@ -3,11 +3,11 @@
   "id": "d437a46a-e515-761c-e31d-5e23c5a0a247",
   "detail-type": "dynamodb-stream-event",
   "source": "aws-dynamodb-stream-eventbridge-fanout",
-  "account": "884807050265",
+  "account": "11111111111",
   "time": "2020-10-30T13:21:40Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:dynamodb:eu-west-1:884807050265:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
+    "arn:aws:dynamodb:eu-west-1:11111111111:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
   ],
   "detail": {
     "eventID": "63951b991a8fc9942126c906a0b70d87",
@@ -32,7 +32,7 @@
       "sizeBytes": 2124,
       "streamViewType": "NEW_IMAGE"
     },
-    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:11111111111:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
   }
   }
 }

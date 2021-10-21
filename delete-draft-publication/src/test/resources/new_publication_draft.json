@@ -3,19 +3,19 @@
   "id": "c2c057c1-67fe-1208-fc21-0401596631ba",
   "detail-type": "Lambda Function Invocation Result - Success",
   "source": "lambda",
-  "account": "884807050265",
+  "account": "11111111111",
   "time": "2020-10-09T09:34:33Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:events:eu-west-1:884807050265:event-bus/orestis-event-bus",
-    "arn:aws:lambda:eu-west-1:884807050265:function:orestis-stack-nva-datacite-mds-EventProducer-8IAE7WYCNTPX:$LATEST"
+    "arn:aws:events:eu-west-1:11111111111:event-bus/orestis-event-bus",
+    "arn:aws:lambda:eu-west-1:11111111111:function:orestis-stack-nva-datacite-mds-EventProducer-8IAE7WYCNTPX:$LATEST"
   ],
   "detail": {
     "version": "1.0",
     "timestamp": "2020-10-09T09:34:33.727Z",
     "requestContext": {
       "requestId": "e3f0079c-da29-4e50-92ef-0b699d415e95",
-      "functionArn": "arn:aws:lambda:eu-west-1:884807050265:function:orestis-stack-nva-datacite-mds-EventProducer-8IAE7WYCNTPX:$LATEST",
+      "functionArn": "arn:aws:lambda:eu-west-1:11111111111:function:orestis-stack-nva-datacite-mds-EventProducer-8IAE7WYCNTPX:$LATEST",
       "condition": "Success",
       "approximateInvokeCount": 1
     },
@@ -30,19 +30,55 @@
     "responsePayload": {
       "type": "publication.update",
       "updateType": "REMOVE",
-      "newPublication": {
-        "id": "https://example.net/unittest/namespace/publication/f54c8aa9-073a-46a1-8f7c-dde66c853934",
-        "identifier": "f54c8aa9-073a-46a1-8f7c-dde66c853934",
+      "newData": {
+        "type": "DoiRequest",
+        "identifier": "017c93559df0-541e2774-d27f-49c9-a234-a26cde19d204",
+        "resourceIdentifier": "017c9354dc9e-3c5d73e2-0cce-45ce-802a-b3443e198401",
+        "modifiedDate": "2021-10-18T12:17:14.224946Z",
+        "createdDate": "2021-10-18T12:17:14.224946Z",
+        "resourceModifiedDate": "2021-10-18T12:16:34.785459Z",
+        "resourcePublicationInstance": {
+          "type": "JournalArticle",
+          "peerReviewed": true,
+          "originalResearch": false,
+          "pages": {
+            "type": "Range"
+          }
+        },
+        "resourcePublicationDate": {
+          "type": "PublicationDate",
+          "year": "2021",
+          "month": "2",
+          "day": "2"
+        },
+        "resourcePublicationYear": "2021",
         "doi": "https://doi.org/10.1103/physrevd.100.085005",
-        "type": "Publication",
-        "mainTitle": "Conformality loss and quantum criticality in topological Higgs electrodynamics in 2+2 dimensions",
-        "status": "DRAFT",
-        "publisher": {
-          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
-          "type": "Organization"
-        }
+        "contributors": [
+          {
+            "type": "Contributor",
+            "identity": {
+              "type": "Identity",
+              "id": "https://api.dev.nva.aws.unit.no/person/1582627888604",
+              "name": "Gkorgkas,Orestis Stylianos",
+              "orcId": "0000-0001-8310-5489"
+            },
+            "affiliations": [
+              {
+                "type": "Organization",
+                "id": "https://api.cristin.no/v2/institutions/20202"
+              }
+            ],
+            "sequence": 1,
+            "correspondingAuthor": false
+          }
+        ],
+        "status": "REQUESTED",
+        "resourceStatus": "DRAFT",
+        "customerId": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+        "owner": "jb@unit.no",
+        "resourceTitle": "My test 20210226_B"
       },
-      "oldPublication": null
+      "oldData": null
     }
   }
 }

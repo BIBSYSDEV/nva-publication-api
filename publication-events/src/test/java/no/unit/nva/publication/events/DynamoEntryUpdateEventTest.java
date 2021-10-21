@@ -10,12 +10,12 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.Resource;
 import org.junit.jupiter.api.Test;
 
 public class DynamoEntryUpdateEventTest {
 
-    public static final Publication NO_VALUE = null;
-    public static final String INSERT_UPDATE_TYPE = "INSERT";
+    public static final Resource NO_VALUE = null;
     public static final String PUBLISHER_ID = "http://example.org/publisher/123";
     public static final String OWNER = "owner";
 
@@ -23,7 +23,6 @@ public class DynamoEntryUpdateEventTest {
     public void writePublicationUpdateEventToJsonAndReadBackAsObject() throws JsonProcessingException {
         var event = new DynamoEntryUpdateEvent(
             PUBLICATION_UPDATE_TYPE,
-            INSERT_UPDATE_TYPE,
             createPublication(),
             NO_VALUE);
         var json = objectMapper.writeValueAsString(event);
@@ -32,8 +31,8 @@ public class DynamoEntryUpdateEventTest {
         assertThat(event, equalTo(mappedEvent));
     }
 
-    private Publication createPublication() {
-        return new Publication.Builder()
+    private Resource createPublication() {
+        Publication publication = new Publication.Builder()
                 .withIdentifier(SortableIdentifier.next())
                 .withModifiedDate(Instant.now())
                 .withOwner(OWNER)
@@ -42,6 +41,7 @@ public class DynamoEntryUpdateEventTest {
                         .build()
                 )
                 .build();
+        return Resource.fromPublication(publication);
     }
 
 }

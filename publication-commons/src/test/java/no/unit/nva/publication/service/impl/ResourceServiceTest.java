@@ -136,7 +136,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
-        Diff diff=JAVERS.compare(inputPublication,savedPublication);
+        Diff diff = JAVERS.compare(inputPublication,savedPublication);
         assertThat(publicationPredefinedTime, is(not(equalTo(RESOURCE_CREATION_TIME))));
         assertThat(diff.prettyPrint(),savedPublication, is(equalTo(inputPublication)));
     }
