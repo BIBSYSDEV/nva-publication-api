@@ -1059,7 +1059,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.doirequests.ExpandResourcesHandler::handleRequest
+      Handler: no.unit.nva.publication.events.expandresources.ExpandResourcesHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
