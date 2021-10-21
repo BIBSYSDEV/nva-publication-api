@@ -436,8 +436,7 @@
 
 :arstall_rapportert
     a                  :cristinfield ;
-    rdfs:comment       """Year that the resource was included in an NVI report. For Results of type Book it is used to generate a confirmedPublisher.
-                        When the Result is of type Journal it is used to create an id(URI) for the journal""" ;
+    rdfs:comment       """Year that the resource was included in an NVI report.""" ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :Result ;
     :currently_ignored false .
