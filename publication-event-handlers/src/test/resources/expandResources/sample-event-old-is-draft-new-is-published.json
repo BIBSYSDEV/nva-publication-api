@@ -1,0 +1,224 @@
+{
+  "version": "0",
+  "id": "e8eebefc-29ff-5b2e-f414-6515c2cc71f2",
+  "detail-type": "Lambda Function Invocation Result - Success",
+  "source": "lambda",
+  "account": "884807050265",
+  "time": "2021-10-21T10:34:01Z",
+  "region": "eu-west-1",
+  "resources": [
+    "arn:aws:events:eu-west-1:884807050265:event-bus/default",
+    "arn:aws:lambda:eu-west-1:884807050265:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST"
+  ],
+  "detail": {
+    "version": "1.0",
+    "timestamp": "2021-10-21T10:34:01.138Z",
+    "requestContext": {
+      "requestId": "6eef0b21-a79e-43fa-b4b1-ca04acdc1449",
+      "functionArn": "arn:aws:lambda:eu-west-1:884807050265:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST",
+      "condition": "Success",
+      "approximateInvokeCount": 1
+    },
+    "responseContext": {
+      "statusCode": 200,
+      "executedVersion": "$LATEST"
+    },
+    "responsePayload": {
+      "updateType": "MODIFY",
+      "oldData": {
+        "type": "Resource",
+        "identifier": "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0",
+        "status": "DRAFT",
+        "owner": "og@unit.no",
+        "publisher": {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+          "labels": {
+          }
+        },
+        "createdDate": "2021-10-21T10:30:33.361804Z",
+        "modifiedDate": "2021-10-21T10:32:23.570141Z",
+        "publishedDate": null,
+        "indexedDate": null,
+        "link": null,
+        "fileSet": {
+          "type": "FileSet",
+          "files": [
+            {
+              "type": "File",
+              "identifier": "321235e8-7b35-47ae-92e5-918c8f774020",
+              "name": "vldb09-677233.pdf",
+              "mimeType": "application/pdf",
+              "size": 428244,
+              "license": {
+                "type": "License",
+                "identifier": "CC0",
+                "labels": {
+                  "nb": "CC0"
+                },
+                "link": null
+              },
+              "administrativeAgreement": false,
+              "publisherAuthority": false,
+              "embargoDate": null
+            }
+          ]
+        },
+        "projects": [
+          {
+            "type": "ResearchProject",
+            "id": "403885",
+            "name": "Method for compression of data",
+            "grants": [],
+            "approvals": []
+          }
+        ],
+        "entityDescription": {
+          "type": "EntityDescription",
+          "mainTitle": "My test 20210226_B",
+          "alternativeTitles": {},
+          "language": "http://lexvo.org/id/iso639-3/eng",
+          "date": {
+            "type": "PublicationDate",
+            "year": "2021",
+            "month": "2",
+            "day": "2"
+          },
+          "contributors": [],
+          "npiSubjectHeading": "1039",
+          "tags": [
+            "databases"
+          ],
+          "description": "Description01",
+          "reference": {
+            "type": "Reference",
+            "publicationContext": {
+              "type": "UnconfirmedJournal",
+              "title": "Proceedings of the VLDB Endowment",
+              "printIssn": null,
+              "onlineIssn": null
+            },
+            "doi": null,
+            "publicationInstance": {
+              "type": "JournalArticle",
+              "volume": null,
+              "issue": null,
+              "articleNumber": null,
+              "contentType": null,
+              "peerReviewed": true,
+              "originalResearch": false,
+              "pages": {
+                "type": "Range",
+                "begin": null,
+                "end": null
+              }
+            }
+          },
+          "metadataSource": null,
+          "abstract": "Abstract01"
+        },
+        "doi": null,
+        "handle": null,
+        "additionalIdentifiers": [],
+        "subjects": []
+      },
+      "newData": {
+        "type": "Resource",
+        "identifier": "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0",
+        "status": "PUBLISHED",
+        "owner": "og@unit.no",
+        "publisher": {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/customer/f54c8aa9-073a-46a1-8f7c-dde66c853934",
+          "labels": {}
+        },
+        "createdDate": "2021-10-21T10:30:33.361804Z",
+        "modifiedDate": "2021-10-21T10:34:00.483978Z",
+        "publishedDate": "2021-10-21T10:34:00.483978Z",
+        "indexedDate": null,
+        "link": null,
+        "fileSet": {
+          "type": "FileSet",
+          "files": [
+            {
+              "type": "File",
+              "identifier": "321235e8-7b35-47ae-92e5-918c8f774020",
+              "name": "vldb09-677233.pdf",
+              "mimeType": "application/pdf",
+              "size": 428244,
+              "license": {
+                "type": "License",
+                "identifier": "CC0",
+                "labels": {
+                  "nb": "CC0"
+                },
+                "link": null
+              },
+              "administrativeAgreement": false,
+              "publisherAuthority": false,
+              "embargoDate": null
+            }
+          ]
+        },
+        "projects": [
+          {
+            "type": "ResearchProject",
+            "id": "403885",
+            "name": "Method for compression of data",
+            "grants": [],
+            "approvals": []
+          }
+        ],
+        "entityDescription": {
+          "type": "EntityDescription",
+          "mainTitle": "My test 20210226_B",
+          "alternativeTitles": {},
+          "language": "http://lexvo.org/id/iso639-3/eng",
+          "date": {
+            "type": "PublicationDate",
+            "year": "2021",
+            "month": "2",
+            "day": "2"
+          },
+          "contributors": [],
+          "npiSubjectHeading": "1039",
+          "tags": [
+            "databases"
+          ],
+          "description": "Description01",
+          "reference": {
+            "type": "Reference",
+            "publicationContext": {
+              "type": "UnconfirmedJournal",
+              "title": "Proceedings of the VLDB Endowment",
+              "printIssn": null,
+              "onlineIssn": null
+            },
+            "doi": null,
+            "publicationInstance": {
+              "type": "JournalArticle",
+              "volume": null,
+              "issue": null,
+              "articleNumber": null,
+              "contentType": null,
+              "peerReviewed": true,
+              "originalResearch": false,
+              "pages": {
+                "type": "Range",
+                "begin": null,
+                "end": null
+              }
+            }
+          },
+          "metadataSource": null,
+          "abstract": "Abstract01"
+        },
+        "doi": null,
+        "handle": null,
+        "additionalIdentifiers": [],
+        "subjects": []
+      },
+      "type": "publication.update"
+    }
+  }
+}

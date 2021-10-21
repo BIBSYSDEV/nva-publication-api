@@ -8,16 +8,20 @@ dependencies {
     }
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
+    implementation libs.nva.s3
 
 
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
-    implementation libs.aws.sdk2.eventbridge
+
     implementation libs.aws.lambda.events
-    implementation libs.aws.sdk.dynamodb
     implementation libs.aws.java.sdk.core
 
+    implementation libs.aws.sdk.dynamodb
+    implementation libs.aws.sdk2.s3
+
     implementation libs.aws.sdk2.urlconnectionclient
+    implementation libs.aws.sdk2.eventbridge
     implementation libs.aws.sdk2.sqs
     implementation libs.aws.sdk2.httpClientApi
     implementation libs.aws.sdk2.auth
@@ -38,5 +42,6 @@ dependencies {
 
 }
 
-
-
+test{
+    environment "EVENTS_BUCKET","theEventsBucket"
+}
