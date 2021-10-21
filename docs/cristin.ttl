@@ -319,8 +319,9 @@
     """ ;
     rdfs:range         xsd:date ;
     rdfs:domain        :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
-    :mapstonvafield    "createdDate when the domain is :Result" ;
-    :currently_ignored "true" .
+    :mapstonvafield    """  createdDate when the domain is :Result
+                            publishedDate when the domain is :Result""" ;
+    :currently_ignored false .
 
 
 :varbeidhovedkatkode
@@ -412,7 +413,8 @@
         """ ;
     rdfs:range         xsd:date ;
     rdfs:domain        :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
-    :currently_ignored "true" .
+    :mapstonvafield    "modifiedDate when the domain is :Result." ;
+    :currently_ignored false .
 
 
 :publiseringstatuskode
@@ -434,10 +436,11 @@
 
 :arstall_rapportert
     a                  :cristinfield ;
-    rdfs:comment       "Year that the resource was included in an NVI report." ;
+    rdfs:comment       """Year that the resource was included in an NVI report. For Results of type Book it is used to generate a confirmedPublisher.
+                        When the Result is of type Journal it is used to create an id(URI) for the journal""" ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :Result ;
-    :currently_ignored "true" .
+    :currently_ignored false .
 
 :merknadtekst
     a                  :cristinfield ;
