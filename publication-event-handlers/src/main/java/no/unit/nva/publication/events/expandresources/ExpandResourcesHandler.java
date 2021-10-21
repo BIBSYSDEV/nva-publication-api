@@ -14,7 +14,7 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
 
     private static final Logger logger = LoggerFactory.getLogger(ExpandResourcesHandler.class);
 
-    protected ExpandResourcesHandler() {
+    public ExpandResourcesHandler() {
         super(DynamoEntryUpdateEvent.class);
     }
 
