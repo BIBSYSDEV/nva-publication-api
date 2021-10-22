@@ -1298,13 +1298,6 @@ It is a self reference.""" ;
         entityDescription.tags
         """ .
 
-:emneordlopenr
-    a                  :cristinfield ;
-    rdfs:comment       "The Cristin ID of the keyword (emneord)" ;
-    rdfs:range         xsd:integer ;
-    rdfs:domain        :VARBEID_EMNEORD_Class ;
-    :currently_ignored "true" .
-
 :helsekategorikode
     a                  :cristinfield ;
     rdfs:comment       """Health Category Code in the UKCRC Health Research Classification System (HRCS).
