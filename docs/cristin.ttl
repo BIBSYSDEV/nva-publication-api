@@ -565,7 +565,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 
 :VARBEID_PERSON
     a               :cristinfield ;
-    rdfs:comment    "A contributor to the respective result entry." ;
+    rdfs:comment    "See description in range class." ;
     rdfs:range      :VARBEID_PERSON_Class ;
     rdfs:domain     :Result ;
     :mapstonvafield "entityDescription.Contributor" .
@@ -606,12 +606,16 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     rdfs:domain     :VARBEID_PERSON_Class ;
     :mapstonvafield "entityDescription.contributor.identity.fullanme" .
 
+:rekkefolgenr
+    a               :cristinfield ;
+    rdfs:comment    "An integer informing in what place among the other contributers this particular one is to be listed.";
+    rdfs:range      :VARBEID_PERSON_Class ;
+    rdfs:domain     xsd:positiveInteger ;
+    :currently_ignored false.
+
 :VARBEID_PERSON_STED
     a               :cristinfield ;
-    rdfs:comment    """
-    Details about the institution which the contributor belongs to and the contributors role to the institution
-    at the time the publication was registered in Cristin.
-    """ ;
+    rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_Class ;
     rdfs:domain     :VARBEID_PERSON_Class ;
     :mapstonvafield "entityDescription.contributor.affiliation" .
@@ -699,19 +703,9 @@ Cristin.
     rdfs:domain        :VARBEID_PERSON_STED_Class ;
     :currently_ignored "true" .
 
-:vekting
-    a                  :cristinfield ;
-    rdfs:comment       "SHOULD BE REMOVED FROM THE IMPORTS." ;
-    rdfs:range         rdf:nil ; #unknown range
-    rdfs:domain        :VARBEID_PERSON_STED_Class ;
-    :currently_ignored "true" .
-
 :VARBEID_PERSON_STED_ROLLE
     a               :cristinfield ;
-    rdfs:comment    """
-        The role of the respective Contributor for the respective publication affiliated for this role with the respective institution.
-        This entry is immutable and does not change in time.
-        """ ;
+    rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_ROLLE_Class ;
     rdfs:domain     :VARBEID_PERSON_STED_Class ;
     :mapstonvafield "entityDescription.contributor.role. only the first role of a person is considered." .
@@ -721,20 +715,10 @@ Cristin.
     rdfs:comment       """
         The role of the respective Contributor for the respective publication affiliated for this role with the respective institution.
         This entry is immutable and does not change in time.
-        Mapped Cristin to NVA roles:
-        REDAKTØR -> EDITOR
-        FORFATTER -> CREATOR
-        PROGRAMDELTAGER -> PROGRAMME_PARTICIPANT
-        PROGRAMLEDER -> PROGRAMME_LEADER
-        OPPHAVSMANN -> RIGHTS_HOLDER
-        JOURNALIST -> JOURNALIST
-        REDAKSJONSKOM -> EDITORIAL_BOARD_MEMBER
-        INTERVJUOBJEKT -> INTERVIEW_SUBJECT
-        FAGLIG_ANSVARLIG -> ACADEMIC_COORDINATOR
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_PERSON_STED_ROLLE_Class ;
-    :currently_ignored "false" ;
+    :currently_ignored false ;
     :mapstonvafield    " maps to NVA Role" .
 
 :eierkode
