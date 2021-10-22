@@ -307,7 +307,7 @@
     """ ;
     rdfs:range         xsd:date ;
     rdfs:domain        :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
-    :currently_ignored "true" .
+    :currently_ignored false .
 
 
 :varbeidhovedkatkode
@@ -380,7 +380,8 @@
         """ ;
     rdfs:range         xsd:date ;
     rdfs:domain        :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
-    :currently_ignored "true" .
+    :mapstonvafield    "modifiedDate when the domain is :Result." ;
+    :currently_ignored false .
 
 
 :publiseringstatuskode
@@ -402,10 +403,10 @@
 
 :arstall_rapportert
     a                  :cristinfield ;
-    rdfs:comment       "Year that the resource was included in an NVI report." ;
+    rdfs:comment       """Year that the resource was included in an NVI report.""" ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :Result ;
-    :currently_ignored "true" .
+    :currently_ignored false .
 
 :merknadtekst
     a                  :cristinfield ;
