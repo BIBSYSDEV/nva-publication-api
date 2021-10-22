@@ -22,7 +22,6 @@ import no.unit.nva.publication.events.EventPayload;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -38,25 +37,17 @@ public class ExpandResourcesHandlerTest {
         Path.of("expandResources/sample-event-old-is-draft-new-is-published.json"));
     String sampleEventString = stringFromResources(Path.of("expandResources/resource-update-sample.json"));
     private ByteArrayOutputStream output;
-    private FakeS3Client s3Client;
     private ExpandResourcesHandler expandResourceHandler;
     private S3Driver s3Driver;
 
     @BeforeEach
     public void init() {
         this.output = new ByteArrayOutputStream();
-        this.s3Client = new FakeS3Client();
+        FakeS3Client s3Client = new FakeS3Client();
         this.expandResourceHandler = new ExpandResourcesHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
-    @Test
-    void shouldLogEventThatIsResourceUpdate() {
-        var testingAppender = LogUtils.getTestingAppender(ExpandResourcesHandler.class);
-        var request = stringToStream(sampleEventString);
-        assertDoesNotThrow(() -> expandResourceHandler.handleRequest(request, output, CONTEXT));
-        assertThat(testingAppender.getMessages(), containsString(RESOURCE_IDENTIFIER_IN_SAMPLE_FILE));
-    }
 
     @Test
     void shouldSaveTheNewestResourceImageInS3WhenThereIsNewResourceImagePresentInTheEventAndIsNotDraftResource()
@@ -66,7 +57,7 @@ public class ExpandResourcesHandlerTest {
         assertThat(allFiles.size(), is(equalTo(1)));
         var contents = s3Driver.getFile(allFiles.get(SINGLE_EXPECTED_FILE));
         var resourceUpdate = dynamoImageSerializerRemovingEmptyFields.readValue(contents, ResourceUpdate.class);
-        ResourceUpdate expectedImage = extractResourceUpdateFromEvent();
+        ResourceUpdate expectedImage = extractResourceUpdateFromEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
         assertThat(resourceUpdate, is(equalTo(expectedImage)));
     }
 
@@ -74,26 +65,34 @@ public class ExpandResourcesHandlerTest {
     void shouldEmitEventThatContainsTheEventPayloadS3Uri()
         throws JsonProcessingException {
         expandResourceHandler.handleRequest(stringToStream(EVENT_WITH_NEW_PUBLISHED_RESOURCE), output, CONTEXT);
-        EventPayload updateEvent =
-            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
-        URI payloadUri = updateEvent.getPayload();
-        String resourceUpdateString = s3Driver.getFile(new UriWrapper(payloadUri).toS3bucketPath());
+        var updateEvent = parseEmittedEvent();
+        var uriWithEventPayload = updateEvent.getPayloadUri();
+        var actualResourceUpdate = fetchResourceUpdateFromS3(uriWithEventPayload);
         var expectedResourceUpdate = extractResourceUpdateFromEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
-        var actualResourceUpdate =
-            dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString,ResourceUpdate.class);
-        assertThat(actualResourceUpdate,is(equalTo(expectedResourceUpdate)));
+        assertThat(actualResourceUpdate, is(equalTo(expectedResourceUpdate)));
+    }
+
+    private ResourceUpdate fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
+        var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
+        return dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString, ResourceUpdate.class);
+    }
+
+    private EventPayload parseEmittedEvent() throws JsonProcessingException {
+        return dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
     }
 
     private ResourceUpdate extractResourceUpdateFromEvent(String eventString) {
-        var event = sampleEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
+        var event = parseEvent(eventString);
         return event.getDetail().getResponsePayload().getNewData();
     }
 
     @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> sampleEvent(String eventString) {
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String eventString) {
         return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
-                   new EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>(eventString,
-                                                                                 dynamoImageSerializerRemovingEmptyFields)
-                       .parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+                   newEventParser(eventString).parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+    }
+
+    private EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> newEventParser(String eventString) {
+        return new EventParser<>(eventString, dynamoImageSerializerRemovingEmptyFields);
     }
 }

@@ -44,4 +44,5 @@ dependencies {
 
 test{
     environment "EVENTS_BUCKET","theEventsBucket"
+    environment "HANDLER_EVENTS_FOLDER", "reource-updates-events"
 }

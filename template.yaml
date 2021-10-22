@@ -44,6 +44,12 @@ Parameters:
   EventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: EventBusArn
+  NewNvaEventBusName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusName'
+  NewNvaEventsBucketsName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBucketName'
   MaxConcurrency:
     Type: Number
     Default: 100
@@ -1065,10 +1071,8 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          BASE_PATH: !Ref CustomDomainBasePath
-          DOMAIN_NAME: !Ref CustomDomain
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'resource-updates-events'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule

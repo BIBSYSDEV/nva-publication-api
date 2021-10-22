@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class EventPayload {
@@ -14,20 +15,23 @@ public class EventPayload {
     @JsonProperty(EVENT_TYPE)
     private final String eventType;
     @JsonProperty(PAYLOAD)
-    private final URI payload;
+    private final URI payloadUri;
 
+    @JacocoGenerated
     @JsonCreator
     public EventPayload(@JsonProperty(EVENT_TYPE) String eventType,
-                        @JsonProperty(PAYLOAD) URI payload) {
-        this.payload = payload;
+                        @JsonProperty(PAYLOAD) URI payloadUri) {
+        this.payloadUri = payloadUri;
         this.eventType = eventType;
     }
 
+    @JacocoGenerated
     public String getEventType() {
         return eventType;
     }
 
-    public URI getPayload() {
-        return payload;
+    @JacocoGenerated
+    public URI getPayloadUri() {
+        return payloadUri;
     }
 }

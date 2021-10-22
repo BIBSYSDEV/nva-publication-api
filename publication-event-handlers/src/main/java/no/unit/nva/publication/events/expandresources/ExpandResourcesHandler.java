@@ -10,50 +10,53 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.EventPayload;
-import no.unit.nva.publication.events.PublicationEventsConfig;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, EventPayload> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ExpandResourcesHandler.class);
-    private static final String EVENTS_BUCKET= ENVIRONMENT.readEnv("EVENTS_BUCKET");
+    private static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final UriWrapper EVENTS_BUCKET_URI = new UriWrapper(URI.create("s3://" + EVENTS_BUCKET));
-    private static final String HANDLERS_EVENTS_FOLDER = "expand-resources-events";
+    private static final String HANDLER_EVENTS_FOLDER = ENVIRONMENT.readEnv("HANDLER_EVENTS_FOLDER");
     private static final String EVENT_TYPE = "indexedEntry.update";
-    private final S3Client s3Client;
     private final S3Driver s3Driver;
 
+    @JacocoGenerated
+    public ExpandResourcesHandler() {
+        this(new S3Driver(EVENTS_BUCKET));
+    }
+
     public ExpandResourcesHandler(S3Client s3Client) {
+        this(new S3Driver(s3Client, EVENTS_BUCKET));
+    }
+
+    private ExpandResourcesHandler(S3Driver s3Driver) {
         super(DynamoEntryUpdateEvent.class);
-        this.s3Client = s3Client;
-        this.s3Driver = new S3Driver(s3Client,EVENTS_BUCKET);
+        this.s3Driver = s3Driver;
     }
 
     @Override
     protected EventPayload processInputPayload(DynamoEntryUpdateEvent input,
-                                       AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
-                                       Context context) {
+                                               AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+                                               Context context) {
 
         String json = toJsonString(input.getNewData());
         UnixPath fullPath = filePath();
-        URI s3Uri=  EVENTS_BUCKET_URI.addChild(fullPath).getUri();
+        URI s3Uri = EVENTS_BUCKET_URI.addChild(fullPath).getUri();
         s3Driver.insertFile(fullPath, json);
-        return new EventPayload(EVENT_TYPE,s3Uri);
+        return new EventPayload(EVENT_TYPE, s3Uri);
     }
 
     private String toJsonString(ResourceUpdate newData) {
-        return attempt(()->JsonUtils.dynamoObjectMapper.writeValueAsString(newData)).orElseThrow();
+        return attempt(() -> JsonUtils.dynamoObjectMapper.writeValueAsString(newData)).orElseThrow();
     }
 
     private UnixPath filePath() {
-        return UnixPath.of(EVENTS_BUCKET).addChild(HANDLERS_EVENTS_FOLDER).addChild(UUID.randomUUID().toString());
+        return UnixPath.of(EVENTS_BUCKET).addChild(HANDLER_EVENTS_FOLDER).addChild(UUID.randomUUID().toString());
     }
 }
