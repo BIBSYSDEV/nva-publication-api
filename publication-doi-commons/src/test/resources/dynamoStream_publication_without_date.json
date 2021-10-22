@@ -278,5 +278,5 @@
     "sizeBytes": 1922,
     "streamViewType": "NEW_IMAGE"
   },
-  "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/nva_resources/stream/2020-08-19T09:27:44.804"
+  "eventSourceARN": "arn:aws:dynamodb:eu-west-1:11111111111:table/nva_resources/stream/2020-08-19T09:27:44.804"
 }

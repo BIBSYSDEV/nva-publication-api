@@ -1042,11 +1042,45 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "publication.update" ]
+                  type: [ "doirequest.update" ]
                   newPublication:
                     doiRequest:
                       type: [ { "exists": true } ] # "exists" works only in leaf nodes.
-
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref EventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+  ResourceExpansionHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.expandresources.ExpandResourcesHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENT_BUS: !Ref EventBusName
+          AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          BASE_PATH: !Ref CustomDomainBasePath
+          DOMAIN_NAME: !Ref CustomDomain
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref EventBusName
+            Pattern:
+              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
+              detail:
+                responsePayload:
+                  type: [ "publication.update" ]
+                  newData:
+                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:

@@ -29,9 +29,7 @@ dependencies {
     implementation libs.jackson.core
 
 
-    testImplementation(libs.javers) {
-        because "For comparing java objects and detailing the differences in readable way"
-    }
+    testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
 
     compileOnly(libs.nva.identifiers){
