@@ -71,7 +71,8 @@
     rdfs:comment    """
     The structure defining the VARBEID_SPRAK property.
     A language that this work has been published in, the respective title, and the respective abstract
-    and an indication whether it is the original language or a translation.""" .
+    and an indication whether it is the original language or a translation.
+    The Cristin Result can have multiple varbeid_sprak objects.""" .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
@@ -290,26 +291,13 @@
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        "additionalIdentifiers":[
-            {
-                "source":"Cristin",
-                "value": ":id"
-            }
-        ]
-    """ .
+    rdfs:domain     :Result ; .
 
 :arstall
     a               :cristinfield ;
     rdfs:comment    "The year a resource (result) was published." ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.date.year = :arstall;
-        entityDescription.date.month = null;
-        entityDescription.date.day = null;
-    """ .
+    rdfs:domain     :Result ; .
 
 :dato_opprettet
     a                  :cristinfield ;
@@ -319,7 +307,6 @@
     """ ;
     rdfs:range         xsd:date ;
     rdfs:domain        :Result, :VITENSKAPELIGARBEID_LOKAL_Class ;
-    :mapstonvafield    "createdDate when the domain is :Result" ;
     :currently_ignored "true" .
 
 
@@ -330,8 +317,7 @@
 
 """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :Result ;
-    :mapstonvafield "practically not in use because :varbeidunderkatkode can specify the type of publication" .
+    rdfs:domain     :Result ; .
 
 :varbeidunderkatkode
     a               :cristinfield ;
@@ -342,31 +328,7 @@
         The range of this property is found here:  https://api.cristin.no/v2/results/categories?lang=nb ,  en
         """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-       entityDescription.reference.publicationInstance
-       implementedMappings:
-         Anthology -> BookAnthology
-         Monograph -> BookMonograph
-         Rapport -> ReportResearch
-         Kapittel -> ChapterArticle
-         Popvit_Kapittel -> ChapterArticle
-         Faglig_Kapittel -> ChapterArticle
-         Leksikalinnforing -> ChapterArticle
-         Artikkel_Fag -> JournalArticle
-         Short_communication -> JournalArticle
-         Bokanmeldelse -> JournalReview
-         Doktorgradsavhandling -> DegreePhd
-         Mastergradsoppgave -> DegreeMaster
-         Hovedfagsoppgave -> DegreeMaster
-         Forskerlinjeoppgave -> DegreeMaster
-         Vit_Foredrag -> ConferenceLecture
-         Poster -> ConferencePoster
-         Foredrag_Fag -> Lecture
-         Popvit_Foredrag -> Lecture
-         Annen_Presentasj -> Other_Presentation
-         Utst_Web -> Other_Presentation
-    """ .
+    rdfs:domain     :Result ; .
 
 :eierkode_opprettet
     a            :cristinfield ;
@@ -506,10 +468,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     a               :cristinfield ;
     rdfs:comment    """See the description of the range class. """ ;
     rdfs:range      :VARBEID_SPRAK_Class ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.mainTitle, entityDescription.language
-    """ .
+    rdfs:domain     :Result ; .
 
 :sprakkode
     a               :cristinfield ;
@@ -520,34 +479,25 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     Possibly null or (xx) to represent (n/a)
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ;
-    :mapstonvafield """
-        entityDescription.language if VARBEID_SPRAK.status_original is "J"
-    """ .
+    rdfs:domain     :VARBEID_SPRAK_Class, :TIDSSKRIFT_Class ; .
 
 :tittletekst
     a               :cristinfield ;
     rdfs:comment    "The title in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ;
-    :mapstonvafield """
-        entityDescription.mainTitle  if VARBEID_SPRAK.status_original is "J"
-    """ .
+    rdfs:domain     :VARBEID_SPRAK_Class ; .
 
 
 :sammendragtekst
     a               :cristinfield ;
     rdfs:comment    "The abstract in the VARARBEID_SPRAK entry. It is supposed to be in the language described by :sprakkode" ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_SPRAK_Class ;
-    :mapstonvafield """
-            entityDescription.abstract  if VARBEID_SPRAK.status_original is "J"
-        """ .
+    rdfs:domain     :VARBEID_SPRAK_Class ; .
 
 :status_original
     a                  :cristinfield ;
     rdfs:comment       """
-    Indicator of whether the title in the respective VARBEID_SPRAK is the original title or not.
+    Indicator of whether the title and the abstract is in the respective VARBEID_SPRAK is in the original language and if so, then they are the original title and abstract.
     Known possible values are 'J' ('true')
         , 'N' (false) and NULL (free to interpretation ) .
 
@@ -567,8 +517,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     a               :cristinfield ;
     rdfs:comment    "See description in range class." ;
     rdfs:range      :VARBEID_PERSON_Class ;
-    rdfs:domain     :Result ;
-    :mapstonvafield "entityDescription.Contributor" .
+    rdfs:domain     :Result ; .
 
 :personlopenr
     a                  :cristinfield ;
@@ -580,7 +529,6 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     """ ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :VARBEID_PERSON_Class, :PRESENTASJON_VARBEID_Class ;
-    :mapstonvafield    " when the domain is:VARBEID_PERSON_Class it maps entityDescription.contributor.identity.id" ;
     :currently_ignored false .
 
 
@@ -592,8 +540,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 (e.g. Elsevier)
         """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
-    :mapstonvafield "entityDescription.contributor.identity.fullanme" .
+    rdfs:domain     :VARBEID_PERSON_Class ; .
 
 :etternavn
     a               :cristinfield ;
@@ -603,8 +550,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
         submitted the publication to the publisher ( e.g. Elsevier ) .
 """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
-    :mapstonvafield "entityDescription.contributor.identity.fullanme" .
+    rdfs:domain     :VARBEID_PERSON_Class ; .
 
 :rekkefolgenr
     a               :cristinfield ;
@@ -617,8 +563,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     a               :cristinfield ;
     rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_Class ;
-    rdfs:domain     :VARBEID_PERSON_Class ;
-    :mapstonvafield "entityDescription.contributor.affiliation" .
+    rdfs:domain     :VARBEID_PERSON_Class ; .
 
 
 :institusjonsnr
@@ -632,8 +577,7 @@ Cristin.
 
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ;
-    :mapstonvafield "entityDescription.contributor.affiliation.id" .
+    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
 
 :avdnr
     a               :cristinfield ;
@@ -644,8 +588,7 @@ Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ;
-    :mapstonvafield "entityDescription.contributor.affiliation.id" .
+    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
 
 :undavdnr
     a               :cristinfield ;
@@ -656,8 +599,7 @@ Cristin.
     See example in the definition of the domain class :VARBEID_PERSON_STED_Class
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ;
-    :mapstonvafield "entityDescription.contributor.affiliation.id" .
+    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
 
 :gruppenr
     a               :cristinfield ;
@@ -666,8 +608,7 @@ Cristin.
      This value may have changed from the time of entry was registered in Cristin.
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ;
-    :mapstonvafield "entityDescription.contributor.affiliation.id" .
+    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
 
 :stedkode_opprinnelig
     a                  :cristinfield ;
@@ -707,8 +648,7 @@ Cristin.
     a               :cristinfield ;
     rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_ROLLE_Class ;
-    rdfs:domain     :VARBEID_PERSON_STED_Class ;
-    :mapstonvafield "entityDescription.contributor.role. only the first role of a person is considered." .
+    rdfs:domain     :VARBEID_PERSON_STED_Class ; .
 
 :rollekode
     a                  :cristinfield ;
@@ -718,8 +658,7 @@ Cristin.
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :VARBEID_PERSON_STED_ROLLE_Class ;
-    :currently_ignored false ;
-    :mapstonvafield    " maps to NVA Role" .
+    :currently_ignored false ;.
 
 :eierkode
     a                  :cristinfield ;
@@ -940,13 +879,7 @@ It is a self reference.""" ;
 :type_bok_rapport
     a               :cristinfield ;
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages,
-        entityDescription.reference.publicationContext.isbnList,
-        entityDescription.reference.publicationContext.publisher
-        entityDescription.npiSubjectHeading
-    """ .
+    rdfs:domain     :Result ; .
 
 
 
@@ -954,19 +887,13 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    "The isbn which the respective book is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationContext.isbnList
-    """ .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ; .
 
 :utgivernavn
     a               :cristinfield ;
     rdfs:comment    "The name of the publisher of the respective book. Can be empty." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
-    :mapstonvafield """
-            entityDescription.reference.publicationContext.publisher
-        """ .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ; .
 
 :forlag
     a            :cristinfield ;
@@ -1014,10 +941,7 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :FAGFELT_Class ;
-        :mapstonvafield """
-            entityDescription.npiSubjectHeading
-        """ .
+    rdfs:domain     :FAGFELT_Class ; .
 
 :fagomradekode
     a                  :cristinfield ;
@@ -1046,13 +970,7 @@ It is a self reference.""" ;
     A type publication called tidsskrift.
     """ ;
     rdfs:range      :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.volume,
-        entityDescription.reference.publicationInstance.pages.begin,
-        entityDescription.reference.publicationInstance.pages.end,
-        entityDescription.reference.doi
-    """ .
+    rdfs:domain     :Result ; .
 
 :volum
     a               :cristinfield ;
@@ -1060,37 +978,25 @@ It is a self reference.""" ;
     The volume in which the article is published. The value is a number in the form of a string. Possibly null.
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.volume
-    """ .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ; .
 
 :sidenr_fra
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the start of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages.begin
-    """ .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ; .
 
 :sidenr_til
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages.end
-    """ .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ; .
 
 :doi
     a               :cristinfield ;
     rdfs:comment    "The doi connected to the respective entry. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
-    :mapstonvafield """
-        entityDescription.reference.doi
-    """ .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ; .
 
 :antall_sider_totalt
     a               :cristinfield ;
@@ -1100,10 +1006,7 @@ It is a self reference.""" ;
     refers to the entry (e.g Chapter) and not the to parent entry (e.g. Book).
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationInstance.pages
-    """ .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ; .
 
 :publiseringsar
     a                  :cristinfield ;
@@ -1184,28 +1087,19 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    "The issn connected to the respective article. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationContext.printIssn
-    """ .
+    rdfs:domain     :TIDSSKRIFT_Class ; .
 
 :issn_elektronisk
     a               :cristinfield ;
     rdfs:comment    "The online version of the issn connected to the respective article. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationContext.onlineIssn
-    """ .
+    rdfs:domain     :TIDSSKRIFT_Class ; .
 
 :tidsskriftnavn
     a               :cristinfield ;
     rdfs:comment    "The name of the journal publishing the article" ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TIDSSKRIFT_Class ;
-    :mapstonvafield """
-        entityDescription.reference.publicationContext.title
-    """ .
+    rdfs:domain     :TIDSSKRIFT_Class ; .
 
 :tidsskriftnr
     a                  :cristinfield ;
@@ -1264,10 +1158,7 @@ It is a self reference.""" ;
     a               :cristinfield ;
     rdfs:comment    """See the range class.""" ;
     rdfs:range      :VARBEID_EMNEORD_Class ;
-    rdfs:domain     :Result ;
-    :mapstonvafield """
-        entityDescription.tags,
-    """ .
+    rdfs:domain     :Result ; .
 
 :emneordnavn_bokmal
     a               :cristinfield ;
@@ -1275,28 +1166,19 @@ It is a self reference.""" ;
     The bokmal version of the VARBEID_EMNEORD. Possibly null.
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ;
-    :mapstonvafield """
-        entityDescription.tags
-    """ .
+    rdfs:domain     :VARBEID_EMNEORD_Class ; .
 
 :emneordnavn_engelsk
     a               :cristinfield ;
     rdfs:comment    "The english version of the VARBEID_EMNEORD. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ;
-    :mapstonvafield """
-        entityDescription.tags
-    """ .
+    rdfs:domain     :VARBEID_EMNEORD_Class ; .
 
 :emneordnavn_nynorsk
     a               :cristinfield ;
     rdfs:comment    "The nynorsk version of the the VARBEID_EMNEORD. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :VARBEID_EMNEORD_Class ;
-    :mapstonvafield """
-        entityDescription.tags
-        """ .
+    rdfs:domain     :VARBEID_EMNEORD_Class ; .
 
 :emneordlopenr
     a                  :cristinfield ;
@@ -1311,10 +1193,7 @@ It is a self reference.""" ;
     See https://hrcsonline.net/health-categories/.
     """ ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
-        :mapstonvafield """
-        subjects
-        """ .
+    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ; .
 
 :aktivitetskode
     a                  :cristinfield ;
@@ -1322,10 +1201,7 @@ It is a self reference.""" ;
                      See https://hrcsonline.net/research-activities/.
                      """ ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ;
-        :mapstonvafield """
-        subjects
-        """ .
+    rdfs:domain        :VARBEID_HRCS_KLASSIFISERING_Class ; .
 
 :TYPE_BOK_RAPPORT_DEL
     a            :cristinfield ;
