@@ -72,7 +72,7 @@
     The structure defining the VARBEID_SPRAK property.
     A language that this work has been published in, the respective title, and the respective abstract
     and an indication whether it is the original language or a translation.
-    The Cristin Result can have multiple varbeid_sprak objects, only the object with original language will be used""" .
+    The Cristin Result can have multiple varbeid_sprak objects.""" .
 
 :VARBEID_PERSON_Class
     a            rdfs:Class ;
