@@ -166,6 +166,9 @@ Resources:
     Type: "AWS::SQS::Queue"
   DoiRequestEventProducerDLQ:
     Type: "AWS::SQS::Queue"
+  ResourceExpansionHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+
 
 
   #==============================ROLES=======================================================================
@@ -1089,10 +1092,10 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !Ref NewNvaEventBusName
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
 
   PublicationFanoutHandler:
