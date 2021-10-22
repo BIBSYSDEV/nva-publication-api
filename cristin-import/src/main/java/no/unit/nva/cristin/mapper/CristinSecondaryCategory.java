@@ -44,6 +44,8 @@ public enum CristinSecondaryCategory {
     CONFERENCE_POSTER("POSTER", "CONFERENCE_POSTER"),
     LECTURE("FOREDRAG_FAG", "LECTURE"),
     POPULAR_SCIENTIFIC_LECTURE("POPVIT_FOREDRAG", "POPULAR_SCIENTIFIC_LECTURE"),
+    OTHER_PRESENTATION("ANNEN_PRESENTASJ", "OTHER_PRESENTATION"),
+    INTERNET_EXHIBIT("UTST_WEB", "INTERNET_EXHIBIT"),
     UNMAPPED;
 
     public static final int DEFAULT_VALUE = 0;
@@ -147,6 +149,11 @@ public enum CristinSecondaryCategory {
     public static boolean isLecture(CristinObject cristinObject) {
         return CristinSecondaryCategory.LECTURE.equals(cristinObject.getSecondaryCategory())
                 || CristinSecondaryCategory.POPULAR_SCIENTIFIC_LECTURE.equals(cristinObject.getSecondaryCategory());
+    }
+
+    public static boolean isOtherPresentation(CristinObject cristinObject) {
+        return CristinSecondaryCategory.OTHER_PRESENTATION.equals(cristinObject.getSecondaryCategory())
+                || CristinSecondaryCategory.INTERNET_EXHIBIT.equals(cristinObject.getSecondaryCategory());
     }
 
     public boolean isUnknownCategory() {

@@ -3,11 +3,11 @@
   "id": "f680f8a3-312d-55d1-8c72-22bda71b1be6",
   "detail-type": "dynamodb-stream-event",
   "source": "aws-dynamodb-stream-eventbridge-fanout",
-  "account": "884807050265",
+  "account": "11111111111",
   "time": "2021-02-02T11:25:26Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:dynamodb:eu-west-1:884807050265:table/OrestisResources/stream/2021-02-01T12:02:08.358"
+    "arn:aws:dynamodb:eu-west-1:11111111111:table/OrestisResources/stream/2021-02-01T12:02:08.358"
   ],
   "detail": {
     "eventID": "2a25e4739d1e26701243f747bf452abe",
@@ -87,6 +87,6 @@
       "sizeBytes": 868,
       "streamViewType": "NEW_AND_OLD_IMAGES"
     },
-    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:884807050265:table/OrestisResources/stream/2021-02-01T12:02:08.358"
+    "eventSourceARN": "arn:aws:dynamodb:eu-west-1:11111111111:table/OrestisResources/stream/2021-02-01T12:02:08.358"
   }
 }

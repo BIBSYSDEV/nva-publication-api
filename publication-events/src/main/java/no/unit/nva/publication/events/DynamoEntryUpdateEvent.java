@@ -2,53 +2,59 @@ package no.unit.nva.publication.events;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.Objects;
-import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
+
+import java.util.Objects;
 
 public class DynamoEntryUpdateEvent {
 
     public static final String PUBLICATION_UPDATE_TYPE = "publication.update";
+    public static final String MESSAGE_UPDATE_TYPE = "message.update";
+    public static final String DOI_REQUEST_UPDATE_TYPE = "doirequest.update";
 
-    private final String type;
+    private static final String UPDATE_TYPE = "updateType";
+    private static final String OLD_DATA = "oldData";
+    private static final String NEW_DATA = "newData";
+
+    @JsonProperty(UPDATE_TYPE)
     private final String updateType;
-    private final Publication oldPublication;
-    private final Publication newPublication;
+    @JsonProperty(OLD_DATA)
+    private final ResourceUpdate oldData;
+    @JsonProperty(NEW_DATA)
+    private final ResourceUpdate newData;
 
     /**
-     * Constructor for creating PublicationUpdateEvent.
+     * Constructor for creating DynamoEntryUpdateEvent.
      *
-     * @param type           type
      * @param updateType     eventName from DynamodbStreamRecord
-     * @param oldPublication old Publication
-     * @param newPublication new Publication
+     * @param oldData old data
+     * @param newData new data
      */
     @JsonCreator
     public DynamoEntryUpdateEvent(
-        @JsonProperty("type") String type,
-        @JsonProperty("updateType") String updateType,
-        @JsonProperty("oldPublication") Publication oldPublication,
-        @JsonProperty("newPublication") Publication newPublication) {
-        this.type = type;
-        this.updateType = updateType;
-        this.oldPublication = oldPublication;
-        this.newPublication = newPublication;
-    }
+            @JsonProperty(UPDATE_TYPE) String updateType,
+            @JsonProperty(OLD_DATA) ResourceUpdate oldData,
+            @JsonProperty(NEW_DATA) ResourceUpdate newData) {
 
-    public String getType() {
-        return type;
+        this.updateType = updateType;
+        this.oldData = oldData;
+        this.newData = newData;
     }
 
     public String getUpdateType() {
         return updateType;
     }
 
-    public Publication getOldPublication() {
-        return oldPublication;
+    public ResourceUpdate getOldData() {
+        return oldData;
     }
 
-    public Publication getNewPublication() {
-        return newPublication;
+    public ResourceUpdate getNewData() {
+        return newData;
     }
 
     @Override
@@ -63,13 +69,29 @@ public class DynamoEntryUpdateEvent {
         DynamoEntryUpdateEvent that = (DynamoEntryUpdateEvent) o;
         return getType().equals(that.getType())
                 && getUpdateType().equals(that.getUpdateType())
-                && Objects.equals(getOldPublication(), that.getOldPublication())
-                && Objects.equals(getNewPublication(), that.getNewPublication());
+                && Objects.equals(getOldData(), that.getOldData())
+                && Objects.equals(getNewData(), that.getNewData());
     }
 
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getType(), getUpdateType(), getOldPublication(), getNewPublication());
+        return Objects.hash(getType(), getUpdateType(), getOldData(), getNewData());
+    }
+
+
+    @JsonProperty("type")
+    private String getType() {
+        String eventType = null;
+        if (oldData instanceof Resource || newData instanceof Resource) {
+            eventType = DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
+        }
+        if (oldData instanceof Message || newData instanceof Message) {
+            eventType = DynamoEntryUpdateEvent.MESSAGE_UPDATE_TYPE;
+        }
+        if (oldData instanceof DoiRequest || newData instanceof DoiRequest) {
+            eventType = DynamoEntryUpdateEvent.DOI_REQUEST_UPDATE_TYPE;
+        }
+        return eventType;
     }
 }

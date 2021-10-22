@@ -134,9 +134,16 @@ Feature: Mappings that hold for all types of Cristin Results
     When the Cristin Result is converted to an NVA Resource
     Then the NVA Contributor has the role "<NvaRole>"
     Examples:
-      | CristinRole | NvaRole |
-      | REDAKTØR    | EDITOR  |
-      | FORFATTER   | CREATOR |
+      | CristinRole     | NvaRole               |
+      | REDAKTØR        | EDITOR                |
+      | FORFATTER       | CREATOR               |
+      | PROGRAMDELTAGER | PROGRAMME_PARTICIPANT |
+      | PROGRAMLEDER    | PROGRAMME_LEADER      |
+      | OPPHAVSMANN     | RIGHTS_HOLDER         |
+      | JOURNALIST      | JOURNALIST            |
+      | REDAKSJONSKOM   | EDITORIAL_BOARD_MEMBER|
+      | INTERVJUOBJEKT  | INTERVIEW_SUBJECT     |
+      | FAGLIG_ANSVARLIG| ACADEMIC_COORDINATOR  |
 
   Scenario: The abstract is copied from the the Cristin Result's title entry when there
   one title entry and it is annotated as original.

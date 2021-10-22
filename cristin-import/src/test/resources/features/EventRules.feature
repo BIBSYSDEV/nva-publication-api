@@ -12,6 +12,8 @@ Feature: Event conversion rules
     | POSTER            |
     | FOREDRAG_FAG      |
     | POPVIT_FOREDRAG   |
+    | ANNEN_PRESENTASJ  |
+    | UTST_WEB          |
 
   Scenario Outline: Cristin Result of type foredrag is converted to
   an NVA Resource with the correct Publication Instance type
@@ -25,3 +27,5 @@ Feature: Event conversion rules
     | POSTER            | ConferencePoster  |
     | FOREDRAG_FAG      | Lecture           |
     | POPVIT_FOREDRAG   | Lecture           |
+    | ANNEN_PRESENTASJ  | OtherPresentation |
+    | UTST_WEB          | OtherPresentation |
