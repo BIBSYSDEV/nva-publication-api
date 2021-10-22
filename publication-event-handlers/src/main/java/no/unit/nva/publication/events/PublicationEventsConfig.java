@@ -7,7 +7,7 @@ import nva.commons.core.JsonUtils;
 public final class PublicationEventsConfig {
 
     public static final ObjectMapper dynamoImageSerializerRemovingEmptyFields = JsonUtils.dynamoObjectMapper;
-    public static Environment ENVIRONMENT = new Environment();
+    public static final Environment ENVIRONMENT = new Environment();
 
     private PublicationEventsConfig() {
 
