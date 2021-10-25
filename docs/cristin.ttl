@@ -165,8 +165,8 @@
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-    Indicates that the respective  publication is a part of book or report.
-    The field TYPE_BOK_RAPPORT_DEL.inngar_i contains the reference to the parent Cristin entry about that book or report.
+    Indicates that the respective  publication is a part of Book or Report.
+    The field TYPE_BOK_RAPPORT_DEL.inngar_i contains the reference to the parent Cristin entry about that Book or Report.
     The secondary categories that have such a field are
     	ANNET
 	    INNLEDNING
@@ -1199,21 +1199,23 @@ It is a self reference.""" ;
 
 :TYPE_BOK_RAPPORT_DEL
     a            :cristinfield ;
-    rdfs:comment """Reference to a Cristin entry that is a part of a book or report.""" ;
-    rdfs:range   :TYPE_BOK_RAPPORT_Class ;
-    rdfs:domain  :Result .
+    rdfs:comment """Reference to a Cristin entry that is a part of a Book or Report.""" ;
+    rdfs:range   :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
 
 :varbeidlopenr_inngar_i
     a            :cristinfield ;
     rdfs:comment """The CristinID of the current TYPE_BOK_RAPPORT_DEL_Class entry's parent TYPE_BOK_RAPPORT_Class entry.""" ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
-    rdfs:range   xsd:integer .
+    rdfs:range   xsd:integer;
+    :currently_ignored true.
 
 :status_utgitt_av_forlag
     a            :cristinfield ;
     rdfs:comment """UNKNOWN meaning. It takes values "J" and "N" corresponding to the values true and false.""" ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class;
+    :currently_ignored true.
 
 :delangivelse
     a                  :cristinfield ;
@@ -1231,7 +1233,8 @@ It is a self reference.""" ;
     Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored false.
 
 :sidenr_til
     a            :cristinfield ;
@@ -1239,14 +1242,16 @@ It is a self reference.""" ;
     Expressed as a string to cover roman numerals or other non-integer ways of denoting pages.
     """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class;
+    :currently_ignored false.
 
 :sprakkode_oversatt_fra
     a            :cristinfield ;
     rdfs:comment """It has meaning only when the respective entry has :varbeidunderkatkode OVERSETTELSE_KAP
-    or OVERSETTELSE_BOK, indicating that the current entry is a translation of a book or chapter.
+    or OVERSETTELSE_BOK, indicating that the current entry is a translation of a Book or Chapter.
  The value represents the language of the original document as an ISO 639-1 code. The original document is not
  referenced further as it may not be in the scope of Cristin.
   """ ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored true.
