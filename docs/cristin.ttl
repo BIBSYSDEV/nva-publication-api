@@ -221,7 +221,7 @@
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-         The respective object contains metadata about a book.
+         The respective object contains metadata about a Book or Report.
          The respective field (TYPE_BOK_RAPPORT) has a value only if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
          RAPPORT
@@ -879,6 +879,7 @@ It is a self reference.""" ;
 
 :type_bok_rapport
     a               :cristinfield ;
+    rdfs:comment    "See description in range class.";
     rdfs:range      :TYPE_BOK_RAPPORT_Class ;
     rdfs:domain     :Result ; .
 
@@ -886,16 +887,17 @@ It is a self reference.""" ;
 
 :isbn
     a               :cristinfield ;
-    rdfs:comment    "The isbn which the respective book is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
+    rdfs:comment    "The isbn which the respective Book or Report is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ; .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false;.
 
 :utgivernavn
     a               :cristinfield ;
-    rdfs:comment    "The name of the publisher of the respective book. Can be empty." ;
+    rdfs:comment    "The name of the publisher of the respective Book or Report. Can be empty." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class ; .
-
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false;.
 :forlag
     a            :cristinfield ;
     rdfs:comment """
@@ -906,28 +908,30 @@ It is a self reference.""" ;
 
         """ ;
     rdfs:range   :FORLAG_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false;.
 
 :forlagsnavn
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The name of the Publishing House that published the book""" .
+    rdfs:comment """The name of the Publishing House that published the Book or Report""";
+    :currently_ignored false;.
 
 :forlagsnr
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The internal Cristin number of the specific Book  series.""" ;
+    rdfs:comment """The internal Cristin number of the specific Book series.""" ;
     :should_ignore   true.
 
 
 :fagfelt
     a            :cristinfield ;
-    rdfs:comment "The scientific field in which the book is published" ;
+    rdfs:comment "The scientific field in which the Book or Report is published" ;
     rdfs:range   :FAGFELT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
-
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false;.
 
 :tidsskrift_serie
     a            :cristinfield ;
@@ -936,31 +940,40 @@ It is a self reference.""" ;
         This field has the exact same structure as the field "tidskrift" in the field "type_tidsskriftpublikasjon"
      """ ;
     rdfs:range   :TIDSSKRIFT_Class ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_Class .
+    rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false;.
+
+:volum_serie
+    a           :cristinfield ;
+    rdfs:comment "The Book or Report volume in the series. The value is a number in the form of a string. Possibly null.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored false.
 
 :fagfeltkode
     a               :cristinfield ;
-    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:comment    "The (numerical) code representing the scientific field in which the Book or Report is published" ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :FAGFELT_Class ; .
+    rdfs:domain     :FAGFELT_Class ;
+    :currently_ignored false;.
 
 :fagomradekode
     a                  :cristinfield ;
-    rdfs:comment       "The (abbreviation) code representing the scientific field in which the book is published" ;
+    rdfs:comment       "The (abbreviation) code representing the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
 :navn
     a                  :cristinfield ;
-    rdfs:comment       "The NSD name of the scientific field in which the book is published" ;
+    rdfs:comment       "The NSD name of the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
 :navn_engelsk
     a                  :cristinfield ;
-    rdfs:comment       "The english name of the scientific field in which the book is published" ;
+    rdfs:comment       "The english name of the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
@@ -1033,8 +1046,8 @@ It is a self reference.""" ;
         A string holding information about the which issue it is,
         this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored false .
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_Class  ;
+    :currently_ignored true .
 
 :status_referee_ordning
     a                  :cristinfield ;
@@ -1094,21 +1107,21 @@ It is a self reference.""" ;
     rdfs:comment    "The issn connected to the respective article. Possibly null." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored false .
+    :currently_ignored   false .
 
 :issn_elektronisk
     a               :cristinfield ;
     rdfs:comment    "The online version of the issn connected to the respective article. Possibly null." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored false .
+    :currently_ignored   false .
 
 :tidsskriftnavn
     a               :cristinfield ;
     rdfs:comment    "The name of the journal publishing the article" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TIDSSKRIFT_Class ;
-    :currently_ignored false .
+    :currently_ignored   false .
 
 :tidsskriftnr
     a                  :cristinfield ;
@@ -1123,7 +1136,7 @@ It is a self reference.""" ;
     rdfs:comment "A code representing the id of a Journal, Series (also viewed as a Journal in NSD) or Publishing House in NSD-channel registry " ;
     rdfs:range   rdf:nil ; #unknown range
     rdfs:domain  :TIDSSKRIFT_Class, :FORLAG_Class  ;
-    :currently_ignored false .
+    :currently_ignored   false .
 
 :landkode_utgiver
     a                  :cristinfield ;
