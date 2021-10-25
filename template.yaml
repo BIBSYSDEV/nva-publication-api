@@ -44,9 +44,9 @@ Parameters:
   EventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: EventBusArn
-  NewNvaEventBusName:
+  NewNvaEventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/Events/EventsBusName'
+    Default: '/NVA/Events/EventsBusArn'
   NewNvaEventsBucketsName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
@@ -1092,7 +1092,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref NewNvaEventBusName
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
