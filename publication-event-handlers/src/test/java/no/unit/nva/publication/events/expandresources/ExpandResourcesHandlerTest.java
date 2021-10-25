@@ -6,8 +6,6 @@ import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,18 +22,15 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
-import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class ExpandResourcesHandlerTest {
 
     public static final Context CONTEXT = mock(Context.class);
-    public static final String RESOURCE_IDENTIFIER_IN_SAMPLE_FILE = "017c93559df0-541e2774-d27f-49c9-a234-a26cde19d204";
     public static final int SINGLE_EXPECTED_FILE = 0;
     public static final String EVENT_WITH_NEW_PUBLISHED_RESOURCE = stringFromResources(
         Path.of("expandResources/sample-event-old-is-draft-new-is-published.json"));
-    String sampleEventString = stringFromResources(Path.of("expandResources/resource-update-sample.json"));
     private ByteArrayOutputStream output;
     private ExpandResourcesHandler expandResourceHandler;
     private S3Driver s3Driver;

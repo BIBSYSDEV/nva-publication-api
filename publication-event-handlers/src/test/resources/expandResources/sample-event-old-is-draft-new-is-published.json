@@ -3,19 +3,19 @@
   "id": "e8eebefc-29ff-5b2e-f414-6515c2cc71f2",
   "detail-type": "Lambda Function Invocation Result - Success",
   "source": "lambda",
-  "account": "884807050265",
+  "account": "111111111111",
   "time": "2021-10-21T10:34:01Z",
   "region": "eu-west-1",
   "resources": [
-    "arn:aws:events:eu-west-1:884807050265:event-bus/default",
-    "arn:aws:lambda:eu-west-1:884807050265:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST"
+    "arn:aws:events:eu-west-1:111111111111:event-bus/default",
+    "arn:aws:lambda:eu-west-1:111111111111:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST"
   ],
   "detail": {
     "version": "1.0",
     "timestamp": "2021-10-21T10:34:01.138Z",
     "requestContext": {
       "requestId": "6eef0b21-a79e-43fa-b4b1-ca04acdc1449",
-      "functionArn": "arn:aws:lambda:eu-west-1:884807050265:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST",
+      "functionArn": "arn:aws:lambda:eu-west-1:111111111111:function:nva-publication-api-nva-p-PublicationFanoutHandler-ipYLxhqVkOU3:$LATEST",
       "condition": "Success",
       "approximateInvokeCount": 1
     },
