@@ -1,6 +1,6 @@
 [versions]
 
-nva = { strictly = '1.15.1' }
+nva = { strictly = '1.16.1' }
 nvaDatamodel = { strictly = '0.14.4' }
 jackson = { require = '2.13.0' }
 awsSdk = { require = '1.12.52' }
