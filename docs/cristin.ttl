@@ -221,7 +221,7 @@
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
     rdfs:comment    """
-         The respective object contains metadata about a book or report.
+         The respective object contains metadata about a Book or Report.
          The respective field (TYPE_BOK_RAPPORT) has a value only if the varbeidhovedkatkode has one of the following values:
          OVERSETTELSESARB
          RAPPORT
@@ -887,14 +887,14 @@ It is a self reference.""" ;
 
 :isbn
     a               :cristinfield ;
-    rdfs:comment    "The isbn which the respective book/report is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
+    rdfs:comment    "The isbn which the respective Book or Report is registered with. Is nullable when the domain is :TIDSSKRIFTSERIE_Class." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false;.
 
 :utgivernavn
     a               :cristinfield ;
-    rdfs:comment    "The name of the publisher of the respective book/report. Can be empty." ;
+    rdfs:comment    "The name of the publisher of the respective Book or Report. Can be empty." ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false;.
@@ -915,20 +915,20 @@ It is a self reference.""" ;
     a            :cristinfield ;
     rdfs:range   xsd:string ;
     rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The name of the Publishing House that published the book/report""";
+    rdfs:comment """The name of the Publishing House that published the Book or Report""";
     :currently_ignored false;.
 
 :forlagsnr
     a            :cristinfield ;
     rdfs:range   xsd:integer ;
     rdfs:domain  :FORLAG_Class ;
-    rdfs:comment """The internal Cristin number of the specific Book/report series.""" ;
+    rdfs:comment """The internal Cristin number of the specific Book series.""" ;
     :should_ignore   true.
 
 
 :fagfelt
     a            :cristinfield ;
-    rdfs:comment "The scientific field in which the book is published" ;
+    rdfs:comment "The scientific field in which the Book or Report is published" ;
     rdfs:range   :FAGFELT_Class ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false;.
@@ -945,35 +945,35 @@ It is a self reference.""" ;
 
 :volum_serie
     a           :cristinfield ;
-    rdfs:comment "The book/report volume in the series. The value is a number in the form of a string. Possibly null.";
+    rdfs:comment "The Book or Report volume in the series. The value is a number in the form of a string. Possibly null.";
     rdfs:range  xsd:string ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false.
 
 :fagfeltkode
     a               :cristinfield ;
-    rdfs:comment    "The (numerical) code representing the scientific field in which the book is published" ;
+    rdfs:comment    "The (numerical) code representing the scientific field in which the Book or Report is published" ;
     rdfs:range      xsd:positiveInteger ;
     rdfs:domain     :FAGFELT_Class ;
     :currently_ignored false;.
 
 :fagomradekode
     a                  :cristinfield ;
-    rdfs:comment       "The (abbreviation) code representing the scientific field in which the book is published" ;
+    rdfs:comment       "The (abbreviation) code representing the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
 :navn
     a                  :cristinfield ;
-    rdfs:comment       "The NSD name of the scientific field in which the book is published" ;
+    rdfs:comment       "The NSD name of the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
 
 :navn_engelsk
     a                  :cristinfield ;
-    rdfs:comment       "The english name of the scientific field in which the book is published" ;
+    rdfs:comment       "The english name of the scientific field in which the Book or Report is published" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :FAGFELT_Class ;
     :currently_ignored "true" .
