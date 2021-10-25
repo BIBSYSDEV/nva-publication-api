@@ -6,20 +6,18 @@ dependencies {
     implementation(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
     implementation libs.nva.s3
 
-
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
-
     implementation libs.aws.lambda.events
     implementation libs.aws.java.sdk.core
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.s3
-
     implementation libs.aws.sdk2.urlconnectionclient
     implementation libs.aws.sdk2.eventbridge
     implementation libs.aws.sdk2.sqs
@@ -31,7 +29,6 @@ dependencies {
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
     implementation libs.jackson.core
-
 
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers

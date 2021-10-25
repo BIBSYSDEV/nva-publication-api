@@ -2,10 +2,10 @@
 
 nva = { strictly = '1.16.1' }
 nvaDatamodel = { strictly = '0.14.4' }
-jackson = { require = '2.13.0' }
+jackson = { strictly = '2.13.0' }
 awsSdk = { require = '1.12.52' }
 awsSdk2 = { require = '2.17.24' }
-log4jApi = { require = '2.14.1' }
+log4jApi = { strictly = '2.14.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }
 awsLambdaCore = { stictly = '1.2.1' }
