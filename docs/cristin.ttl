@@ -1002,25 +1002,29 @@ It is a self reference.""" ;
     The volume in which the article is published. The value is a number in the form of a string. Possibly null.
     """ ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class; .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :currently_ignored false .
 
 :sidenr_fra
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the start of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ; .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :currently_ignored false .
 
 :sidenr_til
     a               :cristinfield ;
     rdfs:comment    "The page number the that marks the end of the article. The value is a number in the form of a string. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ; .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
+    :currently_ignored false .
 
 :doi
     a               :cristinfield ;
     rdfs:comment    "The doi connected to the respective entry. Possibly null." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ; .
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    :currently_ignored false .
 
 :antall_sider_totalt
     a               :cristinfield ;
@@ -1041,8 +1045,8 @@ It is a self reference.""" ;
      """ ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" ;
-    :should_ignore     "true" .
+    :currently_ignored true ;
+    :should_ignore     true .
 
 
 :hefte
@@ -1053,21 +1057,21 @@ It is a self reference.""" ;
         this could be in the form of a number, a roman number or any other way of distinguishing an issue""" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_Class  ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :status_referee_ordning
     a                  :cristinfield ;
     rdfs:comment       "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_FOREDRAG_POSTER_Class ;
-    :currently_ignored "true" .
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TIDSSKRIFT_Class, :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored true .
 
 :supplement
     a                  :cristinfield ;
     rdfs:comment       "A area for adding information about possible attachments to the article." ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :utbredelsesomrade
     a                  :cristinfield ;
@@ -1076,7 +1080,7 @@ It is a self reference.""" ;
         Examples: NORSK, NORDISK, INTERNASJ, NASJONALT, UKJENT""" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :artikkelnummer
     a                  :cristinfield ;
@@ -1086,21 +1090,21 @@ It is a self reference.""" ;
         """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :arstall_trykket
     a                  :cristinfield ;
     rdfs:comment       "The year the publication was printed." ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :arstall_online
     a                  :cristinfield ;
     rdfs:comment       "The year the publication was released online." ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :tidskrift
     a            :cristinfield ;
@@ -1134,7 +1138,7 @@ It is a self reference.""" ;
     rdfs:comment       "Number identifying the specific journal within Cristin" ;
     rdfs:range         xsd:positiveInteger ;
     rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :nsdkode
 
@@ -1152,14 +1156,7 @@ It is a self reference.""" ;
         Possibly null.""" ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
-
-:status_referee_ordning
-    a                  :cristinfield ;
-    rdfs:comment       "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no, (U)=uncertain and NULL." ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :dato_utgatt
     a                  :cristinfield ;
@@ -1169,7 +1166,7 @@ It is a self reference.""" ;
     """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :status_serie
     a                  :cristinfield ;
@@ -1180,7 +1177,7 @@ It is a self reference.""" ;
     """ ;
     rdfs:range         xsd:string ;
     rdfs:domain        :TIDSSKRIFT_Class ;
-    :currently_ignored "true" .
+    :currently_ignored true .
 
 :VARBEID_EMNEORD
     a               :cristinfield ;
