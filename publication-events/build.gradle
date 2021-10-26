@@ -6,10 +6,10 @@ dependencies {
     implementation libs.nva.identifiers
     implementation libs.nva.core
 
-    runtimeOnly libs.jackson.core
-    testImplementation libs.jackson.core
-    runtimeOnly libs.jackson.databind
-    testImplementation libs.jackson.databind
+    implementation libs.jackson.annotations
+    implementation libs.jackson.core
+    implementation libs.jackson.databind
+
 
     implementation libs.jackson.annotations
 

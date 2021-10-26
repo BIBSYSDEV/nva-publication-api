@@ -44,6 +44,12 @@ Parameters:
   EventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: EventBusArn
+  NewNvaEventBusArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusArn'
+  NewNvaEventsBucketsName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBucketName'
   MaxConcurrency:
     Type: Number
     Default: 100
@@ -160,6 +166,9 @@ Resources:
     Type: "AWS::SQS::Queue"
   DoiRequestEventProducerDLQ:
     Type: "AWS::SQS::Queue"
+  ResourceExpansionHandlerDLQ:
+    Type: "AWS::SQS::Queue"
+
 
 
   #==============================ROLES=======================================================================
@@ -1065,10 +1074,8 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName
-          AWC_ACCOUNT_ID: !Ref AWS::AccountId
-          BASE_PATH: !Ref CustomDomainBasePath
-          DOMAIN_NAME: !Ref CustomDomain
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'resource-updates-events'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1085,10 +1092,10 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
-            Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
 
   PublicationFanoutHandler:
