@@ -287,6 +287,16 @@
 
     """ .
 
+:TYPE_FOREDRAG_POSTER_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "Metadata concerning an event, like a lecture." .
+
+:HENDELSE_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :TYPE_FOREDRAG_POSTER_Class ;
+    rdfs:comment    "Information about the actuall event.".
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -1024,8 +1034,8 @@ It is a self reference.""" ;
     refers to the entry (e.g Chapter) and not the to parent entry (e.g. Book).
     """ ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
-    :currently_ignored false .
+    rdfs:domain     :TYPE_BOK_RAPPORT_Class, :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored false.
 
 :publiseringsar
     a                  :cristinfield ;
@@ -1053,7 +1063,7 @@ It is a self reference.""" ;
     a                  :cristinfield ;
     rdfs:comment       "Defines whether or not the Journal is peerreviewed (J)=yes, (N)=no and NULL." ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TIDSSKRIFT_Class ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TIDSSKRIFT_Class, :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
 :supplement
@@ -1264,3 +1274,32 @@ It is a self reference.""" ;
   """ ;
     rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_Class, :TYPE_BOK_RAPPORT_DEL_Class .
+
+:type_foredrag_poster
+    a           :cristinfield ;
+    rdfs:comment "See description in range class.";
+    rdfs:range  :TYPE_FOREDRAG_POSTER_Class ;
+    rdfs:domain :Result .
+
+:status_invitert
+    a           :cristinfield ;
+    rdfs:comment """The value is J or N. When the value is J the lecturer has received a special invitation to hold a lecture or a poster.
+                    N indicates that the lecturer still held a lecture or a poster, but without a special invitation""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored true .
+
+:status_plenar
+    a           :cristinfield ;
+    rdfs:comment """The value is J or N. When the value is J the lecture or poster was the main event.
+                    N indicates that it was not the main event.""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored true .
+
+:hendelse
+    a           :cristinfield ;
+    rdfs:comment "See description in range class.";
+    rdfs:range  :HENDELSE_Class;
+    rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
+    :currently_ignored true .
