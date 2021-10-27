@@ -5,9 +5,9 @@ import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.IdentityClient;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.UserResponse;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
 import org.slf4j.Logger;
@@ -32,27 +32,21 @@ public class IdentityClientImpl implements IdentityClient {
     private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
 
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
-    private final SecretsReader secretsReader;
-    private final Environment environment;
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
+    private final String identityServiceSecret;
 
-    public IdentityClientImpl(SecretsReader secretsReader, Environment environment, HttpClient httpClient) {
-        this.secretsReader = secretsReader;
-        this.environment = environment;
+    public IdentityClientImpl(SecretsReader secretsReader, HttpClient httpClient) throws ErrorReadingSecretException {
         this.httpClient =  httpClient;
+        this.identityServiceSecret = secretsReader.fetchSecret(
+                Constants.IDENTITY_SERVICE_SECRET_NAME, Constants.IDENTITY_SERVICE_SECRET_KEY);
     }
 
     @JacocoGenerated
-    public IdentityClientImpl() {
-        this(new SecretsReader(), new Environment(), HttpClient.newHttpClient());
+    public IdentityClientImpl() throws ErrorReadingSecretException {
+        this(new SecretsReader(), HttpClient.newHttpClient());
     }
 
-    private String getSecret() throws ErrorReadingSecretException {
-        String secretName = environment.readEnv(Constants.IDENTITY_SERVICE_SECRET_NAME);
-        String secretKey = environment.readEnv(Constants.IDENTITY_SERVICE_SECRET_KEY);
-        return secretsReader.fetchSecret(secretName, secretKey);
-    }
 
     @Override
     public Optional<URI> getCustomerId(String username) {
@@ -60,7 +54,7 @@ public class IdentityClientImpl implements IdentityClient {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(createGetUserUri(username))
-                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, getSecret())
+                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
@@ -68,17 +62,17 @@ public class IdentityClientImpl implements IdentityClient {
                 UserResponse userResponse = objectMapper.readValue(response.body(), UserResponse.class);
                 customerId = userResponse.getCustomerId();
             }
-        } catch (ErrorReadingSecretException | IOException | InterruptedException e) {
-            logger.error(GET_USER_ERROR, e);
+        } catch (IOException | InterruptedException e) {
+            logger.warn(GET_USER_ERROR, e);
         }
         return Optional.ofNullable(customerId);
     }
 
     private URI createGetUserUri(String username) {
-        String schemeAndHost = String.join(Constants.COLON_SLASH_SLASH,
-                environment.readEnv(Constants.API_SCHEME), environment.readEnv(Constants.API_HOST));
-        return URI.create(String.join(Constants.SLASH,
-                schemeAndHost, Constants.USER_INTERNAL_SERVICE_PATH, username));
+        return new UriWrapper(Constants.API_SCHEME, Constants.API_HOST)
+                .addChild(Constants.USER_INTERNAL_SERVICE_PATH)
+                .addChild(username)
+                .getUri();
     }
 
     @Override
@@ -87,7 +81,7 @@ public class IdentityClientImpl implements IdentityClient {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(createGetCustomerUri(customerId))
-                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, getSecret())
+                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
@@ -95,8 +89,8 @@ public class IdentityClientImpl implements IdentityClient {
                 CustomerResponse customerResponse = objectMapper.readValue(response.body(), CustomerResponse.class);
                 cristinId = customerResponse.getCristinId();
             }
-        } catch (ErrorReadingSecretException | IOException | InterruptedException e) {
-            logger.error(GET_CUSTOMER_ERROR, e);
+        } catch (IOException | InterruptedException e) {
+            logger.warn(GET_CUSTOMER_ERROR, e);
         }
         return Optional.ofNullable(cristinId);
     }

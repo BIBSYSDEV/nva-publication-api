@@ -18,7 +18,6 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import nva.commons.core.Environment;
 import nva.commons.core.JsonUtils;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
@@ -56,11 +55,10 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedMessageWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
 
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
 
         service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
@@ -74,11 +72,10 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedDoiRequestWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
 
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
 
 
         service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
@@ -93,11 +90,10 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoUserResponse() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsNothing();
 
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
 
         service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
@@ -111,11 +107,10 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoCustomerResponse() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsUser();
 
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
 
         service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
@@ -129,11 +124,10 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoInstitutionResponse() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
 
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
 
         service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
@@ -214,11 +208,6 @@ public class ResourceExpansionServiceTest {
         when(userResponse.statusCode()).thenReturn(200);
         when(userResponse.body()).thenReturn(body);
         return userResponse;
-    }
-
-    private Environment createEnvironment() {
-        Environment environment = new Environment();
-        return environment;
     }
 
     private SecretsReader createSecretsReaderMockAlwaysReturnsSecret() throws ErrorReadingSecretException {
