@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.impl;
 
+import no.unit.nva.expansion.InstitutionClient;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.IdentityClient;
@@ -15,9 +16,11 @@ import java.util.Set;
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private final IdentityClient identityClient;
+    private final InstitutionClient institutionClient;
 
-    public ResourceExpansionServiceImpl(IdentityClient identityClient) {
+    public ResourceExpansionServiceImpl(IdentityClient identityClient, InstitutionClient institutionClient) {
         this.identityClient = identityClient;
+        this.institutionClient = institutionClient;
     }
 
     @Override
@@ -38,8 +41,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private Set<URI> getOrganizationIds(String username) {
         Set<URI> organizationIds = new HashSet<>();
-        getOrganizationId(username).ifPresent(organizationIds::add);
-        //TODO: add organization ids from hierarchy
+        Optional<URI> organizationId = getOrganizationId(username);
+        if (organizationId.isPresent()) {
+            organizationIds.addAll(institutionClient.getOrganizationIds(organizationId.get()));
+        }
         return organizationIds;
     }
 

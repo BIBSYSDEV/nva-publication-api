@@ -1,8 +1,9 @@
 package no.unit.nva.expansion.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import no.unit.nva.expansion.model.CustomerResponse;
+import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.IdentityClient;
+import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.UserResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
@@ -20,20 +21,12 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.Optional;
 
+import static com.google.common.net.HttpHeaders.ACCEPT;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.MediaType.JSON_UTF_8;
+import static java.net.HttpURLConnection.HTTP_OK;
+
 public class IdentityClientImpl implements IdentityClient {
-
-    private static final String IDENTITY_SERVICE_SECRET_NAME = "IDENTITY_SERVICE_SECRET_NAME";
-    private static final String IDENTITY_SERVICE_SECRET_KEY = "IDENTITY_SERVICE_SECRET_KEY";
-    private static final String IDENTITY_SERVICE_URL = "IDENTITY_SERVICE_URL";
-
-    private static final String USER_INTERNAL_SERVICE_PATH = "/identity-internal/user/";
-    private static final String CUSTOMER_SERVICE_PATH = "/customer/";
-    private static final String CUSTOMER_INTERNAL_PATH = "/identity-internal/customer/";
-
-    private static final String ACCEPT = "Accept";
-    private static final String APPLICATION_JSON = "application/json";
-    private static final String AUTHORIZATION = "Authorization";
-    private static final int OK = 200;
 
     private static final String GET_USER_ERROR = "Error getting customerId from user";
     private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
@@ -56,8 +49,8 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private String getSecret() throws ErrorReadingSecretException {
-        String secretName = environment.readEnv(IDENTITY_SERVICE_SECRET_NAME);
-        String secretKey = environment.readEnv(IDENTITY_SERVICE_SECRET_KEY);
+        String secretName = environment.readEnv(Constants.IDENTITY_SERVICE_SECRET_NAME);
+        String secretKey = environment.readEnv(Constants.IDENTITY_SERVICE_SECRET_KEY);
         return secretsReader.fetchSecret(secretName, secretKey);
     }
 
@@ -67,11 +60,11 @@ public class IdentityClientImpl implements IdentityClient {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(createGetUserUri(username))
-                    .headers(ACCEPT, APPLICATION_JSON, AUTHORIZATION, getSecret())
+                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, getSecret())
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            if (response.statusCode() == OK) {
+            if (response.statusCode() == HTTP_OK) {
                 UserResponse userResponse = objectMapper.readValue(response.body(), UserResponse.class);
                 customerId = userResponse.getCustomerId();
             }
@@ -82,8 +75,10 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private URI createGetUserUri(String username) {
-        String identityServiceUrl = environment.readEnv(IDENTITY_SERVICE_URL);
-        return URI.create(identityServiceUrl + USER_INTERNAL_SERVICE_PATH + username);
+        String schemeAndHost = String.join(Constants.COLON_SLASH_SLASH,
+                environment.readEnv(Constants.API_SCHEME), environment.readEnv(Constants.API_HOST));
+        return URI.create(String.join(Constants.SLASH,
+                schemeAndHost, Constants.USER_INTERNAL_SERVICE_PATH, username));
     }
 
     @Override
@@ -92,11 +87,11 @@ public class IdentityClientImpl implements IdentityClient {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(createGetCustomerUri(customerId))
-                    .headers(ACCEPT, APPLICATION_JSON, AUTHORIZATION, getSecret())
+                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, getSecret())
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            if (response.statusCode() == OK) {
+            if (response.statusCode() == HTTP_OK) {
                 CustomerResponse customerResponse = objectMapper.readValue(response.body(), CustomerResponse.class);
                 cristinId = customerResponse.getCristinId();
             }
@@ -107,7 +102,7 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private URI createGetCustomerUri(URI customerId) {
-        String uri = customerId.toString().replace(CUSTOMER_SERVICE_PATH, CUSTOMER_INTERNAL_PATH);
+        String uri = customerId.toString().replace(Constants.CUSTOMER_SERVICE_PATH, Constants.CUSTOMER_INTERNAL_PATH);
         return URI.create(uri);
     }
 }

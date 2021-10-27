@@ -3,10 +3,12 @@ package no.unit.nva.expansion;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.expansion.impl.IdentityClientImpl;
+import no.unit.nva.expansion.impl.InstitutionClientImpl;
 import no.unit.nva.expansion.impl.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.InstitutionResponse;
 import no.unit.nva.expansion.model.UserResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -28,6 +30,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -53,46 +56,50 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedMessageWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironmentMock();
-        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
+        Environment environment = createEnvironment();
+        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
 
         IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
 
-        service = new ResourceExpansionServiceImpl(identityClient);
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
         Message message = createMessage();
 
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
-        assertThat(expandedMessage.getOrganizationIds().size(), is(1));
+        assertThat(expandedMessage.getOrganizationIds().size(), is(3));
     }
 
     @Test
     void shouldReturnExpandedDoiRequestWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironmentMock();
-        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
+        Environment environment = createEnvironment();
+        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
 
         IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
 
-        service = new ResourceExpansionServiceImpl(identityClient);
+
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
         DoiRequest doiRequest = createDoiRequest();
 
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
-        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(1));
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(3));
     }
 
     @Test
     void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoUserResponse() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironmentMock();
+        Environment environment = createEnvironment();
         HttpClient httpClient = createHttpClientMockReturnsNothing();
 
         IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
 
-        service = new ResourceExpansionServiceImpl(identityClient);
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
         Message message = createMessage();
 
@@ -104,12 +111,31 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoCustomerResponse() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        Environment environment = createEnvironmentMock();
-        HttpClient httpClient = createHttpClientMockReturnsUserOnly();
+        Environment environment = createEnvironment();
+        HttpClient httpClient = createHttpClientMockReturnsUser();
 
         IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
 
-        service = new ResourceExpansionServiceImpl(identityClient);
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+
+        DoiRequest doiRequest = createDoiRequest();
+
+        ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
+
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(0));
+    }
+
+    @Test
+    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoInstitutionResponse() throws Exception {
+        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
+        Environment environment = createEnvironment();
+        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
+
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+        InstitutionClient institutionClient = new InstitutionClientImpl(environment, httpClient);
+
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
 
         DoiRequest doiRequest = createDoiRequest();
 
@@ -143,10 +169,8 @@ public class ResourceExpansionServiceTest {
         return httpClient;
     }
 
-    private HttpClient createHttpClientMockReturnsUserOnly() throws IOException, InterruptedException {
-        HttpResponse userResponse = mock(HttpResponse.class);
-        when(userResponse.statusCode()).thenReturn(200);
-        when(userResponse.body()).thenReturn(createUserResponseAsJson());
+    private HttpClient createHttpClientMockReturnsUser() throws IOException, InterruptedException {
+        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
 
         HttpClient httpClient = mock(HttpClient.class);
         when(httpClient.send(any(), any()))
@@ -158,24 +182,42 @@ public class ResourceExpansionServiceTest {
     }
 
     private HttpClient createHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
-        HttpResponse userResponse = mock(HttpResponse.class);
-        when(userResponse.statusCode()).thenReturn(200);
-        when(userResponse.body()).thenReturn(createUserResponseAsJson());
-
-        HttpResponse customerResponse = mock(HttpResponse.class);
-        when(customerResponse.statusCode()).thenReturn(200);
-        when(customerResponse.body()).thenReturn(createCustomerResponseAsJson());
+        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
+        HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
 
         HttpClient httpClient = mock(HttpClient.class);
         when(httpClient.send(any(), any()))
                 .thenReturn(userResponse)
-                .thenReturn(customerResponse);
+                .thenReturn(customerResponse)
+                .thenThrow(IOException.class);
 
         return httpClient;
     }
 
-    private Environment createEnvironmentMock() {
-        Environment environment = mock(Environment.class);
+    private HttpClient createHttpClientMockReturnsUserThenCustomerThenInstitution()
+            throws IOException, InterruptedException {
+        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
+        HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
+        HttpResponse institutionResponse = createHttpResponse(createInstitutionResponseAsJson());
+
+        HttpClient httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(), any()))
+                .thenReturn(userResponse)
+                .thenReturn(customerResponse)
+                .thenReturn(institutionResponse);
+
+        return httpClient;
+    }
+
+    private HttpResponse createHttpResponse(String body) {
+        HttpResponse userResponse = mock(HttpResponse.class);
+        when(userResponse.statusCode()).thenReturn(200);
+        when(userResponse.body()).thenReturn(body);
+        return userResponse;
+    }
+
+    private Environment createEnvironment() {
+        Environment environment = new Environment();
         return environment;
     }
 
@@ -185,7 +227,7 @@ public class ResourceExpansionServiceTest {
         return secretsReader;
     }
 
-    private Object createCustomerResponseAsJson() throws JsonProcessingException {
+    private String createCustomerResponseAsJson() throws JsonProcessingException {
         CustomerResponse customerResponse = new CustomerResponse();
         customerResponse.setCristinId(randomUri());
         return objectMapper.writeValueAsString(customerResponse);
@@ -195,6 +237,18 @@ public class ResourceExpansionServiceTest {
         UserResponse userResponse = new UserResponse();
         userResponse.setCustomerId(randomUri());
         return objectMapper.writeValueAsString(userResponse);
+    }
+
+    private String createInstitutionResponseAsJson() throws JsonProcessingException {
+        InstitutionResponse institutionResponse = new InstitutionResponse();
+        institutionResponse.setId(randomUri());
+        InstitutionResponse.SubUnit subUnit1 = new InstitutionResponse.SubUnit();
+        subUnit1.setId(randomUri());
+        InstitutionResponse.SubUnit subUnit2 = new InstitutionResponse.SubUnit();
+        subUnit2.setId(randomUri());
+        institutionResponse.setSubunits(List.of(subUnit1, subUnit2));
+
+        return objectMapper.writeValueAsString(institutionResponse);
     }
 
     private static UserInstance sampleSender() {

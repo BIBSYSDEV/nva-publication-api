@@ -1,5 +1,6 @@
 dependencies{
     implementation libs.nva.core
+    implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
 
@@ -8,4 +9,11 @@ dependencies{
     implementation(project(':storage-model'))
 
     testImplementation libs.nva.testutils
+}
+
+test {
+    environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
+    environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
+    environment "API_HOST", "localhost"
+    environment "API_SCHEME", "https"
 }
