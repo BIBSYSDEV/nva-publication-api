@@ -1,9 +1,9 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_EVENTS_SENT_PER_REQUEST;
 import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_REQUEST_ENTRIES;
 import static no.unit.nva.publication.s3imports.EventEmitter.REQUEST_ENTRY_SET_MAX_BYTE_SIZE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;

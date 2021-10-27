@@ -8,6 +8,7 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.identifiers
     implementation libs.nva.s3
+    implementation libs.nva.language
 
     compileOnly libs.nva.apigateway
 
@@ -15,17 +16,23 @@ dependencies {
 
     implementation libs.junit.jupiter.api
 
+
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.s3
 
+    implementation libs.bundles.testing
     implementation (libs.dynamodDbLocal) {
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-dynamodb'
         exclude group: 'com.amazonaws', module: 'aws-java-sdk-core'
     }
 
-    implementation (libs.dynamoDbHttpCoreDependency){
+    implementation (libs.httpcore){
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
+
+    // https://mvnrepository.com/artifact/uk.co.jemos.podam/podam
+    testImplementation group: 'uk.co.jemos.podam', name: 'podam', version: '7.1.0.RELEASE'
+
 
 }
 

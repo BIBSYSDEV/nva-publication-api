@@ -10,18 +10,21 @@ slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }
 awsLambdaCore = { stictly = '1.2.1' }
 awsLambdaEvents = { strictly = '3.9.0' }
-dynamoDbHttpCoreDependency = { strictly = '4.4.13' }
+# jsonld and awssdk have different versions. update libraries and check again
+httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '1.15.0' }
 nvaUserAccessService = { require = '0.3.0' }
 awsIon = { strictly = '1.5.1' }
 commonsValidator = { strictly = '1.7' }
 apacheCommons = { strictly = '4.4' }
-testUtils = { strictly = '0.1.25' }
+testUtils = { strictly = '0.1.28' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.0' }
 mockito = { strictly = '3.12.4' }
 configTypesafe = { strictly = '1.4.1' }
+jsonld = { strictly = '0.13.3' }
+nva-language ={strictly = '1.0'}
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -34,6 +37,7 @@ nva-testutils = { group = 'com.github.bibsysdev', name = 'nva-testutils', versio
 nva-user-access-rights = { group = 'com.github.bibsysdev.nva-user-access-service', name = 'user-access-rights', version.ref = 'nvaUserAccessService' }
 nva-datamodel = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
+nva-language = {group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
 
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson' }
@@ -50,7 +54,7 @@ aws-sdk-dynamodb = { group = 'com.amazonaws', name = 'aws-java-sdk-dynamodb', ve
 aws-java-sdk-core = { group = 'com.amazonaws', name = 'aws-java-sdk-core', version.ref = 'awsSdk' }
 aws-sdk-apigateway = { group = 'com.amazonaws', name = 'aws-java-sdk-api-gateway', version.ref = 'awsSdk' }
 
-dynamoDbHttpCoreDependency = { group = 'org.apache.httpcomponents', name = 'httpcore', version.ref = 'dynamoDbHttpCoreDependency' }
+httpcore = { group = 'org.apache.httpcomponents', name = 'httpcore', version.ref = 'httpcore' }
 
 aws-sdk2-s3 = { group = 'software.amazon.awssdk', name = 's3', version.ref = 'awsSdk2' }
 aws-core = { group = 'software.amazon.awssdk', name = 'aws-core', version.ref = 'awsSdk2' }
@@ -71,10 +75,11 @@ log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.re
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
+jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
+
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
-
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
 javafaker = { group = 'com.github.javafaker', name = 'javafaker', version = { strictly = '1.0.2' } }
 javers = { group = 'org.javers', name = 'javers-core', version = { strictly = '6.0.1' } }
@@ -94,5 +99,7 @@ cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref =
 cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = 'cucumber' }
 
 [bundles]
-testing = ["junit-jupiter-params","junit-jupiter-api","junit-vintage-engine","junit-jupiter-engine","mockito-core","hamcrest-base", "hamcrest-core","logutils","nva-testutils","javers","zalando"]
+testing = ["junit-jupiter-params", "junit-jupiter-api", "junit-vintage-engine",
+           "junit-jupiter-engine", "mockito-core", "hamcrest-base", "hamcrest-core",
+            "logutils", "nva-testutils", "javers", "zalando"]
 
