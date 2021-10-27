@@ -15,7 +15,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItems;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -98,7 +97,7 @@ class IndexDocumentTest {
     }
 
     @Test
-    void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenDegreeIsPartOfSeriesFoundInNsd()
+    void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenBookIsPartOfSeriesFoundInNsd()
         throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         IndexDocument actualDocument = fromPublication(publication);
@@ -112,17 +111,34 @@ class IndexDocumentTest {
     }
 
     @Test
-    void shouldNotFailWhenThereIsNoPublicationContext() {
-        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        publication.getEntityDescription().getReference().setPublicationContext(null);
-        assertDoesNotThrow(() -> IndexDocument.fromPublication(publication));
+    void shouldReturnIndexDocumentWithConfirmedJournalIdWhenPublicationIsPublishedInConfirmedJournal()
+        throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication(FeatureArticle.class);
+        IndexDocument actualDocument = fromPublication(publication);
+        Journal journal = extractJournal(publication);
+        URI expectedJournalId = journal.getId();
+        assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
     }
 
     @Test
-    void shouldNotFailWhenThereIsNoPublicationInstance() {
+    void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+        publication.getEntityDescription().getReference().setPublicationContext(null);
+        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+    }
+
+    @Test
+    void shouldNotFailWhenThereIsNoPublicationInstance() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().getReference().setPublicationInstance(null);
-        assertDoesNotThrow(() -> IndexDocument.fromPublication(publication));
+        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+    }
+
+    @Test
+    void shouldNotFailWhenThereIsNoMainTitle() throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
+        publication.getEntityDescription().setMainTitle(null);
+        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
     }
 
     private static UriRetriever mockPublicationChannelPublisherResponse(URI journalId,
@@ -138,6 +154,10 @@ class IndexDocumentTest {
         when(mockUriRetriever.getRawContent(eq(publisherId), any()))
             .thenReturn(Optional.of(publicationChannelSamplePublisher));
         return mockUriRetriever;
+    }
+
+    private Journal extractJournal(Publication publication) {
+        return (Journal) publication.getEntityDescription().getReference().getPublicationContext();
     }
 
     private URI extractPublisherUri(Publication publication) {
