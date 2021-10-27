@@ -16,7 +16,7 @@ nvaUserAccessService = { require = '0.3.0' }
 awsIon = { strictly = '1.5.1' }
 commonsValidator = { strictly = '1.7' }
 apacheCommons = { strictly = '4.4' }
-testUtils = { strictly = '0.1.25' }
+testUtils = { strictly = '0.1.27' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.0' }
@@ -34,6 +34,8 @@ nva-testutils = { group = 'com.github.bibsysdev', name = 'nva-testutils', versio
 nva-user-access-rights = { group = 'com.github.bibsysdev.nva-user-access-service', name = 'user-access-rights', version.ref = 'nvaUserAccessService' }
 nva-datamodel = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
+nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nva' }
+
 
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson' }
