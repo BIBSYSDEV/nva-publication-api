@@ -1,8 +1,8 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;

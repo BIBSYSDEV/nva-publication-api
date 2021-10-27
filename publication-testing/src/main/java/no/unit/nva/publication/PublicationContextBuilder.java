@@ -34,7 +34,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.model.pages.TemporalExtent;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class PublicationContextBuilder {
 
     public static final String SERIES_URI_PREFIX = "https://dev.nva.aws.unit.no/publication-channels/";
@@ -85,8 +87,9 @@ public class PublicationContextBuilder {
             case "Lecture":
             case "OtherPresentation":
                 return randomPresentation();
+            default:
+                throw new UnsupportedOperationException("Publication instance not supported: " + className);
         }
-        throw new UnsupportedOperationException("Publication instance not supported: " + className);
     }
 
     private static Degree randomDegree() throws InvalidIsbnException, InvalidUnconfirmedSeriesException {

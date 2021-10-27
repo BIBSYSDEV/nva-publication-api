@@ -4,7 +4,9 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import java.util.Map;
 import no.unit.nva.model.PublicationDate;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class RandomUtils {
 
     public static Map<String, String> randomLabels() {

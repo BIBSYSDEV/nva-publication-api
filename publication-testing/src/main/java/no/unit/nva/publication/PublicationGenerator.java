@@ -42,6 +42,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
 import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public final class PublicationGenerator {
 
     public static final String OWNER = "owner@example.org";

@@ -19,7 +19,9 @@ import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.Role;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class EntityDescriptionBuilder {
 
     public static EntityDescription randomEntityDescription(Class<?> publicationInstanceClass) {
@@ -39,9 +41,9 @@ public class EntityDescriptionBuilder {
     }
 
     private static Map<String, String> randomAlternativeTitles() {
-        Language randomLanguageWithIso6391Code =randomLanguage();
-        while(isNull(randomLanguageWithIso6391Code.getIso6391Code())){
-            randomLanguageWithIso6391Code =randomLanguage();
+        Language randomLanguageWithIso6391Code = randomLanguage();
+        while (isNull(randomLanguageWithIso6391Code.getIso6391Code())) {
+            randomLanguageWithIso6391Code = randomLanguage();
         }
         return Map.of(randomLanguageWithIso6391Code.getIso6391Code(), randomString());
     }

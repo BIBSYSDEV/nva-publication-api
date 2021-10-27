@@ -52,7 +52,10 @@ import no.unit.nva.model.instancetypes.report.ReportWorkingPaper;
 import no.unit.nva.model.pages.MonographPages;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.model.pages.Range;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
+@SuppressWarnings("PMD.CouplingBetweenObjects")
 public class PublicationInstanceBuilder {
 
     public static PublicationInstance<? extends Pages> randomPublicationInstance() {
@@ -71,6 +74,7 @@ public class PublicationInstanceBuilder {
         return Arrays.stream(types).map(Type::value).collect(Collectors.toList());
     }
 
+    @SuppressWarnings("PMD.NcssCount")
     public static PublicationInstance<? extends Pages> randomPublicationInstance(Class<?> randomType) {
         var typeName = randomType.getSimpleName();
 
@@ -145,8 +149,9 @@ public class PublicationInstanceBuilder {
                 return generateLecture();
             case "OtherPresentation":
                 return generateOtherPresentation();
+            default:
+                throw new UnsupportedOperationException("Publication instance not supported: " + typeName);
         }
-        throw new UnsupportedOperationException("Publication instance not supported: " + typeName);
     }
 
     private static OtherPresentation generateOtherPresentation() {

@@ -1,13 +1,5 @@
 package no.unit.nva.publication.indexing;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.*;
-import static org.hamcrest.core.IsEqual.equalTo;
-import java.net.URI;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
-import org.junit.jupiter.api.Test;
-
 class IndexDocumentTest {
 
 //    @Test

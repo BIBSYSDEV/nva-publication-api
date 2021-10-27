@@ -11,7 +11,9 @@ import java.util.UUID;
 import no.unit.nva.model.File;
 import no.unit.nva.model.FileSet;
 import no.unit.nva.model.License;
+import nva.commons.core.JacocoGenerated;
 
+@JacocoGenerated
 public class FileSetGenerator {
 
     public static FileSet randomFileSet() {
