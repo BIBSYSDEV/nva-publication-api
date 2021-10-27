@@ -39,6 +39,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private Set<URI> getOrganizationIds(String username) {
         Set<URI> organizationIds = new HashSet<>();
         getOrganizationId(username).ifPresent(organizationIds::add);
+        //TODO: add organization ids from hierarchy
         return organizationIds;
     }
 
