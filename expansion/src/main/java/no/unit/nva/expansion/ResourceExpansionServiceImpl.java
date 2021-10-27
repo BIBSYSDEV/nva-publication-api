@@ -10,7 +10,7 @@ import java.util.Set;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
-    private IdentityClient identityClient;
+    private final IdentityClient identityClient;
 
     public ResourceExpansionServiceImpl(IdentityClient identityClient) {
         this.identityClient = identityClient;

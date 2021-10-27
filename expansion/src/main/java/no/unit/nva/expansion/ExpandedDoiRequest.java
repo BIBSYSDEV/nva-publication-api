@@ -13,6 +13,7 @@ public class ExpandedDoiRequest extends DoiRequest implements WithOrganizationSc
     private Set<URI> organizationIds;
 
     public ExpandedDoiRequest(DoiRequest doiRequest) {
+        super();
         setDoi(doiRequest.getDoi());
         setContributors(doiRequest.getContributors());
         setCreatedDate(doiRequest.getCreatedDate());

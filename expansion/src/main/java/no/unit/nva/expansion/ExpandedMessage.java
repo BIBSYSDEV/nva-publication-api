@@ -13,6 +13,7 @@ public class ExpandedMessage extends Message implements WithOrganizationScope {
     private Set<URI> organizationIds;
 
     public ExpandedMessage(Message message) {
+        super();
         setMessageType(message.getMessageType());
         setCreatedTime(message.getCreatedTime());
         setIdentifier(message.getIdentifier());

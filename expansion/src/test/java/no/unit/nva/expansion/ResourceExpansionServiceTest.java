@@ -45,7 +45,7 @@ public class ResourceExpansionServiceTest {
     private ResourceExpansionService service;
 
     @Test
-    void shouldReturnExpandedMessageWithOrganizationIds() throws IOException, ErrorReadingSecretException, InterruptedException {
+    void shouldReturnExpandedMessageWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
         Environment environment = createEnvironmentMock();
         HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
@@ -62,7 +62,7 @@ public class ResourceExpansionServiceTest {
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithOrganizationIds() throws IOException, ErrorReadingSecretException, InterruptedException {
+    void shouldReturnExpandedDoiRequestWithOrganizationIds() throws Exception {
         SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
         Environment environment = createEnvironmentMock();
         HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
@@ -76,6 +76,40 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(1));
+    }
+
+    @Test
+    void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoUserResponse() throws Exception {
+        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
+        Environment environment = createEnvironmentMock();
+        HttpClient httpClient = createHttpClientMockReturnsNothing();
+
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+
+        service = new ResourceExpansionServiceImpl(identityClient);
+
+        Message message = createMessage();
+
+        ExpandedMessage expandedMessage = service.expandMessage(message);
+
+        assertThat(expandedMessage.getOrganizationIds().size(), is(0));
+    }
+
+    @Test
+    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoCustomerResponse() throws Exception {
+        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
+        Environment environment = createEnvironmentMock();
+        HttpClient httpClient = createHttpClientMockReturnsUserOnly();
+
+        IdentityClient identityClient = new IdentityClientImpl(secretsReader, environment, httpClient);
+
+        service = new ResourceExpansionServiceImpl(identityClient);
+
+        DoiRequest doiRequest = createDoiRequest();
+
+        ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
+
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(0));
     }
 
     private DoiRequest createDoiRequest() {
@@ -95,11 +129,35 @@ public class ResourceExpansionServiceTest {
         return message;
     }
 
+    private HttpClient createHttpClientMockReturnsNothing() throws IOException, InterruptedException {
+        HttpClient httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(), any()))
+                .thenThrow(IOException.class);
+
+        return httpClient;
+    }
+
+    private HttpClient createHttpClientMockReturnsUserOnly() throws IOException, InterruptedException {
+        HttpResponse userResponse = mock(HttpResponse.class);
+        when(userResponse.statusCode()).thenReturn(200);
+        when(userResponse.body()).thenReturn(createUserResponseAsJson());
+
+        HttpClient httpClient = mock(HttpClient.class);
+        when(httpClient.send(any(), any()))
+                .thenReturn(userResponse)
+                .thenThrow(IOException.class);
+
+
+        return httpClient;
+    }
+
     private HttpClient createHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
         HttpResponse userResponse = mock(HttpResponse.class);
+        when(userResponse.statusCode()).thenReturn(200);
         when(userResponse.body()).thenReturn(createUserResponseAsJson());
 
         HttpResponse customerResponse = mock(HttpResponse.class);
+        when(customerResponse.statusCode()).thenReturn(200);
         when(customerResponse.body()).thenReturn(createCustomerResponseAsJson());
 
         HttpClient httpClient = mock(HttpClient.class);

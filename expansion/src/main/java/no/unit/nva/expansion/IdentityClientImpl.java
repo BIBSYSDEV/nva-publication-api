@@ -29,6 +29,7 @@ public class IdentityClientImpl implements IdentityClient {
     public static final String AUTHORIZATION = "Authorization";
     public static final String GET_USER_ERROR = "Error getting customerId from user";
     public static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
+    public static final int OK = 200;
 
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final SecretsReader secretsReader;
@@ -63,8 +64,10 @@ public class IdentityClientImpl implements IdentityClient {
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            UserResponse userResponse = objectMapper.readValue(response.body(), UserResponse.class);
-            customerId = userResponse.getCustomerId();
+            if (response.statusCode() == OK) {
+                UserResponse userResponse = objectMapper.readValue(response.body(), UserResponse.class);
+                customerId = userResponse.getCustomerId();
+            }
         } catch (ErrorReadingSecretException | IOException | InterruptedException e) {
             logger.error(GET_USER_ERROR, e);
         }
@@ -85,8 +88,10 @@ public class IdentityClientImpl implements IdentityClient {
                     .GET()
                     .build();
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
-            CustomerResponse customerResponse = objectMapper.readValue(response.body(), CustomerResponse.class);
-            cristinId = customerResponse.getCristinId();
+            if (response.statusCode() == OK) {
+                CustomerResponse customerResponse = objectMapper.readValue(response.body(), CustomerResponse.class);
+                cristinId = customerResponse.getCristinId();
+            }
         } catch (ErrorReadingSecretException | IOException | InterruptedException e) {
             logger.error(GET_CUSTOMER_ERROR, e);
         }

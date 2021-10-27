@@ -31,7 +31,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
 @SuppressWarnings("PMD.GodClass")
-public final class DoiRequest
+public class DoiRequest
     implements WithIdentifier,
                RowLevelSecurity,
                WithStatus,
