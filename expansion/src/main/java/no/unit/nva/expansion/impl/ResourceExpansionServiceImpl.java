@@ -1,5 +1,9 @@
-package no.unit.nva.expansion;
+package no.unit.nva.expansion.impl;
 
+import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.IdentityClient;
+import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 

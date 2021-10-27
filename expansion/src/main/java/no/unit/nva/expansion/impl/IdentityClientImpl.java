@@ -1,6 +1,9 @@
-package no.unit.nva.expansion;
+package no.unit.nva.expansion.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.expansion.model.CustomerResponse;
+import no.unit.nva.expansion.IdentityClient;
+import no.unit.nva.expansion.model.UserResponse;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonUtils;
@@ -19,17 +22,21 @@ import java.util.Optional;
 
 public class IdentityClientImpl implements IdentityClient {
 
-    private static final String IDENTITY_SERVICE_SECRET_NAME = "IdentityServiceSecret-";
-    private static final String IDENTITY_SERVICE_SECRET_KEY = "IdentityServiceSecretKey";
-    public static final String USER_SERVICE_URL = "https://api.dev.nva.aws.unit.no/identity-internal/user/";
-    public static final String CUSTOMER_SERVICE_PATH = "/customer/";
-    public static final String CUSTOMER_INTERNAL_PATH = "/identity-internal/customer/";
-    public static final String ACCEPT = "Accept";
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String AUTHORIZATION = "Authorization";
-    public static final String GET_USER_ERROR = "Error getting customerId from user";
-    public static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
-    public static final int OK = 200;
+    private static final String IDENTITY_SERVICE_SECRET_NAME = "IDENTITY_SERVICE_SECRET_NAME";
+    private static final String IDENTITY_SERVICE_SECRET_KEY = "IDENTITY_SERVICE_SECRET_KEY";
+
+    private static final String USER_SERVICE_URL = "https://api.dev.nva.aws.unit.no/identity-internal/user/";
+    private static final String CUSTOMER_SERVICE_PATH = "/customer/";
+    private static final String CUSTOMER_INTERNAL_PATH = "/identity-internal/customer/";
+
+    private static final String ACCEPT = "Accept";
+    private static final String APPLICATION_JSON = "application/json";
+    private static final String AUTHORIZATION = "Authorization";
+    private static final int OK = 200;
+
+    private static final String GET_USER_ERROR = "Error getting customerId from user";
+    private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
+
 
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final SecretsReader secretsReader;

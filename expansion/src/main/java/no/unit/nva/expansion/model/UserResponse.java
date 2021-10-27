@@ -1,4 +1,4 @@
-package no.unit.nva.expansion;
+package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

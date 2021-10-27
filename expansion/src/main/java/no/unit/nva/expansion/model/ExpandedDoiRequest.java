@@ -1,5 +1,6 @@
-package no.unit.nva.expansion;
+package no.unit.nva.expansion.model;
 
+import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.publication.storage.model.DoiRequest;
 
 import java.net.URI;

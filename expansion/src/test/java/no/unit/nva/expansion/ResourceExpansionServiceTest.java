@@ -2,6 +2,12 @@ package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import no.unit.nva.expansion.impl.IdentityClientImpl;
+import no.unit.nva.expansion.impl.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.CustomerResponse;
+import no.unit.nva.expansion.model.ExpandedDoiRequest;
+import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.UserResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
