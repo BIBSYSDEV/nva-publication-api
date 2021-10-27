@@ -24,8 +24,9 @@ public class IdentityClientImpl implements IdentityClient {
 
     private static final String IDENTITY_SERVICE_SECRET_NAME = "IDENTITY_SERVICE_SECRET_NAME";
     private static final String IDENTITY_SERVICE_SECRET_KEY = "IDENTITY_SERVICE_SECRET_KEY";
+    private static final String IDENTITY_SERVICE_URL = "IDENTITY_SERVICE_URL";
 
-    private static final String USER_SERVICE_URL = "https://api.dev.nva.aws.unit.no/identity-internal/user/";
+    private static final String USER_INTERNAL_SERVICE_PATH = "/identity-internal/user/";
     private static final String CUSTOMER_SERVICE_PATH = "/customer/";
     private static final String CUSTOMER_INTERNAL_PATH = "/identity-internal/customer/";
 
@@ -36,7 +37,6 @@ public class IdentityClientImpl implements IdentityClient {
 
     private static final String GET_USER_ERROR = "Error getting customerId from user";
     private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
-
 
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final SecretsReader secretsReader;
@@ -82,7 +82,8 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private URI createGetUserUri(String username) {
-        return URI.create(USER_SERVICE_URL + username);
+        String identityServiceUrl = environment.readEnv(IDENTITY_SERVICE_URL);
+        return URI.create(identityServiceUrl + USER_INTERNAL_SERVICE_PATH + username);
     }
 
     @Override
