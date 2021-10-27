@@ -297,6 +297,53 @@
     rdfs:subClassOf :TYPE_FOREDRAG_POSTER_Class ;
     rdfs:comment    "Information about the actuall event.".
 
+:TYPE_PRODUKT_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """ A registration for a physical or digital material produced on the basis of a scientific or artistic enterprise,
+                        this does not include documentation of the original result.
+                        The product may be one of the following types:
+                        Digital learning material (Digitale læremidler)
+                        Model architecture (model arkitektur)
+                        Multimedia product (multimediaprodukt)
+                        Music - recording product (Musikk - innspillingsprodukt)
+                        Software (Programvare)
+                        Database (Database)
+                        Sound material (Lydmateriale)
+                        Other product (Annet produkt)""".
+
+:ARKIVPOST_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "A reference to a local archive".
+
+:ARKIV_FIL_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    "Holds information about a file uploaded to an archive.".
+
+:TYPE_KUNSTNERSIKPRODUKSJON_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """An artistic production, exists with the main category: Kunstnerisk og museal presentasjon.
+                       It can have the following secondary categories:
+                       Museumsutstilling
+                       Arkitektutstilling
+                       Kunstutstilling
+                       Webutstilling
+                       Annen presentasjon """.
+
+:TYPE_UTSTILLING_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :CristinClass ;
+    rdfs:comment    """Consists of general information about an exhibit. Exists with the main category: Utstilling.
+                        It can have the following secondary categories:
+                        Museumsutstilling
+                        Arkitektutstilling
+                        Kunstutstilling
+                        Webutstilling
+                        Annen presentasjon""".
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -432,6 +479,13 @@
     rdfs:domain        :Result ;
     :currently_ignored "true" .
 
+:VARBEID_KILDE
+    a                   :cristinfield ;
+    rdfs:comment        "See description in range class.";
+    rdfs:range          :VARBEID_KILDE_Class ;
+    rdfs:domain         :Result ;
+    :currently_ignored  true.
+
 :kildekode
     a                  :cristinfield ;
     rdfs:comment       """
@@ -519,7 +573,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
 
 :VITENSKAPELIGARBEID_LOKAL
     a                  :cristinfield ;
-    rdfs:comment       "See description of domain class" ;
+    rdfs:comment       "See description of range class" ;
     rdfs:domain        :Result ;
     rdfs:range         :VITENSKAPELIGARBEID_LOKAL_Class ;
     :currently_ignored "true" .
@@ -756,7 +810,7 @@ Cristin.
 
 :VARBEID_VDISIPLIN
     a            :cristinfield ;
-    rdfs:comment "See description of domain class" ;
+    rdfs:comment "See description of range class" ;
     rdfs:range   :VARBEID_VDISIPLIN_Class ;
     rdfs:domain  :Result .
 
@@ -837,6 +891,13 @@ It is a self reference.""" ;
     publications of the author.
     """ ;
     :currently_ignored false .
+
+:finansiering_varbeid
+    a                   :cristinfield;
+    rdfs:comment        "See description in range class.";
+    rdfs:domain         :Result ;
+    rdfs:range          :FINANSIERING_VARBEID_Class ;
+    :currently_ignored  true.
 
 :finansieringslopenr
     a                  :cristinfield ;
@@ -1308,3 +1369,39 @@ It is a self reference.""" ;
     rdfs:range  :HENDELSE_Class;
     rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
+
+:TYPE_PRODUKT
+    a           :cristinfield ;
+    rdfs:comment "See description in range class.";
+    rdfs:domain :Result ;
+    rdfs:range  :TYPE_PRODUKT_Class ;
+    :currently_ignored true.
+
+:arkivpost
+    a           :cristinfield ;
+    rdfs:comment "See description in range class";
+    rdfs:domain :Result ;
+    rdfs:range  :ARKIVPOST_Class ;
+    :currently_ignored true.
+
+:arkivfil
+    a           :cristinfield ;
+    rdfs:comment "See description in range class.";
+    rdfs:domain :Result ;
+    rdfs:range  :ARKIV_FIL_Class ;
+    :currently_ignored true.
+
+:TYPE_KUNSTNERSIKPRODUKSJON
+    a           :cristinfield ;
+    rdfs:comment "See description in range class";
+    rdfs:domain :Result ;
+    rdfs:range  :TYPE_KUNSTNERSIKPRODUKSJON_Class;
+    :currently_ignored true.
+
+:TYPE_UTSTILLING
+    a           :cristinfield ;
+    rdfs:comment "See description in range class";
+    rdfs:domain :Result ;
+    rdfs:range  :TYPE_UTSTILLING_Class;
+    :currently_ignored true.
+

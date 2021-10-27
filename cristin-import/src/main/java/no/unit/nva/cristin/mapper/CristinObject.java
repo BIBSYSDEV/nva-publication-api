@@ -24,7 +24,7 @@ import nva.commons.core.JsonSerializable;
     setterPrefix = "with"
 )
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
-@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet", "peerReviewed",
+@JsonIgnoreProperties({"type_mediebidrag", "brukernavn_opprettet",
     "brukernavn_siste_endring", "kildekode", "publiseringstatuskode", "merknadtekst_godkjenning",
     "dato_utgitt", "finansiering_varbeid", "varbeid_emneord", "type_produkt",
     "kildepostid", "eierkode_opprettet", "arkivpost",
