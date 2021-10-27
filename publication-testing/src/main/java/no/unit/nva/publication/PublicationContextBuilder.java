@@ -39,7 +39,6 @@ import nva.commons.core.JacocoGenerated;
 @JacocoGenerated
 public class PublicationContextBuilder {
 
-    public static final String SERIES_URI_PREFIX = "https://dev.nva.aws.unit.no/publication-channels/";
 
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
@@ -155,12 +154,11 @@ public class PublicationContextBuilder {
     }
 
     private static Series randomBookSeries() {
-        URI randomSeriesUri = URI.create(SERIES_URI_PREFIX + randomString());
-        return new Series(randomSeriesUri);
+        return new Series(randomPublicationChannelsUri());
     }
 
     private static PublishingHouse randomPublishingHouse() {
-        return new Publisher(randomUri());
+        return new Publisher(randomPublicationChannelsUri());
     }
 
     private static List<String> randomIsbnList() {
@@ -168,7 +166,11 @@ public class PublicationContextBuilder {
     }
 
     private static Journal randomJournal() {
-        return new Journal(randomUri().toString());
+        return new Journal(randomPublicationChannelsUri().toString());
+    }
+
+    private static URI randomPublicationChannelsUri() {
+        return URI.create("https://api.dev.nva.aws.unit.no/publication-channels/"+randomString());
     }
 
     private static ArtisticDesign randomArtisticDesign() {
