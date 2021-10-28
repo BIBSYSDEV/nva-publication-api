@@ -1335,7 +1335,7 @@ It is a self reference.""" ;
     rdfs:domain        :TIDSSKRIFT_Class ;
     :currently_ignored true .
 
-:VARBEID_EMNEORD
+:varbeid_emneord
     a               :cristinfield ;
     rdfs:comment    """See the range class.""" ;
     rdfs:range      :VARBEID_EMNEORD_Class ;
