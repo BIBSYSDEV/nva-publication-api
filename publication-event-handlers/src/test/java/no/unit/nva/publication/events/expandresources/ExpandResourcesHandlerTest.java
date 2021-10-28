@@ -15,8 +15,10 @@ import java.nio.file.Path;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -43,7 +45,6 @@ public class ExpandResourcesHandlerTest {
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
-
     @Test
     void shouldSaveTheNewestResourceImageInS3WhenThereIsNewResourceImagePresentInTheEventAndIsNotDraftResource()
         throws JsonProcessingException {
@@ -51,9 +52,11 @@ public class ExpandResourcesHandlerTest {
         var allFiles = s3Driver.listAllFiles(UnixPath.ROOT_PATH);
         assertThat(allFiles.size(), is(equalTo(1)));
         var contents = s3Driver.getFile(allFiles.get(SINGLE_EXPECTED_FILE));
-        var resourceUpdate = dynamoImageSerializerRemovingEmptyFields.readValue(contents, ResourceUpdate.class);
+        var documentToIndex = dynamoImageSerializerRemovingEmptyFields.readValue(contents, Publication.class);
+
+        ResourceUpdate actualResource = Resource.fromPublication(documentToIndex);
         ResourceUpdate expectedImage = extractResourceUpdateFromEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
-        assertThat(resourceUpdate, is(equalTo(expectedImage)));
+        assertThat(actualResource, is(equalTo(expectedImage)));
     }
 
     @Test
@@ -69,7 +72,9 @@ public class ExpandResourcesHandlerTest {
 
     private ResourceUpdate fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
         var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
-        return dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString, ResourceUpdate.class);
+        Publication publication =
+            dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString,Publication.class);
+        return Resource.fromPublication(publication);
     }
 
     private EventPayload parseEmittedEvent() throws JsonProcessingException {
