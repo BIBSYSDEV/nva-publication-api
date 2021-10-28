@@ -32,6 +32,7 @@ import java.util.List;
 import static no.unit.nva.expansion.JsonConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -68,6 +69,7 @@ public class ResourceExpansionServiceTest {
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
+        assertThat((Message) expandedMessage, is(equalTo(message)));
     }
 
     @Test
@@ -78,6 +80,7 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
+        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     @Test
@@ -88,6 +91,7 @@ public class ResourceExpansionServiceTest {
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
+        assertThat((Message) expandedMessage, is(equalTo(message)));
     }
 
     @Test
@@ -98,6 +102,7 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
+        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     @Test
@@ -108,6 +113,7 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
+        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     private DoiRequest createDoiRequest() {
