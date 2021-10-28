@@ -1,6 +1,6 @@
 package no.unit.nva.publication.indexing;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.indexing.IndexingConfig.indexingMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,7 +17,7 @@ public final class JsonLdUtils {
     }
 
     private static JsonNode addContext(JsonNode root) {
-        if (!isNull(root)) {
+        if (nonNull(root)) {
             ObjectNode context = indexingMapper.createObjectNode();
             context.put("@vocab", "https://bibsysdev.github.io/src/nva/ontology.ttl#");
             context.put("id", "@id");
