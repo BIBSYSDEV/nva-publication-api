@@ -14,9 +14,6 @@ public final class Constants {
     public static final String CUSTOMER_INTERNAL_PATH = "identity-internal/customer";
     public static final String INSTITUTION_SERVICE_PATH = "institution/departments";
 
-    public static final String SLASH = "/";
-    public static final String COLON_SLASH_SLASH = "://";
-
     private Constants() {
     }
 }

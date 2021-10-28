@@ -69,7 +69,11 @@ public class ResourceExpansionServiceTest {
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
-        assertThat((Message) expandedMessage, is(equalTo(message)));
+        assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
+    }
+
+    private void assertThatExpandedMessageHasNoDataLoss(Message message, Message expandedMessage) {
+        assertThat(expandedMessage, is(equalTo(message)));
     }
 
     @Test
@@ -80,7 +84,7 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
-        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
+        assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
     }
 
     @Test
@@ -91,7 +95,7 @@ public class ResourceExpansionServiceTest {
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
-        assertThat((Message) expandedMessage, is(equalTo(message)));
+        assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
     }
 
     @Test
@@ -102,7 +106,11 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
-        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
+        assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
+    }
+
+    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, DoiRequest expandedDoiRequest) {
+        assertThat(expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     @Test
@@ -113,7 +121,7 @@ public class ResourceExpansionServiceTest {
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
-        assertThat((DoiRequest) expandedDoiRequest, is(equalTo(doiRequest)));
+        assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
     }
 
     private DoiRequest createDoiRequest() {
@@ -139,8 +147,8 @@ public class ResourceExpansionServiceTest {
     }
 
     private HttpClient prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
-        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
-        when(httpClientMock.send(any(), any()))
+        HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
+        when(httpClientMock.<String>send(any(), any()))
                 .thenReturn(userResponse)
                 .thenThrow(IOException.class);
 
@@ -148,9 +156,9 @@ public class ResourceExpansionServiceTest {
     }
 
     private HttpClient prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
-        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
-        HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
-        when(httpClientMock.send(any(), any()))
+        HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
+        HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
+        when(httpClientMock.<String>send(any(), any()))
                 .thenReturn(userResponse)
                 .thenReturn(customerResponse)
                 .thenThrow(IOException.class);
@@ -160,10 +168,10 @@ public class ResourceExpansionServiceTest {
 
     private HttpClient prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
             throws IOException, InterruptedException {
-        HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
-        HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
-        HttpResponse institutionResponse = createHttpResponse(createInstitutionResponseAsJson());
-        when(httpClientMock.send(any(), any()))
+        HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
+        HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
+        HttpResponse<String> institutionResponse = createHttpResponse(createInstitutionResponseAsJson());
+        when(httpClientMock.<String>send(any(), any()))
                 .thenReturn(userResponse)
                 .thenReturn(customerResponse)
                 .thenReturn(institutionResponse);
@@ -171,12 +179,12 @@ public class ResourceExpansionServiceTest {
         return httpClientMock;
     }
 
-    private HttpResponse createHttpResponse(String body) {
-        HttpResponse userResponse = mock(HttpResponse.class);
-        when(userResponse.statusCode()).thenReturn(200);
-        when(userResponse.body()).thenReturn(body);
+    private HttpResponse<String> createHttpResponse(String body) {
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.body()).thenReturn(body);
 
-        return userResponse;
+        return response;
     }
 
     private SecretsReader createSecretsReaderMockAlwaysReturnsSecret() throws ErrorReadingSecretException {
