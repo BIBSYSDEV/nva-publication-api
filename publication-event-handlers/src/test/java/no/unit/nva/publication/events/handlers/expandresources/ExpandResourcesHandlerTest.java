@@ -1,20 +1,28 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.restclients.IdentityClientImpl;
+import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.EventPayload;
@@ -24,6 +32,8 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
+import nva.commons.secrets.ErrorReadingSecretException;
+import nva.commons.secrets.SecretsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +43,28 @@ public class ExpandResourcesHandlerTest {
     public static final int SINGLE_EXPECTED_FILE = 0;
     public static final String EVENT_WITH_NEW_PUBLISHED_RESOURCE = stringFromResources(
         Path.of("expandResources/sample-event-old-is-draft-new-is-published.json"));
+    private static final String RANDOM_SECRET = randomString();
     private ByteArrayOutputStream output;
     private ExpandResourcesHandler expandResourceHandler;
     private S3Driver s3Driver;
 
     @BeforeEach
-    public void init() {
+    public void init() throws ErrorReadingSecretException {
         this.output = new ByteArrayOutputStream();
         FakeS3Client s3Client = new FakeS3Client();
-        this.expandResourceHandler = new ExpandResourcesHandler(s3Client);
+        HttpClient httpClient = HttpClient.newHttpClient();
+        SecretsReader secretsReader = fakeSecretsReader();
+        IdentityClientImpl identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        ResourceExpansionService resourceExpansionService =
+            new ResourceExpansionServiceImpl(identityClient, new InstitutionClientImpl());
+        this.expandResourceHandler = new ExpandResourcesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
+    }
+
+    private SecretsReader fakeSecretsReader() throws ErrorReadingSecretException {
+        SecretsReader secretsReader = mock(SecretsReader.class);
+        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn(RANDOM_SECRET);
+        return secretsReader;
     }
 
     @Test
@@ -73,7 +95,7 @@ public class ExpandResourcesHandlerTest {
     private ResourceUpdate fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
         var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
         Publication publication =
-            dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString,Publication.class);
+            dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString, Publication.class);
         return Resource.fromPublication(publication);
     }
 

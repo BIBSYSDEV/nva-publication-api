@@ -9,7 +9,7 @@ import java.util.Set;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 
-public class ExpandedMessage extends Message implements WithOrganizationScope {
+public class ExpandedMessage extends Message implements WithOrganizationScope, ExpandedResourceUpdate {
 
     private Set<URI> organizationIds;
 

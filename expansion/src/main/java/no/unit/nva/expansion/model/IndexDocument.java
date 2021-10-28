@@ -15,15 +15,15 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
-import no.unit.nva.model.Publication;
 import no.unit.nva.expansion.utils.JsonLdUtils;
 import no.unit.nva.expansion.utils.UriRetriever;
+import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
-public final class IndexDocument implements JsonSerializable {
+public final class IndexDocument implements JsonSerializable, ExpandedResourceUpdate {
 
     public static final String ID_FIELD_NAME = "id";
     public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
@@ -62,12 +62,12 @@ public final class IndexDocument implements JsonSerializable {
         return uris;
     }
 
-    public URI getId() {
-        return URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
-    }
-
     public List<URI> getPublicationContextUris() {
         return getPublicationContextUris(indexDocumentRootNode);
+    }
+
+    public URI getId() {
+        return URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
     }
 
     @JacocoGenerated

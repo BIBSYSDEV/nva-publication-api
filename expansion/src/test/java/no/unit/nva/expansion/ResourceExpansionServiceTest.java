@@ -1,15 +1,19 @@
 package no.unit.nva.expansion;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.ResourceExpansionServiceImpl.UNSUPPORTED_TYPE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.net.URI;
@@ -17,7 +21,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -35,6 +41,7 @@ import no.unit.nva.publication.PublicationInstanceBuilder;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
@@ -50,16 +57,11 @@ public class ResourceExpansionServiceTest {
     public static final String SOME_MESSAGE = "someMessage";
     public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Clock CLOCK = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-    private static final UserInstance SAMPLE_SENDER = sampleSender();
     public static final int ORGANIZATION_AND_TWO_SUBUNITS = 3;
     public static final int NO_ORGANIZATION = 0;
-
+    private static final UserInstance SAMPLE_SENDER = sampleSender();
     private ResourceExpansionService service;
     private HttpClient httpClientMock;
-
-    private static List<Class<?>> listPublicationInstanceTypes() {
-        return PublicationInstanceBuilder.listPublicationInstanceTypes();
-    }
 
     @BeforeEach
     void init() throws Exception {
@@ -73,16 +75,11 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedMessageWithTheOrgIdsThatTheRespectiveResourceOwnerIsAffiliatedWith() throws Exception {
         prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
-
         Message message = createMessage();
-        ExpandedMessage expandedMessage = service.expandMessage(message);
+        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
         assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
-    }
-
-    private void assertThatExpandedMessageHasNoDataLoss(Message message, Message expandedMessage) {
-        assertThat(expandedMessage, is(equalTo(message)));
     }
 
     @Test
@@ -90,7 +87,7 @@ public class ResourceExpansionServiceTest {
         prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
 
         DoiRequest doiRequest = createDoiRequest();
-        ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
+        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) service.expandEntry(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
         assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
@@ -101,7 +98,7 @@ public class ResourceExpansionServiceTest {
         prepareHttpClientMockReturnsNothing();
 
         Message message = createMessage();
-        ExpandedMessage expandedMessage = service.expandMessage(message);
+        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
 
         assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
         assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
@@ -112,14 +109,10 @@ public class ResourceExpansionServiceTest {
         prepareHttpClientMockReturnsUser();
 
         DoiRequest doiRequest = createDoiRequest();
-        ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
+        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) service.expandEntry(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
         assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
-    }
-
-    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, DoiRequest expandedDoiRequest) {
-        assertThat(expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     @Test
@@ -127,7 +120,7 @@ public class ResourceExpansionServiceTest {
         prepareHttpClientMockReturnsUserThenCustomer();
 
         DoiRequest doiRequest = createDoiRequest();
-        ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
+        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) service.expandEntry(doiRequest);
 
         assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
         assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
@@ -137,8 +130,53 @@ public class ResourceExpansionServiceTest {
     @MethodSource("listPublicationInstanceTypes")
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType) throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(instanceType);
-        IndexDocument indexDoc = service.expandResource(Resource.fromPublication(publication));
+        Resource resourceUpdate = Resource.fromPublication(publication);
+        IndexDocument indexDoc = (IndexDocument) service.expandEntry(resourceUpdate);
         assertThat(indexDoc.getId(), is(not(nullValue())));
+    }
+
+    @ParameterizedTest(name = "should process all ResourceUpdate types:{0}")
+    @MethodSource("listResourceUpdateTypes")
+    void shouldProcessAllResourceUpdateTypes(Class<?> resourceUpdateType) throws IOException, InterruptedException {
+        prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
+        ResourceUpdate resource = generateResourceUpdate(resourceUpdateType);
+        service.expandEntry(resource);
+        assertDoesNotThrow(() -> service.expandEntry(resource));
+    }
+
+    private ResourceUpdate generateResourceUpdate(Class<?> resourceUpdateType) {
+        if (Resource.class.equals(resourceUpdateType)) {
+            return Resource.fromPublication(PublicationGenerator.randomPublication());
+        }
+        if (DoiRequest.class.equals(resourceUpdateType)) {
+            return createDoiRequest();
+        }
+        if (Message.class.equals(resourceUpdateType)) {
+            return createMessage();
+        }
+        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
+    }
+
+    private static List<Class<?>> listResourceUpdateTypes() {
+        JsonSubTypes[] annotations = ResourceUpdate.class.getAnnotationsByType(JsonSubTypes.class);
+        Type[] types = annotations[0].value();
+        return Arrays.stream(types).map(Type::value).collect(Collectors.toList());
+    }
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
+
+    private static UserInstance sampleSender() {
+        return new UserInstance(SOME_SENDER, SOME_ORG);
+    }
+
+    private void assertThatExpandedMessageHasNoDataLoss(Message message, Message expandedMessage) {
+        assertThat(expandedMessage, is(equalTo(message)));
+    }
+
+    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, DoiRequest expandedDoiRequest) {
+        assertThat(expandedDoiRequest, is(equalTo(doiRequest)));
     }
 
     private DoiRequest createDoiRequest() {
@@ -235,9 +273,5 @@ public class ResourceExpansionServiceTest {
         institutionResponse.setSubunits(List.of(subUnit1, subUnit2));
 
         return objectMapper.writeValueAsString(institutionResponse);
-    }
-
-    private static UserInstance sampleSender() {
-        return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 }
