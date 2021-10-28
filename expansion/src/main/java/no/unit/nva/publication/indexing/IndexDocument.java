@@ -41,7 +41,9 @@ public final class IndexDocument implements JsonSerializable {
         throws JsonProcessingException {
         var documentWithId = createJsonWithId(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        return new IndexDocument(attempt(() -> indexingMapper.readTree(enrichedJson)).orElseThrow());
+        return attempt(() -> indexingMapper.readTree(enrichedJson))
+            .map(IndexDocument::new)
+            .orElseThrow();
     }
 
     public static List<URI> getPublicationContextUris(JsonNode indexDocument) {
@@ -106,7 +108,6 @@ public final class IndexDocument implements JsonSerializable {
             .map(documentWithLinkedData -> documentWithLinkedData.toFramedJsonLd(documentWithId))
             .orElseThrow();
     }
-
 
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
         String jsonString = indexingMapper.writeValueAsString(publication);

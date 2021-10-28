@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
+import java.util.stream.Stream;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
@@ -33,8 +34,11 @@ import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.PublicationInstanceBuilder;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class IndexDocumentTest {
 
@@ -44,7 +48,7 @@ class IndexDocumentTest {
         "/entityDescription/reference/publicationContext/series/name";
 
     @Test
-    public void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
+    void shouldReturnIndexDocumentWithValidReferenceData() throws Exception {
 
         final Publication publication = randomBookWithConfirmedPublisher();
         final URI seriesUri = extractSeriesUri(publication);
@@ -63,9 +67,12 @@ class IndexDocumentTest {
         assertEquals(seriesName, framedResultNode.at(SERIES_NAME_JSON_PTR).textValue());
     }
 
-    @Test
-    void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier() throws JsonProcessingException {
-        Publication publication = PublicationGenerator.randomPublication();
+    @ParameterizedTest(name = "should return properly framed document with id based on Id-namespace and resource "
+                              + "identifier. Instance type:{0}")
+    @MethodSource("publicationInstanceProvider")
+    void shouldReturnDocumentWithIdBasedOnIdNameSpaceAndResourceIdentifier(Class<?> publicationInstance)
+        throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
         assertThat(indexDocument.getId(), is(not(nullValue())));
         var documentId = indexDocument.getId();
@@ -139,6 +146,10 @@ class IndexDocumentTest {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().setMainTitle(null);
         assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+    }
+
+    private static Stream<Class<?>> publicationInstanceProvider() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
     private static UriRetriever mockPublicationChannelPublisherResponse(URI journalId,
