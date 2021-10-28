@@ -1021,6 +1021,101 @@ It is a self reference.""" ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false.
 
+:utgave
+    a           :cristinfield ;
+    rdfs:comment "A text field which generally consists of a number indicating which edition this book is.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:utgave_fra
+    a           :cristinfield ;
+    rdfs:comment "A text field which generally consists of a number indicating which edition this book is. This field is most likely not used in Cristin any more.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:status_revidert
+    a           :cristinfield ;
+    rdfs:comment "If the value is (J) the Book or Report has been revised, if it is (N) it has not. Possibly null.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:status_elektronisk_publisert
+    a           :cristinfield ;
+    rdfs:comment "If the value is (J) the Book or Report has been published electronically, if it is (N) it has not. Possibly null.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:stedangivelse_utgiver
+    a           :cristinfield ;
+    rdfs:comment "A text field indicating where the Book or Report was published, example: Oslo.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:institusjonsnr_utgiver
+    a           :cristinfield ;
+    rdfs:comment """This field has to bee seen in combination with :avdnr_utgiver, :undavdnr_utgiver, :gruppenr_utgiver.
+                    Each of the fields carries a number that combined gives a publisher. Each number added makes the granularity finer.
+                    Example: 194 60 0 0 would be the Faculty of Economics(60) at NTNU(194).""";
+    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:avdnr_utgiver
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_utgiver";
+    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:undavdnr_utgiver
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_utgiver";
+    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:gruppenr_utgiver
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_utgiver";
+    rdfs:range  rdf:nil ; #unknown range but should be String or Integer.
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+
+:tidsskriftnr_serie
+    a           :cristinfield ;
+    rdfs:comment """Refers to a journal and not a publisher. This is often the case for conference proceedings, when this would be a collection of articles.
+                    Not part of current CristinImport.""" ;
+    rdfs:range  rdf:nil; #Unknown.
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:sprakkode_oversatt_til
+    a           :cristinfield ;
+    rdfs:comment "Holds the language-code for the language the Book or Report has been translated into, feks 'EN' for english.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:originalforfatter
+    a           :cristinfield ;
+    rdfs:comment "If the Book is a translation this field will hold the name of the original author(s)." ;
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
+:originaltittel
+    a           :cristinfield ;
+    rdfs:comment "If the Book is a translation this field will hold the original title.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :TYPE_BOK_RAPPORT_Class ;
+    :currently_ignored true.
+
 :fagfeltkode
     a               :cristinfield ;
     rdfs:comment    "The (numerical) code representing the scientific field in which the Book or Report is published" ;
@@ -1082,9 +1177,9 @@ It is a self reference.""" ;
 
 :doi
     a               :cristinfield ;
-    rdfs:comment    "The doi connected to the respective entry. Possibly null." ;
+    rdfs:comment    "The doi connected to the respective entry. Possibly null. Currently ignored for TYPE_BOK_RAPPORT_Class domain." ;
     rdfs:range      xsd:string ;
-    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class ;
+    rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false .
 
 :antall_sider_totalt
@@ -1216,7 +1311,7 @@ It is a self reference.""" ;
         Example: NO
         Possibly null.""" ;
     rdfs:range         xsd:string ;
-    rdfs:domain        :TIDSSKRIFT_Class ;
+    rdfs:domain        :TIDSSKRIFT_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true .
 
 :dato_utgatt
@@ -1297,9 +1392,9 @@ It is a self reference.""" ;
 
 :status_utgitt_av_forlag
     a            :cristinfield ;
-    rdfs:comment """UNKNOWN meaning. It takes values "J" and "N" corresponding to the values true and false.""" ;
+    rdfs:comment "If the value is (J) the Book or Report has been published by a publisher, if it is (N) it has not. Possibly null." ;
     rdfs:range   xsd:string ;
-    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class;
+    rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true.
 
 :delangivelse
@@ -1380,7 +1475,7 @@ It is a self reference.""" ;
 :arkivpost
     a           :cristinfield ;
     rdfs:comment "See description in range class";
-    rdfs:domain :Result ;
+    rdfs:domain :Result, :TYPE_BOK_RAPPORT_Class ;
     rdfs:range  :ARKIVPOST_Class ;
     :currently_ignored true.
 
