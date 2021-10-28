@@ -1037,14 +1037,15 @@ It is a self reference.""" ;
 
 :status_revidert
     a           :cristinfield ;
-    rdfs:comment "If the value is (J) the Book or Report has been revised, if it is (N) it has not. Possibly null.";
+    rdfs:comment """If the value is (J) the Book or Report has been revised, if it is (N) it has not. Possibly null if we dont know.
+                    Revision is done by the author(s).""";
     rdfs:range  xsd:string ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true.
 
 :status_elektronisk_publisert
     a           :cristinfield ;
-    rdfs:comment "If the value is (J) the Book or Report has been published electronically, if it is (N) it has not. Possibly null.";
+    rdfs:comment "If the value is (J) the Book or Report has been published electronically, if it is (N) it has not. Possibly null if we dont know.";
     rdfs:range  xsd:string ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true.
@@ -1089,7 +1090,7 @@ It is a self reference.""" ;
 
 :tidsskriftnr_serie
     a           :cristinfield ;
-    rdfs:comment """Refers to a journal and not a publisher. This is often the case for conference proceedings, when this would be a collection of articles.
+    rdfs:comment """Refers to a Cristin journal and not a publisher. This is often the case for conference proceedings, when this would be a collection of articles.
                     Not part of current CristinImport.""" ;
     rdfs:range  rdf:nil; #Unknown.
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
@@ -1097,7 +1098,7 @@ It is a self reference.""" ;
 
 :sprakkode_oversatt_til
     a           :cristinfield ;
-    rdfs:comment "Holds the language-code for the language the Book or Report has been translated into, feks 'EN' for english.";
+    rdfs:comment "Holds the language-code(ISO 639-1 code) for the language the Book or Report has been translated into, feks 'EN' for english.";
     rdfs:range  xsd:string ;
     rdfs:domain :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true.
@@ -1177,7 +1178,9 @@ It is a self reference.""" ;
 
 :doi
     a               :cristinfield ;
-    rdfs:comment    "The doi connected to the respective entry. Possibly null. Currently ignored for TYPE_BOK_RAPPORT_Class domain." ;
+    rdfs:comment    """The doi connected to the respective entry. Possibly null.
+                        There are currently no entries in Cristin where the main category is BOK and this field is not null.
+                        Currently ignored for TYPE_BOK_RAPPORT_Class domain.""" ;
     rdfs:range      xsd:string ;
     rdfs:domain     :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored false .
@@ -1392,7 +1395,8 @@ It is a self reference.""" ;
 
 :status_utgitt_av_forlag
     a            :cristinfield ;
-    rdfs:comment "If the value is (J) the Book or Report has been published by a publisher, if it is (N) it has not. Possibly null." ;
+    rdfs:comment """If the value is (J) the Book or Report has been published by a publisher, if it is (N) it has not. Possibly null if status is unknown.
+                    There is no sure connection between this value and :forlag""" ;
     rdfs:range   xsd:string ;
     rdfs:domain  :TYPE_BOK_RAPPORT_DEL_Class, :TYPE_BOK_RAPPORT_Class ;
     :currently_ignored true.
