@@ -1,0 +1,15 @@
+package no.unit.nva.publication.events.handlers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import nva.commons.core.Environment;
+import nva.commons.core.JsonUtils;
+
+public final class PublicationEventsConfig {
+
+    public static final ObjectMapper dynamoImageSerializerRemovingEmptyFields = JsonUtils.dynamoObjectMapper;
+    public static final Environment ENVIRONMENT = new Environment();
+
+    private PublicationEventsConfig() {
+
+    }
+}

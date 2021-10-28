@@ -1032,7 +1032,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.doirequests.DoiRequestEventProducer::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -1068,7 +1068,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.expandresources.ExpandResourcesHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandResourcesHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -1103,7 +1103,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.fanout.PublicationFanoutHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.fanout.PublicationFanoutHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -1169,7 +1169,7 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
-      Handler: no.unit.nva.publication.events.dynamodbstream.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11
