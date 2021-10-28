@@ -15,7 +15,6 @@ import java.time.ZoneId;
 import java.util.List;
 import no.unit.nva.model.Agent;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.ArtisticDesign;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
@@ -33,13 +32,12 @@ import no.unit.nva.model.contexttypes.venue.Venue;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.exceptions.InvalidUnconfirmedSeriesException;
-import no.unit.nva.model.pages.TemporalExtent;
+import no.unit.nva.model.time.Period;
+import no.unit.nva.model.time.Time;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public class PublicationContextBuilder {
-
-    public static final Publication EMPTY_PRODUCT_AWAITING_TO_BECOME_URI = null;
 
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
@@ -106,16 +104,23 @@ public class PublicationContextBuilder {
             .withAgent(randomAgent())
             .withLabel(randomLabel())
             .withPlace(randomPlace())
-            .withProduct(EMPTY_PRODUCT_AWAITING_TO_BECOME_URI)
-            .withTime(randomTemporalExtent())
+            .withProduct(randomUri())
+            .withTime(randomTime())
             .build();
     }
 
-    private static TemporalExtent randomTemporalExtent() {
-        Instant fromInstant = randomInstant();
-        LocalDateTime from = LocalDateTime.ofInstant(fromInstant, ZoneId.systemDefault());
+    private static Time randomTime() {
+        Instant instant = randomInstant();
+        LocalDateTime from = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+
+        return Math.random() <= 0.5
+                ? new no.unit.nva.model.time.Instant(from)
+                : randomPeriod(instant, from);
+    }
+
+    private static Period randomPeriod(Instant fromInstant, LocalDateTime from) {
         LocalDateTime to = LocalDateTime.ofInstant(randomInstant(fromInstant), ZoneId.systemDefault());
-        return new TemporalExtent(from, to);
+        return new Period(from, to);
     }
 
     private static Agent randomAgent() {
