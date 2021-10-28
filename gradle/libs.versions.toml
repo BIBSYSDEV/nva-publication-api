@@ -16,7 +16,7 @@ nvaUserAccessService = { require = '0.3.0' }
 awsIon = { strictly = '1.5.1' }
 commonsValidator = { strictly = '1.7' }
 apacheCommons = { strictly = '4.4' }
-testUtils = { strictly = '0.1.27' }
+testUtils = { strictly = '0.1.28' }
 hamcrest = { strictly = '2.2' }
 cucumber = { strictly = '6.11.0' }
 junit = { strictly = '5.8.0' }

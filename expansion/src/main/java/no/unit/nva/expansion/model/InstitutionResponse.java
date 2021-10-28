@@ -1,6 +1,8 @@
 package no.unit.nva.expansion.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.expansion.JsonConfig;
 
 import java.net.URI;
 import java.util.List;
@@ -37,6 +39,10 @@ public class InstitutionResponse {
                 .collect(Collectors.toSet());
         organizationIds.add(id);
         return organizationIds;
+    }
+
+    public static InstitutionResponse fromJson(String json) throws JsonProcessingException {
+        return JsonConfig.objectMapper.readValue(json, InstitutionResponse.class);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

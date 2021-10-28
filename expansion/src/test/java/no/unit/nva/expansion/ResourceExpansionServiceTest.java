@@ -1,7 +1,6 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.expansion.impl.IdentityClientImpl;
 import no.unit.nva.expansion.impl.InstitutionClientImpl;
 import no.unit.nva.expansion.impl.ResourceExpansionServiceImpl;
@@ -11,16 +10,15 @@ import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.InstitutionResponse;
 import no.unit.nva.expansion.model.UserResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import nva.commons.core.JsonUtils;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,7 +29,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.expansion.JsonConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -43,188 +41,156 @@ public class ResourceExpansionServiceTest {
 
     public static final String SOME_SENDER = "some@sender";
     public static final URI SOME_ORG = URI.create("https://example.org/123");
-    public static final UserInstance SAMPLE_OWNER = new UserInstance("sample@owner", SOME_ORG);
     public static final String SOME_MESSAGE = "someMessage";
     public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final Clock CLOCK = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
     private static final UserInstance SAMPLE_SENDER = sampleSender();
+    public static final int ORGANIZATION_AND_TWO_SUBUNITS = 3;
+    public static final int NO_ORGANIZATION = 0;
 
-    private final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private ResourceExpansionService service;
+    private HttpClient httpClientMock;
+
+    @BeforeEach
+    void init() throws Exception {
+        SecretsReader secretsReaderMock = createSecretsReaderMockAlwaysReturnsSecret();
+        httpClientMock = mock(HttpClient.class);
+        IdentityClient identityClient = new IdentityClientImpl(secretsReaderMock, httpClientMock);
+        InstitutionClient institutionClient = new InstitutionClientImpl(httpClientMock);
+        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+    }
 
     @Test
-    void shouldReturnExpandedMessageWithOrganizationIds() throws Exception {
-        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
-
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
-
-        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+    void shouldReturnExpandedMessageWithTheOrgIdsThatTheRespectiveResourceOwnerIsAffiliatedWith() throws Exception {
+        prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
 
         Message message = createMessage();
-
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
-        assertThat(expandedMessage.getOrganizationIds().size(), is(3));
+        assertThat(expandedMessage.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithOrganizationIds() throws Exception {
-        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomerThenInstitution();
-
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
-
-
-        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+    void shouldReturnExpandedDoiRequestWithTheOrgIdsThatTheRespectiveResourceOwnerIsAffiliatedWith() throws Exception {
+        prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
 
         DoiRequest doiRequest = createDoiRequest();
-
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
-        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(3));
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(ORGANIZATION_AND_TWO_SUBUNITS));
     }
 
     @Test
-    void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoUserResponse() throws Exception {
-        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        HttpClient httpClient = createHttpClientMockReturnsNothing();
-
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
-
-        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+    void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoResourceOwnerUserResponse() throws Exception {
+        prepareHttpClientMockReturnsNothing();
 
         Message message = createMessage();
-
         ExpandedMessage expandedMessage = service.expandMessage(message);
 
-        assertThat(expandedMessage.getOrganizationIds().size(), is(0));
+        assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoCustomerResponse() throws Exception {
-        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        HttpClient httpClient = createHttpClientMockReturnsUser();
-
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
-
-        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoResourceOwnerCustomerResponse() throws Exception {
+        prepareHttpClientMockReturnsUser();
 
         DoiRequest doiRequest = createDoiRequest();
-
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
-        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(0));
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
     }
 
     @Test
     void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoInstitutionResponse() throws Exception {
-        SecretsReader secretsReader = createSecretsReaderMockAlwaysReturnsSecret();
-        HttpClient httpClient = createHttpClientMockReturnsUserThenCustomer();
-
-        IdentityClient identityClient = new IdentityClientImpl(secretsReader, httpClient);
-        InstitutionClient institutionClient = new InstitutionClientImpl(httpClient);
-
-        service = new ResourceExpansionServiceImpl(identityClient, institutionClient);
+        prepareHttpClientMockReturnsUserThenCustomer();
 
         DoiRequest doiRequest = createDoiRequest();
-
         ExpandedDoiRequest expandedDoiRequest = service.expandDoiRequest(doiRequest);
 
-        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(0));
+        assertThat(expandedDoiRequest.getOrganizationIds().size(), is(NO_ORGANIZATION));
     }
 
     private DoiRequest createDoiRequest() {
-        SortableIdentifier resourceIdentifier = SortableIdentifier.next();
-        Publication publication = samplePublication(resourceIdentifier);
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
         Resource resource = Resource.fromPublication(publication);
 
         return DoiRequest.newDoiRequestForResource(resource);
     }
 
     private Message createMessage() {
-        SortableIdentifier resourceIdentifier = SortableIdentifier.next();
-        Publication publication = samplePublication(resourceIdentifier);
+        Publication publication = PublicationGenerator.publicationWithIdentifier();
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
 
         Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
         return message;
     }
 
-    private HttpClient createHttpClientMockReturnsNothing() throws IOException, InterruptedException {
-        HttpClient httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any()))
+    private HttpClient prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
+        when(httpClientMock.send(any(), any()))
                 .thenThrow(IOException.class);
 
-        return httpClient;
+        return httpClientMock;
     }
 
-    private HttpClient createHttpClientMockReturnsUser() throws IOException, InterruptedException {
+    private HttpClient prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
         HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
-
-        HttpClient httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any()))
+        when(httpClientMock.send(any(), any()))
                 .thenReturn(userResponse)
                 .thenThrow(IOException.class);
 
-
-        return httpClient;
+        return httpClientMock;
     }
 
-    private HttpClient createHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
+    private HttpClient prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
         HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
-
-        HttpClient httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any()))
+        when(httpClientMock.send(any(), any()))
                 .thenReturn(userResponse)
                 .thenReturn(customerResponse)
                 .thenThrow(IOException.class);
 
-        return httpClient;
+        return httpClientMock;
     }
 
-    private HttpClient createHttpClientMockReturnsUserThenCustomerThenInstitution()
+    private HttpClient prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
             throws IOException, InterruptedException {
         HttpResponse userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse customerResponse = createHttpResponse(createCustomerResponseAsJson());
         HttpResponse institutionResponse = createHttpResponse(createInstitutionResponseAsJson());
-
-        HttpClient httpClient = mock(HttpClient.class);
-        when(httpClient.send(any(), any()))
+        when(httpClientMock.send(any(), any()))
                 .thenReturn(userResponse)
                 .thenReturn(customerResponse)
                 .thenReturn(institutionResponse);
 
-        return httpClient;
+        return httpClientMock;
     }
 
     private HttpResponse createHttpResponse(String body) {
         HttpResponse userResponse = mock(HttpResponse.class);
         when(userResponse.statusCode()).thenReturn(200);
         when(userResponse.body()).thenReturn(body);
+
         return userResponse;
     }
 
     private SecretsReader createSecretsReaderMockAlwaysReturnsSecret() throws ErrorReadingSecretException {
         SecretsReader secretsReader = mock(SecretsReader.class);
         when(secretsReader.fetchSecret(any(), any())).thenReturn("secret");
+
         return secretsReader;
     }
 
     private String createCustomerResponseAsJson() throws JsonProcessingException {
         CustomerResponse customerResponse = new CustomerResponse();
         customerResponse.setCristinId(randomUri());
+
         return objectMapper.writeValueAsString(customerResponse);
     }
 
     private String createUserResponseAsJson() throws JsonProcessingException {
         UserResponse userResponse = new UserResponse();
         userResponse.setCustomerId(randomUri());
+
         return objectMapper.writeValueAsString(userResponse);
     }
 
@@ -243,16 +209,4 @@ public class ResourceExpansionServiceTest {
     private static UserInstance sampleSender() {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
-
-    private Publication samplePublication(SortableIdentifier resourceIdentifier) {
-        Organization publisher = new Organization.Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
-        EntityDescription entityDescription = new EntityDescription.Builder().withMainTitle(randomString()).build();
-        return new Publication.Builder()
-                .withPublisher(publisher)
-                .withOwner(SAMPLE_OWNER.getUserIdentifier())
-                .withIdentifier(resourceIdentifier)
-                .withEntityDescription(entityDescription)
-                .build();
-    }
-
 }

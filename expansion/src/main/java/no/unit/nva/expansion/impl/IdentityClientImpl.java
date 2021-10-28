@@ -1,12 +1,10 @@
 package no.unit.nva.expansion.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.IdentityClient;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.UserResponse;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
@@ -33,7 +31,6 @@ public class IdentityClientImpl implements IdentityClient {
 
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final HttpClient httpClient;
-    private final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
     private final String identityServiceSecret;
 
     public IdentityClientImpl(SecretsReader secretsReader, HttpClient httpClient) throws ErrorReadingSecretException {
@@ -52,15 +49,10 @@ public class IdentityClientImpl implements IdentityClient {
     public Optional<URI> getCustomerId(String username) {
         URI customerId = null;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(createGetUserUri(username))
-                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
-                    .GET()
-                    .build();
+            HttpRequest request = createGetUserHttpRequest(createGetUserInternalUri(username));
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
-                UserResponse userResponse = objectMapper.readValue(response.body(), UserResponse.class);
-                customerId = userResponse.getCustomerId();
+                customerId = UserResponse.fromJson(response.body()).getCustomerId();
             }
         } catch (IOException | InterruptedException e) {
             logger.warn(GET_USER_ERROR, e);
@@ -68,7 +60,15 @@ public class IdentityClientImpl implements IdentityClient {
         return Optional.ofNullable(customerId);
     }
 
-    private URI createGetUserUri(String username) {
+    private HttpRequest createGetUserHttpRequest(URI getUserUri) {
+        return HttpRequest.newBuilder()
+                .uri(getUserUri)
+                .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
+                .GET()
+                .build();
+    }
+
+    private URI createGetUserInternalUri(String username) {
         return new UriWrapper(Constants.API_SCHEME, Constants.API_HOST)
                 .addChild(Constants.USER_INTERNAL_SERVICE_PATH)
                 .addChild(username)
@@ -79,15 +79,10 @@ public class IdentityClientImpl implements IdentityClient {
     public Optional<URI> getCristinId(URI customerId) {
         URI cristinId = null;
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(createGetCustomerUri(customerId))
-                    .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
-                    .GET()
-                    .build();
+            HttpRequest request = createGetCustomerHttpRequest(customerId);
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
-                CustomerResponse customerResponse = objectMapper.readValue(response.body(), CustomerResponse.class);
-                cristinId = customerResponse.getCristinId();
+                cristinId = CustomerResponse.fromJson(response.body()).getCristinId();
             }
         } catch (IOException | InterruptedException e) {
             logger.warn(GET_CUSTOMER_ERROR, e);
@@ -95,7 +90,15 @@ public class IdentityClientImpl implements IdentityClient {
         return Optional.ofNullable(cristinId);
     }
 
-    private URI createGetCustomerUri(URI customerId) {
+    private HttpRequest createGetCustomerHttpRequest(URI customerId) {
+        return HttpRequest.newBuilder()
+                .uri(createGetCustomerInternalUri(customerId))
+                .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
+                .GET()
+                .build();
+    }
+
+    private URI createGetCustomerInternalUri(URI customerId) {
         String uri = customerId.toString().replace(Constants.CUSTOMER_SERVICE_PATH, Constants.CUSTOMER_INTERNAL_PATH);
         return URI.create(uri);
     }

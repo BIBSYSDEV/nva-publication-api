@@ -1,13 +1,12 @@
 dependencies{
+    implementation(project(':storage-model'))
     implementation libs.nva.core
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
-
     implementation libs.nva.datamodel
 
-    implementation(project(':storage-model'))
-
+    testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
 }
 

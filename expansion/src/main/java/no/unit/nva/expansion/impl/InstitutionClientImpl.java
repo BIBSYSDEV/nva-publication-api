@@ -1,11 +1,9 @@
 package no.unit.nva.expansion.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.InstitutionClient;
 import no.unit.nva.expansion.model.InstitutionResponse;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +27,6 @@ public class InstitutionClientImpl implements InstitutionClient {
 
     private final Logger logger = LoggerFactory.getLogger(InstitutionClientImpl.class);
     private final HttpClient httpClient;
-    private final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
 
     @JacocoGenerated
     public InstitutionClientImpl() {
@@ -44,21 +41,24 @@ public class InstitutionClientImpl implements InstitutionClient {
     public Set<URI> getOrganizationIds(URI organizationId) {
         Set<URI> organizationIds = new HashSet<>();
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(createGetInstitutionUri(organizationId))
-                    .headers(ACCEPT, JSON_UTF_8.toString())
-                    .GET()
-                    .build();
+            HttpRequest request = createGetInstitutionHierarchyHttpRequest(organizationId);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
-                InstitutionResponse institutionResponse = objectMapper
-                        .readValue(response.body(), InstitutionResponse.class);
+                InstitutionResponse institutionResponse = InstitutionResponse.fromJson(response.body());
                 organizationIds.addAll(institutionResponse.getOrganizationIds());
             }
         } catch (IOException | InterruptedException e) {
             logger.warn(GET_INSTITUTION_ERROR, e);
         }
         return organizationIds;
+    }
+
+    private HttpRequest createGetInstitutionHierarchyHttpRequest(URI organizationId) {
+        return HttpRequest.newBuilder()
+                .uri(createGetInstitutionUri(organizationId))
+                .headers(ACCEPT, JSON_UTF_8.toString())
+                .GET()
+                .build();
     }
 
     private URI createGetInstitutionUri(URI organizationId) {
