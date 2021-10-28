@@ -72,12 +72,12 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
     }
 
     private Optional<String> transformToJson(ResourceUpdate newData) {
-        return attempt(() -> createResourceIndexDocument(newData))
+        return attempt(() -> createExpandedResourceUpdate(newData))
             .map(ExpandedResourceUpdate::toJsonString)
             .toOptional();
     }
 
-    private ExpandedResourceUpdate createResourceIndexDocument(ResourceUpdate input) {
+    private ExpandedResourceUpdate createExpandedResourceUpdate(ResourceUpdate input) {
         return attempt(() -> resourceExpansionService.expandEntry(input)).orElseThrow();
     }
 }
