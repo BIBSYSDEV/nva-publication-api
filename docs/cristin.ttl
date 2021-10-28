@@ -315,7 +315,7 @@
 :ARKIVPOST_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    "A reference to a local archive".
+    rdfs:comment    "A reference to a local archive. Example: {eierkode=UIO, edit_iri=https://w3prod-dspace01.uio.no/dspace/swordv2/edit/81508, dato_opprettet=2019-01-24T23:06:25}".
 
 :ARKIV_FIL_Class
     a               rdfs:Class ;
@@ -336,7 +336,9 @@
 :TYPE_UTSTILLING_Class
     a               rdfs:Class ;
     rdfs:subClassOf :CristinClass ;
-    rdfs:comment    """Consists of general information about an exhibit. Exists with the main category: Utstilling.
+    rdfs:comment    """Consists of :varbeidlopenr linking to a Cristin Result with information about an exhibit,
+                        which may or may not be part of a larger exhibition.
+                        Exists with the main category: Utstilling.
                         It can have the following secondary categories:
                         Museumsutstilling
                         Arkitektutstilling
@@ -479,7 +481,7 @@
     rdfs:domain        :Result ;
     :currently_ignored "true" .
 
-:VARBEID_KILDE
+:varbeid_kilde
     a                   :cristinfield ;
     rdfs:comment        "See description in range class.";
     rdfs:range          :VARBEID_KILDE_Class ;
@@ -529,7 +531,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     rdfs:domain        :Result ;
     :currently_ignored "true" .
 
-:VARBEID_SPRAK
+:varbeid_sprak
     a               :cristinfield ;
     rdfs:comment    """See the description of the range class. """ ;
     rdfs:range      :VARBEID_SPRAK_Class ;
@@ -571,14 +573,14 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     rdfs:domain        :VARBEID_SPRAK_Class ;
     :currently_ignored "false" .
 
-:VITENSKAPELIGARBEID_LOKAL
+:vitenskapeligarbeid_lokal
     a                  :cristinfield ;
     rdfs:comment       "See description of range class" ;
     rdfs:domain        :Result ;
     rdfs:range         :VITENSKAPELIGARBEID_LOKAL_Class ;
     :currently_ignored "true" .
 
-:VARBEID_PERSON
+:varbeid_person
     a               :cristinfield ;
     rdfs:comment    "See description in range class." ;
     rdfs:range      :VARBEID_PERSON_Class ;
@@ -624,7 +626,7 @@ See varbeid.kildekode. Mostly superseded by VARBEID_KILDE. It contains only the 
     rdfs:domain     xsd:positiveInteger ;
     :currently_ignored false.
 
-:VARBEID_PERSON_STED
+:varbeid_person_sted
     a               :cristinfield ;
     rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_Class ;
@@ -709,7 +711,7 @@ Cristin.
     rdfs:domain        :VARBEID_PERSON_STED_Class ;
     :currently_ignored "true" .
 
-:VARBEID_PERSON_STED_ROLLE
+:varbeid_person_sted_rolle
     a               :cristinfield ;
     rdfs:comment    "See description in range class" ;
     rdfs:range      :VARBEID_PERSON_STED_ROLLE_Class ;
@@ -807,8 +809,7 @@ Cristin.
     rdfs:comment       """UNKNOWN meaning""" ;
     :currently_ignored "true" .
 
-
-:VARBEID_VDISIPLIN
+:varbeid_vdisiplin
     a            :cristinfield ;
     rdfs:comment "See description of range class" ;
     rdfs:range   :VARBEID_VDISIPLIN_Class ;
@@ -846,7 +847,7 @@ Cristin.
     rdfs:range   xsd:string ;
     rdfs:domain  :VARBEID_VDISIPLIN_Class .
 
-:TYPE_MEDIEBIDRAG
+:type_mediebidrag
     a                  :cristinfield ;
     rdfs:range         :TYPE_MEDIEBIDRAG_Class ;
     rdfs:domain        :Result ;
@@ -863,8 +864,7 @@ Cristin.
 It is a self reference.""" ;
     :currently_ignored true .
 
-
-:PRESENTASJON_VARBEID
+:presentasjon_varbeid
     a                  :cristinfield ;
     rdfs:range         :PRESENTASJON_VARBEID_Class ;
     rdfs:domain        :Result ;
@@ -1465,7 +1465,7 @@ It is a self reference.""" ;
     rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
-:TYPE_PRODUKT
+:type_produkt
     a           :cristinfield ;
     rdfs:comment "See description in range class.";
     rdfs:domain :Result ;
@@ -1486,14 +1486,14 @@ It is a self reference.""" ;
     rdfs:range  :ARKIV_FIL_Class ;
     :currently_ignored true.
 
-:TYPE_KUNSTNERSIKPRODUKSJON
+:type_kunstneriskproduksjon
     a           :cristinfield ;
     rdfs:comment "See description in range class";
     rdfs:domain :Result ;
     rdfs:range  :TYPE_KUNSTNERSIKPRODUKSJON_Class;
     :currently_ignored true.
 
-:TYPE_UTSTILLING
+:type_utstilling
     a           :cristinfield ;
     rdfs:comment "See description in range class";
     rdfs:domain :Result ;

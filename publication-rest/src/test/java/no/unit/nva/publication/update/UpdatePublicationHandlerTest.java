@@ -2,11 +2,11 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static no.unit.nva.publication.PublicationGenerator.randomString;
 import static no.unit.nva.publication.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -204,7 +204,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
-        throws TransactionFailedException, IOException, NotFoundException {
+        throws TransactionFailedException, IOException {
         Publication savedPublication = publicationService.createPublication(publication);
         Publication publicationUpdate = updateTitle(savedPublication);
 
@@ -264,7 +264,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         return LogUtils.getTestingAppenderForRootLogger();
     }
 
-    private ResourceService serviceFailsOnModifyRequestWithRuntimeError() throws ApiGatewayException {
+    private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
         return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
             public Publication updatePublication(Publication publicationUpdate) {
