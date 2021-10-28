@@ -1,11 +1,11 @@
 package no.unit.nva.publication.indexing;
 
-import static no.unit.nva.publication.indexing.IndexDocument.ID_NAMESPACE;
-import static no.unit.nva.publication.indexing.IndexDocument.fromPublication;
+import static no.unit.nva.expansion.model.IndexDocument.ID_NAMESPACE;
+import static no.unit.nva.expansion.model.IndexDocument.fromPublication;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
-import static no.unit.nva.publication.indexing.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
-import static no.unit.nva.publication.indexing.PublicationJsonPointers.SERIES_ID_JSON_PTR;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
+import no.unit.nva.expansion.model.IndexDocument;
+import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Journal;
