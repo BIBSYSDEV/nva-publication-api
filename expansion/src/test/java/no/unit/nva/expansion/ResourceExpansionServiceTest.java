@@ -1,17 +1,37 @@
 package no.unit.nva.expansion;
 
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.core.IsNot.not;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.expansion.impl.IdentityClientImpl;
-import no.unit.nva.expansion.impl.InstitutionClientImpl;
-import no.unit.nva.expansion.impl.ResourceExpansionServiceImpl;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.IndexDocument;
 import no.unit.nva.expansion.model.InstitutionResponse;
 import no.unit.nva.expansion.model.UserResponse;
+import no.unit.nva.expansion.restclients.IdentityClient;
+import no.unit.nva.expansion.restclients.IdentityClientImpl;
+import no.unit.nva.expansion.restclients.InstitutionClient;
+import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.publication.PublicationInstanceBuilder;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
@@ -20,23 +40,8 @@ import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.List;
-
-import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ResourceExpansionServiceTest {
 
@@ -51,6 +56,10 @@ public class ResourceExpansionServiceTest {
 
     private ResourceExpansionService service;
     private HttpClient httpClientMock;
+
+    private static List<Class<?>> listPublicationInstanceTypes() {
+        return PublicationInstanceBuilder.listPublicationInstanceTypes();
+    }
 
     @BeforeEach
     void init() throws Exception {
@@ -124,6 +133,14 @@ public class ResourceExpansionServiceTest {
         assertThatExpandedDoiRequestHasNoDataLoss(doiRequest, expandedDoiRequest);
     }
 
+    @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")
+    @MethodSource("listPublicationInstanceTypes")
+    void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType) throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication(instanceType);
+        IndexDocument indexDoc = service.expandResource(Resource.fromPublication(publication));
+        assertThat(indexDoc.getId(), is(not(nullValue())));
+    }
+
     private DoiRequest createDoiRequest() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         Resource resource = Resource.fromPublication(publication);
@@ -141,7 +158,7 @@ public class ResourceExpansionServiceTest {
 
     private HttpClient prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
         when(httpClientMock.send(any(), any()))
-                .thenThrow(IOException.class);
+            .thenThrow(IOException.class);
 
         return httpClientMock;
     }
@@ -149,8 +166,8 @@ public class ResourceExpansionServiceTest {
     private HttpClient prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
-                .thenReturn(userResponse)
-                .thenThrow(IOException.class);
+            .thenReturn(userResponse)
+            .thenThrow(IOException.class);
 
         return httpClientMock;
     }
@@ -159,22 +176,22 @@ public class ResourceExpansionServiceTest {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
-                .thenReturn(userResponse)
-                .thenReturn(customerResponse)
-                .thenThrow(IOException.class);
+            .thenReturn(userResponse)
+            .thenReturn(customerResponse)
+            .thenThrow(IOException.class);
 
         return httpClientMock;
     }
 
     private HttpClient prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
-            throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
         HttpResponse<String> institutionResponse = createHttpResponse(createInstitutionResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
-                .thenReturn(userResponse)
-                .thenReturn(customerResponse)
-                .thenReturn(institutionResponse);
+            .thenReturn(userResponse)
+            .thenReturn(customerResponse)
+            .thenReturn(institutionResponse);
 
         return httpClientMock;
     }
