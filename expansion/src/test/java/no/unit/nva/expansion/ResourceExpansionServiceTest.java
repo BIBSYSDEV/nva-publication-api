@@ -106,7 +106,7 @@ public class ResourceExpansionServiceTest {
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoInstitutionResponse() throws Exception {
+    void shouldReturnExpandedDoiRequestWithEmptyOrganizationIdsOnNoResourceOwnerInstitutionResponse() throws Exception {
         prepareHttpClientMockReturnsUserThenCustomer();
 
         DoiRequest doiRequest = createDoiRequest();
