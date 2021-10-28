@@ -5,9 +5,11 @@ dependencies{
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
     implementation libs.nva.datamodel
+    implementation libs.jsonld
 
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
+    testImplementation libs.bundles.testing
 }
 
 test {

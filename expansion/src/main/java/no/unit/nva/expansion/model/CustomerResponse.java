@@ -3,7 +3,7 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import no.unit.nva.expansion.JsonConfig;
+import no.unit.nva.expansion.ExpansionConfig;
 
 import java.net.URI;
 
@@ -22,6 +22,6 @@ public class CustomerResponse {
     }
 
     public static CustomerResponse fromJson(String json) throws JsonProcessingException {
-        return JsonConfig.objectMapper.readValue(json, CustomerResponse.class);
+        return ExpansionConfig.objectMapper.readValue(json, CustomerResponse.class);
     }
 }

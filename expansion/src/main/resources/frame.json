@@ -1,0 +1,48 @@
+{
+  "@context": {
+    "@vocab":  "https://bibsysdev.github.io/src/nva/ontology.ttl#",
+    "id": "@id",
+    "type": "@type",
+    "contributors": {
+      "@container": "@set"
+    },
+    "additionalIdentifiers": {
+      "@container": "@set"
+    },
+    "affiliations": {
+      "@container": "@set"
+    },
+    "subjects": {
+      "@container": "@set"
+    },
+    "projects": {
+      "@container": "@set"
+    },
+    "tags": {
+      "@container": "@set"
+    },
+    "isbnList": {
+      "@container": "@set"
+    },
+    "venues": {
+      "@container": "@set"
+    },
+    "files": {
+      "@container": "@set"
+    },
+    "grants": {
+      "@container": "@set"
+    },
+    "approvals": {
+      "@container": "@set"
+    }
+  },
+  "@type": "Publication",
+  "entityDescription": {
+    "reference": {
+      "publicationContext": {
+        "@embed": "@always"
+      }
+    }
+  }
+}

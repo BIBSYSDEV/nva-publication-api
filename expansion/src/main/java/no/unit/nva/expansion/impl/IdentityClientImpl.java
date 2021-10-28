@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.impl;
 
-import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.IdentityClient;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.UserResponse;
@@ -23,6 +22,13 @@ import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.expansion.ExpansionConstants.API_HOST;
+import static no.unit.nva.expansion.ExpansionConstants.API_SCHEME;
+import static no.unit.nva.expansion.ExpansionConstants.CUSTOMER_INTERNAL_PATH;
+import static no.unit.nva.expansion.ExpansionConstants.CUSTOMER_SERVICE_PATH;
+import static no.unit.nva.expansion.ExpansionConstants.IDENTITY_SERVICE_SECRET_KEY;
+import static no.unit.nva.expansion.ExpansionConstants.IDENTITY_SERVICE_SECRET_NAME;
+import static no.unit.nva.expansion.ExpansionConstants.USER_INTERNAL_SERVICE_PATH;
 
 public class IdentityClientImpl implements IdentityClient {
 
@@ -36,7 +42,7 @@ public class IdentityClientImpl implements IdentityClient {
     public IdentityClientImpl(SecretsReader secretsReader, HttpClient httpClient) throws ErrorReadingSecretException {
         this.httpClient =  httpClient;
         this.identityServiceSecret = secretsReader.fetchSecret(
-                Constants.IDENTITY_SERVICE_SECRET_NAME, Constants.IDENTITY_SERVICE_SECRET_KEY);
+                IDENTITY_SERVICE_SECRET_NAME, IDENTITY_SERVICE_SECRET_KEY);
     }
 
     @JacocoGenerated
@@ -69,8 +75,8 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private URI createGetUserInternalUri(String username) {
-        return new UriWrapper(Constants.API_SCHEME, Constants.API_HOST)
-                .addChild(Constants.USER_INTERNAL_SERVICE_PATH)
+        return new UriWrapper(API_SCHEME, API_HOST)
+                .addChild(USER_INTERNAL_SERVICE_PATH)
                 .addChild(username)
                 .getUri();
     }
@@ -99,7 +105,7 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private URI createGetCustomerInternalUri(URI customerId) {
-        String uri = customerId.toString().replace(Constants.CUSTOMER_SERVICE_PATH, Constants.CUSTOMER_INTERNAL_PATH);
+        String uri = customerId.toString().replace(CUSTOMER_SERVICE_PATH, CUSTOMER_INTERNAL_PATH);
         return URI.create(uri);
     }
 }

@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.impl;
 
-import no.unit.nva.expansion.Constants;
 import no.unit.nva.expansion.InstitutionClient;
 import no.unit.nva.expansion.model.InstitutionResponse;
 import nva.commons.core.JacocoGenerated;
@@ -19,6 +18,9 @@ import java.util.Set;
 import static com.google.common.net.HttpHeaders.ACCEPT;
 import static com.google.common.net.MediaType.JSON_UTF_8;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static no.unit.nva.expansion.ExpansionConstants.API_HOST;
+import static no.unit.nva.expansion.ExpansionConstants.API_SCHEME;
+import static no.unit.nva.expansion.ExpansionConstants.INSTITUTION_SERVICE_PATH;
 
 public class InstitutionClientImpl implements InstitutionClient {
 
@@ -63,8 +65,8 @@ public class InstitutionClientImpl implements InstitutionClient {
 
     private URI createGetInstitutionUri(URI organizationId) {
         String query = URI_QUERY + organizationId;
-        return new UriWrapper(Constants.API_SCHEME, Constants.API_HOST)
-                .addChild(Constants.INSTITUTION_SERVICE_PATH + query)
+        return new UriWrapper(API_SCHEME, API_HOST)
+                .addChild(INSTITUTION_SERVICE_PATH + query)
                 .getUri();
     }
 }

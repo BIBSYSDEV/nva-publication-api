@@ -2,10 +2,14 @@ package no.unit.nva.expansion;
 
 import nva.commons.core.Environment;
 
-public final class Constants {
+import static no.unit.nva.expansion.ExpansionConfig.ENVIRONMENT;
 
-    public static final String IDENTITY_SERVICE_SECRET_NAME = new Environment().readEnv("IDENTITY_SERVICE_SECRET_NAME");
-    public static final String IDENTITY_SERVICE_SECRET_KEY = new Environment().readEnv("IDENTITY_SERVICE_SECRET_KEY");
+public final class ExpansionConstants {
+
+    public static final String IDENTITY_SERVICE_SECRET_NAME = ENVIRONMENT
+            .readEnv("IDENTITY_SERVICE_SECRET_NAME");
+    public static final String IDENTITY_SERVICE_SECRET_KEY = ENVIRONMENT
+            .readEnv("IDENTITY_SERVICE_SECRET_KEY");
     public static final String API_SCHEME = new Environment().readEnv("API_SCHEME");
     public static final String API_HOST = new Environment().readEnv("API_HOST");
 
@@ -14,6 +18,6 @@ public final class Constants {
     public static final String CUSTOMER_INTERNAL_PATH = "identity-internal/customer";
     public static final String INSTITUTION_SERVICE_PATH = "institution/departments";
 
-    private Constants() {
+    private ExpansionConstants() {
     }
 }

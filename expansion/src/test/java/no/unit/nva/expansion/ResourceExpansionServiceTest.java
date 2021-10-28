@@ -29,7 +29,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 
-import static no.unit.nva.expansion.JsonConfig.objectMapper;
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;

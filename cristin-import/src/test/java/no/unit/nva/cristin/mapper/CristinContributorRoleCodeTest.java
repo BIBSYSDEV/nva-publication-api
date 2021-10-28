@@ -1,6 +1,6 @@
 package no.unit.nva.cristin.mapper;
 
-import static no.unit.nva.publication.PublicationGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
