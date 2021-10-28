@@ -30,11 +30,10 @@ import org.slf4j.LoggerFactory;
 
 public class IdentityClientImpl implements IdentityClient {
 
-    private static final String GET_USER_ERROR = "Error getting customerId from user";
-    private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
     public static final String ERROR_READING_SECRETS_ERROR =
         "Could not read secrets for internal communication with identity service";
-
+    private static final String GET_USER_ERROR = "Error getting customerId from user";
+    private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final HttpClient httpClient;
     private final String identityServiceSecret;
@@ -43,15 +42,6 @@ public class IdentityClientImpl implements IdentityClient {
         this.httpClient = httpClient;
         this.identityServiceSecret = attempt(() -> fetchSecret(secretsReader))
             .orElseThrow(fail -> logAndFail(fail.getException()));
-    }
-
-    private RuntimeException logAndFail(Exception exception) {
-        logger.error(ERROR_READING_SECRETS_ERROR);
-        return new RuntimeException(exception);
-    }
-
-    private String fetchSecret(SecretsReader secretsReader) throws ErrorReadingSecretException {
-        return secretsReader.fetchSecret(IDENTITY_SERVICE_SECRET_NAME, IDENTITY_SERVICE_SECRET_KEY);
     }
 
     @JacocoGenerated
@@ -74,21 +64,6 @@ public class IdentityClientImpl implements IdentityClient {
         return Optional.ofNullable(customerId);
     }
 
-    private HttpRequest createGetUserHttpRequest(URI getUserUri) {
-        return HttpRequest.newBuilder()
-            .uri(getUserUri)
-            .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
-            .GET()
-            .build();
-    }
-
-    private URI createGetUserInternalUri(String username) {
-        return new UriWrapper(API_SCHEME, API_HOST)
-            .addChild(USER_INTERNAL_SERVICE_PATH)
-            .addChild(username)
-            .getUri();
-    }
-
     @Override
     public Optional<URI> getCristinId(URI customerId) {
         URI cristinId = null;
@@ -102,6 +77,30 @@ public class IdentityClientImpl implements IdentityClient {
             logger.warn(GET_CUSTOMER_ERROR, e);
         }
         return Optional.ofNullable(cristinId);
+    }
+
+    private RuntimeException logAndFail(Exception exception) {
+        logger.error(ERROR_READING_SECRETS_ERROR);
+        return new RuntimeException(exception);
+    }
+
+    private String fetchSecret(SecretsReader secretsReader) throws ErrorReadingSecretException {
+        return secretsReader.fetchSecret(IDENTITY_SERVICE_SECRET_NAME, IDENTITY_SERVICE_SECRET_KEY);
+    }
+
+    private HttpRequest createGetUserHttpRequest(URI getUserUri) {
+        return HttpRequest.newBuilder()
+            .uri(getUserUri)
+            .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
+            .GET()
+            .build();
+    }
+
+    private URI createGetUserInternalUri(String username) {
+        return new UriWrapper(API_SCHEME, API_HOST)
+            .addChild(USER_INTERNAL_SERVICE_PATH)
+            .addChild(username)
+            .getUri();
     }
 
     private HttpRequest createGetCustomerHttpRequest(URI customerId) {
