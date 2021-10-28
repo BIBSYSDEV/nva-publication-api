@@ -5,6 +5,7 @@ import nva.commons.core.JsonUtils;
 
 public interface ExpandedResourceUpdate extends JsonSerializable {
 
+    @Override
     default String toJsonString() {
         try {
             return JsonUtils.dtoObjectMapper.writeValueAsString(this);
