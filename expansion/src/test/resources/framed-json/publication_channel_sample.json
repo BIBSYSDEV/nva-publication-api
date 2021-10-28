@@ -1,0 +1,16 @@
+{
+  "@context": "https://bibsysdev.github.io/src/publication-channel/channel-context.json",
+  "id": "https://api.dev.nva.aws.unit.no/publication-channels/journal/495273/2020",
+  "type": "Journal",
+  "identifier": "495273",
+  "name": "International Journal of Turbomachinery, Propulsion and Power",
+  "website": "https://www.mdpi.com/journal/ijtpp",
+  "level": "1",
+  "active": true,
+  "onlineIssn": "2504-186X",
+  "printIssn": null,
+  "npiDomain": "Maskinteknikk",
+  "openAccess": "DOAJ",
+  "language": "Engelsk",
+  "publisherId": "https://api.dev.nva.aws.unit.no/publication-channels/publisher/26778/2020"
+}

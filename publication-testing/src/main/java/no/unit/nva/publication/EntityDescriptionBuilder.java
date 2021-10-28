@@ -1,6 +1,7 @@
 package no.unit.nva.publication;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.publication.PublicationContextBuilder.randomPublicationContext;
 import static no.unit.nva.publication.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationInstanceBuilder.randomPublicationInstance;
 import static no.unit.nva.publication.RandomUtils.randomLabels;
@@ -105,7 +106,7 @@ public class EntityDescriptionBuilder {
     private static Reference randomReference(Class<?> publicationInstanceClass) {
         return new Reference.Builder()
             .withPublicationInstance(randomPublicationInstance(publicationInstanceClass))
-            .withPublishingContext(PublicationContextBuilder.randomPublicationContext(publicationInstanceClass))
+            .withPublishingContext(randomPublicationContext(publicationInstanceClass))
             .withDoi(randomUri())
             .build();
     }

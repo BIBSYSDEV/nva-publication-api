@@ -1,6 +1,10 @@
 dependencies{
     implementation libs.nva.core
     implementation libs.nva.identifiers
+    implementation libs.nva.apigateway
 
     implementation libs.nva.datamodel
+    implementation libs.jsonld
+    testImplementation libs.bundles.testing
+    testImplementation project (":publication-testing")
 }
