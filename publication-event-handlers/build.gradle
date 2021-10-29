@@ -2,6 +2,7 @@ dependencies {
     implementation project(":publication-events")
     implementation project(":publication-doi-commons")
     implementation project(":storage-model")
+    implementation project(":expansion")
 
     implementation(libs.nva.datamodel) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
@@ -10,6 +11,7 @@ dependencies {
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
     implementation libs.nva.s3
+    implementation libs.nva.secrets
 
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
@@ -42,4 +44,6 @@ dependencies {
 test{
     environment "EVENTS_BUCKET","theEventsBucket"
     environment "HANDLER_EVENTS_FOLDER", "reource-updates-events"
+    environment "IDENTITY_SERVICE_SECRET_NAME","someSecretName"
+    environment "IDENTITY_SERVICE_SECRET_KEY","someSecretKey"
 }

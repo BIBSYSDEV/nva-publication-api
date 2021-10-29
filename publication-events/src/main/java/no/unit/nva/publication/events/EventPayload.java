@@ -12,6 +12,8 @@ public class EventPayload {
 
     public static final String EVENT_TYPE = "eventType";
     public static final String PAYLOAD = "payload";
+    private static final String RESOURCES_SERVICE_ENTRY_UPDATE = "resources.entry.update";
+    private static final String EMPTY_EVENT_TYPE = "event.empty";
     @JsonProperty(EVENT_TYPE)
     private final String eventType;
     @JsonProperty(PAYLOAD)
@@ -23,6 +25,16 @@ public class EventPayload {
                         @JsonProperty(PAYLOAD) URI payloadUri) {
         this.payloadUri = payloadUri;
         this.eventType = eventType;
+    }
+
+    @JacocoGenerated
+    public static EventPayload emptyEvent() {
+        return new EventPayload(EMPTY_EVENT_TYPE, null);
+    }
+
+    @JacocoGenerated
+    public static EventPayload indexedEntryEvent(URI payloadUri) {
+        return new EventPayload(RESOURCES_SERVICE_ENTRY_UPDATE, payloadUri);
     }
 
     @JacocoGenerated

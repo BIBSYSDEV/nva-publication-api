@@ -9,7 +9,7 @@ import java.util.Set;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 
-public class ExpandedDoiRequest extends DoiRequest implements WithOrganizationScope {
+public class ExpandedDoiRequest extends DoiRequest implements WithOrganizationScope, ExpandedResourceUpdate {
 
     private Set<URI> organizationIds;
 

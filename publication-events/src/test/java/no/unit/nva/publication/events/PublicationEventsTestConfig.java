@@ -6,8 +6,8 @@ import nva.commons.core.JsonUtils;
 public final class PublicationEventsTestConfig {
 
     public static final ObjectMapper objectMapper = JsonUtils.dtoObjectMapper;
-    private PublicationEventsTestConfig(){
+
+    private PublicationEventsTestConfig() {
 
     }
-
 }
