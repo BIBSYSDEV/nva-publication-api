@@ -12,8 +12,8 @@ public class EventPayload {
 
     public static final String EVENT_TYPE = "eventType";
     public static final String PAYLOAD = "payload";
-    private static final String INDEXED_ENTRY_EVENT = "indexedEntry.update";
-    private static final String EMPTY_EVENT_TYPE = "empty-event";
+    private static final String RESOURCES_SERVICE_ENTRY_UPDATE = "resources.entry.update";
+    private static final String EMPTY_EVENT_TYPE = "event.empty";
     @JsonProperty(EVENT_TYPE)
     private final String eventType;
     @JsonProperty(PAYLOAD)
@@ -34,7 +34,7 @@ public class EventPayload {
 
     @JacocoGenerated
     public static EventPayload indexedEntryEvent(URI payloadUri) {
-        return new EventPayload(INDEXED_ENTRY_EVENT, payloadUri);
+        return new EventPayload(RESOURCES_SERVICE_ENTRY_UPDATE, payloadUri);
     }
 
     @JacocoGenerated
