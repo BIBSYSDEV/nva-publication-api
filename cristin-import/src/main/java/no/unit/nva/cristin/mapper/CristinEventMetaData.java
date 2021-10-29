@@ -24,7 +24,7 @@ import java.time.LocalDate;
         "antall_nasjonale_deltakere", "institusjonsnr_arrangor", "avdnr_arrangor",
         "undavdnr_arrangor", "gruppenr_arrangor", "utbredelsesomrade","arstall", "hendelsetype",
         "url", "personlopenr_arrangor"})
-public class CristinEvent {
+public class CristinEventMetaData {
 
 
     public static final String TITLE = "titteltekst";
@@ -48,6 +48,6 @@ public class CristinEvent {
     private String place;
 
     @JacocoGenerated
-    public CristinEvent() {
+    public CristinEventMetaData() {
     }
 }

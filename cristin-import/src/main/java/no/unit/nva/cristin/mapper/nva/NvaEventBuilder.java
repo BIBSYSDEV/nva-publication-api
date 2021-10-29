@@ -16,6 +16,6 @@ public class NvaEventBuilder {
     }
 
     private String extractEventTitle() {
-        return cristinObject.getLectureOrPosterMetaData().getCristinEvent().getTitle();
+        return cristinObject.getLectureOrPosterMetaData().getCristinEventMetaData().getTitle();
     }
 }

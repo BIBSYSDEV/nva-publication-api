@@ -28,7 +28,7 @@ public class CristinLectureOrPosterMetaData {
     private String numberOfPages;
 
     @JsonProperty(EVENT)
-    private CristinEvent cristinEvent;
+    private CristinEventMetaData cristinEventMetaData;
 
     @JacocoGenerated
     public CristinLectureOrPosterMetaData() {
