@@ -8,7 +8,6 @@ import no.unit.nva.cristin.mapper.PeriodicalBuilder;
 import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.contexttypes.Chapter;
-import no.unit.nva.model.contexttypes.Event;
 import no.unit.nva.model.contexttypes.PublicationContext;
 import no.unit.nva.model.exceptions.InvalidIsbnException;
 import no.unit.nva.model.exceptions.InvalidIssnException;
@@ -73,7 +72,7 @@ public class ReferenceBuilder extends CristinMappingModule {
             return buildChapterForPublicationContext();
         }
         if (isEvent(cristinObject)) {
-            return buildEventForPublicationContext();
+            return new NvaEventBuilder(cristinObject).buildEvent();
         }
         return null;
     }
@@ -88,10 +87,6 @@ public class ReferenceBuilder extends CristinMappingModule {
 
     private Chapter buildChapterForPublicationContext() {
         return new Chapter.Builder().build();
-    }
-
-    private PublicationContext buildEventForPublicationContext() {
-        return new Event.Builder().build();
     }
 
     private URI extractDoi() {
