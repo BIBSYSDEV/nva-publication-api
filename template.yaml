@@ -1076,6 +1076,8 @@ Resources:
         Variables:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'resource-updates-events'
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
