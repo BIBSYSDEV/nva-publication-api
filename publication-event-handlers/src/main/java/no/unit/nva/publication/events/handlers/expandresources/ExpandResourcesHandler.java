@@ -78,6 +78,7 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
     }
 
     private void logError(Failure<?> fail, ResourceUpdate input) {
-        logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), fail.getException());
+        Exception exception = fail.getException();
+        logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), exception);
     }
 }
