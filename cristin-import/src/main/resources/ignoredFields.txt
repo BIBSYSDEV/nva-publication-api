@@ -17,6 +17,10 @@ entityDescription.reference.publicationContext.series
 entityDescription.reference.publicationContext.unconfirmedSeriesTitle
 entityDescription.reference.publicationContext.seriesNumber
 entityDescription.reference.publicationContext.partOf
+entityDescription.reference.publicationContext.time
+entityDescription.reference.publicationContext.place
+entityDescription.reference.publicationContext.label
+entityDescription.reference.publicationContext.agent
 entityDescription.reference.publicationInstance.contentType
 entityDescription.reference.publicationInstance.content
 entityDescription.reference.publicationInstance.corrigendumFor
