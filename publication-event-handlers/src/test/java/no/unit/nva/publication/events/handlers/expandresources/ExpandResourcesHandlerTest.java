@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -18,6 +19,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
+import java.time.Clock;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -25,13 +27,20 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
+import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
@@ -101,6 +110,57 @@ public class ExpandResourcesHandlerTest {
         expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
         assertThat(logs.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
         assertThat(logs.getMessages(), containsString(IDENTIFIER_IN_RESOURCE_FILE));
+    }
+
+    @Test
+    void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws JsonProcessingException {
+        Publication publication = PublicationGenerator.randomPublication().copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .build();
+        Resource resource = Resource.fromPublication(publication);
+        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(resource);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        EventPayload eventPayload =
+            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+    }
+
+    @Test
+    void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws JsonProcessingException {
+        DoiRequest doiRequest = doiRequestForDraftResource();
+
+        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(doiRequest);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        EventPayload eventPayload =
+            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+    }
+
+    @Test
+    void shouldAlwaysEmitEventsForMessages() throws JsonProcessingException {
+        Message someMessage = sampleMessage();
+        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(someMessage);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        EventPayload eventPayload =
+            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+    }
+
+    private Message sampleMessage() {
+        Publication publication = PublicationGenerator.randomPublication();
+        UserInstance someUser = new UserInstance(randomString(), randomUri());
+        Message someMessage = Message.supportMessage(someUser, publication, randomString(), SortableIdentifier.next(),
+                                                     Clock.systemDefaultZone());
+        return someMessage;
+    }
+
+    private DoiRequest doiRequestForDraftResource() {
+        Publication publication = PublicationGenerator.randomPublication().copy()
+            .withStatus(PublicationStatus.DRAFT)
+            .build();
+        Resource resource = Resource.fromPublication(publication);
+        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
+        return doiRequest;
     }
 
     private SecretsReader fakeSecretsReader() throws ErrorReadingSecretException {

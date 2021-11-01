@@ -13,6 +13,7 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.secrets
 
+
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
@@ -34,6 +35,8 @@ dependencies {
 
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
+    testImplementation libs.nva.datamodel
+    testImplementation project(":publication-testing")
 
     compileOnly(libs.nva.identifiers){
         because "PMD complains about no/unit/nva/identifiers/SortableIdentifier"
