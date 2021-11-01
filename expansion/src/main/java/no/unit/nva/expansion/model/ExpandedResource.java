@@ -23,7 +23,7 @@ import nva.commons.core.JsonSerializable;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
-public final class IndexDocument implements JsonSerializable, ExpandedResourceUpdate {
+public final class ExpandedResource implements JsonSerializable, ExpandedResourceUpdate {
 
     public static final String ID_FIELD_NAME = "id";
     public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
@@ -31,20 +31,20 @@ public final class IndexDocument implements JsonSerializable, ExpandedResourceUp
 
     private final JsonNode indexDocumentRootNode;
 
-    public IndexDocument(JsonNode root) {
+    public ExpandedResource(JsonNode root) {
         this.indexDocumentRootNode = root;
     }
 
-    public static IndexDocument fromPublication(Publication publication) throws JsonProcessingException {
+    public static ExpandedResource fromPublication(Publication publication) throws JsonProcessingException {
         return fromPublication(uriRetriever, publication);
     }
 
-    public static IndexDocument fromPublication(UriRetriever uriRetriever, Publication publication)
+    public static ExpandedResource fromPublication(UriRetriever uriRetriever, Publication publication)
         throws JsonProcessingException {
         var documentWithId = createJsonWithId(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
         return attempt(() -> objectMapper.readTree(enrichedJson))
-            .map(IndexDocument::new)
+            .map(ExpandedResource::new)
             .orElseThrow();
     }
 
@@ -88,10 +88,10 @@ public final class IndexDocument implements JsonSerializable, ExpandedResourceUp
         if (this == o) {
             return true;
         }
-        if (!(o instanceof IndexDocument)) {
+        if (!(o instanceof ExpandedResource)) {
             return false;
         }
-        IndexDocument that = (IndexDocument) o;
+        ExpandedResource that = (ExpandedResource) o;
         return Objects.equals(indexDocumentRootNode, that.indexDocumentRootNode);
     }
 

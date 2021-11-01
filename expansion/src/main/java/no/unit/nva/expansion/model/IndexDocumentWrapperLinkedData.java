@@ -1,6 +1,6 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.model.IndexDocument.getPublicationContextUris;
+import static no.unit.nva.expansion.model.ExpandedResource.getPublicationContextUris;
 import static no.unit.nva.expansion.utils.JsonLdUtils.toJsonString;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;

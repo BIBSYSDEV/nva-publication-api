@@ -8,7 +8,7 @@ import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResourceUpdate;
-import no.unit.nva.expansion.model.IndexDocument;
+import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -54,8 +54,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return expandedDoiRequest;
     }
 
-    private IndexDocument expandResource(Resource resource) throws JsonProcessingException {
-        return IndexDocument.fromPublication(resource.toPublication());
+    private ExpandedResource expandResource(Resource resource) throws JsonProcessingException {
+        return ExpandedResource.fromPublication(resource.toPublication());
     }
 
     private Set<URI> getOrganizationIds(String username) {
