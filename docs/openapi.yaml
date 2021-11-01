@@ -11,7 +11,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/definitions/Publication'
+              $ref: '#/components/schemas/Publication'
       security:
         - CognitoUserPool: [ ]
       x-amazon-apigateway-integration:
@@ -26,19 +26,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Publication'
+                $ref: '#/components/schemas/Publication'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
         '502':
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
   /{identifier}:
     get:
       summary: Fetch Publication by Identifier
@@ -64,7 +64,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Publication'
+                $ref: '#/components/schemas/Publication'
     put:
       summary: Update Publication for Identifier
       security:
@@ -74,7 +74,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/definitions/Publication'
+              $ref: '#/components/schemas/Publication'
       parameters:
         - in: path
           name: identifier
@@ -95,7 +95,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Publication'
+                $ref: '#/components/schemas/Publication'
     delete:
       summary: Delete Publication for Identifier
       security:
@@ -118,9 +118,9 @@ paths:
         '202':
           description: Accepted
           content:
-            appilcation/json:
+            application/json:
               schema:
-                $ref: '#/definitions/Publication'
+                $ref: '#/components/schemas/Publication'
   /by-owner:
     get:
       summary: Get Publications by Owner
@@ -140,7 +140,7 @@ paths:
                 schema:
                   type: array
                   items:
-                    $ref: '#/definitions/Publication'
+                    $ref: '#/components/schemas/Publication'
 
   /{identifier}/publish:
     put:
@@ -167,31 +167,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/PublicationPublishStatus'
+                $ref: '#/components/schemas/PublicationPublishStatus'
         '204':
           description: Publish completed
           content:
             application/json:
               schema:
-                $ref: '#/definitions/PublicationPublishStatus'
+                $ref: '#/components/schemas/PublicationPublishStatus'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
         '404':
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
         '502':
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
   /doirequest:
     get:
       summary: Find DOI Requests By Role
@@ -209,27 +209,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Publication'
+                $ref: '#/components/schemas/Publication'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
 
         '404':
           description: Not Found
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
 
         '502':
           description: Bad Gateway
           content:
             application/json:
               schema:
-                $ref: '#/definitions/Problem'
+                $ref: '#/components/schemas/Problem'
 
       x-amazon-apigateway-integration:
         uri:
@@ -245,7 +245,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/definitions/CreateDoiRequest"
+              $ref: "#/components/schemas/CreateDoiRequest"
       responses:
         '201':
           description: "Created"
@@ -264,7 +264,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/definitions/UpdateDoiRequest'
+              $ref: '#/components/schemas/UpdateDoiRequest'
       parameters:
         - in: path
           name: publicationIdentifier
@@ -288,7 +288,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/definitions/CreateMessageRequest'
+              $ref: '#/components/schemas/CreateMessageRequest'
       responses:
         '201':
           description: "Created"
@@ -308,7 +308,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/definitions/ResourceMessages'
+                $ref: '#/components/schemas/ResourceMessages'
       x-amazon-apigateway-integration:
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaListMessagesFunction.Arn}/invocations
@@ -349,7 +349,7 @@ components:
       type: object
       properties:
         doiRequestStatus:
-          $ref: '#/definitions/DoiRequestStatus'
+          $ref: '#/components/schemas/DoiRequestStatus'
       description: Initiate a Update DOI request process
     DoiRequestMessageDto:
       type: object
@@ -363,16 +363,6 @@ components:
         - REQUESTED
         - APPROVED
         - REJECTED
-    ResourceMessages:
-      description: Message list for a Publication
-      type: object
-      properties:
-        publication:
-          $ref: '#/definitions/Publication'
-        messages:
-          type: array
-          items:
-            $ref: '#/definitions/Message'
     Message:
       description: Message
       type: object
@@ -388,6 +378,16 @@ components:
           enum:
             - DoiRequest
             - Support
+    ResourceMessages:
+      description: Message list for a Publication
+      type: object
+      properties:
+        publication:
+          $ref: '#/components/schemas/Publication'
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
     CreateMessageRequest:
       type: object
       properties:
@@ -409,4 +409,5 @@ components:
       x-amazon-apigateway-authorizer:
         type: cognito_user_pools
         providerARNs:
-          - !Ref CognitoAuthorizerArn
+          - Ref:
+              CognitoAuthorizerArn
