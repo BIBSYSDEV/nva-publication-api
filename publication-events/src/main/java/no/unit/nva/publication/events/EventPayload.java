@@ -5,13 +5,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
+import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class EventPayload {
 
     public static final String EVENT_TYPE = "eventType";
-    public static final String PAYLOAD = "payload";
+    public static final String PAYLOAD = "uri";
     private static final String RESOURCES_SERVICE_ENTRY_UPDATE = "resources.entry.update";
     private static final String EMPTY_EVENT_TYPE = "event.empty";
     @JsonProperty(EVENT_TYPE)
@@ -35,6 +36,27 @@ public class EventPayload {
     @JacocoGenerated
     public static EventPayload indexedEntryEvent(URI payloadUri) {
         return new EventPayload(RESOURCES_SERVICE_ENTRY_UPDATE, payloadUri);
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEventType(), getPayloadUri());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof EventPayload)) {
+            return false;
+        }
+        EventPayload that = (EventPayload) o;
+        return Objects.equals(getEventType(), that.getEventType()) && Objects.equals(getPayloadUri(),
+                                                                                     that.getPayloadUri());
     }
 
     @JacocoGenerated

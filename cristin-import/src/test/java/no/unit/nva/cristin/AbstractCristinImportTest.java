@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
-import no.unit.nva.testutils.IoUtils;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
+import nva.commons.core.ioutils.IoUtils;
 
 public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
 

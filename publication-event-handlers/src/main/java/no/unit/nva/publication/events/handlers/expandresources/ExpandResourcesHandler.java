@@ -14,11 +14,15 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
@@ -53,10 +57,25 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
                                                Context context) {
 
         return Optional.ofNullable(input.getNewData())
+            .filter(this::shouldBeEnriched)
             .flatMap(this::transformToJson)
             .map(this::insertEventBodyToS3)
+            .stream()
+            .peek(uri -> logger.info("S3 URI:" + uri.toString()))
             .map(EventPayload::indexedEntryEvent)
-            .orElse(EventPayload.emptyEvent());
+            .collect(SingletonCollector.collectOrElse(EventPayload.emptyEvent()));
+    }
+
+    private boolean shouldBeEnriched(ResourceUpdate entry) {
+        if (entry instanceof Resource) {
+            Resource resource = (Resource) entry;
+            return PublicationStatus.PUBLISHED.equals(resource.getStatus());
+        } else if (entry instanceof DoiRequest) {
+            DoiRequest doiRequest = (DoiRequest) entry;
+            return PublicationStatus.PUBLISHED.equals(doiRequest.getResourceStatus());
+        } else {
+            return true;
+        }
     }
 
     @JacocoGenerated
@@ -65,7 +84,7 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
     }
 
     private URI insertEventBodyToS3(String string) {
-        return s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string);
+        return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
     }
 
     private Optional<String> transformToJson(ResourceUpdate newData) {

@@ -50,6 +50,9 @@ Parameters:
   NewNvaEventsBucketsName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
+  IdentityServiceInternalCommunicationSecretArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/UserServiceInternalApiKeyArn'
   MaxConcurrency:
     Type: Number
     Default: 100
@@ -307,6 +310,19 @@ Resources:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
             Resource: "*"
+  InternalAccessToIdentityServicePermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub InternalAccessToIdentityServicePermissions-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:*
+            Resource: "*"
 
   NvaPublicationApi:
     Type: AWS::Serverless::Api
@@ -372,7 +388,8 @@ Resources:
                   description: UUID identifier of the Publication to fetch.
               x-amazon-apigateway-integration:
                 uri:
-                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
+                  #Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}:live/invocations
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NvaFetchPublicationFunction.Arn}/invocations
                 responses: { }
                 httpMethod: POST
                 type: AWS_PROXY
@@ -771,11 +788,11 @@ Resources:
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: AllAtOnce
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 1
+#      AutoPublishAlias: live
+#      DeploymentPreference:
+#        Type: AllAtOnce
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -792,27 +809,27 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
-  NvaFecthPublicationFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
-
-  NvaFetchPublicationFucntionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaFetchPublicationFucntionScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFecthPublicationFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+#  NvaFecthPublicationFunctionScalableTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MaxCapacity: !Ref MaxConcurrency
+#      MinCapacity: !Ref MinConcurrency
+#      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
+#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+#      ScalableDimension: lambda:function:ProvisionedConcurrency
+#      ServiceNamespace: lambda
+#    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+#
+#  NvaFetchPublicationFucntionScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: NvaFetchPublicationFucntionScalingPolicy
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref NvaFecthPublicationFunctionScalableTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
 
   NvaUpdatePublicationFunction:
@@ -1078,6 +1095,9 @@ Resources:
           HANDLER_EVENTS_FOLDER: 'resource-updates-events'
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          API_SCHEME: 'https'
+          API_HOST: !Sub 'api.${CustomDomain}'
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1087,7 +1107,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "publication.update" ]
+                  type: [ "publication.update", "message.update", "doirequest.update" ]
                   newData:
                     type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
@@ -1109,6 +1129,10 @@ Resources:
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: "not used"
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
