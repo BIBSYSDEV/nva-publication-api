@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.publication.storage.model.Message;
 
@@ -9,11 +10,11 @@ import java.util.Set;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 
-public class ExpandedMessage extends Message implements WithOrganizationScope, ExpandedResourceUpdate {
+public final class ExpandedMessage extends Message implements WithOrganizationScope, ExpandedResourceUpdate {
 
     private Set<URI> organizationIds;
 
-    public ExpandedMessage(Message message) {
+    private ExpandedMessage(Message message) {
         super();
         setMessageType(message.getMessageType());
         setCreatedTime(message.getCreatedTime());
@@ -26,6 +27,13 @@ public class ExpandedMessage extends Message implements WithOrganizationScope, E
         setStatus(message.getStatus());
         setText(message.getText());
 
+    }
+
+    public static ExpandedMessage create(Message message, ResourceExpansionServiceImpl resourceExpansionService) {
+        ExpandedMessage expandedMessage = new ExpandedMessage(message);
+        Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message.getOwner());
+        expandedMessage.setOrganizationIds(organizationIds);
+        return expandedMessage;
     }
 
     @Override
