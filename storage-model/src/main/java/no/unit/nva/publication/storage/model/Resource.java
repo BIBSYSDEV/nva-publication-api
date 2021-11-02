@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Instant;
@@ -23,7 +22,7 @@ import no.unit.nva.model.ResearchProject;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
-@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
     public static final String TYPE = Resource.class.getSimpleName();

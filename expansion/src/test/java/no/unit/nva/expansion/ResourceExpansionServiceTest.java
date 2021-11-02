@@ -35,6 +35,7 @@ import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.PublicationInstanceBuilder;
@@ -171,12 +172,12 @@ public class ResourceExpansionServiceTest {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 
-    private void assertThatExpandedMessageHasNoDataLoss(Message message, Message expandedMessage) {
-        assertThat(expandedMessage, is(equalTo(message)));
+    private void assertThatExpandedMessageHasNoDataLoss(Message message, ExpandedMessage expandedMessage) {
+        assertThat(expandedMessage.toMessage(), is(equalTo(message)));
     }
 
-    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, DoiRequest expandedDoiRequest) {
-        assertThat(expandedDoiRequest, is(equalTo(doiRequest)));
+    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, ExpandedDoiRequest expandedDoiRequest) {
+        assertThat(expandedDoiRequest.toDoiRequest(), is(equalTo(doiRequest)));
     }
 
     private DoiRequest createDoiRequest() {
@@ -189,28 +190,23 @@ public class ResourceExpansionServiceTest {
     private Message createMessage() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
-
-        Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
-        return message;
+        return Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
     }
 
-    private HttpClient prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
         when(httpClientMock.send(any(), any()))
             .thenThrow(IOException.class);
 
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
             .thenReturn(userResponse)
             .thenThrow(IOException.class);
-
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
@@ -218,10 +214,9 @@ public class ResourceExpansionServiceTest {
             .thenReturn(customerResponse)
             .thenThrow(IOException.class);
 
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
+    private void prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
         throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
@@ -230,8 +225,6 @@ public class ResourceExpansionServiceTest {
             .thenReturn(userResponse)
             .thenReturn(customerResponse)
             .thenReturn(institutionResponse);
-
-        return httpClientMock;
     }
 
     private HttpResponse<String> createHttpResponse(String body) {

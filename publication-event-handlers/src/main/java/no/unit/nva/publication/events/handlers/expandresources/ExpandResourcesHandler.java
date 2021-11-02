@@ -62,7 +62,7 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
             .map(this::insertEventBodyToS3)
             .stream()
             .peek(uri -> logger.info("S3 URI:" + uri.toString()))
-            .map(EventPayload::indexedEntryEvent)
+            .map(EventPayload::resourcesUpdateEvent)
             .collect(SingletonCollector.collectOrElse(EventPayload.emptyEvent()));
     }
 

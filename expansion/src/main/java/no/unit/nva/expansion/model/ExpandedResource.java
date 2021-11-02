@@ -9,11 +9,17 @@ import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_J
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
 import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.expansion.utils.JsonLdUtils;
 import no.unit.nva.expansion.utils.UriRetriever;
@@ -23,16 +29,27 @@ import nva.commons.core.JsonSerializable;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
-public final class ExpandedResource implements JsonSerializable, ExpandedResourceUpdate {
+@JsonTypeName("Publication")
+public final class ExpandedResource implements JsonSerializable, ExpandedDatabaseEntry {
 
+    // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
+    // because is does not extend the Resource or Publication class,
+    // but it contains its data as an inner Json Node.
+    public static final String EXPANDED_RESOURCE_TYPE = "Publication";
     public static final String ID_FIELD_NAME = "id";
     public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
     private static final UriRetriever uriRetriever = new UriRetriever();
 
-    private final JsonNode indexDocumentRootNode;
+    @JsonAnySetter
+    private final Map<String, Object> allFields;
 
-    public ExpandedResource(JsonNode root) {
-        this.indexDocumentRootNode = root;
+    @JsonProperty(TYPE_FIELD)
+    public String getType() {
+        return EXPANDED_RESOURCE_TYPE;
+    }
+
+    public ExpandedResource() {
+        this.allFields = new LinkedHashMap<>();
     }
 
     public static ExpandedResource fromPublication(Publication publication) throws JsonProcessingException {
@@ -43,8 +60,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedResourc
         throws JsonProcessingException {
         var documentWithId = createJsonWithId(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        return attempt(() -> objectMapper.readTree(enrichedJson))
-            .map(ExpandedResource::new)
+        return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class))
             .orElseThrow();
     }
 
@@ -62,24 +78,30 @@ public final class ExpandedResource implements JsonSerializable, ExpandedResourc
         return uris;
     }
 
+    @JsonAnyGetter
+    public Map<String, Object> getAllFields() {
+        return this.allFields;
+    }
+
     public List<URI> getPublicationContextUris() {
-        return getPublicationContextUris(indexDocumentRootNode);
+        ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
+        return getPublicationContextUris(docAsObjectNode);
     }
 
     public URI getId() {
-        return URI.create(indexDocumentRootNode.at(ID_JSON_PTR).textValue());
+        return URI.create(objectMapper.convertValue(this.allFields, ObjectNode.class).at(ID_JSON_PTR).textValue());
     }
 
     @JacocoGenerated
     @Override
     public String toJsonString() {
-        return JsonLdUtils.toJsonString(indexDocumentRootNode);
+        return JsonLdUtils.toJsonString(objectMapper.convertValue(this, ObjectNode.class));
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(indexDocumentRootNode);
+        return Objects.hash(this.allFields);
     }
 
     @JacocoGenerated
@@ -92,7 +114,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedResourc
             return false;
         }
         ExpandedResource that = (ExpandedResource) o;
-        return Objects.equals(indexDocumentRootNode, that.indexDocumentRootNode);
+        return Objects.equals(this.allFields, that.allFields);
     }
 
     @JacocoGenerated
@@ -102,7 +124,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedResourc
     }
 
     public JsonNode asJsonNode() {
-        return indexDocumentRootNode;
+        return objectMapper.convertValue(this.allFields, ObjectNode.class);
     }
 
     private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
