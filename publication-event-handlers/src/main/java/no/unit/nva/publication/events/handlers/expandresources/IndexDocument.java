@@ -2,11 +2,13 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static nva.commons.core.attempt.Try.attempt;
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonSerializable;
 
@@ -25,9 +27,10 @@ public class IndexDocument implements JsonSerializable {
     @JsonProperty(BODY)
     private final ExpandedDatabaseEntry body;
 
-    public IndexDocument(String type,
-                         SortableIdentifier identifier,
-                         ExpandedDatabaseEntry body) {
+    @JsonCreator
+    public IndexDocument(@JsonProperty(TYPE) String type,
+                         @JsonProperty(IDENTIFIER) SortableIdentifier identifier,
+                         @JsonProperty(BODY) ExpandedDatabaseEntry body) {
 
         this.type = type;
         this.identifier = identifier;
@@ -59,6 +62,10 @@ public class IndexDocument implements JsonSerializable {
     public static IndexDocument createMessageUpdate(ExpandedMessage message) {
         SortableIdentifier identifier = message.getIdentifier();
         return new IndexDocument(MESSAGE_UPDATE, identifier, message);
+    }
+
+    public static IndexDocument fromJsonString(String indexingEventPayload) throws JsonProcessingException {
+        return dynamoImageSerializerRemovingEmptyFields.readValue(indexingEventPayload, IndexDocument.class);
     }
 
     public String getType() {

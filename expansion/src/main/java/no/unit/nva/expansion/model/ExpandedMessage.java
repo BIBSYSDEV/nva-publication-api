@@ -6,6 +6,7 @@ import static no.unit.nva.expansion.model.ExpandedMessage.TYPE;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
@@ -165,6 +166,37 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         message.setStatus(this.getStatus());
         message.setText(this.getText());
         return message;
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
+                            getResourceIdentifier(),
+                            getText(), getCreatedTime(), getResourceTitle(), getMessageType(), getOrganizationIds());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ExpandedMessage)) {
+            return false;
+        }
+        ExpandedMessage that = (ExpandedMessage) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && getStatus() == that.getStatus()
+               && Objects.equals(getSender(), that.getSender())
+               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getText(), that.getText())
+               && Objects.equals(getCreatedTime(), that.getCreatedTime())
+               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && getMessageType() == that.getMessageType()
+               && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
     }
 
     // should not become public. An ExpandedMessage needs an Expansion service to be complete
