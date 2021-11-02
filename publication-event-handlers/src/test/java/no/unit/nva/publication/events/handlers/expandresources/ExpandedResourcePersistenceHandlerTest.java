@@ -49,29 +49,6 @@ class ExpandedResourcePersistenceHandlerTest {
     private URI eventUriInEventsBucket;
     private ByteArrayOutputStream output;
 
-    public static Stream<ExpandedDatabaseEntry> expandedEntriesProvider() throws JsonProcessingException {
-        return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
-    }
-
-    public static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
-        throws JsonProcessingException {
-        return Stream.of(
-            new PersistedEntryWithExpectedType(randomResource(), IndexDocument.RESOURCE_UPDATE),
-            new PersistedEntryWithExpectedType(randomDoiRequest(), IndexDocument.DOI_REQUEST_UPDATE),
-            new PersistedEntryWithExpectedType(randomMessage(), IndexDocument.MESSAGE_UPDATE));
-    }
-
-    public static ExpandedResource randomResource() throws JsonProcessingException {
-        var publication = PublicationGenerator.randomPublication();
-        return ExpandedResource.fromPublication(publication);
-    }
-
-    public static ExpandedDoiRequest randomDoiRequest() {
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
-            Resource.fromPublication(PublicationGenerator.randomPublication()));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
-    }
-
     @BeforeEach
     public void init() {
         var eventsBucket = new FakeS3Client();
@@ -101,7 +78,7 @@ class ExpandedResourcePersistenceHandlerTest {
         EventPayload outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
         IndexDocument indexDocument = IndexDocument.fromJsonString(indexingEventPayload);
-        assertThat(HELP_MESSAGE,indexDocument.getBody(), is(equalTo(update)));
+        assertThat(HELP_MESSAGE, indexDocument.getBody(), is(equalTo(update)));
     }
 
     @ParameterizedTest(name = "should store entry containing the general type (index namde) of the persisted event")
@@ -115,6 +92,29 @@ class ExpandedResourcePersistenceHandlerTest {
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
         IndexDocument indexDocument = IndexDocument.fromJsonString(indexingEventPayload);
         assertThat(indexDocument.getType(), is(equalTo(expectedPersistedEntry.type)));
+    }
+
+    private static Stream<ExpandedDatabaseEntry> expandedEntriesProvider() throws JsonProcessingException {
+        return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
+    }
+
+    private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
+        throws JsonProcessingException {
+        return Stream.of(
+            new PersistedEntryWithExpectedType(randomResource(), IndexDocument.RESOURCE_UPDATE),
+            new PersistedEntryWithExpectedType(randomDoiRequest(), IndexDocument.DOI_REQUEST_UPDATE),
+            new PersistedEntryWithExpectedType(randomMessage(), IndexDocument.MESSAGE_UPDATE));
+    }
+
+    private static ExpandedResource randomResource() throws JsonProcessingException {
+        var publication = PublicationGenerator.randomPublication();
+        return ExpandedResource.fromPublication(publication);
+    }
+
+    private static ExpandedDoiRequest randomDoiRequest() {
+        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
+            Resource.fromPublication(PublicationGenerator.randomPublication()));
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
     private static ExpandedMessage randomMessage() {
