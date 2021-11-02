@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
@@ -248,6 +249,46 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         doiRequest.setResourceTitle(this.getResourceTitle());
         doiRequest.setStatus(this.getStatus());
         return doiRequest;
+    }
+
+    @JacocoGenerated
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
+                            getModifiedDate(),
+                            getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
+                            getResourceModifiedDate(),
+                            getResourcePublicationInstance(), getResourcePublicationDate(),
+                            getResourcePublicationYear(),
+                            getDoi(), getContributors(), getOrganizationIds());
+    }
+
+    @JacocoGenerated
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ExpandedDoiRequest)) {
+            return false;
+        }
+        ExpandedDoiRequest that = (ExpandedDoiRequest) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && getStatus() == that.getStatus()
+               && getResourceStatus() == that.getResourceStatus()
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && Objects.equals(getResourceModifiedDate(), that.getResourceModifiedDate())
+               && Objects.equals(getResourcePublicationInstance(), that.getResourcePublicationInstance())
+               && Objects.equals(getResourcePublicationDate(), that.getResourcePublicationDate())
+               && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
+               && Objects.equals(getDoi(), that.getDoi())
+               && Objects.equals(getContributors(), that.getContributors())
+               && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete

@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import no.unit.nva.expansion.utils.JsonLdUtils;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
@@ -43,11 +42,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
-    @JsonProperty(TYPE_FIELD)
-    public String getType() {
-        return EXPANDED_RESOURCE_TYPE;
-    }
-
     public ExpandedResource() {
         this.allFields = new LinkedHashMap<>();
     }
@@ -60,8 +54,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         throws JsonProcessingException {
         var documentWithId = createJsonWithId(publication);
         var enrichedJson = enrichJson(uriRetriever, documentWithId);
-        return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class))
-            .orElseThrow();
+        return attempt(() -> objectMapper.readValue(enrichedJson, ExpandedResource.class)).orElseThrow();
     }
 
     public static List<URI> getPublicationContextUris(JsonNode indexDocument) {
@@ -78,6 +71,12 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         return uris;
     }
 
+    @JsonProperty(TYPE_FIELD)
+    public String getType() {
+        return EXPANDED_RESOURCE_TYPE;
+    }
+
+    @JacocoGenerated
     @JsonAnyGetter
     public Map<String, Object> getAllFields() {
         return this.allFields;
@@ -95,13 +94,17 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
     @JacocoGenerated
     @Override
     public String toJsonString() {
-        return JsonLdUtils.toJsonString(objectMapper.convertValue(this, ObjectNode.class));
+        return attempt(() -> objectMapper.writeValueAsString(this)).orElseThrow();
+    }
+
+    public ObjectNode asJsonNode() {
+        return objectMapper.convertValue(this, ObjectNode.class);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(this.allFields);
+        return Objects.hash(this.asJsonNode());
     }
 
     @JacocoGenerated
@@ -114,17 +117,14 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
             return false;
         }
         ExpandedResource that = (ExpandedResource) o;
-        return Objects.equals(this.allFields, that.allFields);
+        //Comparison can only happen when comparing them as json nodes.
+        return Objects.equals(this.asJsonNode(), that.asJsonNode());
     }
 
     @JacocoGenerated
     @Override
     public String toString() {
         return toJsonString();
-    }
-
-    public JsonNode asJsonNode() {
-        return objectMapper.convertValue(this.allFields, ObjectNode.class);
     }
 
     private static String enrichJson(UriRetriever uriRetriever, ObjectNode documentWithId) {
