@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.publication.storage.model.DoiRequest;
 
@@ -9,11 +10,11 @@ import java.util.Set;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 
-public class ExpandedDoiRequest extends DoiRequest implements WithOrganizationScope, ExpandedResourceUpdate {
+public final class ExpandedDoiRequest extends DoiRequest implements WithOrganizationScope, ExpandedResourceUpdate {
 
     private Set<URI> organizationIds;
 
-    public ExpandedDoiRequest(DoiRequest doiRequest) {
+    private ExpandedDoiRequest(DoiRequest doiRequest) {
         super();
         setDoi(doiRequest.getDoi());
         setContributors(doiRequest.getContributors());
@@ -30,6 +31,14 @@ public class ExpandedDoiRequest extends DoiRequest implements WithOrganizationSc
         setResourceStatus(doiRequest.getResourceStatus());
         setResourceTitle(doiRequest.getResourceTitle());
         setStatus(doiRequest.getStatus());
+    }
+
+    public static ExpandedDoiRequest create(DoiRequest doiRequest,
+                                            ResourceExpansionServiceImpl resourceExpansionService) {
+        ExpandedDoiRequest expandedDoiRequest = new ExpandedDoiRequest(doiRequest);
+        Set<URI> ids = resourceExpansionService.getOrganizationIds(expandedDoiRequest.getOwner());
+        expandedDoiRequest.setOrganizationIds(ids);
+        return expandedDoiRequest;
     }
 
     @Override
