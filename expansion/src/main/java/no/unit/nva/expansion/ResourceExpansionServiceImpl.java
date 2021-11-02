@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
-import no.unit.nva.expansion.model.ExpandedResourceUpdate;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedResourceUpdate;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -30,35 +30,17 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedResourceUpdate expandEntry(ResourceUpdate resourceUpdate) throws JsonProcessingException {
         if (resourceUpdate instanceof Resource) {
-            return expandResource((Resource) resourceUpdate);
+            return ExpandedResource.fromPublication(resourceUpdate.toPublication());
         } else if (resourceUpdate instanceof DoiRequest) {
-            return expandDoiRequest((DoiRequest) resourceUpdate);
+            return ExpandedDoiRequest.create((DoiRequest) resourceUpdate, this);
         } else if (resourceUpdate instanceof Message) {
-            return expandMessage((Message) resourceUpdate);
+            return ExpandedMessage.create((Message) resourceUpdate, this);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdate.getClass().getSimpleName());
     }
 
-    private ExpandedMessage expandMessage(Message message) {
-        ExpandedMessage expandedMessage = new ExpandedMessage(message);
-        Set<URI> organizationIds = getOrganizationIds(message.getOwner());
-        expandedMessage.setOrganizationIds(organizationIds);
-        return expandedMessage;
-    }
-
-    private ExpandedDoiRequest expandDoiRequest(DoiRequest doiRequest) {
-        ExpandedDoiRequest expandedDoiRequest = new ExpandedDoiRequest(doiRequest);
-        Set<URI> organizationIds = getOrganizationIds(doiRequest.getOwner());
-        expandedDoiRequest.setOrganizationIds(organizationIds);
-        return expandedDoiRequest;
-    }
-
-    private ExpandedResource expandResource(Resource resource) throws JsonProcessingException {
-        return ExpandedResource.fromPublication(resource.toPublication());
-    }
-
-    private Set<URI> getOrganizationIds(String username) {
+    public Set<URI> getOrganizationIds(String username) {
         Set<URI> organizationIds = new HashSet<>();
         Optional<URI> organizationId = getOrganizationId(username);
         if (organizationId.isPresent()) {
