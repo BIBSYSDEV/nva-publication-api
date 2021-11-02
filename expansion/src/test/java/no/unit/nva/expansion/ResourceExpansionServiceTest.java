@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
-import no.unit.nva.expansion.model.IndexDocument;
+import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.InstitutionResponse;
 import no.unit.nva.expansion.model.UserResponse;
 import no.unit.nva.expansion.restclients.IdentityClient;
@@ -131,7 +131,7 @@ public class ResourceExpansionServiceTest {
     void shouldReturnFramedIndexDocumentFromResource(Class<?> instanceType) throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(instanceType);
         Resource resourceUpdate = Resource.fromPublication(publication);
-        IndexDocument indexDoc = (IndexDocument) service.expandEntry(resourceUpdate);
+        ExpandedResource indexDoc = (ExpandedResource) service.expandEntry(resourceUpdate);
         assertThat(indexDoc.getId(), is(not(nullValue())));
     }
 
