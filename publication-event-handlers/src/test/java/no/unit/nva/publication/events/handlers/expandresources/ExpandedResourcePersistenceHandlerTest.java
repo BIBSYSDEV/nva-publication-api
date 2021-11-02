@@ -41,6 +41,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ExpandedResourcePersistenceHandlerTest {
 
     private static final ResourceExpansionService resourceExpansionService = fakeExpansionService();
+    private static final String HELP_MESSAGE = String.format("%s should be compared for equality only as json "
+                                                             + "objects", ExpandedResource.class.getSimpleName());
     private ExpandedResourcePersistenceHandler handler;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
@@ -99,7 +101,7 @@ class ExpandedResourcePersistenceHandlerTest {
         EventPayload outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
         IndexDocument indexDocument = IndexDocument.fromJsonString(indexingEventPayload);
-        assertThat(indexDocument.getBody(), is(equalTo(update)));
+        assertThat(HELP_MESSAGE,indexDocument.getBody(), is(equalTo(update)));
     }
 
     @ParameterizedTest(name = "should store entry containing the general type (index namde) of the persisted event")
