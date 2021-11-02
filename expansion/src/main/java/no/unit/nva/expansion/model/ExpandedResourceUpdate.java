@@ -1,10 +1,21 @@
 package no.unit.nva.expansion.model;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
 
+@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = "Publication", value = ExpandedResource.class),
+    @JsonSubTypes.Type(name = "DoiRequest", value = ExpandedDoiRequest.class),
+    @JsonSubTypes.Type(name = "Message", value = ExpandedMessage.class),
+})
 public interface ExpandedResourceUpdate extends JsonSerializable {
+
+    String TYPE_FIELD = "type";
 
     @JacocoGenerated
     @Override
@@ -15,5 +26,4 @@ public interface ExpandedResourceUpdate extends JsonSerializable {
             throw new RuntimeException(e);
         }
     }
-
 }

@@ -49,4 +49,5 @@ test{
     environment "HANDLER_EVENTS_FOLDER", "reource-updates-events"
     environment "IDENTITY_SERVICE_SECRET_NAME","someSecretName"
     environment "IDENTITY_SERVICE_SECRET_KEY","someSecretKey"
+    environment "INDEX_ENTRIES_BUCKET", "indexEntries"
 }

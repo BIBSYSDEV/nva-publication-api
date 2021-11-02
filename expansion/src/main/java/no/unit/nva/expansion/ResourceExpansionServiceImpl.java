@@ -40,6 +40,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdate.getClass().getSimpleName());
     }
 
+    @Override
     public Set<URI> getOrganizationIds(String username) {
         Set<URI> organizationIds = new HashSet<>();
         Optional<URI> organizationId = getOrganizationId(username);

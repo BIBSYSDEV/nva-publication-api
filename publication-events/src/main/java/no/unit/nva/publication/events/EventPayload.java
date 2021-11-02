@@ -8,12 +8,13 @@ import java.net.URI;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeInfo(use = Id.NAME, property = "type")
+@JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = EventPayload.class)
 public class EventPayload {
 
     public static final String EVENT_TYPE = "eventType";
     public static final String PAYLOAD = "uri";
-    private static final String RESOURCES_SERVICE_ENTRY_UPDATE = "resources.entry.update";
+    private static final String RESOURCES_ENTRY_UPDATE = "resources.entry.update";
+    private static final String INDEX_ENTRY_UPDATE = "index.entry.update";
     private static final String EMPTY_EVENT_TYPE = "event.empty";
     @JsonProperty(EVENT_TYPE)
     private final String eventType;
@@ -34,8 +35,13 @@ public class EventPayload {
     }
 
     @JacocoGenerated
-    public static EventPayload indexedEntryEvent(URI payloadUri) {
-        return new EventPayload(RESOURCES_SERVICE_ENTRY_UPDATE, payloadUri);
+    public static EventPayload resourcesUpdateEvent(URI payloadUri) {
+        return new EventPayload(RESOURCES_ENTRY_UPDATE, payloadUri);
+    }
+
+    @JacocoGenerated
+    public static EventPayload indexEntryEvent(URI payloadUri) {
+        return new EventPayload(INDEX_ENTRY_UPDATE, payloadUri);
     }
 
     @JacocoGenerated

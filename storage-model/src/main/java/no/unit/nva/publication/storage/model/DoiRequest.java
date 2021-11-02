@@ -44,8 +44,7 @@ public class DoiRequest
     public static final String TYPE = DoiRequest.class.getSimpleName();
     
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
-    
-    public static final SortableIdentifier NOT_IMPORTANT = null;
+
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
     
     @JsonProperty

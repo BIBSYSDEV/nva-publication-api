@@ -20,11 +20,13 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.Set;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
+import no.unit.nva.expansion.model.ExpandedResourceUpdate;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -174,8 +176,16 @@ public class ExpandResourcesHandlerTest {
     }
 
     private ResourceExpansionService createFailingService() {
-        return resourceUpdate -> {
-            throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
+        return new ResourceExpansionService() {
+            @Override
+            public ExpandedResourceUpdate expandEntry(ResourceUpdate resourceUpdate) {
+                throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
+            }
+
+            @Override
+            public Set<URI> getOrganizationIds(String username) {
+                return null;
+            }
         };
     }
 
