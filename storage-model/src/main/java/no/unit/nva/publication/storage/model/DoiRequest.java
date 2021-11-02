@@ -7,7 +7,6 @@ import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDoiRe
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
@@ -29,7 +28,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
+@JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings("PMD.GodClass")
 public class DoiRequest
     implements WithIdentifier,

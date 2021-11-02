@@ -1,7 +1,6 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
-import static no.unit.nva.expansion.model.ExpandedResource.EXPANDED_RESOURCE_TYPE;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -55,7 +54,7 @@ class ExpandedResourceUpdateTest {
         var publication = PublicationGenerator.randomPublication();
         var expandedResource = fromPublication(publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
-        assertThat(json.get(ExpandedResourceUpdate.TYPE_FIELD).textValue(), is(equalTo("Publication")));
+        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo("Publication")));
     }
 
     @Test
@@ -64,7 +63,7 @@ class ExpandedResourceUpdateTest {
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var expandedResource = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get(ExpandedResourceUpdate.TYPE_FIELD).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
+        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
     }
 
     @Test
@@ -72,7 +71,7 @@ class ExpandedResourceUpdateTest {
         Message message = randomMessage();
         var expandedResource = ExpandedMessage.create(message, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get(ExpandedResourceUpdate.TYPE_FIELD).textValue(), is(equalTo(ExpandedMessage.TYPE)));
+        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo(ExpandedMessage.TYPE)));
     }
 
     private Message randomMessage() {

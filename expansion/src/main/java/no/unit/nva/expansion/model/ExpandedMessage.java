@@ -16,7 +16,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(TYPE)
-public final class ExpandedMessage implements WithOrganizationScope, ExpandedResourceUpdate {
+public final class ExpandedMessage implements WithOrganizationScope, ExpandedDatabaseEntry {
 
     public static final String TYPE = "Message";
     private SortableIdentifier identifier;

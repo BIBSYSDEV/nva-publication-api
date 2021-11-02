@@ -2,7 +2,6 @@ package no.unit.nva.publication.storage.model;
 
 import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
 import java.time.Clock;
@@ -15,7 +14,7 @@ import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-@JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
+@JsonTypeInfo(use = Id.NAME, property = "type")
 public class Message implements WithIdentifier,
                                 WithStatus,
                                 RowLevelSecurity,

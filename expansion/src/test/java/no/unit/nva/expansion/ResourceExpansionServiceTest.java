@@ -193,23 +193,20 @@ public class ResourceExpansionServiceTest {
         return Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
     }
 
-    private HttpClient prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
         when(httpClientMock.send(any(), any()))
             .thenThrow(IOException.class);
 
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
             .thenReturn(userResponse)
             .thenThrow(IOException.class);
-
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
+    private void prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
@@ -217,10 +214,9 @@ public class ResourceExpansionServiceTest {
             .thenReturn(customerResponse)
             .thenThrow(IOException.class);
 
-        return httpClientMock;
     }
 
-    private HttpClient prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
+    private void prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
         throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
@@ -229,8 +225,6 @@ public class ResourceExpansionServiceTest {
             .thenReturn(userResponse)
             .thenReturn(customerResponse)
             .thenReturn(institutionResponse);
-
-        return httpClientMock;
     }
 
     private HttpResponse<String> createHttpResponse(String body) {

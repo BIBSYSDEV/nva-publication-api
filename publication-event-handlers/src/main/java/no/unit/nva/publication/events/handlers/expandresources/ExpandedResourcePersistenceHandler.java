@@ -9,26 +9,26 @@ import java.net.URI;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.expansion.model.ExpandedResourceUpdate;
+import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.publication.events.EventPayload;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
 
-public class ExpandedEntryUpdateHandler extends
-                                        DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
+public class ExpandedResourcePersistenceHandler
+    extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
 
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    public static final String INDEX_ENTRIES_BUCKET = ENVIRONMENT.readEnv("INDEX_ENTRIES_BUCKET");
+    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
 
     @JacocoGenerated
-    public ExpandedEntryUpdateHandler() {
-        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(INDEX_ENTRIES_BUCKET));
+    public ExpandedResourcePersistenceHandler() {
+        this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
-    protected ExpandedEntryUpdateHandler(S3Driver s3Reader, S3Driver s3Writer) {
+    protected ExpandedResourcePersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
         super(EventPayload.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
@@ -40,7 +40,7 @@ public class ExpandedEntryUpdateHandler extends
                                                Context context) {
         String data = s3Reader.readEvent(input.getPayloadUri());
         var expandedResourceUpdate =
-            attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedResourceUpdate.class))
+            attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
                 .orElseThrow();
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         URI uri = attempt(() -> s3Writer.insertEvent(UnixPath.EMPTY_PATH, indexDocument.toJsonString())).orElseThrow();

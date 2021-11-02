@@ -165,12 +165,6 @@ public class ResourceTest {
                    .build();
     }
 
-    private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
-        AdditionalIdentifier cristinIdentifier = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
-        AdditionalIdentifier otherRandomIdentifier = new AdditionalIdentifier(randomString(), randomString());
-        return Set.of(cristinIdentifier, otherRandomIdentifier);
-    }
-
     public Reference sampleJournalArticleReference() throws InvalidIssnException, MalformedURLException {
         return new Reference.Builder()
                    .withDoi(randomUri())
@@ -188,7 +182,7 @@ public class ResourceTest {
                    .withOrcId(randomString())
                    .build();
     }
-    
+
     private static Organization sampleOrganization() {
         return new Organization.Builder()
                    .withId(SAMPLE_ORG_URI)
@@ -198,6 +192,12 @@ public class ResourceTest {
     
     private static String randomString() {
         return UUID.randomUUID().toString();
+    }
+    
+    private Set<AdditionalIdentifier> sampleAdditionalIdentifiers() {
+        AdditionalIdentifier cristinIdentifier = new AdditionalIdentifier(CRISTIN_SOURCE, randomString());
+        AdditionalIdentifier otherRandomIdentifier = new AdditionalIdentifier(randomString(), randomString());
+        return Set.of(cristinIdentifier, otherRandomIdentifier);
     }
     
     private EntityDescription sampleEntityDescription(Reference reference) {

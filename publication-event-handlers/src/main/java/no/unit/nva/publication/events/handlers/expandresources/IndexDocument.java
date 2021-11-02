@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceUpdate;
+import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JsonSerializable;
 
@@ -15,7 +15,7 @@ public class IndexDocument implements JsonSerializable {
     public static final String TYPE = "type";
     public static final String IDENTIFIER = "identifier";
     public static final String BODY = "body";
-    public static final String RESOURCE_UPDATE = "resources";
+    public static final String RESOURCE_UPDATE = "resource";
     public static final String MESSAGE_UPDATE = "message";
     public static final String DOI_REQUEST_UPDATE = "doirequest";
     @JsonProperty(TYPE)
@@ -23,18 +23,18 @@ public class IndexDocument implements JsonSerializable {
     @JsonProperty(IDENTIFIER)
     private final SortableIdentifier identifier;
     @JsonProperty(BODY)
-    private final ExpandedResourceUpdate body;
+    private final ExpandedDatabaseEntry body;
 
     public IndexDocument(String type,
                          SortableIdentifier identifier,
-                         ExpandedResourceUpdate body) {
+                         ExpandedDatabaseEntry body) {
 
         this.type = type;
         this.identifier = identifier;
         this.body = body;
     }
 
-    public static IndexDocument createIndexDocument(ExpandedResourceUpdate expandedResourceUpdate) {
+    public static IndexDocument createIndexDocument(ExpandedDatabaseEntry expandedResourceUpdate) {
         IndexDocument output = null;
         if (expandedResourceUpdate instanceof ExpandedResource) {
             output = createResourceUpdate((ExpandedResource) expandedResourceUpdate);
@@ -69,7 +69,7 @@ public class IndexDocument implements JsonSerializable {
         return identifier;
     }
 
-    public ExpandedResourceUpdate getBody() {
+    public ExpandedDatabaseEntry getBody() {
         return body;
     }
 

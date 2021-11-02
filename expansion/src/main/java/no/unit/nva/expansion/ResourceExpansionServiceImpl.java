@@ -8,7 +8,7 @@ import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedResourceUpdate;
+import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -28,7 +28,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedResourceUpdate expandEntry(ResourceUpdate resourceUpdate) throws JsonProcessingException {
+    public ExpandedDatabaseEntry expandEntry(ResourceUpdate resourceUpdate) throws JsonProcessingException {
         if (resourceUpdate instanceof Resource) {
             return ExpandedResource.fromPublication(resourceUpdate.toPublication());
         } else if (resourceUpdate instanceof DoiRequest) {
@@ -44,9 +44,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     public Set<URI> getOrganizationIds(String username) {
         Set<URI> organizationIds = new HashSet<>();
         Optional<URI> organizationId = getOrganizationId(username);
-        if (organizationId.isPresent()) {
-            organizationIds.addAll(institutionClient.getOrganizationIds(organizationId.get()));
-        }
+        organizationId.ifPresent(uri -> organizationIds.addAll(institutionClient.getOrganizationIds(uri)));
         return organizationIds;
     }
 

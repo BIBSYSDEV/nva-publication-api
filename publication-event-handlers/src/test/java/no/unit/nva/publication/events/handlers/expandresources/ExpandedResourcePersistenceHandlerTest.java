@@ -33,9 +33,9 @@ import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ExpandedEntryUpdateHandlerTest {
+class ExpandedResourcePersistenceHandlerTest {
 
-    private ExpandedEntryUpdateHandler handler;
+    private ExpandedResourcePersistenceHandler handler;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
     private URI eventUriInEventsBucket;
@@ -48,7 +48,7 @@ class ExpandedEntryUpdateHandlerTest {
         var indexBucket = new FakeS3Client();
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
-        handler = new ExpandedEntryUpdateHandler(s3Reader, s3Writer);
+        handler = new ExpandedResourcePersistenceHandler(s3Reader, s3Writer);
 
         resourceExpansionService = fakeExpansionService();
         output = new ByteArrayOutputStream();

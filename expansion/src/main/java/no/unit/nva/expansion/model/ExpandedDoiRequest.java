@@ -24,7 +24,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(TYPE)
 @SuppressWarnings("PMD.TooManyFields")
-public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedResourceUpdate {
+public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedDatabaseEntry {
 
     public static final String TYPE = "DoiRequest";
 

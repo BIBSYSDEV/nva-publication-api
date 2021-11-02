@@ -26,7 +26,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.ExpandedResourceUpdate;
+import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -89,7 +89,7 @@ public class ExpandResourcesHandlerTest {
         var documentToIndex = dynamoImageSerializerRemovingEmptyFields.readValue(contents, Publication.class);
 
         ResourceUpdate actualResource = Resource.fromPublication(documentToIndex);
-        ResourceUpdate expectedImage = extractResourceUpdateFromEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
+        ResourceUpdate expectedImage = extractResourceUpdateFromEvent();
         assertThat(actualResource, is(equalTo(expectedImage)));
     }
 
@@ -100,7 +100,7 @@ public class ExpandResourcesHandlerTest {
         var updateEvent = parseEmittedEvent();
         var uriWithEventPayload = updateEvent.getPayloadUri();
         var actualResourceUpdate = fetchResourceUpdateFromS3(uriWithEventPayload);
-        var expectedResourceUpdate = extractResourceUpdateFromEvent(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
+        var expectedResourceUpdate = extractResourceUpdateFromEvent();
         assertThat(actualResourceUpdate, is(equalTo(expectedResourceUpdate)));
     }
 
@@ -151,9 +151,8 @@ public class ExpandResourcesHandlerTest {
     private Message sampleMessage() {
         Publication publication = PublicationGenerator.randomPublication();
         UserInstance someUser = new UserInstance(randomString(), randomUri());
-        Message someMessage = Message.supportMessage(someUser, publication, randomString(), SortableIdentifier.next(),
-                                                     Clock.systemDefaultZone());
-        return someMessage;
+        Clock clock = Clock.systemDefaultZone();
+        return Message.supportMessage(someUser, publication, randomString(), SortableIdentifier.next(), clock);
     }
 
     private DoiRequest doiRequestForDraftResource() {
@@ -161,8 +160,7 @@ public class ExpandResourcesHandlerTest {
             .withStatus(PublicationStatus.DRAFT)
             .build();
         Resource resource = Resource.fromPublication(publication);
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(resource);
-        return doiRequest;
+        return DoiRequest.newDoiRequestForResource(resource);
     }
 
     private SecretsReader fakeSecretsReader() throws ErrorReadingSecretException {
@@ -178,7 +176,7 @@ public class ExpandResourcesHandlerTest {
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
-            public ExpandedResourceUpdate expandEntry(ResourceUpdate resourceUpdate) {
+            public ExpandedDatabaseEntry expandEntry(ResourceUpdate resourceUpdate) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
 
@@ -200,18 +198,20 @@ public class ExpandResourcesHandlerTest {
         return dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
     }
 
-    private ResourceUpdate extractResourceUpdateFromEvent(String eventString) {
-        var event = parseEvent(eventString);
+    private ResourceUpdate extractResourceUpdateFromEvent() {
+        var event =
+            parseEvent();
         return event.getDetail().getResponsePayload().getNewData();
     }
 
     @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String eventString) {
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent() {
         return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
-                   newEventParser(eventString).parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+                   newEventParser()
+                       .parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
     }
 
-    private EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> newEventParser(String eventString) {
-        return new EventParser<>(eventString, dynamoImageSerializerRemovingEmptyFields);
+    private EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> newEventParser() {
+        return new EventParser<>(EVENT_WITH_NEW_PUBLISHED_RESOURCE, dynamoImageSerializerRemovingEmptyFields);
     }
 }
