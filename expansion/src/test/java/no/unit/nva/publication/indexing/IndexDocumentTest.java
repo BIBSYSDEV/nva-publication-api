@@ -1,7 +1,7 @@
 package no.unit.nva.publication.indexing;
 
-import static no.unit.nva.expansion.model.IndexDocument.ID_NAMESPACE;
-import static no.unit.nva.expansion.model.IndexDocument.fromPublication;
+import static no.unit.nva.expansion.model.ExpandedResource.ID_NAMESPACE;
+import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
 import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
-import no.unit.nva.expansion.model.IndexDocument;
+import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
@@ -60,7 +60,7 @@ class IndexDocumentTest {
 
         final UriRetriever mockUriRetriever =
             mockPublicationChannelPublisherResponse(seriesUri, seriesName, publisherUri, publisherName);
-        final IndexDocument indexDocument = fromPublication(mockUriRetriever, publication);
+        final ExpandedResource indexDocument = fromPublication(mockUriRetriever, publication);
         final JsonNode framedResultNode = indexDocument.asJsonNode();
 
         assertEquals(publisherUri.toString(), framedResultNode.at(PUBLISHER_ID_JSON_PTR).textValue());
@@ -90,7 +90,7 @@ class IndexDocumentTest {
             extractBook(publication);
         Series series = (Series) book.getSeries();
         URI expectedSeriesUri = series.getId();
-        IndexDocument actualDocument = fromPublication(publication);
+        ExpandedResource actualDocument = fromPublication(publication);
         assertThat(actualDocument.getPublicationContextUris(), hasItems(expectedSeriesUri));
     }
 
@@ -101,7 +101,7 @@ class IndexDocumentTest {
         Journal journal =
             (Journal) publication.getEntityDescription().getReference().getPublicationContext();
         URI expectedJournalUri = journal.getId();
-        IndexDocument actualDocument = fromPublication(publication);
+        ExpandedResource actualDocument = fromPublication(publication);
         assertThat(actualDocument.getPublicationContextUris(), contains(expectedJournalUri));
     }
 
@@ -109,7 +109,7 @@ class IndexDocumentTest {
     void shouldReturnIndexDocumentWithConfirmedSeriesIdWhenBookIsPartOfSeriesFoundInNsd()
         throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
-        IndexDocument actualDocument = fromPublication(publication);
+        ExpandedResource actualDocument = fromPublication(publication);
         Book book = extractBook(publication);
         Series confirmedSeries = (Series) book.getSeries();
         URI expectedSeriesId = confirmedSeries.getId();
@@ -123,7 +123,7 @@ class IndexDocumentTest {
     void shouldReturnIndexDocumentWithConfirmedJournalIdWhenPublicationIsPublishedInConfirmedJournal()
         throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(FeatureArticle.class);
-        IndexDocument actualDocument = fromPublication(publication);
+        ExpandedResource actualDocument = fromPublication(publication);
         Journal journal = extractJournal(publication);
         URI expectedJournalId = journal.getId();
         assertThat(actualDocument.getPublicationContextUris(), containsInAnyOrder(expectedJournalId));
@@ -133,21 +133,21 @@ class IndexDocumentTest {
     void shouldNotFailWhenThereIsNoPublicationContext() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().getReference().setPublicationContext(null);
-        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+        assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
 
     @Test
     void shouldNotFailWhenThereIsNoPublicationInstance() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().getReference().setPublicationInstance(null);
-        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+        assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
 
     @Test
     void shouldNotFailWhenThereIsNoMainTitle() throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(BookMonograph.class);
         publication.getEntityDescription().setMainTitle(null);
-        assertThat(IndexDocument.fromPublication(publication), is(not(nullValue())));
+        assertThat(ExpandedResource.fromPublication(publication), is(not(nullValue())));
     }
 
     private static Stream<Class<?>> publicationInstanceProvider() {

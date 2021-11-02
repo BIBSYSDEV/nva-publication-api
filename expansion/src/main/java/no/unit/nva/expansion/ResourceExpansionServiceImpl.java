@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
+import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceUpdate;
-import no.unit.nva.expansion.model.IndexDocument;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -30,7 +30,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     @Override
     public ExpandedResourceUpdate expandEntry(ResourceUpdate resourceUpdate) throws JsonProcessingException {
         if (resourceUpdate instanceof Resource) {
-            return IndexDocument.fromPublication(resourceUpdate.toPublication());
+            return ExpandedResource.fromPublication(resourceUpdate.toPublication());
         } else if (resourceUpdate instanceof DoiRequest) {
             return ExpandedDoiRequest.create((DoiRequest) resourceUpdate, this);
         } else if (resourceUpdate instanceof Message) {
