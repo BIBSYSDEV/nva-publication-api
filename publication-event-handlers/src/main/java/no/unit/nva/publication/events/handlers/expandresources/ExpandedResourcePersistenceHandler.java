@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.publication.events.handlers.expandresources.IndexDocument.createIndexDocument;
+import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -43,7 +44,9 @@ public class ExpandedResourcePersistenceHandler
             attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
                 .orElseThrow();
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        URI uri = attempt(() -> s3Writer.insertEvent(UnixPath.EMPTY_PATH, indexDocument.toJsonString())).orElseThrow();
+        var filePath = UnixPath.of(indexDocument.getType())
+            .addChild(indexDocument.getIdentifier().toString() + GZIP_ENDING);
+        URI uri = attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
         return EventPayload.indexEntryEvent(uri);
     }
 }
