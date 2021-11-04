@@ -31,7 +31,7 @@ public class PersistedDocumentConsumptionAttributes {
         this.documentIdentifier = documentIdentifier;
     }
 
-    public static PersistedDocumentConsumptionAttributes createMetadata(ExpandedDatabaseEntry expandedEntry) {
+    public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDatabaseEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
             return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {

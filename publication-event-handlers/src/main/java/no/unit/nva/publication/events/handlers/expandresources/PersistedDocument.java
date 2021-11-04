@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.createAttributes;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,9 +30,7 @@ public class PersistedDocument implements JsonSerializable {
     }
 
     public static PersistedDocument createIndexDocument(ExpandedDatabaseEntry expandedResourceUpdate) {
-        PersistedDocumentConsumptionAttributes metadata = PersistedDocumentConsumptionAttributes.createMetadata(
-            expandedResourceUpdate);
-        return new PersistedDocument(expandedResourceUpdate, metadata);
+        return new PersistedDocument(expandedResourceUpdate, createAttributes(expandedResourceUpdate));
     }
 
     public static PersistedDocument fromJsonString(String indexingEventPayload) throws JsonProcessingException {

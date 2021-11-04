@@ -1,6 +1,9 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.storage.model.Message.supportMessage;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -101,9 +104,9 @@ class ExpandedResourcePersistenceHandlerTest {
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
         throws JsonProcessingException {
         return Stream.of(
-            new PersistedEntryWithExpectedType(randomResource(), PersistedDocumentConsumptionAttributes.RESOURCES_INDEX),
-            new PersistedEntryWithExpectedType(randomDoiRequest(), PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX),
-            new PersistedEntryWithExpectedType(randomMessage(), PersistedDocumentConsumptionAttributes.MESSAGES_INDEX));
+            new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
+            new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
+            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX));
     }
 
     private static ExpandedResource randomResource() throws JsonProcessingException {
