@@ -12,9 +12,9 @@ import nva.commons.core.JacocoGenerated;
 
 public class PersistedDocumentMetadata {
 
-    public static final String RESOURCES_INDEX = "resource";
-    public static final String MESSAGES_INDEX = "message";
-    public static final String DOI_REQUESTS_INDEX = "doirequest";
+    public static final String RESOURCES_INDEX = "resources";
+    public static final String MESSAGES_INDEX = "messages";
+    public static final String DOI_REQUESTS_INDEX = "doirequests";
 
     public static final String INDEX_FIELD = "index";
     public static final String DOCUMENT_IDENTIFIER = "documentIdentifier";
