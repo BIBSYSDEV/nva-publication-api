@@ -158,7 +158,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         Message message = new Message();
         message.setMessageType(this.getMessageType());
         message.setCreatedTime(this.getCreatedTime());
-        message.setIdentifier(this.fetchIdentifier());
+        message.setIdentifier(this.getIdentifier());
         message.setCustomerId(this.getCustomerId());
         message.setOwner(this.getOwner());
         message.setResourceIdentifier(this.getResourceIdentifier());
@@ -172,7 +172,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(fetchIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
                             getResourceIdentifier(),
                             getText(), getCreatedTime(), getResourceTitle(), getMessageType(), getOrganizationIds());
     }
@@ -187,7 +187,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
             return false;
         }
         ExpandedMessage that = (ExpandedMessage) o;
-        return Objects.equals(fetchIdentifier(), that.fetchIdentifier())
+        return Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
@@ -201,7 +201,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     }
 
     @Override
-    public SortableIdentifier fetchIdentifier() {
+    public SortableIdentifier retrieveIdentifier() {
         return getIdentifier();
     }
 

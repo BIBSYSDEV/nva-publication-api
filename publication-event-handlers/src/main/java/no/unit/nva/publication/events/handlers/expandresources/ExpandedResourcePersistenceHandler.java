@@ -16,6 +16,8 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExpandedResourcePersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
@@ -23,6 +25,7 @@ public class ExpandedResourcePersistenceHandler
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedResourcePersistenceHandler.class);
 
     @JacocoGenerated
     public ExpandedResourcePersistenceHandler() {
@@ -46,7 +49,9 @@ public class ExpandedResourcePersistenceHandler
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         var filePath = createFilePath(indexDocument);
         URI uri = attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
-        return EventPayload.indexEntryEvent(uri);
+        var outputEvent = EventPayload.indexEntryEvent(uri);
+        logger.info(attempt(() -> objectMapper.writeValueAsString(outputEvent)).orElseThrow());
+        return outputEvent;
     }
 
     private UnixPath createFilePath(PersistedDocument indexDocument) {

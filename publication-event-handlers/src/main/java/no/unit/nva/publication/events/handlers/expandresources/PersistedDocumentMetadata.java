@@ -33,11 +33,11 @@ public class PersistedDocumentMetadata {
 
     public static PersistedDocumentMetadata createMetadata(ExpandedDatabaseEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
-            return new PersistedDocumentMetadata(RESOURCES_INDEX, expandedEntry.fetchIdentifier());
+            return new PersistedDocumentMetadata(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
-            return new PersistedDocumentMetadata(DOI_REQUESTS_INDEX, expandedEntry.fetchIdentifier());
+            return new PersistedDocumentMetadata(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedMessage) {
-            return new PersistedDocumentMetadata(MESSAGES_INDEX, expandedEntry.fetchIdentifier());
+            return new PersistedDocumentMetadata(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
         }
         throw new UnsupportedOperationException(
             UNSUPPORTED_TYPE_ERROR_MESSAGE + expandedEntry.getClass().getSimpleName());

@@ -2,7 +2,6 @@ package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.IDENTIFIER_JSON_PTR;
-import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.publication.storage.model.Message.supportMessage;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -37,7 +36,7 @@ class ExpandedDatabaseEntryTest {
     @ParameterizedTest(name = "should return identifier using a non serializable method")
     @MethodSource("entryProvider")
     void shouldReturnIdentifierUsingNonSerializableMethod(ExpandedDatabaseEntry entry) {
-        SortableIdentifier identifier = entry.fetchIdentifier();
+        SortableIdentifier identifier = entry.retrieveIdentifier();
         SortableIdentifier fromSerializedId = SortableIdentifier.fromUri(extractIdFromSerializedObject(entry));
         assertThat(identifier, is(equalTo(fromSerializedId)));
     }

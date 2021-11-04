@@ -26,5 +26,5 @@ public interface ExpandedDatabaseEntry extends JsonSerializable {
         }
     }
 
-    SortableIdentifier fetchIdentifier();
+    SortableIdentifier retrieveIdentifier();
 }

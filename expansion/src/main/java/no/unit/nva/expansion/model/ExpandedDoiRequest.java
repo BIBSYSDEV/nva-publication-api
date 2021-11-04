@@ -236,7 +236,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         doiRequest.setDoi(this.getDoi());
         doiRequest.setContributors(this.getContributors());
         doiRequest.setCreatedDate(this.getCreatedDate());
-        doiRequest.setIdentifier(this.fetchIdentifier());
+        doiRequest.setIdentifier(this.getIdentifier());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
@@ -254,7 +254,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(fetchIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
+        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
                             getModifiedDate(),
                             getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
                             getResourceModifiedDate(),
@@ -273,7 +273,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
             return false;
         }
         ExpandedDoiRequest that = (ExpandedDoiRequest) o;
-        return Objects.equals(fetchIdentifier(), that.fetchIdentifier())
+        return Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()
@@ -292,7 +292,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @Override
-    public SortableIdentifier fetchIdentifier() {
+    public SortableIdentifier retrieveIdentifier() {
         return getIdentifier();
     }
 
