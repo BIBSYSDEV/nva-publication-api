@@ -99,7 +99,8 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         return ENVIRONMENT.readEnv(IMPORT_EVENT_TYPE_ENV_VARIABLE);
     }
 
-    private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request) {
+    private void writeFailedEmitActionsInS3(List<PutEventsResult> failedRequests, ImportRequest request)
+        throws IOException {
         UriWrapper errorReportUri = createErrorReportUri(request);
         S3Driver s3Driver = new S3Driver(s3Client, request.extractBucketFromS3Location());
         String errorReportContent = PutEventsResult.toString(failedRequests);

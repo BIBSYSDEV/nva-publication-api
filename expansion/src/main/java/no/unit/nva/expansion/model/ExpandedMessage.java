@@ -43,6 +43,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         return expandedMessage;
     }
 
+
     @JacocoGenerated
     public MessageType getMessageType() {
         return messageType;
@@ -197,6 +198,11 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
                && Objects.equals(getResourceTitle(), that.getResourceTitle())
                && getMessageType() == that.getMessageType()
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
+    }
+
+    @Override
+    public SortableIdentifier retrieveIdentifier() {
+        return getIdentifier();
     }
 
     // should not become public. An ExpandedMessage needs an Expansion service to be complete

@@ -1,11 +1,12 @@
 package no.unit.nva.publication.indexing;
 
-import static no.unit.nva.expansion.model.ExpandedResource.ID_NAMESPACE;
+import static no.unit.nva.expansion.ExpansionConfig.ID_NAMESPACE;
+import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
-import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.PUBLISHER_ID_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.SERIES_ID_JSON_PTR;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSampleJournal;
+import static no.unit.nva.publication.indexing.PublicationChannelGenerator.getPublicationChannelSamplePublisher;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
@@ -22,11 +23,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.utils.PublicationJsonPointers;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.contexttypes.Book;
@@ -42,7 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class IndexDocumentTest {
+class ExpandedResourceTest {
 
     public static final String PUBLISHER_NAME_JSON_PTR =
         "/entityDescription/reference/publicationContext/publisher/name";
@@ -76,10 +79,10 @@ class IndexDocumentTest {
         throws JsonProcessingException {
         Publication publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
-        assertThat(indexDocument.getId(), is(not(nullValue())));
-        var documentId = indexDocument.getId();
+        ObjectNode json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
         URI expectedUri = new UriWrapper(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
-        assertThat(documentId, is(equalTo(expectedUri)));
+        URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
+        assertThat(actualUri, is(equalTo(expectedUri)));
     }
 
     @Test

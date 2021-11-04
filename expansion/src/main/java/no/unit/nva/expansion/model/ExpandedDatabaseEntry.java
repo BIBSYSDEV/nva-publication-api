@@ -3,6 +3,7 @@ package no.unit.nva.expansion.model;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 import nva.commons.core.JsonUtils;
@@ -15,8 +16,6 @@ import nva.commons.core.JsonUtils;
 })
 public interface ExpandedDatabaseEntry extends JsonSerializable {
 
-    String TYPE_FIELD = "type";
-
     @JacocoGenerated
     @Override
     default String toJsonString() {
@@ -26,4 +25,6 @@ public interface ExpandedDatabaseEntry extends JsonSerializable {
             throw new RuntimeException(e);
         }
     }
+
+    SortableIdentifier retrieveIdentifier();
 }

@@ -4,8 +4,8 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRIN
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
-import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -130,7 +130,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
         if (!putEventsResults.isEmpty()) {
             String reportContent = PutEventsResult.toString(putEventsResults);
-            s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent);
+            attempt(()->s3Driver.insertFile(reportFilename.toS3bucketPath(), reportContent)).orElseThrow();
         }
     }
 

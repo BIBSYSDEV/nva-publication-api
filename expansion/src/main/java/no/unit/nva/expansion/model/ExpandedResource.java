@@ -1,6 +1,6 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.ExpansionConfig.ENVIRONMENT;
+import static no.unit.nva.expansion.ExpansionConfig.ID_NAMESPACE;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.CONTEXT_TYPE_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
@@ -11,7 +11,6 @@ import static nva.commons.core.StringUtils.isNotBlank;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.expansion.utils.UriRetriever;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
@@ -34,9 +34,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
     // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
     // because is does not extend the Resource or Publication class,
     // but it contains its data as an inner Json Node.
-    public static final String EXPANDED_RESOURCE_TYPE = "Publication";
     public static final String ID_FIELD_NAME = "id";
-    public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
     private static final UriRetriever uriRetriever = new UriRetriever();
 
     @JsonAnySetter
@@ -71,9 +69,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         return uris;
     }
 
-    @JsonProperty(TYPE_FIELD)
-    public String getType() {
-        return EXPANDED_RESOURCE_TYPE;
+    public List<URI> getPublicationContextUris() {
+        ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
+        return getPublicationContextUris(docAsObjectNode);
     }
 
     @JacocoGenerated
@@ -82,12 +80,13 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         return this.allFields;
     }
 
-    public List<URI> getPublicationContextUris() {
-        ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
-        return getPublicationContextUris(docAsObjectNode);
+    @Override
+    public SortableIdentifier retrieveIdentifier() {
+        return SortableIdentifier.fromUri(fetchId());
     }
 
-    public URI getId() {
+
+    public URI fetchId() {
         return URI.create(objectMapper.convertValue(this.allFields, ObjectNode.class).at(ID_JSON_PTR).textValue());
     }
 

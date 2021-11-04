@@ -47,9 +47,15 @@ Parameters:
   NewNvaEventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusArn'
+  NewNvaEventBusName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusName'
   NewNvaEventsBucketsName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
+  ExpandedEntriesPersistenceBucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/PersistedEntriesBucketName'
   IdentityServiceInternalCommunicationSecretArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/UserServiceInternalApiKeyArn'
@@ -551,7 +557,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-
   NvaPublishPublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -723,7 +728,44 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-
+  ExpandedResourcesPersistenceHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedResourcePersistenceHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'resource-updates-events'
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          API_SCHEME: 'https'
+          API_HOST: !Sub 'api.${CustomDomain}'
+          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusName
+            Pattern:
+              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
+              detail:
+                responsePayload:
+                  type: ["EventPayload"]
+                  eventType: [ "resources.entry.update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
   PublicationFanoutHandler:
     DependsOn: EventsLambdaPermissions

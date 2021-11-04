@@ -2,7 +2,8 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
-import static no.unit.nva.publication.events.handlers.expandresources.IndexDocument.createIndexDocument;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocument.createIndexDocument;
+import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -15,13 +16,16 @@ import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ExpandedResourcePersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
 
+    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedResourcePersistenceHandler.class);
 
     @JacocoGenerated
     public ExpandedResourcePersistenceHandler() {
@@ -38,12 +42,31 @@ public class ExpandedResourcePersistenceHandler
     protected EventPayload processInputPayload(EventPayload input,
                                                AwsEventBridgeEvent<AwsEventBridgeDetail<EventPayload>> event,
                                                Context context) {
-        String data = s3Reader.readEvent(input.getPayloadUri());
-        var expandedResourceUpdate =
-            attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
-                .orElseThrow();
+        ExpandedDatabaseEntry expandedResourceUpdate = readEvent(input);
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        URI uri = attempt(() -> s3Writer.insertEvent(UnixPath.EMPTY_PATH, indexDocument.toJsonString())).orElseThrow();
-        return EventPayload.indexEntryEvent(uri);
+        var uri = writeEntryToS3(indexDocument);
+        var outputEvent = EventPayload.indexEntryEvent(uri);
+        logger.info(attempt(() -> objectMapper.writeValueAsString(outputEvent)).orElseThrow());
+        return outputEvent;
+    }
+
+    private URI writeEntryToS3(PersistedDocument indexDocument) {
+        var filePath = createFilePath(indexDocument);
+        return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
+    }
+
+    private ExpandedDatabaseEntry readEvent(EventPayload input) {
+        String data = s3Reader.readEvent(input.getPayloadUri());
+        return attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
+            .orElseThrow();
+    }
+
+    private UnixPath createFilePath(PersistedDocument indexDocument) {
+        return UnixPath.of(createPathBasedOnIndexName(indexDocument))
+            .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
+    }
+
+    private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
+        return indexDocument.getConsumptionAttributes().getIndex();
     }
 }

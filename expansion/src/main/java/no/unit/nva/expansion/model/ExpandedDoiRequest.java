@@ -291,6 +291,11 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
     }
 
+    @Override
+    public SortableIdentifier retrieveIdentifier() {
+        return getIdentifier();
+    }
+
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest) {
         ExpandedDoiRequest request = new ExpandedDoiRequest();

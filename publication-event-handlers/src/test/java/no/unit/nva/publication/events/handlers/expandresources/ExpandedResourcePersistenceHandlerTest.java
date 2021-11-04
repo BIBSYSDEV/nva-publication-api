@@ -1,6 +1,9 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
 import static no.unit.nva.publication.storage.model.Message.supportMessage;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -77,21 +80,21 @@ class ExpandedResourcePersistenceHandlerTest {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), update.toJsonString());
         EventPayload outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
-        IndexDocument indexDocument = IndexDocument.fromJsonString(indexingEventPayload);
+        PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(HELP_MESSAGE, indexDocument.getBody(), is(equalTo(update)));
     }
 
     @ParameterizedTest(name = "should store entry containing the general type (index namde) of the persisted event")
     @MethodSource("entriesWithExpectedTypesProvider")
-    void shouldStoreEntryContainingTheGeneralTypeOfThePersistedEntry(
+    void shouldStoreEntryContainingTheIndexNameForThePersistedEntry(
         PersistedEntryWithExpectedType expectedPersistedEntry)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
                                                       expectedPersistedEntry.entry.toJsonString());
         EventPayload outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
-        IndexDocument indexDocument = IndexDocument.fromJsonString(indexingEventPayload);
-        assertThat(indexDocument.getType(), is(equalTo(expectedPersistedEntry.type)));
+        PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
+        assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
 
     private static Stream<ExpandedDatabaseEntry> expandedEntriesProvider() throws JsonProcessingException {
@@ -101,9 +104,9 @@ class ExpandedResourcePersistenceHandlerTest {
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
         throws JsonProcessingException {
         return Stream.of(
-            new PersistedEntryWithExpectedType(randomResource(), IndexDocument.RESOURCE_UPDATE),
-            new PersistedEntryWithExpectedType(randomDoiRequest(), IndexDocument.DOI_REQUEST_UPDATE),
-            new PersistedEntryWithExpectedType(randomMessage(), IndexDocument.MESSAGE_UPDATE));
+            new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
+            new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
+            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX));
     }
 
     private static ExpandedResource randomResource() throws JsonProcessingException {
@@ -144,11 +147,11 @@ class ExpandedResourcePersistenceHandlerTest {
     private static class PersistedEntryWithExpectedType {
 
         final ExpandedDatabaseEntry entry;
-        final String type;
+        final String index;
 
-        public PersistedEntryWithExpectedType(ExpandedDatabaseEntry databaseEntry, String type) {
+        public PersistedEntryWithExpectedType(ExpandedDatabaseEntry databaseEntry, String index) {
             this.entry = databaseEntry;
-            this.type = type;
+            this.index = index;
         }
     }
 }

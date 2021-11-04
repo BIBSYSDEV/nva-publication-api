@@ -24,18 +24,17 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import no.unit.nva.expansion.model.CustomerResponse;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.InstitutionResponse;
-import no.unit.nva.expansion.model.UserResponse;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
+import no.unit.nva.expansion.restclients.responses.CustomerResponse;
+import no.unit.nva.expansion.restclients.responses.UserResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.PublicationInstanceBuilder;
@@ -133,7 +132,7 @@ public class ResourceExpansionServiceTest {
         Publication publication = PublicationGenerator.randomPublication(instanceType);
         Resource resourceUpdate = Resource.fromPublication(publication);
         ExpandedResource indexDoc = (ExpandedResource) service.expandEntry(resourceUpdate);
-        assertThat(indexDoc.getId(), is(not(nullValue())));
+        assertThat(indexDoc.fetchId(), is(not(nullValue())));
     }
 
     @ParameterizedTest(name = "should process all ResourceUpdate types:{0}")
@@ -143,19 +142,6 @@ public class ResourceExpansionServiceTest {
         ResourceUpdate resource = generateResourceUpdate(resourceUpdateType);
         service.expandEntry(resource);
         assertDoesNotThrow(() -> service.expandEntry(resource));
-    }
-
-    private ResourceUpdate generateResourceUpdate(Class<?> resourceUpdateType) {
-        if (Resource.class.equals(resourceUpdateType)) {
-            return Resource.fromPublication(PublicationGenerator.randomPublication());
-        }
-        if (DoiRequest.class.equals(resourceUpdateType)) {
-            return createDoiRequest();
-        }
-        if (Message.class.equals(resourceUpdateType)) {
-            return createMessage();
-        }
-        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }
 
     private static List<Class<?>> listResourceUpdateTypes() {
@@ -172,11 +158,25 @@ public class ResourceExpansionServiceTest {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 
+    private ResourceUpdate generateResourceUpdate(Class<?> resourceUpdateType) {
+        if (Resource.class.equals(resourceUpdateType)) {
+            return Resource.fromPublication(PublicationGenerator.randomPublication());
+        }
+        if (DoiRequest.class.equals(resourceUpdateType)) {
+            return createDoiRequest();
+        }
+        if (Message.class.equals(resourceUpdateType)) {
+            return createMessage();
+        }
+        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
+    }
+
     private void assertThatExpandedMessageHasNoDataLoss(Message message, ExpandedMessage expandedMessage) {
         assertThat(expandedMessage.toMessage(), is(equalTo(message)));
     }
 
-    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest, ExpandedDoiRequest expandedDoiRequest) {
+    private void assertThatExpandedDoiRequestHasNoDataLoss(DoiRequest doiRequest,
+                                                           ExpandedDoiRequest expandedDoiRequest) {
         assertThat(expandedDoiRequest.toDoiRequest(), is(equalTo(doiRequest)));
     }
 
@@ -196,7 +196,6 @@ public class ResourceExpansionServiceTest {
     private void prepareHttpClientMockReturnsNothing() throws IOException, InterruptedException {
         when(httpClientMock.send(any(), any()))
             .thenThrow(IOException.class);
-
     }
 
     private void prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
@@ -213,7 +212,6 @@ public class ResourceExpansionServiceTest {
             .thenReturn(userResponse)
             .thenReturn(customerResponse)
             .thenThrow(IOException.class);
-
     }
 
     private void prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits()
