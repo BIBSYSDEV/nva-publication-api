@@ -42,24 +42,31 @@ public class ExpandedResourcePersistenceHandler
     protected EventPayload processInputPayload(EventPayload input,
                                                AwsEventBridgeEvent<AwsEventBridgeDetail<EventPayload>> event,
                                                Context context) {
-        String data = s3Reader.readEvent(input.getPayloadUri());
-        var expandedResourceUpdate =
-            attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
-                .orElseThrow();
+        ExpandedDatabaseEntry expandedResourceUpdate = readEvent(input);
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        var filePath = createFilePath(indexDocument);
-        URI uri = attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
+        var uri = writeEntryToS3(indexDocument);
         var outputEvent = EventPayload.indexEntryEvent(uri);
         logger.info(attempt(() -> objectMapper.writeValueAsString(outputEvent)).orElseThrow());
         return outputEvent;
     }
 
+    private URI writeEntryToS3(PersistedDocument indexDocument) {
+        var filePath = createFilePath(indexDocument);
+        return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
+    }
+
+    private ExpandedDatabaseEntry readEvent(EventPayload input) {
+        String data = s3Reader.readEvent(input.getPayloadUri());
+        return attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
+            .orElseThrow();
+    }
+
     private UnixPath createFilePath(PersistedDocument indexDocument) {
         return UnixPath.of(createPathBasedOnIndexName(indexDocument))
-            .addChild(indexDocument.getMetadata().getDocumentIdentifier().toString() + GZIP_ENDING);
+            .addChild(indexDocument.getConsumptionAttributes().getDocumentIdentifier().toString() + GZIP_ENDING);
     }
 
     private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
-        return indexDocument.getMetadata().getIndex();
+        return indexDocument.getConsumptionAttributes().getIndex();
     }
 }

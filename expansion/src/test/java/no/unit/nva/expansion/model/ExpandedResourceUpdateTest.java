@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 
 class ExpandedResourceUpdateTest {
 
+    public static final String TYPE = "type";
+    public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
     private final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
 
     @Test
@@ -54,7 +56,7 @@ class ExpandedResourceUpdateTest {
         var publication = PublicationGenerator.randomPublication();
         var expandedResource = fromPublication(publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
-        assertThat(json.get("type").textValue(), is(equalTo("Publication")));
+        assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
 
     @Test
@@ -63,7 +65,7 @@ class ExpandedResourceUpdateTest {
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var expandedResource = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get("type").textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
+        assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
     }
 
     @Test
@@ -71,7 +73,7 @@ class ExpandedResourceUpdateTest {
         Message message = randomMessage();
         var expandedResource = ExpandedMessage.create(message, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get("type").textValue(), is(equalTo(ExpandedMessage.TYPE)));
+        assertThat(json.get(TYPE).textValue(), is(equalTo(ExpandedMessage.TYPE)));
     }
 
     private Message randomMessage() {

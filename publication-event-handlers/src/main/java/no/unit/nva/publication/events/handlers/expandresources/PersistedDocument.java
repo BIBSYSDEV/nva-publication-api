@@ -13,22 +13,24 @@ import nva.commons.core.JsonSerializable;
 public class PersistedDocument implements JsonSerializable {
 
     public static final String BODY = "body";
-    public static final String METADATA = "metadata";
-    @JsonProperty(METADATA)
-    private final PersistedDocumentMetadata metadata;
+    public static final String CONSUMPTION_ATTRIBUTES = "consumptionAttributes";
+    @JsonProperty(CONSUMPTION_ATTRIBUTES)
+    private final PersistedDocumentConsumptionAttributes consumptionAttributes;
     @JsonProperty(BODY)
     private final ExpandedDatabaseEntry body;
 
     @JsonCreator
-    public PersistedDocument(@JsonProperty(BODY) ExpandedDatabaseEntry body,
-                             @JsonProperty(METADATA) PersistedDocumentMetadata metadata) {
+    public PersistedDocument(
+        @JsonProperty(BODY) ExpandedDatabaseEntry body,
+        @JsonProperty(CONSUMPTION_ATTRIBUTES) PersistedDocumentConsumptionAttributes consumptionAttributes) {
 
-        this.metadata = metadata;
+        this.consumptionAttributes = consumptionAttributes;
         this.body = body;
     }
 
     public static PersistedDocument createIndexDocument(ExpandedDatabaseEntry expandedResourceUpdate) {
-        PersistedDocumentMetadata metadata = PersistedDocumentMetadata.createMetadata(expandedResourceUpdate);
+        PersistedDocumentConsumptionAttributes metadata = PersistedDocumentConsumptionAttributes.createMetadata(
+            expandedResourceUpdate);
         return new PersistedDocument(expandedResourceUpdate, metadata);
     }
 
@@ -37,8 +39,8 @@ public class PersistedDocument implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public PersistedDocumentMetadata getMetadata() {
-        return metadata;
+    public PersistedDocumentConsumptionAttributes getConsumptionAttributes() {
+        return consumptionAttributes;
     }
 
     @JacocoGenerated
@@ -54,7 +56,7 @@ public class PersistedDocument implements JsonSerializable {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getMetadata(), getBody());
+        return Objects.hash(getConsumptionAttributes(), getBody());
     }
 
     @JacocoGenerated
@@ -67,7 +69,7 @@ public class PersistedDocument implements JsonSerializable {
             return false;
         }
         PersistedDocument that = (PersistedDocument) o;
-        return Objects.equals(getMetadata(), that.getMetadata()) && Objects.equals(getBody(),
-                                                                                   that.getBody());
+        return Objects.equals(getConsumptionAttributes(), that.getConsumptionAttributes())
+               && Objects.equals(getBody(), that.getBody());
     }
 }

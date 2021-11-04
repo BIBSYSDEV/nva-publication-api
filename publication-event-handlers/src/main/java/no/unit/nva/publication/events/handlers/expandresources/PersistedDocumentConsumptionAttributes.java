@@ -10,7 +10,7 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
-public class PersistedDocumentMetadata {
+public class PersistedDocumentConsumptionAttributes {
 
     public static final String RESOURCES_INDEX = "resources";
     public static final String MESSAGES_INDEX = "messages";
@@ -25,19 +25,19 @@ public class PersistedDocumentMetadata {
     private final SortableIdentifier documentIdentifier;
 
     @JsonCreator
-    public PersistedDocumentMetadata(@JsonProperty(INDEX_FIELD) String index,
-                                     @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
+    public PersistedDocumentConsumptionAttributes(@JsonProperty(INDEX_FIELD) String index,
+                                                  @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
         this.index = index;
         this.documentIdentifier = documentIdentifier;
     }
 
-    public static PersistedDocumentMetadata createMetadata(ExpandedDatabaseEntry expandedEntry) {
+    public static PersistedDocumentConsumptionAttributes createMetadata(ExpandedDatabaseEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
-            return new PersistedDocumentMetadata(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
-            return new PersistedDocumentMetadata(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedMessage) {
-            return new PersistedDocumentMetadata(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
         }
         throw new UnsupportedOperationException(
             UNSUPPORTED_TYPE_ERROR_MESSAGE + expandedEntry.getClass().getSimpleName());
@@ -63,10 +63,10 @@ public class PersistedDocumentMetadata {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PersistedDocumentMetadata)) {
+        if (!(o instanceof PersistedDocumentConsumptionAttributes)) {
             return false;
         }
-        PersistedDocumentMetadata that = (PersistedDocumentMetadata) o;
+        PersistedDocumentConsumptionAttributes that = (PersistedDocumentConsumptionAttributes) o;
         return Objects.equals(getIndex(), that.getIndex()) && Objects.equals(getDocumentIdentifier(),
                                                                              that.getDocumentIdentifier());
     }

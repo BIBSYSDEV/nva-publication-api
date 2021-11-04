@@ -91,7 +91,7 @@ class ExpandedResourcePersistenceHandlerTest {
         EventPayload outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
-        assertThat(indexDocument.getMetadata().getIndex(), is(equalTo(expectedPersistedEntry.index)));
+        assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
 
     private static Stream<ExpandedDatabaseEntry> expandedEntriesProvider() throws JsonProcessingException {
@@ -101,9 +101,9 @@ class ExpandedResourcePersistenceHandlerTest {
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
         throws JsonProcessingException {
         return Stream.of(
-            new PersistedEntryWithExpectedType(randomResource(), PersistedDocumentMetadata.RESOURCES_INDEX),
-            new PersistedEntryWithExpectedType(randomDoiRequest(), PersistedDocumentMetadata.DOI_REQUESTS_INDEX),
-            new PersistedEntryWithExpectedType(randomMessage(), PersistedDocumentMetadata.MESSAGES_INDEX));
+            new PersistedEntryWithExpectedType(randomResource(), PersistedDocumentConsumptionAttributes.RESOURCES_INDEX),
+            new PersistedEntryWithExpectedType(randomDoiRequest(), PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX),
+            new PersistedEntryWithExpectedType(randomMessage(), PersistedDocumentConsumptionAttributes.MESSAGES_INDEX));
     }
 
     private static ExpandedResource randomResource() throws JsonProcessingException {
