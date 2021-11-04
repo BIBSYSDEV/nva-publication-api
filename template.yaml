@@ -47,6 +47,9 @@ Parameters:
   NewNvaEventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusArn'
+  NewNvaEventBusName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/Events/EventsBusName'
   NewNvaEventsBucketsName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
@@ -730,7 +733,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.expandresource.ExpandedResourcePersistenceHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedResourcePersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -748,7 +751,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref NewNvaEventsBucketsName
+            EventBusName: !Ref NewNvaEventBusName
             Pattern:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:

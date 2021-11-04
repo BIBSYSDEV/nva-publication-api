@@ -71,6 +71,17 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @JacocoGenerated
+    @JsonProperty("id")
+    public URI getId() {
+        return this.fetchId();
+    }
+
+    @JacocoGenerated
+    public void setId() {
+        //DO nothing
+    }
+
+    @JacocoGenerated
     public List<Contributor> getContributors() {
         return contributors;
     }
@@ -236,7 +247,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         doiRequest.setDoi(this.getDoi());
         doiRequest.setContributors(this.getContributors());
         doiRequest.setCreatedDate(this.getCreatedDate());
-        doiRequest.setIdentifier(this.getIdentifier());
+        doiRequest.setIdentifier(this.fetchIdentifier());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
@@ -254,7 +265,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
+        return Objects.hash(fetchIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
                             getModifiedDate(),
                             getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
                             getResourceModifiedDate(),
@@ -273,7 +284,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
             return false;
         }
         ExpandedDoiRequest that = (ExpandedDoiRequest) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
+        return Objects.equals(fetchIdentifier(), that.fetchIdentifier())
                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()
@@ -289,6 +300,11 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getContributors(), that.getContributors())
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
+    }
+
+    @Override
+    public SortableIdentifier fetchIdentifier() {
+        return getIdentifier();
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete

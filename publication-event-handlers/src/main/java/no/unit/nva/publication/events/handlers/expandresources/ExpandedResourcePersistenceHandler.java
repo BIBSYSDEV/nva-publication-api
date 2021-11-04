@@ -2,7 +2,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
-import static no.unit.nva.publication.events.handlers.expandresources.IndexDocument.createIndexDocument;
+import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocument.createIndexDocument;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -20,9 +20,9 @@ import nva.commons.core.paths.UnixPath;
 public class ExpandedResourcePersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
 
+    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
 
     @JacocoGenerated
     public ExpandedResourcePersistenceHandler() {
@@ -44,8 +44,8 @@ public class ExpandedResourcePersistenceHandler
             attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
                 .orElseThrow();
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        var filePath = UnixPath.of(indexDocument.getType())
-            .addChild(indexDocument.getIdentifier().toString() + GZIP_ENDING);
+        var filePath = UnixPath.of(indexDocument.getMetadata().getIndex())
+            .addChild(indexDocument.getMetadata().getDocumentIdentifier().toString() + GZIP_ENDING);
         URI uri = attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
         return EventPayload.indexEntryEvent(uri);
     }

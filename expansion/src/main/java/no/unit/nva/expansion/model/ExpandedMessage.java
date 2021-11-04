@@ -3,6 +3,7 @@ package no.unit.nva.expansion.model;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.model.ExpandedMessage.TYPE;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
@@ -41,6 +42,17 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message.getOwner());
         expandedMessage.setOrganizationIds(organizationIds);
         return expandedMessage;
+    }
+
+    @JacocoGenerated
+    @JsonProperty("id")
+    public URI getId() {
+        return this.fetchId();
+    }
+
+    @JacocoGenerated
+    public void setId() {
+        //DO nothing
     }
 
     @JacocoGenerated
@@ -157,7 +169,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         Message message = new Message();
         message.setMessageType(this.getMessageType());
         message.setCreatedTime(this.getCreatedTime());
-        message.setIdentifier(this.getIdentifier());
+        message.setIdentifier(this.fetchIdentifier());
         message.setCustomerId(this.getCustomerId());
         message.setOwner(this.getOwner());
         message.setResourceIdentifier(this.getResourceIdentifier());
@@ -171,7 +183,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
+        return Objects.hash(fetchIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
                             getResourceIdentifier(),
                             getText(), getCreatedTime(), getResourceTitle(), getMessageType(), getOrganizationIds());
     }
@@ -186,7 +198,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
             return false;
         }
         ExpandedMessage that = (ExpandedMessage) o;
-        return Objects.equals(getIdentifier(), that.getIdentifier())
+        return Objects.equals(fetchIdentifier(), that.fetchIdentifier())
                && Objects.equals(getOwner(), that.getOwner())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
@@ -197,6 +209,11 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
                && Objects.equals(getResourceTitle(), that.getResourceTitle())
                && getMessageType() == that.getMessageType()
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
+    }
+
+    @Override
+    public SortableIdentifier fetchIdentifier() {
+        return getIdentifier();
     }
 
     // should not become public. An ExpandedMessage needs an Expansion service to be complete

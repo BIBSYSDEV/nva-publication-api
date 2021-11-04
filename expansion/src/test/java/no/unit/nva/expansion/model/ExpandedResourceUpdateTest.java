@@ -54,7 +54,7 @@ class ExpandedResourceUpdateTest {
         var publication = PublicationGenerator.randomPublication();
         var expandedResource = fromPublication(publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
-        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo("Publication")));
+        assertThat(json.get("type").textValue(), is(equalTo("Publication")));
     }
 
     @Test
@@ -63,7 +63,7 @@ class ExpandedResourceUpdateTest {
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var expandedResource = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
+        assertThat(json.get("type").textValue(), is(equalTo(ExpandedDoiRequest.TYPE)));
     }
 
     @Test
@@ -71,7 +71,7 @@ class ExpandedResourceUpdateTest {
         Message message = randomMessage();
         var expandedResource = ExpandedMessage.create(message, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
-        assertThat(json.get(ExpandedDatabaseEntry.TYPE_FIELD).textValue(), is(equalTo(ExpandedMessage.TYPE)));
+        assertThat(json.get("type").textValue(), is(equalTo(ExpandedMessage.TYPE)));
     }
 
     private Message randomMessage() {
