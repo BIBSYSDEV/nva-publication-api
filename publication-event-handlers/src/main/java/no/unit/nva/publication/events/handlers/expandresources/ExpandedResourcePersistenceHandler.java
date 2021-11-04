@@ -44,9 +44,17 @@ public class ExpandedResourcePersistenceHandler
             attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
                 .orElseThrow();
         var indexDocument = createIndexDocument(expandedResourceUpdate);
-        var filePath = UnixPath.of(indexDocument.getMetadata().getIndex())
-            .addChild(indexDocument.getMetadata().getDocumentIdentifier().toString() + GZIP_ENDING);
+        var filePath = createFilePath(indexDocument);
         URI uri = attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
         return EventPayload.indexEntryEvent(uri);
+    }
+
+    private UnixPath createFilePath(PersistedDocument indexDocument) {
+        return UnixPath.of(createPathBasedOnIndexName(indexDocument))
+            .addChild(indexDocument.getMetadata().getDocumentIdentifier().toString() + GZIP_ENDING);
+    }
+
+    private String createPathBasedOnIndexName(PersistedDocument indexDocument) {
+        return indexDocument.getMetadata().getIndex();
     }
 }
