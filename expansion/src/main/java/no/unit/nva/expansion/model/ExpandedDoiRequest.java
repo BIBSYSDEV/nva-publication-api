@@ -71,17 +71,6 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @JacocoGenerated
-    @JsonProperty("id")
-    public URI getId() {
-        return this.fetchId();
-    }
-
-    @JacocoGenerated
-    public void setId() {
-        //DO nothing
-    }
-
-    @JacocoGenerated
     public List<Contributor> getContributors() {
         return contributors;
     }

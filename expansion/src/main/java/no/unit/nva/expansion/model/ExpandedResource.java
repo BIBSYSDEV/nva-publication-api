@@ -70,6 +70,11 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         return uris;
     }
 
+    public List<URI> getPublicationContextUris() {
+        ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
+        return getPublicationContextUris(docAsObjectNode);
+    }
+
     @JacocoGenerated
     @JsonAnyGetter
     public Map<String, Object> getAllFields() {
@@ -82,15 +87,9 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDatabas
         return SortableIdentifier.fromUri(fetchId());
     }
 
-    @Override
-    @JsonIgnore
+
     public URI fetchId() {
         return URI.create(objectMapper.convertValue(this.allFields, ObjectNode.class).at(ID_JSON_PTR).textValue());
-    }
-
-    public List<URI> getPublicationContextUris() {
-        ObjectNode docAsObjectNode = objectMapper.convertValue(this.allFields, ObjectNode.class);
-        return getPublicationContextUris(docAsObjectNode);
     }
 
     @JacocoGenerated

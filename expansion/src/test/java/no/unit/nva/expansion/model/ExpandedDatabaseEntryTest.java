@@ -1,6 +1,7 @@
 package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
+import static no.unit.nva.expansion.utils.PublicationJsonPointers.IDENTIFIER_JSON_PTR;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.ID_JSON_PTR;
 import static no.unit.nva.publication.storage.model.Message.supportMessage;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -27,18 +28,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedDatabaseEntryTest {
 
-    private static ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
+    private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
 
     public static Stream<ExpandedDatabaseEntry> entryProvider() throws JsonProcessingException {
         return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
-    }
-
-    @ParameterizedTest(name = "should return id using non serializable method")
-    @MethodSource("entryProvider")
-    void shouldReturnIdUsingNonSerializableMethod(ExpandedDatabaseEntry entry) {
-        URI id = entry.fetchId();
-        URI serializedId = extractIdFromSerializedObject(entry);
-        assertThat(id, is(equalTo(serializedId)));
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method")
@@ -54,7 +47,7 @@ class ExpandedDatabaseEntryTest {
             .map(ExpandedDatabaseEntry::toJsonString)
             .map(objectMapper::readTree)
             .map(json -> (ObjectNode) json)
-            .map(json -> json.at(ID_JSON_PTR))
+            .map(json -> json.at(IDENTIFIER_JSON_PTR))
             .map(JsonNode::textValue)
             .map(URI::create)
             .orElseThrow();
