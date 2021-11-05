@@ -1,6 +1,8 @@
 package no.unit.nva.publication;
 
 import static java.lang.Integer.parseInt;
+import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -8,6 +10,7 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.attempt.Try;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +27,6 @@ public final class RequestUtil {
         "Missing claim in requestContext: ";
     public static final String PAGESIZE = "pagesize";
     public static final int DEFAULT_PAGESIZE = 10;
-
 
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
     public static final String USING_DEFAULT_VALUE = ", using default value: ";
@@ -59,11 +61,16 @@ public final class RequestUtil {
      * @throws ApiGatewayException exception thrown if value is missing
      */
     public static URI getCustomerId(RequestInfo requestInfo) throws ApiGatewayException {
-        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_CUSTOMER_ID);
-        if (!jsonNode.isMissingNode()) {
-            return URI.create(jsonNode.textValue());
-        }
-        throw new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID, null);
+        return requestInfo.getCustomerId()
+            .map(attempt(URI::create))
+            .flatMap(Try::toOptional)
+            .orElseThrow(() -> logErrorAndThrowException(requestInfo));
+    }
+
+    private static BadRequestException logErrorAndThrowException(RequestInfo requestInfo) {
+        String requestInfoJsonString = attempt(() -> dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow();
+        logger.debug("RequestInfo object:" + requestInfoJsonString);
+        return new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID);
     }
 
     /**
@@ -97,7 +104,7 @@ public final class RequestUtil {
                 logger.debug("got pagesize='" + pagesizeString + "'");
                 int pageSize = parseInt(pagesizeString);
                 if (pageSize > 0) {
-                    return  pageSize;
+                    return pageSize;
                 } else {
                     throw new BadRequestException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
                 }
