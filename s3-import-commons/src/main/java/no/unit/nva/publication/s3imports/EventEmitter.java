@@ -111,14 +111,6 @@ public class EventEmitter<T> {
         return putEventsRequests;
     }
 
-    protected void reduceEmittingRate() {
-        try {
-            Thread.sleep(ApplicationConstants.WAIT_TIME_IN_MILLIS_FOR_EMITTING_BATCHES_OF_FILENAMES);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void checkBus() {
         List<String> busNames = listAllBusNames();
         if (!busNames.contains(ApplicationConstants.EVENT_BUS_NAME)) {
@@ -212,16 +204,15 @@ public class EventEmitter<T> {
         List<List<PutEventsRequest>> requestBatches = createRequestBatches(eventRequests,
                                                                            numberOfEntriesEmittedPerBatch);
 
-        return sendRequestBatchesAndPauseAfterSendingEachBatch(requestBatches);
+        return sendRequestBatches(requestBatches);
     }
 
-    private List<PutEventsResult> sendRequestBatchesAndPauseAfterSendingEachBatch(
+    private List<PutEventsResult> sendRequestBatches(
         List<List<PutEventsRequest>> requestBatches) {
         List<PutEventsResult> putEventsResults = new ArrayList<>();
 
         for (List<PutEventsRequest> batch : requestBatches) {
             List<PutEventsResult> batchResults = emitBatch(batch);
-            reduceEmittingRate();
             putEventsResults.addAll(batchResults);
         }
         return putEventsResults;
@@ -237,7 +228,7 @@ public class EventEmitter<T> {
 
     private List<List<PutEventsRequest>> createRequestBatches(List<PutEventsRequest> eventRequests,
                                                               int numberOfEntriesEmittedPerBatch) {
-        ArrayList<List<PutEventsRequest>> result = new ArrayList<>();
+        List<List<PutEventsRequest>> result = new ArrayList<>();
 
         int numberOfRequests = calculateNumberOfRequestsSentPerBatch(numberOfEntriesEmittedPerBatch);
 

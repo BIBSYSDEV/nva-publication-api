@@ -52,29 +52,15 @@ public class EventEmitterTest {
     @Test
     public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
         EventEmitter<String> eventEmitter = newEventEmitter();
-        List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(eventBodies);
+        List<String> aLotOfEvents = generateInputBiggerThanEventEmittersRequestSize();
+        eventEmitter.addEvents(aLotOfEvents);
         int desiredBatchSize = 20;
         eventEmitter.emitEvents(desiredBatchSize);
-        int expectedNumberOfPutEventRequests = eventBodies.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
+        int expectedNumberOfPutEventRequests = aLotOfEvents.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
-        int expectedEmissionGroups = eventBodies.size() / desiredBatchSize;
-        assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
     }
 
-    @Test
-    public void emitEventsEmitsAllEventInEmissionGroupsPausingAfterEachEmissionGroup() {
 
-        EventEmitter<String> eventEmitter = newEventEmitter();
-        List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(eventBodies);
-        //The actual batch size will always be a multiple of the events that we send per request
-        int desiredEmittedEntriesPetBatch = 2 * NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-        eventEmitter.emitEvents(desiredEmittedEntriesPetBatch);
-
-        int expectedEmissionGroups = eventBodies.size() / desiredEmittedEntriesPetBatch;
-        assertThat(sleepingCounter.get(), is(equalTo(expectedEmissionGroups)));
-    }
 
     @Test
     public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
@@ -123,12 +109,7 @@ public class EventEmitterTest {
         return new EventEmitter<>(randomString(),
                                   randomString(),
                                   randomString(),
-                                  eventBridgeClient) {
-            @Override
-            protected void reduceEmittingRate() {
-                sleepingCounter.incrementAndGet();
-            }
-        };
+                                  eventBridgeClient);
     }
 
     private EventBridgeClient setupEventBridgeClient() {
