@@ -35,6 +35,7 @@ public class IdentityClientImpl implements IdentityClient {
     private static final String GET_USER_ERROR = "Error getting customerId from user";
     private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
     public static final String RESPONSE_STATUS_BODY = "Response status=%s, body=%s";
+    public static final String CREATING_REQUEST_TO = "Creating request to: ";
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final HttpClient httpClient;
     private final String identityServiceSecret;
@@ -98,6 +99,7 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private HttpRequest createGetUserHttpRequest(URI getUserUri) {
+        logger.info(CREATING_REQUEST_TO + getUserUri);
         return HttpRequest.newBuilder()
             .uri(getUserUri)
             .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
@@ -113,8 +115,10 @@ public class IdentityClientImpl implements IdentityClient {
     }
 
     private HttpRequest createGetCustomerHttpRequest(URI customerId) {
+        URI uri = createGetCustomerInternalUri(customerId);
+        logger.info(CREATING_REQUEST_TO + uri);
         return HttpRequest.newBuilder()
-            .uri(createGetCustomerInternalUri(customerId))
+            .uri(uri)
             .headers(ACCEPT, JSON_UTF_8.toString(), AUTHORIZATION, identityServiceSecret)
             .GET()
             .build();
