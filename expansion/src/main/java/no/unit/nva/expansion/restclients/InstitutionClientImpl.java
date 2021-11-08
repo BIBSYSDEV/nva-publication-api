@@ -52,7 +52,7 @@ public class InstitutionClientImpl implements InstitutionClient {
                 logWarning(response);
             }
         } catch (IOException | InterruptedException e) {
-            logger.error(GET_INSTITUTION_ERROR, e);
+            logger.warn(GET_INSTITUTION_ERROR, e);
         }
         return organizationIds;
     }
