@@ -60,6 +60,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private URI doi;
     @JsonProperty
     private List<Contributor> contributors;
+    @JsonProperty
     private Set<URI> organizationIds;
 
     public static ExpandedDoiRequest create(DoiRequest doiRequest,

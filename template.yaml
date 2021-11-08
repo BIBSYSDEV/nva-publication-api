@@ -916,6 +916,7 @@ Resources:
       MemorySize: 2048
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -942,6 +943,7 @@ Resources:
       MemorySize: 512
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 2
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId

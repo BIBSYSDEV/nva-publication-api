@@ -20,13 +20,6 @@ public final class ApplicationConstants {
     private static final Integer DEFAULT_MAX_SLEEP_TIME = 100;
     public static final Integer MAX_SLEEP_TIME = setupMaxSleepTime();
     public static final UnixPath ERRORS_FOLDER = UnixPath.of("errors");
-    public static final int WAIT_TIME_IN_MILLIS_FOR_EMITTING_BATCHES_OF_FILENAMES =
-        setupWaitTimeForEmittingEventBatches();
-
-    private static int setupWaitTimeForEmittingEventBatches() {
-        String waitTimeString = ENVIRONMENT.readEnv("BATCH_EMISSION_INTERVAL_MILLIS");
-        return Integer.parseInt(waitTimeString);
-    }
 
     private ApplicationConstants() {
 
