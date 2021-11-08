@@ -874,8 +874,8 @@ Resources:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: update-doi-status
-      Handler: no.unit.nva.doi.handler.UpdateDoiStatusHandler::handleRequest
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.doirequests.UpdateDoiStatusHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
       Role: !GetAtt UpdateDoiStatusLambdaRole.Arn

@@ -1,10 +1,9 @@
-package no.unit.nva.doi.handler;
+package no.unit.nva.publication.events.handlers.doirequests;
 
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
-import no.unit.nva.doi.UpdateDoiStatusProcess;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -16,7 +15,7 @@ import nva.commons.core.attempt.Failure;
 
 public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<DoiUpdateHolder, Void> {
 
-    public static final Void SUCCESSESFULLY_HANDLED_EVENT = null;
+    public static final Void SUCCESSFULLY_HANDLED_EVENT = null;
     private final ResourceService resourceService;
 
     /**
@@ -42,7 +41,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
                                        AwsEventBridgeEvent<AwsEventBridgeDetail<DoiUpdateHolder>> event,
                                        Context context) {
         attempt(() -> updateDoi(input)).orElseThrow(this::handleFailure);
-        return SUCCESSESFULLY_HANDLED_EVENT;
+        return SUCCESSFULLY_HANDLED_EVENT;
     }
 
     @JacocoGenerated
