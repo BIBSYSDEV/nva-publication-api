@@ -60,6 +60,7 @@ public class ResourceExpansionServiceTest {
     public static final int ORGANIZATION_AND_TWO_SUBUNITS = 3;
     public static final int NO_ORGANIZATION = 0;
     private static final UserInstance SAMPLE_SENDER = sampleSender();
+    public static final String NOT_FOUND = "Not found";
     private ResourceExpansionService service;
     private HttpClient httpClientMock;
 
@@ -96,6 +97,28 @@ public class ResourceExpansionServiceTest {
     @Test
     void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnNoResourceOwnerUserResponse() throws Exception {
         prepareHttpClientMockReturnsNothing();
+
+        Message message = createMessage();
+        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
+
+        assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
+        assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
+    }
+
+    @Test
+    void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnResourceOwnerUserNotFoundResponse() throws Exception {
+        prepareHttpClientMockReturnsNotFound();
+
+        Message message = createMessage();
+        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
+
+        assertThat(expandedMessage.getOrganizationIds().size(), is(NO_ORGANIZATION));
+        assertThatExpandedMessageHasNoDataLoss(message, expandedMessage);
+    }
+
+    @Test
+    void shouldReturnExpandedMessageWithEmptyOrganizationIdsOnResourceOwnerCustomerNotFoundResponse() throws Exception {
+        prepareHttpClientMockReturnsUserAndCustomerThenNotFound();
 
         Message message = createMessage();
         ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
@@ -198,11 +221,36 @@ public class ResourceExpansionServiceTest {
             .thenThrow(IOException.class);
     }
 
+    private void prepareHttpClientMockReturnsNotFound() throws IOException, InterruptedException {
+        HttpResponse<String> notFoundResponse = createNotFoundResponse();
+
+        when(httpClientMock.<String>send(any(), any()))
+                .thenReturn(notFoundResponse);
+    }
+
+    private HttpResponse<String> createNotFoundResponse() {
+        HttpResponse<String> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(404);
+        when(response.body()).thenReturn(NOT_FOUND);
+        return response;
+    }
+
     private void prepareHttpClientMockReturnsUser() throws IOException, InterruptedException {
         HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
         when(httpClientMock.<String>send(any(), any()))
             .thenReturn(userResponse)
             .thenThrow(IOException.class);
+    }
+
+    private void prepareHttpClientMockReturnsUserAndCustomerThenNotFound() throws IOException, InterruptedException {
+        HttpResponse<String> userResponse = createHttpResponse(createUserResponseAsJson());
+        HttpResponse<String> customerResponse = createHttpResponse(createCustomerResponseAsJson());
+        HttpResponse<String> notFoundResponse = createNotFoundResponse();
+
+        when(httpClientMock.<String>send(any(), any()))
+                .thenReturn(userResponse)
+                .thenReturn(customerResponse)
+                .thenReturn(notFoundResponse);
     }
 
     private void prepareHttpClientMockReturnsUserThenCustomer() throws IOException, InterruptedException {

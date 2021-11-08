@@ -25,6 +25,7 @@ public class InstitutionClientImpl implements InstitutionClient {
 
     private static final String GET_INSTITUTION_ERROR = "Error getting departments for institution";
     public static final String URI_QUERY = "?uri=";
+    public static final String RESPONSE_STATUS_BODY = "Response status=%s, body=%s";
 
     private final Logger logger = LoggerFactory.getLogger(InstitutionClientImpl.class);
     private final HttpClient httpClient;
@@ -47,11 +48,17 @@ public class InstitutionClientImpl implements InstitutionClient {
             if (response.statusCode() == HTTP_OK) {
                 InstitutionResponse institutionResponse = InstitutionResponse.fromJson(response.body());
                 organizationIds.addAll(institutionResponse.getOrganizationIds());
+            } else {
+                logWarning(response);
             }
         } catch (IOException | InterruptedException e) {
-            logger.warn(GET_INSTITUTION_ERROR, e);
+            logger.error(GET_INSTITUTION_ERROR, e);
         }
         return organizationIds;
+    }
+
+    private void logWarning(HttpResponse<String> response) {
+        logger.warn(String.format(RESPONSE_STATUS_BODY, response.statusCode(), response.body()));
     }
 
     private HttpRequest createGetInstitutionHierarchyHttpRequest(URI organizationId) {

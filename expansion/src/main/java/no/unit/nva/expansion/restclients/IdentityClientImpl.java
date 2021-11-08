@@ -34,6 +34,7 @@ public class IdentityClientImpl implements IdentityClient {
         "Could not read secrets for internal communication with identity service";
     private static final String GET_USER_ERROR = "Error getting customerId from user";
     private static final String GET_CUSTOMER_ERROR = "Error getting cristinId from customer";
+    public static final String RESPONSE_STATUS_BODY = "Response status=%s, body=%s";
     private final Logger logger = LoggerFactory.getLogger(IdentityClientImpl.class);
     private final HttpClient httpClient;
     private final String identityServiceSecret;
@@ -57,11 +58,17 @@ public class IdentityClientImpl implements IdentityClient {
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
                 customerId = UserResponse.fromJson(response.body()).getCustomerId();
+            } else {
+                logWarning(response);
             }
         } catch (IOException | InterruptedException e) {
             logger.warn(GET_USER_ERROR, e);
         }
         return Optional.ofNullable(customerId);
+    }
+
+    private void logWarning(HttpResponse<String> response) {
+        logger.warn(String.format(RESPONSE_STATUS_BODY, response.statusCode(), response.body()));
     }
 
     @Override
@@ -72,6 +79,8 @@ public class IdentityClientImpl implements IdentityClient {
             HttpResponse<String> response = httpClient.send(request, BodyHandlers.ofString());
             if (response.statusCode() == HTTP_OK) {
                 cristinId = CustomerResponse.fromJson(response.body()).getCristinId();
+            } else {
+                logWarning(response);
             }
         } catch (IOException | InterruptedException e) {
             logger.warn(GET_CUSTOMER_ERROR, e);
