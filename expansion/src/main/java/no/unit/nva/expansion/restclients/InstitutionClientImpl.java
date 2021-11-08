@@ -26,6 +26,7 @@ public class InstitutionClientImpl implements InstitutionClient {
     private static final String GET_INSTITUTION_ERROR = "Error getting departments for institution";
     public static final String URI_QUERY = "?uri=";
     public static final String RESPONSE_STATUS_BODY = "Response status=%s, body=%s";
+    public static final String CREATING_REQUEST_TO = "Creating request to: ";
 
     private final Logger logger = LoggerFactory.getLogger(InstitutionClientImpl.class);
     private final HttpClient httpClient;
@@ -62,8 +63,10 @@ public class InstitutionClientImpl implements InstitutionClient {
     }
 
     private HttpRequest createGetInstitutionHierarchyHttpRequest(URI organizationId) {
+        URI uri = createGetInstitutionUri(organizationId);
+        logger.info(CREATING_REQUEST_TO + uri);
         return HttpRequest.newBuilder()
-                .uri(createGetInstitutionUri(organizationId))
+                .uri(uri)
                 .headers(ACCEPT, JSON_UTF_8.toString())
                 .GET()
                 .build();
