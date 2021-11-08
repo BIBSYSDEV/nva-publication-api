@@ -1,6 +1,6 @@
-package no.unit.nva.doi.handler;
+package no.unit.nva.publication.events.handlers.doirequests;
 
-import static no.unit.nva.doi.UpdateDoiStatusProcess.ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT;
+import static no.unit.nva.publication.events.handlers.doirequests.UpdateDoiStatusProcess.ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -17,8 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.time.Instant;
-import no.unit.nva.doi.UpdateDoiStatusProcess;
-import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -36,15 +34,16 @@ import org.mockito.ArgumentCaptor;
 
 class UpdateDoiStatusHandlerTest {
 
-    public static final String BAD_EVENT_WITH_DATE_IN_FUTURE = "update_doi_status_event_bad_date_in_the_future.json";
-    public static final String NULL_OBJECT = "{}";
+    public static final String BAD_EVENT_WITH_DATE_IN_FUTURE =
+        "doirequests/update_doi_status_event_bad_date_in_the_future.json";
+    public static final String EMPTY_OBJECT = "{}";
     public static final URI EXAMPLE_DOI = URI.create("https://doi.org/10.1103/physrevd.100.085005");
     public static final Instant EXAMPLE_DOI_MODIFIED_DATE = Instant.parse("2020-08-14T10:30:10.019991Z");
     private static final SortableIdentifier PUBLICATION_IDENTIFIER_IN_RESOURCES =
         new SortableIdentifier("41076d56-2839-11eb-b644-1bb5be85c01b");
     private static final String BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO =
-        "update_doi_status_event_bad_input_not_matching_pojo.json";
-    private static final String OK_EVENT = "update_doi_status_event.json";
+        "doirequests/update_doi_status_event_bad_input_not_matching_pojo.json";
+    private static final String OK_EVENT = "doirequests/update_doi_status_event.json";
     private UpdateDoiStatusHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
@@ -93,7 +92,7 @@ class UpdateDoiStatusHandlerTest {
             () -> handler.handleRequest(eventInputStream, outputStream, context));
 
         assertThat(actualException.getMessage(), is(equalTo(String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
-            NULL_OBJECT))));
+                                                                          EMPTY_OBJECT))));
     }
 
     @Test

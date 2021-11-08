@@ -180,7 +180,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         S3Driver s3Driver = new S3Driver(s3Client, errorFileUri.getUri().getHost());
         ImportResult<AwsEventBridgeEvent<FileContentsEvent<JsonNode>>> reportContent =
             ImportResult.reportFailure(event, fail.getException());
-        attempt(()->s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
+        attempt(() -> s3Driver.insertFile(errorFileUri.toS3bucketPath(), reportContent.toJsonString())).orElseThrow();
     }
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,

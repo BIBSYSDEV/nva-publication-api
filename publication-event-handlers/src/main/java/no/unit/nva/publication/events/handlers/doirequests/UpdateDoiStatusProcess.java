@@ -1,9 +1,8 @@
-package no.unit.nva.doi;
+package no.unit.nva.publication.events.handlers.doirequests;
 
 import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import java.time.Instant;
-import no.unit.nva.doi.handler.exception.DependencyRemoteNvaApiException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
