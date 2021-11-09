@@ -100,6 +100,11 @@ public final class ResourceBuilder {
         return this;
     }
 
+    public ResourceBuilder withRowVersion(String rowVersion) {
+        resource.setRowVersion(rowVersion);
+        return this;
+    }
+
     public Resource build() {
         return resource;
     }

@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -21,7 +22,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields","PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
@@ -59,10 +60,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
     private Set<AdditionalIdentifier> additionalIdentifiers;
     @JsonProperty
     private List<URI> subjects;
-
-    public Resource() {
-
-    }
+    @JsonProperty(ROW_VERSION)
+    private String rowVersion;
 
     public static Resource resourceQueryObject(UserInstance userInstance, SortableIdentifier resourceIdentifier) {
         return emptyResource(userInstance.getUserIdentifier(), userInstance.getOrganizationUri(),
@@ -104,6 +103,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
             .withHandle(publication.getHandle())
             .withAdditionalIdentifiers(publication.getAdditionalIdentifiers())
             .withSubjects(publication.getSubjects())
+            .withRowVersion(nextRowVersion())
             .build();
     }
 
@@ -114,6 +114,10 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public static ResourceBuilder builder() {
         return new ResourceBuilder();
+    }
+
+    public static String nextRowVersion() {
+        return UUID.randomUUID().toString();
     }
 
     @JacocoGenerated
@@ -290,7 +294,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
             .withDoi(getDoi())
             .withHandle(getHandle())
             .withAdditionalIdentifiers(getAdditionalIdentifiers())
-            .withSubjects(getSubjects());
+            .withSubjects(getSubjects())
+            .withRowVersion(getRowVersion());
     }
 
     @Override
@@ -314,6 +319,17 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
             .withAdditionalIdentifiers(getAdditionalIdentifiers())
             .withSubjects(getSubjects())
             .build();
+    }
+
+    @Override
+    @JacocoGenerated
+    public String getRowVersion() {
+        return rowVersion;
+    }
+
+    @JacocoGenerated
+    public void setRowVersion(String rowVersion) {
+        this.rowVersion = rowVersion;
     }
 
     @Override

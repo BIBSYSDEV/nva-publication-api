@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.storage.model.ResourceUpdate.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
@@ -33,6 +34,7 @@ public class Message implements WithIdentifier,
     private Instant createdTime;
     private String resourceTitle;
     private MessageType messageType;
+    private String rowVersion;
 
     @JacocoGenerated
     public Message() {
@@ -192,6 +194,17 @@ public class Message implements WithIdentifier,
         throw new UnsupportedOperationException();
     }
 
+    @JacocoGenerated
+    @Override
+    public String getRowVersion() {
+        return this.rowVersion;
+    }
+
+    @JacocoGenerated
+    public void setRowVersion(String rowVersion) {
+        this.rowVersion = rowVersion;
+    }
+
     @Override
     @JacocoGenerated
     public int hashCode() {
@@ -228,6 +241,21 @@ public class Message implements WithIdentifier,
         return toJsonString();
     }
 
+    public MessageBuilder copy() {
+        return Message.builder()
+            .withCreatedTime(this.getCreatedTime())
+            .withCustomerId(this.getCustomerId())
+            .withIdentifier(this.getIdentifier())
+            .withMessageType(this.getMessageType())
+            .withResourceIdentifier(getResourceIdentifier())
+            .withStatus(this.getStatus())
+            .withOwner(this.getOwner())
+            .withSender(this.getSender())
+            .withText(this.getText())
+            .withResourceTitle(this.getResourceTitle())
+            .withRowVersion(this.getRowVersion());
+    }
+
     private static MessageBuilder buildMessage(UserInstance sender, Publication publication,
                                                String messageText, SortableIdentifier messageIdentifier,
                                                Clock clock) {
@@ -240,7 +268,8 @@ public class Message implements WithIdentifier,
             .withOwner(publication.getOwner())
             .withResourceTitle(extractTitle(publication))
             .withCreatedTime(clock.instant())
-            .withIdentifier(messageIdentifier);
+            .withIdentifier(messageIdentifier)
+            .withRowVersion(nextRowVersion());
     }
 
     private static String extractTitle(Publication publication) {

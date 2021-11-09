@@ -98,4 +98,9 @@ public class DoiRequestBuilder {
     public DoiRequest build() {
         return this.doiRequest;
     }
+
+    public DoiRequestBuilder withRowVersion(String rowVersion) {
+        doiRequest.setRowVersion(rowVersion);
+        return this;
+    }
 }

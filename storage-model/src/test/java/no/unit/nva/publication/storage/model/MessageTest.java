@@ -1,5 +1,6 @@
 package no.unit.nva.publication.storage.model;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
@@ -7,6 +8,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import com.amazonaws.services.kms.model.CustomKeyStoreInvalidStateException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
@@ -17,6 +19,7 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
 public class MessageTest {
@@ -83,6 +86,19 @@ public class MessageTest {
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
         Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
         assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
+    }
+
+    @Test
+    void shouldReturnCopyWithoutLossOfInformation(){
+        Clock clock = Clock.systemDefaultZone();
+        Publication publication = PublicationGenerator.randomPublication();
+        Message message = Message.supportMessage(SAMPLE_SENDER, publication,
+                                                 randomString(),
+                                                 SortableIdentifier.next(),
+                                                 clock);
+        var copy = message.copy().build();
+        assertThat(copy, doesNotHaveEmptyValues());
+        assertThat(copy,is(equalTo(message)));
     }
 
     private static UserInstance sampleSender() {
