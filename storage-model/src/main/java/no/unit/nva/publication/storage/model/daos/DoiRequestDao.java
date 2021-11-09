@@ -12,7 +12,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
-@JsonTypeName("DoiRequest")
+@JsonTypeName(DoiRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class DoiRequestDao extends Dao<DoiRequest>
     implements
@@ -20,7 +20,7 @@ public class DoiRequestDao extends Dao<DoiRequest>
     JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "a";
-
+    public static final String TYPE = "DoiRequest";
     private DoiRequest data;
 
     @JacocoGenerated
@@ -35,10 +35,10 @@ public class DoiRequestDao extends Dao<DoiRequest>
 
     public static DoiRequestDao queryObject(URI publisherId, String owner, SortableIdentifier doiRequestIdentifier) {
         DoiRequest doi = DoiRequest.builder()
-                             .withIdentifier(doiRequestIdentifier)
-                             .withOwner(owner)
-                             .withCustomerId(publisherId)
-                             .build();
+            .withIdentifier(doiRequestIdentifier)
+            .withOwner(owner)
+            .withCustomerId(publisherId)
+            .build();
 
         return new DoiRequestDao(doi);
     }
@@ -50,10 +50,10 @@ public class DoiRequestDao extends Dao<DoiRequest>
     public static DoiRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                      SortableIdentifier resourceIdentifier) {
         DoiRequest doi = DoiRequest.builder()
-                             .withResourceIdentifier(resourceIdentifier)
-                             .withOwner(resourceOwner.getUserIdentifier())
-                             .withCustomerId(resourceOwner.getOrganizationUri())
-                             .build();
+            .withResourceIdentifier(resourceIdentifier)
+            .withOwner(resourceOwner.getUserIdentifier())
+            .withCustomerId(resourceOwner.getOrganizationUri())
+            .build();
         return new DoiRequestDao(doi);
     }
 

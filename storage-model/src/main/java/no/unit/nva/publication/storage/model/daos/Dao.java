@@ -3,16 +3,20 @@ package no.unit.nva.publication.storage.model.daos;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_PK_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_SK_FORMAT;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_FORMAT;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
@@ -23,9 +27,9 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 
 @JsonSubTypes({
-    @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
-    @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
-    @JsonSubTypes.Type(name = "Message", value = MessageDao.class),
+    @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
+    @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
+    @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
 })
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
     implements DynamoEntry,
@@ -38,10 +42,32 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
     public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
         "Daos cannot set their identifier. They get it from their contained data";
 
+
+
+
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
     }
+
+    public static String scanFilterExpression() {
+        return "begins_with (#PK, :Resource) or "
+               +"begins_with(#PK, :DoiRequest) or "
+               +"begins_with(#PK, :Message)";
+    }
+
+    // replace the hash values in the filter expression with the actual key name
+    public static Map<String, String> scanFilterExpressionAttributeNames() {
+        return Map.of("#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME);
+    }
+
+    // replace the colon values in the filter expression with the actual value
+    public  static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
+        return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
+                      ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE+KEY_FIELDS_DELIMITER),
+                      ":Message", new AttributeValue(MessageDao.TYPE+KEY_FIELDS_DELIMITER));
+    }
+
 
     @Override
     public final String getPrimaryKeyPartitionKey() {

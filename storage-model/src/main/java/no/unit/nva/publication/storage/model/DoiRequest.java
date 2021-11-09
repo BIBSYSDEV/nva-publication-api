@@ -26,6 +26,8 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.core.JacocoGenerated;
 
@@ -41,7 +43,7 @@ public class DoiRequest
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    public static final String TYPE = DoiRequest.class.getSimpleName();
+    public static final String TYPE = "DoiRequest";
 
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
 
@@ -348,8 +350,14 @@ public class DoiRequest
         return rowVersion;
     }
 
+    @Override
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
+    }
+
+    @Override
+    public Dao<?> toDao() {
+        return new DoiRequestDao(this);
     }
 
     @Override

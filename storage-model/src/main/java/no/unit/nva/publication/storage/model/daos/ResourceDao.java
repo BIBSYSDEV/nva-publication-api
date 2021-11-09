@@ -16,7 +16,7 @@ import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.SingletonCollector;
 
-@JsonTypeName("Resource")
+@JsonTypeName(ResourceDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class ResourceDao extends Dao<Resource>
     implements JoinWithResource,
@@ -24,6 +24,7 @@ public class ResourceDao extends Dao<Resource>
                WithCristinIdentifier {
 
     public static final String CRISTIN_SOURCE = "Cristin";
+    public static final String TYPE = "Resource";
     private static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "b";
     private Resource data;
 

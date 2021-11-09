@@ -12,6 +12,8 @@ import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.MessageDao;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
@@ -24,6 +26,7 @@ public class Message implements WithIdentifier,
                                 JsonSerializable {
 
     public static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.SUPPORT;
+    public static final String TYPE = "Message";
     private SortableIdentifier identifier;
     private String owner;
     private URI customerId;
@@ -200,9 +203,15 @@ public class Message implements WithIdentifier,
         return this.rowVersion;
     }
 
+    @Override
     @JacocoGenerated
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
+    }
+
+    @Override
+    public Dao<?> toDao() {
+        return new MessageDao(this);
     }
 
     @Override

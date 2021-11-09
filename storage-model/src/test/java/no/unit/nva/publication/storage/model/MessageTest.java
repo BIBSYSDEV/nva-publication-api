@@ -8,7 +8,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import com.amazonaws.services.kms.model.CustomKeyStoreInvalidStateException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
 import java.time.Clock;
@@ -49,9 +48,9 @@ public class MessageTest {
     @Test
     public void toStringReturnsAJsonString() throws JsonProcessingException {
         Message message = Message.builder()
-                              .withStatus(MessageStatus.UNREAD)
-                              .withIdentifier(SortableIdentifier.next())
-                              .build();
+            .withStatus(MessageStatus.UNREAD)
+            .withIdentifier(SortableIdentifier.next())
+            .build();
         String json = message.toString();
         Message recreatedMessage = dynamoDbObjectMapper.readValue(json, Message.class);
         assertThat(recreatedMessage, is(equalTo(message)));
@@ -89,7 +88,7 @@ public class MessageTest {
     }
 
     @Test
-    void shouldReturnCopyWithoutLossOfInformation(){
+    void shouldReturnCopyWithoutLossOfInformation() {
         Clock clock = Clock.systemDefaultZone();
         Publication publication = PublicationGenerator.randomPublication();
         Message message = Message.supportMessage(SAMPLE_SENDER, publication,
@@ -98,7 +97,7 @@ public class MessageTest {
                                                  clock);
         var copy = message.copy().build();
         assertThat(copy, doesNotHaveEmptyValues());
-        assertThat(copy,is(equalTo(message)));
+        assertThat(copy, is(equalTo(message)));
     }
 
     private static UserInstance sampleSender() {
@@ -109,10 +108,10 @@ public class MessageTest {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
         EntityDescription entityDescription = new EntityDescription.Builder().withMainTitle(randomString()).build();
         return new Publication.Builder()
-                   .withPublisher(publisher)
-                   .withOwner(SAMPLE_OWNER.getUserIdentifier())
-                   .withIdentifier(resourceIdentifier)
-                   .withEntityDescription(entityDescription)
-                   .build();
+            .withPublisher(publisher)
+            .withOwner(SAMPLE_OWNER.getUserIdentifier())
+            .withIdentifier(resourceIdentifier)
+            .withEntityDescription(entityDescription)
+            .build();
     }
 }
