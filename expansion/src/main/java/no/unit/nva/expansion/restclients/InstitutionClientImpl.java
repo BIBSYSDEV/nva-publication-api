@@ -24,9 +24,9 @@ import static no.unit.nva.expansion.ExpansionConstants.INSTITUTION_SERVICE_PATH;
 public class InstitutionClientImpl implements InstitutionClient {
 
     private static final String GET_INSTITUTION_ERROR = "Error getting departments for institution";
-    public static final String URI_QUERY = "?uri=";
     public static final String RESPONSE_STATUS_BODY = "Response status=%s, body=%s";
     public static final String CREATING_REQUEST_TO = "Creating request to: ";
+    public static final String URI_QUERY_PARAM = "uri";
 
     private final Logger logger = LoggerFactory.getLogger(InstitutionClientImpl.class);
     private final HttpClient httpClient;
@@ -73,9 +73,9 @@ public class InstitutionClientImpl implements InstitutionClient {
     }
 
     private URI createGetInstitutionUri(URI organizationId) {
-        String query = URI_QUERY + organizationId;
         return new UriWrapper(API_SCHEME, API_HOST)
-                .addChild(INSTITUTION_SERVICE_PATH + query)
+                .addChild(INSTITUTION_SERVICE_PATH)
+                .addQueryParameter(URI_QUERY_PARAM, organizationId.toString())
                 .getUri();
     }
 }
