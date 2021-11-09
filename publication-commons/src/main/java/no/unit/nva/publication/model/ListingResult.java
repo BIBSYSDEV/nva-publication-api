@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model;
 
+import static java.util.Objects.nonNull;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
@@ -31,7 +32,7 @@ public class ListingResult<T> {
 
     @JacocoGenerated
     public List<T> getDatabaseEntries() {
-        return databaseEntries;
+        return nonNull(databaseEntries) ? databaseEntries : Collections.emptyList();
     }
 
     @JacocoGenerated

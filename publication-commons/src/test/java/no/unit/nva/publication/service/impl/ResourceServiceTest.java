@@ -820,19 +820,22 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication, randomString());
 
         var listingResult = fetchFirstDataEntry();
-        var databaseEntryInFirstScan = extractIdentifierFromFirstScanResult(listingResult);
+        var identifierInFirstScan = extractIdentifierFromFirstScanResult(listingResult);
 
         var secondListingResult = fetchRestOfDatabaseEntries(listingResult);
-
-        var expectedIdentifiers =
-            new ArrayList<>(List.of(samplePublication.getIdentifier(), sampleDoiRequestIdentifier, sampleMessageIdentifier));
-        expectedIdentifiers.remove(databaseEntryInFirstScan);
-
-        var actualIdentifiers = secondListingResult
+        var identifiersFromSecondScan = secondListingResult
             .getDatabaseEntries().stream()
             .map(ResourceUpdate::getIdentifier)
             .collect(Collectors.toList());
-        assertThat(actualIdentifiers, containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
+
+        var expectedIdentifiers =
+            new ArrayList<>(List.of(samplePublication.getIdentifier(),
+                                    sampleDoiRequestIdentifier,
+                                    sampleMessageIdentifier)
+            );
+        expectedIdentifiers.remove(identifierInFirstScan);
+        assertThat(identifiersFromSecondScan,
+                   containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
     }
 
     @Test
@@ -850,12 +853,15 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
 
         for (var firstUpdate : firstUpdates) {
-            ResourceUpdate secondUpdate = secondUpdates.stream()
-                .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
-                .collect(SingletonCollector.collect());
-
+            ResourceUpdate secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
             assertThat(secondUpdate.getRowVersion(), is(not(equalTo(firstUpdate.getRowVersion()))));
         }
+    }
+
+    private ResourceUpdate findMatchingSecondUpdate(List<ResourceUpdate> secondUpdates, ResourceUpdate firstUpdate) {
+        return secondUpdates.stream()
+            .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
+            .collect(SingletonCollector.collect());
     }
 
     private List<ResourceUpdate> createManySampleResources(int numberOfResources) {
