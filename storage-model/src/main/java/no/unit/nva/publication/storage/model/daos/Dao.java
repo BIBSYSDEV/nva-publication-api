@@ -56,12 +56,12 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & Resource
                +"begins_with(#PK, :Message)";
     }
 
-    // replace the hash values in the filter expression with the actual key name
+    // replaces the hash values in the filter expression with the actual key name
     public static Map<String, String> scanFilterExpressionAttributeNames() {
         return Map.of("#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME);
     }
 
-    // replace the colon values in the filter expression with the actual value
+    // replaces the colon values in the filter expression with the actual value
     public  static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE+KEY_FIELDS_DELIMITER),
