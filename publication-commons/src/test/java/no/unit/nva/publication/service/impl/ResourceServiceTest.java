@@ -813,12 +813,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    void shouldScanNEntriesInDatabaseAfterMarkerX() throws TransactionFailedException {
-        var publication = PublicationGenerator.randomPublication();
-        var createdPublication = resourceService.createPublication(publication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(createdPublication);
-        var userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
-        var messageIdentifier = messageService.createSimpleMessage(userInstance, publication, randomString());
+    void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws TransactionFailedException {
+        var samplePublication = resourceService.createPublication( PublicationGenerator.randomPublication());
+        var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
+        var userInstance = new UserInstance(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication, randomString());
 
         var listingResult = fetchFirstDataEntry();
         var databaseEntryInFirstScan = extractIdentifierFromFirstScanResult(listingResult);
@@ -826,7 +825,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         var secondListingResult = fetchRestOfDatabaseEntries(listingResult);
 
         var expectedIdentifiers =
-            new ArrayList<>(List.of(createdPublication.getIdentifier(), doiRequestIdentifier, messageIdentifier));
+            new ArrayList<>(List.of(samplePublication.getIdentifier(), sampleDoiRequestIdentifier, sampleMessageIdentifier));
         expectedIdentifiers.remove(databaseEntryInFirstScan);
 
         var actualIdentifiers = secondListingResult
@@ -838,9 +837,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     void shouldUpdateResourceRowVersionWhenRefreshesEntry() {
-        int numberOfResources = 40;
-        int numberOfTotalExpectedDatabaseEntries = 2 * numberOfResources; //due to identity entries
-        var sampleResources = createManySampleResources(numberOfResources);
+        int arbitraryNumberOfResources = 40;
+        int numberOfTotalExpectedDatabaseEntries = 2 * arbitraryNumberOfResources; //due to identity entries
+        var sampleResources = createManySampleResources(arbitraryNumberOfResources);
 
         resourceService.refreshResources(sampleResources);
         var firstUpdates =
