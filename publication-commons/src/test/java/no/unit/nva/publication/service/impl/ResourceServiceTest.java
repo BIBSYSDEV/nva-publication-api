@@ -20,7 +20,6 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.core.IsSame.sameInstance;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,7 +50,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
@@ -72,7 +70,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -122,10 +119,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
+    void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
         throws TransactionFailedException, NotFoundException, JsonProcessingException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
-        assertThat(inputPublication.getSubjects(),is(not(nullValue())));
+        assertThat(inputPublication.getSubjects(), is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
         Instant publicationPredefinedTime = Instant.now();
 
@@ -136,14 +133,14 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
         inputPublication.setIdentifier(savedPublicationIdentifier);
-        Diff diff = JAVERS.compare(inputPublication,savedPublication);
+        Diff diff = JAVERS.compare(inputPublication, savedPublication);
         assertThat(publicationPredefinedTime, is(not(equalTo(RESOURCE_CREATION_TIME))));
-        assertThat(diff.prettyPrint(),savedPublication, is(equalTo(inputPublication)));
+        assertThat(diff.prettyPrint(), savedPublication, is(equalTo(inputPublication)));
     }
 
     @Test
-    public void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
-            throws TransactionFailedException, NotFoundException {
+    void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
+        throws TransactionFailedException, NotFoundException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
         Instant predefinedPublishTime = Instant.now();
 
@@ -153,9 +150,9 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         inputPublication.setStatus(PublicationStatus.PUBLISHED);
 
         SortableIdentifier savedPublicationIdentifier =
-                resourceService
-                        .createPublicationWhilePersistingEntryFromLegacySystems(inputPublication)
-                        .getIdentifier();
+            resourceService
+                .createPublicationWhilePersistingEntryFromLegacySystems(inputPublication)
+                .getIdentifier();
         Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 
         // inject publicationIdentifier for making the inputPublication and the savedPublication equal.
@@ -166,8 +163,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatoform() throws NotFoundException,
-                                                                          TransactionFailedException {
+    void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatoform() throws NotFoundException,
+                                                                                           TransactionFailedException {
 
         Publication resource = publicationWithIdentifier();
         Publication savedResource = resourceService.createPublication(resource);
@@ -183,13 +180,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
+    void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
         throws TransactionFailedException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication collidingResource = sampleResource.copy()
-                                                  .withPublisher(anotherPublisher())
-                                                  .withOwner(ANOTHER_OWNER)
-                                                  .build();
+            .withPublisher(anotherPublisher())
+            .withOwner(ANOTHER_OWNER)
+            .build();
         ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers();
         resourceService.createPublication(sampleResource);
         Executable action = () -> resourceService.createPublication(collidingResource);
@@ -201,7 +198,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
+    void createResourceSavesResourcesWithSameOwnerAndPublisherButDifferentIdentifier()
         throws TransactionFailedException {
         final Publication sampleResource = publicationWithIdentifier();
         final Publication anotherResource = publicationWithIdentifier();
@@ -211,7 +208,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws TransactionFailedException {
+    void createPublicationReturnsNullWhenResourceDoesNotBecomeAvailable() throws TransactionFailedException {
         Publication publication = publicationWithoutIdentifier();
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
 
@@ -221,14 +218,14 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierReturnsNotFoundWhenResourceDoesNotExist() {
+    void getResourceByIdentifierReturnsNotFoundWhenResourceDoesNotExist() {
         SortableIdentifier nonExistingIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublication(SAMPLE_USER, nonExistingIdentifier);
         assertThrows(NotFoundException.class, action);
     }
 
     @Test
-    public void getResourceByIdentifierReturnsResourceWhenResourceExists()
+    void getResourceByIdentifierReturnsResourceWhenResourceExists()
         throws ApiGatewayException {
         Publication sampleResource = createSampleResourceWithDoi();
         Publication savedResource = resourceService.getPublication(SAMPLE_USER, sampleResource.getIdentifier());
@@ -236,7 +233,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
+    void whenPublicationOwnerIsUpdatedTheResourceEntryMaintainsTheRestResourceMetadata()
         throws ApiGatewayException {
         Publication sampleResource = createSampleResourceWithDoi();
 
@@ -255,7 +252,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
+    void whenPublicationOwnerIsUpdatedThenBothOrganizationAndUserAreUpdated()
         throws ApiGatewayException {
         Publication originalResource = createSampleResourceWithDoi();
         UserInstance oldOwner = extractUserInstance(originalResource);
@@ -270,7 +267,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
+    void whenPublicationOwnerIsUpdatedTheModifiedDateIsUpdated()
         throws ApiGatewayException {
         Publication sampleResource = createSampleResourceWithDoi();
         UserInstance oldOwner = extractUserInstance(sampleResource);
@@ -286,7 +283,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceIsUpdatedWhenResourceUpdateIsReceived() throws TransactionFailedException, NotFoundException {
+    void resourceIsUpdatedWhenResourceUpdateIsReceived() throws TransactionFailedException, NotFoundException {
         Publication resource = createSampleResourceWithDoi();
         Publication actualOriginalResource = resourceService.getPublication(resource);
         assertThat(actualOriginalResource, is(equalTo(resource)));
@@ -300,7 +297,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws TransactionFailedException {
+    void resourceUpdateFailsWhenUpdateChangesTheOwnerPartOfThePrimaryKey() throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
 
@@ -309,7 +306,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
+    void resourceUpdateFailsWhenUpdateChangesTheOrganizationPartOfThePrimaryKey()
         throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
@@ -319,7 +316,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
+    void resourceUpdateFailsWhenUpdateChangesTheIdentifierPartOfThePrimaryKey()
         throws TransactionFailedException {
         Publication resource = createSampleResourceWithDoi();
         Publication resourceUpdate = updateResourceTitle(resource);
@@ -329,7 +326,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceThrowsTransactionFailedExceptionWithInternalCauseWhenCreatingResourceFails() {
+    void createResourceThrowsTransactionFailedExceptionWithInternalCauseWhenCreatingResourceFails() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
         RuntimeException expectedCause = new RuntimeException(expectedMessage);
@@ -346,7 +343,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
+    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
         throws TransactionFailedException {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         Publication savedPublication = resourceService.insertPreexistingPublication(publication);
@@ -354,7 +351,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
+    void getResourcePropagatesExceptionWithWhenGettingResourceFailsForUnknownReason() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
         RuntimeException exptedMessage = new RuntimeException(expectedMessage);
@@ -370,7 +367,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
+    void getResourcesByOwnerReturnsAllResourcesOwnedByUser() {
         Set<Publication> userResources = createSamplePublications();
 
         List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
@@ -380,7 +377,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
+    void getResourcesByOwnerReturnsEmptyListWhenUseHasNoPublications() {
 
         List<Publication> actualResources = resourceService.getPublicationsByOwner(SAMPLE_USER);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
@@ -389,7 +386,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerPropagatesExceptionWhenExceptionIsThrown() {
+    void getResourcesByOwnerPropagatesExceptionWhenExceptionIsThrown() {
         AmazonDynamoDB client = mock(AmazonDynamoDB.class);
         String expectedMessage = "expectedMessage";
         RuntimeException expectedException = new RuntimeException(expectedMessage);
@@ -404,11 +401,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcesByOwnerPropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
+    void getResourcesByOwnerPropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
         QueryResult responseWithInvalidItem = new QueryResult()
-                .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
+            .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
         ResourceService failingResourceService = new ResourceService(mockClient, clock);
@@ -419,7 +416,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourcePropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
+    void getResourcePropagatesJsonProcessingExceptionWhenExceptionIsThrown() {
 
         AmazonDynamoDB mockClient = mock(AmazonDynamoDB.class);
         Item invalidItem = new Item().withString(SOME_INVALID_FIELD, SOME_STRING);
@@ -436,7 +433,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishResourceSetsPublicationStatusToPublished()
+    void publishResourceSetsPublicationStatusToPublished()
         throws ApiGatewayException {
 
         Publication resource = createSampleResourceWithDoi();
@@ -445,30 +442,30 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Publication actualResource = resourceService.getPublication(resource);
 
         Publication expectedResource = resource.copy()
-                                           .withStatus(PublicationStatus.PUBLISHED)
-                                           .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-                                           .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-                                           .build();
+            .withStatus(PublicationStatus.PUBLISHED)
+            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
+            .build();
 
         assertThat(actualResource, is(equalTo(expectedResource)));
     }
 
     @Test
-    public void publishResourceReturnsUpdatedResource() throws ApiGatewayException {
+    void publishResourceReturnsUpdatedResource() throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
         publishResource(resource);
         Publication updatedResource = resourceService.getPublication(resource);
         Publication expectedResource = resource.copy()
-                                           .withStatus(PublicationStatus.PUBLISHED)
-                                           .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-                                           .withPublishedDate(RESOURCE_MODIFICATION_TIME)
-                                           .build();
+            .withStatus(PublicationStatus.PUBLISHED)
+            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+            .withPublishedDate(RESOURCE_MODIFICATION_TIME)
+            .build();
 
         assertThat(updatedResource, is(equalTo(expectedResource)));
     }
 
     @Test
-    public void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
+    void publishPublicationReturnsResponseThatRequestWasAcceptedWhenResourceIsNotPublished()
         throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
 
@@ -480,7 +477,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
+    void publishPublicationReturnsPublicationResponseThatNoActionWasTakenWhenResourceIsAlreadyPublished()
         throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
 
@@ -493,7 +490,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void byTypeCustomerStatusIndexIsUpdatedWhenResourceIsUpdated() throws ApiGatewayException {
+    void byTypeCustomerStatusIndexIsUpdatedWhenResourceIsUpdated() throws ApiGatewayException {
         Publication resourceWithStatusDraft = createSampleResourceWithDoi();
         ResourceDao resourceDaoWithStatusDraft = new ResourceDao(Resource.fromPublication(resourceWithStatusDraft));
 
@@ -509,7 +506,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
     }
 
-    public void verifyThatTheSampleHasStillStatusDraft(Publication resourceWithStatusDraft) {
+    private void verifyThatTheSampleHasStillStatusDraft(Publication resourceWithStatusDraft) {
         assertThat(resourceWithStatusDraft.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 
@@ -519,13 +516,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishPublicationSetsPublishedDate() throws ApiGatewayException {
+    void publishPublicationSetsPublishedDate() throws ApiGatewayException {
         Publication updatedResource = createPublishedResource();
         assertThat(updatedResource.getPublishedDate(), is(equalTo(RESOURCE_MODIFICATION_TIME)));
     }
 
     @Test
-    public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoTitle()
         throws TransactionFailedException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.getEntityDescription().setMainTitle(null);
@@ -541,7 +538,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
+    void publishResourceThrowsInvalidPublicationExceptionExceptionWhenResourceHasNoLinkAndNoFiles()
         throws TransactionFailedException, NoSuchFieldException {
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(null);
@@ -561,7 +558,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
+    void publishResourcePublishesResourceWhenLinkIsPresentButNoFiles() throws ApiGatewayException {
 
         Publication sampleResource = publicationWithIdentifier();
         sampleResource.setLink(SOME_LINK);
@@ -572,13 +569,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(updatedResource.getStatus().toString(), is(equalTo(PublicationStatus.PUBLISHED.toString())));
     }
 
-    public Publication publishResource(Publication resource) throws ApiGatewayException {
+    private Publication publishResource(Publication resource) throws ApiGatewayException {
         resourceService.publishPublication(extractUserInstance(resource), resource.getIdentifier());
         return resourceService.getPublication(resource);
     }
 
     @Test
-    public void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
+    void publishResourcePublishesResourceWhenResourceHasFilesButNoLink() throws ApiGatewayException {
 
         Publication sampleResource = createSampleResourceWithDoi();
         sampleResource.setLink(null);
@@ -589,7 +586,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
+    void publishResourceUpdatesResourceStatusInResourceWithDoiRequest()
         throws ApiGatewayException {
         Publication publication = createSampleResourceWithDoi();
         SortableIdentifier doiRequestIdentifier = createDoiRequest(publication).getIdentifier();
@@ -602,7 +599,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void markPublicationForDeletionThrowsExceptionWhenDeletingPublishedPublication() throws ApiGatewayException {
+    void markPublicationForDeletionThrowsExceptionWhenDeletingPublishedPublication() throws ApiGatewayException {
         Publication resource = createPublishedResource();
         Executable action =
             () -> resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
@@ -612,7 +609,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void markPublicationForDeletionLogsConditionExceptionWhenUpdateConditionFails() throws ApiGatewayException {
+    void markPublicationForDeletionLogsConditionExceptionWhenUpdateConditionFails() throws ApiGatewayException {
         TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
         Publication resource = createPublishedResource();
         Executable action =
@@ -622,7 +619,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws TransactionFailedException {
+    void createResourceReturnsNewIdentifierWhenResourceIsCreated() throws TransactionFailedException {
         Publication sampleResource = publicationWithoutIdentifier();
         Publication savedResource = resourceService.createPublication(sampleResource);
         assertThat(sampleResource.getIdentifier(), is(equalTo(null)));
@@ -630,7 +627,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
+    void deletePublicationCanMarkDraftForDeletion() throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
 
         Publication resourceUpdate =
@@ -643,7 +640,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void markPublicationForDeletionReturnsUpdatedResourceCanMarkDraftForDeletion()
+    void markPublicationForDeletionReturnsUpdatedResourceCanMarkDraftForDeletion()
         throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
 
@@ -653,7 +650,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void markPublicationForDeletionResourceThrowsErrorWhenDeletingPublicationThatIsMarkedForDeletion()
+    void markPublicationForDeletionResourceThrowsErrorWhenDeletingPublicationThatIsMarkedForDeletion()
         throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
         resourceService.markPublicationForDeletion(extractUserInstance(resource), resource.getIdentifier());
@@ -666,7 +663,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void updateResourceUpdatesLinkedDoiRequestUponUpdate()
+    void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws TransactionFailedException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
@@ -677,17 +674,17 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
         DoiRequest updatedDoiRequest = doiRequestService
-                                           .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
         DoiRequest expectedDoiRequest = originalDoiRequest.copy()
-                                            .withResourceTitle(ANOTHER_TITLE)
-                                            .build();
+            .withResourceTitle(ANOTHER_TITLE)
+            .build();
         assertThat(updatedDoiRequest, is(equalTo(expectedDoiRequest)));
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
     }
 
     @Test
-    public void updateResourceUpdatesAllFieldsInDoiRequest()
+    void updateResourceUpdatesAllFieldsInDoiRequest()
         throws TransactionFailedException, BadRequestException, NotFoundException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication emptyPublication =
@@ -700,8 +697,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
         UserInstance userInstance = extractUserInstance(emptyPublication);
         DoiRequest updatedDoiRequest = doiRequestService
-                                           .getDoiRequestByResourceIdentifier(userInstance,
-                                                                              emptyPublication.getIdentifier());
+            .getDoiRequestByResourceIdentifier(userInstance,
+                                               emptyPublication.getIdentifier());
 
         DoiRequest expectedDoiRequest = expectedDoiRequestAfterPublicationUpdate(
             emptyPublication,
@@ -717,7 +714,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
+    void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
         throws TransactionFailedException {
         DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
@@ -727,13 +724,13 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.updatePublication(resource);
 
         Executable action = () -> doiRequestService
-                                      .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
+            .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
         assertThrows(NotFoundException.class, action);
     }
 
     @Test
-    public void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
+    void deleteDraftPublicationDeletesDraftResourceWithoutDoi()
         throws TransactionFailedException, BadRequestException {
         Publication publication = createSampleResourceWithoutDoi();
         assertThatIdentifierEntryHasBeenCreated();
@@ -749,7 +746,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi()
+    void deleteDraftPublicationThrowsExceptionWhenResourceHasDoi()
         throws TransactionFailedException {
         Publication publication = createSampleResourceWithDoi();
         assertThatIdentifierEntryHasBeenCreated();
@@ -766,7 +763,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished()
+    void deleteDraftPublicationThrowsExceptionWhenResourceIsPublished()
         throws ApiGatewayException {
         Publication publication = createSampleResourceWithoutDoi();
         UserInstance userInstance = extractUserInstance(publication);
@@ -784,7 +781,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest()
+    void deleteDraftPublicationDeletesDoiRequestWhenPublicationHasDoiRequest()
         throws TransactionFailedException, BadRequestException, NotFoundException {
         Publication publication = createSampleResourceWithoutDoi();
         createDoiRequest(publication);
@@ -796,7 +793,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierReturnsExistingResource() throws TransactionFailedException, NotFoundException {
+    void getResourceByIdentifierReturnsExistingResource() throws TransactionFailedException, NotFoundException {
         Publication resource = createSampleResourceWithoutDoi();
 
         Publication retrievedResource = resourceService.getPublicationByIdentifier(resource.getIdentifier());
@@ -804,7 +801,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    public void getResourceByIdentifierThrowsNotFoundExceptionWhenResourceDoesNotExist() {
+    void getResourceByIdentifierThrowsNotFoundExceptionWhenResourceDoesNotExist() {
         TestAppender testAppender = LogUtils.getTestingAppender(ReadResourceService.class);
         SortableIdentifier someIdentifier = SortableIdentifier.next();
         Executable action = () -> resourceService.getPublicationByIdentifier(someIdentifier);
@@ -863,24 +860,24 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
                                                                 Publication publicationUpdate,
                                                                 DoiRequest updatedDoiRequest) {
         return DoiRequest.builder()
-                   .withIdentifier(updatedDoiRequest.getIdentifier())
-                   .withResourceIdentifier(emptyPublication.getIdentifier())
-                   .withDoi(publicationUpdate.getDoi())
-                   .withOwner(emptyPublication.getOwner())
-                   .withCreatedDate(initialDoiRequest.getCreatedDate())
-                   .withModifiedDate(initialDoiRequest.getModifiedDate())
-                   .withCustomerId(emptyPublication.getPublisher().getId())
-                   .withStatus(DoiRequestStatus.REQUESTED)
-                   .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
-                   .withResourceStatus(publicationUpdate.getStatus())
-                   .withResourceModifiedDate(publicationUpdate.getModifiedDate())
-                   .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
-                   .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
-                   .withContributors(publicationUpdate.getEntityDescription().getContributors())
-                   .withResourcePublicationInstance(
-                       publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
-                   .withRowVersion(updatedDoiRequest.getRowVersion())
-                   .build();
+            .withIdentifier(updatedDoiRequest.getIdentifier())
+            .withResourceIdentifier(emptyPublication.getIdentifier())
+            .withDoi(publicationUpdate.getDoi())
+            .withOwner(emptyPublication.getOwner())
+            .withCreatedDate(initialDoiRequest.getCreatedDate())
+            .withModifiedDate(initialDoiRequest.getModifiedDate())
+            .withCustomerId(emptyPublication.getPublisher().getId())
+            .withStatus(DoiRequestStatus.REQUESTED)
+            .withResourceTitle(publicationUpdate.getEntityDescription().getMainTitle())
+            .withResourceStatus(publicationUpdate.getStatus())
+            .withResourceModifiedDate(publicationUpdate.getModifiedDate())
+            .withResourcePublicationDate(publicationUpdate.getEntityDescription().getDate())
+            .withResourcePublicationYear(publicationUpdate.getEntityDescription().getDate().getYear())
+            .withContributors(publicationUpdate.getEntityDescription().getContributors())
+            .withResourcePublicationInstance(
+                publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+            .withRowVersion(updatedDoiRequest.getRowVersion())
+            .build();
     }
 
     private Publication publicationWithAllDoiRequestRelatedFields(Publication emptyPublication) {
@@ -919,8 +916,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private ResourceDao queryObjectForPublishedResource(Publication resourceWithStatusDraft) {
         Resource resourceWithStatusPublished = Resource.fromPublication(resourceWithStatusDraft).copy()
-                                                   .withStatus(PublicationStatus.PUBLISHED)
-                                                   .build();
+            .withStatus(PublicationStatus.PUBLISHED)
+            .build();
         return new ResourceDao(resourceWithStatusPublished);
     }
 
@@ -935,8 +932,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Optional<ResourceDao> parseResult(QueryResult result) {
         return result.getItems().stream()
-                   .map(map -> parseAttributeValuesMap(map, ResourceDao.class))
-                   .findAny();
+            .map(map -> parseAttributeValuesMap(map, ResourceDao.class))
+            .findAny();
     }
 
     private Publication createPublishedResource() throws ApiGatewayException {
@@ -952,10 +949,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private Publication expectedResourceFromSampleResource(Publication sampleResource, Publication savedResource) {
 
         return sampleResource.copy()
-                   .withIdentifier(savedResource.getIdentifier())
-                   .withCreatedDate(RESOURCE_CREATION_TIME)
-                   .withModifiedDate(RESOURCE_CREATION_TIME)
-                   .build();
+            .withIdentifier(savedResource.getIdentifier())
+            .withCreatedDate(RESOURCE_CREATION_TIME)
+            .withModifiedDate(RESOURCE_CREATION_TIME)
+            .build();
     }
 
     private ResourceService resourceServiceProvidingDuplicateIdentifiers() {
@@ -984,11 +981,11 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private Publication expectedUpdatedResource(Publication sampleResource) {
         return sampleResource.copy()
-                   .withOwner(someOtherUser().getUserIdentifier())
-                   .withPublisher(userOrganization(someOtherUser()))
-                   .withCreatedDate(RESOURCE_CREATION_TIME)
-                   .withModifiedDate(RESOURCE_MODIFICATION_TIME)
-                   .build();
+            .withOwner(someOtherUser().getUserIdentifier())
+            .withPublisher(userOrganization(someOtherUser()))
+            .withCreatedDate(RESOURCE_CREATION_TIME)
+            .withModifiedDate(RESOURCE_MODIFICATION_TIME)
+            .build();
     }
 
     private Publication createSampleResourceWithoutDoi() throws TransactionFailedException {
@@ -1027,7 +1024,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private String fetchMainTitleFieldName() {
         return attempt(() -> EntityDescription.class.getDeclaredField(MAIN_TITLE_FIELD).getName())
-                   .orElseThrow(fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
+            .orElseThrow(fail -> new RuntimeException(ENTITY_DESCRIPTION_DOES_NOT_HAVE_FIELD_ERROR));
     }
 
     private void assertThatResourceDoesNotExist(Publication sampleResource) {
