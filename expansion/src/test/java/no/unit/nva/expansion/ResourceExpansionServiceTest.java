@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.InstitutionResponse;
+import no.unit.nva.expansion.restclients.responses.InstitutionResponse;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClient;
