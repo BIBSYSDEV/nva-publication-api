@@ -346,6 +346,16 @@
                         Webutstilling
                         Annen presentasjon""".
 
+:HENDELSESTYPE_Class
+    a               rdfs:Class;
+    rdfs:subClassOf :HENDELSE_Class ;
+    rdfs:comment    "Information about what type of event the surrounding event is.".
+
+:UTBREDELSESOMRADE_Class
+    a               rdfs:Class ;
+    rdfs:subClassOf :HENDELSE_Class ;
+    rdfs:comment    "Information about whether the event is national or international.".
+
 :id
     a               :cristinfield ;
     rdfs:comment    "Identifier of Cristin Result entry." ;
@@ -354,9 +364,9 @@
 
 :arstall
     a               :cristinfield ;
-    rdfs:comment    "The year a resource (result) was published." ;
+    rdfs:comment    "The year a resource (result) was published or an event occurred." ;
     rdfs:range      xsd:positiveInteger ;
-    rdfs:domain     :Result ; .
+    rdfs:domain     :Result, :HENDELSE_Class ; .
 
 :dato_opprettet
     a                  :cristinfield ;
@@ -1232,15 +1242,6 @@ It is a self reference.""" ;
     rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
     :currently_ignored true .
 
-:utbredelsesomrade
-    a                  :cristinfield ;
-    rdfs:comment       """
-        Information about where or to what extent the article has been published.
-        Examples: NORSK, NORDISK, INTERNASJ, NASJONALT, UKJENT""" ;
-    rdfs:range         xsd:string ;
-    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class ;
-    :currently_ignored true .
-
 :artikkelnummer
     a                  :cristinfield ;
     rdfs:comment       """
@@ -1469,6 +1470,240 @@ It is a self reference.""" ;
     rdfs:domain :TYPE_FOREDRAG_POSTER_Class ;
     :currently_ignored true .
 
+:dato_fra
+    a           :cristinfield ;
+    rdfs:comment "The start date of an event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:dato_til
+    a           :cristinfield ;
+    rdfs:comment "The end date of an event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:hendelsestype
+    a           :cristinfield ;
+    rdfs:comment "See description in range class.";
+    rdfs:range  :HENDELSESTYPE_Class ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:hendelsestypekode
+    a           :cristinfield ;
+    rdfs:comment """The code identifying the event type.
+                    Valid event-type codes are:
+                    KONFERANSE
+                    SEMINAR
+                    FAGMESSE
+                    UTSTILLING
+                    WORKSHOP
+                    TV-RADIO
+                    ÅRSMØTE
+                    ANNET
+                    GJESTEFORE
+                    ARRANGEMEN""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSESTYPE_Class;
+    :currently_ignored true.
+
+:hendelsestypenavn
+    a           :cristinfield ;
+    rdfs:comment """The name in Norwegian for the event-type.
+                    Valid names are:
+                    Konferanse
+                    Seminar
+                    Fagmesse
+                    Utstilling
+                    Workshop
+                    TV/radio
+                    Årsmøte
+                    Annet
+                    Gjesteforelesning
+                    Arrangement""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSESTYPE_Class ;
+    :currently_ignored true.
+
+:hendelsestypenavn_engelsk
+    a           :cristinfield ;
+    rdfs:comment """The name in English for the event type.
+                    Valid names are:
+                    Conference
+                    Seminar
+                    Trade fair
+                    Exhibition
+                    Workshop
+                    TV/radio
+                    Annual meeting
+                    Other
+                    Guest lecture
+                    Event""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSESTYPE_Class ;
+    :currently_ignored true.
+
+:hendelsestypenavn_nynorsk
+    a           :cristinfield ;
+    rdfs:comment "The name in Nynorsk for the event type. This value is always null i Cristin and should probably be left out.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSESTYPE_Class ;
+    :currently_ignored true.
+
+:titteltekst
+    a           :cristinfield ;
+    rdfs:comment "The name of the event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:antall_deltakere
+    a           :cristinfield ;
+    rdfs:comment "Number of participants at the event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:antall_internasjonale_deltakere
+    a           :cristinfield ;
+    rdfs:comment "Number of international(Not norwegians) participants at the event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:antall_nasjonale_deltakere
+    a           :cristinfield ;
+    rdfs:comment "Number of national(Norwegian) participants at the event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:arrangornavn
+    a           :cristinfield ;
+    rdfs:comment "Name of the organizer of the event. The organizer could typically be an organization or a faculty of an educational institution";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:landkode
+    a           :cristinfield ;
+    rdfs:comment "The value determines what country the event is happening in. The value is the country code in ISO 3166-1 standard.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:institusjonsnr_arrangor
+    a           :cristinfield ;
+    rdfs:comment """This field has to bee seen in combination with :avdnr_arrangor, :undavdnr_arrangor, :gruppenr_arrangor.
+                    Each of the fields carries a number that combined gives a the place for the event.
+                    Each number added makes the granularity finer.""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:avdnr_arrangor
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_arrangor.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:undavdnr_arrangor
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_arrangor.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:gruppenr_arrangor
+    a           :cristinfield ;
+    rdfs:comment "See :institusjonsnr_arrangor.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:stedangivelse
+    a           :cristinfield ;
+    rdfs:comment "A textual description of the event location. Generally used if a location-code for the event cant be obtained.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:utbredelsesomrade
+    a                  :cristinfield ;
+    rdfs:comment       """
+        Information about where or to what extent the article has been published.
+        Examples: NORSK, NORDISK, INTERNASJ, NASJONALT, UKJENT.
+        If domain is :HENDELSE_Class see description i range class.""" ;
+    rdfs:range         xsd:string, :UTBREDELSESOMRADE_Class ;
+    rdfs:domain        :TYPE_TIDSSKRIFTPUBLIKASJON_Class, :HENDELSE_Class ;
+    :currently_ignored true .
+
+:utbredelsesomradekode
+    a           :cristinfield ;
+    rdfs:comment """Code used to determine the reach of the event.
+                    Valid values are:
+                    NORSK
+                    NORDISK
+                    INTERNASJ
+                    NASJONALT
+                    UKJENT""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :UTBREDELSESOMRADE_Class ;
+    :currently_ignored true.
+
+:utbredelsesomradenavn
+    a           :cristinfield ;
+    rdfs:comment """The name in Norwegian affiliated with the reach-code :utbredelsesomradekode.
+                    Valid values are:
+                    Norsk
+                    Nordisk
+                    Internasjonalt
+                    Nasjonalt (ikke norsk)
+                    Ukjent""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :UTBREDELSESOMRADE_Class ;
+    :currently_ignored true.
+
+:utbredelsesomradenavn_engelsk
+    a           :cristinfield ;
+    rdfs:comment """The name in English affiliated with the reach-code :utbredelsesomradekode.
+                    Valid values are:
+                    Norwegian
+                    Nordic
+                    International
+                    National (not Norwegian)
+                    Unknown""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :UTBREDELSESOMRADE_Class ;
+    :currently_ignored true.
+
+:utbredelsesomradenavn_nynorsk
+    a           :cristinfield ;
+    rdfs:comment """The name in Nynorsk affiliated with the reach-kode :utbredelsesomradekode.
+                    This value is allways null i Cristin and should probably be left out""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :UTBREDELSESOMRADE_Class ;
+    :currently_ignored true.
+
+:url
+    a           :cristinfield ;
+    rdfs:comment """A free text-field containing a wide range of information.
+    Generally its an link to the event, but it could also be a link to where one can find additional information about the event.
+    It can also be an email-adress or a text with intructions about what/who has more information about the event.""";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
+:personlopenr_arrangor
+    a           :cristinfield ;
+    rdfs:comment "A reference to a Cristin person that has organized the event.";
+    rdfs:range  xsd:string ;
+    rdfs:domain :HENDELSE_Class ;
+    :currently_ignored true.
+
 :type_produkt
     a           :cristinfield ;
     rdfs:comment "See description in range class.";
@@ -1503,4 +1738,5 @@ It is a self reference.""" ;
     rdfs:domain :Result ;
     rdfs:range  :TYPE_UTSTILLING_Class;
     :currently_ignored true.
+
 
