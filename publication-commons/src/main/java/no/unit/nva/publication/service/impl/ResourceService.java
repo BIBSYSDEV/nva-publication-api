@@ -153,26 +153,29 @@ public class ResourceService extends ServiceWithTransactions {
     public ListingResult<ResourceUpdate> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
-
-        List<ResourceUpdate> values = extractDatabaseEntries(scanResult);
+        var values = extractDatabaseEntries(scanResult);
         var isTruncated = isNull(scanResult.getLastEvaluatedKey()) || scanResult.getLastEvaluatedKey().isEmpty();
 
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
     public List<ResourceUpdate> refreshResources(List<ResourceUpdate> resourceUpdates) {
-        final List<ResourceUpdate> refreshedEntries = resourceUpdates
-            .stream()
-            .map(ResourceUpdate::refreshRowVersion)
-            .collect(Collectors.toList());
+        final List<ResourceUpdate> refreshedEntries = refreshRowVersion(resourceUpdates);
 
         List<WriteRequest> writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
-        writetoS3InBatches(writeRequests);
+        writeToS3InBatches(writeRequests);
 
         return refreshedEntries;
     }
 
-    private void writetoS3InBatches(List<WriteRequest> writeRequests) {
+    private List<ResourceUpdate> refreshRowVersion(List<ResourceUpdate> resourceUpdates) {
+        return resourceUpdates
+            .stream()
+            .map(ResourceUpdate::refreshRowVersion)
+            .collect(Collectors.toList());
+    }
+
+    private void writeToS3InBatches(List<WriteRequest> writeRequests) {
         Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
             .stream()
             .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
