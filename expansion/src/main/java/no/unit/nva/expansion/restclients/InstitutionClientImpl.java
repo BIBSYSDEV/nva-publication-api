@@ -1,6 +1,6 @@
 package no.unit.nva.expansion.restclients;
 
-import no.unit.nva.expansion.model.InstitutionResponse;
+import no.unit.nva.expansion.restclients.responses.InstitutionResponse;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;

@@ -1,4 +1,4 @@
-package no.unit.nva.expansion.model;
+package no.unit.nva.expansion.restclients.responses;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.nonNull;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstitutionResponse {
@@ -25,7 +28,7 @@ public class InstitutionResponse {
     }
 
     public List<SubUnit> getSubunits() {
-        return subunits;
+        return nonNull(subunits) ? subunits : emptyList();
     }
 
     public void setSubunits(List<SubUnit> subunits) {
@@ -33,7 +36,7 @@ public class InstitutionResponse {
     }
 
     public Set<URI> getOrganizationIds() {
-        Set<URI> organizationIds = subunits.stream()
+        Set<URI> organizationIds = getSubunits().stream()
                 .map(SubUnit::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
