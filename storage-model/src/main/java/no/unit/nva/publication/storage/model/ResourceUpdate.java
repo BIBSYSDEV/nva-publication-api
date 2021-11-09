@@ -1,7 +1,9 @@
 package no.unit.nva.publication.storage.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 
@@ -13,7 +15,17 @@ import no.unit.nva.model.Publication;
 })
 public interface ResourceUpdate {
 
+    String ROW_VERSION = "rowVersion";
+
     Publication toPublication();
 
     SortableIdentifier getIdentifier();
+
+    @JsonProperty(ROW_VERSION)
+    String getRowVersion();
+
+
+    static String nextRowVersion(){
+        return UUID.randomUUID().toString();
+    }
 }

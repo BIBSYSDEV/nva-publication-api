@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDoiRequestCreatedDate;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDoiRequestModifiedDate;
+import static no.unit.nva.publication.storage.model.ResourceUpdate.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -29,23 +30,23 @@ import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass","PMD.ExcessivePublicCount","PMD.TooManyFields"})
 public class DoiRequest
     implements WithIdentifier,
                RowLevelSecurity,
                WithStatus,
                ResourceUpdate,
                ConnectedToResource {
-    
+
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String TYPE = DoiRequest.class.getSimpleName();
-    
+
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
 
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
-    
+
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
@@ -77,6 +78,7 @@ public class DoiRequest
     private URI doi;
     @JsonProperty
     private List<Contributor> contributors;
+    private String rowVersion;
 
     public DoiRequest() {
 
@@ -101,6 +103,7 @@ public class DoiRequest
                 .withModifiedDate(now)
                 .withCreatedDate(now)
                 .withDoi(resource.getDoi())
+                .withRowVersion(nextRowVersion())
                 .build();
 
         doiRequest.validate();
@@ -126,11 +129,12 @@ public class DoiRequest
         Resource resource = Resource.fromPublication(publication);
 
         return extractDataFromResource(DoiRequest.builder(), resource)
-                   .withModifiedDate(extractDoiRequestModifiedDate(publication.getDoiRequest()))
-                   .withCreatedDate(extractDoiRequestCreatedDate(publication.getDoiRequest()))
-                   .withIdentifier(doiRequestIdentifier)
-                   .withStatus(extractDoiRequestStatus(publication.getDoiRequest()))
-                   .build();
+            .withModifiedDate(extractDoiRequestModifiedDate(publication.getDoiRequest()))
+            .withCreatedDate(extractDoiRequestCreatedDate(publication.getDoiRequest()))
+            .withIdentifier(doiRequestIdentifier)
+            .withStatus(extractDoiRequestStatus(publication.getDoiRequest()))
+            .withRowVersion(nextRowVersion())
+            .build();
     }
 
     public static DoiRequestBuilder builder() {
@@ -266,7 +270,7 @@ public class DoiRequest
     public DoiRequest update(Resource resource) {
         if (updateIsAboutTheSameResource(resource)) {
             return extractDataFromResource(this.copy(), resource)
-                       .build();
+                .build();
         }
         throw new IllegalDoiRequestUpdate(RESOURCE_IDENTIFIER_MISMATCH_ERROR);
     }
@@ -278,21 +282,22 @@ public class DoiRequest
 
     public DoiRequestBuilder copy() {
         return DoiRequest.builder()
-                   .withIdentifier(getIdentifier())
-                   .withResourceIdentifier(getResourceIdentifier())
-                   .withStatus(getStatus())
-                   .withResourceStatus(getResourceStatus())
-                   .withModifiedDate(getModifiedDate())
-                   .withCreatedDate(getCreatedDate())
-                   .withCustomerId(getCustomerId())
-                   .withOwner(getOwner())
-                   .withResourceTitle(getResourceTitle())
-                   .withResourceModifiedDate(getResourceModifiedDate())
-                   .withResourcePublicationInstance(getResourcePublicationInstance())
-                   .withResourcePublicationDate(getResourcePublicationDate())
-                   .withResourcePublicationYear(getResourcePublicationYear())
-                   .withDoi(getDoi())
-                   .withContributors(getContributors());
+            .withIdentifier(getIdentifier())
+            .withResourceIdentifier(getResourceIdentifier())
+            .withStatus(getStatus())
+            .withResourceStatus(getResourceStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .withCustomerId(getCustomerId())
+            .withOwner(getOwner())
+            .withResourceTitle(getResourceTitle())
+            .withResourceModifiedDate(getResourceModifiedDate())
+            .withResourcePublicationInstance(getResourcePublicationInstance())
+            .withResourcePublicationDate(getResourcePublicationDate())
+            .withResourcePublicationYear(getResourcePublicationYear())
+            .withDoi(getDoi())
+            .withContributors(getContributors())
+            .withRowVersion(getRowVersion());
     }
 
     public void validate() {
@@ -305,37 +310,46 @@ public class DoiRequest
     public Publication toPublication() {
 
         no.unit.nva.model.DoiRequest doiRequest = new no.unit.nva.model.DoiRequest.Builder()
-                                                      .withStatus(getStatus())
-                                                      .withModifiedDate(getModifiedDate())
-                                                      .withCreatedDate(getCreatedDate())
-                                                      .build();
+            .withStatus(getStatus())
+            .withModifiedDate(getModifiedDate())
+            .withCreatedDate(getCreatedDate())
+            .build();
 
         Reference reference = new Reference.Builder()
-                                  .withPublicationInstance(getResourcePublicationInstance())
-                                  .build();
+            .withPublicationInstance(getResourcePublicationInstance())
+            .build();
 
         EntityDescription entityDescription = new EntityDescription.Builder()
-                                                  .withMainTitle(getResourceTitle())
-                                                  .withDate(getResourcePublicationDate())
-                                                  .withReference(reference)
-                                                  .withContributors(getContributors())
-                                                  .build();
+            .withMainTitle(getResourceTitle())
+            .withDate(getResourcePublicationDate())
+            .withReference(reference)
+            .withContributors(getContributors())
+            .build();
 
         Organization customer = new Organization.Builder()
-                                    .withId(getCustomerId())
-                                    .build();
+            .withId(getCustomerId())
+            .build();
 
         return new
                    Publication.Builder()
-                   .withIdentifier(getResourceIdentifier())
-                   .withModifiedDate(getResourceModifiedDate())
-                   .withDoi(getDoi())
-                   .withStatus(getResourceStatus())
-                   .withEntityDescription(entityDescription)
-                   .withPublisher(customer)
-                   .withOwner(getOwner())
-                   .withDoiRequest(doiRequest)
-                   .build();
+            .withIdentifier(getResourceIdentifier())
+            .withModifiedDate(getResourceModifiedDate())
+            .withDoi(getDoi())
+            .withStatus(getResourceStatus())
+            .withEntityDescription(entityDescription)
+            .withPublisher(customer)
+            .withOwner(getOwner())
+            .withDoiRequest(doiRequest)
+            .build();
+    }
+
+    @Override
+    public String getRowVersion() {
+        return rowVersion;
+    }
+
+    public void setRowVersion(String rowVersion) {
+        this.rowVersion = rowVersion;
     }
 
     @Override

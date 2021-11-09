@@ -37,12 +37,6 @@ public class MessageBuilder {
         return this;
     }
 
-    @Deprecated
-    public MessageBuilder withDoiRequestRelated(boolean doiRequestRelated) {
-        message.setDoiRequestRelated(doiRequestRelated);
-        return this;
-    }
-
     public MessageBuilder withResourceIdentifier(SortableIdentifier resourceIdentifier) {
         message.setResourceIdentifier(resourceIdentifier);
         return this;
@@ -70,5 +64,10 @@ public class MessageBuilder {
 
     public Message build() {
         return message;
+    }
+
+    public MessageBuilder withRowVersion(String rowVersion) {
+        message.setRowVersion(rowVersion);
+        return this;
     }
 }

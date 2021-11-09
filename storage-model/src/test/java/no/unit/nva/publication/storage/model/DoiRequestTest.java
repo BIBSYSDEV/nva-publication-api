@@ -1,6 +1,8 @@
 package no.unit.nva.publication.storage.model;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -80,13 +82,16 @@ public class DoiRequestTest {
     @Test
     public void toPublicationReturnsPublicationInstanceWithoutLossOfInformation() {
 
-        DoiRequest doiRequest = sampleDoiRequestManuallyFilledIn();
+        DoiRequest doiRequest =
+            DoiRequest.newDoiRequestForResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
 
-        assertThat(doiRequest, doesNotHaveEmptyValuesIgnoringClasses(Set.of(PublicationInstance.class)));
+        assertThat(doiRequest, doesNotHaveEmptyValues());
         Publication generatedPublication = doiRequest.toPublication();
 
         DoiRequest regeneratedDoiRequest = DoiRequest.fromDto(generatedPublication, doiRequest.getIdentifier());
-        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringClasses(Set.of(PublicationInstance.class)));
+        // when transformed to Publication we do not have control over the rowVersion anymore because
+        // nva-datamodel-java is an external library.
+        assertThat(regeneratedDoiRequest, doesNotHaveEmptyValuesIgnoringFields(Set.of("rowVersion")));
         assertThat(regeneratedDoiRequest, is(equalTo(doiRequest)));
     }
 
@@ -134,31 +139,7 @@ public class DoiRequestTest {
         return resource.copy().withEntityDescription(updatedEntityDescription).build();
     }
     
-    private DoiRequest sampleDoiRequestManuallyFilledIn() {
-        PublicationDate publicationDate = new Builder()
-                                              .withYear(SOME_PUBLICATION_YEAR)
-                                              .withMonth("5")
-                                              .withDay("22")
-                                              .build();
-        Contributor sampleContributor = attempt(PublicationGenerator::sampleContributor).orElseThrow();
-        return DoiRequest.builder()
-                   .withIdentifier(DOI_REQUEST_IDENTIFIER)
-                   .withResourceIdentifier(RESOURCE_IDENTIFIER)
-                   .withResourceTitle(RESOURCE_TITLE)
-                   .withOwner(SOME_OWNER)
-                   .withCustomerId(SOME_CUSTOMER)
-                   .withStatus(SOME_DOI_REQUEST_STATUS)
-                   .withResourceStatus(SOME_PUBLICATION_STATUS)
-                   .withCreatedDate(DOI_REQUEST_CREATION_TIME)
-                   .withModifiedDate(DOI_REQUEST_UPDATE_TIME)
-                   .withResourceModifiedDate(DOI_REQUEST_UPDATE_TIME)
-                   .withResourcePublicationDate(publicationDate)
-                   .withResourcePublicationYear(SOME_PUBLICATION_YEAR)
-                   .withDoi(SOME_DOI)
-                   .withResourcePublicationInstance(new ReportBasic.Builder().build())
-                   .withContributors(List.of(sampleContributor))
-                   .build();
-    }
+
     
     private DoiRequest doiRequestWithoutResourceReference() {
         Resource resource = Resource.fromPublication(PublicationGenerator.publicationWithoutIdentifier());

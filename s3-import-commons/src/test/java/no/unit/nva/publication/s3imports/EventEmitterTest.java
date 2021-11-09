@@ -52,11 +52,11 @@ public class EventEmitterTest {
     @Test
     public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
         EventEmitter<String> eventEmitter = newEventEmitter();
-        List<String> aLotOfEvents = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(aLotOfEvents);
+        List<String> manyEvents = generateInputBiggerThanEventEmittersRequestSize();
+        eventEmitter.addEvents(manyEvents);
         int desiredBatchSize = 20;
         eventEmitter.emitEvents(desiredBatchSize);
-        int expectedNumberOfPutEventRequests = aLotOfEvents.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
+        int expectedNumberOfPutEventRequests = manyEvents.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
     }
 

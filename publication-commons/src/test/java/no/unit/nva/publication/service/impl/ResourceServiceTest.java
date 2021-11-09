@@ -710,8 +710,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             updatedDoiRequest
         );
 
-        assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         assertThat(updatedDoiRequest, doesNotHaveEmptyValues());
+        assertThat(expectedDoiRequest, doesNotHaveEmptyValues());
         Diff diff = JAVERS.compare(updatedDoiRequest, expectedDoiRequest);
         assertThat(diff.prettyPrint(), updatedDoiRequest, is(equalTo(expectedDoiRequest)));
     }
@@ -879,6 +879,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
                    .withContributors(publicationUpdate.getEntityDescription().getContributors())
                    .withResourcePublicationInstance(
                        publicationUpdate.getEntityDescription().getReference().getPublicationInstance())
+                   .withRowVersion(updatedDoiRequest.getRowVersion())
                    .build();
     }
 
