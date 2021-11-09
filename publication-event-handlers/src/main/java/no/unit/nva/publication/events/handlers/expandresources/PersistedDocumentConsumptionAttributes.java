@@ -25,8 +25,9 @@ public class PersistedDocumentConsumptionAttributes {
     private final SortableIdentifier documentIdentifier;
 
     @JsonCreator
-    public PersistedDocumentConsumptionAttributes(@JsonProperty(INDEX_FIELD) String index,
-                                                  @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
+    public PersistedDocumentConsumptionAttributes(
+            @JsonProperty(INDEX_FIELD) String index,
+            @JsonProperty(DOCUMENT_IDENTIFIER) SortableIdentifier documentIdentifier) {
         this.index = index;
         this.documentIdentifier = documentIdentifier;
     }

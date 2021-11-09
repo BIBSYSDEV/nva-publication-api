@@ -20,16 +20,16 @@ public class InitializationHandlerTest {
         "initialization/pipeline_succeeded_event.json";
     private InitializationHandler handler;
     private ByteArrayOutputStream outputStream;
-    public static final String PIPELINE_NAME_IN_RESOURCES_FILE= "myPipeline";
+    public static final String PIPELINE_NAME_IN_RESOURCES_FILE = "myPipeline";
 
     @BeforeEach
-    public void init(){
+    public void init() {
         this.handler = new InitializationHandler();
         this.outputStream = new ByteArrayOutputStream();
     }
 
     @Test
-    void shouldLogReceivedEventWhenHandlerIsActivated(){
+    void shouldLogReceivedEventWhenHandlerIsActivated() {
         TestAppender logger = LogUtils.getTestingAppenderForRootLogger();
         var sampleEvent = stringFromResources(Path.of(SAMPLE_PIPELINE_EVENT_FROM_AWS_DOCUMENTATION));
         handler.handleRequest(stringToStream(sampleEvent), outputStream, CONTEXT);
