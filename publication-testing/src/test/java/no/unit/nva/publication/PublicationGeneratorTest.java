@@ -27,7 +27,7 @@ class PublicationGeneratorTest {
         return PublicationInstanceBuilder.listPublicationInstanceTypes().stream();
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "Should return publication of type {0} without empty fields")
     @MethodSource("publicationInstanceProvider")
     void shouldReturnPublicationWithoutEmptyFields(Class<?> publicationInstance) {
         assertThat(PublicationGenerator.randomPublication(publicationInstance),

@@ -15,7 +15,7 @@ import java.time.ZoneId;
 import java.util.List;
 import no.unit.nva.model.Agent;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.contexttypes.ArtisticDesign;
+import no.unit.nva.model.contexttypes.Artistic;
 import no.unit.nva.model.contexttypes.Book;
 import no.unit.nva.model.contexttypes.Chapter;
 import no.unit.nva.model.contexttypes.Degree;
@@ -42,19 +42,8 @@ public class PublicationContextBuilder {
     public static PublicationContext randomPublicationContext(Class<?> publicationInstance) {
         String className = publicationInstance.getSimpleName();
         switch (className) {
-            case "ArtisticDesignClothingDesign":
-            case "ArtisticDesignExhibition":
-            case "ArtisticDesignGraphicDesign":
-            case "ArtisticDesignIllustration":
-            case "ArtisticDesignInteractionDesign":
-            case "ArtisticDesignInteriorDesign":
-            case "ArtisticDesignLightDesign":
-            case "ArtisticDesignOther":
-            case "ArtisticDesignProductDesign":
-            case "ArtisticDesignServiceDesign":
-            case "ArtisticDesignWebDesign":
+            case "ArtisticDesign":
                 return randomArtisticDesign();
-
             case "FeatureArticle":
             case "JournalCorrigendum":
             case "JournalArticle":
@@ -179,8 +168,8 @@ public class PublicationContextBuilder {
         return URI.create("https://api.dev.nva.aws.unit.no/publication-channels/"+randomString());
     }
 
-    private static ArtisticDesign randomArtisticDesign() {
-        return new ArtisticDesign(randomVenues());
+    private static Artistic randomArtisticDesign() {
+        return new Artistic(randomVenues());
     }
 
     private static List<Venue> randomVenues() {
@@ -188,7 +177,9 @@ public class PublicationContextBuilder {
     }
 
     private static Venue randomVenue() {
-        return new Venue(randomPlace(), randomInteger());
+        UnconfirmedPlace place = new UnconfirmedPlace(randomString(), "Germany");
+        Period time = new Period(LocalDateTime.now(), LocalDateTime.now().plusDays(1));
+        return new Venue(place, time, randomInteger());
     }
 
     private static Place randomPlace() {
