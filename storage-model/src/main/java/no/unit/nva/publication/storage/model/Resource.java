@@ -20,13 +20,15 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields","PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
 
-    public static final String TYPE = Resource.class.getSimpleName();
+    public static final String TYPE = "Resource";
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -118,6 +120,11 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
 
     public static String nextRowVersion() {
         return UUID.randomUUID().toString();
+    }
+
+    @Override
+    public Dao<?> toDao() {
+        return new ResourceDao(this);
     }
 
     @JacocoGenerated
@@ -327,6 +334,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, R
         return rowVersion;
     }
 
+    @Override
     @JacocoGenerated
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;

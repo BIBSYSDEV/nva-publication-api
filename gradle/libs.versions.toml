@@ -24,6 +24,7 @@ mockito = { strictly = '3.12.4' }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.3' }
 nva-language ={strictly = '1.0'}
+guava = {strictly= '31.0.1-jre'}
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -76,7 +77,7 @@ slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
-
+guava = { group= 'com.google.guava', name= 'guava', version.ref = 'guava'}
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }

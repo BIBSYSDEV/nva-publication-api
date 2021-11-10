@@ -10,8 +10,10 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.userOrga
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_LINK_FIELD;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.RESOURCE_WITHOUT_MAIN_TITLE_ERROR;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
@@ -42,6 +44,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +52,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
@@ -61,15 +65,18 @@ import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.ResourceUpdate;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -96,6 +103,8 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
                                                                               + MAIN_TITLE_FIELD;
     public static final String ANOTHER_TITLE = "anotherTitle";
     public static final URI SOME_DOI = URI.create("https://some-doi.example.org");
+    public static final Javers JAVERS = JaversBuilder.javers().build();
+    public static final int BIG_PAGE = 10;
     private static final URI SOME_ORG = URI.create(PublicationGenerator.PUBLISHER_ID);
     public static final UserInstance SAMPLE_USER = new UserInstance(PublicationGenerator.OWNER, SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
@@ -104,11 +113,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
-    public static final Javers JAVERS = JaversBuilder.javers().build();
-
     private ResourceService resourceService;
     private Clock clock;
     private DoiRequestService doiRequestService;
+    private MessageService messageService;
 
     @BeforeEach
     public void init() {
@@ -116,11 +124,17 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Clock clock = setupClock();
         resourceService = new ResourceService(client, clock);
         doiRequestService = new DoiRequestService(client, clock);
+        messageService = new MessageService(client, clock, SortableIdentifier::next);
+    }
+
+    public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
+        QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
+        return parseResult(queryResult);
     }
 
     @Test
     void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
-        throws TransactionFailedException, NotFoundException, JsonProcessingException {
+        throws TransactionFailedException, NotFoundException {
         Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
         assertThat(inputPublication.getSubjects(), is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
@@ -499,20 +513,10 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(extractUserInstance(resourceWithStatusDraft),
                                            resourceWithStatusDraft.getIdentifier());
 
-        verifyThatTheSampleHasStillStatusDraft(resourceWithStatusDraft);
 
         verifyThatTheResourceWasMovedFromtheDrafts(resourceDaoWithStatusDraft);
 
         verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
-    }
-
-    private void verifyThatTheSampleHasStillStatusDraft(Publication resourceWithStatusDraft) {
-        assertThat(resourceWithStatusDraft.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
-    }
-
-    public Optional<ResourceDao> searchForResource(ResourceDao resourceDaoWithStatusDraft) {
-        QueryResult queryResult = queryForDraftResource(resourceDaoWithStatusDraft);
-        return parseResult(queryResult);
     }
 
     @Test
@@ -567,11 +571,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         Publication updatedResource =
             publishResource(savedResource);
         assertThat(updatedResource.getStatus().toString(), is(equalTo(PublicationStatus.PUBLISHED.toString())));
-    }
-
-    private Publication publishResource(Publication resource) throws ApiGatewayException {
-        resourceService.publishPublication(extractUserInstance(resource), resource.getIdentifier());
-        return resourceService.getPublication(resource);
     }
 
     @Test
@@ -810,6 +809,93 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         assertThat(exception.getMessage(), containsString(someIdentifier.toString()));
         assertThat(testAppender.getMessages(), containsString(RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX));
         assertThat(testAppender.getMessages(), containsString(someIdentifier.toString()));
+    }
+
+    @Test
+    void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws TransactionFailedException {
+        var samplePublication = resourceService.createPublication( PublicationGenerator.randomPublication());
+        var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
+        var userInstance = new UserInstance(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication, randomString());
+
+        var listingResult = fetchFirstDataEntry();
+        var identifierInFirstScan = extractIdentifierFromFirstScanResult(listingResult);
+
+        var secondListingResult = fetchRestOfDatabaseEntries(listingResult);
+        var identifiersFromSecondScan = secondListingResult
+            .getDatabaseEntries().stream()
+            .map(ResourceUpdate::getIdentifier)
+            .collect(Collectors.toList());
+
+        var expectedIdentifiers =
+            new ArrayList<>(List.of(samplePublication.getIdentifier(),
+                                    sampleDoiRequestIdentifier,
+                                    sampleMessageIdentifier)
+            );
+        expectedIdentifiers.remove(identifierInFirstScan);
+        assertThat(identifiersFromSecondScan,
+                   containsInAnyOrder(expectedIdentifiers.toArray(SortableIdentifier[]::new)));
+    }
+
+    @Test
+    void shouldUpdateResourceRowVersionWhenEntityIsRefreshed() {
+        int arbitraryNumberOfResources = 40;
+        int numberOfTotalExpectedDatabaseEntries = 2 * arbitraryNumberOfResources; //due to identity entries
+        var sampleResources = createManySampleResources(arbitraryNumberOfResources);
+
+        resourceService.refreshResources(sampleResources);
+        var firstUpdates =
+            resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
+
+        resourceService.refreshResources(sampleResources);
+        var secondUpdates =
+            resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
+
+        for (var firstUpdate : firstUpdates) {
+            ResourceUpdate secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
+            assertThat(secondUpdate.getRowVersion(), is(not(equalTo(firstUpdate.getRowVersion()))));
+        }
+    }
+
+    private ResourceUpdate findMatchingSecondUpdate(List<ResourceUpdate> secondUpdates, ResourceUpdate firstUpdate) {
+        return secondUpdates.stream()
+            .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
+            .collect(SingletonCollector.collect());
+    }
+
+    private List<ResourceUpdate> createManySampleResources(int numberOfResources) {
+        return IntStream.range(0, numberOfResources)
+            .boxed()
+            .map(ignored -> PublicationGenerator.randomPublication())
+            .map(attempt(p -> resourceService.createPublication(p)))
+            .map(Try::orElseThrow)
+            .map(Resource::fromPublication)
+            .map(resource -> (ResourceUpdate) resource)
+            .collect(Collectors.toList());
+    }
+
+    private ListingResult<ResourceUpdate> fetchRestOfDatabaseEntries(ListingResult<ResourceUpdate> listingResult) {
+        return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker());
+    }
+
+    private SortableIdentifier extractIdentifierFromFirstScanResult(ListingResult<ResourceUpdate> listingResult) {
+        return listingResult.getDatabaseEntries()
+            .stream()
+            .collect(SingletonCollector.collect())
+            .getIdentifier();
+    }
+
+    private ListingResult<ResourceUpdate> fetchFirstDataEntry() {
+        ListingResult<ResourceUpdate> listingResult = ListingResult.empty();
+        while (listingResult.isEmpty()) {
+            listingResult = resourceService.scanResources(1, listingResult.getStartMarker());
+        }
+        return listingResult;
+    }
+
+    private Publication publishResource(Publication resource) throws ApiGatewayException {
+        resourceService.publishPublication(extractUserInstance(resource), resource.getIdentifier());
+        return resourceService.getPublication(resource);
     }
 
     private Clock setupClock() {
