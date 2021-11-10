@@ -229,13 +229,13 @@ public final class PublicationGenerator {
     }
 
     private static FileSet sampleFileSet() {
-        List<File> files = List.of(new File.Builder()
+        var file = new File.Builder()
                 .withIdentifier(UUID.randomUUID())
                 .withLicense(new License.Builder()
                         .withIdentifier("licenseId")
                         .build())
-                .build());
-        return new FileSet(files);
+                .build();
+        return new FileSet(List.of(file));
     }
 
     private static EntityDescription createSampleEntityDescription() {
