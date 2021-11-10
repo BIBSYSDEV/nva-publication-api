@@ -11,17 +11,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignClothingDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignExhibition;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignGraphicDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignIllustration;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignInteractionDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignInteriorDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignLightDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignOther;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignProductDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignServiceDesign;
-import no.unit.nva.model.instancetypes.artistic.ArtisticDesignWebDesign;
+import no.unit.nva.model.instancetypes.artistic.ArtisticDesign;
+import no.unit.nva.model.instancetypes.artistic.ArtisticDesignSubtype;
+import no.unit.nva.model.instancetypes.artistic.ArtisticDesignSubtypeEnum;
 import no.unit.nva.model.instancetypes.book.BookAbstracts;
 import no.unit.nva.model.instancetypes.book.BookAnthology;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
@@ -79,28 +71,8 @@ public class PublicationInstanceBuilder {
         var typeName = randomType.getSimpleName();
 
         switch (typeName) {
-            case "ArtisticDesignClothingDesign":
-                return generateArtisticDesignClothingDesign();
-            case "ArtisticDesignExhibition":
-                return generateArtisticDesignExhibition();
-            case "ArtisticDesignGraphicDesign":
-                return generateArtisticDesignGraphicDesign();
-            case "ArtisticDesignIllustration":
-                return generateArtisticDesignIllustration();
-            case "ArtisticDesignInteractionDesign":
-                return generateArtisticDesignInteractionDesign();
-            case "ArtisticDesignInteriorDesign":
-                return generateArtisticDesignInteriorDesign();
-            case "ArtisticDesignLightDesign":
-                return generateArtisticDesignLightDesign();
-            case "ArtisticDesignOther":
-                return generateArtisticDesignOther();
-            case "ArtisticDesignProductDesign":
-                return generateArtisticDesignProductDesign();
-            case "ArtisticDesignServiceDesign":
-                return generateArtisticDesignServiceDesign();
-            case "ArtisticDesignWebDesign":
-                return generateArtisticDesignWebDesign();
+            case "ArtisticDesign":
+                return generateRandomArtisticDesign();
             case "FeatureArticle":
                 return generateFeatureArticle();
             case "JournalCorrigendum":
@@ -361,47 +333,12 @@ public class PublicationInstanceBuilder {
         return randomString();
     }
 
-    private static ArtisticDesignWebDesign generateArtisticDesignWebDesign() {
-        return new ArtisticDesignWebDesign(randomString());
+    private static ArtisticDesign generateRandomArtisticDesign() {
+        var subtype = randomElement(ArtisticDesignSubtypeEnum.values());
+        return artisticDesign(subtype);
     }
 
-    private static ArtisticDesignServiceDesign generateArtisticDesignServiceDesign() {
-        return new ArtisticDesignServiceDesign(randomString());
-    }
-
-    private static ArtisticDesignProductDesign generateArtisticDesignProductDesign() {
-        return new ArtisticDesignProductDesign(randomString());
-    }
-
-    private static ArtisticDesignOther generateArtisticDesignOther() {
-        return new ArtisticDesignOther(randomString(), randomString());
-    }
-
-    private static ArtisticDesignLightDesign generateArtisticDesignLightDesign() {
-        return new ArtisticDesignLightDesign(randomString());
-    }
-
-    private static ArtisticDesignInteriorDesign generateArtisticDesignInteriorDesign() {
-        return new ArtisticDesignInteriorDesign(randomString());
-    }
-
-    private static ArtisticDesignInteractionDesign generateArtisticDesignInteractionDesign() {
-        return new ArtisticDesignInteractionDesign(randomString());
-    }
-
-    private static ArtisticDesignIllustration generateArtisticDesignIllustration() {
-        return new ArtisticDesignIllustration(randomString());
-    }
-
-    private static ArtisticDesignGraphicDesign generateArtisticDesignGraphicDesign() {
-        return new ArtisticDesignGraphicDesign(randomString());
-    }
-
-    private static ArtisticDesignExhibition generateArtisticDesignExhibition() {
-        return new ArtisticDesignExhibition(randomString());
-    }
-
-    private static ArtisticDesignClothingDesign generateArtisticDesignClothingDesign() {
-        return new ArtisticDesignClothingDesign(randomString());
+    private static ArtisticDesign artisticDesign(ArtisticDesignSubtypeEnum subtype) {
+        return new ArtisticDesign(ArtisticDesignSubtype.create(subtype), randomString());
     }
 }
