@@ -1,5 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
+import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
@@ -54,10 +55,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -1047,7 +1049,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     private FileSet emptyFileSet() {
-        return new FileSet.Builder().build();
+        return new FileSet(emptyList());
     }
 
     private void assertThatJsonProcessingErrorIsPropagatedUp(Class<JsonProcessingException> expectedExceptionClass,
