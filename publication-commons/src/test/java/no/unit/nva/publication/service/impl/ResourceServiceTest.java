@@ -513,7 +513,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(extractUserInstance(resourceWithStatusDraft),
                                            resourceWithStatusDraft.getIdentifier());
 
-        verifyThatTheSampleHasStillStatusDraft(resourceWithStatusDraft);
 
         verifyThatTheResourceWasMovedFromtheDrafts(resourceDaoWithStatusDraft);
 
@@ -839,7 +838,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     }
 
     @Test
-    void shouldUpdateResourceRowVersionWhenRefreshesEntry() {
+    void shouldUpdateResourceRowVersionWhenEntityIsRefreshed() {
         int arbitraryNumberOfResources = 40;
         int numberOfTotalExpectedDatabaseEntries = 2 * arbitraryNumberOfResources; //due to identity entries
         var sampleResources = createManySampleResources(arbitraryNumberOfResources);
@@ -892,10 +891,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             listingResult = resourceService.scanResources(1, listingResult.getStartMarker());
         }
         return listingResult;
-    }
-
-    private void verifyThatTheSampleHasStillStatusDraft(Publication resourceWithStatusDraft) {
-        assertThat(resourceWithStatusDraft.getStatus(), is(equalTo(PublicationStatus.DRAFT)));
     }
 
     private Publication publishResource(Publication resource) throws ApiGatewayException {
