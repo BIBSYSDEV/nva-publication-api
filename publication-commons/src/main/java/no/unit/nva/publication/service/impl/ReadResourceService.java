@@ -93,14 +93,13 @@ public class ReadResourceService {
             .collect(Collectors.toList());
     }
 
-    public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+    public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
 
         QueryRequest queryRequest = createGetByResourceIdentifierQueryRequest(identifier);
 
         QueryResult result = client.query(queryRequest);
         ResourceDao fetchedDao = queryResultToSingleResource(identifier, result);
-
-        return fetchedDao.getData().toPublication();
+        return fetchedDao.getData();
     }
 
     protected Resource getResource(UserInstance userInstance, SortableIdentifier identifier) throws NotFoundException {

@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
@@ -154,7 +154,7 @@ public class ResourceService extends ServiceWithTransactions {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
-        var isTruncated = isNull(scanResult.getLastEvaluatedKey()) || scanResult.getLastEvaluatedKey().isEmpty();
+        var isTruncated = nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
 
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
@@ -200,12 +200,16 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getPublication(sampleResource);
     }
 
+    public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+        return readResourceService.getResourceByIdentifier(identifier);
+    }
+
     public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return readResourceService.getPublicationByIdentifier(identifier);
+        return getResourceByIdentifier(identifier).toPublication();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)

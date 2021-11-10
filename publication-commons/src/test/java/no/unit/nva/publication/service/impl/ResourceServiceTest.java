@@ -513,7 +513,6 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         resourceService.publishPublication(extractUserInstance(resourceWithStatusDraft),
                                            resourceWithStatusDraft.getIdentifier());
 
-
         verifyThatTheResourceWasMovedFromtheDrafts(resourceDaoWithStatusDraft);
 
         verifyThatTheResourceIsInThePublishedResources(resourceWithStatusDraft);
@@ -813,15 +812,16 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     @Test
     void shouldScanEntriesInDatabaseAfterSpecifiedMarker() throws TransactionFailedException {
-        var samplePublication = resourceService.createPublication( PublicationGenerator.randomPublication());
+        var samplePublication = resourceService.createPublication(PublicationGenerator.randomPublication());
         var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
         var userInstance = new UserInstance(samplePublication.getOwner(), samplePublication.getPublisher().getId());
-        var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication, randomString());
+        var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication,
+                                                                         randomString());
 
-        var listingResult = fetchFirstDataEntry();
-        var identifierInFirstScan = extractIdentifierFromFirstScanResult(listingResult);
+        var firstListingResult = fetchFirstDataEntry();
+        var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);
 
-        var secondListingResult = fetchRestOfDatabaseEntries(listingResult);
+        var secondListingResult = fetchRestOfDatabaseEntries(firstListingResult);
         var identifiersFromSecondScan = secondListingResult
             .getDatabaseEntries().stream()
             .map(ResourceUpdate::getIdentifier)

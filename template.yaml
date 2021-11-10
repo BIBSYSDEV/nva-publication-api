@@ -766,6 +766,40 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
+  EventBasedBatchScanHandlerTest:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.EventBasedBatchScanHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+          TABLE_NAME: !Ref NvaResourcesTable
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusName
+            Pattern:
+              detail-type: [ "database.entries.refresh" ]
+
+      EventInvokeConfig:
+        DestinationConfig:
+          OnSuccess:
+            Type: EventBridge
+            Destination: !Ref NewNvaEventBusArn
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
   PublicationFanoutHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -961,6 +995,24 @@ Resources:
 
 
   #==========================Manually triggered functions=============================================
+
+  BatchScanStartHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.batch.BatchScanStartHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      Timeout: 60
+      Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
+      Environment:
+        Variables:
+          EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          HANDLER_EVENTS_FOLDER: 'ignored'
+
 
   ImportCristinDataFromS3:
     DependsOn:
