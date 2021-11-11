@@ -8,13 +8,19 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.daos.Dao;
 
+
+/**
+ * DataEntries are the basic entities associated with a Resource, ignoring database implementation details.
+ * E.g., a DataEntry represents actual data stored in the Database, but without the required Dynamo specific fields
+ * i.e., the Primary and Range keys.
+ */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
     @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
 })
-public interface ResourceUpdate {
+public interface DataEntry {
 
     String ROW_VERSION = "rowVersion";
 
@@ -31,7 +37,7 @@ public interface ResourceUpdate {
         return UUID.randomUUID().toString();
     }
 
-    default ResourceUpdate refreshRowVersion() {
+    default DataEntry refreshRowVersion() {
         setRowVersion(nextRowVersion());
         return this;
     }

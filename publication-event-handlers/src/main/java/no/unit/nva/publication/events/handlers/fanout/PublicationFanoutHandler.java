@@ -10,7 +10,7 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +19,7 @@ public class PublicationFanoutHandler
     extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DynamoEntryUpdateEvent> {
 
     public static final String MAPPING_ERROR = "Error mapping Dynamodb Image to Publication";
-    public static final ResourceUpdate NO_VALUE = null;
+    public static final DataEntry NO_VALUE = null;
     private static final Logger logger = LoggerFactory.getLogger(PublicationFanoutHandler.class);
 
     @JacocoGenerated
@@ -50,7 +50,7 @@ public class PublicationFanoutHandler
         return output;
     }
 
-    private ResourceUpdate getDao(Map<String, AttributeValue> image) {
+    private DataEntry getDao(Map<String, AttributeValue> image) {
         if (image == null) {
             return NO_VALUE;
         }

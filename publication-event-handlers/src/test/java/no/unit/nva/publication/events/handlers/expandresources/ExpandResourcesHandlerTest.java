@@ -26,7 +26,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -38,7 +38,7 @@ import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -88,8 +88,8 @@ public class ExpandResourcesHandlerTest {
         var contents = s3Driver.getFile(allFiles.get(SINGLE_EXPECTED_FILE));
         var documentToIndex = objectMapper.readValue(contents, Publication.class);
 
-        ResourceUpdate actualResource = Resource.fromPublication(documentToIndex);
-        ResourceUpdate expectedImage = extractResourceUpdateFromEvent();
+        DataEntry actualResource = Resource.fromPublication(documentToIndex);
+        DataEntry expectedImage = extractResourceUpdateFromEvent();
         assertThat(actualResource, is(equalTo(expectedImage)));
     }
 
@@ -176,7 +176,7 @@ public class ExpandResourcesHandlerTest {
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
-            public ExpandedDatabaseEntry expandEntry(ResourceUpdate resourceUpdate) {
+            public ExpandedDataEntry expandEntry(DataEntry dataEntry) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
 
@@ -187,7 +187,7 @@ public class ExpandResourcesHandlerTest {
         };
     }
 
-    private ResourceUpdate fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
+    private DataEntry fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
         var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
         Publication publication =
             objectMapper.readValue(resourceUpdateString, Publication.class);
@@ -198,7 +198,7 @@ public class ExpandResourcesHandlerTest {
         return objectMapper.readValue(output.toString(), EventPayload.class);
     }
 
-    private ResourceUpdate extractResourceUpdateFromEvent() {
+    private DataEntry extractResourceUpdateFromEvent() {
         var event =
             parseEvent();
         return event.getDetail().getResponsePayload().getNewData();

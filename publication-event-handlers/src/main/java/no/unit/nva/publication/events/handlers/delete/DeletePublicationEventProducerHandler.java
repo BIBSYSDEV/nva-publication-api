@@ -9,7 +9,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DeletePublicationEvent;
 import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletePublicationEventProducerHandler
@@ -37,10 +37,10 @@ public class DeletePublicationEventProducerHandler
                 && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
     }
 
-    private Publication toPublication(ResourceUpdate resourceUpdate) {
+    private Publication toPublication(DataEntry dataEntry) {
         Publication publication = null;
-        if (resourceUpdate instanceof DoiRequest) {
-            publication = resourceUpdate.toPublication();
+        if (dataEntry instanceof DoiRequest) {
+            publication = dataEntry.toPublication();
         }
         return publication;
     }

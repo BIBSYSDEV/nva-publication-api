@@ -14,7 +14,7 @@ import nva.commons.core.JsonUtils;
     @JsonSubTypes.Type(name = "DoiRequest", value = ExpandedDoiRequest.class),
     @JsonSubTypes.Type(name = "Message", value = ExpandedMessage.class),
 })
-public interface ExpandedDatabaseEntry extends JsonSerializable {
+public interface ExpandedDataEntry extends JsonSerializable {
 
     @JacocoGenerated
     @Override

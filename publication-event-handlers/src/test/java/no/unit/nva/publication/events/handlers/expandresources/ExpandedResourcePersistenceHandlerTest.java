@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
@@ -65,7 +65,7 @@ class ExpandedResourcePersistenceHandlerTest {
 
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource")
     @MethodSource("expandedEntriesProvider")
-    void shouldEmitEventContainingS3UriToPersistedExpandedResource(ExpandedDatabaseEntry update)
+    void shouldEmitEventContainingS3UriToPersistedExpandedResource(ExpandedDataEntry update)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), update.toJsonString());
         EventPayload outputEvent = sendEvent();
@@ -75,7 +75,7 @@ class ExpandedResourcePersistenceHandlerTest {
 
     @ParameterizedTest(name = "should store entry containing the data referenced in the received event")
     @MethodSource("expandedEntriesProvider")
-    void shouldStoreEntryContainingTheDataReferencedInTheReceivedEvent(ExpandedDatabaseEntry update)
+    void shouldStoreEntryContainingTheDataReferencedInTheReceivedEvent(ExpandedDataEntry update)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), update.toJsonString());
         EventPayload outputEvent = sendEvent();
@@ -97,7 +97,7 @@ class ExpandedResourcePersistenceHandlerTest {
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
 
-    private static Stream<ExpandedDatabaseEntry> expandedEntriesProvider() throws JsonProcessingException {
+    private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException {
         return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
     }
 
@@ -146,10 +146,10 @@ class ExpandedResourcePersistenceHandlerTest {
 
     private static class PersistedEntryWithExpectedType {
 
-        final ExpandedDatabaseEntry entry;
+        final ExpandedDataEntry entry;
         final String index;
 
-        public PersistedEntryWithExpectedType(ExpandedDatabaseEntry databaseEntry, String index) {
+        public PersistedEntryWithExpectedType(ExpandedDataEntry databaseEntry, String index) {
             this.entry = databaseEntry;
             this.index = index;
         }

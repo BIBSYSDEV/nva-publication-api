@@ -9,7 +9,7 @@ import java.net.URI;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
@@ -41,7 +41,7 @@ public class ExpandedResourcePersistenceHandler
     protected EventPayload processInputPayload(EventPayload input,
                                                AwsEventBridgeEvent<AwsEventBridgeDetail<EventPayload>> event,
                                                Context context) {
-        ExpandedDatabaseEntry expandedResourceUpdate = readEvent(input);
+        ExpandedDataEntry expandedResourceUpdate = readEvent(input);
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         var uri = writeEntryToS3(indexDocument);
         var outputEvent = EventPayload.indexEntryEvent(uri);
@@ -54,9 +54,9 @@ public class ExpandedResourcePersistenceHandler
         return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
     }
 
-    private ExpandedDatabaseEntry readEvent(EventPayload input) {
+    private ExpandedDataEntry readEvent(EventPayload input) {
         String data = s3Reader.readEvent(input.getPayloadUri());
-        return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDatabaseEntry.class))
+        return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDataEntry.class))
             .orElseThrow();
     }
 

@@ -38,7 +38,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -149,7 +149,7 @@ public class ResourceService extends ServiceWithTransactions {
         sendTransactionWriteRequest(transactWriteItemsRequest);
     }
 
-    public ListingResult<ResourceUpdate> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
+    public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
@@ -157,8 +157,8 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public List<ResourceUpdate> refreshResources(List<ResourceUpdate> resourceUpdates) {
-        final List<ResourceUpdate> refreshedEntries = refreshRowVersion(resourceUpdates);
+    public List<DataEntry> refreshResources(List<DataEntry> dataEntries) {
+        final List<DataEntry> refreshedEntries = refreshRowVersion(dataEntries);
 
         List<WriteRequest> writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
@@ -215,10 +215,10 @@ public class ResourceService extends ServiceWithTransactions {
         return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
     }
 
-    private List<ResourceUpdate> refreshRowVersion(List<ResourceUpdate> resourceUpdates) {
-        return resourceUpdates
+    private List<DataEntry> refreshRowVersion(List<DataEntry> dataEntries) {
+        return dataEntries
             .stream()
-            .map(ResourceUpdate::refreshRowVersion)
+            .map(DataEntry::refreshRowVersion)
             .collect(Collectors.toList());
     }
 
@@ -229,9 +229,9 @@ public class ResourceService extends ServiceWithTransactions {
             .forEach(client::batchWriteItem);
     }
 
-    private List<WriteRequest> createWriteRequestsForBatchJob(List<ResourceUpdate> refreshedEntries) {
+    private List<WriteRequest> createWriteRequestsForBatchJob(List<DataEntry> refreshedEntries) {
         return refreshedEntries.stream()
-            .map(ResourceUpdate::toDao)
+            .map(DataEntry::toDao)
             .map(Dao::toDynamoFormat)
             .map(item -> new PutRequest().withItem(item))
             .map(WriteRequest::new)
@@ -249,12 +249,12 @@ public class ResourceService extends ServiceWithTransactions {
             .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
 
-    private List<ResourceUpdate> extractDatabaseEntries(ScanResult response) {
+    private List<DataEntry> extractDatabaseEntries(ScanResult response) {
         return response.getItems()
             .stream()
             .map(value -> parseAttributeValuesMap(value, Dao.class))
             .map(Dao::getData)
-            .map(d -> (ResourceUpdate) d)
+            .map(d -> (DataEntry) d)
             .collect(Collectors.toList());
     }
 

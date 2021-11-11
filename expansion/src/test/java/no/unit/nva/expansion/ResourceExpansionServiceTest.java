@@ -41,7 +41,7 @@ import no.unit.nva.publication.PublicationInstanceBuilder;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.secrets.ErrorReadingSecretException;
 import nva.commons.secrets.SecretsReader;
@@ -162,13 +162,13 @@ public class ResourceExpansionServiceTest {
     @MethodSource("listResourceUpdateTypes")
     void shouldProcessAllResourceUpdateTypes(Class<?> resourceUpdateType) throws IOException, InterruptedException {
         prepareHttpClientMockReturnsUserThenCustomerThenInstitutionWithTwoSubunits();
-        ResourceUpdate resource = generateResourceUpdate(resourceUpdateType);
+        DataEntry resource = generateResourceUpdate(resourceUpdateType);
         service.expandEntry(resource);
         assertDoesNotThrow(() -> service.expandEntry(resource));
     }
 
     private static List<Class<?>> listResourceUpdateTypes() {
-        JsonSubTypes[] annotations = ResourceUpdate.class.getAnnotationsByType(JsonSubTypes.class);
+        JsonSubTypes[] annotations = DataEntry.class.getAnnotationsByType(JsonSubTypes.class);
         Type[] types = annotations[0].value();
         return Arrays.stream(types).map(Type::value).collect(Collectors.toList());
     }
@@ -181,7 +181,7 @@ public class ResourceExpansionServiceTest {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 
-    private ResourceUpdate generateResourceUpdate(Class<?> resourceUpdateType) {
+    private DataEntry generateResourceUpdate(Class<?> resourceUpdateType) {
         if (Resource.class.equals(resourceUpdateType)) {
             return Resource.fromPublication(PublicationGenerator.randomPublication());
         }

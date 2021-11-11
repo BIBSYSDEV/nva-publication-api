@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
@@ -34,7 +34,7 @@ public final class DynamodbStreamRecordDaoMapper {
      * @return a Dao instance
      * @throws JsonProcessingException JsonProcessingException
      */
-    public static Optional<ResourceUpdate> toDao(Map<String, AttributeValue> recordImage)
+    public static Optional<DataEntry> toDao(Map<String, AttributeValue> recordImage)
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
@@ -43,7 +43,7 @@ public final class DynamodbStreamRecordDaoMapper {
                 .filter(entry -> isDao(dynamoEntry))
                 .map(dao -> ((Dao<?>) dao).getData())
                 .filter(data -> isResourceUpdate(data))
-                .map(data -> (ResourceUpdate) data);
+                .map(data -> (DataEntry) data);
     }
 
     private static boolean isDao(DynamoEntry dynamoEntry) {
@@ -51,7 +51,7 @@ public final class DynamodbStreamRecordDaoMapper {
     }
 
     private static boolean isResourceUpdate(Object data) {
-        return data instanceof ResourceUpdate;
+        return data instanceof DataEntry;
     }
 
     /*These methods are a copy of ItemUtils.toItem. The only difference is that instead of throwing an exception

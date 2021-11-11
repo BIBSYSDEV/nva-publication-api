@@ -8,13 +8,13 @@ import java.util.Set;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.restclients.IdentityClient;
 import no.unit.nva.expansion.restclients.InstitutionClient;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -28,16 +28,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public ExpandedDatabaseEntry expandEntry(ResourceUpdate resourceUpdate) throws JsonProcessingException {
-        if (resourceUpdate instanceof Resource) {
-            return ExpandedResource.fromPublication(resourceUpdate.toPublication());
-        } else if (resourceUpdate instanceof DoiRequest) {
-            return ExpandedDoiRequest.create((DoiRequest) resourceUpdate, this);
-        } else if (resourceUpdate instanceof Message) {
-            return ExpandedMessage.create((Message) resourceUpdate, this);
+    public ExpandedDataEntry expandEntry(DataEntry dataEntry) throws JsonProcessingException {
+        if (dataEntry instanceof Resource) {
+            return ExpandedResource.fromPublication(dataEntry.toPublication());
+        } else if (dataEntry instanceof DoiRequest) {
+            return ExpandedDoiRequest.create((DoiRequest) dataEntry, this);
+        } else if (dataEntry instanceof Message) {
+            return ExpandedMessage.create((Message) dataEntry, this);
         }
         // will throw exception if we want to index a new type that we are not handling yet
-        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdate.getClass().getSimpleName());
+        throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
     }
 
     @Override

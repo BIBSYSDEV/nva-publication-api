@@ -2,7 +2,7 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.StorageModelTestUtils.randomString;
-import static no.unit.nva.publication.storage.model.ResourceUpdate.nextRowVersion;
+import static no.unit.nva.publication.storage.model.DataEntry.nextRowVersion;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class ResourceUpdateTest {
+class DataEntryTest {
 
     static Stream<Tuple> resourceProvider() {
         var publication = PublicationGenerator.randomPublication();
@@ -68,10 +68,10 @@ class ResourceUpdateTest {
 
     private static class Tuple {
 
-        private final ResourceUpdate left;
-        private final ResourceUpdate right;
+        private final DataEntry left;
+        private final DataEntry right;
 
-        public Tuple(ResourceUpdate left, ResourceUpdate right) {
+        public Tuple(DataEntry left, DataEntry right) {
 
             this.left = left;
             this.right = right;

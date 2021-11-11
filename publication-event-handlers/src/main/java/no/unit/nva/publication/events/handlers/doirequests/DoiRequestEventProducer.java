@@ -13,7 +13,7 @@ import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
 import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,8 +88,8 @@ public class DoiRequestEventProducer
         }
     }
 
-    private Publication toPublication(ResourceUpdate resourceUpdate) {
-        return resourceUpdate != null ? resourceUpdate.toPublication() : null;
+    private Publication toPublication(DataEntry dataEntry) {
+        return dataEntry != null ? dataEntry.toPublication() : null;
     }
 
     private boolean isFirstDoiRequest(DynamoEntryUpdateEvent updateEvent) {

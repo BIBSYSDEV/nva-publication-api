@@ -3,7 +3,7 @@ package no.unit.nva.publication.events.handlers.expandresources;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
@@ -33,7 +33,7 @@ public class PersistedDocumentConsumptionAttributes {
         this.documentIdentifier = documentIdentifier;
     }
 
-    public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDatabaseEntry expandedEntry) {
+    public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDataEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
             return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {

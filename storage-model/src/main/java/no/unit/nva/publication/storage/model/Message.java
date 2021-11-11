@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.storage.model.ResourceUpdate.nextRowVersion;
+import static no.unit.nva.publication.storage.model.DataEntry.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
@@ -21,7 +21,7 @@ import nva.commons.core.JsonSerializable;
 public class Message implements WithIdentifier,
                                 WithStatus,
                                 RowLevelSecurity,
-                                ResourceUpdate,
+                                DataEntry,
                                 ConnectedToResource,
                                 JsonSerializable {
 

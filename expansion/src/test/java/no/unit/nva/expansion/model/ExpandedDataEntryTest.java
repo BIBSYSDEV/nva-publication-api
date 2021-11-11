@@ -21,7 +21,7 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
 
-class ExpandedResourceUpdateTest {
+class ExpandedDataEntryTest {
 
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";

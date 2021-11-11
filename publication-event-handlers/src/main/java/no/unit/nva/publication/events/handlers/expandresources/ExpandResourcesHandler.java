@@ -19,7 +19,7 @@ import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
@@ -66,7 +66,7 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
             .collect(SingletonCollector.collectOrElse(EventPayload.emptyEvent()));
     }
 
-    private boolean shouldBeEnriched(ResourceUpdate entry) {
+    private boolean shouldBeEnriched(DataEntry entry) {
         if (entry instanceof Resource) {
             Resource resource = (Resource) entry;
             return PublicationStatus.PUBLISHED.equals(resource.getStatus());
@@ -87,16 +87,16 @@ public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<
         return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
     }
 
-    private Optional<String> transformToJson(ResourceUpdate newData) {
+    private Optional<String> transformToJson(DataEntry newData) {
         return attempt(() -> createExpandedResourceUpdate(newData))
             .toOptional(fail -> logError(fail, newData));
     }
 
-    private String createExpandedResourceUpdate(ResourceUpdate input) throws JsonProcessingException {
+    private String createExpandedResourceUpdate(DataEntry input) throws JsonProcessingException {
         return resourceExpansionService.expandEntry(input).toJsonString();
     }
 
-    private void logError(Failure<?> fail, ResourceUpdate input) {
+    private void logError(Failure<?> fail, DataEntry input) {
         Exception exception = fail.getException();
         logger.warn(ERROR_EXPANDING_RESOURCE_WARNING + input.getIdentifier(), exception);
     }

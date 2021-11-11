@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
@@ -18,18 +18,18 @@ public class PersistedDocument implements JsonSerializable {
     @JsonProperty(CONSUMPTION_ATTRIBUTES)
     private final PersistedDocumentConsumptionAttributes consumptionAttributes;
     @JsonProperty(BODY)
-    private final ExpandedDatabaseEntry body;
+    private final ExpandedDataEntry body;
 
     @JsonCreator
     public PersistedDocument(
-        @JsonProperty(BODY) ExpandedDatabaseEntry body,
+        @JsonProperty(BODY) ExpandedDataEntry body,
         @JsonProperty(CONSUMPTION_ATTRIBUTES) PersistedDocumentConsumptionAttributes consumptionAttributes) {
 
         this.consumptionAttributes = consumptionAttributes;
         this.body = body;
     }
 
-    public static PersistedDocument createIndexDocument(ExpandedDatabaseEntry expandedResourceUpdate) {
+    public static PersistedDocument createIndexDocument(ExpandedDataEntry expandedResourceUpdate) {
         return new PersistedDocument(expandedResourceUpdate, createAttributes(expandedResourceUpdate));
     }
 
@@ -43,7 +43,7 @@ public class PersistedDocument implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public ExpandedDatabaseEntry getBody() {
+    public ExpandedDataEntry getBody() {
         return body;
     }
 

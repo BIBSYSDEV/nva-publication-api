@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
@@ -23,9 +23,9 @@ public class DynamoEntryUpdateEvent {
     @JsonProperty(UPDATE_TYPE)
     private final String updateType;
     @JsonProperty(OLD_DATA)
-    private final ResourceUpdate oldData;
+    private final DataEntry oldData;
     @JsonProperty(NEW_DATA)
-    private final ResourceUpdate newData;
+    private final DataEntry newData;
 
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
@@ -37,8 +37,8 @@ public class DynamoEntryUpdateEvent {
     @JsonCreator
     public DynamoEntryUpdateEvent(
             @JsonProperty(UPDATE_TYPE) String updateType,
-            @JsonProperty(OLD_DATA) ResourceUpdate oldData,
-            @JsonProperty(NEW_DATA) ResourceUpdate newData) {
+            @JsonProperty(OLD_DATA) DataEntry oldData,
+            @JsonProperty(NEW_DATA) DataEntry newData) {
 
         this.updateType = updateType;
         this.oldData = oldData;
@@ -49,11 +49,11 @@ public class DynamoEntryUpdateEvent {
         return updateType;
     }
 
-    public ResourceUpdate getOldData() {
+    public DataEntry getOldData() {
         return oldData;
     }
 
-    public ResourceUpdate getNewData() {
+    public DataEntry getNewData() {
         return newData;
     }
 

@@ -27,7 +27,7 @@ import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields","PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, ResourceUpdate {
+public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, DataEntry {
 
     public static final String TYPE = "Resource";
 

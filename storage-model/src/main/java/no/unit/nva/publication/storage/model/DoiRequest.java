@@ -4,7 +4,7 @@ import static java.util.Objects.isNull;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDoiRequestCreatedDate;
 import static no.unit.nva.publication.storage.model.DoiRequestUtils.extractDoiRequestModifiedDate;
-import static no.unit.nva.publication.storage.model.ResourceUpdate.nextRowVersion;
+import static no.unit.nva.publication.storage.model.DataEntry.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -37,7 +37,7 @@ public class DoiRequest
     implements WithIdentifier,
                RowLevelSecurity,
                WithStatus,
-               ResourceUpdate,
+               DataEntry,
                ConnectedToResource {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
