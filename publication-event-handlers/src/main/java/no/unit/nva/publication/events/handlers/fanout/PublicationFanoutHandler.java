@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toDao;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -9,7 +8,8 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import java.util.Map;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
@@ -32,7 +32,7 @@ public class PublicationFanoutHandler
         DynamodbEvent.DynamodbStreamRecord input,
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
-        String eventJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields
+        String eventJson = attempt(() -> PublicationEventsConfig.objectMapper
                 .writeValueAsString(event))
                 .orElseThrow();
         logger.info("event:" + eventJson);
@@ -43,7 +43,7 @@ public class PublicationFanoutHandler
                 getDao(input.getDynamodb().getNewImage())
         );
 
-        String outputJson = attempt(() -> dynamoImageSerializerRemovingEmptyFields
+        String outputJson = attempt(() -> PublicationEventsConfig.objectMapper
                 .writeValueAsString(output))
                 .orElseThrow();
         logger.info("output" + outputJson);

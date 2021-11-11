@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
 import static com.amazonaws.util.BinaryUtils.copyAllBytesFrom;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,7 +38,7 @@ public final class DynamodbStreamRecordDaoMapper {
         throws JsonProcessingException {
         var attributeMap = fromEventMapToDynamodbMap(recordImage);
         Item item = toItem(attributeMap);
-        DynamoEntry dynamoEntry = dynamoImageSerializerRemovingEmptyFields.readValue(item.toJSON(), DynamoEntry.class);
+        DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
                 .filter(entry -> isDao(dynamoEntry))
                 .map(dao -> ((Dao<?>) dao).getData())
@@ -63,14 +63,14 @@ public final class DynamodbStreamRecordDaoMapper {
 
     private static Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> fromEventMapToDynamodbMap(
         Map<String, AttributeValue> recordImage) throws JsonProcessingException {
-        var jsonString = dynamoImageSerializerRemovingEmptyFields.writeValueAsString(recordImage);
+        var jsonString = objectMapper.writeValueAsString(recordImage);
         var javaType =
-            dynamoImageSerializerRemovingEmptyFields.getTypeFactory()
+            objectMapper.getTypeFactory()
                 .constructParametricType(Map.class,
                                          String.class,
                                          com.amazonaws.services.dynamodbv2.model.AttributeValue.class
                 );
-        return dynamoImageSerializerRemovingEmptyFields.readValue(jsonString, javaType);
+        return objectMapper.readValue(jsonString, javaType);
     }
 
 

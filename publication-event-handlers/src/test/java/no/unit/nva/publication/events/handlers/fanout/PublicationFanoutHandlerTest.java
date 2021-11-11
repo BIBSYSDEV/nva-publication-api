@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -20,7 +20,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -164,8 +164,8 @@ public class PublicationFanoutHandlerTest {
     }
 
     private DynamoEntryUpdateEvent parseResponse() {
-        return Try.attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(outputStream.toString(),
-                                                                    DynamoEntryUpdateEvent.class))
+        return Try.attempt(() -> objectMapper.readValue(outputStream.toString(),
+                                                        DynamoEntryUpdateEvent.class))
             .orElseThrow();
     }
 }

@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
@@ -29,7 +29,7 @@ import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -141,7 +141,7 @@ class ExpandedResourcePersistenceHandlerTest {
         EventPayload eventPayload = EventPayload.resourcesUpdateEvent(eventUriInEventsBucket);
         var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventPayload);
         handler.handleRequest(event, output, mock(Context.class));
-        return dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+        return objectMapper.readValue(output.toString(), EventPayload.class);
     }
 
     private static class PersistedEntryWithExpectedType {

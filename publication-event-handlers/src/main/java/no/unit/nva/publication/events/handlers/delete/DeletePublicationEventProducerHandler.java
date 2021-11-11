@@ -1,4 +1,4 @@
-package no.unit.nva.publication.delete;
+package no.unit.nva.publication.events.handlers.delete;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -7,7 +7,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.DeletePublicationEvent;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;
@@ -40,7 +40,7 @@ public class DeletePublicationEventProducerHandler
     private Publication toPublication(ResourceUpdate resourceUpdate) {
         Publication publication = null;
         if (resourceUpdate instanceof DoiRequest) {
-            publication = ((DoiRequest)resourceUpdate).toPublication();
+            publication = resourceUpdate.toPublication();
         }
         return publication;
     }

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.delete;
+package no.unit.nva.publication.events.handlers.delete;
 
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
@@ -25,9 +25,10 @@ import org.mockito.Mockito;
 
 public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
-    public static final String WILDCARD = "*";
-    public static final String DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON = "delete_draft_publication_without_doi.json";
-    public static final String DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON = "delete_draft_publication_with_doi.json";
+    public static final String DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON =
+        "delete/delete_draft_publication_without_doi.json";
+    public static final String DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON =
+        "delete/delete_draft_publication_with_doi.json";
     
     private DeleteDraftPublicationHandler handler;
     private ByteArrayOutputStream outputStream;

@@ -1,4 +1,4 @@
-package no.unit.nva.publication.delete;
+package no.unit.nva.publication.events.handlers.delete;
 
 import static java.util.Objects.nonNull;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;

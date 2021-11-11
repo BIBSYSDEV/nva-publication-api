@@ -9,7 +9,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.file.Path;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static nva.commons.core.attempt.Try.attempt;
@@ -206,19 +206,19 @@ class DoiRequestEventProducerTest {
     @SuppressWarnings("unchecked")
     private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String event) {
         EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventEventParser =
-            new EventParser<>(event, dynamoImageSerializerRemovingEmptyFields);
+            new EventParser<>(event, objectMapper);
         return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
                    eventEventParser.parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
     }
 
     private boolean hasDoiField(String eventInput) {
-        JsonNode event = attempt(() -> dynamoImageSerializerRemovingEmptyFields.readTree(eventInput)).orElseThrow();
+        JsonNode event = attempt(() -> objectMapper.readTree(eventInput)).orElseThrow();
         return event.at(NEW_DATA_FIELD).has(DOI_FIELD);
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();
-        return dynamoImageSerializerRemovingEmptyFields.readValue(outputString, PublicationHolder.class);
+        return objectMapper.readValue(outputString, PublicationHolder.class);
     }
 }

@@ -1,6 +1,6 @@
-package no.unit.nva.publication.delete;
+package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.delete.DeleteDraftPublicationTestsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -19,9 +19,10 @@ import org.mockito.Mockito;
 
 public class DeletePublicationEventProducerHandlerTest {
 
-    public static final String NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON = "new_publication_draft_for_deletion.json";
-    public static final String NEW_PUBLICATION_DRAFT_JSON = "new_publication_draft.json";
-    public static final String NEW_PUBLICATION_NULL_JSON = "new_publication_null.json";
+    public static final String NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON =
+        "delete/new_publication_draft_for_deletion.json";
+    public static final String NEW_PUBLICATION_DRAFT_JSON = "delete/new_publication_draft.json";
+    public static final String NEW_PUBLICATION_NULL_JSON = "delete/new_publication_null.json";
     private DeletePublicationEventProducerHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
@@ -39,7 +40,8 @@ public class DeletePublicationEventProducerHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(), DeletePublicationEvent.class);
+        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(),
+                                                                 DeletePublicationEvent.class);
         assertThat(response, notNullValue());
         assertThat(response.getDoi(), notNullValue());
         assertThat(response.getIdentifier(), notNullValue());
@@ -53,7 +55,8 @@ public class DeletePublicationEventProducerHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(), DeletePublicationEvent.class);
+        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(),
+                                                                 DeletePublicationEvent.class);
         assertThat(response, nullValue());
     }
 

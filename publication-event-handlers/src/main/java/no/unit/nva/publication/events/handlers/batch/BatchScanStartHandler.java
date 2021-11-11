@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class BatchScanStartHandler implements RequestStreamHandler {
     public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
         String inputString = IoUtils.streamToString(input);
         ScanDatabaseRequest scanRequest =
-            dynamoImageSerializerRemovingEmptyFields.readValue(inputString, ScanDatabaseRequest.class);
+            objectMapper.readValue(inputString, ScanDatabaseRequest.class);
         var event = scanRequest.createNewEventEntry(
             EventBasedBatchScanHandler.EVENT_BUS_NAME,
             EventBasedBatchScanHandler.DETAIL_TYPE,

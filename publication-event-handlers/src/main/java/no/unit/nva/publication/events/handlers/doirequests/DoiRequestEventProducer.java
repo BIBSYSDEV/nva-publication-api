@@ -11,7 +11,7 @@ import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.ResourceUpdate;
 import nva.commons.core.JacocoGenerated;

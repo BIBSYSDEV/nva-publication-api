@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.createAttributes;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -34,7 +34,7 @@ public class PersistedDocument implements JsonSerializable {
     }
 
     public static PersistedDocument fromJsonString(String indexingEventPayload) throws JsonProcessingException {
-        return dynamoImageSerializerRemovingEmptyFields.readValue(indexingEventPayload, PersistedDocument.class);
+        return objectMapper.readValue(indexingEventPayload, PersistedDocument.class);
     }
 
     @JacocoGenerated
@@ -49,7 +49,7 @@ public class PersistedDocument implements JsonSerializable {
 
     @Override
     public String toJsonString() {
-        return attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(this)).orElseThrow();
+        return attempt(() -> objectMapper.writeValueAsString(this)).orElseThrow();
     }
 
     @JacocoGenerated

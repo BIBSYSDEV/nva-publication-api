@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ENVIRONMENT;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocument.createIndexDocument;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
@@ -11,7 +10,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
-import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -57,7 +56,7 @@ public class ExpandedResourcePersistenceHandler
 
     private ExpandedDatabaseEntry readEvent(EventPayload input) {
         String data = s3Reader.readEvent(input.getPayloadUri());
-        return attempt(() -> dynamoImageSerializerRemovingEmptyFields.readValue(data, ExpandedDatabaseEntry.class))
+        return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDatabaseEntry.class))
             .orElseThrow();
     }
 

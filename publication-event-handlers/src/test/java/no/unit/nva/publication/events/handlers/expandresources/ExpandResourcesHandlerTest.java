@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -33,8 +33,8 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
-import no.unit.nva.publication.events.EventPayload;
+import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
@@ -86,7 +86,7 @@ public class ExpandResourcesHandlerTest {
         var allFiles = s3Driver.listAllFiles(UnixPath.ROOT_PATH);
         assertThat(allFiles.size(), is(equalTo(1)));
         var contents = s3Driver.getFile(allFiles.get(SINGLE_EXPECTED_FILE));
-        var documentToIndex = dynamoImageSerializerRemovingEmptyFields.readValue(contents, Publication.class);
+        var documentToIndex = objectMapper.readValue(contents, Publication.class);
 
         ResourceUpdate actualResource = Resource.fromPublication(documentToIndex);
         ResourceUpdate expectedImage = extractResourceUpdateFromEvent();
@@ -123,7 +123,7 @@ public class ExpandResourcesHandlerTest {
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(resource);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         EventPayload eventPayload =
-            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+            objectMapper.readValue(output.toString(), EventPayload.class);
         assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
     }
 
@@ -134,7 +134,7 @@ public class ExpandResourcesHandlerTest {
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(doiRequest);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         EventPayload eventPayload =
-            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+            objectMapper.readValue(output.toString(), EventPayload.class);
         assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
     }
 
@@ -144,7 +144,7 @@ public class ExpandResourcesHandlerTest {
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(someMessage);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         EventPayload eventPayload =
-            dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+            objectMapper.readValue(output.toString(), EventPayload.class);
         assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
     }
 
@@ -190,12 +190,12 @@ public class ExpandResourcesHandlerTest {
     private ResourceUpdate fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
         var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
         Publication publication =
-            dynamoImageSerializerRemovingEmptyFields.readValue(resourceUpdateString, Publication.class);
+            objectMapper.readValue(resourceUpdateString, Publication.class);
         return Resource.fromPublication(publication);
     }
 
     private EventPayload parseEmittedEvent() throws JsonProcessingException {
-        return dynamoImageSerializerRemovingEmptyFields.readValue(output.toString(), EventPayload.class);
+        return objectMapper.readValue(output.toString(), EventPayload.class);
     }
 
     private ResourceUpdate extractResourceUpdateFromEvent() {
@@ -212,6 +212,6 @@ public class ExpandResourcesHandlerTest {
     }
 
     private EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> newEventParser() {
-        return new EventParser<>(EVENT_WITH_NEW_PUBLISHED_RESOURCE, dynamoImageSerializerRemovingEmptyFields);
+        return new EventParser<>(EVENT_WITH_NEW_PUBLISHED_RESOURCE, objectMapper);
     }
 }

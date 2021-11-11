@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.bodies;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -27,7 +27,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
     }
 
     public static ScanDatabaseRequest fromJson(String detail) throws JsonProcessingException {
-        return dynamoImageSerializerRemovingEmptyFields.readValue(detail, ScanDatabaseRequest.class);
+        return objectMapper.readValue(detail, ScanDatabaseRequest.class);
     }
 
     public int getPageSize() {
