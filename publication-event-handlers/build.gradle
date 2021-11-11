@@ -1,5 +1,4 @@
 dependencies {
-    implementation project(":publication-events")
     implementation project(":publication-doi-commons")
     implementation project(":storage-model")
     implementation project(":expansion")
@@ -14,7 +13,6 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
-
 
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core

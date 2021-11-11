@@ -62,12 +62,13 @@ class EventBasedBatchScanHandlerTest extends ResourcesDynamoDbLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        var dynamoDbClient = super.client;
+
         this.clock = Clock.systemDefaultZone();
         this.output = new ByteArrayOutputStream();
         this.context = mockContent();
-
         this.eventBridgeClient = new FakeEventBridgeClient();
+
+        var dynamoDbClient = super.client;
         this.resourceService = mockResourceService(dynamoDbClient);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
         this.scanningStartingPoints = Collections.synchronizedList(new ArrayList<>());

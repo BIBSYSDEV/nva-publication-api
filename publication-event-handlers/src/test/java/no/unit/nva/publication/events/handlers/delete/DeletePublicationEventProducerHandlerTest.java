@@ -11,7 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.events.DeletePublicationEvent;
+import no.unit.nva.publication.events.bodies.DeletePublicationEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
