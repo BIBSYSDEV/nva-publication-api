@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
@@ -66,9 +66,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     public static final String DOI_FIELD_IN_RESOURCE = "doi";
     public static final String RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE = "Resource cannot be deleted: ";
-
-    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     public static final int MAX_SIZE_OF_BATCH_REQUEST = 20;
+    private static final Logger logger = LoggerFactory.getLogger(ResourceService.class);
     private final String tableName;
     private final AmazonDynamoDB client;
     private final Clock clockForTimestamps;
@@ -154,8 +153,7 @@ public class ResourceService extends ServiceWithTransactions {
         var scanRequest = createScanRequestThatFiltersOutIdentityEntries(pageSize, startMarker);
         var scanResult = client.scan(scanRequest);
         var values = extractDatabaseEntries(scanResult);
-        var isTruncated = isNull(scanResult.getLastEvaluatedKey()) || scanResult.getLastEvaluatedKey().isEmpty();
-
+        var isTruncated = thereAreMorePagesToScan(scanResult);
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
@@ -168,29 +166,6 @@ public class ResourceService extends ServiceWithTransactions {
         return refreshedEntries;
     }
 
-    private List<ResourceUpdate> refreshRowVersion(List<ResourceUpdate> resourceUpdates) {
-        return resourceUpdates
-            .stream()
-            .map(ResourceUpdate::refreshRowVersion)
-            .collect(Collectors.toList());
-    }
-
-    private void writeToS3InBatches(List<WriteRequest> writeRequests) {
-        Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
-            .stream()
-            .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
-            .forEach(client::batchWriteItem);
-    }
-
-    private List<WriteRequest> createWriteRequestsForBatchJob(List<ResourceUpdate> refreshedEntries) {
-        return refreshedEntries.stream()
-            .map(ResourceUpdate::toDao)
-            .map(Dao::toDynamoFormat)
-            .map(item -> new PutRequest().withItem(item))
-            .map(WriteRequest::new)
-            .collect(Collectors.toList());
-    }
-
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
         throws ApiGatewayException {
         return readResourceService.getPublication(userInstance, resourceIdentifier);
@@ -200,12 +175,16 @@ public class ResourceService extends ServiceWithTransactions {
         return readResourceService.getPublication(sampleResource);
     }
 
+    public Resource getResourceByIdentifier(SortableIdentifier identifier) throws NotFoundException {
+        return readResourceService.getResourceByIdentifier(identifier);
+    }
+
     public List<Publication> getPublicationsByOwner(UserInstance sampleUser) {
         return readResourceService.getResourcesByOwner(sampleUser);
     }
 
     public Publication getPublicationByIdentifier(SortableIdentifier identifier) throws NotFoundException {
-        return readResourceService.getPublicationByIdentifier(identifier);
+        return getResourceByIdentifier(identifier).toPublication();
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
@@ -230,6 +209,33 @@ public class ResourceService extends ServiceWithTransactions {
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
+    }
+
+    private boolean thereAreMorePagesToScan(ScanResult scanResult) {
+        return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
+    }
+
+    private List<ResourceUpdate> refreshRowVersion(List<ResourceUpdate> resourceUpdates) {
+        return resourceUpdates
+            .stream()
+            .map(ResourceUpdate::refreshRowVersion)
+            .collect(Collectors.toList());
+    }
+
+    private void writeToS3InBatches(List<WriteRequest> writeRequests) {
+        Lists.partition(writeRequests, MAX_SIZE_OF_BATCH_REQUEST)
+            .stream()
+            .map(items -> new BatchWriteItemRequest().withRequestItems(Map.of(tableName, items)))
+            .forEach(client::batchWriteItem);
+    }
+
+    private List<WriteRequest> createWriteRequestsForBatchJob(List<ResourceUpdate> refreshedEntries) {
+        return refreshedEntries.stream()
+            .map(ResourceUpdate::toDao)
+            .map(Dao::toDynamoFormat)
+            .map(item -> new PutRequest().withItem(item))
+            .map(WriteRequest::new)
+            .collect(Collectors.toList());
     }
 
     private ScanRequest createScanRequestThatFiltersOutIdentityEntries(int pageSize,

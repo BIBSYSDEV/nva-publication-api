@@ -48,8 +48,10 @@ dependencies {
 
 test{
     environment "EVENTS_BUCKET","theEventsBucket"
+    environment "EVENT_BUS_NAME", "eventBus"
     environment "HANDLER_EVENTS_FOLDER", "reource-updates-events"
     environment "IDENTITY_SERVICE_SECRET_NAME","someSecretName"
     environment "IDENTITY_SERVICE_SECRET_KEY","someSecretKey"
     environment "PERSISTED_ENTRIES_BUCKET", "persistedEntries"
+    environment "AWS_REGION", "AWS_REGION"
 }

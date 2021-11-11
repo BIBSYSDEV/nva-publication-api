@@ -32,7 +32,7 @@ public class ExpandedResourcePersistenceHandler
         this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
-    protected ExpandedResourcePersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
+    public ExpandedResourcePersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
         super(EventPayload.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
