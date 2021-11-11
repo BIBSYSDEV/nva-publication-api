@@ -17,6 +17,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+
+import no.unit.nva.file.model.File;
+import no.unit.nva.file.model.FileSet;
+import no.unit.nva.file.model.License;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Approval;
@@ -25,11 +29,8 @@ import no.unit.nva.model.ApprovalsBody;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.File;
-import no.unit.nva.model.FileSet;
 import no.unit.nva.model.Grant;
 import no.unit.nva.model.Identity;
-import no.unit.nva.model.License;
 import no.unit.nva.model.NameType;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -273,7 +274,6 @@ public class ResourceTest {
     }
 
     private FileSet sampleFileSet() {
-        FileSet files = new FileSet();
         License license = new License.Builder()
             .withIdentifier(randomString())
             .withLabels(Map.of(randomString(), randomString()))
@@ -289,8 +289,7 @@ public class ResourceTest {
             .withLicense(license)
             .withName(randomString())
             .build();
-        files.setFiles(List.of(file));
-        return files;
+        return new FileSet(List.of(file));
     }
 
     private Resource sampleResource() {

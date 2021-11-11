@@ -192,7 +192,7 @@ public class DaoTest extends ResourcesDynamoDbLocalTest {
         assertThat(parsedDao, is(equalTo(originalDao)));
     }
 
-    @ParameterizedTest(name= "should return filter expression that filters out non data entries:{0}")
+    @ParameterizedTest(name = "should return filter expression that filters out non data entries:{0}")
     @MethodSource("instanceProvider")
     void shouldReturnFilteringExpressionThatFiltersOutNonDataEntries(Dao<?> sampleDao) {
         IdentifierEntry identifier = IdentifierEntry.create(sampleDao);
