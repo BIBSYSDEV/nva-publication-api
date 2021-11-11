@@ -41,7 +41,7 @@ import software.amazon.awssdk.services.s3.S3Client;
  * {@link FilenameEventEmitter} accepts an {@link ImportRequest}, it lists all the files in the S3 location defined in
  * the {@link ImportRequest} and it emits on event per filename.
  *
- * <p>Each event has as event detail-type the value {@link FilenameEventEmitter#EVENT_DETAIL_TYPE} and detail
+ * <p>Each event has as event detail-type the value {@link ImportRequest#EVENT_DETAIL_TYPE} and detail
  * (event-body) an {@link ImportRequest} where s3Location is the URI of the respective file and the rest of the fields
  * are copied from the input.
  */
@@ -56,7 +56,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         "Import event type is set for this handler and cannot be set by the user. "
         + EXPECTED_BODY_MESSAGE;
 
-    public static final String EVENT_DETAIL_TYPE = "import.filename-event";
+
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
     public static final String PATH_SEPARATOR = "/";
@@ -162,7 +162,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
 
         EventEmitter<ImportRequest> eventEmitter =
-            new EventEmitter<>(EVENT_DETAIL_TYPE,
+            new EventEmitter<>(ImportRequest.EVENT_DETAIL_TYPE,
                                RUNNING_CLASS_NAME,
                                context.getInvokedFunctionArn(),
                                eventBridgeClient);

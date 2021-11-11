@@ -26,8 +26,6 @@ public class FileContentsEvent<T> {
     @JsonIgnore
     protected static final String CONTENTS_FIELD = "contents";
     @JsonIgnore
-    protected static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
-    @JsonIgnore
     public static final String FILE_URI = "fileUri";
     @JsonIgnore
     public static final String TIMESTAMP = "timestamp";

@@ -199,7 +199,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.EVENT_DETAIL_TYPE)) {
+        if (!event.getDetailType().equalsIgnoreCase(ImportRequest.EVENT_DETAIL_TYPE)) {
             throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
         }
     }

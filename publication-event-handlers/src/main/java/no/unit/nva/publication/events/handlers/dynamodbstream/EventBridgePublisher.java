@@ -19,7 +19,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 public class EventBridgePublisher implements EventPublisher {
 
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
-    public static final String EVENT_DETAIL_TYPE = "dynamodb-stream-event";
+    public static final String EVENT_DETAIL_TYPE = "PublicationService.Database.Update";
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
@@ -70,16 +70,14 @@ public class EventBridgePublisher implements EventPublisher {
         PutEventsRequest putEventsRequest = PutEventsRequest.builder()
             .entries(requestEntries)
             .build();
-        List<PutEventsRequestEntry> failedEntries = eventBridge.putEvents(putEventsRequest);
-        return failedEntries;
+        return eventBridge.putEvents(putEventsRequest);
     }
 
     private List<PutEventsRequestEntry> createPutEventsRequestEntries(DynamodbEvent event) {
-        List<PutEventsRequestEntry> requestEntries = event.getRecords()
+        return event.getRecords()
             .stream()
             .map(this::createPutEventRequestEntry)
             .collect(Collectors.toList());
-        return requestEntries;
     }
 
     private PutEventsRequestEntry createPutEventRequestEntry(DynamodbStreamRecord record) {

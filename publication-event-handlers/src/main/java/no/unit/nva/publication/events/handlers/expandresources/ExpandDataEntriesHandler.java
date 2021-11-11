@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.HANDLER_EVENTS_FOLDER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,11 +14,11 @@ import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.EventPayload;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
@@ -29,31 +28,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ExpandResourcesHandler extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, EventPayload> {
+public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, EventPayload> {
 
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
-    private static final Logger logger = LoggerFactory.getLogger(ExpandResourcesHandler.class);
+    public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
+    private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
 
     @JacocoGenerated
-    public ExpandResourcesHandler() {
+    public ExpandDataEntriesHandler() {
         this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService());
     }
 
-    public ExpandResourcesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
+    public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
         this(new S3Driver(s3Client, EVENTS_BUCKET), resourceExpansionService);
     }
 
-    private ExpandResourcesHandler(S3Driver s3Driver, ResourceExpansionService resourceExpansionService) {
-        super(DynamoEntryUpdateEvent.class);
+    private ExpandDataEntriesHandler(S3Driver s3Driver, ResourceExpansionService resourceExpansionService) {
+        super(DataEntryUpdateEvent.class);
         this.s3Driver = s3Driver;
         this.resourceExpansionService = resourceExpansionService;
     }
 
     @Override
-    protected EventPayload processInputPayload(DynamoEntryUpdateEvent input,
-                                               AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+    protected EventPayload processInputPayload(DataEntryUpdateEvent input,
+                                               AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
                                                Context context) {
 
         return Optional.ofNullable(input.getNewData())

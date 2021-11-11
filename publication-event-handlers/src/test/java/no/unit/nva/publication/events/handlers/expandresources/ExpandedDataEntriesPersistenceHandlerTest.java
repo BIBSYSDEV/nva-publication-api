@@ -41,12 +41,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class ExpandedResourcePersistenceHandlerTest {
+class ExpandedDataEntriesPersistenceHandlerTest {
 
     private static final ResourceExpansionService resourceExpansionService = fakeExpansionService();
     private static final String HELP_MESSAGE = String.format("%s should be compared for equality only as json "
                                                              + "objects", ExpandedResource.class.getSimpleName());
-    private ExpandedResourcePersistenceHandler handler;
+    private ExpandedDataEntriesPersistenceHandler handler;
     private S3Driver s3Reader;
     private S3Driver s3Writer;
     private URI eventUriInEventsBucket;
@@ -58,7 +58,7 @@ class ExpandedResourcePersistenceHandlerTest {
         var indexBucket = new FakeS3Client();
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
-        handler = new ExpandedResourcePersistenceHandler(s3Reader, s3Writer);
+        handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
 
         output = new ByteArrayOutputStream();
     }

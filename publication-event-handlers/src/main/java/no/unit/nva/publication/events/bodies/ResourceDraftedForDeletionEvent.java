@@ -7,9 +7,9 @@ import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
-public class DeletePublicationEvent {
+public class ResourceDraftedForDeletionEvent {
 
-    public static final String DELETE_PUBLICATION = "delete.publication";
+    public static final String DELETE_PUBLICATION = "PublicationService.Resource.DraftForDeletion";
 
     private final String type;
     private final SortableIdentifier identifier;
@@ -27,7 +27,7 @@ public class DeletePublicationEvent {
      * @param customerId    customerId
      */
     @JsonCreator
-    public DeletePublicationEvent(
+    public ResourceDraftedForDeletionEvent(
             @JsonProperty("type") String type,
             @JsonProperty("identifier") SortableIdentifier identifier,
             @JsonProperty("status") String status,
@@ -74,7 +74,7 @@ public class DeletePublicationEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DeletePublicationEvent that = (DeletePublicationEvent) o;
+        ResourceDraftedForDeletionEvent that = (ResourceDraftedForDeletionEvent) o;
         return type.equals(that.type)
                 && identifier.equals(that.identifier)
                 && status.equals(that.status)

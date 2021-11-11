@@ -6,24 +6,24 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.events.bodies.DeletePublicationEvent;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 
-public class DeletePublicationEventProducerHandler
-    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, DeletePublicationEvent> {
+public class DeletionProcessInitializationHandler
+    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, ResourceDraftedForDeletionEvent> {
 
     @JacocoGenerated
-    public DeletePublicationEventProducerHandler() {
-        super(DynamoEntryUpdateEvent.class);
+    public DeletionProcessInitializationHandler() {
+        super(DataEntryUpdateEvent.class);
     }
 
     @Override
-    protected DeletePublicationEvent processInputPayload(
-        DynamoEntryUpdateEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+    protected ResourceDraftedForDeletionEvent processInputPayload(
+        DataEntryUpdateEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
         Context context) {
         Publication publication = toPublication(input.getNewData());
         if (isDraftForDeletion(publication)) {
@@ -45,13 +45,13 @@ public class DeletePublicationEventProducerHandler
         return publication;
     }
 
-    private DeletePublicationEvent toDeletePublicationEvent(Publication publication) {
-        return new DeletePublicationEvent(
-                DeletePublicationEvent.DELETE_PUBLICATION,
-                publication.getIdentifier(),
-                publication.getStatus().getValue(),
-                publication.getDoi(),
-                publication.getPublisher().getId()
+    private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {
+        return new ResourceDraftedForDeletionEvent(
+            ResourceDraftedForDeletionEvent.DELETE_PUBLICATION,
+            publication.getIdentifier(),
+            publication.getStatus().getValue(),
+            publication.getDoi(),
+            publication.getPublisher().getId()
         );
     }
 }

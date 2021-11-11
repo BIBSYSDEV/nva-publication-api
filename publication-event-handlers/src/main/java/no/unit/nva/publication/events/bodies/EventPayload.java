@@ -13,9 +13,9 @@ public class EventPayload {
 
     public static final String EVENT_TYPE = "eventType";
     public static final String PAYLOAD = "uri";
-    private static final String RESOURCES_ENTRY_UPDATE = "resources.entry.update";
-    private static final String INDEX_ENTRY_UPDATE = "index.entry.update";
-    private static final String EMPTY_EVENT_TYPE = "event.empty";
+    private static final String RESOURCES_ENTRY_UPDATE = "PublicationService.ExpandedEntry.Updated";
+    private static final String INDEX_ENTRY_UPDATE = "PublicationService.ExpandedEntry.Persisted";
+    private static final String EMPTY_EVENT_TYPE = "Event.Empty";
     @JsonProperty(EVENT_TYPE)
     private final String eventType;
     @JsonProperty(PAYLOAD)

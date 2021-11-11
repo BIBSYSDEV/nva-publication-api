@@ -619,12 +619,12 @@ Resources:
 
   #==========================Event Lambda functions====================================================
 
-  DeletePublicationEventProducer:
+  DeletionProcessInitializationHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.delete.DeletePublicationEventProducerHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.delete.DeletionProcessInitializationHandler::handleRequest
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
@@ -637,12 +637,12 @@ Resources:
               detail:
                 responsePayload:
                   type:
-                    - publication.update
+                    - PublicationService.DoiRequest.Update
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
+            Destination: !Ref NewNvaEventBusArn # event is consumed by DoiRegistrar service
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
@@ -671,7 +671,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "doirequest.update" ]
+                  type: [ "PublicationService.DoiRequest.Update" ]
                   newPublication:
                     doiRequest:
                       type: [ { "exists": true } ] # "exists" works only in leaf nodes.
@@ -688,14 +688,13 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandResourcesHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'resource-updates-events'
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
@@ -710,7 +709,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "publication.update", "message.update", "doirequest.update" ]
+                  type: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
                   newData:
                     type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
@@ -726,14 +725,13 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedResourcePersistenceHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
-          HANDLER_EVENTS_FOLDER: 'resource-updates-events'
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
@@ -750,7 +748,7 @@ Resources:
               detail:
                 responsePayload:
                   type: ["EventPayload"]
-                  eventType: [ "resources.entry.update" ]
+                  eventType: [ "PublicationService.ExpandedDataEntry.Update" ]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -783,7 +781,7 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "database.entries.refresh" ]
+              detail-type: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
 
       EventInvokeConfig:
         DestinationConfig:
@@ -794,12 +792,12 @@ Resources:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
 
-  PublicationFanoutHandler:
+  DataEntryUpdateHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      Handler: no.unit.nva.publication.events.handlers.fanout.PublicationFanoutHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
@@ -813,7 +811,7 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern: {
-              "detail-type": [ "dynamodb-stream-event" ],
+              "detail-type": [ "PublicationService.Database.Update" ],
               "resources": [
                 !GetAtt NvaResourcesTable.StreamArn
               ]
@@ -851,7 +849,7 @@ Resources:
               detail:
                 responsePayload:
                   type:
-                    - delete.publication
+                    - DoiRegistrarService.Doi.DeletedDraft
                   hasDoi:
                     - false
       EventInvokeConfig:
@@ -924,7 +922,7 @@ Resources:
               detail:
                 responsePayload:
                   type:
-                    - doi.updateDoiStatus
+                    - DoiRegistrarService.Doi.Updated
       EventInvokeConfig:
         DestinationConfig:
           OnFailure:
@@ -957,7 +955,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type:
-                - import.filename-event
+                - PublicationService.ImportCristinData.Filename
 
   CristinEntriesEventConsumer:
     DependsOn:
@@ -1007,7 +1005,7 @@ Resources:
           HANDLER_EVENTS_FOLDER: 'ignored'
 
 
-  ImportCristinDataFromS3:
+  CristinDataBulkImportFromS3:
     DependsOn:
       - InternalBus
     Type: AWS::Serverless::Function
@@ -1023,7 +1021,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          IMPORT_EVENT_TYPE: import.cristin.entry-event
+          IMPORT_EVENT_TYPE: PublicationService.ImportCristinData.DataEntry
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 

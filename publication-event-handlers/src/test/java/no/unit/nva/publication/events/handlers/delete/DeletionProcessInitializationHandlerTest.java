@@ -11,25 +11,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.events.bodies.DeletePublicationEvent;
+import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class DeletePublicationEventProducerHandlerTest {
+public class DeletionProcessInitializationHandlerTest {
 
     public static final String NEW_PUBLICATION_DRAFT_FOR_DELETION_JSON =
         "delete/new_publication_draft_for_deletion.json";
     public static final String NEW_PUBLICATION_DRAFT_JSON = "delete/new_publication_draft.json";
     public static final String NEW_PUBLICATION_NULL_JSON = "delete/new_publication_null.json";
-    private DeletePublicationEventProducerHandler handler;
+    private DeletionProcessInitializationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
 
     @BeforeEach
     public void setUp() {
-        handler = new DeletePublicationEventProducerHandler();
+        handler = new DeletionProcessInitializationHandler();
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
     }
@@ -40,13 +40,13 @@ public class DeletePublicationEventProducerHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(),
-                                                                 DeletePublicationEvent.class);
+        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(),
+                                                                          ResourceDraftedForDeletionEvent.class);
         assertThat(response, notNullValue());
         assertThat(response.getDoi(), notNullValue());
         assertThat(response.getIdentifier(), notNullValue());
         assertThat(response.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION.getValue())));
-        assertThat(response.getType(), is(equalTo(DeletePublicationEvent.DELETE_PUBLICATION)));
+        assertThat(response.getType(), is(equalTo(ResourceDraftedForDeletionEvent.DELETE_PUBLICATION)));
     }
 
     @Test
@@ -55,8 +55,8 @@ public class DeletePublicationEventProducerHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(),
-                                                                 DeletePublicationEvent.class);
+        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(),
+                                                                          ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
 
@@ -66,7 +66,7 @@ public class DeletePublicationEventProducerHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DeletePublicationEvent response = objectMapper.readValue(outputStream.toString(), DeletePublicationEvent.class);
+        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
 }

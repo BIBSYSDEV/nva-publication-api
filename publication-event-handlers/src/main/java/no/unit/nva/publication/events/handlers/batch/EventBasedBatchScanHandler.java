@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
-    public static final String DETAIL_TYPE = "database.entries.refresh";
+    public static final String DETAIL_TYPE = "PublicationService.DataEntry.ScanAndUpdateRowVersion";
     public static final String EVENT_BUS_NAME =
         PublicationEventsConfig.ENVIRONMENT.readEnv("EVENT_BUS_NAME");
     private final ResourceService resourceService;

@@ -10,11 +10,11 @@ import nva.commons.core.JacocoGenerated;
 
 import java.util.Objects;
 
-public class DynamoEntryUpdateEvent {
+public class DataEntryUpdateEvent {
 
-    public static final String PUBLICATION_UPDATE_TYPE = "publication.update";
-    public static final String MESSAGE_UPDATE_TYPE = "message.update";
-    public static final String DOI_REQUEST_UPDATE_TYPE = "doirequest.update";
+    public static final String PUBLICATION_UPDATE_TYPE = "PublicationService.Resource.Update";
+    public static final String MESSAGE_UPDATE_TYPE = "PublicationService.Message.Update";
+    public static final String DOI_REQUEST_UPDATE_TYPE = "PublicationService.DoiRequest.Update";
 
     private static final String UPDATE_TYPE = "updateType";
     private static final String OLD_DATA = "oldData";
@@ -35,7 +35,7 @@ public class DynamoEntryUpdateEvent {
      * @param newData new data
      */
     @JsonCreator
-    public DynamoEntryUpdateEvent(
+    public DataEntryUpdateEvent(
             @JsonProperty(UPDATE_TYPE) String updateType,
             @JsonProperty(OLD_DATA) DataEntry oldData,
             @JsonProperty(NEW_DATA) DataEntry newData) {
@@ -66,7 +66,7 @@ public class DynamoEntryUpdateEvent {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        DynamoEntryUpdateEvent that = (DynamoEntryUpdateEvent) o;
+        DataEntryUpdateEvent that = (DataEntryUpdateEvent) o;
         return getType().equals(that.getType())
                 && getUpdateType().equals(that.getUpdateType())
                 && Objects.equals(getOldData(), that.getOldData())
@@ -84,13 +84,13 @@ public class DynamoEntryUpdateEvent {
     private String getType() {
         String eventType = null;
         if (oldData instanceof Resource || newData instanceof Resource) {
-            eventType = DynamoEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
         }
         if (oldData instanceof Message || newData instanceof Message) {
-            eventType = DynamoEntryUpdateEvent.MESSAGE_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.MESSAGE_UPDATE_TYPE;
         }
         if (oldData instanceof DoiRequest || newData instanceof DoiRequest) {
-            eventType = DynamoEntryUpdateEvent.DOI_REQUEST_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.DOI_REQUEST_UPDATE_TYPE;
         }
         return eventType;
     }

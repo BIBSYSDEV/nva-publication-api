@@ -20,14 +20,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PublicationFanoutHandlerTest {
+public class DataEntryUpdateHandlerTest {
 
     public static final String DYNAMODBEVENT_NEW_IMAGE_JSON = "dynamodbevent_new_image.json";
     public static final String DYNAMODBEVENT_INVALID_IMAGE_JSON = "dynamodbevent_invalid_image.json";
@@ -49,14 +49,14 @@ public class PublicationFanoutHandlerTest {
 
     @Test
     public void handleRequestReturnsPublicationUpdateEventWhenEventContainsOnlyNewImage() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
             DYNAMODBEVENT_NEW_IMAGE_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DynamoEntryUpdateEvent response = parseResponse();
+        DataEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldData(), is(nullValue()));
         assertThat(response.getNewData().toPublication(), is(notNullValue()));
@@ -66,14 +66,14 @@ public class PublicationFanoutHandlerTest {
 
     @Test
     public void handleRequestReturnsPublicationUpdateEventWhenEventContainsOnlyOldImage() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
                 DYNAMODBEVENT_OLD_IMAGE_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DynamoEntryUpdateEvent response = parseResponse();
+        DataEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldData().toPublication(), is(notNullValue()));
         assertThat(response.getNewData(), is(nullValue()));
@@ -81,14 +81,14 @@ public class PublicationFanoutHandlerTest {
 
     @Test
     public void handleRequestReturnsPublicationUpdateEventWhenEventContainsNewAndOldImage() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
             DYNAMODBEVENT_NEW_AND_OLD_IMAGES_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DynamoEntryUpdateEvent response = parseResponse();
+        DataEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldData().toPublication(), is(notNullValue()));
         assertThat(response.getNewData().toPublication(), is(notNullValue()));
@@ -98,7 +98,7 @@ public class PublicationFanoutHandlerTest {
 
     @Test
     public void handleRequestThrowsRuntimeExceptionWhenImageIsInvalid() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
             DYNAMODBEVENT_INVALID_IMAGE_JSON);
@@ -106,18 +106,18 @@ public class PublicationFanoutHandlerTest {
         RuntimeException exception = assertThrows(RuntimeException.class,
             () -> handler.handleRequest(inputStream, outputStream, context));
 
-        assertThat(exception.getMessage(), containsString(PublicationFanoutHandler.MAPPING_ERROR));
+        assertThat(exception.getMessage(), containsString(DataEntryUpdateHandler.MAPPING_ERROR));
     }
 
     @Test
     public void handleRequestReturnsPublicationUpdateEventWhenImageHasEmptyAttributeValues() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
         InputStream inputStream = IoUtils.inputStreamFromResources(
                 DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        DynamoEntryUpdateEvent response = parseResponse();
+        DataEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getOldData(), is(nullValue()));
         assertThat(response.getNewData().toPublication(), is(notNullValue()));
@@ -136,12 +136,12 @@ public class PublicationFanoutHandlerTest {
 
     @Test
     public void handlerReturnsNullWhenInputIsAnUniqueIdentifierEntry() {
-        PublicationFanoutHandler handler = new PublicationFanoutHandler();
+        DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
         InputStream inputStream = IoUtils.inputStreamFromResources(
             DYNAMODBEVENT_UNIQUENESS_ENTRY);
 
         handler.handleRequest(inputStream, outputStream, context);
-        DynamoEntryUpdateEvent response = parseResponse();
+        DataEntryUpdateEvent response = parseResponse();
 
         assertThat(response.getNewData(), is(nullValue()));
         assertThat(response.getOldData(), is(nullValue()));
@@ -163,9 +163,9 @@ public class PublicationFanoutHandlerTest {
         return publication.getEntityDescription().getReference().getDoi();
     }
 
-    private DynamoEntryUpdateEvent parseResponse() {
+    private DataEntryUpdateEvent parseResponse() {
         return Try.attempt(() -> objectMapper.readValue(outputStream.toString(),
-                                                        DynamoEntryUpdateEvent.class))
+                                                        DataEntryUpdateEvent.class))
             .orElseThrow();
     }
 }

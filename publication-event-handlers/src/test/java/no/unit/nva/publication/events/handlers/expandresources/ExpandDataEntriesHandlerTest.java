@@ -33,7 +33,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
@@ -52,7 +52,7 @@ import nva.commons.secrets.SecretsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ExpandResourcesHandlerTest {
+public class ExpandDataEntriesHandlerTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final int SINGLE_EXPECTED_FILE = 0;
@@ -62,7 +62,7 @@ public class ExpandResourcesHandlerTest {
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
     private static final String RANDOM_SECRET = randomString();
     private ByteArrayOutputStream output;
-    private ExpandResourcesHandler expandResourceHandler;
+    private ExpandDataEntriesHandler expandResourceHandler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
 
@@ -75,7 +75,7 @@ public class ExpandResourcesHandlerTest {
         IdentityClientImpl identityClient = new IdentityClientImpl(secretsReader, httpClient);
         ResourceExpansionService resourceExpansionService =
             new ResourceExpansionServiceImpl(identityClient, new InstitutionClientImpl());
-        this.expandResourceHandler = new ExpandResourcesHandler(s3Client, resourceExpansionService);
+        this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
 
@@ -108,7 +108,7 @@ public class ExpandResourcesHandlerTest {
     void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() {
         TestAppender logs = LogUtils.getTestingAppenderForRootLogger();
         ResourceExpansionService failingService = createFailingService();
-        expandResourceHandler = new ExpandResourcesHandler(s3Client, failingService);
+        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, failingService);
         expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
         assertThat(logs.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
         assertThat(logs.getMessages(), containsString(IDENTIFIER_IN_RESOURCE_FILE));
@@ -205,13 +205,13 @@ public class ExpandResourcesHandlerTest {
     }
 
     @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent() {
-        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> parseEvent() {
+        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>>)
                    newEventParser()
-                       .parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+                       .parse(AwsEventBridgeDetail.class, DataEntryUpdateEvent.class);
     }
 
-    private EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> newEventParser() {
+    private EventParser<AwsEventBridgeDetail<DataEntryUpdateEvent>> newEventParser() {
         return new EventParser<>(EVENT_WITH_NEW_PUBLISHED_RESOURCE, objectMapper);
     }
 }

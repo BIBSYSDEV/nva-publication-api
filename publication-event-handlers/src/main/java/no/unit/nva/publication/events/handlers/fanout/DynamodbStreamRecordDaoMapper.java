@@ -42,7 +42,7 @@ public final class DynamodbStreamRecordDaoMapper {
         return Optional.of(dynamoEntry)
                 .filter(entry -> isDao(dynamoEntry))
                 .map(dao -> ((Dao<?>) dao).getData())
-                .filter(data -> isResourceUpdate(data))
+                .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate)
                 .map(data -> (DataEntry) data);
     }
 

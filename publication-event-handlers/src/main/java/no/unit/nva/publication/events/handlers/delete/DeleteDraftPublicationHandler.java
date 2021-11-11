@@ -8,7 +8,7 @@ import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.events.bodies.DeletePublicationEvent;
+import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -16,7 +16,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<DeletePublicationEvent, Void> {
+public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<ResourceDraftedForDeletionEvent, Void> {
 
     public static final String DELETE_WITH_DOI_ERROR = "Not allowed to delete Draft Publication with DOI. "
                                                        + "Remove DOI first and try again";
@@ -39,14 +39,14 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
      * @param resourceService publicationService
      */
     public DeleteDraftPublicationHandler(ResourceService resourceService) {
-        super(DeletePublicationEvent.class);
+        super(ResourceDraftedForDeletionEvent.class);
         this.resourceService = resourceService;
     }
 
     @Override
     protected Void processInputPayload(
-        DeletePublicationEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DeletePublicationEvent>> event,
+        ResourceDraftedForDeletionEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<ResourceDraftedForDeletionEvent>> event,
         Context context) {
         if (input.hasDoi()) {
             throwPublicationHasDoiError();
@@ -61,7 +61,7 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
         return null;
     }
 
-    private UserInstance fetchUserInformationForPublication(DeletePublicationEvent input) throws NotFoundException {
+    private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input) throws NotFoundException {
         Publication publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
         if (nonNull(publication.getDoi())) {
             throwPublicationHasDoiError();

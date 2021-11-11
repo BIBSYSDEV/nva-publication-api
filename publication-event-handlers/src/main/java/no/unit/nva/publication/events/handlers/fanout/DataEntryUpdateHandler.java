@@ -8,27 +8,27 @@ import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeVal
 import java.util.Map;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PublicationFanoutHandler
-    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DynamoEntryUpdateEvent> {
+public class DataEntryUpdateHandler
+    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DataEntryUpdateEvent> {
 
     public static final String MAPPING_ERROR = "Error mapping Dynamodb Image to Publication";
     public static final DataEntry NO_VALUE = null;
-    private static final Logger logger = LoggerFactory.getLogger(PublicationFanoutHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
 
     @JacocoGenerated
-    public PublicationFanoutHandler() {
+    public DataEntryUpdateHandler() {
         super(DynamodbEvent.DynamodbStreamRecord.class);
     }
 
     @Override
-    protected DynamoEntryUpdateEvent processInput(
+    protected DataEntryUpdateEvent processInput(
         DynamodbEvent.DynamodbStreamRecord input,
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
@@ -37,7 +37,7 @@ public class PublicationFanoutHandler
                 .orElseThrow();
         logger.info("event:" + eventJson);
 
-        DynamoEntryUpdateEvent output = new DynamoEntryUpdateEvent(
+        DataEntryUpdateEvent output = new DataEntryUpdateEvent(
                 input.getEventName(),
                 getDao(input.getDynamodb().getOldImage()),
                 getDao(input.getDynamodb().getNewImage())

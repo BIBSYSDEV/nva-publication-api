@@ -18,20 +18,20 @@ import nva.commons.core.paths.UnixPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExpandedResourcePersistenceHandler
+public class ExpandedDataEntriesPersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
 
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    private static final Logger logger = LoggerFactory.getLogger(ExpandedResourcePersistenceHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
 
     @JacocoGenerated
-    public ExpandedResourcePersistenceHandler() {
+    public ExpandedDataEntriesPersistenceHandler() {
         this(new S3Driver(PublicationEventsConfig.EVENTS_BUCKET), new S3Driver(PERSISTED_ENTRIES_BUCKET));
     }
 
-    public ExpandedResourcePersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
+    public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
         super(EventPayload.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;

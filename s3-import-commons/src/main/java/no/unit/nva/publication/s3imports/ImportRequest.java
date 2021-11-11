@@ -23,6 +23,7 @@ import nva.commons.core.paths.UnixPath;
  */
 public class ImportRequest implements JsonSerializable {
 
+    public static final String EVENT_DETAIL_TYPE = "PublicationService.ImportCristinData.Filename";
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String S3_LOCATION_FIELD = "s3Location";
     public static final String IMPORT_EVENT_TYPE = "importEventType";
@@ -46,23 +47,19 @@ public class ImportRequest implements JsonSerializable {
         this.timestamp = timestamp;
     }
 
-    public ImportRequest(URI s3Location) {
-        this(s3Location, null, null);
-    }
-
-    public ImportRequest(URI s3location, String importEventType) {
-        this(s3location, importEventType, null);
-    }
-
     public ImportRequest(URI s3location, String importEventType, Instant timestamp) {
         this.s3Location = s3location;
         this.importEventType = importEventType;
         this.timestamp = timestamp;
     }
 
+    public static ImportRequest create(URI s3Location, Instant timestamp) {
+        return new ImportRequest(s3Location, EVENT_DETAIL_TYPE, timestamp);
+    }
+
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> s3ImportsMapper.readValue(jsonString, ImportRequest.class))
-                   .orElseThrow(fail -> handleNotParsableInputError(jsonString));
+            .orElseThrow(fail -> handleNotParsableInputError(jsonString));
     }
 
     public String getImportEventType() {
@@ -84,10 +81,10 @@ public class ImportRequest implements JsonSerializable {
 
     public UnixPath extractPathFromS3Location() {
         return Optional.ofNullable(s3Location)
-                   .map(URI::getPath)
-                   .map(UnixPath::fromString)
-                   .map(UnixPath::removeRoot)
-                   .orElse(UnixPath.EMPTY_PATH);
+            .map(URI::getPath)
+            .map(UnixPath::fromString)
+            .map(UnixPath::removeRoot)
+            .orElse(UnixPath.EMPTY_PATH);
     }
 
     @JacocoGenerated

@@ -9,7 +9,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.bodies.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -185,7 +185,7 @@ class DoiRequestEventProducerTest {
     }
 
     private void assertThatEventsDifferOnlyInModifiedDate(String event) {
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventObject = parseEvent(event);
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventObject = parseEvent(event);
 
         Publication newPublication = eventObject.getDetail().getResponsePayload().getNewData().toPublication();
         Publication oldPublication = eventObject.getDetail().getResponsePayload().getOldData().toPublication();
@@ -204,11 +204,11 @@ class DoiRequestEventProducerTest {
     }
 
     @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String event) {
-        EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventEventParser =
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> parseEvent(String event) {
+        EventParser<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventEventParser =
             new EventParser<>(event, objectMapper);
-        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
-                   eventEventParser.parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>>)
+                   eventEventParser.parse(AwsEventBridgeDetail.class, DataEntryUpdateEvent.class);
     }
 
     private boolean hasDoiField(String eventInput) {

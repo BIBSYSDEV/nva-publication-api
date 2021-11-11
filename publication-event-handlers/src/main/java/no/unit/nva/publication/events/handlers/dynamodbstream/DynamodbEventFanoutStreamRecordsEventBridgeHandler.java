@@ -29,9 +29,6 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandler implements Reque
         this(defaultEventBridgePublisher());
     }
 
-    /**
-     * Constructor for CreatePublicationHandler.
-     */
     protected DynamodbEventFanoutStreamRecordsEventBridgeHandler(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
