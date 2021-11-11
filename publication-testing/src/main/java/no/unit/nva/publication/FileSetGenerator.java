@@ -8,18 +8,17 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.util.List;
 import java.util.UUID;
-import no.unit.nva.model.File;
-import no.unit.nva.model.FileSet;
-import no.unit.nva.model.License;
+
+import no.unit.nva.file.model.File;
+import no.unit.nva.file.model.FileSet;
+import no.unit.nva.file.model.License;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public class FileSetGenerator {
 
     public static FileSet randomFileSet() {
-        return new FileSet.Builder()
-                   .withFiles(randomFiles())
-                   .build();
+        return new FileSet(randomFiles());
     }
 
     private static List<File> randomFiles() {

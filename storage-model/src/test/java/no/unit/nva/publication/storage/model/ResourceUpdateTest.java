@@ -54,11 +54,10 @@ class ResourceUpdateTest {
         assertThat(newRowVersion, is(not(equalTo(oldRowVersion))));
     }
 
-    @ParameterizedTest(name= "should return Dao object:{0}")
+    @ParameterizedTest(name = "should return Dao object:{0}")
     @MethodSource("resourceProvider")
-    void shouldReturnDaoObject(Tuple resourceUpdate){
+    void shouldReturnDaoObject(Tuple resourceUpdate) {
         assertThat(resourceUpdate.left.toDao(),is(instanceOf(Dao.class)));
-
     }
 
     private static Message randomMessage(Publication publication) {
