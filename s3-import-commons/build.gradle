@@ -57,6 +57,7 @@ test {
     environment "MAX_SLEEP_TIME", "1"
     environment "IMPORT_EVENT_TYPE", "importEventTypeTestingValue"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
+    environment "EVENT_BUS_NAME", "eventBusName"
 
 }
 

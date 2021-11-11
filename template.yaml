@@ -38,12 +38,6 @@ Parameters:
     Type: String
     Description: Base path mapping in CustomDomain
     Default: publication
-  EventBusName:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: EventBusName
-  EventBusArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: EventBusArn
   NewNvaEventBusArn:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusArn'
@@ -201,7 +195,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - events:PutEvents
-                Resource: !Ref EventBusArn
+                Resource: !GetAtt InternalBus.Arn
               - Effect: Allow
                 Action:
                   - sqs:SendMessage
@@ -638,7 +632,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
                 responsePayload:
@@ -648,7 +642,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeletePublicationEventProducerDlq.Arn
@@ -664,7 +658,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENT_BUS: !Ref EventBusName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           BASE_PATH: !Ref CustomDomainBasePath
           DOMAIN_NAME: !Ref CustomDomain
@@ -672,7 +666,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
@@ -685,7 +679,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
@@ -711,7 +705,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
@@ -723,7 +717,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref NewNvaEventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
@@ -750,7 +744,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref NewNvaEventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
@@ -761,7 +755,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref NewNvaEventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
@@ -779,7 +773,7 @@ Resources:
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
-          EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           TABLE_NAME: !Ref NvaResourcesTable
@@ -787,7 +781,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref NewNvaEventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type: [ "database.entries.refresh" ]
 
@@ -795,7 +789,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref NewNvaEventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
@@ -817,7 +811,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern: {
               "detail-type": [ "dynamodb-stream-event" ],
               "resources": [
@@ -828,7 +822,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt PublicationFanoutHandlerDLQ.Arn
@@ -852,7 +846,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
                 responsePayload:
@@ -864,7 +858,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !Ref EventBusArn
+            Destination: !GetAtt InternalBus.Arn
           OnFailure:
             Type: SQS
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
@@ -884,7 +878,7 @@ Resources:
         Variables:
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
-          EVENT_BUS_NAME: !Ref EventBusName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
       Policies:
         - SQSSendMessagePolicy:
             QueueName: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.QueueName
@@ -923,10 +917,9 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !Ref EventBusName
+            EventBusName: !Ref NewNvaEventBusName
             Pattern:
               detail-type:
-                #Standard detail-type for successful invocation of Lambda function using Lambda destinations
                 - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
@@ -941,7 +934,7 @@ Resources:
 
   CristinEntriesEventEmitter:
     DependsOn:
-      - ImportRequestsEventBus
+      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -955,20 +948,20 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           BATCH_EMISSION_INTERVAL_MILLIS: 700
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !GetAtt ImportRequestsEventBus.Name
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type:
                 - import.filename-event
 
   CristinEntriesEventConsumer:
     DependsOn:
-      - ImportRequestsEventBus
+      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
@@ -988,7 +981,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !GetAtt ImportRequestsEventBus.Name
+            EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail-type:
                 - import.cristin.entry-event
@@ -1016,7 +1009,7 @@ Resources:
 
   ImportCristinDataFromS3:
     DependsOn:
-      - ImportRequestsEventBus
+      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -1029,7 +1022,7 @@ Resources:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
-          EVENT_BUS: !GetAtt ImportRequestsEventBus.Name
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           IMPORT_EVENT_TYPE: import.cristin.entry-event
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
@@ -1103,11 +1096,11 @@ Resources:
       Timestamp: '${BUILD_TIMESTAMP}'
       AuthorizerArn: !Ref CognitoAuthorizerArn
 
-  #=============================Event Buses =============================================================
-  ImportRequestsEventBus:
+  #=============================Internal Event Bus=============================================================
+  InternalBus:
     Type: AWS::Events::EventBus
     Properties:
-      Name: !Join [ '',[ 'import-requests-event-bus',!Ref Suffix ] ]
+      Name: !Join [ '',[ 'resource-service-internal-bus',!Ref Suffix ] ]
 
   #===========================BasePathMappings========================================================
 

@@ -54,7 +54,7 @@ public final class ApplicationConstants {
 
     @JacocoGenerated
     private static String setupEventBus() {
-        return ENVIRONMENT.readEnvOpt("EVENT_BUS").orElse(DEFAULT_EVENT_BUS);
+        return ENVIRONMENT.readEnv("EVENT_BUS_NAME");
     }
 
     @JacocoGenerated

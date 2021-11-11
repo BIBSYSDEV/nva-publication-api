@@ -18,19 +18,11 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     public static final Void SUCCESSFULLY_HANDLED_EVENT = null;
     private final ResourceService resourceService;
 
-    /**
-     * Default constructor for MainHandler.
-     */
     @JacocoGenerated
     public UpdateDoiStatusHandler() {
         this(defaultResourceService());
     }
 
-    /**
-     * Constructor for MainHandler.
-     *
-     * @param resourceService publicationService
-     */
     public UpdateDoiStatusHandler(ResourceService resourceService) {
         super(DoiUpdateHolder.class);
         this.resourceService = resourceService;
@@ -65,7 +57,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     }
 
     private Void updateDoi(DoiUpdateHolder input) throws TransactionFailedException {
-        new UpdateDoiStatusProcess(resourceService, input).updateDoiStatus();
+        new UpdateDoiStatusProcess(resourceService, input).updateDoi();
         return null;
     }
 }
