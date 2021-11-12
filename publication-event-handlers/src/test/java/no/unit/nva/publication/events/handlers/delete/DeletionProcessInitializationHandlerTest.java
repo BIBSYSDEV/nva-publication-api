@@ -46,7 +46,7 @@ public class DeletionProcessInitializationHandlerTest {
         assertThat(response.getDoi(), notNullValue());
         assertThat(response.getIdentifier(), notNullValue());
         assertThat(response.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION.getValue())));
-        assertThat(response.getType(), is(equalTo(ResourceDraftedForDeletionEvent.EVENT_TOPIC)));
+        assertThat(response.getTopic(), is(equalTo(ResourceDraftedForDeletionEvent.EVENT_TOPIC)));
     }
 
     @Test

@@ -393,11 +393,11 @@ Resources:
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-      AutoPublishAlias: live
-      DeploymentPreference:
-        Type: AllAtOnce
-      ProvisionedConcurrencyConfig:
-        ProvisionedConcurrentExecutions: 1
+#      AutoPublishAlias: live
+#      DeploymentPreference:
+#        Type: AllAtOnce
+#      ProvisionedConcurrencyConfig:
+#        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
@@ -413,28 +413,28 @@ Resources:
             Path: /{identifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
-
-  NvaFetchPublicationFunctionScalableTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Properties:
-      MaxCapacity: !Ref MaxConcurrency
-      MinCapacity: !Ref MinConcurrency
-      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
-      ScalableDimension: lambda:function:ProvisionedConcurrency
-      ServiceNamespace: lambda
-    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
-
-  NvaFetchPublicationFunctionScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: NvaFetchPublicationFunctionScalingPolicy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref NvaFetchPublicationFunctionScalableTarget
-      TargetTrackingScalingPolicyConfiguration:
-        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
-        PredefinedMetricSpecification:
-          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+#
+#  NvaFetchPublicationFunctionScalableTarget:
+#    Type: AWS::ApplicationAutoScaling::ScalableTarget
+#    Properties:
+#      MaxCapacity: !Ref MaxConcurrency
+#      MinCapacity: !Ref MinConcurrency
+#      ResourceId: !Sub function:${NvaFetchPublicationFunction}:live # You need to specify an alias or version here
+#      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+#      ScalableDimension: lambda:function:ProvisionedConcurrency
+#      ServiceNamespace: lambda
+#    DependsOn: NvaFetchPublicationFunctionAliaslive # This is your function logical ID + "Alias" + what you use for AutoPublishAlias
+#
+#  NvaFetchPublicationFunctionScalingPolicy:
+#    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+#    Properties:
+#      PolicyName: NvaFetchPublicationFunctionScalingPolicy
+#      PolicyType: TargetTrackingScaling
+#      ScalingTargetId: !Ref NvaFetchPublicationFunctionScalableTarget
+#      TargetTrackingScalingPolicyConfiguration:
+#        TargetValue: 0.70 # Any value between 0.1 and 0.9 can be used here
+#        PredefinedMetricSpecification:
+#          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 
   NvaUpdatePublicationFunction:
     Type: AWS::Serverless::Function
@@ -636,7 +636,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  type:
+                  topic:
                     - PublicationService.DoiRequest.Update
       EventInvokeConfig:
         DestinationConfig:
@@ -671,7 +671,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "PublicationService.DoiRequest.Update" ]
+                  topic: [ "PublicationService.DoiRequest.Update" ]
                   newPublication:
                     doiRequest:
                       type: [ { "exists": true } ] # "exists" works only in leaf nodes.
@@ -679,7 +679,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt DoiRequestEventProducerDLQ.Arn
@@ -709,7 +709,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
+                  topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
                   newData:
                     type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
@@ -747,8 +747,7 @@ Resources:
               detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
-                  type: ["EventPayload"]
-                  eventType: [ "PublicationService.ExpandedDataEntry.Update" ]
+                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -781,7 +780,8 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
+              detail:
+                topic: [ "PublicationService.DataEntry.ScanAndUpdateRowVersion" ]
 
       EventInvokeConfig:
         DestinationConfig:
@@ -848,7 +848,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  type:
+                  topic:
                     - DoiRegistrarService.Doi.DeletedDraft
                   hasDoi:
                     - false
@@ -867,7 +867,7 @@ Resources:
     Properties:
       CodeUri: publication-event-handlers
       # DynamodbStream -> Publish DynamodbEvent to EventBridge
-      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbEventFanoutStreamRecordsEventBridgeHandler::handleRequest
+      Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11
@@ -921,7 +921,7 @@ Resources:
                 - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
-                  type:
+                  topic:
                     - DoiRegistrarService.Doi.Updated
       EventInvokeConfig:
         DestinationConfig:

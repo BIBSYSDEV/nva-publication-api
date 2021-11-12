@@ -32,8 +32,6 @@ public class ImportRequest implements JsonSerializable {
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
-    // This field will be set as the event detail-type by the handler that emits one event per entry
-    // and it will be expected by the specialized handler that will process the entry. E.g. CristinEntriesConsumer.
     @JsonProperty(IMPORT_EVENT_TYPE_FIELD)
     private final String importEventType;
     @JsonProperty(TIMESTAMP_FIELD)

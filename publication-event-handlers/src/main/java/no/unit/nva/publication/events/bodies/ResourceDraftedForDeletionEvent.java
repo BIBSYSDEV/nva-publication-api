@@ -11,7 +11,7 @@ public class ResourceDraftedForDeletionEvent {
 
     public static final String EVENT_TOPIC = "PublicationService.Resource.DraftForDeletion";
 
-    private final String type;
+    private final String topic;
     private final SortableIdentifier identifier;
     private final String status;
     private final URI doi;
@@ -20,7 +20,7 @@ public class ResourceDraftedForDeletionEvent {
     /**
      * Constructor for DeletePublicationEvent.
      *
-     * @param type  type
+     * @param topic topic
      * @param identifier    identifier
      * @param status    status
      * @param doi   doi
@@ -28,20 +28,20 @@ public class ResourceDraftedForDeletionEvent {
      */
     @JsonCreator
     public ResourceDraftedForDeletionEvent(
-            @JsonProperty("type") String type,
+            @JsonProperty("topic") String topic,
             @JsonProperty("identifier") SortableIdentifier identifier,
             @JsonProperty("status") String status,
             @JsonProperty("doi") URI doi,
             @JsonProperty("customerId") URI customerId) {
-        this.type = type;
+        this.topic = topic;
         this.identifier = identifier;
         this.status = status;
         this.doi = doi;
         this.customerId = customerId;
     }
 
-    public String getType() {
-        return type;
+    public String getTopic() {
+        return topic;
     }
 
     public SortableIdentifier getIdentifier() {
@@ -75,7 +75,7 @@ public class ResourceDraftedForDeletionEvent {
             return false;
         }
         ResourceDraftedForDeletionEvent that = (ResourceDraftedForDeletionEvent) o;
-        return type.equals(that.type)
+        return topic.equals(that.topic)
                 && identifier.equals(that.identifier)
                 && status.equals(that.status)
                 && Objects.equals(doi, that.doi)
@@ -85,6 +85,6 @@ public class ResourceDraftedForDeletionEvent {
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(type, identifier, status, doi, customerId);
+        return Objects.hash(topic, identifier, status, doi, customerId);
     }
 }

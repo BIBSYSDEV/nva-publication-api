@@ -14,6 +14,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
 
     public static final String START_MARKER = "startMarker";
     public static final String PAGE_SIZE = "pageSize";
+    public static final String SCAN_REQUEST_EVENT_TOPIC = "PublicationService.DataEntry.ScanAndUpdateRowVersion";
     @JsonProperty(START_MARKER)
     private final Map<String, AttributeValue> startMarker;
     @JsonProperty(PAGE_SIZE)
@@ -28,6 +29,11 @@ public class ScanDatabaseRequest implements JsonSerializable {
 
     public static ScanDatabaseRequest fromJson(String detail) throws JsonProcessingException {
         return objectMapper.readValue(detail, ScanDatabaseRequest.class);
+    }
+
+    @JsonProperty("topic")
+    public String getTopic(){
+        return SCAN_REQUEST_EVENT_TOPIC;
     }
 
     public int getPageSize() {

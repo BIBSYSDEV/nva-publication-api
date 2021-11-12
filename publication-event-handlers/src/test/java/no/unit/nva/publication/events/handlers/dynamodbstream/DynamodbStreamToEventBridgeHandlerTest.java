@@ -9,7 +9,7 @@ import nva.commons.core.ioutils.IoUtils;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class DynamodbEventFanoutStreamRecordsEventBridgeHandlerTest {
+public class DynamodbStreamToEventBridgeHandlerTest {
 
     public static final String DYNAMODB_STREAM_EVENT =
         IoUtils.stringFromResources(Path.of("dynamodbstreams/event.json"));

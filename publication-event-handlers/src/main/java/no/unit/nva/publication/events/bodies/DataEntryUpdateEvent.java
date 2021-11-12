@@ -16,12 +16,12 @@ public class DataEntryUpdateEvent {
     public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
     public static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
 
-    private static final String UPDATE_TYPE = "updateType";
+    private static final String ACTION = "action";
     private static final String OLD_DATA = "oldData";
     private static final String NEW_DATA = "newData";
 
-    @JsonProperty(UPDATE_TYPE)
-    private final String updateType;
+    @JsonProperty(ACTION)
+    private final String action;
     @JsonProperty(OLD_DATA)
     private final DataEntry oldData;
     @JsonProperty(NEW_DATA)
@@ -30,23 +30,23 @@ public class DataEntryUpdateEvent {
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
      *
-     * @param updateType     eventName from DynamodbStreamRecord
+     * @param action     eventName from DynamodbStreamRecord
      * @param oldData old data
      * @param newData new data
      */
     @JsonCreator
     public DataEntryUpdateEvent(
-            @JsonProperty(UPDATE_TYPE) String updateType,
+            @JsonProperty(ACTION) String action,
             @JsonProperty(OLD_DATA) DataEntry oldData,
             @JsonProperty(NEW_DATA) DataEntry newData) {
 
-        this.updateType = updateType;
+        this.action = action;
         this.oldData = oldData;
         this.newData = newData;
     }
 
-    public String getUpdateType() {
-        return updateType;
+    public String getAction() {
+        return action;
     }
 
     public DataEntry getOldData() {
@@ -67,21 +67,21 @@ public class DataEntryUpdateEvent {
             return false;
         }
         DataEntryUpdateEvent that = (DataEntryUpdateEvent) o;
-        return getType().equals(that.getType())
-                && getUpdateType().equals(that.getUpdateType())
-                && Objects.equals(getOldData(), that.getOldData())
-                && Objects.equals(getNewData(), that.getNewData());
+        return getAction().equals(that.getAction())
+               && getTopic().equals(that.getTopic())
+               && Objects.equals(getOldData(), that.getOldData())
+               && Objects.equals(getNewData(), that.getNewData());
     }
 
     @Override
     @JacocoGenerated
     public int hashCode() {
-        return Objects.hash(getType(), getUpdateType(), getOldData(), getNewData());
+        return Objects.hash(getTopic(), getTopic(), getOldData(), getNewData());
     }
 
 
-    @JsonProperty("type")
-    private String getType() {
+    @JsonProperty("topic")
+    private String getTopic() {
         String eventType = null;
         if (oldData instanceof Resource || newData instanceof Resource) {
             eventType = DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
