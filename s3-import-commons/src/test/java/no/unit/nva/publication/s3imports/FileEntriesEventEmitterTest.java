@@ -4,6 +4,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
 
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -58,21 +59,21 @@ public class FileEntriesEventEmitterTest {
 
     public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
 
-    public static final URI S3_BUCKET = URI.create("s3://bucket");
-    public static final String INPUT_PATH = "/parent/folder";
-    public static final String INPUT_FILENAME = "location.file";
-    public static final URI INPUT_URI =
+    private static final URI S3_BUCKET = URI.create("s3://bucket");
+    private static final String INPUT_PATH = "/parent/folder";
+    private static final String INPUT_FILENAME = "location.file";
+    private static final URI INPUT_URI =
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(INPUT_FILENAME).getUri();
-    public static final String IMPORT_EVENT_TYPE = "importEventType";
-    public static final String NON_EXISTING_FILE = "nonexisting.file";
-    public static final URI NON_EXISTING_FILE_URI =
+    private static final String IMPORT_EVENT_TYPE = "importEventType";
+    private static final String NON_EXISTING_FILE = "nonexistingfile.txt";
+    private static final URI NON_EXISTING_FILE_URI =
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(NON_EXISTING_FILE).getUri();
-    public static final String LINE_SEPARATOR = System.lineSeparator();
-    public static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
-    public static final Context CONTEXT = Mockito.mock(Context.class);
-    public static final String SOME_OTHER_BUS = "someOtherBus";
-    public static final String SOME_BUCKETNAME = "someBucketname";
-    public static final String ALL_FILES = ".";
+    private static final String LINE_SEPARATOR = System.lineSeparator();
+    private static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
+    private static final Context CONTEXT = Mockito.mock(Context.class);
+    private static final String SOME_OTHER_BUS = "someOtherBus";
+    private static final String SOME_BUCKETNAME = "someBucketname";
+    private static final String ALL_FILES = ".";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
@@ -172,7 +173,7 @@ public class FileEntriesEventEmitterTest {
         InputStream input = createRequestEventForFile(importRequestForNonExistingFile);
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(importRequestForNonExistingFile.getS3Location()));
+        assertThat(exception.getMessage(), containsString(importRequestForNonExistingFile.getS3Location().toString()));
     }
 
     @Test
@@ -315,8 +316,8 @@ public class FileEntriesEventEmitterTest {
 
 
     private static ImportRequest newImportRequest(String customImportRequestEventType) {
-        return new ImportRequest(URI.create(importRequestForExistingFile.getS3Location()),
-                                 customImportRequestEventType);
+        return new ImportRequest(importRequestForExistingFile.getS3Location(),
+                                 customImportRequestEventType,Instant.now());
     }
 
     //used in parametrized test
@@ -439,7 +440,7 @@ public class FileEntriesEventEmitterTest {
 
     private InputStream createRequestEventForFile(ImportRequest detail) {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FilenameEventEmitter.EVENT_DETAIL_TYPE);
+        request.setDetailType(FILENAME_EMISSION_EVENT_TOPIC);
         request.setDetail(detail);
         return toInputStream(request);
     }

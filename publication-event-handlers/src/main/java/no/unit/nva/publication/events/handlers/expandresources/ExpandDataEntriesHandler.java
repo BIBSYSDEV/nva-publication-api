@@ -9,13 +9,13 @@ import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.restclients.IdentityClientImpl;
 import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
@@ -28,10 +28,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, EventPayload> {
+public class ExpandDataEntriesHandler
+    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, EventReference> {
 
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
+    public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Updated";
+    public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
@@ -52,9 +55,9 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
     }
 
     @Override
-    protected EventPayload processInputPayload(DataEntryUpdateEvent input,
-                                               AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
-                                               Context context) {
+    protected EventReference processInputPayload(DataEntryUpdateEvent input,
+                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
+                                                 Context context) {
 
         return Optional.ofNullable(input.getNewData())
             .filter(this::shouldBeEnriched)
@@ -62,8 +65,17 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
             .map(this::insertEventBodyToS3)
             .stream()
             .peek(uri -> logger.info("S3 URI:" + uri.toString()))
-            .map(EventPayload::resourcesUpdateEvent)
-            .collect(SingletonCollector.collectOrElse(EventPayload.emptyEvent()));
+            .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
+            .collect(SingletonCollector.collectOrElse(emptyEvent()));
+    }
+
+    @JacocoGenerated
+    private static ResourceExpansionService defaultResourceExpansionService() {
+        return new ResourceExpansionServiceImpl(new IdentityClientImpl(), new InstitutionClientImpl());
+    }
+
+    private EventReference emptyEvent() {
+        return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
     private boolean shouldBeEnriched(DataEntry entry) {
@@ -76,11 +88,6 @@ public class ExpandDataEntriesHandler extends DestinationsEventBridgeEventHandle
         } else {
             return true;
         }
-    }
-
-    @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService() {
-        return new ResourceExpansionServiceImpl(new IdentityClientImpl(), new InstitutionClientImpl());
     }
 
     private URI insertEventBodyToS3(String string) {

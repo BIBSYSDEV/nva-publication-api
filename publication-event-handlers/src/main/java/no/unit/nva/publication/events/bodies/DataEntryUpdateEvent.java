@@ -12,9 +12,9 @@ import java.util.Objects;
 
 public class DataEntryUpdateEvent {
 
-    public static final String PUBLICATION_UPDATE_TYPE = "PublicationService.Resource.Update";
-    public static final String MESSAGE_UPDATE_TYPE = "PublicationService.Message.Update";
-    public static final String DOI_REQUEST_UPDATE_TYPE = "PublicationService.DoiRequest.Update";
+    public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
+    public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
+    public static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
 
     private static final String UPDATE_TYPE = "updateType";
     private static final String OLD_DATA = "oldData";
@@ -84,13 +84,13 @@ public class DataEntryUpdateEvent {
     private String getType() {
         String eventType = null;
         if (oldData instanceof Resource || newData instanceof Resource) {
-            eventType = DataEntryUpdateEvent.PUBLICATION_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
         }
         if (oldData instanceof Message || newData instanceof Message) {
-            eventType = DataEntryUpdateEvent.MESSAGE_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.MESSAGE_UPDATE_EVENT_TOPIC;
         }
         if (oldData instanceof DoiRequest || newData instanceof DoiRequest) {
-            eventType = DataEntryUpdateEvent.DOI_REQUEST_UPDATE_TYPE;
+            eventType = DataEntryUpdateEvent.DOI_REQUEST_UPDATE_EVENT_TOPIC;
         }
         return eventType;
     }

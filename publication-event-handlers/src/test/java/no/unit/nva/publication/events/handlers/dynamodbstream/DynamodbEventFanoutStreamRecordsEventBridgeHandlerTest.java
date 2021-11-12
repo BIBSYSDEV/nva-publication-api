@@ -25,13 +25,13 @@ public class DynamodbEventFanoutStreamRecordsEventBridgeHandlerTest {
             }
         };
 
-        DynamodbEventFanoutStreamRecordsEventBridgeHandler handler = createHandler(eventPublisher);
+        DynamodbStreamToEventBridgeHandler handler = createHandler(eventPublisher);
         Context context = Mockito.mock(Context.class);
         DynamodbEvent event = objectMapper.readValue(DYNAMODB_STREAM_EVENT, DynamodbEvent.class);
         handler.handleRequest(event, context);
     }
 
-    private DynamodbEventFanoutStreamRecordsEventBridgeHandler createHandler(EventPublisher eventPublisher) {
-        return new DynamodbEventFanoutStreamRecordsEventBridgeHandler(eventPublisher);
+    private DynamodbStreamToEventBridgeHandler createHandler(EventPublisher eventPublisher) {
+        return new DynamodbStreamToEventBridgeHandler(eventPublisher);
     }
 }

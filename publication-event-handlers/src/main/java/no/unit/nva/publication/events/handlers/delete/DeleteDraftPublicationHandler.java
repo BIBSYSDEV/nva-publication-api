@@ -16,7 +16,8 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventHandler<ResourceDraftedForDeletionEvent, Void> {
+public class DeleteDraftPublicationHandler
+    extends DestinationsEventBridgeEventHandler<ResourceDraftedForDeletionEvent, Void> {
 
     public static final String DELETE_WITH_DOI_ERROR = "Not allowed to delete Draft Publication with DOI. "
                                                        + "Remove DOI first and try again";
@@ -61,7 +62,8 @@ public class DeleteDraftPublicationHandler extends DestinationsEventBridgeEventH
         return null;
     }
 
-    private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input) throws NotFoundException {
+    private UserInstance fetchUserInformationForPublication(ResourceDraftedForDeletionEvent input)
+        throws NotFoundException {
         Publication publication = resourceService.getPublicationByIdentifier(input.getIdentifier());
         if (nonNull(publication.getDoi())) {
             throwPublicationHasDoiError();

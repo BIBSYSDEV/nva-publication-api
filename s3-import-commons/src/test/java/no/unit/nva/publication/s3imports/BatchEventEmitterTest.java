@@ -1,14 +1,13 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_EVENTS_SENT_PER_REQUEST;
-import static no.unit.nva.publication.s3imports.EventEmitter.NUMBER_OF_REQUEST_ENTRIES;
-import static no.unit.nva.publication.s3imports.EventEmitter.REQUEST_ENTRY_SET_MAX_BYTE_SIZE;
+import static no.unit.nva.publication.s3imports.BatchEventEmitter.NUMBER_OF_EVENTS_SENT_PER_REQUEST;
+import static no.unit.nva.publication.s3imports.BatchEventEmitter.NUMBER_OF_REQUEST_ENTRIES;
+import static no.unit.nva.publication.s3imports.BatchEventEmitter.REQUEST_ENTRY_SET_MAX_BYTE_SIZE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -35,7 +34,7 @@ import software.amazon.awssdk.services.eventbridge.model.ListEventBusesResponse;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
-public class EventEmitterTest {
+public class BatchEventEmitterTest {
 
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 10;
     public static final Lorem FAKER = Faker.instance().lorem();
@@ -51,11 +50,11 @@ public class EventEmitterTest {
 
     @Test
     public void emitEventsEmitsAllEventsWhenCalledWithArguments() {
-        EventEmitter<String> eventEmitter = newEventEmitter();
+        BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> manyEvents = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(manyEvents);
+        batchEventEmitter.addEvents(manyEvents);
         int desiredBatchSize = 20;
-        eventEmitter.emitEvents(desiredBatchSize);
+        batchEventEmitter.emitEvents(desiredBatchSize);
         int expectedNumberOfPutEventRequests = manyEvents.size() / NUMBER_OF_EVENTS_SENT_PER_REQUEST;
         verify(eventBridgeClient, times(expectedNumberOfPutEventRequests)).putEvents(any(PutEventsRequest.class));
     }
@@ -65,11 +64,11 @@ public class EventEmitterTest {
     @Test
     public void emitEventLogsNumberOfEntriesInRequestWhenEventEmissionFails() {
         eventBridgeClient = eventBridgeClientThrowsExceptionWhenPuttingRequests();
-        TestAppender logAppender = LogUtils.getTestingAppender(EventEmitter.class);
-        EventEmitter<String> eventEmitter = newEventEmitter();
+        TestAppender logAppender = LogUtils.getTestingAppender(BatchEventEmitter.class);
+        BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> eventBodies = generateInputBiggerThanEventEmittersRequestSize();
-        eventEmitter.addEvents(eventBodies);
-        assertThrows(EventBridgeException.class, () -> eventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_PER_REQUEST));
+        batchEventEmitter.addEvents(eventBodies);
+        assertThrows(EventBridgeException.class, () -> batchEventEmitter.emitEvents(NUMBER_OF_EVENTS_SENT_PER_REQUEST));
         assertThat(logAppender.getMessages(),
                    containsString(NUMBER_OF_REQUEST_ENTRIES + NUMBER_OF_EVENTS_SENT_PER_REQUEST));
     }
@@ -79,21 +78,21 @@ public class EventEmitterTest {
     public void eventEmitterCreatesPutEventRequestsThatDoNotExceedAmazonsLimits(String individualEntrySize,
                                                                                 String numberOfExpectedRequests) {
 
-        EventEmitter<String> eventEmitter = newEventEmitter();
+        BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         List<String> eventBodies = generateEventsOfSpecificSize(Integer.parseInt(individualEntrySize));
-        eventEmitter.addEvents(eventBodies);
+        batchEventEmitter.addEvents(eventBodies);
         double expectedNumberOfRequests = Integer.parseInt(numberOfExpectedRequests);
         double acceptableError = 1.0;
-        double actualSize = eventEmitter.getPutEventsRequests().size();
+        double actualSize = batchEventEmitter.getPutEventsRequests().size();
         assertThat(actualSize, is(closeTo(expectedNumberOfRequests, acceptableError)));
     }
 
     @Test
     public void eventEmitterThrowsExceptionWhenDataEntryIsTooBigForAwsEventBridgeEvent() {
-        EventEmitter<String> eventEmitter = newEventEmitter();
+        BatchEventEmitter<String> batchEventEmitter = newEventEmitter();
         int sizeBiggerThanAcceptable = REQUEST_ENTRY_SET_MAX_BYTE_SIZE + 100;
         List<String> eventBodies = generateEventsOfSpecificSize(sizeBiggerThanAcceptable);
-        assertThrows(EntryTooBigException.class, () -> eventEmitter.addEvents(eventBodies));
+        assertThrows(EntryTooBigException.class, () -> batchEventEmitter.addEvents(eventBodies));
     }
 
     private EventBridgeClient eventBridgeClientThrowsExceptionWhenPuttingRequests() {
@@ -105,11 +104,11 @@ public class EventEmitterTest {
         return client;
     }
 
-    private EventEmitter<String> newEventEmitter() {
-        return new EventEmitter<>(randomString(),
-                                  randomString(),
-                                  randomString(),
-                                  eventBridgeClient);
+    private BatchEventEmitter<String> newEventEmitter() {
+        return new BatchEventEmitter<>(randomString(),
+                                       randomString(),
+                                       randomString(),
+                                       eventBridgeClient);
     }
 
     private EventBridgeClient setupEventBridgeClient() {

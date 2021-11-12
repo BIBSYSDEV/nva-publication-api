@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
@@ -24,6 +25,7 @@ import java.util.Set;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
@@ -34,11 +36,10 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.events.bodies.EventPayload;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
@@ -98,7 +99,7 @@ public class ExpandDataEntriesHandlerTest {
         throws JsonProcessingException {
         expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
         var updateEvent = parseEmittedEvent();
-        var uriWithEventPayload = updateEvent.getPayloadUri();
+        var uriWithEventPayload = updateEvent.getUri();
         var actualResourceUpdate = fetchResourceUpdateFromS3(uriWithEventPayload);
         var expectedResourceUpdate = extractResourceUpdateFromEvent();
         assertThat(actualResourceUpdate, is(equalTo(expectedResourceUpdate)));
@@ -122,9 +123,9 @@ public class ExpandDataEntriesHandlerTest {
         Resource resource = Resource.fromPublication(publication);
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(resource);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
-        EventPayload eventPayload =
-            objectMapper.readValue(output.toString(), EventPayload.class);
-        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+        EventReference eventReference =
+            objectMapper.readValue(output.toString(), EventReference.class);
+        assertThat(eventReference, is(equalTo(emptyEvent())));
     }
 
     @Test
@@ -133,9 +134,9 @@ public class ExpandDataEntriesHandlerTest {
 
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(doiRequest);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
-        EventPayload eventPayload =
-            objectMapper.readValue(output.toString(), EventPayload.class);
-        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+        EventReference eventReference =
+            objectMapper.readValue(output.toString(), EventReference.class);
+        assertThat(eventReference, is(equalTo(emptyEvent())));
     }
 
     @Test
@@ -143,9 +144,13 @@ public class ExpandDataEntriesHandlerTest {
         Message someMessage = sampleMessage();
         InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(someMessage);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
-        EventPayload eventPayload =
-            objectMapper.readValue(output.toString(), EventPayload.class);
-        assertThat(eventPayload, is(equalTo(EventPayload.emptyEvent())));
+        EventReference eventReference =
+            objectMapper.readValue(output.toString(), EventReference.class);
+        assertThat(eventReference, is(equalTo(emptyEvent())));
+    }
+
+    private EventReference emptyEvent() {
+        return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
 
     private Message sampleMessage() {
@@ -194,8 +199,8 @@ public class ExpandDataEntriesHandlerTest {
         return Resource.fromPublication(publication);
     }
 
-    private EventPayload parseEmittedEvent() throws JsonProcessingException {
-        return objectMapper.readValue(output.toString(), EventPayload.class);
+    private EventReference parseEmittedEvent() throws JsonProcessingException {
+        return objectMapper.readValue(output.toString(), EventReference.class);
     }
 
     private DataEntry extractResourceUpdateFromEvent() {

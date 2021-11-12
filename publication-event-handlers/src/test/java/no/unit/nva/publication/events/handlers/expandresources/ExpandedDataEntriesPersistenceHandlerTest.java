@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler.EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
@@ -21,6 +22,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
@@ -29,7 +31,6 @@ import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -68,8 +69,8 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     void shouldEmitEventContainingS3UriToPersistedExpandedResource(ExpandedDataEntry update)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), update.toJsonString());
-        EventPayload outputEvent = sendEvent();
-        String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
+        EventReference outputEvent = sendEvent();
+        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         assertThat(indexingEventPayload, is(not(emptyString())));
     }
 
@@ -78,8 +79,8 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     void shouldStoreEntryContainingTheDataReferencedInTheReceivedEvent(ExpandedDataEntry update)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()), update.toJsonString());
-        EventPayload outputEvent = sendEvent();
-        String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
+        EventReference outputEvent = sendEvent();
+        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(HELP_MESSAGE, indexDocument.getBody(), is(equalTo(update)));
     }
@@ -91,8 +92,8 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
                                                       expectedPersistedEntry.entry.toJsonString());
-        EventPayload outputEvent = sendEvent();
-        String indexingEventPayload = s3Writer.readEvent(outputEvent.getPayloadUri());
+        EventReference outputEvent = sendEvent();
+        String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
@@ -137,11 +138,12 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         };
     }
 
-    private EventPayload sendEvent() throws JsonProcessingException {
-        EventPayload eventPayload = EventPayload.resourcesUpdateEvent(eventUriInEventsBucket);
-        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventPayload);
+    private EventReference sendEvent() throws JsonProcessingException {
+        EventReference eventReference =
+            new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, eventUriInEventsBucket);
+        var event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(eventReference);
         handler.handleRequest(event, output, mock(Context.class));
-        return objectMapper.readValue(output.toString(), EventPayload.class);
+        return objectMapper.readValue(output.toString(), EventReference.class);
     }
 
     private static class PersistedEntryWithExpectedType {

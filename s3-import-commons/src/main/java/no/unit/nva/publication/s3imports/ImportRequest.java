@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -23,38 +24,39 @@ import nva.commons.core.paths.UnixPath;
  */
 public class ImportRequest implements JsonSerializable {
 
-    public static final String EVENT_DETAIL_TYPE = "PublicationService.ImportCristinData.Filename";
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String S3_LOCATION_FIELD = "s3Location";
-    public static final String IMPORT_EVENT_TYPE = "importEventType";
-    public static final String TIMESTAMP = "timestamp";
+    public static final String MISSING_S3_LOCATION_MESSAGE = S3_LOCATION_FIELD + " cannot be empty";
+    public static final String IMPORT_EVENT_TYPE_FIELD = "importEventType";
+    public static final String TIMESTAMP_FIELD = "timestamp";
 
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
     // This field will be set as the event detail-type by the handler that emits one event per entry
-    // and it will be expected by the specialized handler that will process the entry. E.g. DataMigrationHandler.
-    @JsonProperty(IMPORT_EVENT_TYPE)
+    // and it will be expected by the specialized handler that will process the entry. E.g. CristinEntriesConsumer.
+    @JsonProperty(IMPORT_EVENT_TYPE_FIELD)
     private final String importEventType;
-    @JsonProperty(TIMESTAMP)
+    @JsonProperty(TIMESTAMP_FIELD)
     private final Instant timestamp;
 
     @JsonCreator
-    public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location,
-                         @JsonProperty(IMPORT_EVENT_TYPE) String importEventType,
-                         @JsonProperty(TIMESTAMP) Instant timestamp) {
-        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
+    public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) URI s3location,
+                         @JsonProperty(IMPORT_EVENT_TYPE_FIELD) String importEventType,
+                         @JsonProperty(TIMESTAMP_FIELD) Instant timestamp) {
+        this.s3Location = requireNonEmptyS3Location(s3location);
         this.importEventType = importEventType;
         this.timestamp = timestamp;
     }
 
-    public ImportRequest(URI s3location, String importEventType, Instant timestamp) {
-        this.s3Location = s3location;
-        this.importEventType = importEventType;
-        this.timestamp = timestamp;
+    private URI requireNonEmptyS3Location(URI s3Location) {
+        if (isNull(s3Location)) {
+            throw new IllegalArgumentException(MISSING_S3_LOCATION_MESSAGE);
+        }
+        return s3Location;
     }
 
-    public static ImportRequest create(URI s3Location, Instant timestamp) {
-        return new ImportRequest(s3Location, EVENT_DETAIL_TYPE, timestamp);
+    public ImportRequest(URI s3location, Instant timestamp) {
+        this(s3location, null, timestamp);
     }
 
     public static ImportRequest fromJson(String jsonString) {
@@ -67,8 +69,8 @@ public class ImportRequest implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public String getS3Location() {
-        return Optional.ofNullable(s3Location).map(URI::toString).orElse(null);
+    public URI getS3Location() {
+        return s3Location;
     }
 
     public Instant getTimestamp() {

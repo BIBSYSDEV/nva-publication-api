@@ -47,7 +47,7 @@ public class DeletionProcessInitializationHandler
 
     private ResourceDraftedForDeletionEvent toDeletePublicationEvent(Publication publication) {
         return new ResourceDraftedForDeletionEvent(
-            ResourceDraftedForDeletionEvent.DELETE_PUBLICATION,
+            ResourceDraftedForDeletionEvent.EVENT_TOPIC,
             publication.getIdentifier(),
             publication.getStatus().getValue(),
             publication.getDoi(),

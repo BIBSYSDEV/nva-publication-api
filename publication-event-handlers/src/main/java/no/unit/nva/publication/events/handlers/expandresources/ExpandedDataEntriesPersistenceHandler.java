@@ -9,8 +9,8 @@ import java.net.URI;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.publication.events.bodies.EventPayload;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -19,8 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ExpandedDataEntriesPersistenceHandler
-    extends DestinationsEventBridgeEventHandler<EventPayload, EventPayload> {
+    extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
+    public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
     public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
@@ -32,20 +33,21 @@ public class ExpandedDataEntriesPersistenceHandler
     }
 
     public ExpandedDataEntriesPersistenceHandler(S3Driver s3Reader, S3Driver s3Writer) {
-        super(EventPayload.class);
+        super(EventReference.class);
         this.s3Reader = s3Reader;
         this.s3Writer = s3Writer;
     }
 
     @Override
-    protected EventPayload processInputPayload(EventPayload input,
-                                               AwsEventBridgeEvent<AwsEventBridgeDetail<EventPayload>> event,
-                                               Context context) {
+    protected EventReference processInputPayload(
+        EventReference input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
+        Context context) {
         ExpandedDataEntry expandedResourceUpdate = readEvent(input);
         var indexDocument = createIndexDocument(expandedResourceUpdate);
         var uri = writeEntryToS3(indexDocument);
-        var outputEvent = EventPayload.indexEntryEvent(uri);
-        logger.info(attempt(() -> objectMapper.writeValueAsString(outputEvent)).orElseThrow());
+        var outputEvent = new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, uri);
+        logger.info(outputEvent.toJsonString());
         return outputEvent;
     }
 
@@ -54,8 +56,8 @@ public class ExpandedDataEntriesPersistenceHandler
         return attempt(() -> s3Writer.insertFile(filePath, indexDocument.toJsonString())).orElseThrow();
     }
 
-    private ExpandedDataEntry readEvent(EventPayload input) {
-        String data = s3Reader.readEvent(input.getPayloadUri());
+    private ExpandedDataEntry readEvent(EventReference input) {
+        String data = s3Reader.readEvent(input.getUri());
         return attempt(() -> PublicationEventsConfig.objectMapper.readValue(data, ExpandedDataEntry.class))
             .orElseThrow();
     }

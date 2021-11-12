@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +55,7 @@ public class FakeEventBridgeClient implements EventBridgeClient {
         return PutEventsResponse.builder().entries(resultEntries).failedEntryCount(numberOfFailures()).build();
     }
 
-    public List<String> listEmittedFilenames() {
+    public List<URI> listEmittedFilenames() {
         return extractEmittedImportRequests()
                    .map(ImportRequest::getS3Location)
                    .collect(Collectors.toList());

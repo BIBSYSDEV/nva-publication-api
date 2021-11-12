@@ -399,7 +399,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handleRequestThrowsExceptionWhenInputContainsUnknownProperty() throws JsonProcessingException {
+    public void shouldThrowExceptionWhenInputContainsUnknownProperty() throws JsonProcessingException {
         String input = IoUtils.stringFromResources(Path.of("cristin_entry_with_unknown_property.json"));
 
         AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event = parseEventAsIdentifieableObject(input);

@@ -1004,7 +1004,6 @@ Resources:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
 
-
   CristinDataBulkImportFromS3:
     DependsOn:
       - InternalBus

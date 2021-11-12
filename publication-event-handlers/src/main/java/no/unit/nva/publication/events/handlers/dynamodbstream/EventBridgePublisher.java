@@ -19,7 +19,6 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 public class EventBridgePublisher implements EventPublisher {
 
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
-    public static final String EVENT_DETAIL_TYPE = "PublicationService.Database.Update";
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
@@ -27,28 +26,26 @@ public class EventBridgePublisher implements EventPublisher {
     private final EventPublisher failedEventPublisher;
     private final String eventBusName;
     private final Clock clock;
+    private final String eventDetailType;
 
     @JacocoGenerated
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
                                 EventPublisher failedEventPublisher,
-                                String eventBusName) {
-        this(eventBridge, failedEventPublisher, eventBusName, Clock.systemUTC());
+                                String eventBusName,
+                                String eventDetailType) {
+        this(eventBridge, failedEventPublisher, eventBusName, eventDetailType, Clock.systemUTC());
     }
 
-    /**
-     * Constructor for EventBridgePublisher.
-     *
-     * @param eventBridge          eventBridge
-     * @param failedEventPublisher failedEventPublisher
-     * @param eventBusName         eventBusName
-     * @param clock                clock
-     */
     public EventBridgePublisher(EventBridgeRetryClient eventBridge,
-                                EventPublisher failedEventPublisher, String eventBusName, Clock clock) {
+                                EventPublisher failedEventPublisher,
+                                String eventBusName,
+                                String eventDetailType,
+                                Clock clock) {
         this.eventBridge = eventBridge;
         this.failedEventPublisher = failedEventPublisher;
         this.eventBusName = eventBusName;
         this.clock = clock;
+        this.eventDetailType = eventDetailType;
     }
 
     @Override
@@ -86,7 +83,7 @@ public class EventBridgePublisher implements EventPublisher {
             .eventBusName(eventBusName)
             .time(time)
             .source(EVENT_SOURCE)
-            .detailType(EVENT_DETAIL_TYPE)
+            .detailType(eventDetailType)
             .detail(toString(record))
             .resources(record.getEventSourceARN())
             .build();

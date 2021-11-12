@@ -46,7 +46,7 @@ public class DeletionProcessInitializationHandlerTest {
         assertThat(response.getDoi(), notNullValue());
         assertThat(response.getIdentifier(), notNullValue());
         assertThat(response.getStatus(), is(equalTo(PublicationStatus.DRAFT_FOR_DELETION.getValue())));
-        assertThat(response.getType(), is(equalTo(ResourceDraftedForDeletionEvent.DELETE_PUBLICATION)));
+        assertThat(response.getType(), is(equalTo(ResourceDraftedForDeletionEvent.EVENT_TOPIC)));
     }
 
     @Test
@@ -55,8 +55,8 @@ public class DeletionProcessInitializationHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(),
-                                                                          ResourceDraftedForDeletionEvent.class);
+        ResourceDraftedForDeletionEvent response =
+            objectMapper.readValue(outputStream.toString(),ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
 
@@ -66,7 +66,8 @@ public class DeletionProcessInitializationHandlerTest {
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        ResourceDraftedForDeletionEvent response = objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
+        ResourceDraftedForDeletionEvent response =
+            objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
 }

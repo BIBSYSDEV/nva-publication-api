@@ -44,7 +44,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
  *
  * @param <T> the type of the event detail.
  */
-public class EventEmitter<T> {
+public class BatchEventEmitter<T> {
 
     public static final String BUS_NOT_FOUND_ERROR = "EventBridge bus not found: ";
     public static final String NUMBER_OF_REQUEST_ENTRIES = "Number of request entries:";
@@ -52,17 +52,17 @@ public class EventEmitter<T> {
     protected static final int NUMBER_OF_EVENTS_SENT_PER_REQUEST = 10;
     protected static final int REQUEST_ENTRY_SET_MAX_BYTE_SIZE = 256_000; // 256KB with some slack
     private static final int MAX_ATTEMPTS = 10;
-    private static final Logger logger = LoggerFactory.getLogger(EventEmitter.class);
+    private static final Logger logger = LoggerFactory.getLogger(BatchEventEmitter.class);
     private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
 
-    public EventEmitter(String detailType,
-                        String eventSource,
-                        String invokingFunctionArn,
-                        EventBridgeClient eventBridgeClient) {
+    public BatchEventEmitter(String detailType,
+                             String eventSource,
+                             String invokingFunctionArn,
+                             EventBridgeClient eventBridgeClient) {
         this.detailType = detailType;
         this.invokingFunctionArn = invokingFunctionArn;
         this.client = eventBridgeClient;

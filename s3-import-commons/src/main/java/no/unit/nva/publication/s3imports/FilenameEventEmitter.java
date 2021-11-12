@@ -41,12 +41,14 @@ import software.amazon.awssdk.services.s3.S3Client;
  * {@link FilenameEventEmitter} accepts an {@link ImportRequest}, it lists all the files in the S3 location defined in
  * the {@link ImportRequest} and it emits on event per filename.
  *
- * <p>Each event has as event detail-type the value {@link ImportRequest#EVENT_DETAIL_TYPE} and detail
+ * <p>Each event has as event detail-type the value {@link FilenameEventEmitter#FILENAME_EMISSION_EVENT_TOPIC} and
+ * detail
  * (event-body) an {@link ImportRequest} where s3Location is the URI of the respective file and the rest of the fields
  * are copied from the input.
  */
 public class FilenameEventEmitter implements RequestStreamHandler {
 
+    public static final String FILENAME_EMISSION_EVENT_TOPIC = "PublicationService.ImportCristinData.Filename";
     public static final Environment ENVIRONMENT = new Environment();
     public static final String EXPECTED_BODY_MESSAGE =
         "The expected json body contains only an s3Location.\nThe received body was: ";
@@ -56,10 +58,8 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         "Import event type is set for this handler and cannot be set by the user. "
         + EXPECTED_BODY_MESSAGE;
 
-
     public static final String LINE_SEPARATOR = System.lineSeparator();
     public static final String NON_EMITTED_FILENAMES_WARNING_PREFIX = "Some files failed to be emitted:";
-    public static final String PATH_SEPARATOR = "/";
     public static final String RUNNING_CLASS_NAME = FilenameEventEmitter.class.getCanonicalName();
     public static final String ERROR_REPORT_FILENAME = Instant.now().toString() + "emitFilenamesReport.error.";
     public static final String IMPORT_EVENT_TYPE_ENV_VARIABLE = "IMPORT_EVENT_TYPE";
@@ -90,7 +90,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         validateImportRequest(importRequest, files);
         List<PutEventsResult> failedRequests = emitEvents(context, files);
         logWarningForNotEmittedFilenames(failedRequests);
-        List<String> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
+        List<URI> notEmittedFilenames = collectNotEmittedFilenames(failedRequests);
         writeFailedEmitActionsInS3(failedRequests, importRequest);
         writeOutput(output, notEmittedFilenames);
     }
@@ -129,12 +129,12 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private List<URI> listFiles(ImportRequest importRequest) {
-        URI s3Location = URI.create(importRequest.getS3Location());
+
         S3Driver s3Driver = new S3Driver(s3Client, importRequest.extractBucketFromS3Location());
         List<UnixPath> filenames = s3Driver.listAllFiles(importRequest.extractPathFromS3Location());
         logger.info(attempt(() -> s3ImportsMapper.writeValueAsString(filenames)).orElseThrow());
         return filenames.stream()
-            .map(filename -> createUri(s3Location, filename))
+            .map(filename -> createUri(importRequest.getS3Location(), filename))
             .collect(Collectors.toList());
     }
 
@@ -148,7 +148,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
         }
     }
 
-    private List<String> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
+    private List<URI> collectNotEmittedFilenames(List<PutEventsResult> failedRequests) {
         return failedRequests.stream()
             .map(PutEventsResult::getRequest)
             .map(PutEventsRequest::entries)
@@ -161,17 +161,17 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     private List<PutEventsResult> emitEvents(Context context, List<URI> files) {
 
-        EventEmitter<ImportRequest> eventEmitter =
-            new EventEmitter<>(ImportRequest.EVENT_DETAIL_TYPE,
-                               RUNNING_CLASS_NAME,
-                               context.getInvokedFunctionArn(),
-                               eventBridgeClient);
+        BatchEventEmitter<ImportRequest> batchEventEmitter =
+            new BatchEventEmitter<>(FILENAME_EMISSION_EVENT_TOPIC,
+                                    RUNNING_CLASS_NAME,
+                                    context.getInvokedFunctionArn(),
+                                    eventBridgeClient);
 
         List<ImportRequest> filenameEvents = files.stream()
             .map(this::newImportRequestForSingleFile)
             .collect(Collectors.toList());
-        eventEmitter.addEvents(filenameEvents);
-        return eventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
+        batchEventEmitter.addEvents(filenameEvents);
+        return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_FILENAMES_PER_BATCH);
     }
 
     private ImportRequest newImportRequestForSingleFile(URI uri) {

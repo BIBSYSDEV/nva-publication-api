@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
+import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -46,7 +48,9 @@ public class EventBridgePublisherTest {
         MockitoAnnotations.initMocks(this);
 
         publisher = new EventBridgePublisher(eventBridge, failedEventPublisher,
-                                             EVENT_BUS, Clock.fixed(NOW, ZoneId.systemDefault()));
+                                             EVENT_BUS,
+                                             EVENT_DETAIL_TYPE,
+                                             Clock.fixed(NOW, ZoneId.systemDefault()));
     }
 
     @Test
@@ -82,7 +86,7 @@ public class EventBridgePublisherTest {
             .eventBusName(EVENT_BUS)
             .time(NOW)
             .source(EventBridgePublisher.EVENT_SOURCE)
-            .detailType(EventBridgePublisher.EVENT_DETAIL_TYPE)
+            .detailType(DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE)
             .resources(EVENT_SOURCE_ARN);
     }
 
@@ -95,7 +99,7 @@ public class EventBridgePublisherTest {
 
     private List<PutEventsRequestEntry> createFailedEntries() {
         String failedRecordString = String.format(RECORD_STRING_TEMPLATE, FAILED_EVENT_NAME,
-            EventBridgePublisherTest.EVENT_SOURCE_ARN);
+                                                  EventBridgePublisherTest.EVENT_SOURCE_ARN);
         return Collections.singletonList(
             PUT_EVENT_REQUEST_BUILDER
                 .detail(failedRecordString)
@@ -113,13 +117,13 @@ public class EventBridgePublisherTest {
         String expectedDetail = String.format(EXPECTED_DETAIL_TEMPLATE, EVENT_SOURCE_ARN);
         return PutEventsRequest.builder()
             .entries(PutEventsRequestEntry.builder()
-                .eventBusName(EVENT_BUS)
-                .time(NOW)
-                .source(EventBridgePublisher.EVENT_SOURCE)
-                .detailType(EventBridgePublisher.EVENT_DETAIL_TYPE)
-                .detail(expectedDetail)
-                .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
-                .build())
+                         .eventBusName(EVENT_BUS)
+                         .time(NOW)
+                         .source(EventBridgePublisher.EVENT_SOURCE)
+                         .detailType(DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE)
+                         .detail(expectedDetail)
+                         .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
+                         .build())
             .build();
     }
 
