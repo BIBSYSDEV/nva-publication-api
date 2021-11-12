@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
-import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -49,7 +48,7 @@ public class EventBridgePublisherTest {
 
         publisher = new EventBridgePublisher(eventBridge, failedEventPublisher,
                                              EVENT_BUS,
-                                             EVENT_DETAIL_TYPE,
+                                             DYNAMODB_UPDATE_EVENT_TOPIC,
                                              Clock.fixed(NOW, ZoneId.systemDefault()));
     }
 
@@ -86,7 +85,7 @@ public class EventBridgePublisherTest {
             .eventBusName(EVENT_BUS)
             .time(NOW)
             .source(EventBridgePublisher.EVENT_SOURCE)
-            .detailType(DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE)
+            .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
             .resources(EVENT_SOURCE_ARN);
     }
 
@@ -120,7 +119,7 @@ public class EventBridgePublisherTest {
                          .eventBusName(EVENT_BUS)
                          .time(NOW)
                          .source(EventBridgePublisher.EVENT_SOURCE)
-                         .detailType(DynamodbStreamToEventBridgeHandler.EVENT_DETAIL_TYPE)
+                         .detailType(DynamodbStreamToEventBridgeHandler.DYNAMODB_UPDATE_EVENT_TOPIC)
                          .detail(expectedDetail)
                          .resources(EventBridgePublisherTest.EVENT_SOURCE_ARN)
                          .build())

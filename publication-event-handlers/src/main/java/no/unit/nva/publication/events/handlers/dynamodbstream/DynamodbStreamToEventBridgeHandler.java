@@ -23,7 +23,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     public static final String AWS_REGION = "AWS_REGION";
     private final EventPublisher eventPublisher;
-    public static final String EVENT_DETAIL_TYPE = "PublicationService.Database.Update";
+    public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
 
 
     @JacocoGenerated
@@ -41,7 +41,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
             defaultEventBridgeRetryClient(),
             defaultFailedEventPublisher(),
             DynamoDbStreamEventsConstants.getEventBusName(),
-            EVENT_DETAIL_TYPE
+            DYNAMODB_UPDATE_EVENT_TOPIC
         );
     }
 
