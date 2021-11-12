@@ -105,7 +105,7 @@ class DoiRequestEventProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -117,7 +117,7 @@ class DoiRequestEventProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -161,7 +161,7 @@ class DoiRequestEventProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(),
-                   is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+                   is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -180,7 +180,7 @@ class DoiRequestEventProducerTest {
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 

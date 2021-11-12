@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 public class DoiRequestEventProducer
     extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, PublicationHolder> {
 
-    public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "PublicationService.Doi.CreationRequest";
-    public static final String TYPE_UPDATE_EXISTING_DOI = "PublicationService.Doi.UpdateRequest";
+    public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
+    public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
 
     protected static final String EMPTY_EVENT_TYPE = "empty";
@@ -81,9 +81,9 @@ public class DoiRequestEventProducer
 
     private String calculateEventType(DataEntryUpdateEvent updateEvent) {
         if (isFirstDoiRequest(updateEvent)) {
-            return TYPE_REQUEST_FOR_NEW_DRAFT_DOI;
+            return REQUEST_DRAFT_DOI_EVENT_TOPIC;
         } else {
-            return TYPE_UPDATE_EXISTING_DOI;
+            return UPDATE_DOI_EVENT_TOPIC;
         }
     }
 
