@@ -1,12 +1,12 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_CONTENTS_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
-
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
-import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC;
+import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -57,14 +57,13 @@ import software.amazon.ion.system.IonTextWriterBuilder;
 
 public class FileEntriesEventEmitterTest {
 
-    public static final String UNEXPECTED_DETAIL_TYPE = "unexpected detail type";
+    public static final String UNEXPECTED_TOPIC = "unexpected detail type";
 
     private static final URI S3_BUCKET = URI.create("s3://bucket");
     private static final String INPUT_PATH = "/parent/folder";
     private static final String INPUT_FILENAME = "location.file";
     private static final URI INPUT_URI =
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(INPUT_FILENAME).getUri();
-    private static final String IMPORT_EVENT_TYPE = "importEventType";
     private static final String NON_EXISTING_FILE = "nonexistingfile.txt";
     private static final URI NON_EXISTING_FILE_URI =
         new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(NON_EXISTING_FILE).getUri();
@@ -75,19 +74,25 @@ public class FileEntriesEventEmitterTest {
     private static final String SOME_BUCKETNAME = "someBucketname";
     private static final String ALL_FILES = ".";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
+    private static ImportRequest importRequestForExistingFile;
+    private static ImportRequest importRequestForNonExistingFile;
     private S3Client s3Client;
     private FakeEventBridgeClient eventBridgeClient;
     private FileEntriesEventEmitter handler;
     private ByteArrayOutputStream outputStream;
     private Instant timestamp;
-    private static ImportRequest importRequestForExistingFile;
-    private static ImportRequest importRequestForNonExistingFile;
 
     @BeforeEach
     public void init() {
         timestamp = Instant.now();
-        importRequestForExistingFile = new ImportRequest(INPUT_URI, IMPORT_EVENT_TYPE, timestamp);
-        importRequestForNonExistingFile = new ImportRequest(NON_EXISTING_FILE_URI, IMPORT_EVENT_TYPE, timestamp);
+        importRequestForExistingFile = new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                                                         FILENAME_EMISSION_EVENT_SUBTOPIC,
+                                                         INPUT_URI,
+                                                         timestamp);
+        importRequestForNonExistingFile = new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                                                            FILENAME_EMISSION_EVENT_SUBTOPIC,
+                                                            NON_EXISTING_FILE_URI,
+                                                            timestamp);
         s3Client = new FakeS3Client(fileWithContentsAsJsonArray().toMap());
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
         handler = newHandler();
@@ -95,7 +100,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsEventWithResourceWhenFileUriExistsAndContainsDataAsJsonArray() {
+    public void shouldEmitEventWithResourceWhenFileUriExistsAndContainsDataAsJsonArray() {
         InputStream input = createRequestEventForFile(importRequestForExistingFile);
         FileEntriesEventEmitter handler = newHandler();
 
@@ -106,15 +111,15 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedDetailType() {
+    public void handlerThrowsExceptionWhenInputDoesNotHaveTheExpectedTopic() {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(UNEXPECTED_DETAIL_TYPE);
-        request.setDetail(importRequestForExistingFile);
+        ImportRequest invalidRequest = importRequestForExistingFile.withTopic(UNEXPECTED_TOPIC);
+        request.setDetail(invalidRequest);
         InputStream input = toInputStream(request);
 
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(request.getDetailType()));
+        assertThat(exception.getMessage(), containsString(invalidRequest.getTopic()));
     }
 
     @Test
@@ -158,11 +163,11 @@ public class FileEntriesEventEmitterTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalStateException exception = assertThrows(IllegalStateException.class, action);
         String expectedErrorFileLocation = ERRORS_FOLDER
-                                               .addChild(timestampToString(timestamp))
-                                               .addChild(exception.getClass().getSimpleName())
-                                               .addChild(INPUT_PATH)
-                                               .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
-                                               .toString();
+            .addChild(timestampToString(timestamp))
+            .addChild(exception.getClass().getSimpleName())
+            .addChild(INPUT_PATH)
+            .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
+            .toString();
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, is(containsString(exception.getMessage())));
@@ -183,11 +188,11 @@ public class FileEntriesEventEmitterTest {
         Executable action = () -> handler.handleRequest(input, outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
         String expectedErrorFileLocation = ERRORS_FOLDER
-                                               .addChild(timestampToString(timestamp))
-                                               .addChild(exception.getClass().getSimpleName())
-                                               .addChild(INPUT_PATH)
-                                               .addChild(NON_EXISTING_FILE + FILE_EXTENSION_ERROR)
-                                               .toString();
+            .addChild(timestampToString(timestamp))
+            .addChild(exception.getClass().getSimpleName())
+            .addChild(INPUT_PATH)
+            .addChild(NON_EXISTING_FILE + FILE_EXTENSION_ERROR)
+            .toString();
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, is(containsString(exception.getMessage())));
@@ -210,9 +215,9 @@ public class FileEntriesEventEmitterTest {
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         List<String> samplesOfExpectedContentsInReportFile = Arrays.stream(FILE_01_CONTENTS)
-                                                                 .map(SampleObject::getId)
-                                                                 .map(Object::toString)
-                                                                 .collect(Collectors.toList());
+            .map(SampleObject::getId)
+            .map(Object::toString)
+            .collect(Collectors.toList());
         for (String sample : samplesOfExpectedContentsInReportFile) {
             assertThat(actualErrorFile, containsString(sample));
         }
@@ -238,11 +243,11 @@ public class FileEntriesEventEmitterTest {
         Exception exception = assertThrows(RuntimeException.class, action);
 
         String expectedErrorFileLocation = ERRORS_FOLDER
-                                               .addChild(timestampToString(timestamp))
-                                               .addChild(exception.getClass().getSimpleName())
-                                               .addChild(INPUT_PATH)
-                                               .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
-                                               .toString();
+            .addChild(timestampToString(timestamp))
+            .addChild(exception.getClass().getSimpleName())
+            .addChild(INPUT_PATH)
+            .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
+            .toString();
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         assertThat(actualErrorFile, containsString(INPUT_URI.toString()));
@@ -256,17 +261,17 @@ public class FileEntriesEventEmitterTest {
         handler.handleRequest(input, outputStream, CONTEXT);
 
         String expectedErrorFileLocation = ERRORS_FOLDER
-                                               .addChild(timestampToString(timestamp))
-                                               .addChild(PARTIAL_FAILURE)
-                                               .addChild(INPUT_PATH)
-                                               .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
-                                               .toString();
+            .addChild(timestampToString(timestamp))
+            .addChild(PARTIAL_FAILURE)
+            .addChild(INPUT_PATH)
+            .addChild(INPUT_FILENAME + FILE_EXTENSION_ERROR)
+            .toString();
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKETNAME);
         String actualErrorFile = s3Driver.getFile(UnixPath.of(expectedErrorFileLocation));
         List<String> samplesOfExpectedContentsInReportFile = Arrays.stream(FILE_01_CONTENTS)
-                                                                 .map(SampleObject::getId)
-                                                                 .map(Object::toString)
-                                                                 .collect(Collectors.toList());
+            .map(SampleObject::getId)
+            .map(Object::toString)
+            .collect(Collectors.toList());
         for (String sample : samplesOfExpectedContentsInReportFile) {
             assertThat(actualErrorFile, containsString(sample));
         }
@@ -286,17 +291,17 @@ public class FileEntriesEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsEventsWithDetailTypeEqualToInputsImportRequestEventType() {
-        String expectedImportRequestEventType = randomString();
-        ImportRequest importRequestWithCustomType =
-            newImportRequest(expectedImportRequestEventType);
-        InputStream input = createRequestEventForFile(importRequestWithCustomType);
+    public void handlerEmitsEventsWithSubtopicEqualToInputsImportRequestSubtopic() {
+        String inputImportEventSubtopic = randomString();
+        ImportRequest inputImportEvent =
+            newImportRequest(inputImportEventSubtopic);
+        InputStream input = createRequestEventForFile(inputImportEvent);
         handler.handleRequest(input, outputStream, CONTEXT);
-        var detailTypes = extractDetailTypesFromEvents();
+        var subtopic = extractSubtopicsFromEvents();
 
-        assertThat(detailTypes.size(), is(equalTo(FILE_01_CONTENTS.length)));
-        for (String detailType : detailTypes) {
-            assertThat(detailType, is(equalTo(expectedImportRequestEventType)));
+        assertThat(subtopic.size(), is(equalTo(FILE_01_CONTENTS.length)));
+        for (String detailType : subtopic) {
+            assertThat(detailType, is(equalTo(inputImportEventSubtopic)));
         }
     }
 
@@ -313,11 +318,11 @@ public class FileEntriesEventEmitterTest {
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
     }
 
-
-
-    private static ImportRequest newImportRequest(String customImportRequestEventType) {
-        return new ImportRequest(importRequestForExistingFile.getS3Location(),
-                                 customImportRequestEventType,Instant.now());
+    private static ImportRequest newImportRequest(String subtopic) {
+        return new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                                 subtopic,
+                                 importRequestForExistingFile.getS3Location(),
+                                 Instant.now());
     }
 
     //used in parametrized test
@@ -365,27 +370,27 @@ public class FileEntriesEventEmitterTest {
         ObjectMapper objectMapperWithoutLineBreaks =
             s3ImportsMapper.configure(SerializationFeature.INDENT_OUTPUT, false);
         String nodesInLines = contentAsJsonNodes()
-                                  .stream()
-                                  .map(attempt(objectMapperWithoutLineBreaks::writeValueAsString))
-                                  .map(Try::orElseThrow)
-                                  .collect(Collectors.joining(LINE_SEPARATOR));
+            .stream()
+            .map(attempt(objectMapperWithoutLineBreaks::writeValueAsString))
+            .map(Try::orElseThrow)
+            .collect(Collectors.joining(LINE_SEPARATOR));
         return IoUtils.stringToStream(nodesInLines);
     }
 
     private static List<JsonNode> contentAsJsonNodes() {
         return Stream.of(FILE_01_CONTENTS)
-                   .map(JsonSerializable::toJsonString)
-                   .map(attempt(s3ImportsMapper::readTree))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .map(JsonSerializable::toJsonString)
+            .map(attempt(s3ImportsMapper::readTree))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private static String createNewIonObjectsList(Collection<SampleObject> sampleObjects) {
         return sampleObjects.stream()
-                   .map(attempt(s3ImportsMapper::writeValueAsString))
-                   .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.joining(System.lineSeparator()));
+            .map(attempt(s3ImportsMapper::writeValueAsString))
+            .map(attempt -> attempt.map(FileEntriesEventEmitterTest::jsonToIon))
+            .map(Try::orElseThrow)
+            .collect(Collectors.joining(System.lineSeparator()));
     }
 
     private static String createNewIonArray(Collection<SampleObject> sampleObjects) throws IOException {
@@ -403,7 +408,7 @@ public class FileEntriesEventEmitterTest {
 
     private static List<SampleObject> randomObjects() {
         return Stream.of(SampleObject.random(), SampleObject.random(), SampleObject.random())
-                   .collect(Collectors.toList());
+            .collect(Collectors.toList());
     }
 
     private FakeEventBridgeClient eventBridgeClientThatFailsToEmitMessages() {
@@ -425,13 +430,15 @@ public class FileEntriesEventEmitterTest {
         };
     }
 
-    private List<String> extractDetailTypesFromEvents() {
+    private List<String> extractSubtopicsFromEvents() {
         return eventBridgeClient
-                   .getEvenRequests()
-                   .stream()
-                   .flatMap(eventRequest -> eventRequest.entries().stream())
-                   .map(PutEventsRequestEntry::detailType)
-                   .collect(Collectors.toList());
+            .getEvenRequests()
+            .stream()
+            .flatMap(eventRequest -> eventRequest.entries().stream())
+            .map(PutEventsRequestEntry::detail)
+            .map(detailString -> FileContentsEvent.fromJson(detailString, SampleObject.class))
+            .map(FileContentsEvent::getSubtopic)
+            .collect(Collectors.toList());
     }
 
     private FileEntriesEventEmitter newHandler() {
@@ -440,34 +447,33 @@ public class FileEntriesEventEmitterTest {
 
     private InputStream createRequestEventForFile(ImportRequest detail) {
         AwsEventBridgeEvent<ImportRequest> request = new AwsEventBridgeEvent<>();
-        request.setDetailType(FILENAME_EMISSION_EVENT_TOPIC);
         request.setDetail(detail);
         return toInputStream(request);
     }
 
     private List<SampleObject> collectEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
         return eventBridgeClient.getEvenRequests()
-                   .stream()
-                   .flatMap(e -> e.entries().stream())
-                   .map(PutEventsRequestEntry::detail)
-                   .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
-                   .map(FileContentsEvent::getContents)
-                   .collect(Collectors.toList());
+            .stream()
+            .flatMap(e -> e.entries().stream())
+            .map(PutEventsRequestEntry::detail)
+            .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
+            .map(FileContentsEvent::getContents)
+            .collect(Collectors.toList());
     }
 
     private List<Instant> collectTimestampFromEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
         return eventBridgeClient.getEvenRequests()
-                .stream()
-                .flatMap(e -> e.entries().stream())
-                .map(PutEventsRequestEntry::detail)
-                .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
-                .map(FileContentsEvent::getTimestamp)
-                .collect(Collectors.toList());
+            .stream()
+            .flatMap(e -> e.entries().stream())
+            .map(PutEventsRequestEntry::detail)
+            .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
+            .map(FileContentsEvent::getTimestamp)
+            .collect(Collectors.toList());
     }
 
     private InputStream toInputStream(AwsEventBridgeEvent<ImportRequest> request) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(request))
-                   .map(IoUtils::stringToStream)
-                   .orElseThrow();
+            .map(IoUtils::stringToStream)
+            .orElseThrow();
     }
 }

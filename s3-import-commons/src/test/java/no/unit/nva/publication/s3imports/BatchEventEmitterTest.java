@@ -107,7 +107,6 @@ public class BatchEventEmitterTest {
     private BatchEventEmitter<String> newEventEmitter() {
         return new BatchEventEmitter<>(randomString(),
                                        randomString(),
-                                       randomString(),
                                        eventBridgeClient);
     }
 

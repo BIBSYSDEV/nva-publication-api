@@ -1,13 +1,12 @@
 package no.unit.nva.publication.s3imports;
 
-import static no.unit.nva.publication.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.EMPTY_STRING;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
@@ -61,6 +59,7 @@ public class FilenameEventEmitterTest {
     private static final String PATH_SEPARATOR = "/";
     private static final Instant NOW = Instant.now();
     private static final Integer NON_ZERO_NUMBER_OF_FAILURES = 2;
+    public static final String EMPTY_SUBTOPIC = null;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
@@ -91,7 +90,7 @@ public class FilenameEventEmitterTest {
 
     @Test
     public void handlerThrowsNoExceptionWheInputIsValidAndLocationIsNotEmpty() {
-        ImportRequest importRequest = new ImportRequest(randomUri(), NOW);
+        ImportRequest importRequest = newImportRequest();
         Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
@@ -105,7 +104,7 @@ public class FilenameEventEmitterTest {
 
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
         var s3Location = URI.create(SOME_S3_LOCATION + pathSeparator);
-        var importRequest = new ImportRequest(s3Location, NOW);
+        var importRequest = new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC, s3Location, NOW);
         var inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         var fileList = eventBridgeClient.listEmittedFilenames();
@@ -201,30 +200,7 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsImportRequestContainingTheImportEventTypeSetInTheEnvironment()
-        throws IOException {
-        String expectedImportEvent = new Environment().readEnv(IMPORT_EVENT_TYPE_ENV_VARIABLE);
-        ImportRequest importRequest = newImportRequest();
-        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
-        for (ImportRequest emittedImportRequest : emittedImportRequests) {
-
-            assertThat(emittedImportRequest.getImportEventType(), is(equalTo(expectedImportEvent)));
-        }
-    }
-
-    @Test
-    public void shouldThrowExceptionSayingThatSettingImportEventTypeIsNotAllowedWhenImportEventTypeIsSetByTheUser()
-        throws IOException {
-        String someEventType = "someEventType";
-        ImportRequest importRequest = new ImportRequest(SOME_S3_LOCATION, someEventType, NOW);
-        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV));
-    }
-
-    @Test
-    public void shouldEmmitEventIncludingATimestampBasedOnWhenItWasTriggered() throws IOException {
+    public void shouldEmmitEventWithEventTriggerTimestamp() throws IOException {
         Instant expectedTimestamp = clock.instant();
         ImportRequest importRequest = newImportRequest();
 
@@ -251,7 +227,10 @@ public class FilenameEventEmitterTest {
     }
 
     private ImportRequest newImportRequest() {
-        return new ImportRequest(SOME_S3_LOCATION, Instant.now());
+        return new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC,
+                                 EMPTY_SUBTOPIC,
+                                 SOME_S3_LOCATION,
+                                 NOW);
     }
 
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {

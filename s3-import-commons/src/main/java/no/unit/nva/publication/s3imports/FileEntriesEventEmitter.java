@@ -40,10 +40,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
- * This class accepts an {@link ImportRequest} and emits  with event detail-type equal to the value of the{@link
- * ImportRequest#getImportEventType()}.
- *
- * <p>The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
+ * The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
  * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
  *
  * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
@@ -52,11 +49,13 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  */
 public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
+    public static final String WRONG_TOPIC_ERROR = "event does not contain the correct subtopic:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     public static final String FILE_EXTENSION_ERROR = ".error";
     public static final String PARTIAL_FAILURE = "PartialFailure";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
+    public static final String FILE_CONTENTS_EMISSION_EVENT_TOPIC = "PublicationService.DataImport.DataEntry";
+
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
@@ -114,7 +113,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         return attempt(() -> fetchFileFromS3(input, s3Driver))
             .map(this::parseContents)
             .map(jsonNodes -> generateEventBodies(input, jsonNodes))
-            .map(eventBodies -> emitEvents(context, input, eventBodies));
+            .map(eventBodies -> emitEvents(context, eventBodies));
     }
 
     private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
@@ -156,15 +155,18 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
         URI fileUri = input.getS3Location();
         Instant timestamp = input.getTimestamp();
-        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, timestamp, json));
+        return contents.stream()
+            .map(json -> new FileContentsEvent<>(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                                                                     input.getSubtopic(),
+                                                                     fileUri,
+                                                                     timestamp,
+                                                                     json));
     }
 
     private List<PutEventsResult> emitEvents(Context context,
-                                             ImportRequest input,
                                              Stream<FileContentsEvent<JsonNode>> eventBodies) {
         BatchEventEmitter<FileContentsEvent<JsonNode>> batchEventEmitter =
-            new BatchEventEmitter<>(input.getImportEventType(),
-                                    CANONICAL_NAME,
+            new BatchEventEmitter<>(CANONICAL_NAME,
                                     context.getInvokedFunctionArn(),
                                     eventBridgeClient);
         batchEventEmitter.addEvents(eventBodies);
@@ -199,8 +201,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC)) {
-            throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
+        if (!FILE_CONTENTS_EMISSION_EVENT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
+            throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
         }
     }
 

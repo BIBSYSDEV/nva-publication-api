@@ -53,17 +53,15 @@ public class BatchEventEmitter<T> {
     protected static final int REQUEST_ENTRY_SET_MAX_BYTE_SIZE = 256_000; // 256KB with some slack
     private static final int MAX_ATTEMPTS = 10;
     private static final Logger logger = LoggerFactory.getLogger(BatchEventEmitter.class);
-    private final String detailType;
     private final String invokingFunctionArn;
     private final EventBridgeClient client;
     private final String eventSource;
     private List<PutEventsRequest> putEventsRequests;
 
-    public BatchEventEmitter(String detailType,
+    public BatchEventEmitter(
                              String eventSource,
                              String invokingFunctionArn,
                              EventBridgeClient eventBridgeClient) {
-        this.detailType = detailType;
         this.invokingFunctionArn = invokingFunctionArn;
         this.client = eventBridgeClient;
         this.eventSource = eventSource;
@@ -132,7 +130,7 @@ public class BatchEventEmitter<T> {
         return PutEventsRequestEntry.builder()
             .eventBusName(ApplicationConstants.EVENT_BUS_NAME)
             .resources(invokingFunctionArn)
-            .detailType(detailType)
+            .detailType("BatchImport")
             .time(Instant.now())
             .detail(toJson(eventDetail))
             .source(eventSource)

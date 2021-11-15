@@ -55,7 +55,7 @@ dependencies {
 
 test {
     environment "MAX_SLEEP_TIME", "1"
-    environment "IMPORT_EVENT_TYPE", "importEventTypeTestingValue"
+    environment "FILENAME_EMISSION_EVENT_SUBTOPIC", "FILENAME_EMISSION_EVENT_SUBTOPIC"
     environment "BATCH_EMISSION_INTERVAL_MILLIS", "0"
     environment "EVENT_BUS_NAME", "eventBusName"
 
