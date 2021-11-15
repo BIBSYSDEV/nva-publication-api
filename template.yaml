@@ -393,11 +393,11 @@ Resources:
       Handler: no.unit.nva.publication.fetch.FetchPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1408
-#      AutoPublishAlias: live
-#      DeploymentPreference:
-#        Type: AllAtOnce
-#      ProvisionedConcurrencyConfig:
-#        ProvisionedConcurrentExecutions: 1
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
+      ProvisionedConcurrencyConfig:
+        ProvisionedConcurrentExecutions: 1
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
