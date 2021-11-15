@@ -10,7 +10,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
-import no.unit.nva.publication.doi.update.dto.PublicationHolder;
+import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -22,14 +22,14 @@ import org.slf4j.LoggerFactory;
  * Sends messages to DoiRegistrar service for creating and updating DOIs.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, PublicationHolder> {
+    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, DoiUpdateRequestEvent> {
 
     public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
     public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
 
     protected static final String EMPTY_EVENT_TYPE = "empty";
-    public static final PublicationHolder EMPTY_EVENT = emptyEvent();
+    public static final DoiUpdateRequestEvent EMPTY_EVENT = emptyEvent();
     private static final Logger logger = LoggerFactory.getLogger(DoiRequestEventProducer.class);
 
     @JacocoGenerated
@@ -38,38 +38,38 @@ public class DoiRequestEventProducer
     }
 
     @Override
-    protected PublicationHolder processInputPayload(
+    protected DoiUpdateRequestEvent processInputPayload(
         DataEntryUpdateEvent input,
         AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
         Context context) {
 
         logger.info(event.toJsonString());
-        PublicationHolder updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
+        DoiUpdateRequestEvent updatedDoiInformationEvent = fromDynamoEntryUpdate(input);
         validate(updatedDoiInformationEvent);
         return updatedDoiInformationEvent;
     }
 
-    private static PublicationHolder emptyEvent() {
+    private static DoiUpdateRequestEvent emptyEvent() {
         return toPublicationHolder(null, EMPTY_EVENT_TYPE);
     }
 
-    private static PublicationHolder toPublicationHolder(DoiRequest doiRequest, String eventType) {
+    private static DoiUpdateRequestEvent toPublicationHolder(DoiRequest doiRequest, String eventType) {
         Publication publication = nonNull(doiRequest) ? doiRequest.toPublication() : null;
-        return new PublicationHolder(eventType, publication);
+        return new DoiUpdateRequestEvent(eventType, publication);
     }
 
-    private void validate(PublicationHolder updatedDoiInformationEvent) {
+    private void validate(DoiUpdateRequestEvent updatedDoiInformationEvent) {
         if (isInvalid(updatedDoiInformationEvent)) {
             throw new IllegalStateException(NO_RESOURCE_IDENTIFIER_ERROR);
         }
     }
 
-    private boolean isInvalid(PublicationHolder updatedDoiInformationEvent) {
+    private boolean isInvalid(DoiUpdateRequestEvent updatedDoiInformationEvent) {
         return nonNull(updatedDoiInformationEvent.getItem())
                && isNull(updatedDoiInformationEvent.getItem().getIdentifier());
     }
 
-    private PublicationHolder fromDynamoEntryUpdate(DataEntryUpdateEvent updateEvent) {
+    private DoiUpdateRequestEvent fromDynamoEntryUpdate(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .filter(this::shouldPropagateEvent)
             .map(DataEntryUpdateEvent::getNewData)
