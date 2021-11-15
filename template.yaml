@@ -752,7 +752,7 @@ Resources:
         DestinationConfig:
           OnSuccess:
             Type: EventBridge
-            Destination: !GetAtt InternalBus.Arn
+            Destination: !Ref NewNvaEventBusArn
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
