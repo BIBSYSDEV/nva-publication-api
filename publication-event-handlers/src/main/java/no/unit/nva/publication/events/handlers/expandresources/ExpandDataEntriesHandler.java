@@ -33,7 +33,7 @@ public class ExpandDataEntriesHandler
 
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
-    public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Updated";
+    public static final String EXPANDED_ENTRY_UPDATED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Update";
     public static final String EMPTY_EVENT_TOPIC = "Event.Empty";
     private static final Logger logger = LoggerFactory.getLogger(ExpandDataEntriesHandler.class);
     private final S3Driver s3Driver;
