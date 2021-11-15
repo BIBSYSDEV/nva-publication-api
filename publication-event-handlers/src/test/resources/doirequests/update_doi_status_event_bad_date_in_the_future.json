@@ -28,7 +28,7 @@
       "executedVersion": "$LATEST"
     },
     "responsePayload": {
-      "type": "doi.publication.updateDoi",
+      "topic": "PublicationService.DoiRequest.Update",
       "item": {
         "publicationId": "41076d56-2839-11eb-b644-1bb5be85c01b",
         "doi": "https://doi.org/10.1103/physrevd.100.085005",

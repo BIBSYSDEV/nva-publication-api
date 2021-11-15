@@ -8,22 +8,27 @@ import nva.commons.core.JacocoGenerated;
 
 public class PublicationHolder {
 
-    private final String type;
+    public static final String TOPIC = "topic";
+    public static final String ITEM = "item";
+
+    @JsonProperty(TOPIC)
+    private final String topic;
+    @JsonProperty(ITEM)
     private final Publication item;
 
     @JacocoGenerated
     @JsonCreator
     public PublicationHolder(
-        @JsonProperty("type") String type,
-        @JsonProperty("item") Publication publication) {
-        this.type = type;
+        @JsonProperty(TOPIC) String type,
+        @JsonProperty(ITEM) Publication publication) {
+        this.topic = type;
         this.item = publication;
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getType(), getItem());
+        return Objects.hash(getTopic(), getItem());
     }
 
     @JacocoGenerated
@@ -36,12 +41,12 @@ public class PublicationHolder {
             return false;
         }
         PublicationHolder that = (PublicationHolder) o;
-        return Objects.equals(getType(), that.getType()) && Objects.equals(getItem(), that.getItem());
+        return Objects.equals(getTopic(), that.getTopic()) && Objects.equals(getItem(), that.getItem());
     }
 
     @JacocoGenerated
-    public String getType() {
-        return type;
+    public String getTopic() {
+        return topic;
     }
 
     @JacocoGenerated
