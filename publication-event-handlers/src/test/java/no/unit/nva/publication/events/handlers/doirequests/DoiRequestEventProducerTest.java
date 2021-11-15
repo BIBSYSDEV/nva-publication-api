@@ -8,7 +8,7 @@ import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.doi.update.dto.PublicationHolder;
+import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
@@ -89,7 +89,7 @@ class DoiRequestEventProducerTest {
         assertTrue(hasDoiField(eventInput));
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.EMPTY_EVENT_TYPE)));
         assertThat(actual.getItem(), nullValue());
         //TODO: revert assertions when bug is resolved https://unit.atlassian.net/browse/NP-3308
@@ -104,7 +104,7 @@ class DoiRequestEventProducerTest {
         assertTrue(hasDoiField(eventInput));
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
@@ -116,7 +116,7 @@ class DoiRequestEventProducerTest {
         assertTrue(hasDoiField(eventInput));
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
@@ -125,7 +125,7 @@ class DoiRequestEventProducerTest {
     void handlerCreatesOutputWithNonEmptyDoiWhenNewImageHasPublicationWithDoi() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(EVENT_PUBLICATION_WITH_DOI_IS_UPDATED);
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         URI doiInResourceFile = URI.create("https://doi.org/10.1103/physrevd.100.085005");
         URI actualDoi = actual.getItem().getDoi();
         assertThat(actualDoi, is(equalTo(doiInResourceFile)));
@@ -140,7 +140,7 @@ class DoiRequestEventProducerTest {
 
         var eventInputStream = IoUtils.stringToStream(event);
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
@@ -149,7 +149,7 @@ class DoiRequestEventProducerTest {
     void processInputSkipsCreatingDtosWhenNoNewImageIsPresentInDao() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources((RESOURCE_UPDATE_EVENT_OLD_ONLY));
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
 
@@ -158,7 +158,7 @@ class DoiRequestEventProducerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(
             RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_DIFFERENT_NEW_HAS_DOI);
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getTopic(),
                    is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
@@ -169,7 +169,7 @@ class DoiRequestEventProducerTest {
     void processInputSkipsCreatingDtosWhenOldAndNewImageAreEqual() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_OLD_AND_NEW_PRESENT_EQUAL);
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual, is(equalTo(EMPTY_EVENT)));
     }
@@ -178,7 +178,7 @@ class DoiRequestEventProducerTest {
     void handlerCreatesEventWhenDoiRequestIsApprovedForPublishedPublication() throws JsonProcessingException {
         var eventInputStream = IoUtils.inputStreamFromResources(RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED);
         handler.handleRequest(eventInputStream, outputStream, context);
-        PublicationHolder actual = outputToPublicationHolder(outputStream);
+        DoiUpdateRequestEvent actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getTopic(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
@@ -216,9 +216,9 @@ class DoiRequestEventProducerTest {
         return event.at(NEW_DATA_FIELD).has(DOI_FIELD);
     }
 
-    private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
+    private DoiUpdateRequestEvent outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();
-        return objectMapper.readValue(outputString, PublicationHolder.class);
+        return objectMapper.readValue(outputString, DoiUpdateRequestEvent.class);
     }
 }

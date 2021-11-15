@@ -843,7 +843,7 @@ Resources:
         EventBridgeEvent:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !GetAtt InternalBus.Name
+            EventBusName: !Ref NewNvaEventBusName
             Pattern:
               detail:
                 responsePayload:

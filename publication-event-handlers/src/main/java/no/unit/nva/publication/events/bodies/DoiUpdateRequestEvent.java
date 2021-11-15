@@ -1,4 +1,4 @@
-package no.unit.nva.publication.doi.update.dto;
+package no.unit.nva.publication.events.bodies;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,7 +6,7 @@ import java.util.Objects;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
 
-public class PublicationHolder {
+public class DoiUpdateRequestEvent {
 
     public static final String TOPIC = "topic";
     public static final String ITEM = "item";
@@ -18,7 +18,7 @@ public class PublicationHolder {
 
     @JacocoGenerated
     @JsonCreator
-    public PublicationHolder(
+    public DoiUpdateRequestEvent(
         @JsonProperty(TOPIC) String type,
         @JsonProperty(ITEM) Publication publication) {
         this.topic = type;
@@ -37,10 +37,10 @@ public class PublicationHolder {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof PublicationHolder)) {
+        if (!(o instanceof DoiUpdateRequestEvent)) {
             return false;
         }
-        PublicationHolder that = (PublicationHolder) o;
+        DoiUpdateRequestEvent that = (DoiUpdateRequestEvent) o;
         return Objects.equals(getTopic(), that.getTopic()) && Objects.equals(getItem(), that.getItem());
     }
 
