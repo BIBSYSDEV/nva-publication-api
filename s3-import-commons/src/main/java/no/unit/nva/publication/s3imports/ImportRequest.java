@@ -74,7 +74,7 @@ public class ImportRequest implements JsonSerializable {
         return s3Location.getHost();
     }
 
-    public ImportRequest withTopic(String topic) {
+    protected ImportRequest withTopic(String topic) {
         return new ImportRequest(topic, subtopic, s3Location, timestamp);
     }
 
