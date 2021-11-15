@@ -200,7 +200,11 @@ public final class CristinDataGenerator {
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
-        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomUri(), Instant.now(), cristinData);
+        FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomString(),
+                                                                          randomString(),
+                                                                          randomUri(),
+                                                                          Instant.now(),
+                                                                          cristinData);
         event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;

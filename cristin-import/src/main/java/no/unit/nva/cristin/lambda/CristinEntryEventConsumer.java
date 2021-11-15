@@ -44,7 +44,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     public static final int MAX_EFFORTS = 10;
     public static final String ERROR_SAVING_CRISTIN_RESULT = "Could not save cristin result with ID: ";
     public static final Random RANDOM = new Random(System.currentTimeMillis());
-    public static final String EVENT_DETAIL_TYPE = "import.cristin.entry-event";
+    public static final String EVENT_DETAIL_TYPE = "PublicationService.CristinData.DataEntry";
     public static final String JSON = ".json";
     public static final String UNKNOWN_CRISTIN_ID_ERROR_REPORT_PREFIX = "unknownCristinId_";
     public static final String DO_NOT_WRITE_ID_IN_EXCEPTION_MESSAGE = null;

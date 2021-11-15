@@ -11,7 +11,7 @@ import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -20,7 +20,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
-    public static final String DETAIL_TYPE = "database.entries.refresh";
+    public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
     public static final String EVENT_BUS_NAME =
         PublicationEventsConfig.ENVIRONMENT.readEnv("EVENT_BUS_NAME");
     private final ResourceService resourceService;
@@ -40,7 +40,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
-        ListingResult<ResourceUpdate> result =
+        ListingResult<DataEntry> result =
             resourceService.scanResources(input.getPageSize(), input.getStartMarker());
         resourceService.refreshResources(result.getDatabaseEntries());
         if (result.isTruncated()) {
@@ -72,7 +72,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
 
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,
-                                                                ListingResult<ResourceUpdate> result) {
+                                                                ListingResult<DataEntry> result) {
         PutEventsRequestEntry newEvent = input
             .newScanDatabaseRequest(result.getStartMarker())
             .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());

@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.time.Instant;
-
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 
 /**
@@ -15,10 +14,13 @@ import no.unit.nva.publication.s3imports.FileContentsEvent;
 public class CristinObjectEvent extends FileContentsEvent<JsonNode> {
 
     @JsonCreator
-    public CristinObjectEvent(@JsonProperty(FILE_URI) URI fileUri,
-                              @JsonProperty(TIMESTAMP) Instant timestamp,
-                              @JsonProperty(CONTENTS_FIELD) JsonNode contents) {
+    public CristinObjectEvent(
+        @JsonProperty(TOPIC) String topic,
+        @JsonProperty(SUBTOPIC) String subtopic,
+        @JsonProperty(FILE_URI) URI fileUri,
+        @JsonProperty(TIMESTAMP) Instant timestamp,
+        @JsonProperty(CONTENTS_FIELD) JsonNode contents) {
 
-        super(fileUri, timestamp, contents);
+        super(topic,subtopic,fileUri, timestamp, contents);
     }
 }

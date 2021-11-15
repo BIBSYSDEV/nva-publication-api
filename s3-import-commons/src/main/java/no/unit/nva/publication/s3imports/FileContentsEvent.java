@@ -24,47 +24,66 @@ import nva.commons.core.JacocoGenerated;
 public class FileContentsEvent<T> {
 
     @JsonIgnore
-    protected static final String CONTENTS_FIELD = "contents";
-    @JsonIgnore
-    protected static final String PUBLICATIONS_OWNER_FIELD = "publicationsOwner";
-    @JsonIgnore
     public static final String FILE_URI = "fileUri";
     @JsonIgnore
     public static final String TIMESTAMP = "timestamp";
-
+    public static final String TOPIC = "topic";
+    public static final String SUBTOPIC = "subtopic";
+    @JsonIgnore
+    protected static final String CONTENTS_FIELD = "contents";
     @JsonProperty(FILE_URI)
     private final URI fileUri;
     @JsonProperty(TIMESTAMP)
     private final Instant timestamp;
     @JsonProperty(CONTENTS_FIELD)
     private final T contents;
-
+    @JsonProperty(TOPIC)
+    private final String topic;
+    @JsonProperty(SUBTOPIC)
+    private final String subtopic;
 
     @JacocoGenerated
     @JsonCreator
-    public FileContentsEvent(@JsonProperty(FILE_URI) URI fileUri,
-                             @JsonProperty(TIMESTAMP) Instant timestamp,
-                             @JsonProperty(CONTENTS_FIELD) T contents) {
+    public FileContentsEvent(
+        @JsonProperty(TOPIC) String topic,
+        @JsonProperty(SUBTOPIC) String subtopic,
+        @JsonProperty(FILE_URI) URI fileUri,
+        @JsonProperty(TIMESTAMP) Instant timestamp,
+        @JsonProperty(CONTENTS_FIELD) T contents) {
+        this.topic = topic;
+        this.subtopic = subtopic;
         this.fileUri = fileUri;
         this.timestamp = timestamp;
         this.contents = contents;
-
     }
 
     public static <T> FileContentsEvent<T> fromJson(String jsonString, Class<T> contentsClass) {
         JavaType javaType = constructJavaType(contentsClass);
         return attempt(() -> s3ImportsMapper
-                                 .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
+            .<FileContentsEvent<T>>readValue(jsonString, javaType)).orElseThrow();
     }
 
+    @JacocoGenerated
+    public String getTopic() {
+        return topic;
+    }
+
+    @JacocoGenerated
+    public String getSubtopic() {
+        return subtopic;
+    }
+
+    @JacocoGenerated
     public URI getFileUri() {
         return fileUri;
     }
 
+    @JacocoGenerated
     public Instant getTimestamp() {
         return timestamp;
     }
 
+    @JacocoGenerated
     public T getContents() {
         return contents;
     }

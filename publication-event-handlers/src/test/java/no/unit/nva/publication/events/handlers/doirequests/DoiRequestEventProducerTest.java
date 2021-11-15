@@ -9,7 +9,7 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import nva.commons.core.ioutils.IoUtils;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.file.Path;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
 import static nva.commons.core.attempt.Try.attempt;
@@ -105,7 +105,7 @@ class DoiRequestEventProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -117,7 +117,7 @@ class DoiRequestEventProducerTest {
 
         handler.handleRequest(IoUtils.stringToStream(eventInput), outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -161,7 +161,7 @@ class DoiRequestEventProducerTest {
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
         assertThat(actual.getType(),
-                   is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+                   is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
@@ -180,12 +180,12 @@ class DoiRequestEventProducerTest {
         handler.handleRequest(eventInputStream, outputStream, context);
         PublicationHolder actual = outputToPublicationHolder(outputStream);
 
-        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.TYPE_UPDATE_EXISTING_DOI)));
+        assertThat(actual.getType(), is(equalTo(DoiRequestEventProducer.UPDATE_DOI_EVENT_TOPIC)));
         assertThat(actual.getItem(), notNullValue());
     }
 
     private void assertThatEventsDifferOnlyInModifiedDate(String event) {
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventObject = parseEvent(event);
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventObject = parseEvent(event);
 
         Publication newPublication = eventObject.getDetail().getResponsePayload().getNewData().toPublication();
         Publication oldPublication = eventObject.getDetail().getResponsePayload().getOldData().toPublication();
@@ -204,21 +204,21 @@ class DoiRequestEventProducerTest {
     }
 
     @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> parseEvent(String event) {
-        EventParser<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> eventEventParser =
-            new EventParser<>(event, dynamoImageSerializerRemovingEmptyFields);
-        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>>)
-                   eventEventParser.parse(AwsEventBridgeDetail.class, DynamoEntryUpdateEvent.class);
+    private AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> parseEvent(String event) {
+        EventParser<AwsEventBridgeDetail<DataEntryUpdateEvent>> eventEventParser =
+            new EventParser<>(event, objectMapper);
+        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>>)
+                   eventEventParser.parse(AwsEventBridgeDetail.class, DataEntryUpdateEvent.class);
     }
 
     private boolean hasDoiField(String eventInput) {
-        JsonNode event = attempt(() -> dynamoImageSerializerRemovingEmptyFields.readTree(eventInput)).orElseThrow();
+        JsonNode event = attempt(() -> objectMapper.readTree(eventInput)).orElseThrow();
         return event.at(NEW_DATA_FIELD).has(DOI_FIELD);
     }
 
     private PublicationHolder outputToPublicationHolder(ByteArrayOutputStream outputStream)
         throws JsonProcessingException {
         String outputString = outputStream.toString();
-        return dynamoImageSerializerRemovingEmptyFields.readValue(outputString, PublicationHolder.class);
+        return objectMapper.readValue(outputString, PublicationHolder.class);
     }
 }

@@ -1,13 +1,13 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.dynamoImageSerializerRemovingEmptyFields;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.createAttributes;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
-import no.unit.nva.expansion.model.ExpandedDatabaseEntry;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
 
@@ -18,23 +18,23 @@ public class PersistedDocument implements JsonSerializable {
     @JsonProperty(CONSUMPTION_ATTRIBUTES)
     private final PersistedDocumentConsumptionAttributes consumptionAttributes;
     @JsonProperty(BODY)
-    private final ExpandedDatabaseEntry body;
+    private final ExpandedDataEntry body;
 
     @JsonCreator
     public PersistedDocument(
-        @JsonProperty(BODY) ExpandedDatabaseEntry body,
+        @JsonProperty(BODY) ExpandedDataEntry body,
         @JsonProperty(CONSUMPTION_ATTRIBUTES) PersistedDocumentConsumptionAttributes consumptionAttributes) {
 
         this.consumptionAttributes = consumptionAttributes;
         this.body = body;
     }
 
-    public static PersistedDocument createIndexDocument(ExpandedDatabaseEntry expandedResourceUpdate) {
+    public static PersistedDocument createIndexDocument(ExpandedDataEntry expandedResourceUpdate) {
         return new PersistedDocument(expandedResourceUpdate, createAttributes(expandedResourceUpdate));
     }
 
     public static PersistedDocument fromJsonString(String indexingEventPayload) throws JsonProcessingException {
-        return dynamoImageSerializerRemovingEmptyFields.readValue(indexingEventPayload, PersistedDocument.class);
+        return objectMapper.readValue(indexingEventPayload, PersistedDocument.class);
     }
 
     @JacocoGenerated
@@ -43,13 +43,13 @@ public class PersistedDocument implements JsonSerializable {
     }
 
     @JacocoGenerated
-    public ExpandedDatabaseEntry getBody() {
+    public ExpandedDataEntry getBody() {
         return body;
     }
 
     @Override
     public String toJsonString() {
-        return attempt(() -> dynamoImageSerializerRemovingEmptyFields.writeValueAsString(this)).orElseThrow();
+        return attempt(() -> objectMapper.writeValueAsString(this)).orElseThrow();
     }
 
     @JacocoGenerated

@@ -1,7 +1,7 @@
 {
   "version": "0",
   "id": "0d0f3a87-d77e-20a6-ff1e-f880e229534c",
-  "detail-type": "import.cristin.entry-event",
+  "detail-type": "PublicationService.CristinData.DataEntry",
   "source": "no.unit.nva.cristin.lambda.InputEntriesEventEmitter",
   "account": "1111111111111111",
   "time": "2021-04-29T12:43:56Z",

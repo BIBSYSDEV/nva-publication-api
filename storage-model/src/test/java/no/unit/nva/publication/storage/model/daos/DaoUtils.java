@@ -8,9 +8,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -18,10 +16,9 @@ import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceTest;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.WithIdentifier;
@@ -56,7 +53,7 @@ public final class DaoUtils {
             .orElseThrow();
     }
 
-    protected static <R extends WithIdentifier & RowLevelSecurity & ResourceUpdate> PutItemRequest toPutItemRequest(
+    protected static <R extends WithIdentifier & RowLevelSecurity & DataEntry> PutItemRequest toPutItemRequest(
         Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(resource.toDynamoFormat());

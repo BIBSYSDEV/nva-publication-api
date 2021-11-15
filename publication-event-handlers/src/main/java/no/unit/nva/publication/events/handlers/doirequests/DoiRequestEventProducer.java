@@ -11,22 +11,21 @@ import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiRegistrarEntryFields;
 import no.unit.nva.publication.doi.update.dto.PublicationHolder;
-import no.unit.nva.publication.events.DynamoEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Consumes DynamodbEvent's that's been published on EventBridge, and produces new PublicationCollection DTO with type
- * `publication.doirequest`.
+ * Sends messages to DoiRegistrar service for creating and updating DOIs.
  */
 public class DoiRequestEventProducer
-    extends DestinationsEventBridgeEventHandler<DynamoEntryUpdateEvent, PublicationHolder> {
+    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, PublicationHolder> {
 
-    public static final String TYPE_REQUEST_FOR_NEW_DRAFT_DOI = "publication.doiupdate.newdraftdoirequest";
-    public static final String TYPE_UPDATE_EXISTING_DOI = "publication.doiupdate.updateexistingdoi";
+    public static final String REQUEST_DRAFT_DOI_EVENT_TOPIC = "PublicationService.Doi.CreationRequest";
+    public static final String UPDATE_DOI_EVENT_TOPIC = "PublicationService.Doi.UpdateRequest";
     public static final String NO_RESOURCE_IDENTIFIER_ERROR = "Resource has no identifier:";
 
     protected static final String EMPTY_EVENT_TYPE = "empty";
@@ -35,13 +34,13 @@ public class DoiRequestEventProducer
 
     @JacocoGenerated
     public DoiRequestEventProducer() {
-        super(DynamoEntryUpdateEvent.class);
+        super(DataEntryUpdateEvent.class);
     }
 
     @Override
     protected PublicationHolder processInputPayload(
-        DynamoEntryUpdateEvent input,
-        AwsEventBridgeEvent<AwsEventBridgeDetail<DynamoEntryUpdateEvent>> event,
+        DataEntryUpdateEvent input,
+        AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
         Context context) {
 
         logger.info(event.toJsonString());
@@ -70,55 +69,55 @@ public class DoiRequestEventProducer
                && isNull(updatedDoiInformationEvent.getItem().getIdentifier());
     }
 
-    private PublicationHolder fromDynamoEntryUpdate(DynamoEntryUpdateEvent updateEvent) {
+    private PublicationHolder fromDynamoEntryUpdate(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
             .filter(this::shouldPropagateEvent)
-            .map(DynamoEntryUpdateEvent::getNewData)
+            .map(DataEntryUpdateEvent::getNewData)
             .filter(data -> data instanceof DoiRequest)
             .map(data -> (DoiRequest) data)
             .map(pub -> toPublicationHolder(pub, calculateEventType(updateEvent)))
             .orElse(EMPTY_EVENT);
     }
 
-    private String calculateEventType(DynamoEntryUpdateEvent updateEvent) {
+    private String calculateEventType(DataEntryUpdateEvent updateEvent) {
         if (isFirstDoiRequest(updateEvent)) {
-            return TYPE_REQUEST_FOR_NEW_DRAFT_DOI;
+            return REQUEST_DRAFT_DOI_EVENT_TOPIC;
         } else {
-            return TYPE_UPDATE_EXISTING_DOI;
+            return UPDATE_DOI_EVENT_TOPIC;
         }
     }
 
-    private Publication toPublication(ResourceUpdate resourceUpdate) {
-        return resourceUpdate != null ? resourceUpdate.toPublication() : null;
+    private Publication toPublication(DataEntry dataEntry) {
+        return dataEntry != null ? dataEntry.toPublication() : null;
     }
 
-    private boolean isFirstDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+    private boolean isFirstDoiRequest(DataEntryUpdateEvent updateEvent) {
         return isNull(toPublication(updateEvent.getOldData()))
                && updateHasDoiRequest(updateEvent)
                && isNull(toPublication(updateEvent.getNewData()).getDoi());
     }
 
-    private boolean updateHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+    private boolean updateHasDoiRequest(DataEntryUpdateEvent updateEvent) {
         return nonNull(toPublication(updateEvent.getNewData()))
                && nonNull(toPublication(updateEvent.getNewData()).getDoiRequest());
     }
 
-    private boolean publicationHasDoiRequest(DynamoEntryUpdateEvent updateEvent) {
+    private boolean publicationHasDoiRequest(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
-            .map(DynamoEntryUpdateEvent::getNewData)
+            .map(DataEntryUpdateEvent::getNewData)
             .filter(data -> data instanceof DoiRequest)
             .map(data -> (DoiRequest) data)
             .isPresent();
     }
 
-    private boolean shouldPropagateEvent(DynamoEntryUpdateEvent updateEvent) {
+    private boolean shouldPropagateEvent(DataEntryUpdateEvent updateEvent) {
         boolean publicationHasDoiRequest = publicationHasDoiRequest(updateEvent);
         boolean isChange = isEffectiveChange(updateEvent);
 
         return isChange && publicationHasDoiRequest;
     }
 
-    private boolean isEffectiveChange(DynamoEntryUpdateEvent updateEvent) {
+    private boolean isEffectiveChange(DataEntryUpdateEvent updateEvent) {
         var newPublication = toPublication(updateEvent.getNewData());
         var oldPublication = toPublication(updateEvent.getOldData());
         if (nonNull(newPublication)) {
@@ -129,24 +128,24 @@ public class DoiRequestEventProducer
         return false;
     }
 
-    private boolean doiRequestGotApproved(DynamoEntryUpdateEvent updateEvent) {
+    private boolean doiRequestGotApproved(DataEntryUpdateEvent updateEvent) {
         DoiRequestStatus oldStatus = extractOldPublicationStatus(updateEvent);
         DoiRequestStatus newStatus = extractNewPublicationStatus(updateEvent);
         return DoiRequestStatus.REQUESTED.equals(oldStatus) && DoiRequestStatus.APPROVED.equals(newStatus);
     }
 
-    private DoiRequestStatus extractNewPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
+    private DoiRequestStatus extractNewPublicationStatus(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
-            .map(DynamoEntryUpdateEvent::getNewData)
+            .map(DataEntryUpdateEvent::getNewData)
             .filter(data -> data instanceof DoiRequest)
             .map(data -> (DoiRequest) data)
             .map(DoiRequest::getStatus)
             .orElse(null);
     }
 
-    private DoiRequestStatus extractOldPublicationStatus(DynamoEntryUpdateEvent updateEvent) {
+    private DoiRequestStatus extractOldPublicationStatus(DataEntryUpdateEvent updateEvent) {
         return Optional.of(updateEvent)
-            .map(DynamoEntryUpdateEvent::getOldData)
+            .map(DataEntryUpdateEvent::getOldData)
             .filter(data -> data instanceof DoiRequest)
             .map(data -> (DoiRequest) data)
             .map(DoiRequest::getStatus)

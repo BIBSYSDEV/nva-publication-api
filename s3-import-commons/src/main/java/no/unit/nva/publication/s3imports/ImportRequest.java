@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import static java.util.Objects.isNull;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -10,68 +11,59 @@ import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 
 /**
  * An {@link ImportRequest} contains 3 fields.
  *
  * <p>1. The {@link ImportRequest#s3Location} field is a URI to an S3 bucket of the form "s3://somebucket/some/path/".
- *
- * <p>2. The {@link ImportRequest#importEventType} field is a String denoting the event type that is going to be
- * created for each entry contained in the files of the folder. Pay attention that each file may contain multiple
- * entries.
  */
 public class ImportRequest implements JsonSerializable {
 
     public static final String ILLEGAL_ARGUMENT_MESSAGE = "Illegal argument:";
     public static final String S3_LOCATION_FIELD = "s3Location";
-    public static final String IMPORT_EVENT_TYPE = "importEventType";
-    public static final String TIMESTAMP = "timestamp";
-
+    public static final String MISSING_S3_LOCATION_MESSAGE = S3_LOCATION_FIELD + " cannot be empty";
+    public static final String TIMESTAMP_FIELD = "timestamp";
+    public static final String SUBTOPIC = "subtopic";
+    private static final String TOPIC = "topic";
+    @JsonProperty(TOPIC)
+    private final String topic;
     @JsonProperty(S3_LOCATION_FIELD)
     private final URI s3Location;
-    // This field will be set as the event detail-type by the handler that emits one event per entry
-    // and it will be expected by the specialized handler that will process the entry. E.g. DataMigrationHandler.
-    @JsonProperty(IMPORT_EVENT_TYPE)
-    private final String importEventType;
-    @JsonProperty(TIMESTAMP)
+    @JsonProperty(TIMESTAMP_FIELD)
     private final Instant timestamp;
+    @JsonProperty(SUBTOPIC)
+    private final String subtopic;
 
     @JsonCreator
-    public ImportRequest(@JsonProperty(S3_LOCATION_FIELD) String s3location,
-                         @JsonProperty(IMPORT_EVENT_TYPE) String importEventType,
-                         @JsonProperty(TIMESTAMP) Instant timestamp) {
-        this.s3Location = Optional.ofNullable(s3location).map(URI::create).orElseThrow();
-        this.importEventType = importEventType;
+    public ImportRequest(
+        @JsonProperty(TOPIC) String topic,
+        @JsonProperty(SUBTOPIC) String subtopic,
+        @JsonProperty(S3_LOCATION_FIELD) URI s3location,
+        @JsonProperty(TIMESTAMP_FIELD) Instant timestamp) {
+        this.s3Location = requireNonEmptyS3Location(s3location);
         this.timestamp = timestamp;
-    }
-
-    public ImportRequest(URI s3Location) {
-        this(s3Location, null, null);
-    }
-
-    public ImportRequest(URI s3location, String importEventType) {
-        this(s3location, importEventType, null);
-    }
-
-    public ImportRequest(URI s3location, String importEventType, Instant timestamp) {
-        this.s3Location = s3location;
-        this.importEventType = importEventType;
-        this.timestamp = timestamp;
+        this.topic = topic;
+        this.subtopic = subtopic;
     }
 
     public static ImportRequest fromJson(String jsonString) {
         return attempt(() -> s3ImportsMapper.readValue(jsonString, ImportRequest.class))
-                   .orElseThrow(fail -> handleNotParsableInputError(jsonString));
+            .orElseThrow(fail -> handleNotParsableInputError(fail, jsonString));
     }
 
-    public String getImportEventType() {
-        return importEventType;
+    public String getSubtopic() {
+        return subtopic;
+    }
+
+    public String getTopic() {
+        return topic;
     }
 
     @JacocoGenerated
-    public String getS3Location() {
-        return Optional.ofNullable(s3Location).map(URI::toString).orElse(null);
+    public URI getS3Location() {
+        return s3Location;
     }
 
     public Instant getTimestamp() {
@@ -82,18 +74,22 @@ public class ImportRequest implements JsonSerializable {
         return s3Location.getHost();
     }
 
+    protected ImportRequest withTopic(String topic) {
+        return new ImportRequest(topic, subtopic, s3Location, timestamp);
+    }
+
     public UnixPath extractPathFromS3Location() {
         return Optional.ofNullable(s3Location)
-                   .map(URI::getPath)
-                   .map(UnixPath::fromString)
-                   .map(UnixPath::removeRoot)
-                   .orElse(UnixPath.EMPTY_PATH);
+            .map(URI::getPath)
+            .map(UnixPath::fromString)
+            .map(UnixPath::removeRoot)
+            .orElse(UnixPath.EMPTY_PATH);
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getS3Location());
+        return Objects.hash(getTopic(), getS3Location(), getTimestamp());
     }
 
     @JacocoGenerated
@@ -106,11 +102,20 @@ public class ImportRequest implements JsonSerializable {
             return false;
         }
         ImportRequest that = (ImportRequest) o;
-        return Objects.equals(getS3Location(), that.getS3Location())
-               && Objects.equals(getImportEventType(), that.getImportEventType());
+        return Objects.equals(getTopic(), that.getTopic())
+               && Objects.equals(getS3Location(), that.getS3Location())
+               && Objects.equals(getTimestamp(), that.getTimestamp());
     }
 
-    private static IllegalArgumentException handleNotParsableInputError(String inputString) {
-        return new IllegalArgumentException(ILLEGAL_ARGUMENT_MESSAGE + inputString);
+    private static IllegalArgumentException handleNotParsableInputError(
+        Failure<ImportRequest> fail, String inputString) {
+        return new IllegalArgumentException(ILLEGAL_ARGUMENT_MESSAGE + inputString,fail.getException());
+    }
+
+    private URI requireNonEmptyS3Location(URI s3Location) {
+        if (isNull(s3Location)) {
+            throw new IllegalArgumentException(MISSING_S3_LOCATION_MESSAGE);
+        }
+        return s3Location;
     }
 }

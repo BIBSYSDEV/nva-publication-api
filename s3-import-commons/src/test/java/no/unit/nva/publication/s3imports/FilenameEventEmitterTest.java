@@ -5,12 +5,11 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultClock;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.EXPECTED_BODY_MESSAGE;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.IMPORT_EVENT_TYPE_ENV_VARIABLE;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.PATH_SEPARATOR;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -31,15 +30,12 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.Environment;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
@@ -54,37 +50,38 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class FilenameEventEmitterTest {
 
-    public static final String SOME_BUCKET = "s3://bucket/";
-    public static final String SOME_FOLDER = "some/folder/";
-    public static final String SOME_S3_LOCATION = SOME_BUCKET;
-    public static final UnixPath FILE_DIRECTLY_UNDER_S3_LOCATION = UnixPath.of(SOME_FOLDER, "file01");
-    public static final UnixPath FILE_IN_SUBFOLDER = UnixPath.of(SOME_FOLDER, "someOtherFolder", "file02");
-    public static final List<UnixPath> INPUT_FILE_LIST = List.of(FILE_DIRECTLY_UNDER_S3_LOCATION, FILE_IN_SUBFOLDER);
-    public static final Map<String, InputStream> FILE_CONTENTS = fileContents();
-    public static final int NON_ZERO_NUMBER_OF_FAILURES = 2;
-    public static final String SOME_OTHER_BUS = "someOtherBus";
+    private static final String SOME_BUCKET = "someBucket";
+    private static final URI SOME_S3_LOCATION = URI.create("s3://" + SOME_BUCKET + "/");
+
+    private static final String SOME_OTHER_BUS = "someOtherBus";
     private static final Context CONTEXT = mock(Context.class);
-    public static final String LIST_ALL_FILES = ".";
-    public static final URI EMPTY_URI = null;
+    private static final String LIST_ALL_FILES = ".";
+    private static final String PATH_SEPARATOR = "/";
+    private static final Instant NOW = Instant.now();
+    private static final Integer NON_ZERO_NUMBER_OF_FAILURES = 2;
+    public static final String EMPTY_SUBTOPIC = null;
     private ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private FilenameEventEmitter handler;
 
     private FakeEventBridgeClient eventBridgeClient;
     private FakeS3Client s3Client;
     private Clock clock;
+    private S3Driver s3Driver;
+    private List<URI> injectedFiles;
 
     @BeforeEach
-    public void init() {
+    public void init() throws IOException {
         outputStream = new ByteArrayOutputStream();
         eventBridgeClient = new FakeEventBridgeClient(ApplicationConstants.EVENT_BUS_NAME);
         clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
-
-        s3Client = new FakeS3Client(FILE_CONTENTS);
+        s3Client = new FakeS3Client();
+        s3Driver = new S3Driver(s3Client, SOME_BUCKET);
+        injectedFiles = List.of(insertRandomFile(), insertRandomFile(), insertRandomFile());
         handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
     }
 
     @Test
-    public void handlerThrowsExceptionWhenInputIsInvalid() throws JsonProcessingException {
+    public void shouldThrowExceptionWhenInputDoesNotContainS3Location() throws JsonProcessingException {
         String json = invalidBody();
         Executable action = () -> handler.handleRequest(IoUtils.stringToStream(json), outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
@@ -92,7 +89,7 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerThrowsNoExceptionWhenInputIsValid() {
+    public void handlerThrowsNoExceptionWheInputIsValidAndLocationIsNotEmpty() {
         ImportRequest importRequest = newImportRequest();
         Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         assertDoesNotThrow(action);
@@ -104,14 +101,15 @@ public class FilenameEventEmitterTest {
     public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
-        init(); // @BeforeEach seems to not run between subsequent iterations of Parameterized test
-        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION + pathSeparator));
-        InputStream inputStream = toJsonStream(importRequest);
-        handler.handleRequest(inputStream, outputStream, CONTEXT);
-        List<String> fileList = eventBridgeClient.listEmittedFilenames();
 
-        String[] expectedFiles = expectedFileUris();
-        assertThat(fileList, containsInAnyOrder(expectedFiles));
+        handler = new FilenameEventEmitter(s3Client, eventBridgeClient, clock);
+        var s3Location = URI.create(SOME_S3_LOCATION + pathSeparator);
+        var importRequest = new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC, EMPTY_SUBTOPIC, s3Location, NOW);
+        var inputStream = toJsonStream(importRequest);
+        handler.handleRequest(inputStream, outputStream, CONTEXT);
+        var fileList = eventBridgeClient.listEmittedFilenames();
+
+        assertThat(fileList, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
     }
 
     @Test
@@ -142,24 +140,25 @@ public class FilenameEventEmitterTest {
     @Test
     public void handlerLogsAndReturnsFailedEventRequestsWhenEventsFailToBeEmitted() throws IOException {
 
-        TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+        final TestAppender appender = LogUtils.getTestingAppender(FilenameEventEmitter.class);
+
         handler = handlerThatFailsToEmitMessages();
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
-        handler.handleRequest(inputStream, outputStream, CONTEXT);
-        String[] failedResultsArray = s3ImportsMapper.readValue(outputStream.toString(), String[].class);
-        List<String> failedResults = Arrays.asList(failedResultsArray);
 
-        String[] expectedFileUris = expectedFileUris();
-        assertThat(failedResults, containsInAnyOrder(expectedFileUris));
-        for (UnixPath filename : INPUT_FILE_LIST) {
+        handler.handleRequest(inputStream, outputStream, CONTEXT);
+        URI[] failedResultsArray = s3ImportsMapper.readValue(outputStream.toString(), URI[].class);
+        List<URI> failedResults = Arrays.asList(failedResultsArray);
+
+        assertThat(failedResults, containsInAnyOrder(injectedFiles.toArray(URI[]::new)));
+        for (URI filename : injectedFiles) {
             assertThat(appender.getMessages(), containsString(filename.toString()));
         }
     }
 
     @Test
     public void handlerSavesInS3FolderErrorTimestampPathFilenameAReportContainingAllFilenamesThatFailedToBeEmitted()
-            throws IOException {
+        throws IOException {
         handler = handlerThatFailsToEmitMessages();
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
@@ -167,11 +166,11 @@ public class FilenameEventEmitterTest {
 
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
         UnixPath errorReportFile = ERRORS_FOLDER
-                                       .addChild(timestampToString(clock.instant()))
-                                       .addChild(importRequest.extractPathFromS3Location())
-                                       .addChild(ERROR_REPORT_FILENAME);
+            .addChild(timestampToString(clock.instant()))
+            .addChild(importRequest.extractPathFromS3Location())
+            .addChild(ERROR_REPORT_FILENAME);
         String content = s3Driver.getFile(errorReportFile);
-        for (UnixPath filename : INPUT_FILE_LIST) {
+        for (URI filename : injectedFiles) {
             assertThat(content, containsString(filename.toString()));
         }
     }
@@ -179,13 +178,14 @@ public class FilenameEventEmitterTest {
     @Test
     public void handlerDoesNotCreateReportFileWhenNoErrorHasOccurred()
         throws IOException {
+
         ImportRequest importRequest = newImportRequest();
         InputStream inputStream = toJsonStream(importRequest);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
         S3Driver s3Driver = new S3Driver(s3Client, SOME_BUCKET);
 
         List<UnixPath> allFiles = s3Driver.listAllFiles(UnixPath.of(LIST_ALL_FILES));
-        assertThat(allFiles, containsInAnyOrder(INPUT_FILE_LIST.toArray(UnixPath[]::new)));
+        assertThatBucketContainsOnlyInjectedInputFilesAndNotAnyGeneratedReportFiles(allFiles);
     }
 
     @Test
@@ -200,40 +200,9 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerEmitsImportRequestContainingTheImportEventTypeSetInTheEnvironment()
-        throws IOException {
-        String expectedImportEvent = new Environment().readEnv(IMPORT_EVENT_TYPE_ENV_VARIABLE);
-        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION));
-
-        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
-        for (ImportRequest emittedImportRequest : emittedImportRequests) {
-
-            assertThat(emittedImportRequest.getImportEventType(), is(equalTo(expectedImportEvent)));
-        }
-    }
-
-    @Test
-    public void handleThrowsExceptionSayingThatSettingImportEventTypeIsNotAllowedWhenImportEventTypeIsSetByTheUser() {
-        String someEventType = "someEventType";
-        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION), someEventType);
-        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(INFORM_USER_THAT_EVENT_TYPE_IS_SET_IN_ENV));
-    }
-
-    @Test
-    public void handleThrowsExceptionInformingOnExpectedInputWhenS3LocationIsNotPresent() {
-        ImportRequest importRequest = new ImportRequest(EMPTY_URI);
-        Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(EXPECTED_BODY_MESSAGE));
-    }
-
-    @Test
-    public void handlerEmitsEventIncludingATimestampBasedOnWhenItWasTriggered() throws IOException {
+    public void shouldEmmitEventWithEventTriggerTimestamp() throws IOException {
         Instant expectedTimestamp = clock.instant();
-        ImportRequest importRequest = new ImportRequest(URI.create(SOME_S3_LOCATION),null);
+        ImportRequest importRequest = newImportRequest();
 
         handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         List<ImportRequest> emittedImportRequests = eventBridgeClient.listEmittedImportRequests();
@@ -242,26 +211,26 @@ public class FilenameEventEmitterTest {
         }
     }
 
-    private static Map<String, InputStream> fileContents() {
-        return INPUT_FILE_LIST.stream()
-                   .map(file -> new SimpleEntry<>(file.toString(), fileContent()))
-                   .collect(Collectors.toMap(SimpleEntry::getKey,
-                                             SimpleEntry::getValue));
+    private URI insertRandomFile() throws IOException {
+        UnixPath firstFilePath = UnixPath.of(randomString()).addChild(randomString());
+        return s3Driver.insertFile(firstFilePath, randomString());
     }
 
-    private static InputStream fileContent() {
-        return InputStream.nullInputStream();
+    private void assertThatBucketContainsOnlyInjectedInputFilesAndNotAnyGeneratedReportFiles(List<UnixPath> allFiles) {
+        var expectedFilenamesInS3Bucket = injectedFiles
+            .stream()
+            .map(UriWrapper::new)
+            .map(UriWrapper::toS3bucketPath)
+            .collect(Collectors.toList());
+
+        assertThat(allFiles, containsInAnyOrder(expectedFilenamesInS3Bucket.toArray(UnixPath[]::new)));
     }
 
     private ImportRequest newImportRequest() {
-        return new ImportRequest(URI.create(SOME_S3_LOCATION));
-    }
-
-    private String[] expectedFileUris() {
-        return INPUT_FILE_LIST.stream()
-                   .map(filename -> SOME_BUCKET + filename)
-                   .collect(Collectors.toList())
-                   .toArray(String[]::new);
+        return new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC,
+                                 EMPTY_SUBTOPIC,
+                                 SOME_S3_LOCATION,
+                                 NOW);
     }
 
     private FilenameEventEmitter handlerThatFailsToEmitMessages() {
@@ -281,8 +250,8 @@ public class FilenameEventEmitterTest {
 
     private <T> InputStream toJsonStream(T importRequest) {
         return attempt(() -> s3ImportsMapper.writeValueAsString(importRequest))
-                   .map(IoUtils::stringToStream)
-                   .orElseThrow();
+            .map(IoUtils::stringToStream)
+            .orElseThrow();
     }
 
     private String invalidBody() throws JsonProcessingException {

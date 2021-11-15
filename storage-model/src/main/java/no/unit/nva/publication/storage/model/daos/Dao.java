@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
@@ -31,7 +31,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
 })
-public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & ResourceUpdate>
+public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntry>
     implements DynamoEntry,
                WithPrimaryKey,
                WithByTypeCustomerStatusIndex,

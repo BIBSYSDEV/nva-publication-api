@@ -35,7 +35,7 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.ResourceUpdate;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -62,12 +62,13 @@ class EventBasedBatchScanHandlerTest extends ResourcesDynamoDbLocalTest {
     @BeforeEach
     public void init() {
         super.init();
-        var dynamoDbClient = super.client;
+
         this.clock = Clock.systemDefaultZone();
         this.output = new ByteArrayOutputStream();
         this.context = mockContent();
-
         this.eventBridgeClient = new FakeEventBridgeClient();
+
+        var dynamoDbClient = super.client;
         this.resourceService = mockResourceService(dynamoDbClient);
         this.handler = new EventBasedBatchScanHandler(resourceService, eventBridgeClient);
         this.scanningStartingPoints = Collections.synchronizedList(new ArrayList<>());
@@ -156,7 +157,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesDynamoDbLocalTest {
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
         return new ResourceService(dynamoDbClient, clock) {
             @Override
-            public ListingResult<ResourceUpdate> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
+            public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
                 if (nonNull(startMarker)) {
                     scanningStartingPoints.add(startMarker);
                 }

@@ -29,7 +29,7 @@ import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
 @JsonTypeName("Publication")
-public final class ExpandedResource implements JsonSerializable, ExpandedDatabaseEntry {
+public final class ExpandedResource implements JsonSerializable, ExpandedDataEntry {
 
     // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
     // because is does not extend the Resource or Publication class,

@@ -6,6 +6,9 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Stack initialization handler. Does nothing for now.
+ */
 public class InitializationHandler extends EventHandler<PipelineEvent, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(InitializationHandler.class);

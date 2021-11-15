@@ -14,9 +14,6 @@ import nva.commons.core.attempt.Failure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Process handling Update DOI no.unit.nva.publication.storage.model.Status event for Publication.
- */
 public class UpdateDoiStatusProcess {
 
     public static final String ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT = "Invalid payload for DoiUpdateHolder DTO: %s";
@@ -53,11 +50,7 @@ public class UpdateDoiStatusProcess {
         validateInput();
     }
 
-    /**
-     * Update DOI no.unit.nva.publication.storage.model.Status.
-     */
-    public void updateDoiStatus() throws TransactionFailedException {
-
+    public void updateDoi() throws TransactionFailedException {
         publication.setModifiedDate(request.getModifiedDate());
         publication.setDoi(request.getDoi().orElseThrow());
         resourceService.updatePublication(publication);

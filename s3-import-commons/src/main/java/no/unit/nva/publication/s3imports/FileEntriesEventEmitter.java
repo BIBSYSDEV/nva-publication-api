@@ -5,6 +5,7 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLD
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultEventBridgeClient;
 import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultS3Client;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
+
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.exceptions.ExceptionUtils.stackTraceInSingleLine;
@@ -39,10 +40,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 
 /**
- * This class accepts an {@link ImportRequest} and emits  with event detail-type equal to the value of the{@link
- * ImportRequest#getImportEventType()}.
- *
- * <p>The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
+ * The body of the event (field "detail") is of type {@link FileContentsEvent} and it contains
  * the data of the file located in the s3Location defined in {@link ImportRequest#getS3Location()}.
  *
  * <p>In its present form the {@link FileContentsEvent} contains also a field with the name "publicationsOwner" which
@@ -51,11 +49,13 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  */
 public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String WRONG_DETAIL_TYPE_ERROR = "event does not contain the correct detail-type:";
+    public static final String WRONG_TOPIC_ERROR = "event does not contain the correct subtopic:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     public static final String FILE_EXTENSION_ERROR = ".error";
     public static final String PARTIAL_FAILURE = "PartialFailure";
     public static final PutEventsRequest NO_REQUEST_WAS_EMITTED = null;
+    public static final String FILE_CONTENTS_EMISSION_EVENT_TOPIC = "PublicationService.DataImport.DataEntry";
+
     private static final String CANONICAL_NAME = FileEntriesEventEmitter.class.getCanonicalName();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final boolean SEQUENTIAL = false;
@@ -113,7 +113,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         return attempt(() -> fetchFileFromS3(input, s3Driver))
             .map(this::parseContents)
             .map(jsonNodes -> generateEventBodies(input, jsonNodes))
-            .map(eventBodies -> emitEvents(context, input, eventBodies));
+            .map(eventBodies -> emitEvents(context, eventBodies));
     }
 
     private String returnNothingOrThrowExceptionWhenEmissionFailedCompletely(
@@ -125,8 +125,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
         S3Driver s3Driver = new S3Driver(s3Client, input.extractBucketFromS3Location());
         UriWrapper reportFilename = generateErrorReportUri(input, failedEntries);
         List<PutEventsResult> putEventsResults =
-            failedEntries.orElse(fails -> generateReportIndicatingTotalEmissionFailure(fails,
-                                                                                       input.getS3Location()));
+            failedEntries.orElse(fails -> generateReportIndicatingTotalEmissionFailure(fails, input.getS3Location()));
 
         if (!putEventsResults.isEmpty()) {
             String reportContent = PutEventsResult.toString(putEventsResults);
@@ -154,25 +153,28 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private Stream<FileContentsEvent<JsonNode>> generateEventBodies(ImportRequest input, List<JsonNode> contents) {
-        URI fileUri = URI.create(input.getS3Location());
+        URI fileUri = input.getS3Location();
         Instant timestamp = input.getTimestamp();
-        return contents.stream().map(json -> new FileContentsEvent<>(fileUri, timestamp, json));
+        return contents.stream()
+            .map(json -> new FileContentsEvent<>(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+                                                                     input.getSubtopic(),
+                                                                     fileUri,
+                                                                     timestamp,
+                                                                     json));
     }
 
     private List<PutEventsResult> emitEvents(Context context,
-                                             ImportRequest input,
                                              Stream<FileContentsEvent<JsonNode>> eventBodies) {
-        EventEmitter<FileContentsEvent<JsonNode>> eventEmitter =
-            new EventEmitter<>(input.getImportEventType(),
-                               CANONICAL_NAME,
-                               context.getInvokedFunctionArn(),
-                               eventBridgeClient);
-        eventEmitter.addEvents(eventBodies);
-        return eventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
+        BatchEventEmitter<FileContentsEvent<JsonNode>> batchEventEmitter =
+            new BatchEventEmitter<>(CANONICAL_NAME,
+                                    context.getInvokedFunctionArn(),
+                                    eventBridgeClient);
+        batchEventEmitter.addEvents(eventBodies);
+        return batchEventEmitter.emitEvents(NUMBER_OF_EMITTED_ENTRIES_PER_BATCH);
     }
 
     private List<PutEventsResult> generateReportIndicatingTotalEmissionFailure(
-        Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
+        Try<List<PutEventsResult>> completeEmissionFailure, URI s3Location) {
         PutEventsResponse customPutEventsResponse =
             generatePutEventsResultIndicatingNoEventsWereEmitted(completeEmissionFailure, s3Location);
         PutEventsResult putEventsResult = new PutEventsResult(NO_REQUEST_WAS_EMITTED, customPutEventsResponse);
@@ -180,7 +182,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private PutEventsResponse generatePutEventsResultIndicatingNoEventsWereEmitted(
-        Try<List<PutEventsResult>> completeEmissionFailure, String s3Location) {
+        Try<List<PutEventsResult>> completeEmissionFailure, URI s3Location) {
         String fileLocationAndExceptionStackTraceAsResultMessage =
             String.format(EXCEPTION_STACKTRACE_MESSAGE_TEMPLATE, s3Location,
                           stackTraceInSingleLine(completeEmissionFailure.getException()));
@@ -199,8 +201,8 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!event.getDetailType().equalsIgnoreCase(FilenameEventEmitter.EVENT_DETAIL_TYPE)) {
-            throw new IllegalArgumentException(WRONG_DETAIL_TYPE_ERROR + event.getDetailType());
+        if (!FILE_CONTENTS_EMISSION_EVENT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
+            throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
         }
     }
 

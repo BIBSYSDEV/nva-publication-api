@@ -29,21 +29,21 @@ class ExpandedDatabaseEntryTest {
 
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
 
-    public static Stream<ExpandedDatabaseEntry> entryProvider() throws JsonProcessingException {
+    public static Stream<ExpandedDataEntry> entryProvider() throws JsonProcessingException {
         return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method")
     @MethodSource("entryProvider")
-    void shouldReturnIdentifierUsingNonSerializableMethod(ExpandedDatabaseEntry entry) {
+    void shouldReturnIdentifierUsingNonSerializableMethod(ExpandedDataEntry entry) {
         SortableIdentifier identifier = entry.retrieveIdentifier();
         SortableIdentifier fromSerializedId = SortableIdentifier.fromUri(extractIdFromSerializedObject(entry));
         assertThat(identifier, is(equalTo(fromSerializedId)));
     }
 
-    private URI extractIdFromSerializedObject(ExpandedDatabaseEntry entry) {
+    private URI extractIdFromSerializedObject(ExpandedDataEntry entry) {
         return Try.of(entry)
-            .map(ExpandedDatabaseEntry::toJsonString)
+            .map(ExpandedDataEntry::toJsonString)
             .map(objectMapper::readTree)
             .map(json -> (ObjectNode) json)
             .map(json -> json.at(IDENTIFIER_JSON_PTR))

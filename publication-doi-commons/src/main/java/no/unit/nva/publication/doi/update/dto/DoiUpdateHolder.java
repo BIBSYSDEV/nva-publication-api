@@ -6,7 +6,6 @@ import nva.commons.core.JsonSerializable;
 
 public class DoiUpdateHolder implements JsonSerializable {
 
-    public static final String DEFAULT_TYPE = "doi.updateDoiStatus";
     protected String type;
     protected DoiUpdateDto item;
 
