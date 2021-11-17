@@ -9,6 +9,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -74,7 +75,7 @@ public class ReadResourceService {
         String partitionKey = constructPrimaryPartitionKey(userInstance);
         QueryExpressionSpec querySpec = partitionKeyToQuerySpec(partitionKey);
         Map<String, AttributeValue> valuesMap = conditionValueMapToAttributeValueMap(querySpec.getValueMap(),
-            String.class);
+                                                                                     String.class);
         Map<String, String> namesMap = querySpec.getNameMap();
         QueryResult result = performQuery(querySpec.getKeyConditionExpression(), valuesMap, namesMap);
 
@@ -83,7 +84,7 @@ public class ReadResourceService {
 
     private String constructPrimaryPartitionKey(UserInstance userInstance) {
         return ResourceDao.constructPrimaryPartitionKey(userInstance.getOrganizationUri(),
-            userInstance.getUserIdentifier());
+                                                        userInstance.getUserIdentifier());
     }
 
     private List<Publication> queryResultToListOfPublications(QueryResult result) {
@@ -117,9 +118,22 @@ public class ReadResourceService {
     protected List<Dao> fetchResourceAndDoiRequestFromTheByResourceIndex(UserInstance userInstance,
                                                                          SortableIdentifier resourceIdentifier) {
         ResourceDao queryObject = ResourceDao.queryObject(userInstance, resourceIdentifier);
-        QueryRequest queryRequest = queryByResourceIndex(queryObject);
+        QueryRequest queryRequest = attempt(() -> queryByResourceIndex(queryObject))
+            .orElseThrow(fail -> logQueryRelatedDataAndThrowException(fail,
+                                                                      userInstance,
+                                                                      resourceIdentifier));
         QueryResult queryResult = client.query(queryRequest);
         return parseResultSetToDaos(queryResult);
+    }
+
+    private RuntimeException logQueryRelatedDataAndThrowException(Failure<QueryRequest> fail,
+                                                                  UserInstance userInstance,
+                                                                  SortableIdentifier resourceIdentifier) {
+
+        logger.error("Could fetch Resource for user:");
+        logger.error("UserInstance" + userInstance.toJsonString());
+        logger.error("Resource identifier:" + resourceIdentifier.toString());
+        return new RuntimeException(fail.getException());
     }
 
     private static ResourceDao queryResultToSingleResource(SortableIdentifier identifier, QueryResult result)
@@ -158,7 +172,7 @@ public class ReadResourceService {
             );
         Map<String, AttributeValue> expressionAttributeValues =
             Map.of(":PK", new AttributeValue(resourceDao.getResourceByIdentifierPartitionKey()),
-                ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
+                   ":SK", new AttributeValue(resourceDao.getResourceByIdentifierSortKey())
             );
 
         return new QueryRequest()
@@ -186,8 +200,8 @@ public class ReadResourceService {
 
     private GetItemResult getResourceByPrimaryKey(Map<String, AttributeValue> primaryKey) throws NotFoundException {
         GetItemResult result = client.getItem(new GetItemRequest()
-            .withTableName(tableName)
-            .withKey(primaryKey));
+                                                  .withTableName(tableName)
+                                                  .withKey(primaryKey));
         if (isNull(result.getItem())) {
             throw new NotFoundException(RESOURCE_NOT_FOUND_MESSAGE);
         }

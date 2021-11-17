@@ -55,7 +55,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
@@ -70,10 +69,10 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -857,6 +856,18 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             DataEntry secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
             assertThat(secondUpdate.getRowVersion(), is(not(equalTo(firstUpdate.getRowVersion()))));
         }
+    }
+
+    @Test
+    void shouldLogUserInformationQueryObjectAndResourceIdentifierWhenFailingToPublishResource()
+        throws ApiGatewayException {
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+        var sampleResource = createSampleResourceWithDoi();
+        UserInstance userInstance = new UserInstance(sampleResource.getOwner(), null);
+        assertThrows(RuntimeException.class,
+                     () -> resourceService.publishPublication(userInstance, sampleResource.getIdentifier()));
+        assertThat(logger.getMessages(), containsString(userInstance.getUserIdentifier()));
+        assertThat(logger.getMessages(), containsString(sampleResource.getIdentifier().toString()));
     }
 
     private DataEntry findMatchingSecondUpdate(List<DataEntry> secondUpdates, DataEntry firstUpdate) {
