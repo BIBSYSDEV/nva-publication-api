@@ -43,8 +43,6 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
         "Daos cannot set their identifier. They get it from their contained data";
 
 
-
-
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
