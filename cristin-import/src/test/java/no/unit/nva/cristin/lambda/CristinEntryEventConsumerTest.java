@@ -15,7 +15,6 @@ import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToStrin
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
@@ -35,19 +34,15 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
-import no.unit.nva.cristin.CristinImportConfig;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.Identifiable;
-import no.unit.nva.cristin.mapper.PublicationInstanceBuilderImpl;
 import no.unit.nva.cristin.mapper.nva.exceptions.AffiliationWithoutRoleException;
 import no.unit.nva.cristin.mapper.nva.exceptions.ContributorWithoutAffiliationException;
 import no.unit.nva.cristin.mapper.nva.exceptions.InvalidIsbnRuntimeException;
@@ -65,7 +60,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.JsonUtils;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
@@ -163,14 +157,14 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     @Test
-    public void handlerThrowsExceptionWhenInputDetailTypeIsNotTheExpected() throws JsonProcessingException {
-        String unexpectedDetailType = "unexpectedDetailType";
-        String input = eventWithInvalidDetailType(unexpectedDetailType);
+    public void handlerThrowsExceptionWhenSubtopicIsNotAsExpected() throws JsonProcessingException {
+        String unexpectedSubtopic = randomString();
+        String input = eventWithInvalidSubtopic(unexpectedSubtopic);
 
         Executable action = () -> handler.handleRequest(stringToStream(input), outputStream, CONTEXT);
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, action);
-        assertThat(exception.getMessage(), containsString(CristinEntryEventConsumer.EVENT_DETAIL_TYPE));
-        assertThat(exception.getMessage(), containsString(unexpectedDetailType));
+        assertThat(exception.getMessage(), containsString(CristinEntryEventConsumer.EVENT_SUBTOPIC));
+        assertThat(exception.getMessage(), containsString(unexpectedSubtopic));
     }
 
     @Test
@@ -299,7 +293,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> awsEvent =
                 CristinDataGenerator.toAwsEvent(cristinObjectWithInvalidIssn);
         InputStream inputStream = IoUtils.stringToStream(awsEvent.toJsonString());
-
         Executable action = () -> handler.handleRequest(inputStream, outputStream, CONTEXT);
 
         assertThrows(InvalidIssnRuntimeException.class, action);
@@ -564,13 +557,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         };
     }
 
-    private String eventWithInvalidDetailType(String invalidDetailType) throws JsonProcessingException {
-        String input = validEventToJsonString();
-        AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = parseEvent(input);
-
-        event.setDetailType(invalidDetailType);
-        input = eventHandlerObjectMapper.writeValueAsString(event);
-        return input;
+    private String eventWithInvalidSubtopic(String invalidSubtopic) throws JsonProcessingException {
+        var cristinObject = CristinDataGenerator.randomObject();
+        var eventWIthInvalidSubtopic =
+            CristinDataGenerator.toAwsEvent(cristinObject,invalidSubtopic);
+        return eventHandlerObjectMapper.writeValueAsString(eventWIthInvalidSubtopic);
     }
 
     private String validEventToJsonString() {
