@@ -999,7 +999,7 @@ Resources:
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
-          EVENT_BUS_NAME: !Ref NewNvaEventBusName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
 
