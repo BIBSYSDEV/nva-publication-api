@@ -980,8 +980,10 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type:
-                - import.cristin.entry-event
+              detail:
+                topic: ["PublicationService.DataImport.DataEntry"]
+                subtopic: ["PublicationService.CristinData.DataEntry"]
+
 
 
   #==========================Manually triggered functions=============================================
@@ -1019,7 +1021,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          IMPORT_EVENT_TYPE: PublicationService.ImportCristinData.DataEntry
+          FILENAME_EMISSION_EVENT_SUBTOPIC: PublicationService.ImportCristinData.DataEntry
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 

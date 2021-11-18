@@ -2,6 +2,7 @@ package no.unit.nva.cristin;
 
 import static no.unit.nva.cristin.CristinImportConfig.eventHandlerObjectMapper;
 import static no.unit.nva.cristin.CristinImportConfig.singleLineObjectMapper;
+import static no.unit.nva.cristin.lambda.CristinEntryEventConsumer.EVENT_SUBTOPIC;
 import static no.unit.nva.cristin.mapper.CristinObject.MAIN_CATEGORY_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.PUBLICATION_OWNER_FIELD;
 import static no.unit.nva.cristin.mapper.CristinObject.SECONDARY_CATEGORY_FIELD;
@@ -198,14 +199,17 @@ public final class CristinDataGenerator {
     }
 
     public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData) {
+        return toAwsEvent(inputData,EVENT_SUBTOPIC);
+    }
+
+    public static <T> AwsEventBridgeEvent<FileContentsEvent<JsonNode>> toAwsEvent(T inputData, String subtopic) {
         AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event = new AwsEventBridgeEvent<>();
         JsonNode cristinData = convertToJsonNode(inputData);
         FileContentsEvent<JsonNode> eventDetail = new FileContentsEvent<>(randomString(),
-                                                                          randomString(),
+                                                                          subtopic,
                                                                           randomUri(),
                                                                           Instant.now(),
                                                                           cristinData);
-        event.setDetailType(CristinEntryEventConsumer.EVENT_DETAIL_TYPE);
         event.setDetail(eventDetail);
         return event;
     }

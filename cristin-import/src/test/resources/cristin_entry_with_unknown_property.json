@@ -1,7 +1,6 @@
 {
   "version": "0",
   "id": "0d0f3a87-d77e-20a6-ff1e-f880e229534c",
-  "detail-type": "PublicationService.CristinData.DataEntry",
   "source": "no.unit.nva.cristin.lambda.InputEntriesEventEmitter",
   "account": "1111111111111111",
   "time": "2021-04-29T12:43:56Z",
@@ -10,6 +9,8 @@
     "arn:aws:lambda:eu-west-1:11111111111111111:function:publication-api-n-CristinEntriesEventEmitt-1111111111"
   ],
   "detail": {
+    "topic": "NotImportant",
+    "subtopic": "PublicationService.CristinData.DataEntry",
     "publicationsowner": "someRandomUser",
     "fileUri": "s3://bucket/parent/child/filename.json",
     "timestamp": "2017-02-03T11:25:30.00Z",
