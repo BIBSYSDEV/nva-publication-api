@@ -953,8 +953,8 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type:
-                - PublicationService.ImportCristinData.Filename
+              detail:
+                topic: [ "PublicationService.ImportCristinData.Filename" ]
 
   CristinEntriesEventConsumer:
     DependsOn:
