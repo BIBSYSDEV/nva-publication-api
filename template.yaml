@@ -954,7 +954,7 @@ Resources:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
               detail:
-                topic: [ "PublicationService.ImportCristinData.Filename" ]
+                topic: [ "PublicationService.DataImport.Filename" ]
 
   CristinEntriesEventConsumer:
     DependsOn:
