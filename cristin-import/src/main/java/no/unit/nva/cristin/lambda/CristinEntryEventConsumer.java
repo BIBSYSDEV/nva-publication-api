@@ -121,8 +121,9 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private void validateEvent(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event) {
-        if (!EVENT_SUBTOPIC.equals(event.getDetail().getSubtopic())) {
+        if (!EVENT_SUBTOPIC.equalsIgnoreCase(event.getDetail().getSubtopic())) {
             String errorMessage = messageIndicatingTheCorrectEventType(event);
+            logger.info(event.toJsonString());
             throw new IllegalArgumentException(errorMessage);
         }
     }
