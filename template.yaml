@@ -1021,7 +1021,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          FILENAME_EMISSION_EVENT_SUBTOPIC: PublicationService.ImportCristinData.DataEntry
+          FILENAME_EMISSION_EVENT_SUBTOPIC: PublicationService.CristinData.DataEntry
           BATCH_EMISSION_INTERVAL_MILLIS: 700
 
 
