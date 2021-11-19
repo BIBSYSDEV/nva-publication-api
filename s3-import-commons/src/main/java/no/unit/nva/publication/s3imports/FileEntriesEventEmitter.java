@@ -49,7 +49,7 @@ import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
  */
 public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String> {
 
-    public static final String WRONG_TOPIC_ERROR = "event does not contain the correct subtopic:";
+    public static final String WRONG_TOPIC_ERROR = "event does not contain the correct topic:";
     public static final String FILE_NOT_FOUND_ERROR = "File not found: ";
     public static final String FILE_EXTENSION_ERROR = ".error";
     public static final String PARTIAL_FAILURE = "PartialFailure";
@@ -69,6 +69,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     private static final Object END_OF_ARRAY = "]";
     private static final String BEGINNING_OF_ARRAY = "[";
     public static final int NUMBER_OF_EMITTED_ENTRIES_PER_BATCH = 100;
+    public static final String EXPECTED_INPUT_TOPIC = FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
     private final S3Client s3Client;
     private final EventBridgeClient eventBridgeClient;
 
@@ -201,7 +202,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
-        if (!FILE_CONTENTS_EMISSION_EVENT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
+        if (!EXPECTED_INPUT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
             throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
         }
     }
