@@ -691,6 +691,7 @@ Resources:
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 2
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
@@ -727,6 +728,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
+      ReservedConcurrentExecutions: 2
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
