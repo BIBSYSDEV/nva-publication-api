@@ -1,6 +1,7 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
+import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_CONTENTS_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
@@ -12,10 +13,12 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,6 +40,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.JsonSerializable;
+import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
@@ -109,6 +113,32 @@ public class FileEntriesEventEmitterTest {
         List<SampleObject> emittedResourceObjects = collectEmittedObjects(eventBridgeClient);
 
         assertThat(emittedResourceObjects, containsInAnyOrder(FILE_01_CONTENTS));
+    }
+
+    @Test
+    public void shouldEmitEventWithTopicEqualToDataEntryEmissionTopic() {
+        InputStream input = createRequestEventForFile(importRequestForExistingFile);
+        FileEntriesEventEmitter handler = newHandler();
+
+        handler.handleRequest(input, outputStream, CONTEXT);
+        var emitedEventTopics = emitedEvents(eventBridgeClient)
+            .map(FileContentsEvent::getTopic)
+            .collect(Collectors.toSet());
+        assertThat(emitedEventTopics, hasSize(1));
+        var actualEmittedTopic = emitedEventTopics.stream().collect(SingletonCollector.collect());
+        assertThat(actualEmittedTopic, is(equalTo(FILE_CONTENTS_EMISSION_EVENT_TOPIC)));
+    }
+
+    @Test
+    public void shouldAcceptEventsWithTopicEqualToFilenameEmissionTopic() {
+        InputStream validEvent = createRequestEventForFile(importRequestForExistingFile);
+        assertThat(importRequestForExistingFile.getTopic(), is(equalTo(FILENAME_EMISSION_EVENT_TOPIC)));
+        assertDoesNotThrow(() -> handler.handleRequest(validEvent, outputStream, CONTEXT));
+
+        ImportRequest invalidRequest = importRequestForExistingFile.withTopic(randomString());
+        InputStream invalidEvent = createRequestEventForFile(invalidRequest);
+        assertThat(invalidRequest.getTopic(), is(not(equalTo(FILENAME_EMISSION_EVENT_TOPIC))));
+        assertThrows(IllegalArgumentException.class, () -> handler.handleRequest(invalidEvent, outputStream, CONTEXT));
     }
 
     @Test
@@ -432,12 +462,7 @@ public class FileEntriesEventEmitterTest {
     }
 
     private List<String> extractSubtopicsFromEvents() {
-        return eventBridgeClient
-            .getEvenRequests()
-            .stream()
-            .flatMap(eventRequest -> eventRequest.entries().stream())
-            .map(PutEventsRequestEntry::detail)
-            .map(detailString -> FileContentsEvent.fromJson(detailString, SampleObject.class))
+        return emitedEvents(eventBridgeClient)
             .map(FileContentsEvent::getSubtopic)
             .collect(Collectors.toList());
     }
@@ -453,21 +478,22 @@ public class FileEntriesEventEmitterTest {
     }
 
     private List<SampleObject> collectEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
-        return eventBridgeClient.getEvenRequests()
-            .stream()
-            .flatMap(e -> e.entries().stream())
-            .map(PutEventsRequestEntry::detail)
-            .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
+        return emitedEvents(eventBridgeClient)
             .map(FileContentsEvent::getContents)
             .collect(Collectors.toList());
     }
 
-    private List<Instant> collectTimestampFromEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
+    private Stream<FileContentsEvent<SampleObject>> emitedEvents(
+        FakeEventBridgeClient eventBridgeClient) {
         return eventBridgeClient.getEvenRequests()
             .stream()
             .flatMap(e -> e.entries().stream())
             .map(PutEventsRequestEntry::detail)
-            .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class))
+            .map(detail -> FileContentsEvent.fromJson(detail, SampleObject.class));
+    }
+
+    private List<Instant> collectTimestampFromEmittedObjects(FakeEventBridgeClient eventBridgeClient) {
+        return emitedEvents(eventBridgeClient)
             .map(FileContentsEvent::getTimestamp)
             .collect(Collectors.toList());
     }

@@ -6,7 +6,6 @@ import static no.unit.nva.publication.s3imports.ApplicationConstants.defaultCloc
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.ERROR_REPORT_FILENAME;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
-import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.WRONG_OR_EMPTY_S3_LOCATION_ERROR;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -89,16 +88,36 @@ public class FilenameEventEmitterTest {
     }
 
     @Test
-    public void handlerThrowsNoExceptionWheInputIsValidAndLocationIsNotEmpty() {
+    public void shouldNotThrowExceptionWheInputIsValidAndLocationIsNotEmpty() {
         ImportRequest importRequest = newImportRequest();
         Executable action = () -> handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
         assertDoesNotThrow(action);
     }
 
+    @Test
+    void shouldEmitEventWithTopicFilenameEmissionEvent() throws IOException {
+        ImportRequest importRequest = newImportRequest();
+        handler.handleRequest(toJsonStream(importRequest), outputStream, CONTEXT);
+        var expectedEvents =
+            eventBridgeClient.getEvenRequests()
+                .stream()
+                .flatMap(requests -> requests.entries().stream())
+                .collect(Collectors.toList());
+
+        for (var emittedEvent : expectedEvents) {
+            String detail = emittedEvent.detail();
+            var emittedEventDetail = ImportRequest.fromJson(detail);
+            assertThat(emittedEventDetail.getTopic(),
+                       is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC)));
+            assertThat(emittedEventDetail.getSubtopic(),
+                       is(equalTo(FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC)));
+        }
+    }
+
     @ParameterizedTest(
         name = "handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location")
     @ValueSource(strings = {EMPTY_STRING, PATH_SEPARATOR})
-    public void handlerEmitsEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
+    public void shouldEmitEventsWithFullFileUriForEveryFilenameInS3BucketWhenInputIsAnExistingNotEmptyS3Location(
         String pathSeparator)
         throws IOException {
 
