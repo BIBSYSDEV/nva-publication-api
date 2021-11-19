@@ -1,11 +1,11 @@
 package no.unit.nva.publication.s3imports;
 
 import static no.unit.nva.publication.s3imports.ApplicationConstants.ERRORS_FOLDER;
-import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_CONTENTS_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.FILE_EXTENSION_ERROR;
 import static no.unit.nva.publication.s3imports.FileEntriesEventEmitter.PARTIAL_FAILURE;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
 import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_SUBTOPIC;
+import static no.unit.nva.publication.s3imports.FilenameEventEmitter.FILENAME_EMISSION_EVENT_TOPIC;
 import static no.unit.nva.publication.s3imports.S3ImportsConfig.s3ImportsMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -74,6 +74,7 @@ public class FileEntriesEventEmitterTest {
     private static final String SOME_BUCKETNAME = "someBucketname";
     private static final String ALL_FILES = ".";
     private static final Integer NON_ZER0_NUMBER_OF_FAILURES = 2;
+    public static final String TOPIC_EMITTED_BY_FILENAME_EMITTER = FILENAME_EMISSION_EVENT_TOPIC;
     private static ImportRequest importRequestForExistingFile;
     private static ImportRequest importRequestForNonExistingFile;
     private S3Client s3Client;
@@ -85,11 +86,11 @@ public class FileEntriesEventEmitterTest {
     @BeforeEach
     public void init() {
         timestamp = Instant.now();
-        importRequestForExistingFile = new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+        importRequestForExistingFile = new ImportRequest(TOPIC_EMITTED_BY_FILENAME_EMITTER,
                                                          FILENAME_EMISSION_EVENT_SUBTOPIC,
                                                          INPUT_URI,
                                                          timestamp);
-        importRequestForNonExistingFile = new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+        importRequestForNonExistingFile = new ImportRequest(TOPIC_EMITTED_BY_FILENAME_EMITTER,
                                                             FILENAME_EMISSION_EVENT_SUBTOPIC,
                                                             NON_EXISTING_FILE_URI,
                                                             timestamp);
@@ -294,7 +295,7 @@ public class FileEntriesEventEmitterTest {
     public void handlerEmitsEventsWithSubtopicEqualToInputsImportRequestSubtopic() {
         String inputImportEventSubtopic = randomString();
         ImportRequest inputImportEvent =
-            newImportRequest(inputImportEventSubtopic);
+            importRequestWithCustomSubtopic(inputImportEventSubtopic);
         InputStream input = createRequestEventForFile(inputImportEvent);
         handler.handleRequest(input, outputStream, CONTEXT);
         var subtopic = extractSubtopicsFromEvents();
@@ -318,8 +319,8 @@ public class FileEntriesEventEmitterTest {
         assertThat(emittedObjects, containsInAnyOrder(sampleObjects.toArray(SampleObject[]::new)));
     }
 
-    private static ImportRequest newImportRequest(String subtopic) {
-        return new ImportRequest(FILE_CONTENTS_EMISSION_EVENT_TOPIC,
+    private static ImportRequest importRequestWithCustomSubtopic(String subtopic) {
+        return new ImportRequest(FILENAME_EMISSION_EVENT_TOPIC,
                                  subtopic,
                                  importRequestForExistingFile.getS3Location(),
                                  Instant.now());

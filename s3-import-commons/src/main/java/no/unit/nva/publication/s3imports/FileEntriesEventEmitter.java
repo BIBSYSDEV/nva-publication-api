@@ -203,6 +203,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
 
     private void validateEvent(AwsEventBridgeEvent<ImportRequest> event) {
         if (!EXPECTED_INPUT_TOPIC.equalsIgnoreCase(event.getDetail().getTopic())) {
+            logger.info(event.toJsonString());
             throw new IllegalArgumentException(WRONG_TOPIC_ERROR + event.getDetail().getTopic());
         }
     }
