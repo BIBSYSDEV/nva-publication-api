@@ -252,14 +252,9 @@ public class BatchEventEmitter<T> {
     }
 
     private PutEventsResult emitEvent(PutEventsRequest request) {
-        request.entries().forEach(this::log);
         PutEventsResponse result = attempt(() -> client.putEvents(request))
             .orElseThrow(fail -> logEmissionFailureDetails(fail, request));
         return new PutEventsResult(request, result);
-    }
-
-    private void log(PutEventsRequestEntry eventEntry) {
-        logger.info("EmittingEvent: " + eventEntry.detail());
     }
 
     private int requestEntrySize(PutEventsRequestEntry entry) {
