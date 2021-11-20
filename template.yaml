@@ -691,7 +691,7 @@ Resources:
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 2
+      ReservedConcurrentExecutions: 32
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
@@ -728,7 +728,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.expandresources.ExpandedDataEntriesPersistenceHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
-      ReservedConcurrentExecutions: 2
+      ReservedConcurrentExecutions: 32
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -942,7 +942,7 @@ Resources:
       MemorySize: 2048
       Timeout: 600 # 10 min timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 5
+      ReservedConcurrentExecutions: 32
       Environment:
         Variables:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
@@ -969,7 +969,7 @@ Resources:
       MemorySize: 512
       Timeout: 30 #  30 sec timeout
       Role: !GetAtt LambdaRole.Arn
-      ReservedConcurrentExecutions: 5
+      ReservedConcurrentExecutions: 32
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
