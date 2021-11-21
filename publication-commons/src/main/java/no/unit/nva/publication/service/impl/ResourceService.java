@@ -37,6 +37,7 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -242,6 +243,7 @@ public class ResourceService extends ServiceWithTransactions {
                                                                        Map<String, AttributeValue> startMarker) {
         return new ScanRequest()
             .withTableName(tableName)
+            .withIndexName(DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME)
             .withLimit(pageSize)
             .withExclusiveStartKey(startMarker)
             .withFilterExpression(Dao.scanFilterExpression())

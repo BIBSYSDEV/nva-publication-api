@@ -18,6 +18,7 @@ dependencies {
     implementation libs.aws.lambda.java.core
     implementation libs.aws.lambda.events
     implementation libs.aws.java.sdk.core
+    implementation libs.guava
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.sdk2.s3

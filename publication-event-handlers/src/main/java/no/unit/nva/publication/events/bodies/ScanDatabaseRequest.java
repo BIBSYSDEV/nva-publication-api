@@ -32,7 +32,7 @@ public class ScanDatabaseRequest implements JsonSerializable {
     }
 
     @JsonProperty("topic")
-    public String getTopic(){
+    public String getTopic() {
         return SCAN_REQUEST_EVENT_TOPIC;
     }
 
