@@ -13,6 +13,8 @@ import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequest;
@@ -25,6 +27,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
         PublicationEventsConfig.ENVIRONMENT.readEnv("EVENT_BUS_NAME");
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
+    private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
 
     @JacocoGenerated
     public EventBasedBatchScanHandler() {
@@ -43,6 +46,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
         ListingResult<DataEntry> result =
             resourceService.scanResources(input.getPageSize(), input.getStartMarker());
         resourceService.refreshResources(result.getDatabaseEntries());
+        logger.info("Query starting point:" + input.getStartMarker());
         if (result.isTruncated()) {
             sendEventToInvokeNewRefreshRowVersionExecution(input, context, result);
         }
