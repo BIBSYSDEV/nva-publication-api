@@ -5,8 +5,10 @@ import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStream
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Lists;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ public class EventBridgePublisher implements EventPublisher {
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
+    public static final int ENTRIES_PER_REQUEST = 7;
     private final EventBridgeRetryClient eventBridge;
     private final EventPublisher failedEventPublisher;
     private final String eventBusName;
@@ -64,10 +67,18 @@ public class EventBridgePublisher implements EventPublisher {
     }
 
     private List<PutEventsRequestEntry> putEventsToEventBus(List<PutEventsRequestEntry> requestEntries) {
-        PutEventsRequest putEventsRequest = PutEventsRequest.builder()
+        List<List<PutEventsRequestEntry>> groupedRequestEntries = Lists.partition(requestEntries, ENTRIES_PER_REQUEST);
+        return groupedRequestEntries.stream()
+            .map(this::createPutEventsRequest)
+            .map(eventBridge::putEvents)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+    }
+
+    private PutEventsRequest createPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
+        return PutEventsRequest.builder()
             .entries(requestEntries)
             .build();
-        return eventBridge.putEvents(putEventsRequest);
     }
 
     private List<PutEventsRequestEntry> createPutEventsRequestEntries(DynamodbEvent event) {
