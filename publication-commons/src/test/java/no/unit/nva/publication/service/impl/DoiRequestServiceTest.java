@@ -29,7 +29,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;

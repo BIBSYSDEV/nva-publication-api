@@ -10,7 +10,7 @@ dependencies {
     implementation libs.jackson.databind
     runtimeOnly libs.jackson.core
 
-    compileOnly(libs.nva.datamodel) {
+    compileOnly(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
@@ -21,7 +21,8 @@ dependencies {
     testImplementation project(":publication-testing")
     testImplementation libs.nva.testutils
     testImplementation libs.javafaker
-    testImplementation libs.nva.datamodel
+    testImplementation libs.nva.datamodel.core
+    testImplementation libs.nva.datamodel.testutils
     testImplementation libs.jackson.core
 
 }

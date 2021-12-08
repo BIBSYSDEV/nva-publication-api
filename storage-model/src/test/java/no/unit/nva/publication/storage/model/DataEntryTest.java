@@ -14,7 +14,7 @@ import java.time.Instant;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

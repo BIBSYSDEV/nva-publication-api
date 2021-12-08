@@ -35,6 +35,9 @@
     },
     "approvals": {
       "@container": "@set"
+    },
+    "messages": {
+      "@container": "@set"
     }
   },
   "@type": "Publication",

@@ -11,26 +11,28 @@ dependencies {
     implementation libs.nva.core
     implementation libs.nva.identifiers
 
-    implementation(libs.nva.datamodel) {
+
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
-
-    runtimeOnly libs.jackson.core
-    testImplementation libs.jackson.core
-
-    runtimeOnly libs.jackson.datatype.jdk8
-    runtimeOnly libs.jackson.datatype.jsr310
-
-    implementation libs.jackson.databind
-
-    runtimeOnly libs.jackson.module.parameter.names
-    implementation libs.jackson.annotations
 
     implementation libs.aws.java.sdk.core
     implementation libs.aws.sdk.dynamodb
 
+    implementation libs.jackson.databind
+    implementation libs.jackson.annotations
+    implementation libs.guava
     implementation libs.log4j.api
 
+
+    runtimeOnly libs.jackson.core
+    runtimeOnly libs.jackson.datatype.jdk8
+    runtimeOnly libs.jackson.datatype.jsr310
+    runtimeOnly libs.jackson.module.parameter.names
+
+
+    testImplementation libs.jackson.core
+    testImplementation libs.nva.datamodel.testutils
     testImplementation project(":publication-testing")
     testImplementation libs.nva.testutils
     testImplementation libs.logutils

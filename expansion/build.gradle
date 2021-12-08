@@ -4,8 +4,10 @@ dependencies{
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.secrets
-    implementation libs.nva.datamodel
+    implementation libs.nva.datamodel.core
+    implementation libs.nva.datamodel.testutils
     implementation libs.jsonld
+    implementation libs.guava
 
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils

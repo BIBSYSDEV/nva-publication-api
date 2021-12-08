@@ -11,7 +11,8 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.PublicationGenerator;
+
+import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

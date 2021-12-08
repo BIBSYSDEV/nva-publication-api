@@ -24,7 +24,7 @@ import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;

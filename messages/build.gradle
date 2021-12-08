@@ -8,10 +8,11 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.identifiers
-    implementation libs.nva.datamodel
+    implementation libs.nva.datamodel.core
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
+    implementation libs.guava
 
     runtimeOnly libs.jackson.databind
     testImplementation libs.jackson.databind
@@ -19,6 +20,7 @@ dependencies {
     testImplementation libs.jackson.core
 
     testImplementation project(":publication-testing")
+    testImplementation libs.nva.datamodel.testutils
     testImplementation project(":doi-requests")
     testImplementation libs.javafaker
     testImplementation libs.zalando

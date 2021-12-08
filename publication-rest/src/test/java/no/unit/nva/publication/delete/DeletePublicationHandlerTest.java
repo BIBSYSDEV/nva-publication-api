@@ -1,7 +1,7 @@
 package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
-import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;

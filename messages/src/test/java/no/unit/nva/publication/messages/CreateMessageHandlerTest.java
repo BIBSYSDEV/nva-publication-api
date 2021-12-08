@@ -26,8 +26,8 @@ import java.util.Map;
 import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
 
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;

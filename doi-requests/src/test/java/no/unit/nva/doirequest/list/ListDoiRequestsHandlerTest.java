@@ -4,7 +4,7 @@ import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapp
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
-import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
