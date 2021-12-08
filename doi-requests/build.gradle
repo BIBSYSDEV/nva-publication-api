@@ -8,7 +8,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.core
-    implementation(libs.nva.datamodel) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
@@ -18,9 +18,13 @@ dependencies {
 
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
-    runtimeOnly libs.jackson.core
-    testImplementation libs.jackson.core
 
+    implementation libs.guava
+
+    runtimeOnly libs.jackson.core
+
+    testImplementation libs.nva.datamodel.testutils
+    testImplementation libs.jackson.core
     testImplementation project(':publication-testing')
     testImplementation libs.nva.testutils
     testImplementation(libs.javafaker) {

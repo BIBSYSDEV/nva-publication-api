@@ -5,7 +5,7 @@ dependencies {
     implementation project(":publication-commons")
     implementation project(":s3-import-commons")
 
-    implementation(libs.nva.datamodel) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 

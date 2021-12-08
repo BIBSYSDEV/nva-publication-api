@@ -14,7 +14,7 @@ import no.unit.nva.expansion.FakeResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
@@ -60,7 +60,7 @@ class ExpandedDataEntryTest {
     }
 
     @Test
-    void expandedDoiRequestShouldHaveTypeDoiRequest() throws JsonProcessingException {
+    void expandedDoiRequestShouldHaveTypeDoiRequest() {
         var publication = PublicationGenerator.randomPublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var expandedResource = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);

@@ -38,8 +38,9 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
-import no.unit.nva.publication.PublicationGenerator;
-import no.unit.nva.publication.PublicationInstanceBuilder;
+
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

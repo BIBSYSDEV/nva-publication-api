@@ -2,11 +2,12 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-import static no.unit.nva.publication.PublicationGenerator.randomUri;
+
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -34,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.PublicationGenerator;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -55,12 +56,10 @@ import org.zalando.problem.Problem;
 public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     public static final String IDENTIFIER = "identifier";
-    public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PUBLICATION_RESPONSE_TYPE =
-        restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, PublicationResponse.class);
+
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
         restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
 
-    public static final String RESOURCE_NOT_FOUND_ERROR_TEMPLATE = "Resource not found: %s";
     public static final String SOME_MESSAGE = "SomeMessage";
     public static final String SOME_CURATOR = "some@curator";
 

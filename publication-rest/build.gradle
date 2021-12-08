@@ -9,7 +9,7 @@ dependencies {
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.identifiers
-    implementation(libs.nva.datamodel) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
@@ -18,12 +18,14 @@ dependencies {
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
+    implementation libs.guava
 
     implementation group:'com.github.bibsysdev.nva-user-access-service', name:'user-access-rights', version:'6b4dd1cbdf839bba01aac9c890e31789009b00fd'
 
 
 
     testImplementation project(":publication-testing")
+    testImplementation libs.nva.datamodel.testutils
     testImplementation libs.logutils
     testImplementation libs.nva.testutils
     testImplementation libs.zalando

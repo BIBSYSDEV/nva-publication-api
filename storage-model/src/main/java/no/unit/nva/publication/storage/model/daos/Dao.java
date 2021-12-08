@@ -16,8 +16,8 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DataEntry;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.WithIdentifier;
 import no.unit.nva.publication.storage.model.WithStatus;
@@ -42,7 +42,6 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
     public static final String UNSUPORTED_SET_IDENTIFIER_ERROR =
         "Daos cannot set their identifier. They get it from their contained data";
 
-
     public static String orgUriToOrgIdentifier(URI uri) {
         String[] pathParts = uri.getPath().split(URI_PATH_SEPARATOR);
         return pathParts[pathParts.length - 1];
@@ -50,8 +49,8 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
 
     public static String scanFilterExpression() {
         return "begins_with (#PK, :Resource) or "
-               +"begins_with(#PK, :DoiRequest) or "
-               +"begins_with(#PK, :Message)";
+               + "begins_with(#PK, :DoiRequest) or "
+               + "begins_with(#PK, :Message)";
     }
 
     // replaces the hash values in the filter expression with the actual key name
@@ -60,12 +59,11 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
     }
 
     // replaces the colon values in the filter expression with the actual value
-    public  static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
+    public static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
-                      ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE+KEY_FIELDS_DELIMITER),
-                      ":Message", new AttributeValue(MessageDao.TYPE+KEY_FIELDS_DELIMITER));
+                      ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE + KEY_FIELDS_DELIMITER),
+                      ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
     }
-
 
     @Override
     public final String getPrimaryKeyPartitionKey() {
@@ -148,18 +146,18 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
 
     private String formatByTypeCustomerStatusIndexPartitionKey(String publisherId, String status) {
         return String.format(BY_TYPE_CUSTOMER_STATUS_PK_FORMAT,
-            getType(),
-            publisherId,
-            status);
+                             getType(),
+                             publisherId,
+                             status);
     }
-    
+
     private Optional<String> extractStatus() {
         return attempt(this::getData)
-                   .map(data -> (WithStatus) data)
-                   .map(WithStatus::getStatusString)
-                   .toOptional();
+            .map(data -> (WithStatus) data)
+            .map(WithStatus::getStatusString)
+            .toOptional();
     }
-    
+
     private String customerIdentifier() {
         return orgUriToOrgIdentifier(getCustomerId());
     }

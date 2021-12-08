@@ -1,6 +1,8 @@
 package no.unit.nva.publication.s3imports;
 
+import static nva.commons.core.attempt.Try.attempt;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
 import nva.commons.core.paths.UnixPath;
@@ -8,11 +10,11 @@ import nva.commons.core.paths.UnixPath;
 public class FileContent {
 
     private final UnixPath filename;
-    private final InputStream fileContent;
+    private final ByteBuffer fileContent;
 
     public FileContent(UnixPath filename, InputStream fileContent) {
         this.filename = filename;
-        this.fileContent = fileContent;
+        this.fileContent = attempt(() -> ByteBuffer.wrap(fileContent.readAllBytes())).orElseThrow();
     }
 
     @Override
@@ -37,11 +39,11 @@ public class FileContent {
         return filename;
     }
 
-    public InputStream getFileContent() {
+    public ByteBuffer getFileContent() {
         return fileContent;
     }
 
-    public Map<String, InputStream> toMap() {
+    public Map<String, ByteBuffer> toMap() {
         return Map.of(filename.toString(), fileContent);
     }
 }

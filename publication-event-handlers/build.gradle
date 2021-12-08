@@ -4,7 +4,7 @@ dependencies {
     implementation project(":expansion")
     implementation project(":publication-commons")
 
-    implementation(libs.nva.datamodel) {
+    implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
@@ -36,7 +36,8 @@ dependencies {
 
     testImplementation libs.bundles.testing
     testImplementation libs.nva.identifiers
-    testImplementation libs.nva.datamodel
+    testImplementation libs.nva.datamodel.testutils
+    testImplementation libs.nva.datamodel.core
     testImplementation project(":publication-testing")
 
     compileOnly(libs.nva.identifiers){

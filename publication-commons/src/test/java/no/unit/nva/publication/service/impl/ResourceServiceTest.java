@@ -2,8 +2,8 @@ package no.unit.nva.publication.service.impl;
 
 import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.PublicationGenerator.publicationWithIdentifier;
-import static no.unit.nva.publication.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceService.RESOURCE_FILE_SET_FIELD;
@@ -62,7 +62,8 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.PublicationGenerator;
+
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
@@ -136,7 +137,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
         throws TransactionFailedException, NotFoundException {
-        Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        Publication inputPublication = publicationWithoutIdentifier();
         assertThat(inputPublication.getSubjects(), is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
         Instant publicationPredefinedTime = Instant.now();
@@ -156,7 +157,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
         throws TransactionFailedException, NotFoundException {
-        Publication inputPublication = PublicationGenerator.publicationWithoutIdentifier();
+        Publication inputPublication = publicationWithoutIdentifier();
         Instant predefinedPublishTime = Instant.now();
 
         inputPublication.setPublishedDate(predefinedPublishTime);
@@ -360,7 +361,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
         throws TransactionFailedException {
-        Publication publication = PublicationGenerator.publicationWithIdentifier();
+        Publication publication = publicationWithIdentifier();
         Publication savedPublication = resourceService.insertPreexistingPublication(publication);
         assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
     }

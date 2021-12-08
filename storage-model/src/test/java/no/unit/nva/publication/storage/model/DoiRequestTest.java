@@ -1,10 +1,8 @@
 package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringClasses;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -17,36 +15,20 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationDate.Builder;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.report.ReportBasic;
-import no.unit.nva.publication.PublicationGenerator;
+
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;
 
 public class DoiRequestTest {
     
     public static final String TYPE_FIELD = "type";
-    public static final SortableIdentifier DOI_REQUEST_IDENTIFIER = SortableIdentifier.next();
-    public static final SortableIdentifier RESOURCE_IDENTIFIER = SortableIdentifier.next();
-    public static final String RESOURCE_TITLE = "resourceTitle";
-    public static final String SOME_OWNER = "someOwner";
-    public static final URI SOME_CUSTOMER = URI.create("https://some-customer.com");
-    public static final DoiRequestStatus SOME_DOI_REQUEST_STATUS = DoiRequestStatus.REJECTED;
-    public static final PublicationStatus SOME_PUBLICATION_STATUS = PublicationStatus.DRAFT;
-    public static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("1000-01-01T10:15:30.00Z");
-    public static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2000-01-01T10:15:30.00Z");
-    public static final String SOME_PUBLICATION_YEAR = "ca. 1600";
-    public static final URI SOME_DOI = URI.create("https://doi.org/example");
     private static final Instant NOW = Instant.now();
     public static final Clock CLOCK = fixedClock();
     private final DoiRequest sampleDoiRequest = sampleDoiRequestFromResource();

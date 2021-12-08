@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -341,7 +342,8 @@ public class FileEntriesEventEmitterTest {
     public void handlerEmitsEventsWithJsonFormatWhenInputIsFileWithIonContent(
         Function<Collection<SampleObject>, FileContent> ionContentProvider) {
         List<SampleObject> sampleObjects = randomObjects();
-        s3Client = new FakeS3Client(ionContentProvider.apply(sampleObjects).toMap());
+        var stringInputStreamMap = ionContentProvider.apply(sampleObjects).toMap();
+        s3Client = new FakeS3Client(stringInputStreamMap);
         InputStream input = createRequestEventForFile(importRequestForExistingFile);
         handler = newHandler();
         handler.handleRequest(input, outputStream, CONTEXT);
