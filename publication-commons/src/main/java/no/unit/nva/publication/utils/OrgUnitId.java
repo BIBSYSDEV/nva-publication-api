@@ -10,6 +10,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import nva.commons.core.paths.UriWrapper;
 
+/**
+ * Class for encapsulating the logic of selecting the most appropriate affiliation for a resource owner.
+ * Given a Set of OrgUnitIds (URIs), the class finds the most specific one per institution and
+ * selects a random one.
+ */
 public class OrgUnitId implements Comparable<OrgUnitId> {
 
     public static final String UNIT_LEVEL_DELIMITER = "\\.";
