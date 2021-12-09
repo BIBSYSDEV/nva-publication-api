@@ -51,7 +51,7 @@ public class PersonApiClient {
 
     public List<URI> fetchAffiliationsForUser(String feideId)
         throws IOException, InterruptedException, ApiGatewayException {
-        var queryUri = createQueryToPersonService(feideId);
+        var queryUri = createPersonServiceQuery(feideId);
         var response = sendQuery(queryUri);
         checkResponse(response);
         return extractUserAffiliations(response);
@@ -80,7 +80,7 @@ public class PersonApiClient {
         return httpClient.send(httpRequest, BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 
-    private URI createQueryToPersonService(String feideId) {
+    private URI createPersonServiceQuery(String feideId) {
         return new UriWrapper("https", API_HOST)
             .addChild(PATH_TO_PESON_SERVICE_PROXY)
             .addQueryParameter("feideid", feideId)
