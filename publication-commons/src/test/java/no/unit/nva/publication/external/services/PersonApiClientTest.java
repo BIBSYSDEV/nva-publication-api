@@ -1,6 +1,7 @@
 package no.unit.nva.publication.external.services;
 
 import static no.unit.nva.publication.TestingUtils.createOrgUnitId;
+import static no.unit.nva.publication.TestingUtils.createRandomOrgUnitId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -42,7 +43,7 @@ class PersonApiClientTest {
     public void init() {
         inputFeideId = randomString();
         errorMessage = randomString();
-        randomOrgUnitId = createOrgUnitId(randomInteger(), randomInteger(), randomInteger(), randomInteger());
+        randomOrgUnitId = createRandomOrgUnitId();
         successfulNonEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId, randomOrgUnitId).toString();
         successfulEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId).toString();
         randomFailureCode = randomNonSuccessfulStatusCode();
