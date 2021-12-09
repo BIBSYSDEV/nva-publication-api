@@ -1,0 +1,20 @@
+[
+  {
+    "feideids": [
+      "someUser@unit.no"
+    ],
+    "orcids": [
+      "https://sandbox.orcid.org/0000-0000-0000-00000"
+    ],
+    "orgunitids": [
+      "https://api.cristin.no/v2/institutions/20202",
+      "https://api.cristin.no/v2/units/194.63.10.0"
+    ],
+    "handles": [
+      "http://hdl.handle.net/11250.1/12345678"
+    ],
+    "id": "https://api.dev.nva.aws.unit.no/person/1234567989",
+    "name": "User, Some",
+    "birthDate": ""
+  }
+]

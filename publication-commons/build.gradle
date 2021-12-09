@@ -23,7 +23,7 @@ dependencies {
     implementation libs.jackson.annotations
     implementation libs.guava
     implementation libs.log4j.api
-
+    implementation libs.zalando
 
     runtimeOnly libs.jackson.core
     runtimeOnly libs.jackson.datatype.jdk8
@@ -40,7 +40,10 @@ dependencies {
     testImplementation(libs.javers) {
         because "For comparing java objects and detailing the differences in readable way"
     }
+}
 
+test{
+    environment "API_HOST", "api.dev.nva.aws.unit.no"
 }
 
 
