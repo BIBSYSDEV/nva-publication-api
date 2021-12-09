@@ -44,7 +44,7 @@ public class OrgUnitId implements Comparable<OrgUnitId> {
     }
 
     private static Stream<OrgUnitId> findAffiliationCandidates(List<OrgUnitId> orgUnitIds) {
-        var groupedByInstitution = groupByFirstLevel(orgUnitIds);
+        var groupedByInstitution = groupByInstitution(orgUnitIds);
         return selectMostSpecificUnitIdPerInstitution(groupedByInstitution.values());
     }
 
@@ -52,7 +52,7 @@ public class OrgUnitId implements Comparable<OrgUnitId> {
         return affiliationCandidates.findAny();
     }
 
-    private static Map<Integer, List<OrgUnitId>> groupByFirstLevel(List<OrgUnitId> orgUnitIds) {
+    private static Map<Integer, List<OrgUnitId>> groupByInstitution(List<OrgUnitId> orgUnitIds) {
         return orgUnitIds.stream()
             .filter(OrgUnitId::notEmpty)
             .collect(Collectors.groupingBy(OrgUnitId::firstLevel));
