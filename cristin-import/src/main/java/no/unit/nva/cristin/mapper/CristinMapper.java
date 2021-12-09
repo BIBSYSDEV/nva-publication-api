@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
 import static java.util.Objects.isNull;
+import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_OWNER_AFFILIATION;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.HARDCODED_SAMPLE_DOI;
 import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
@@ -38,6 +39,7 @@ import no.unit.nva.model.Publication.Builder;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
@@ -47,6 +49,7 @@ import nva.commons.core.language.LanguageMapper;
 public class CristinMapper extends CristinMappingModule {
 
     public static final String EMPTY_STRING = "";
+
 
     public CristinMapper(CristinObject cristinObject) {
         super(cristinObject);
@@ -62,6 +65,7 @@ public class CristinMapper extends CristinMappingModule {
             .withPublishedDate(extractEntryCreationDate())
             .withPublisher(extractOrganization())
             .withOwner(cristinObject.getPublicationOwner())
+            .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(), HARDCODED_OWNER_AFFILIATION))
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(HARDCODED_SAMPLE_DOI)
             .withProjects(extractProjects())

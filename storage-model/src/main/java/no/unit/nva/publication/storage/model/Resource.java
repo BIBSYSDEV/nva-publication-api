@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -21,11 +20,12 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.core.JacocoGenerated;
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields","PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.ExcessivePublicCount"})
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, DataEntry {
 
@@ -37,6 +37,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
     private PublicationStatus status;
     @JsonProperty
     private String owner;
+    @JsonProperty
+    private ResourceOwner resourceOwner;
     @JsonProperty
     private Organization publisher;
     @JsonProperty
@@ -91,6 +93,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return Resource.builder()
             .withIdentifier(publication.getIdentifier())
             .withOwner(publication.getOwner())
+            .withResourceOwner(publication.getResourceOwner())
             .withCreatedDate(publication.getCreatedDate())
             .withModifiedDate(publication.getModifiedDate())
             .withIndexedDate(publication.getIndexedDate())
@@ -123,47 +126,12 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return UUID.randomUUID().toString();
     }
 
-    @Override
-    public Dao<?> toDao() {
-        return new ResourceDao(this);
+    public ResourceOwner getResourceOwner() {
+        return resourceOwner;
     }
 
-    @JacocoGenerated
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getOwner(), getPublisher(), getCreatedDate(),
-                            getModifiedDate(),
-                            getPublishedDate(), getIndexedDate(), getLink(), getFileSet(), getProjects(),
-                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(),
-                            getSubjects());
-    }
-
-    @JacocoGenerated
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof Resource)) {
-            return false;
-        }
-        Resource resource = (Resource) o;
-        return Objects.equals(getIdentifier(), resource.getIdentifier())
-               && getStatus() == resource.getStatus()
-               && Objects.equals(getOwner(), resource.getOwner())
-               && Objects.equals(getPublisher(), resource.getPublisher())
-               && Objects.equals(getCreatedDate(), resource.getCreatedDate())
-               && Objects.equals(getModifiedDate(), resource.getModifiedDate())
-               && Objects.equals(getPublishedDate(), resource.getPublishedDate())
-               && Objects.equals(getIndexedDate(), resource.getIndexedDate())
-               && Objects.equals(getLink(), resource.getLink())
-               && Objects.equals(getFileSet(), resource.getFileSet())
-               && Objects.equals(getProjects(), resource.getProjects())
-               && Objects.equals(getEntityDescription(), resource.getEntityDescription())
-               && Objects.equals(getDoi(), resource.getDoi())
-               && Objects.equals(getHandle(), resource.getHandle())
-               && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
-               && Objects.equals(getSubjects(), resource.getSubjects());
+    public void setResourceOwner(ResourceOwner resourceOwner) {
+        this.resourceOwner = resourceOwner;
     }
 
     public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
@@ -290,6 +258,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
             .withIdentifier(getIdentifier())
             .withStatus(getStatus())
             .withOwner(getOwner())
+            .withResourceOwner(getResourceOwner())
+            .withResourceOwner(getResourceOwner())
             .withPublisher(getPublisher())
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
@@ -311,7 +281,8 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
             .withOwner(getOwner())
-            .withStatus(this.getStatus())
+            .withResourceOwner(getResourceOwner())
+            .withStatus(getStatus())
             .withCreatedDate(getCreatedDate())
             .withModifiedDate(getModifiedDate())
             .withIndexedDate(getIndexedDate())
@@ -342,6 +313,11 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
     }
 
     @Override
+    public Dao<?> toDao() {
+        return new ResourceDao(this);
+    }
+
+    @Override
     @JsonIgnore
     public URI getCustomerId() {
         return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
@@ -362,6 +338,43 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
 
     public void setSubjects(List<URI> subjects) {
         this.subjects = subjects;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getOwner(), getResourceOwner(), getPublisher(),
+                            getCreatedDate(),
+                            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
+                            getProjects(),
+                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Resource)) {
+            return false;
+        }
+        Resource resource = (Resource) o;
+        return Objects.equals(getIdentifier(), resource.getIdentifier())
+               && getStatus() == resource.getStatus()
+               && Objects.equals(getOwner(), resource.getOwner())
+               && Objects.equals(getResourceOwner(), resource.getResourceOwner())
+               && Objects.equals(getPublisher(), resource.getPublisher())
+               && Objects.equals(getCreatedDate(), resource.getCreatedDate())
+               && Objects.equals(getModifiedDate(), resource.getModifiedDate())
+               && Objects.equals(getPublishedDate(), resource.getPublishedDate())
+               && Objects.equals(getIndexedDate(), resource.getIndexedDate())
+               && Objects.equals(getLink(), resource.getLink())
+               && Objects.equals(getFileSet(), resource.getFileSet())
+               && Objects.equals(getProjects(), resource.getProjects())
+               && Objects.equals(getEntityDescription(), resource.getEntityDescription())
+               && Objects.equals(getDoi(), resource.getDoi())
+               && Objects.equals(getHandle(), resource.getHandle())
+               && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
+               && Objects.equals(getSubjects(), resource.getSubjects());
     }
 }
 

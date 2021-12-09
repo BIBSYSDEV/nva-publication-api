@@ -555,13 +555,13 @@ public final class CristinDataGenerator {
             .build();
     }
 
-    private static CristinObject createObjectWithCristinContributorRoleCode(Integer index,
+    private static CristinObject createObjectWithCristinContributorRoleCode(Integer cristinId,
                                                                             List<CristinContributor> contributors) {
         return CristinObject.builder()
             .withMainCategory(randomMainCategory())
             .withSecondaryCategory(randomSecondaryCategory())
             .withCristinTitles(randomTitles())
-            .withId(index)
+            .withId(cristinId)
             .withEntryCreationDate(LocalDate.now())
             .withPublicationYear(randomYear())
             .withYearReported(randomYear())

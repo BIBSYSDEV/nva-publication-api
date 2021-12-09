@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * A simple model of a Bare response, to avoid using resource files
+ * A simple model of a Bare response, to avoid using resource files.
  */
 public class PersonApiResponseBodyMock {
 
