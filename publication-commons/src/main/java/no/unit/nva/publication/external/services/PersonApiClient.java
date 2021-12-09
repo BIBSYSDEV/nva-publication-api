@@ -96,7 +96,7 @@ public class PersonApiClient {
 
     private Optional<ObjectNode> extractUserInformation(HttpResponse<String> response) throws JsonProcessingException {
         var result = (ArrayNode) dtoObjectMapper.readTree(response.body());
-        return (nonNull(result) && !result.isEmpty())
+        return nonNull(result) && !result.isEmpty()
                    ? Optional.of((ObjectNode) result.get(0))
                    : Optional.empty();
     }
