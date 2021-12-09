@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.update;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -9,6 +10,7 @@ import java.time.Clock;
 import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -74,7 +76,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     @JacocoGenerated
     private static DoiRequestService defaultService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
-                                     HttpClient.newBuilder().build(),
+                                     EXTERNAL_SERVICES_HTTP_CLIENT,
                                      Clock.systemDefaultZone());
     }
 
