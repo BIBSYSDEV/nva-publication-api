@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.List;
 
+/**
+ * A simple model of a Bare search result entry, to avoid using resource files
+ */
 public class PersonApiEntry {
 
     @JsonProperty("feideids")

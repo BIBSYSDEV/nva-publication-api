@@ -8,6 +8,9 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A simple model of a Bare response, to avoid using resource files
+ */
 public class PersonApiResponseBodyMock {
 
     List<PersonApiEntry> personApiEntries;
@@ -19,6 +22,7 @@ public class PersonApiResponseBodyMock {
     }
 
     @JsonValue
+    //Bare returns a Json Array as a search result and not a JSON object.
     public String toString() {
         return attempt(() -> dtoObjectMapper.writeValueAsString(personApiEntries)).orElseThrow();
     }
