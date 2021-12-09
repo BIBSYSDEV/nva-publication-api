@@ -39,7 +39,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
 
     public CreateMessageHandler(AmazonDynamoDB client, HttpClient externalServicesHttpClient, Environment environment) {
-        this(environment, defaultMessageService(client), defaultResourceService(client,externalServicesHttpClient));
+        this(environment, defaultMessageService(client), defaultResourceService(client, externalServicesHttpClient));
     }
 
     public CreateMessageHandler(Environment environment,
@@ -72,8 +72,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
-    private static ResourceService defaultResourceService(AmazonDynamoDB client,HttpClient externalServicesHttpClient) {
-        return new ResourceService(client, externalServicesHttpClient,Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService(AmazonDynamoDB client,
+                                                          HttpClient externalServicesHttpClient) {
+        return new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
     }
 
     private static MessageService defaultMessageService(AmazonDynamoDB client) {
@@ -108,8 +109,8 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     private MessageType parseMessageType(CreateMessageRequest input) {
         return Optional.ofNullable(input.getMessageType())
-                   .map(MessageType::parse)
-                   .orElse(MessageType.SUPPORT);
+            .map(MessageType::parse)
+            .orElse(MessageType.SUPPORT);
     }
 
     private BadRequestException handleBadRequests(InvalidInputException exception) {
