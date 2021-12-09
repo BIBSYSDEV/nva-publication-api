@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
@@ -38,6 +39,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -69,11 +71,12 @@ public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
     @BeforeEach
     public void initialize() throws TransactionFailedException {
         super.init();
-        resourcesService = new ResourceService(client, Clock.systemDefaultZone());
+        HttpClient httpClient = new FakeHttpClient();
+        resourcesService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, httpClient,Clock.systemDefaultZone());
         environment = setupEnvironment();
-        handler = new CreateMessageHandler(client, environment);
+        handler = new CreateMessageHandler(client,new FakeHttpClient(), environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
     }

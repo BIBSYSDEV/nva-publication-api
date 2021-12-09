@@ -23,7 +23,6 @@ import java.util.Objects;
 import java.util.Optional;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,6 @@ import org.zalando.problem.Status;
 
 public class PersonApiClient {
 
-    public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
     public static final String ERROR_WITH_PERSON_SERVICE_COMMINUCATION = "Error communicating with Person service";
     public static final String PERSON_SERVICE_RESPONSE = "Person Service response:";
     public static final String USER_AFFILIATIONS_FIELD = "/orgunitids";
@@ -42,11 +40,6 @@ public class PersonApiClient {
 
     public PersonApiClient(HttpClient httpClient) {
         this.httpClient = httpClient;
-    }
-
-    @JacocoGenerated
-    public PersonApiClient() {
-        this.httpClient = HTTP_CLIENT;
     }
 
     public List<URI> fetchAffiliationsForUser(String feideId)

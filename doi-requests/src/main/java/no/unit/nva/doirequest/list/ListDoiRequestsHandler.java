@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -83,7 +84,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client, Clock clock) {
-        return new DoiRequestService(client, clock);
+        return new DoiRequestService(client, EXTERNAL_SERVICES_HTTP_CLIENT, clock);
     }
 
     private Publication[] emptyResult() {

@@ -1,11 +1,13 @@
 package no.unit.nva.publication.messages;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
@@ -33,11 +35,11 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     @JacocoGenerated
     public CreateMessageHandler() {
-        this(defaultClient(), new Environment());
+        this(defaultClient(), EXTERNAL_SERVICES_HTTP_CLIENT, new Environment());
     }
 
-    public CreateMessageHandler(AmazonDynamoDB client, Environment environment) {
-        this(environment, defaultMessageService(client), defaultResourceService(client));
+    public CreateMessageHandler(AmazonDynamoDB client, HttpClient externalServicesHttpClient, Environment environment) {
+        this(environment, defaultMessageService(client), defaultResourceService(client,externalServicesHttpClient));
     }
 
     public CreateMessageHandler(Environment environment,
@@ -70,8 +72,8 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
-    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client, Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService(AmazonDynamoDB client,HttpClient externalServicesHttpClient) {
+        return new ResourceService(client, externalServicesHttpClient,Clock.systemDefaultZone());
     }
 
     private static MessageService defaultMessageService(AmazonDynamoDB client) {

@@ -4,6 +4,7 @@ import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapp
 import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -30,6 +31,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -63,10 +65,10 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTes
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-        doiRequestService = new DoiRequestService(client, clock);
+        doiRequestService = new DoiRequestService(client, new FakeHttpClient(), clock);
 
         handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
-        resourceService = new ResourceService(client, clock);
+        resourceService = new ResourceService(client, new FakeHttpClient(), clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
     }

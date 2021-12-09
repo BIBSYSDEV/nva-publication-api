@@ -4,6 +4,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -72,7 +73,9 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
 
     @JacocoGenerated
     private static DoiRequestService defaultService() {
-        return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+        return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
+                                     HttpClient.newBuilder().build(),
+                                     Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

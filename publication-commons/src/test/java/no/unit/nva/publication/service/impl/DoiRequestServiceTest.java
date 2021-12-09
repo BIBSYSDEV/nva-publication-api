@@ -17,6 +17,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -59,18 +61,20 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
     private Clock mockClock;
     private ResourceService resourceService;
     private DoiRequestService doiRequestService;
+    private HttpClient httpClient;
 
     @BeforeEach
     public void initialize() {
         super.init();
         this.mockClock = mock(Clock.class);
+        this.httpClient = new FakeHttpClient();
         when(mockClock.instant())
             .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-        this.resourceService = new ResourceService(client, mockClock);
-        this.doiRequestService = new DoiRequestService(client, mockClock);
+        this.resourceService = new ResourceService(client,httpClient, mockClock);
+        this.doiRequestService = new DoiRequestService(client, httpClient,mockClock);
     }
 
     @Test
@@ -92,7 +96,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
 
         DoiRequest actualDoiRequest = doiRequestService.getDoiRequestByResourceIdentifier(userInstance,
-            emptyPublication.getIdentifier());
+                                                                                          emptyPublication.getIdentifier());
 
         DoiRequest expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
 
@@ -137,13 +141,16 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
 
         SortableIdentifier duplicateIdentifier = SortableIdentifier.next();
         Supplier<SortableIdentifier> identifierSupplier = () -> duplicateIdentifier;
-        DoiRequestService doiRequestServiceProducingDuplicates = new DoiRequestService(client, mockClock,
-            identifierSupplier);
+        DoiRequestService doiRequestServiceProducingDuplicates =
+            new DoiRequestService(client,
+                                  httpClient,
+                                  mockClock,
+                                  identifierSupplier);
 
         UserInstance userInstance = createUserInstance(publication);
 
         Executable action = () -> doiRequestServiceProducingDuplicates.createDoiRequest(userInstance,
-            publication.getIdentifier());
+                                                                                        publication.getIdentifier());
         assertDoesNotThrow(action);
         assertThrows(TransactionFailedException.class, action);
     }
@@ -298,7 +305,7 @@ public class DoiRequestServiceTest extends ResourcesDynamoDbLocalTest {
         UserInstance sampleCurator = createSampleCurator(publication);
         Executable action =
             () -> doiRequestService.updateDoiRequest(sampleCurator, publication.getIdentifier(),
-                DoiRequestStatus.APPROVED);
+                                                     DoiRequestStatus.APPROVED);
         assertThrows(BadRequestException.class, action);
     }
 

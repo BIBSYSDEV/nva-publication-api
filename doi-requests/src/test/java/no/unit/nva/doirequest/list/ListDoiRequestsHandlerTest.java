@@ -15,12 +15,14 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.github.javafaker.Faker;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -79,13 +82,14 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         init();
         setupClock();
-        resourceService = new ResourceService(client, mockClock);
+        var httpClient = new FakeHttpClient();
+        resourceService = new ResourceService(client,httpClient, mockClock);
 
         outputStream = new ByteArrayOutputStream();
-        context = Mockito.mock(Context.class);
+        context = mock(Context.class);
         Environment environment = mockEnvironment();
 
-        doiRequestService = new DoiRequestService(client, mockClock);
+        doiRequestService = new DoiRequestService(client,httpClient, mockClock);
         messageService = new MessageService(client, mockClock);
         handler = new ListDoiRequestsHandler(environment, doiRequestService, messageService);
     }
@@ -295,7 +299,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private Environment mockEnvironment() {
-        Environment environment = Mockito.mock(Environment.class);
+        Environment environment = mock(Environment.class);
         Mockito.when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
     }
@@ -420,7 +424,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private void setupClock() {
-        mockClock = Mockito.mock(Clock.class);
+        mockClock = mock(Clock.class);
         Mockito.when(mockClock.instant())
             .thenReturn(PUBLICATION_CREATION_TIME)
             .thenReturn(PUBLICATION_UPDATE_TIME)

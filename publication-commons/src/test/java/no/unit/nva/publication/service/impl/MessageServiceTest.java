@@ -13,6 +13,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.javafaker.Faker;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
@@ -33,6 +34,7 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +68,8 @@ public class MessageServiceTest extends ResourcesDynamoDbLocalTest {
         super.init();
         Clock clock = mockClock();
         messageService = new MessageService(client, clock);
-        resourceService = new ResourceService(client, clock);
+        var httpClient= new FakeHttpClient();
+        resourceService = new ResourceService(client, httpClient, clock);
     }
 
     @Test
