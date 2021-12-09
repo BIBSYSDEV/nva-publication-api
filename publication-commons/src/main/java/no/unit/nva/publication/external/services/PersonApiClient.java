@@ -1,6 +1,7 @@
 package no.unit.nva.publication.external.services;
 
 import static com.google.common.net.HttpHeaders.ACCEPT;
+import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,11 +33,11 @@ import org.zalando.problem.Status;
 public class PersonApiClient {
 
     public static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().build();
-    private static final Logger logger = LoggerFactory.getLogger(PersonApiClient.class);
     public static final String ERROR_WITH_PERSON_SERVICE_COMMINUCATION = "Error communicating with Person service";
     public static final String PERSON_SERVICE_RESPONSE = "Person Service response:";
     public static final String USER_AFFILIATIONS_FIELD = "/orgunitids";
     public static final String PATH_TO_PESON_SERVICE_PROXY = "person";
+    private static final Logger logger = LoggerFactory.getLogger(PersonApiClient.class);
     private final HttpClient httpClient;
 
     public PersonApiClient(HttpClient httpClient) {
@@ -51,14 +52,14 @@ public class PersonApiClient {
     public List<URI> fetchAffiliationsForUser(String feideId)
         throws IOException, InterruptedException, ApiGatewayException {
         var queryUri = createQueryToPersonService(feideId);
-        HttpResponse<String> response = sendQuery(queryUri);
+        var response = sendQuery(queryUri);
         checkResponse(response);
         return extractUserAffiliations(response);
     }
 
     private void checkResponse(HttpResponse<String> response) throws BadGatewayException {
-        if (!Objects.equals(HttpURLConnection.HTTP_OK,response.statusCode())) {
-            Problem errorReport = generateErrorReport(response);
+        if (!Objects.equals(HttpURLConnection.HTTP_OK, response.statusCode())) {
+            var errorReport = generateErrorReport(response);
             logger.warn(PERSON_SERVICE_RESPONSE + errorReport);
             throw new BadGatewayException(ERROR_WITH_PERSON_SERVICE_COMMINUCATION);
         }
@@ -72,7 +73,7 @@ public class PersonApiClient {
     }
 
     private HttpResponse<String> sendQuery(URI queryUri) throws IOException, InterruptedException {
-        HttpRequest httpRequest = HttpRequest.newBuilder(queryUri)
+        var httpRequest = HttpRequest.newBuilder(queryUri)
             .header(ACCEPT, MediaType.JSON_UTF_8.toString())
             .GET()
             .build();
@@ -94,13 +95,10 @@ public class PersonApiClient {
     }
 
     private Optional<ObjectNode> extractUserInformation(HttpResponse<String> response) throws JsonProcessingException {
-
         var result = (ArrayNode) dtoObjectMapper.readTree(response.body());
-        if (!result.isEmpty()) {
-            return Optional.of((ObjectNode) result.get(0));
-        } else {
-            return Optional.empty();
-        }
+        return (nonNull(result) && !result.isEmpty())
+                   ? Optional.of((ObjectNode) result.get(0))
+                   : Optional.empty();
     }
 
     private List<URI> toUriList(ArrayNode affiliations) {
