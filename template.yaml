@@ -34,6 +34,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Custom API to connect this lambda to
     Default: CustomDomain
+  ApiDomain:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: Custom API to connect this lambda to
+    Default: /NVA/ApiDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain

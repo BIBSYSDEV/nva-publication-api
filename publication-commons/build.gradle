@@ -23,6 +23,7 @@ dependencies {
     implementation libs.jackson.annotations
     implementation libs.guava
     implementation libs.log4j.api
+    implementation libs.zalando
 
 
     runtimeOnly libs.jackson.core
@@ -42,6 +43,11 @@ dependencies {
     }
 
 }
+
+test{
+    environment "API_HOST", "api.dev.nva.aws.unit.no"
+}
+
 
 
 
