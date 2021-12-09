@@ -36,7 +36,6 @@ class PersonApiClientTest {
         IoUtils.stringFromResources(Path.of("personApiClient", "successful_empty_response.json"));
     private PersonApiClient personApiClient;
     private String errorMessage;
-
     private String inputFeideId;
     private int randomFailureCode;
 
