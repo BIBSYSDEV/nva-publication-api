@@ -32,7 +32,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.Resource;
@@ -47,7 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
-class EventBasedBatchScanHandlerTest extends ResourcesDynamoDbLocalTest {
+class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     public static final int LARGE_PAGE = 10;
     public static final int ONE_ENTRY_PER_EVENT = 1;

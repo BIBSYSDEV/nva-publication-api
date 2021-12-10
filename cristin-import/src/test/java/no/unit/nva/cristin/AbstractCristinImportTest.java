@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.cristin.mapper.CristinObject;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.ioutils.IoUtils;
 
-public class AbstractCristinImportTest extends ResourcesDynamoDbLocalTest {
+public class AbstractCristinImportTest extends ResourcesLocalTest {
 
     public static final Integer NUMBER_OF_LINES_IN_RESOURCES_FILE = 100;
     public static final CollectionType CRISTIN_OBJECTS_LIST_JAVATYPE =

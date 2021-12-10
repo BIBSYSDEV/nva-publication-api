@@ -38,7 +38,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
+public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";

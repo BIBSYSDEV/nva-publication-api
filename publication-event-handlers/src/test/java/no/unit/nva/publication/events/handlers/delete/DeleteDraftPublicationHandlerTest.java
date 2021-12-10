@@ -16,7 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
+public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON =
         "delete/delete_draft_publication_without_doi.json";

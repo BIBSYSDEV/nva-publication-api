@@ -69,7 +69,7 @@ import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -91,7 +91,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
+public class ResourceServiceTest extends ResourcesLocalTest {
 
     public static final String ANOTHER_OWNER = "another@owner.no";
     public static final String SOME_OTHER_USER = "some_other@user.no";

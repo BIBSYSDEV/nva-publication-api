@@ -37,7 +37,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageCollection;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
@@ -54,7 +54,7 @@ import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
+public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     public static final String SAMPLE_USER = "some@user";
     public static final URI SOME_ORG = URI.create("https://example.com/123");
