@@ -1,6 +1,5 @@
 package no.unit.nva.publication.messages;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
@@ -79,7 +78,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         super.init();
         output = new ByteArrayOutputStream();
         HttpClient httpClient = new FakeHttpClient();
-        resourceService = new ResourceService(client,httpClient ,Clock.systemDefaultZone());
+        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
@@ -173,20 +172,20 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private List<Publication> createPublicationsOfDifferentOwners() {
 
         return PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, NO_IDENTIFIER)
-                   .stream()
-                   .map(attempt(p -> resourceService.createPublication(p)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .stream()
+            .map(attempt(p -> resourceService.createPublication(p)))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private ResourceConversation[] constructExpectedResponse(List<Message> messages) {
         List<ResourceConversation> conversations = messages.stream()
-                                                       .collect(Collectors.groupingBy(Message::getResourceIdentifier))
-                                                       .values()
-                                                       .stream()
-                                                       .map(ResourceConversation::fromMessageList)
-                                                       .flatMap(List::stream)
-                                                       .collect(Collectors.toList());
+            .collect(Collectors.groupingBy(Message::getResourceIdentifier))
+            .values()
+            .stream()
+            .map(ResourceConversation::fromMessageList)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
 
         return conversations.toArray(ResourceConversation[]::new);
     }
@@ -200,8 +199,8 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
 
         List<ResourceConversation> sorted = Arrays.stream(responseObjects)
-                                                .sorted(this::objectWithOldestMessageFirst)
-                                                .collect(Collectors.toList());
+            .sorted(this::objectWithOldestMessageFirst)
+            .collect(Collectors.toList());
         List<ResourceConversation> actualResponseObjects = Arrays.asList(responseObjects);
 
         assertThat(actualResponseObjects, is(equalTo(sorted)));
@@ -216,11 +215,11 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private MessageDto oldestMessage(ResourceConversation left) {
         return left.getMessageCollections()
-                   .stream()
-                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
-                   .sorted(Comparator.comparing(MessageDto::getDate))
-                   .collect(Collectors.toList())
-                   .get(0);
+            .stream()
+            .flatMap(messageCollection -> messageCollection.getMessages().stream())
+            .sorted(Comparator.comparing(MessageDto::getDate))
+            .collect(Collectors.toList())
+            .get(0);
     }
 
     private void assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(
@@ -241,8 +240,8 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private void assertThatMessagesInMessageCollectionAreOrderedByOldestFirst(MessageCollection messageCollection) {
         var messages = messageCollection.getMessages();
         List<MessageDto> sortedMessages = messages.stream()
-                                              .sorted(Comparator.comparing(MessageDto::getDate))
-                                              .collect(Collectors.toList());
+            .sorted(Comparator.comparing(MessageDto::getDate))
+            .collect(Collectors.toList());
 
         assertThat(messages, is(not(sameInstance(sortedMessages))));
         assertThat(messages, is(equalTo(sortedMessages)));
@@ -280,11 +279,11 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private InputStream userRequest(String userIdentifier, URI organizationUri, String requestedRole)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
-                   .withFeideId(userIdentifier)
-                   .withCustomerId(organizationUri.toString())
-                   .withRoles(requestedRole)
-                   .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole))
-                   .build();
+            .withFeideId(userIdentifier)
+            .withCustomerId(organizationUri.toString())
+            .withRoles(requestedRole)
+            .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole))
+            .build();
     }
 
     private UserInstance extractPublicationOwner(Message message) {
@@ -293,15 +292,15 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private List<Publication> extractPublicationDescriptionFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
-                   .map(ResourceConversation::getPublication)
-                   .collect(Collectors.toList());
+            .map(ResourceConversation::getPublication)
+            .collect(Collectors.toList());
     }
 
     private Publication[] constructExpectedPublicationDescriptions(List<Message> savedMessages) {
         List<Publication> expectedPublicationDescriptions = savedMessages
-                                                                .stream()
-                                                                .map(this::createPublicationDescription)
-                                                                .collect(Collectors.toList());
+            .stream()
+            .map(this::createPublicationDescription)
+            .collect(Collectors.toList());
         Publication[] expectedPublicationDescriptionsArray = new Publication[NUMBER_OF_PUBLICATIONS];
         expectedPublicationDescriptions.toArray(expectedPublicationDescriptionsArray);
         return expectedPublicationDescriptionsArray;
@@ -309,14 +308,14 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
-                   .flatMap(responseObject -> responseObject.getMessageCollections().stream())
-                   .flatMap(messageCollections -> messageCollections.getMessages().stream())
-                   .collect(Collectors.toList());
+            .flatMap(responseObject -> responseObject.getMessageCollections().stream())
+            .flatMap(messageCollections -> messageCollections.getMessages().stream())
+            .collect(Collectors.toList());
     }
 
     private MessageDto[] constructExpectedMessages(List<Message> savedMessages) {
         List<MessageDto> expectedMessages = savedMessages.stream().map(MessageDto::fromMessage)
-                                                .collect(Collectors.toList());
+            .collect(Collectors.toList());
         MessageDto[] expectedMessagesArray = new MessageDto[savedMessages.size()];
         expectedMessages.toArray(expectedMessagesArray);
         return expectedMessagesArray;
@@ -342,16 +341,16 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private List<Message> createSampleMessagesFromPublications(List<Publication> publications,
                                                                Function<Publication, UserInstance> sender) {
         return publications.stream()
-                   .map(attempt(pub -> createMessage(pub, sender.apply(pub))))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .map(attempt(pub -> createMessage(pub, sender.apply(pub))))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private List<Publication> createSamplePublications() {
         return IntStream.range(0, NUMBER_OF_PUBLICATIONS).boxed()
-                   .map(attempt(i -> createPublication()))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .map(attempt(i -> createPublication()))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private Environment mockEnvironment() {

@@ -16,6 +16,7 @@ public class UserInstance implements JsonSerializable {
         this.organizationUri = organizationUri;
     }
 
+
     public URI getOrganizationUri() {
         return organizationUri;
     }

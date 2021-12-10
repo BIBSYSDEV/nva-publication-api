@@ -13,7 +13,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.github.javafaker.Faker;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
@@ -68,7 +67,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
         super.init();
         Clock clock = mockClock();
         messageService = new MessageService(client, clock);
-        var httpClient= new FakeHttpClient();
+        var httpClient = new FakeHttpClient();
         resourceService = new ResourceService(client, httpClient, clock);
     }
 
@@ -239,15 +238,15 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     private List<Message> filterBasedOnCustomerId(URI customerId, List<Message> allMessagesOfAllOwnersAndCustomers) {
         return allMessagesOfAllOwnersAndCustomers
-                   .stream()
-                   .filter(message -> message.getCustomerId().equals(customerId))
-                   .collect(Collectors.toList());
+            .stream()
+            .filter(message -> message.getCustomerId().equals(customerId))
+            .collect(Collectors.toList());
     }
 
     private MessageDto[] constructExpectedMessagesDtos(List<Message> insertedMessages) {
         return insertedMessages.stream()
-                   .map(MessageDto::fromMessage)
-                   .toArray(MessageDto[]::new);
+            .map(MessageDto::fromMessage)
+            .toArray(MessageDto[]::new);
     }
 
     private Publication constructExpectedPublication(Publication insertedPublication) {
@@ -257,11 +256,11 @@ public class MessageServiceTest extends ResourcesLocalTest {
                 .build();
 
         return new Publication.Builder()
-                   .withIdentifier(insertedPublication.getIdentifier())
-                   .withOwner(insertedPublication.getOwner())
-                   .withPublisher(insertedPublication.getPublisher())
-                   .withEntityDescription(entityDescription)
-                   .build();
+            .withIdentifier(insertedPublication.getIdentifier())
+            .withOwner(insertedPublication.getOwner())
+            .withPublisher(insertedPublication.getPublisher())
+            .withEntityDescription(entityDescription)
+            .build();
     }
 
     private String randomString() {
@@ -276,10 +275,10 @@ public class MessageServiceTest extends ResourcesLocalTest {
         var publicationOfSomeOrg = PublicationGenerator.publicationWithoutIdentifier();
         var someOtherOrg = new Organization.Builder().withId(SOME_OTHER_ORG).build();
         var publicationOfDifferentOrg = publicationOfSomeOrg
-                                            .copy()
-                                            .withOwner(SOME_OTHER_OWNER)
-                                            .withPublisher(someOtherOrg)
-                                            .build();
+            .copy()
+            .withOwner(SOME_OTHER_OWNER)
+            .withPublisher(someOtherOrg)
+            .build();
         var newPublications = List.of(publicationOfSomeOrg, publicationOfDifferentOrg);
         return persistPublications(newPublications);
     }
@@ -300,16 +299,16 @@ public class MessageServiceTest extends ResourcesLocalTest {
     private List<Publication> createPublicationsOfDifferentOwnersInSameOrg() {
         var publicationOfSomeOwner = PublicationGenerator.publicationWithoutIdentifier();
         var publicationOfDifferentOwner = PublicationGenerator.publicationWithoutIdentifier()
-                                              .copy().withOwner(SOME_OTHER_OWNER).build();
+            .copy().withOwner(SOME_OTHER_OWNER).build();
         var newPublications = List.of(publicationOfSomeOwner, publicationOfDifferentOwner);
         return persistPublications(newPublications);
     }
 
     private List<Publication> persistPublications(List<Publication> newPublications) {
         return newPublications.stream()
-                   .map(attempt(pub -> resourceService.createPublication(pub)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .map(attempt(pub -> resourceService.createPublication(pub)))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private Supplier<SortableIdentifier> duplicateIdentifierSupplier() {
@@ -323,11 +322,11 @@ public class MessageServiceTest extends ResourcesLocalTest {
     private List<Message> insertSampleMessages(Publication publication) {
         var publicationOwner = extractOwner(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
-                   .map(ignoredValue -> randomString())
-                   .map(message -> createSimpleMessage(publication, message))
-                   .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
-                   .map(Try::orElseThrow)
-                   .collect(Collectors.toList());
+            .map(ignoredValue -> randomString())
+            .map(message -> createSimpleMessage(publication, message))
+            .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
+            .map(Try::orElseThrow)
+            .collect(Collectors.toList());
     }
 
     private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier)

@@ -95,8 +95,8 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
         UserInstance userInstance = createUserInstance(emptyPublication);
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
 
-        DoiRequest actualDoiRequest = doiRequestService.getDoiRequestByResourceIdentifier(userInstance,
-                                                                                          emptyPublication.getIdentifier());
+        DoiRequest actualDoiRequest =
+            doiRequestService.getDoiRequestByResourceIdentifier(userInstance,emptyPublication.getIdentifier());
 
         DoiRequest expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
 

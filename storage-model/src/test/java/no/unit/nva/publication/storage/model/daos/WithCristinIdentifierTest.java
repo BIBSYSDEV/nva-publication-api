@@ -25,8 +25,7 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId()
-            throws MalformedURLException, InvalidIssnException {
+    public void dynamoClientReturnsResourceWithMatchingCristinIdWhenSearchingResourcesByCristinId() {
         ResourceDao dao = sampleResourceDao();
         client.putItem(toPutItemRequest(dao));
         WithCristinIdentifier actualResult = queryDbFindByCristinIdentifier(dao);
@@ -35,8 +34,7 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void dynamoClientReturnsOnlyResourcesWithCristinIdWhenSearchingResourcesByCristinId()
-            throws MalformedURLException, InvalidIssnException {
+    public void dynamoClientReturnsOnlyResourcesWithCristinIdWhenSearchingResourcesByCristinId() {
         ResourceDao daoWithCristinId = sampleResourceDao();
         ResourceDao daoWithoutCristinId = createResourceDaoWithoutCristinIdentifier();
         client.putItem(toPutItemRequest(daoWithCristinId));
@@ -58,8 +56,7 @@ public class WithCristinIdentifierTest extends ResourcesLocalTest {
                 .collect(SingletonCollector.collectOrElse(null));
     }
 
-    protected static ResourceDao createResourceDaoWithoutCristinIdentifier()
-            throws MalformedURLException, InvalidIssnException {
+    protected static ResourceDao createResourceDaoWithoutCristinIdentifier() {
         return new ResourceDao(sampleResourceDao()
                 .getData()
                 .copy()

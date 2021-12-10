@@ -90,7 +90,8 @@ public class ResourceService extends ServiceWithTransactions {
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
         var affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
-        attempt(() -> affiliationService.fetchAffiliation("make PMD happy")).orElseThrow();
+        //Will be removed in the next PR
+        attempt(() -> affiliationService.fetchAffiliation("For PMD to stop complaining"));
     }
 
     public ResourceService(AmazonDynamoDB client,

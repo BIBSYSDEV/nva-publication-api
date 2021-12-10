@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -32,7 +31,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         "delete/delete_draft_publication_without_doi.json";
     public static final String DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON =
         "delete/delete_draft_publication_with_doi.json";
-    
+
     private DeleteDraftPublicationHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
@@ -41,7 +40,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        HttpClient httpClient= new FakeHttpClient();
+        HttpClient httpClient = new FakeHttpClient();
         resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
@@ -58,7 +57,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         NotFoundException exception = assertThrows(NotFoundException.class,
-            () -> resourceService.getPublicationByIdentifier(publication.getIdentifier()));
+                                                   () -> resourceService.getPublicationByIdentifier(
+                                                       publication.getIdentifier()));
         String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + publication.getIdentifier();
         assertThat(exception.getMessage(), equalTo(message));
     }
@@ -70,7 +70,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
             DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
+                                                  () -> handler.handleRequest(inputStream, outputStream, context));
         String message = ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE + identifier;
         assertThat(exception.getMessage(), containsString(message));
     }
@@ -82,7 +82,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
             DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
+                                                  () -> handler.handleRequest(inputStream, outputStream, context));
         String message = DeleteDraftPublicationHandler.DELETE_WITH_DOI_ERROR;
         assertThat(exception.getMessage(), equalTo(message));
     }
