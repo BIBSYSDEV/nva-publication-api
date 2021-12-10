@@ -36,29 +36,29 @@ class AffiliationSelectionServiceTest {
     void shouldReturnTheAffiliationUriWhenUserHasOnlyOneAffiliation()
         throws IOException, InterruptedException, ApiGatewayException {
         var affiliationService = newAffiliationService(mockResponseWithOneAffiliationForUser());
-        URI affiliationUri = affiliationService.fetchAffiliation(feideId).orElseThrow();
+        var affiliationUri = affiliationService.fetchAffiliation(feideId).orElseThrow();
         assertThat(affiliationUri, is(equalTo(singleOrgUnitId)));
     }
 
     @Test
     void shouldReturnAffiliationSuchThatThereIsNoOtherAffiliationThatProvidesMoreInformationForSameInstitution()
         throws IOException, InterruptedException, ApiGatewayException {
-        URI leastSpecificUnitId = URI.create("https://api.cristin.no/v2/institutions/194");
-        URI midSpecificUnitId = URI.create("https://api.cristin.no/v2/units/194.63.0.0");
-        URI mostSpecificUnitId = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
+        var leastSpecificUnitId = URI.create("https://api.cristin.no/v2/institutions/194");
+        var midSpecificUnitId = URI.create("https://api.cristin.no/v2/units/194.63.0.0");
+        var mostSpecificUnitId = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
         var affiliationService =
             newAffiliationService(mockResponseWithAffiliations(midSpecificUnitId,
                                                                leastSpecificUnitId,
                                                                mostSpecificUnitId)
             );
-        URI actualAffiliation = affiliationService.fetchAffiliation(feideId).orElseThrow();
+        var actualAffiliation = affiliationService.fetchAffiliation(feideId).orElseThrow();
         assertThat(actualAffiliation, is(equalTo(mostSpecificUnitId)));
     }
 
     @Test
     void shouldReturnInstitutionAffiliationIfThatIsTheOnlyPresentOne()
         throws IOException, InterruptedException, ApiGatewayException {
-        URI expectedUri = URI.create("https://api.cristin.no/v2/institutions/194");
+        var expectedUri = URI.create("https://api.cristin.no/v2/institutions/194");
         var affiliationService =
             newAffiliationService(mockResponseWithAffiliations(expectedUri)
             );
