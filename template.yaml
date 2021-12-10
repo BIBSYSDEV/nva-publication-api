@@ -5,15 +5,6 @@ Description: >
 
   SAM Template for NVA Publication Service
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: NvaPublicationApi
-    Description: NVA publication API
-    Author: Unit
-    SpdxLicenseId: MIT
-    LicenseUrl: LICENSE
-    Labels: [ '${CODEBUILD_RESOLVED_SOURCE_VERSION}', '${GIT_REPO}', '@${BUILD_TIMESTAMP}' ]
-
 Globals:
   Function:
     Timeout: 20
