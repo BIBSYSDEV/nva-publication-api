@@ -11,9 +11,10 @@ import java.util.stream.Stream;
 import nva.commons.core.paths.UriWrapper;
 
 /**
- * Class for encapsulating the logic of selecting the most appropriate affiliation for a resource owner.
- * Given a Set of OrgUnitIds (URIs), the class finds the most specific one per institution and
- * selects a random one.
+ * Class for encapsulating the logic of selecting the most appropriate affiliation for a resource owner. Given a Set of
+ * OrgUnitIds (URIs), the class creates a set of candidate affiliations by selecting the most specific affiliation for
+ * each institution. Then for the lack of a better criterion it selects a random affiliation out of the candidate
+ * affiliations.
  */
 public class OrgUnitId implements Comparable<OrgUnitId> {
 
