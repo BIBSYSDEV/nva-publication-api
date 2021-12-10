@@ -1,6 +1,8 @@
 package no.unit.nva.publication.external.services;
 
+import static no.unit.nva.publication.TestingUtils.createRandomOrgUnitId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -17,12 +19,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,19 +30,21 @@ import org.zalando.problem.Status;
 
 class PersonApiClientTest {
 
-    private static final String SUCCESSFUL_NON_EMPTY_RESPONSE =
-        IoUtils.stringFromResources(Path.of("personApiClient", "successful_non_empty_response.json"));
-    private static final String SUCCESSFUL_EMPTY_RESPONSE =
-        IoUtils.stringFromResources(Path.of("personApiClient", "successful_empty_response.json"));
     private PersonApiClient personApiClient;
     private String errorMessage;
     private String inputFeideId;
     private int randomFailureCode;
+    private URI mockOrgUnitId;
+    private String successfulNonEmptyResponse;
+    private String successfulEmptyResponse;
 
     @BeforeEach
     public void init() {
         inputFeideId = randomString();
         errorMessage = randomString();
+        mockOrgUnitId = createRandomOrgUnitId();
+        successfulNonEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId, mockOrgUnitId).toString();
+        successfulEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId).toString();
         randomFailureCode = randomNonSuccessfulStatusCode();
     }
 
@@ -51,7 +53,7 @@ class PersonApiClientTest {
         throws IOException, InterruptedException, ApiGatewayException {
         personApiClient = new PersonApiClient(createMockHttpClientReturningResponse(successfulNonEmptyResponse()));
         var userAffiliations = personApiClient.fetchAffiliationsForUser(inputFeideId);
-        assertThat(userAffiliations, is(hasItems(URI.create("https://api.cristin.no/v2/units/194.63.10.0"))));
+        assertThat(userAffiliations, is(hasItems(mockOrgUnitId)));
     }
 
     @Test
@@ -69,6 +71,7 @@ class PersonApiClientTest {
         assertThrows(BadGatewayException.class, () -> personApiClient.fetchAffiliationsForUser(inputFeideId));
         assertThat(logger.getMessages(), containsString(errorMessage));
     }
+
 
     @SuppressWarnings("unchecked")
     private HttpResponse<String> badRequestResponse() {
@@ -95,11 +98,11 @@ class PersonApiClientTest {
     }
 
     private HttpResponse<String> successfulNonEmptyResponse() {
-        return mockSuccessfulResponse(SUCCESSFUL_NON_EMPTY_RESPONSE);
+        return mockSuccessfulResponse(successfulNonEmptyResponse);
     }
 
     private HttpResponse<String> successfulEmptyResponse() {
-        return mockSuccessfulResponse(SUCCESSFUL_EMPTY_RESPONSE);
+        return mockSuccessfulResponse(successfulEmptyResponse);
     }
 
     @SuppressWarnings("unchecked")
