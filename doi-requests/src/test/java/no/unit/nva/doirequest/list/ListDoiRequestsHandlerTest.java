@@ -37,7 +37,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -57,7 +57,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class ListDoiRequestsHandlerTest extends ResourcesDynamoDbLocalTest {
+public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
 
     public static final String SOME_CURATOR = "SomeCurator";
     public static final String SOME_OTHER_OWNER = "someOther@owner.no";

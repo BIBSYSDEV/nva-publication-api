@@ -14,14 +14,14 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class MessageDaoTest extends ResourcesDynamoDbLocalTest {
+public class MessageDaoTest extends ResourcesLocalTest {
 
     public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
     public static final String SAMPLE_SENDER_USERNAME = "some@sender";

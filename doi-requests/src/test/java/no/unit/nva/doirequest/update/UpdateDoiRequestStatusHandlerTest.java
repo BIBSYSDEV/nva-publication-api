@@ -26,7 +26,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -42,7 +42,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class UpdateDoiRequestStatusHandlerTest extends ResourcesDynamoDbLocalTest {
+public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
     public static final String SOME_CURATOR = "some@curator.org";
     public static final String INVALID_IDENTIFIER = "invalidIdentifier";
