@@ -27,7 +27,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
+public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     public static final String HTTP_PATH_SEPARATOR = "/";
     public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";

@@ -32,14 +32,14 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.stream.Stream;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.WithStatus;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class DaoTest extends ResourcesDynamoDbLocalTest {
+public class DaoTest extends ResourcesLocalTest {
 
     @BeforeEach
     public void init() {

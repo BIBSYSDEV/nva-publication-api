@@ -33,12 +33,12 @@ import nva.commons.core.JacocoGenerated;
 import org.junit.jupiter.api.AfterEach;
 
 @JacocoGenerated
-public class ResourcesDynamoDbLocalTest {
+public class ResourcesLocalTest {
     
     public static final ScalarAttributeType STRING_TYPE = ScalarAttributeType.S;
     protected AmazonDynamoDB client;
     
-    public ResourcesDynamoDbLocalTest() {
+    public ResourcesLocalTest() {
     
     }
     

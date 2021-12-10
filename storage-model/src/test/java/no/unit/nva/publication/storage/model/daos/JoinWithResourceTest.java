@@ -15,11 +15,11 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.model.exceptions.InvalidIssnException;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class JoinWithResourceTest extends ResourcesDynamoDbLocalTest {
+public class JoinWithResourceTest extends ResourcesLocalTest {
 
     @BeforeEach
     public void init() {

@@ -18,7 +18,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
-public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
+public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final String WILDCARD = "*";

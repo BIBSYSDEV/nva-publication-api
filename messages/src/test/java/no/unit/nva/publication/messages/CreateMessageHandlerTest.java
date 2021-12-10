@@ -31,7 +31,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
+import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -49,7 +49,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.zalando.problem.Problem;
 
-public class CreateMessageHandlerTest extends ResourcesDynamoDbLocalTest {
+public class CreateMessageHandlerTest extends ResourcesLocalTest {
 
     public static final Faker FAKER = Faker.instance();
     public static final String SOME_CURATOR = "some@curator";
