@@ -1,5 +1,6 @@
 package no.unit.nva.publication.update;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
@@ -35,6 +36,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public UpdatePublicationHandler() {
         this(new ResourceService(
                  AmazonDynamoDBClientBuilder.defaultClient(),
+                 EXTERNAL_SERVICES_HTTP_CLIENT,
                  Clock.systemDefaultZone()),
              new Environment());
     }

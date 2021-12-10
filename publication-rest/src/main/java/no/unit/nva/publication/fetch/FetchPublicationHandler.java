@@ -1,5 +1,6 @@
 package no.unit.nva.publication.fetch;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -24,8 +25,7 @@ import nva.commons.core.JacocoGenerated;
 
 public class FetchPublicationHandler extends ApiGatewayHandler<Void, PublicationResponse> {
 
-    public static final String PUBLICATION_CONTEXT_JSON = "publicationContext.json";
-
+    public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
     private final DoiRequestService doiRequestService;
 
@@ -73,12 +73,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, Publication
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client) {
-        return new DoiRequestService(client, Clock.systemDefaultZone());
+        return new DoiRequestService(client, EXTERNAL_SERVICES_HTTP_CLIENT, CLOCK);
     }
 
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client, Clock.systemDefaultZone());
+        return new ResourceService(client, EXTERNAL_SERVICES_HTTP_CLIENT, CLOCK);
     }
 
     private DoiRequest fetchDoiRequest(Publication publication) {

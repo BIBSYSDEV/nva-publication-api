@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -9,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -17,6 +19,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +41,8 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesDynamoDbLocalTes
     @BeforeEach
     public void setUp() {
         super.init();
-        resourceService = new ResourceService(client,Clock.systemDefaultZone());
+        HttpClient httpClient= new FakeHttpClient();
+        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);

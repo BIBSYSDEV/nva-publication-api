@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -25,6 +26,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
     public static final String EVENT_BUS_NAME =
         PublicationEventsConfig.ENVIRONMENT.readEnv("EVENT_BUS_NAME");
+
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;
     private final Logger logger = LoggerFactory.getLogger(EventBasedBatchScanHandler.class);
@@ -62,7 +64,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
 
     @JacocoGenerated
     private static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(), Clock.systemDefaultZone());
+        return new ResourceService(defaultDynamoDbClient(), EXTERNAL_SERVICES_HTTP_CLIENT, Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

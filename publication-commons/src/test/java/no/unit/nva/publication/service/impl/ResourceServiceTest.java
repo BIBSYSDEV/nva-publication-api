@@ -43,6 +43,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -62,7 +63,6 @@ import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidPublicationException;
@@ -76,6 +76,7 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
@@ -119,13 +120,15 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     private Clock clock;
     private DoiRequestService doiRequestService;
     private MessageService messageService;
+    private HttpClient httpClient;
 
     @BeforeEach
     public void init() {
         super.init();
         Clock clock = setupClock();
-        resourceService = new ResourceService(client, clock);
-        doiRequestService = new DoiRequestService(client, clock);
+        httpClient = new FakeHttpClient();
+        resourceService = new ResourceService(client, httpClient, clock);
+        doiRequestService = new DoiRequestService(client, httpClient, clock);
         messageService = new MessageService(client, clock, SortableIdentifier::next);
     }
 
@@ -349,7 +352,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(expectedCause);
 
-        ResourceService failingService = new ResourceService(client, clock);
+        ResourceService failingService = new ResourceService(client,httpClient, clock);
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> failingService.createPublication(resource);
@@ -375,7 +378,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .thenThrow(exptedMessage);
         Publication resource = publicationWithIdentifier();
 
-        ResourceService failingResourceService = new ResourceService(client, clock);
+        ResourceService failingResourceService = new ResourceService(client,httpClient, clock);
 
         Executable action = () -> failingResourceService.getPublication(resource);
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -408,7 +411,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        ResourceService failingResourceService = new ResourceService(client, clock);
+        ResourceService failingResourceService = new ResourceService(client,httpClient, clock);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
@@ -424,7 +427,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
             .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        ResourceService failingResourceService = new ResourceService(mockClient,httpClient, clock);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -439,7 +442,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
         when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient, clock);
+        ResourceService failingResourceService = new ResourceService(mockClient,httpClient, clock);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -665,7 +668,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws TransactionFailedException, BadRequestException, NotFoundException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client,httpClient, clock);
         Publication resource = createSampleResourceWithDoi();
         DoiRequest originalDoiRequest = createDoiRequest(resource);
 
@@ -686,7 +689,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void updateResourceUpdatesAllFieldsInDoiRequest()
         throws TransactionFailedException, BadRequestException, NotFoundException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client,httpClient, clock);
         Publication emptyPublication =
             resourceService.createPublication(PublicationGenerator.generateEmptyPublication());
 
@@ -716,7 +719,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
     @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
         throws TransactionFailedException {
-        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client,httpClient, clock);
         Publication resource = createSampleResourceWithDoi();
         UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getPublisher().getId());
 
@@ -932,7 +935,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
         when(client.getItem(any(GetItemRequest.class)))
             .thenReturn(new GetItemResult().withItem(Collections.emptyMap()));
 
-        return new ResourceService(client, clock);
+        return new ResourceService(client,httpClient, clock);
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
@@ -1057,7 +1060,7 @@ public class ResourceServiceTest extends ResourcesDynamoDbLocalTest {
 
     private ResourceService resourceServiceProvidingDuplicateIdentifiers() {
         Supplier<SortableIdentifier> duplicateIdSupplier = () -> SOME_IDENTIFIER;
-        return new ResourceService(client, clock, duplicateIdSupplier);
+        return new ResourceService(client, httpClient, clock, duplicateIdSupplier);
     }
 
     private FileSet emptyFileSet() {

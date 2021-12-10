@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
@@ -42,6 +43,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -80,8 +82,9 @@ public class FetchPublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
+        HttpClient httpClient = new FakeHttpClient();
+        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client,httpClient, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, doiRequestService, environment);

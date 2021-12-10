@@ -20,6 +20,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,9 +38,9 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -76,7 +77,10 @@ public class ResourceService extends ServiceWithTransactions {
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
 
-    public ResourceService(AmazonDynamoDB client, Clock clock, Supplier<SortableIdentifier> identifierSupplier) {
+    public ResourceService(AmazonDynamoDB client,
+                           HttpClient externalServicesHttpClient,
+                           Clock clock,
+                           Supplier<SortableIdentifier> identifierSupplier) {
         super();
         tableName = RESOURCES_TABLE_NAME;
         this.client = client;
@@ -85,10 +89,14 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
+        var affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
+        attempt(() -> affiliationService.fetchAffiliation("make PMD happy")).orElseThrow();
     }
 
-    public ResourceService(AmazonDynamoDB client, Clock clock) {
-        this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
+    public ResourceService(AmazonDynamoDB client,
+                           HttpClient externalServicesHttpClient,
+                           Clock clock) {
+        this(client, externalServicesHttpClient, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     public Publication createPublication(Publication inputData) throws TransactionFailedException {

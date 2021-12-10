@@ -14,7 +14,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import no.unit.nva.publication.external.services.PersonApiClient;
 import no.unit.nva.publication.external.services.PersonApiResponseBodyMock;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;

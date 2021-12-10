@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +40,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
@@ -71,6 +73,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
 
     private Publication publication;
     private Environment environment;
+    private HttpClient httpClient;
 
     /**
      * Set up environment.
@@ -82,7 +85,8 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        httpClient = new FakeHttpClient();
+        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
@@ -264,7 +268,7 @@ public class UpdatePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        return new ResourceService(client, Clock.systemDefaultZone()) {
+        return new ResourceService(client,httpClient, Clock.systemDefaultZone()) {
             @Override
             public Publication updatePublication(Publication publicationUpdate) {
                 throw new RuntimeException(SOME_MESSAGE);

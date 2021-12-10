@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -35,6 +36,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -68,8 +70,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesDynamoDbLocalTest {
     public void initialize() {
         init();
         setupClock();
-        resourceService = new ResourceService(client, mockClock);
-        doiRequestService = new DoiRequestService(client, mockClock);
+        var httpClient = new FakeHttpClient();
+        resourceService = new ResourceService(client, httpClient, mockClock);
+        doiRequestService = new DoiRequestService(client,httpClient, mockClock);
         messageService = new MessageService(client, mockClock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);

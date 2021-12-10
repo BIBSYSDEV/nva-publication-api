@@ -15,12 +15,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.ResourcesDynamoDbLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -48,7 +50,8 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
     public void setUp() {
         init();
         prepareEnvironment();
-        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        var httpClient = new FakeHttpClient();
+        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
@@ -158,5 +161,4 @@ public class DeletePublicationHandlerTest extends ResourcesDynamoDbLocalTest {
         UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
-
 }

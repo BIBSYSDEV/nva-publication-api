@@ -1,5 +1,6 @@
 package no.unit.nva.publication.messages;
 
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +44,7 @@ import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -75,7 +78,8 @@ public class ListMessagesHandlerTest extends ResourcesDynamoDbLocalTest {
     public void init() {
         super.init();
         output = new ByteArrayOutputStream();
-        resourceService = new ResourceService(client, Clock.systemDefaultZone());
+        HttpClient httpClient = new FakeHttpClient();
+        resourceService = new ResourceService(client,httpClient ,Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);

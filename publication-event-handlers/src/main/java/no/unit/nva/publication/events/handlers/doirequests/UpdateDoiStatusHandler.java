@@ -3,6 +3,7 @@ package no.unit.nva.publication.events.handlers.doirequests;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.http.HttpClient;
 import java.time.Clock;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -40,6 +41,7 @@ public class UpdateDoiStatusHandler extends DestinationsEventBridgeEventHandler<
     private static ResourceService defaultResourceService() {
         return new ResourceService(
             AmazonDynamoDBClientBuilder.defaultClient(),
+            HttpClient.newBuilder().build(),
             Clock.systemDefaultZone());
     }
 
