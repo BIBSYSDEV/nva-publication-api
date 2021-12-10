@@ -1,6 +1,5 @@
 package no.unit.nva.publication.external.services;
 
-import static no.unit.nva.publication.TestingUtils.createOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.createRandomOrgUnitId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
@@ -22,7 +21,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadGatewayException;
 import nva.commons.logutils.LogUtils;
@@ -36,7 +34,7 @@ class PersonApiClientTest {
     private String errorMessage;
     private String inputFeideId;
     private int randomFailureCode;
-    private URI randomOrgUnitId;
+    private URI mockOrgUnitId;
     private String successfulNonEmptyResponse;
     private String successfulEmptyResponse;
 
@@ -44,8 +42,8 @@ class PersonApiClientTest {
     public void init() {
         inputFeideId = randomString();
         errorMessage = randomString();
-        randomOrgUnitId = createRandomOrgUnitId();
-        successfulNonEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId, randomOrgUnitId).toString();
+        mockOrgUnitId = createRandomOrgUnitId();
+        successfulNonEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId, mockOrgUnitId).toString();
         successfulEmptyResponse = PersonApiResponseBodyMock.createResponse(inputFeideId).toString();
         randomFailureCode = randomNonSuccessfulStatusCode();
     }
@@ -55,7 +53,7 @@ class PersonApiClientTest {
         throws IOException, InterruptedException, ApiGatewayException {
         personApiClient = new PersonApiClient(createMockHttpClientReturningResponse(successfulNonEmptyResponse()));
         var userAffiliations = personApiClient.fetchAffiliationsForUser(inputFeideId);
-        assertThat(userAffiliations, is(hasItems(randomOrgUnitId)));
+        assertThat(userAffiliations, is(hasItems(mockOrgUnitId)));
     }
 
     @Test
