@@ -173,8 +173,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public List<DataEntry> refreshResources(List<DataEntry> dataEntries) {
-        final List<DataEntry> refreshedEntries = refreshRowVersion(dataEntries);
-        List<WriteRequest> writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
+        final var refreshedEntries = refreshAndMigrate(dataEntries);
+        var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
         return refreshedEntries;
     }
@@ -209,6 +209,13 @@ public class ResourceService extends ServiceWithTransactions {
         return updateResourceService.updatePublication(resourceUpdate);
     }
 
+    // update this method according to current needs.
+    public DataEntry migrate(DataEntry dataEntry) throws ApiGatewayException {
+        return dataEntry instanceof Resource
+                   ? migrateResource((Resource) dataEntry)
+                   : dataEntry;
+    }
+
     @Override
     protected String getTableName() {
         return tableName;
@@ -222,6 +229,15 @@ public class ResourceService extends ServiceWithTransactions {
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
+    }
+
+    private List<DataEntry> refreshAndMigrate(List<DataEntry> dataEntries) {
+        return dataEntries
+            .stream()
+            .map(attempt(this::migrate))
+            .map(Try::orElseThrow)
+            .map(DataEntry::refreshRowVersion)
+            .collect(Collectors.toList());
     }
 
     private Organization createOrganization(UserInstance userInstance) {
@@ -239,11 +255,12 @@ public class ResourceService extends ServiceWithTransactions {
         return nonNull(scanResult.getLastEvaluatedKey()) && !scanResult.getLastEvaluatedKey().isEmpty();
     }
 
-    private List<DataEntry> refreshRowVersion(List<DataEntry> dataEntries) {
-        return dataEntries
-            .stream()
-            .map(DataEntry::refreshRowVersion)
-            .collect(Collectors.toList());
+    // change this method depending on the current migration needs.
+    private Resource migrateResource(Resource dataEntry) throws ApiGatewayException {
+        var userInstance = new UserInstance(dataEntry.getOwner(), dataEntry.getPublisher().getId());
+        var resourceOwner = createResourceOwner(userInstance);
+        dataEntry.setResourceOwner(resourceOwner);
+        return dataEntry;
     }
 
     private void writeToS3InBatches(List<WriteRequest> writeRequests) {
