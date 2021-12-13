@@ -3,6 +3,7 @@ package no.unit.nva.publication.messages;
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -31,7 +32,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
@@ -43,6 +43,7 @@ import no.unit.nva.publication.service.impl.MessageCollection;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.service.impl.ResourceServiceUtils;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
@@ -85,7 +86,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        Environment environment = mockEnvironment();
+        var environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
     }
 
@@ -100,38 +101,37 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     public void listMessagesReturnsMessagesPerPublicationsForUser()
         throws IOException {
-        List<Message> savedMessages = insertSampleMessagesForSingleOwner();
-        UserInstance owner = extractPublicationOwner(savedMessages.get(0));
+        var savedMessages = insertSampleMessagesForSingleOwner();
+        var owner = extractPublicationOwner(savedMessages.get(0));
 
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
         GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
+        var responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
-
         assertThatResourceDescriptionsContainIdentifierAndTitle(savedMessages, responseObjects);
     }
 
     @Test
     public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
-        UserInstance userInstance = new UserInstance(randomString(), randomUri());
-        List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
-        List<Message> messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
-        List<Message> moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
-        List<Message> allMessages = new ArrayList<>();
+        var userInstance = new UserInstance(randomString(), randomUri());
+        var publications = createSamplePublicationsForSingleOwner(userInstance);
+        var messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
+        var moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
+        var allMessages = new ArrayList<Message>();
         allMessages.addAll(messages);
         allMessages.addAll(moreMessages);
 
-        UserInstance owner = extractPublicationOwner(allMessages.get(0));
+        var owner = extractPublicationOwner(allMessages.get(0));
 
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
         GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceConversation[] responseObjects = response.getBodyObject(ResourceConversation[].class);
+        var responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
         assertThatResponseObjectsAreOrderedByOldestMessage(responseObjects);
@@ -140,19 +140,20 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     public void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
         throws IOException {
-        List<Publication> publications = createPublicationsOfDifferentOwners();
-        final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
+        var publications = createPublicationsOfDifferentOwners();
+        final var messages =
+            createSampleMessagesFromPublications(publications,ResourceServiceUtils::extractUserInstance);
 
-        final ResourceConversation[] expectedResponse = constructExpectedResponse(messages);
+        final var expectedResponse = constructExpectedResponse(messages);
 
-        URI orgURI = messages.get(0).getCustomerId();
-        UserInstance curator = someCurator(orgURI);
+        var orgURI = messages.get(0).getCustomerId();
+        var curator = someCurator(orgURI);
 
         input = defaultCuratorRequest(curator.getUserIdentifier(), curator.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
         GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
+        var body = response.getBodyObject(ResourceConversation[].class);
 
         assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
     }
@@ -160,17 +161,18 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     public void listMessagesReturnsEmptyListWhenUserIsNeitherCreatorOrCurator()
         throws IOException {
-        List<Publication> publications = createPublicationsOfDifferentOwners();
-        final List<Message> messages = createSampleMessagesFromPublications(publications, this::theOwner);
+        var publications = createPublicationsOfDifferentOwners();
+        final var messages =
+            createSampleMessagesFromPublications(publications,ResourceServiceUtils::extractUserInstance);
 
-        URI orgURI = messages.get(0).getCustomerId();
-        UserInstance curator = someCurator(orgURI);
+        var orgURI = messages.get(0).getCustomerId();
+        var curator = someCurator(orgURI);
 
         input = userRequest(curator.getUserIdentifier(), curator.getOrganizationUri(), SOME_OTHER_ROLE);
         handler.handleRequest(input, output, CONTEXT);
 
         GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
-        ResourceConversation[] body = response.getBodyObject(ResourceConversation[].class);
+        var body = response.getBodyObject(ResourceConversation[].class);
 
         assertThat(Arrays.asList(body), is(empty()));
     }
@@ -185,7 +187,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceConversation[] constructExpectedResponse(List<Message> messages) {
-        List<ResourceConversation> conversations = messages.stream()
+        var conversations = messages.stream()
             .collect(Collectors.groupingBy(Message::getResourceIdentifier))
             .values()
             .stream()
@@ -194,12 +196,6 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
 
         return conversations.toArray(ResourceConversation[]::new);
-    }
-
-    private UserInstance theOwner(Publication publication) {
-        String owner = publication.getOwner();
-        URI customerId = publication.getPublisher().getId();
-        return new UserInstance(owner, customerId);
     }
 
     private void assertThatResponseObjectsAreOrderedByOldestMessage(ResourceConversation[] responseObjects) {
@@ -375,13 +371,10 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private Message createMessage(Publication publication, UserInstance sender)
         throws TransactionFailedException, NotFoundException {
-        SortableIdentifier messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
+        var messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
         return messageService.getMessage(extractUserInstance(publication), messageIdentifier);
     }
 
-    private String randomString() {
-        return FAKER.lorem().sentence();
-    }
 
     private InputStream sampleListRequest() throws JsonProcessingException {
         return defaultUserRequest(SAMPLE_USER, SOME_ORG);
