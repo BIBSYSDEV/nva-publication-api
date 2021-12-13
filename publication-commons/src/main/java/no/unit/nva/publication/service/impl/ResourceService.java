@@ -107,8 +107,7 @@ public class ResourceService extends ServiceWithTransactions {
         throws ApiGatewayException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
-        ResourceOwner resourceOwner = createResourceOwner(userInstance);
-        newResource.setResourceOwner(resourceOwner);
+        newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
@@ -116,8 +115,6 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setStatus(PublicationStatus.DRAFT);
         return insertResource(newResource);
     }
-
-
 
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
         throws TransactionFailedException {
@@ -179,10 +176,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     public List<DataEntry> refreshResources(List<DataEntry> dataEntries) {
         final List<DataEntry> refreshedEntries = refreshRowVersion(dataEntries);
-
         List<WriteRequest> writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
-
         return refreshedEntries;
     }
 

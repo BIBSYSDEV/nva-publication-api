@@ -265,14 +265,14 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
         resourceService.publishPublication(owner, publication.getIdentifier());
-//        SortableIdentifier doiRequestIdentifier = doiRequestService
-//            .createDoiRequest(owner, publication.getIdentifier());
-//
-//        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
-//        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewDoiRequestStatus);
-//
-//        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(owner, doiRequestIdentifier);
-//        assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
+        SortableIdentifier doiRequestIdentifier = doiRequestService
+            .createDoiRequest(owner, publication.getIdentifier());
+
+        DoiRequestStatus expectedNewDoiRequestStatus = DoiRequestStatus.APPROVED;
+        doiRequestService.updateDoiRequest(owner, publication.getIdentifier(), expectedNewDoiRequestStatus);
+
+        DoiRequest updatedDoiRequest = doiRequestService.getDoiRequest(owner, doiRequestIdentifier);
+        assertThat(updatedDoiRequest.getModifiedDate(), is(equalTo(DOI_REQUEST_UPDATE_TIME)));
     }
 
     @Test
