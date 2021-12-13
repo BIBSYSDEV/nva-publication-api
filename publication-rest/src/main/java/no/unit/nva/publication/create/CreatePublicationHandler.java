@@ -7,13 +7,13 @@ import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -61,9 +61,11 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
 
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
-        Publication newPublication = input.toPublication();
-        Publication createdPublication = publicationService.createPublication(userInstance, newPublication);
+        var userInstance = RequestUtil.extractUserInstance(requestInfo);
+        var newPublication = Optional.ofNullable(input)
+            .map(CreatePublicationRequest::toPublication)
+            .orElseGet(Publication::new);
+        var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
@@ -84,5 +86,4 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             getLocation(identifier).toString())
         );
     }
-
 }
