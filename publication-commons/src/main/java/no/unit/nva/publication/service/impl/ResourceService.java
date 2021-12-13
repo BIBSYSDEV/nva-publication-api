@@ -92,7 +92,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
+        this.affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
         //Will be removed in the next PR
         attempt(() -> affiliationService.fetchAffiliation("For PMD to stop complaining"));
     }
@@ -107,11 +107,11 @@ public class ResourceService extends ServiceWithTransactions {
         throws ApiGatewayException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
-        newResource.setResourceOwner(createResourceOwner(userInstance));
         newResource.setIdentifier(identifierSupplier.get());
+        newResource.setResourceOwner(createResourceOwner(userInstance));
+        newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
-        newResource.setPublisher(createOrganization(userInstance));
         newResource.setStatus(PublicationStatus.DRAFT);
         return insertResource(newResource);
     }
