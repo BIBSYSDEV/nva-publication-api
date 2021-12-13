@@ -62,11 +62,11 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
 
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
-        Publication newPublication = Optional.ofNullable(input)
+        var userInstance = RequestUtil.extractUserInstance(requestInfo);
+        var newPublication = Optional.ofNullable(input)
             .map(CreatePublicationRequest::toPublication)
             .orElseGet(Publication::new);
-        Publication createdPublication = publicationService.createPublication(userInstance, newPublication);
+        var createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);

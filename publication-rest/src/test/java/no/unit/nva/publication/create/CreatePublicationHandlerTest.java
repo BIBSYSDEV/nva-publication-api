@@ -3,7 +3,6 @@ package no.unit.nva.publication.create;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
-import static no.unit.nva.publication.testing.TestHeaders.getResponseHeaders;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -16,16 +15,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
-import java.util.HashMap;
-import java.util.Map;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -40,7 +35,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
 import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -82,7 +76,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenDoesNotContainABodyRequestContainsEmptyResource()
         throws Exception {
-        InputStream inputStream = createPublicationRequest(null);
+        var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
@@ -93,7 +87,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
-        CreatePublicationRequest request = createEmptyPublicationRequest();
+        var request = createEmptyPublicationRequest();
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -109,11 +103,11 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void requestToHandlerReturnsResourceWithFilSetWhenRequestContainsFileSet() throws Exception {
-        FileSet filesetInCreationRequest = PublicationGenerator.randomPublication().getFileSet();
-        CreatePublicationRequest request = createEmptyPublicationRequest();
+        var filesetInCreationRequest = PublicationGenerator.randomPublication().getFileSet();
+        var request = createEmptyPublicationRequest();
         request.setFileSet(filesetInCreationRequest);
 
-        InputStream inputStream = createPublicationRequest(request);
+        var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
@@ -126,18 +120,18 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldSaveAllSuppliedInformationOfPublicationRequestExceptForInternalInformationDecidedByService()
         throws Exception {
-        CreatePublicationRequest request = CreatePublicationRequest.fromPublication(samplePublication);
-        InputStream inputStream = createPublicationRequest(request);
+        var request = CreatePublicationRequest.fromPublication(samplePublication);
+        var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
         GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
 
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
 
-        PublicationResponse expectedPublicationResponse =
+        var expectedPublicationResponse =
             constructResponseSettingFieldsThatAreNotCopiedByTheRequest(samplePublication, actualPublicationResponse);
 
-        Diff diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
+        var diff = JAVERS.compare(expectedPublicationResponse, actualPublicationResponse);
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
         assertThat(actualPublicationResponse.getPublisher(), is(equalTo(expectedPublicationResponse.getPublisher())));
         assertThat(diff.prettyPrint(), actualPublicationResponse, is(equalTo(expectedPublicationResponse)));
@@ -189,12 +183,6 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getOwner(), is(equalTo(testFeideId)));
         assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testFeideId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
-    }
-
-    private Map<String, String> getResponseHeadersWithLocation(SortableIdentifier identifier) {
-        Map<String, String> map = new HashMap<>(getResponseHeaders());
-        map.put(HttpHeaders.LOCATION, handler.getLocation(identifier).toString());
-        return map;
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
