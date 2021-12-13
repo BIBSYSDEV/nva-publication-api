@@ -7,7 +7,6 @@ import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
-import lombok.SneakyThrows;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -17,6 +16,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -57,10 +57,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.apiHost = environment.readEnv(API_HOST);
     }
 
-    @SneakyThrows
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
-                                               Context context) {
+                                               Context context) throws ApiGatewayException {
 
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
         Publication newPublication = input.toPublication();
