@@ -40,12 +40,12 @@ public class ScanDatabaseRequest implements JsonSerializable {
 
     public int getPageSize() {
         return pageSizeWithinLimits(pageSize)
-            ?pageSize
-            : DEFAULT_PAGE_SIZE;
+                   ? pageSize
+                   : DEFAULT_PAGE_SIZE;
     }
 
     private boolean pageSizeWithinLimits(int pageSize) {
-        return pageSize>0 && pageSize <= MAX_PAGE_SIZE;
+        return pageSize > 0 && pageSize <= MAX_PAGE_SIZE;
     }
 
     public Map<String, AttributeValue> getStartMarker() {
