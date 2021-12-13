@@ -14,6 +14,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(TYPE)
@@ -36,9 +37,10 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
 
     }
 
-    public static ExpandedMessage create(Message message, ResourceExpansionService resourceExpansionService) {
+    public static ExpandedMessage create(Message message, ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
         ExpandedMessage expandedMessage = ExpandedMessage.fromMessage(message);
-        Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message.getOwner());
+        Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message);
         expandedMessage.setOrganizationIds(organizationIds);
         return expandedMessage;
     }

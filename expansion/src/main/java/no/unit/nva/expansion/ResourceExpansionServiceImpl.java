@@ -1,34 +1,41 @@
 package no.unit.nva.expansion;
 
+import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.util.HashSet;
+import java.net.http.HttpClient;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.restclients.IdentityClient;
-import no.unit.nva.expansion.restclients.InstitutionClient;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.ConnectedToResource;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
+import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     public static final String UNSUPPORTED_TYPE = "Expansion is not supported for type:";
-    private final IdentityClient identityClient;
-    private final InstitutionClient institutionClient;
 
-    public ResourceExpansionServiceImpl(IdentityClient identityClient, InstitutionClient institutionClient) {
-        this.identityClient = identityClient;
-        this.institutionClient = institutionClient;
+    private final ResourceService resourceService;
+    private final HttpClient externalServicesHttpClient;
+
+    public ResourceExpansionServiceImpl(HttpClient externalServicesHttpClient,
+                                        ResourceService resourceService) {
+        this.externalServicesHttpClient = externalServicesHttpClient;
+        this.resourceService = resourceService;
     }
 
     @Override
-    public ExpandedDataEntry expandEntry(DataEntry dataEntry) throws JsonProcessingException {
+    public ExpandedDataEntry expandEntry(DataEntry dataEntry) throws JsonProcessingException, NotFoundException {
         if (dataEntry instanceof Resource) {
             return ExpandedResource.fromPublication(dataEntry.toPublication());
         } else if (dataEntry instanceof DoiRequest) {
@@ -41,19 +48,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     @Override
-    public Set<URI> getOrganizationIds(String username) {
-        Set<URI> organizationIds = new HashSet<>();
-        Optional<URI> organizationId = getOrganizationId(username);
-        organizationId.ifPresent(uri -> organizationIds.addAll(institutionClient.getOrganizationIds(uri)));
-        return organizationIds;
-    }
-
-    private Optional<URI> getOrganizationId(String username) {
-        Optional<URI> customerId = identityClient.getCustomerId(username);
-        Optional<URI> cristinId = Optional.empty();
-        if (customerId.isPresent()) {
-            cristinId = identityClient.getCristinId(customerId.get());
+    public Set<URI> getOrganizationIds(DataEntry dataEntry) throws NotFoundException {
+        if (dataEntry instanceof ConnectedToResource) {
+            var resourceIdentifier = ((ConnectedToResource) dataEntry).getResourceIdentifier();
+            var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
+            return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
+                .stream()
+                .map(affiliation -> retrieveAllRelatedOrganizations(externalServicesHttpClient, affiliation))
+                .flatMap(Collection::stream)
+                .collect(Collectors.toSet());
         }
-        return cristinId;
+        return Collections.emptySet();
     }
 }

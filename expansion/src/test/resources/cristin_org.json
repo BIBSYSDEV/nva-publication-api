@@ -1,0 +1,397 @@
+{
+  "type": "Organization",
+  "@context": "https://api.dev.nva.aws.unit.no/cristin/organization",
+  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.10.0",
+  "name": {
+    "en": "Department of Computer Science",
+    "nb": "Institutt for datateknologi og informatikk"
+  },
+  "partOf": [
+    {
+      "type": "Organization",
+      "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0",
+      "name": {
+        "en": "Faculty of Information Technology and Electrical Engineering",
+        "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
+      },
+      "partOf": [
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0",
+          "name": {
+            "en": "Norwegian University of Science and Technology",
+            "nb": "Norges teknisk-naturvitenskapelige universitet",
+            "nn": "Noregs teknisk-naturvitskaplege universitet"
+          },
+          "hasPart": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.21.0",
+              "name": {
+                "en": "Vice-Rector Ålesund",
+                "nb": "Viserektor Ålesund"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0",
+              "name": {
+                "en": "Faculty of Information Technology and Electrical Engineering",
+                "nb": "Fakultet for informasjonsteknologi og elektroteknikk"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.15.0.0",
+              "name": {
+                "en": "Director of Finance and Property",
+                "nb": "Økonomi- og eiendomsdirektør"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.66.0.0",
+              "name": {
+                "en": "Faculty of Natural Sciences",
+                "nb": "Fakultet for naturvitenskap"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.16.0.0",
+              "name": {
+                "en": "Director, Organization",
+                "nb": "Organisasjonsdirektør"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.62.0.0",
+              "name": {
+                "en": "Faculty of Humanities",
+                "nb": "Det humanistiske fakultet"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.67.0.0",
+              "name": {
+                "en": "Faculty of Social and Educational Sciences",
+                "nb": "Fakultet for samfunns- og utdanningsvitenskap"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.31.0.0",
+              "name": {
+                "en": "NTNU University Museum",
+                "nb": "NTNU Vitenskapsmuseet"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.61.0.0",
+              "name": {
+                "en": "Faculty of Architecture and Design",
+                "nb": "Fakultet for arkitektur og design"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.60.0.0",
+              "name": {
+                "en": "Faculty of Economics and Management",
+                "nb": "Fakultet for økonomi"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.12.0.0",
+              "name": {
+                "en": "Rector",
+                "nb": "Rektor"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.65.0.0",
+              "name": {
+                "en": "Faculty of Medicine and Health Sciences",
+                "nb": "Fakultet for medisin og helsevitenskap"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.14.0.0",
+              "name": {
+                "en": "Pro-Rector for Education",
+                "nb": "Prorektor for utdanning"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.35.0.0",
+              "name": {
+                "nb": "Enheter under Kunnskapdepartementet og Utdanningdirektoratet"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.64.0.0",
+              "name": {
+                "en": "Faculty of Engineering",
+                "nb": "Fakultet for ingeniørvitenskap"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.13.0.0",
+              "name": {
+                "en": "Pro-Rector for Research",
+                "nb": "Prorektor for forskning"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.20.11.0",
+              "name": {
+                "en": "Vice-Rector Gjøvik",
+                "nb": "Viserektor Gjøvik"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            },
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.17.0.0",
+              "name": {
+                "en": "Pro-Rector for Innovation",
+                "nb": "Prorektor for nyskaping"
+              },
+              "partOf": [
+                {
+                  "type": "Organization",
+                  "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "hasPart": [
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.10.0",
+          "name": {
+            "en": "Department of Computer Science",
+            "nb": "Institutt for datateknologi og informatikk"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.25.0",
+          "name": {
+            "en": "Department of Engineering Cybernetics",
+            "nb": "Institutt for teknisk kybernetikk"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.35.0",
+          "name": {
+            "en": "Department of Electronic Systems",
+            "nb": "Institutt for elektroniske systemer"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.15.0",
+          "name": {
+            "en": "Department of Mathematical Sciences",
+            "nb": "Institutt for matematiske fag"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.55.0",
+          "name": {
+            "en": "Department of ICT and Natural Sciences",
+            "nb": "Institutt for IKT og realfag"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.1.0",
+          "name": {
+            "en": "IE Faculty Administration",
+            "nb": "IE fakultetsadministrasjon"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.20.0",
+          "name": {
+            "en": "Department of Electric Power Engineering",
+            "nb": "Institutt for elkraftteknikk"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        },
+        {
+          "type": "Organization",
+          "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.30.0",
+          "name": {
+            "en": "Department of Information Security and Communication Technology",
+            "nb": "Institutt for informasjonssikkerhet og kommunikasjonsteknologi"
+          },
+          "partOf": [
+            {
+              "type": "Organization",
+              "id": "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

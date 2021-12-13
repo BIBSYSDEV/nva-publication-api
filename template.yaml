@@ -688,6 +688,7 @@ Resources:
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: 'https'
           API_HOST: !Ref ApiDomain
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'

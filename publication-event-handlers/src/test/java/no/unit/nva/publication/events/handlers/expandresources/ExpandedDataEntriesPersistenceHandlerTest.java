@@ -31,12 +31,14 @@ import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -85,7 +87,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         assertThat(HELP_MESSAGE, indexDocument.getBody(), is(equalTo(update)));
     }
 
-    @ParameterizedTest(name = "should store entry containing the general type (index namde) of the persisted event")
+    @ParameterizedTest(name = "should store entry containing the general type (index name) of the persisted event")
     @MethodSource("entriesWithExpectedTypesProvider")
     void shouldStoreEntryContainingTheIndexNameForThePersistedEntry(
         PersistedEntryWithExpectedType expectedPersistedEntry)
@@ -98,12 +100,13 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
 
-    private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException {
+    private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException,
+                                                                              NotFoundException {
         return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
     }
 
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
-        throws JsonProcessingException {
+        throws JsonProcessingException, NotFoundException {
         return Stream.of(
             new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
             new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
@@ -115,13 +118,13 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return ExpandedResource.fromPublication(publication);
     }
 
-    private static ExpandedDoiRequest randomDoiRequest() {
+    private static ExpandedDoiRequest randomDoiRequest() throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
-    private static ExpandedMessage randomMessage() {
+    private static ExpandedMessage randomMessage() throws NotFoundException {
         var randomUser = new UserInstance(randomString(), randomUri());
         var publication = PublicationGenerator.randomPublication();
         var clock = Clock.systemDefaultZone();
@@ -132,7 +135,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     private static ResourceExpansionServiceImpl fakeExpansionService() {
         return new ResourceExpansionServiceImpl(null, null) {
             @Override
-            public Set<URI> getOrganizationIds(String username) {
+            public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());
             }
         };

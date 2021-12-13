@@ -1,5 +1,6 @@
 dependencies{
     implementation(project(':storage-model'))
+    implementation(project(':publication-commons'))
     implementation libs.nva.core
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
@@ -8,6 +9,7 @@ dependencies{
     implementation libs.nva.datamodel.testutils
     implementation libs.jsonld
     implementation libs.guava
+    implementation libs.aws.sdk.dynamodb
 
     testImplementation(project(':publication-testing'))
     testImplementation libs.nva.testutils
@@ -17,5 +19,5 @@ dependencies{
 test {
     environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
     environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
-    environment "API_HOST", "localhost"
+    environment "API_HOST", "api.dev.nva.aws.unit.no"
 }

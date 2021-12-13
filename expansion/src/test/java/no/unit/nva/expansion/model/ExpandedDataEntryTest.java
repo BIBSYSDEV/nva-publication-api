@@ -19,6 +19,7 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.Test;
 
 class ExpandedDataEntryTest {
@@ -36,7 +37,7 @@ class ExpandedDataEntryTest {
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithoutLossOfInformation() {
+    void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
@@ -44,7 +45,7 @@ class ExpandedDataEntryTest {
     }
 
     @Test
-    void shouldReturnExpandedMessageWithoutLossOfInformation() {
+    void shouldReturnExpandedMessageWithoutLossOfInformation() throws NotFoundException {
         var randomMessage = randomMessage();
         var expandedMessage = ExpandedMessage.create(randomMessage, resourceExpansionService);
         assertThat(expandedMessage.toMessage(), is(equalTo(randomMessage)));
@@ -60,7 +61,7 @@ class ExpandedDataEntryTest {
     }
 
     @Test
-    void expandedDoiRequestShouldHaveTypeDoiRequest() {
+    void expandedDoiRequestShouldHaveTypeDoiRequest() throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
         var expandedResource = ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
@@ -69,7 +70,7 @@ class ExpandedDataEntryTest {
     }
 
     @Test
-    void expandedMessageShouldHaveTypeMessage() {
+    void expandedMessageShouldHaveTypeMessage() throws NotFoundException {
         Message message = randomMessage();
         var expandedResource = ExpandedMessage.create(message, resourceExpansionService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
