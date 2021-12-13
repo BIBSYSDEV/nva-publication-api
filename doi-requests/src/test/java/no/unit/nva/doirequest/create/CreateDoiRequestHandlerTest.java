@@ -3,6 +3,7 @@ package no.unit.nva.doirequest.create;
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -11,6 +12,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.net.HttpHeaders;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.MessageDto;
@@ -50,7 +53,7 @@ import org.zalando.problem.Problem;
 public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     public static final String HTTP_PATH_SEPARATOR = "/";
-    public static final String NOT_THE_RESOURCE_OWNER = "someOther@owner.org";
+    public static final ResourceOwner NOT_THE_RESOURCE_OWNER = new ResourceOwner(randomString(), randomUri());
     public static final URI SOME_PUBLISHER = URI.create("https://some-publicsher.com");
     public static final int SINGLE_MESSAGE = 0;
     public static final String ALLOW_ALL_ORIGINS = "*";
@@ -85,14 +88,10 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
-
-        sendRequest(publication, publication.getOwner());
-
+        sendRequest(publication, publication.getResourceOwner());
         GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
         String doiRequestIdentifier = extractLocationHeader(response);
-
         DoiRequest doiRequest = readDoiRequestDirectlyFromService(publication, doiRequestIdentifier);
-
         assertThat(doiRequest, is(not(nullValue())));
     }
 
@@ -114,7 +113,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                                       .withBody(request)
-                                      .withFeideId(NOT_THE_RESOURCE_OWNER)
+                                      .withFeideId(NOT_THE_RESOURCE_OWNER.getOwner())
                                       .withCustomerId(SOME_PUBLISHER.toString())
                                       .build();
 
@@ -128,11 +127,10 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
 
-        sendRequest(publication, publication.getOwner());
+        sendRequest(publication, publication.getResourceOwner());
 
         outputStream = new ByteArrayOutputStream();
-
-        sendRequest(publication, publication.getOwner());
+        sendRequest(publication, publication.getResourceOwner());
 
         GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
@@ -144,7 +142,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         Publication publication = createPublication();
         String expectedMessageText = randomString();
 
-        sendRequest(publication, publication.getOwner(), expectedMessageText);
+        sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
 
         Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
             extractUserInstance(publication),
@@ -155,12 +153,12 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         assertThat(savedMessage.getMessageType(), is(equalTo(MessageType.DOI_REQUEST.toString())));
     }
 
-    public void sendRequest(Publication publication, String owner, String message) throws IOException {
+    public void sendRequest(Publication publication, ResourceOwner owner, String message) throws IOException {
         InputStream inputStream = createRequest(publication, owner, message);
         handler.handleRequest(inputStream, outputStream, context);
     }
 
-    private void sendRequest(Publication publication, String owner) throws IOException {
+    private void sendRequest(Publication publication, ResourceOwner owner) throws IOException {
         sendRequest(publication, owner, null);
     }
 
@@ -170,12 +168,12 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         return environment;
     }
 
-    private InputStream createRequest(Publication publication, String user, String message)
-        throws com.fasterxml.jackson.core.JsonProcessingException {
+    private InputStream createRequest(Publication publication, ResourceOwner owner, String message)
+        throws JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
         return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                    .withCustomerId(publication.getPublisher().getId().toString())
-                   .withFeideId(user)
+                   .withFeideId(owner.getOwner())
                    .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
                    .withBody(request)
                    .build();
