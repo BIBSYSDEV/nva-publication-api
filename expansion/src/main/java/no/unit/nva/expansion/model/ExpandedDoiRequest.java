@@ -21,6 +21,7 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(TYPE)
@@ -64,9 +65,10 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private Set<URI> organizationIds;
 
     public static ExpandedDoiRequest create(DoiRequest doiRequest,
-                                            ResourceExpansionService resourceExpansionService) {
+                                            ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
         ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
-        Set<URI> ids = resourceExpansionService.getOrganizationIds(expandedDoiRequest.getOwner());
+        Set<URI> ids = resourceExpansionService.getOrganizationIds(doiRequest);
         expandedDoiRequest.setOrganizationIds(ids);
         return expandedDoiRequest;
     }

@@ -21,6 +21,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -29,7 +30,7 @@ class ExpandedDatabaseEntryTest {
 
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
 
-    public static Stream<ExpandedDataEntry> entryProvider() throws JsonProcessingException {
+    public static Stream<ExpandedDataEntry> entryProvider() throws JsonProcessingException, NotFoundException {
         return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
     }
 
@@ -57,13 +58,13 @@ class ExpandedDatabaseEntryTest {
         return ExpandedResource.fromPublication(publication);
     }
 
-    private static ExpandedDoiRequest randomDoiRequest() {
+    private static ExpandedDoiRequest randomDoiRequest() throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
-    private static ExpandedMessage randomMessage() {
+    private static ExpandedMessage randomMessage() throws NotFoundException {
         var randomUser = new UserInstance(randomString(), randomUri());
         var publication = PublicationGenerator.randomPublication();
         var clock = Clock.systemDefaultZone();

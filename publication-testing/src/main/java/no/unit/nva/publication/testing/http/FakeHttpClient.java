@@ -9,19 +9,28 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
 public class FakeHttpClient<T> extends HttpClient {
 
-    private final T responseBody;
+    private final List<T> responseBodies;
+    private final AtomicInteger callCounter;
 
-    public FakeHttpClient(T responseBody) {
+    public FakeHttpClient(T... responseBody) {
         super();
-        this.responseBody = responseBody;
+        this.responseBodies = Arrays.asList(responseBody);
+        this.callCounter = new AtomicInteger(0);
+    }
+
+    public AtomicInteger getCallCounter() {
+        return callCounter;
     }
 
     @Override
@@ -71,6 +80,7 @@ public class FakeHttpClient<T> extends HttpClient {
 
     @Override
     public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseBodyHandler) {
+        var responseBody = nextResponse();
         return new FakeHttpResponse(request, responseBody);
     }
 
@@ -83,5 +93,11 @@ public class FakeHttpClient<T> extends HttpClient {
     public <T> CompletableFuture<HttpResponse<T>> sendAsync(HttpRequest request, BodyHandler<T> responseBodyHandler,
                                                             PushPromiseHandler<T> pushPromiseHandler) {
         return null;
+    }
+
+    private T nextResponse() {
+        int nextResponseIndex = Math.min(callCounter.get(), responseBodies.size() - 1);
+        callCounter.incrementAndGet();
+        return responseBodies.get(nextResponseIndex);
     }
 }

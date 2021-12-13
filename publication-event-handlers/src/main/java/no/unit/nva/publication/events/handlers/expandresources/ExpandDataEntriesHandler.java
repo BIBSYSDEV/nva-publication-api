@@ -2,9 +2,13 @@ package no.unit.nva.publication.events.handlers.expandresources;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
@@ -12,14 +16,14 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
-import no.unit.nva.expansion.restclients.IdentityClientImpl;
-import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Failure;
@@ -41,7 +45,12 @@ public class ExpandDataEntriesHandler
 
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
-        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService());
+        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService(defaultHttpClient()));
+    }
+
+    @JacocoGenerated
+    private static HttpClient defaultHttpClient() {
+        return HttpClient.newBuilder().build();
     }
 
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
@@ -70,8 +79,18 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService() {
-        return new ResourceExpansionServiceImpl(new IdentityClientImpl(), new InstitutionClientImpl());
+    private static ResourceExpansionService defaultResourceExpansionService(HttpClient httpClient) {
+        return new ResourceExpansionServiceImpl(httpClient, defaultResourceService(httpClient));
+    }
+
+    @JacocoGenerated
+    private static ResourceService defaultResourceService(HttpClient httpClient) {
+        return new ResourceService(defaultDynamoDbClient(), httpClient, Clock.systemDefaultZone());
+    }
+
+    @JacocoGenerated
+    private static AmazonDynamoDB defaultDynamoDbClient() {
+        return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
     private EventReference emptyEvent() {
@@ -99,7 +118,7 @@ public class ExpandDataEntriesHandler
             .toOptional(fail -> logError(fail, newData));
     }
 
-    private String createExpandedResourceUpdate(DataEntry input) throws JsonProcessingException {
+    private String createExpandedResourceUpdate(DataEntry input) throws JsonProcessingException, NotFoundException {
         return resourceExpansionService.expandEntry(input).toJsonString();
     }
 

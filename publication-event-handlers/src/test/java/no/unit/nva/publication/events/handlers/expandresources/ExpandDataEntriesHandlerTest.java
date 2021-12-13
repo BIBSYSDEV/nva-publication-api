@@ -4,21 +4,19 @@ import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ob
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Set;
@@ -29,18 +27,20 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
-import no.unit.nva.expansion.restclients.IdentityClientImpl;
-import no.unit.nva.expansion.restclients.InstitutionClientImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -48,12 +48,10 @@ import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
-import nva.commons.secrets.ErrorReadingSecretException;
-import nva.commons.secrets.SecretsReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ExpandDataEntriesHandlerTest {
+public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
     public static final int SINGLE_EXPECTED_FILE = 0;
@@ -61,23 +59,48 @@ public class ExpandDataEntriesHandlerTest {
         Path.of("expandResources/sample-event-old-is-draft-new-is-published.json"));
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
-    private static final String RANDOM_SECRET = randomString();
+    public static final Clock CLOCK = Clock.systemDefaultZone();
     private ByteArrayOutputStream output;
     private ExpandDataEntriesHandler expandResourceHandler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
 
+    private static final URI AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE =
+        URI.create("https://api.cristin.no/v2/units/194.63.10.0");
+    private static final String PERSON_API_RESPONSE_WITH_UNIT =
+        stringFromResources(Path.of("expandResources", "fake_person_api_response_with_unit.json"));
+    private static final String INSTITUTION_PROXY_ORG_RESPONSE =
+        stringFromResources(Path.of("expandResources", "cristin_org.json"));
+    private static final String INSTITUTION_PROXY_PARENT_ORG_RESPONSE =
+        stringFromResources(Path.of("expandResources", "cristin_parent_org.json"));
+    private static final String INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE =
+        stringFromResources(Path.of("expandResources", "cristin_grand_parent_org.json"));
+    private ResourceService resourceService;
+
     @BeforeEach
-    public void init() throws ErrorReadingSecretException {
+    public void init() {
+        super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        HttpClient httpClient = HttpClient.newHttpClient();
-        SecretsReader secretsReader = fakeSecretsReader();
-        IdentityClientImpl identityClient = new IdentityClientImpl(secretsReader, httpClient);
+        var httpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_UNIT,
+                                              INSTITUTION_PROXY_ORG_RESPONSE,
+                                              INSTITUTION_PROXY_PARENT_ORG_RESPONSE,
+                                              INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE);
+
+        resourceService = new ResourceService(client, httpClient, CLOCK);
+        insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(identityClient, new InstitutionClientImpl());
+            new ResourceExpansionServiceImpl(httpClient, resourceService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
+    }
+
+    private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
+        var publication = PublicationGenerator.randomPublication().copy()
+            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
+            .withResourceOwner(new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+            .build();
+        return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
 
     @Test
@@ -168,12 +191,6 @@ public class ExpandDataEntriesHandlerTest {
         return DoiRequest.newDoiRequestForResource(resource);
     }
 
-    private SecretsReader fakeSecretsReader() throws ErrorReadingSecretException {
-        SecretsReader secretsReader = mock(SecretsReader.class);
-        when(secretsReader.fetchSecret(anyString(), anyString())).thenReturn(RANDOM_SECRET);
-        return secretsReader;
-    }
-
     private InputStream sampleEvent() {
         return stringToStream(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
     }
@@ -186,7 +203,7 @@ public class ExpandDataEntriesHandlerTest {
             }
 
             @Override
-            public Set<URI> getOrganizationIds(String username) {
+            public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return null;
             }
         };
