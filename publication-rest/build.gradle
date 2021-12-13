@@ -25,6 +25,7 @@ dependencies {
 
 
     testImplementation project(":publication-testing")
+    testImplementation libs.bundles.testing
     testImplementation libs.nva.datamodel.testutils
     testImplementation libs.logutils
     testImplementation libs.nva.testutils

@@ -13,6 +13,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.Update;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
@@ -50,6 +52,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
     public static final String RESOURCE_LINK_FIELD = "link";
 
     private static final String PUBLISHED_DATE_FIELD_IN_RESOURCE = "publishedDate";
+    //TODO: fix affiliation update when updating owner
+    private static final URI AFFILIATION_UPDATE_NOT_UPDATE_YET = null;
 
     private final String tableName;
     private final AmazonDynamoDB client;
@@ -130,7 +134,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         return existingResource
                    .copy()
                    .withPublisher(userOrganization(newOwner))
-                   .withOwner(newOwner.getUserIdentifier())
+                   .withResourceOwner(new ResourceOwner(newOwner.getUserIdentifier(),AFFILIATION_UPDATE_NOT_UPDATE_YET))
                    .withModifiedDate(clockForTimestamps.instant())
                    .build();
     }

@@ -48,7 +48,7 @@ public final class ResourceServiceUtils {
         return newOrganization(user.getOrganizationUri());
     }
 
-    public static UserInstance extractOwner(Publication publication) {
+    public static UserInstance extractUserInstance(Publication publication) {
         String owner = publication.getOwner();
         URI customerId = publication.getPublisher().getId();
         return new UserInstance(owner, customerId);

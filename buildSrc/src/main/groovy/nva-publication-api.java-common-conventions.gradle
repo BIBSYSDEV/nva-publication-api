@@ -36,10 +36,13 @@ test {
     useJUnitPlatform {
         excludeTags("RemoteTest")
     }
-    failFast = true
+    failFast = false
     testLogging {
         events 'skipped', 'passed', 'failed'
+        showCauses true
+        exceptionFormat "full"
     }
+
 
     finalizedBy jacocoTestReport
     //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin

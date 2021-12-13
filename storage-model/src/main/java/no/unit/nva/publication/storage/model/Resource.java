@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.file.model.FileSet;
@@ -325,7 +326,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
 
     @Override
     public String getOwner() {
-        return owner;
+        return Optional.ofNullable(getResourceOwner()).map(ResourceOwner::getOwner).orElse(owner);
     }
 
     public void setOwner(String owner) {

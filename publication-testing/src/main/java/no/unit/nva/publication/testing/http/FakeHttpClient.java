@@ -15,8 +15,14 @@ import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
-public class FakeHttpClient extends HttpClient {
+public class FakeHttpClient<T> extends HttpClient {
 
+    private final T responseBody;
+
+    public FakeHttpClient(T responseBody) {
+        super();
+        this.responseBody = responseBody;
+    }
 
     @Override
     public Optional<CookieHandler> cookieHandler() {
@@ -65,7 +71,7 @@ public class FakeHttpClient extends HttpClient {
 
     @Override
     public <T> HttpResponse<T> send(HttpRequest request, BodyHandler<T> responseBodyHandler) {
-        return new FakeHttpResponse(request);
+        return new FakeHttpResponse(request, responseBody);
     }
 
     @Override

@@ -4,9 +4,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
-import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.api.UpdatePublicationRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
@@ -59,12 +57,10 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
         SortableIdentifier identifierInPath = RequestUtil.getIdentifier(requestInfo);
         validateRequest(identifierInPath, input);
-        Publication existingPublication;
-        existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
-
-        Publication publication = PublicationMapper.toExistingPublication(input, existingPublication);
-        Publication updatedPublication = resourceService.updatePublication(publication);
-        return  PublicationResponse.fromPublication(updatedPublication);
+        Publication existingPublication = fetchExistingPublication(requestInfo, identifierInPath);
+        Publication publicationUpdate = input.generatePublicationUpdate(existingPublication);
+        Publication updatedPublication = resourceService.updatePublication(publicationUpdate);
+        return PublicationResponse.fromPublication(updatedPublication);
     }
 
     @Override
@@ -107,10 +103,10 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
 
         return requestInfo.getAccessRights()
-                   .stream()
-                   .filter(StringUtils::isNotBlank)
-                   .map(AccessRight::fromString)
-                   .anyMatch(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES::equals);
+            .stream()
+            .filter(StringUtils::isNotBlank)
+            .map(AccessRight::fromString)
+            .anyMatch(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES::equals);
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

@@ -2,7 +2,8 @@ package no.unit.nva.publication.messages;
 
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -21,7 +22,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,7 +32,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
@@ -44,9 +46,11 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.attempt.Try;
@@ -66,6 +70,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     public static final boolean NO_IDENTIFIER = false;
     public static final String SOME_OTHER_ROLE = "SomeOtherRole";
+    public static final URI NOT_IMPORTANT = null;
     private static final int NUMBER_OF_PUBLICATIONS = 3;
     private ListMessagesHandler handler;
     private ByteArrayOutputStream output;
@@ -77,7 +82,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         output = new ByteArrayOutputStream();
-        HttpClient httpClient = new FakeHttpClient();
+        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         Environment environment = mockEnvironment();
@@ -95,7 +100,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     public void listMessagesReturnsMessagesPerPublicationsForUser()
         throws IOException {
-        List<Message> savedMessages = insetSampleMessages();
+        List<Message> savedMessages = insertSampleMessagesForSingleOwner();
         UserInstance owner = extractPublicationOwner(savedMessages.get(0));
 
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
@@ -112,7 +117,8 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
-        List<Publication> publications = createSamplePublications();
+        UserInstance userInstance = new UserInstance(randomString(), randomUri());
+        List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
         List<Message> messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         List<Message> moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         List<Message> allMessages = new ArrayList<>();
@@ -173,7 +179,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
         return PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, NO_IDENTIFIER)
             .stream()
-            .map(attempt(p -> resourceService.createPublication(p)))
+            .map(attempt(p -> createPublication(resourceService, p)))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
@@ -247,8 +253,15 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         assertThat(messages, is(equalTo(sortedMessages)));
     }
 
-    private Publication createPublication() throws TransactionFailedException {
-        return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
+    private Publication createPublication(ResourceService resourceService, Publication p) throws ApiGatewayException {
+        return resourceService.createPublication(extractUserInstance(p), p);
+    }
+
+    private Publication createPublication(UserInstance userInstance) throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        publication.setResourceOwner(new ResourceOwner(userInstance.getUserIdentifier(), NOT_IMPORTANT));
+        publication.setPublisher(new Organization.Builder().withId(userInstance.getOrganizationUri()).build());
+        return createPublication(resourceService, publication);
     }
 
     private void assertThatResourceDescriptionsContainIdentifierAndTitle(List<Message> savedMessages,
@@ -325,8 +338,9 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         return ResourceConversation.createPublicationDescription(message);
     }
 
-    private List<Message> insetSampleMessages() {
-        List<Publication> publications = createSamplePublications();
+    private List<Message> insertSampleMessagesForSingleOwner() {
+        UserInstance userInstance = new UserInstance(randomString(), randomUri());
+        List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
         return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
 
@@ -346,9 +360,9 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
 
-    private List<Publication> createSamplePublications() {
+    private List<Publication> createSamplePublicationsForSingleOwner(UserInstance userInstance) {
         return IntStream.range(0, NUMBER_OF_PUBLICATIONS).boxed()
-            .map(attempt(i -> createPublication()))
+            .map(attempt(i -> createPublication(userInstance)))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
@@ -362,7 +376,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private Message createMessage(Publication publication, UserInstance sender)
         throws TransactionFailedException, NotFoundException {
         SortableIdentifier messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
-        return messageService.getMessage(extractOwner(publication), messageIdentifier);
+        return messageService.getMessage(extractUserInstance(publication), messageIdentifier);
     }
 
     private String randomString() {

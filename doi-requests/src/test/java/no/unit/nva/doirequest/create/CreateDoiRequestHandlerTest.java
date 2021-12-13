@@ -1,7 +1,7 @@
 package no.unit.nva.doirequest.create;
 
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
@@ -26,7 +25,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -37,9 +35,11 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.HttpStatus;
@@ -70,7 +70,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     public void initialize() {
         init();
         setupClock();
-        var httpClient = new FakeHttpClient();
+        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         resourceService = new ResourceService(client, httpClient, mockClock);
         doiRequestService = new DoiRequestService(client,httpClient, mockClock);
         messageService = new MessageService(client, mockClock);
@@ -83,7 +83,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     @Test
     public void createDoiRequestStoresNewDoiRequestForPublishedResource()
-        throws TransactionFailedException, IOException, NotFoundException {
+        throws ApiGatewayException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, publication.getOwner());
@@ -98,7 +98,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     @Test
     public void createDoiRequestReturnsErrorWhenUserTriesToCreateDoiRequestOnNotOwnedPublication()
-        throws TransactionFailedException, IOException {
+        throws ApiGatewayException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
@@ -125,7 +125,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     @Test
     public void createDoiRequestReturnsBadRequestErrorWenDoiRequestAlreadyExists()
-        throws TransactionFailedException, IOException {
+        throws ApiGatewayException, IOException {
         Publication publication = createPublication();
 
         sendRequest(publication, publication.getOwner());
@@ -140,14 +140,14 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     @Test
     public void createDoiRequestStoresMessageAsDoiRelatedWhenMessageIsIncluded()
-        throws TransactionFailedException, IOException {
+        throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         String expectedMessageText = randomString();
 
         sendRequest(publication, publication.getOwner(), expectedMessageText);
 
         Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
-            extractOwner(publication),
+            extractUserInstance(publication),
             publication.getIdentifier());
 
         MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
@@ -204,7 +204,9 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
     }
 
-    private Publication createPublication() throws TransactionFailedException {
-        return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
+    private Publication createPublication() throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        return resourceService.createPublication(extractUserInstance(publication),publication);
+
     }
 }

@@ -2,10 +2,10 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
-
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -37,15 +37,15 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
@@ -85,7 +85,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        httpClient = new FakeHttpClient();
+        httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         context = mock(Context.class);
 
@@ -96,10 +96,10 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner() throws IOException,
-                                                                                         ApiGatewayException {
+    public void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner()
+        throws IOException,ApiGatewayException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
-        Publication savedPublication = publicationService.createPublication(publication);
+        Publication savedPublication = createSamplePublication();
 
         Publication publicationUpdate = updateTitle(savedPublication);
 
@@ -133,7 +133,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment);
 
-        Publication savedPublication = publicationService.createPublication(publication);
+        Publication savedPublication = createSamplePublication();
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
@@ -149,13 +149,18 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment);
-        Publication savedPublication = publicationService.createPublication(publication);
+        Publication savedPublication = createSamplePublication();
 
         InputStream event = ownerUpdatesOwnPublication(savedPublication.getIdentifier(), savedPublication);
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
         assertEquals(SC_INTERNAL_SERVER_ERROR, gatewayResponse.getStatusCode());
         assertThat(appender.getMessages(), containsString(SOME_MESSAGE));
+    }
+
+    private Publication createSamplePublication() throws ApiGatewayException {
+        UserInstance userInstance = extractUserInstance(publication);
+        return publicationService.createPublication(userInstance, publication);
     }
 
     @Test
@@ -185,8 +190,8 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerUpdatesResourceWhenInputIsValidAndUserHasRightToEditAnyResourceInOwnInstitution()
-        throws TransactionFailedException, IOException, NotFoundException {
-        Publication savedPublication = publicationService.createPublication(publication);
+        throws ApiGatewayException, IOException {
+        Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
 
         InputStream event = userUpdatesPublicationAndHasRightToUpdate(publicationUpdate);
@@ -207,8 +212,8 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerThrowsExceptionWhenInputIsValidUserHasRightToEditAnyResourceInOwnInstButEditsResourceInOtherInst()
-        throws TransactionFailedException, IOException {
-        Publication savedPublication = publicationService.createPublication(publication);
+        throws ApiGatewayException, IOException {
+        Publication savedPublication = createSamplePublication();
         Publication publicationUpdate = updateTitle(savedPublication);
 
         InputStream event = userUpdatesPublicationOfOtherInstitution(publicationUpdate);

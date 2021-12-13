@@ -4,7 +4,7 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -36,18 +36,16 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +58,9 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
-                                                                           .constructParametricType(
-                                                                               GatewayResponse.class,
-                                                                               PublicationResponse.class);
+        .constructParametricType(
+            GatewayResponse.class,
+            PublicationResponse.class);
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
 
     private ResourceService publicationService;
@@ -82,9 +80,9 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        HttpClient httpClient = new FakeHttpClient();
+        HttpClient httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client,httpClient, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, httpClient, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, doiRequestService, environment);
@@ -166,9 +164,9 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     public void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
-        throws NotFoundException, TransactionFailedException, BadRequestException, IOException {
+        throws ApiGatewayException, IOException {
         Publication createdPublication = createPublication();
-        UserInstance resourceOwner = extractOwner(createdPublication);
+        UserInstance resourceOwner = extractUserInstance(createdPublication);
         SortableIdentifier doiRequestIdentifier =
             doiRequestService.createDoiRequest(resourceOwner, createdPublication.getIdentifier());
         InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
@@ -178,8 +176,8 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         DoiRequest actualDoiRequest = publicationDto.getDoiRequest();
         DoiRequest expectedDoiRequest = doiRequestService.getDoiRequest(resourceOwner, doiRequestIdentifier)
-                                            .toPublication()
-                                            .getDoiRequest();
+            .toPublication()
+            .getDoiRequest();
         assertThat(actualDoiRequest, is(equalTo(expectedDoiRequest)));
     }
 
@@ -191,9 +189,9 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-                   .withHeaders(headers)
-                   .withPathParameters(pathParameters)
-                   .build();
+            .withHeaders(headers)
+            .withPathParameters(pathParameters)
+            .build();
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {
@@ -208,13 +206,15 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private GatewayResponse<Problem> parseFailureResponse() throws JsonProcessingException {
         JavaType responseWithProblemType = restApiMapper.getTypeFactory()
-                                               .constructParametricType(GatewayResponse.class, Problem.class);
+            .constructParametricType(GatewayResponse.class, Problem.class);
         return restApiMapper.readValue(output.toString(), responseWithProblemType);
     }
 
-    private Publication createPublication() throws TransactionFailedException, NotFoundException {
-        Publication publication = PublicationGenerator.publicationWithoutIdentifier();
-        SortableIdentifier publicationIdentifier = publicationService.createPublication(publication).getIdentifier();
+    private Publication createPublication() throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        UserInstance userInstance = extractUserInstance(publication);
+        SortableIdentifier publicationIdentifier =
+            publicationService.createPublication(userInstance, publication).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);
     }
 }

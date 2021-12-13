@@ -7,18 +7,16 @@ import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import lombok.SneakyThrows;
 import no.unit.nva.PublicationMapper;
-import no.unit.nva.api.CreatePublicationRequest;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -39,10 +37,10 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @JacocoGenerated
     public CreatePublicationHandler() {
         this(new ResourceService(
-                AmazonDynamoDBClientBuilder.defaultClient(),
-                EXTERNAL_SERVICES_HTTP_CLIENT,
-                Clock.systemDefaultZone()),
-            new Environment());
+                 AmazonDynamoDBClientBuilder.defaultClient(),
+                 EXTERNAL_SERVICES_HTTP_CLIENT,
+                 Clock.systemDefaultZone()),
+             new Environment());
     }
 
     /**
@@ -59,22 +57,26 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         this.apiHost = environment.readEnv(API_HOST);
     }
 
+    @SneakyThrows
     @Override
-    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo, Context context)
-        throws ApiGatewayException {
+    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
+                                               Context context) {
 
-        Publication newPublication = PublicationMapper.toNewPublication(
-            input,
-            RequestUtil.getOwner(requestInfo),
-            null, //TODO: set handle
-            null, //TODO: set link
-            createPublisherFromCustomerId(RequestUtil.getCustomerId(requestInfo)));
-
-        Publication createdPublication = publicationService.createPublication(newPublication);
-
+        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
+        Publication newPublication = input.toPublication();
+        Publication createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
 
         return PublicationMapper.convertValue(createdPublication, PublicationResponse.class);
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
+        return HttpStatus.SC_CREATED;
+    }
+
+    protected URI getLocation(SortableIdentifier identifier) {
+        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
     }
 
     private void setLocationHeader(SortableIdentifier identifier) {
@@ -84,18 +86,4 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
         );
     }
 
-    protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
-    }
-
-    private Organization createPublisherFromCustomerId(URI customerId) {
-        return new Builder()
-            .withId(customerId)
-            .build();
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HttpStatus.SC_CREATED;
-    }
 }
