@@ -765,6 +765,7 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
+          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
       Events:
         EventBridgeEvent:
