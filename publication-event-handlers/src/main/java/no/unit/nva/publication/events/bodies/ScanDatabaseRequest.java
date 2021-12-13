@@ -15,6 +15,8 @@ public class ScanDatabaseRequest implements JsonSerializable {
     public static final String START_MARKER = "startMarker";
     public static final String PAGE_SIZE = "pageSize";
     public static final String SCAN_REQUEST_EVENT_TOPIC = "PublicationService.DataEntry.ScanAndUpdateRowVersion";
+    public static final int DEFAULT_PAGE_SIZE = 700; // Choosing for safety 3/4 of max page size.
+    public static final int MAX_PAGE_SIZE = 1000;
     @JsonProperty(START_MARKER)
     private final Map<String, AttributeValue> startMarker;
     @JsonProperty(PAGE_SIZE)
@@ -37,7 +39,13 @@ public class ScanDatabaseRequest implements JsonSerializable {
     }
 
     public int getPageSize() {
-        return pageSize;
+        return pageSizeWithinLimits(pageSize)
+            ?pageSize
+            : DEFAULT_PAGE_SIZE;
+    }
+
+    private boolean pageSizeWithinLimits(int pageSize) {
+        return pageSize>0 && pageSize <= MAX_PAGE_SIZE;
     }
 
     public Map<String, AttributeValue> getStartMarker() {
