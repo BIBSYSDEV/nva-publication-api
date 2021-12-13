@@ -21,9 +21,8 @@ import nva.commons.core.JacocoGenerated;
 public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPublicationStatusResponse> {
 
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
-    public static final String API_SCHEME = "API_SCHEME";
+    public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
-    private final String apiScheme;
     private final String apiHost;
     private final ResourceService resourceService;
 
@@ -51,7 +50,6 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     public PublishPublicationHandler(Environment environment, ResourceService resourceService) {
         super(Void.class, environment);
         this.resourceService = resourceService;
-        this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
     }
 
@@ -68,7 +66,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     }
 
     protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier.toString()));
+        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier.toString()));
     }
 
     @Override

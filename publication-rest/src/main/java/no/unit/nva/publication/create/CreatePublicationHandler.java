@@ -24,11 +24,10 @@ import org.apache.http.HttpStatus;
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
-    public static final String API_SCHEME = "API_SCHEME";
+    public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
 
     private final ResourceService publicationService;
-    private final String apiScheme;
     private final String apiHost;
 
     /**
@@ -53,7 +52,6 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                     Environment environment) {
         super(CreatePublicationRequest.class, environment);
         this.publicationService = publicationService;
-        this.apiScheme = environment.readEnv(API_SCHEME);
         this.apiHost = environment.readEnv(API_HOST);
     }
 
@@ -77,7 +75,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     }
 
     protected URI getLocation(SortableIdentifier identifier) {
-        return URI.create(String.format(LOCATION_TEMPLATE, apiScheme, apiHost, identifier));
+        return URI.create(String.format(LOCATION_TEMPLATE, API_SCHEME, apiHost, identifier));
     }
 
     private void setLocationHeader(SortableIdentifier identifier) {

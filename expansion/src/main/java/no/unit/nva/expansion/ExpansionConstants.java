@@ -10,7 +10,7 @@ public final class ExpansionConstants {
             .readEnv("IDENTITY_SERVICE_SECRET_NAME");
     public static final String IDENTITY_SERVICE_SECRET_KEY = ENVIRONMENT
             .readEnv("IDENTITY_SERVICE_SECRET_KEY");
-    public static final String API_SCHEME = new Environment().readEnv("API_SCHEME");
+    public static final String API_SCHEME = "https";
     public static final String API_HOST = new Environment().readEnv("API_HOST");
 
     public static final String USER_INTERNAL_SERVICE_PATH = "identity-internal/user";

@@ -18,5 +18,4 @@ test {
     environment "IDENTITY_SERVICE_SECRET_NAME", "secretName"
     environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
     environment "API_HOST", "localhost"
-    environment "API_SCHEME", "https"
 }
