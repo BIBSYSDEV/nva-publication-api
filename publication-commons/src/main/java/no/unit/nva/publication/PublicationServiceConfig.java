@@ -12,7 +12,7 @@ public final class PublicationServiceConfig {
     public static final String PATH_SEPARATOR = "/";
     public static final String MESSAGE_PATH = "/messages";
     public static final String API_HOST = ENVIRONMENT.readEnv("API_HOST");
-    public static final String API_SCHEME = ENVIRONMENT.readEnv("API_SCHEME");
+    public static final String API_SCHEME = "https";
     public static final HttpClient EXTERNAL_SERVICES_HTTP_CLIENT = HttpClient.newBuilder().build();
 
     public static final ObjectMapper dtoObjectMapper = JsonUtils.dtoObjectMapper;

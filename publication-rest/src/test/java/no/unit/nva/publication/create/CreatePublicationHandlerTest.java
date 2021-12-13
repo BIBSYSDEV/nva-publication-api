@@ -61,7 +61,6 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         super.init();
         Environment environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
-        when(environmentMock.readEnv(API_SCHEME)).thenReturn(HTTPS);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
         var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         ResourceService resourceService = new ResourceService(client, httpClient, CLOCK);

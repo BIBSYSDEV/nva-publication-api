@@ -26,11 +26,10 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
 
     public static final String API_PUBLICATION_PATH_IDENTIFIER = "publicationIdentifier";
     public static final String INVALID_PUBLICATION_ID_ERROR = "Invalid publication id: ";
-    public static final String API_SCHEME_ENV_VARIABLE = "API_SCHEME";
+
     public static final String API_HOST_ENV_VARIABLE = "API_HOST";
     private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
-
-    private final String apiScheme;
+    public static final String API_SCHEME = "https";
     private final String apiHost;
     private final DoiRequestService doiRequestService;
 
@@ -43,7 +42,6 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
                                          DoiRequestService doiRequestService) {
         super(ApiUpdateDoiRequest.class, environment);
         this.apiHost = environment.readEnv(API_HOST_ENV_VARIABLE);
-        this.apiScheme = environment.readEnv(API_SCHEME_ENV_VARIABLE);
         this.doiRequestService = doiRequestService;
     }
 
@@ -116,7 +114,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
 
     private String getContentLocation(SortableIdentifier publicationID) {
-        return String.format(LOCATION_TEMPLATE_PUBLICATION, apiScheme, apiHost, publicationID.toString());
+        return String.format(LOCATION_TEMPLATE_PUBLICATION, API_SCHEME, apiHost, publicationID.toString());
     }
 
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {

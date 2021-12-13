@@ -50,7 +50,6 @@ public class PublishPublicationHandlerTest {
     @BeforeEach
     public void setUp() {
         environment = mock(Environment.class);
-        when(environment.readEnv(PublishPublicationHandler.API_SCHEME)).thenReturn(HTTPS);
         when(environment.readEnv(PublishPublicationHandler.API_HOST)).thenReturn(NVA_UNIT_NO);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         publicationService = mock(ResourceService.class);
