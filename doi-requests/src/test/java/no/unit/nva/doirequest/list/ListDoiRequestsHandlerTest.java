@@ -4,7 +4,6 @@ import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapp
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
-import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
@@ -27,15 +26,15 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.DoiRequestMessage;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
@@ -71,7 +70,6 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant DOI_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
-    private static final URI SOME_OTHER_PUBLISHER = URI.create("https://some-other-publisher.com");
     private ListDoiRequestsHandler handler;
     private ResourceService resourceService;
     private Clock mockClock;
@@ -132,9 +130,10 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
 
         List<Publication> actualResponse = parseResponse();
 
-        Publication expectedResponse = filterDoiRequests(createdDoiRequests,
-                                                         doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer,
-                                                                                                   doiRequest));
+        Publication expectedResponse =
+            filterDoiRequests(createdDoiRequests,
+                              doiRequest -> doiRequestBelongsToCustomer(curatorsCustomer, doiRequest)
+            );
 
         Publication unexpectedDoiResponse = filterDoiRequests(createdDoiRequests,
                                                               doiRequest -> !doiRequestBelongsToCustomer(
@@ -320,7 +319,6 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         return MessageDto.fromMessage(message);
     }
 
-
     private boolean doiRequestBelongsToCustomer(URI curatorsCustomer, DoiRequest doiRequest) {
         return doiRequest.getCustomerId().equals(curatorsCustomer);
     }
@@ -373,44 +371,33 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() throws ApiGatewayException {
-        Publication publication = publicationWithoutIdentifier();
-        UserInstance firstOwner = extractUserInstance(publication);
-        Publication publicationWithDifferentOwner = publication.copy().withOwner(SOME_OTHER_OWNER).build();
-        UserInstance secondOwner = extractUserInstance(publicationWithDifferentOwner);
-        return savePublicationsOfDifferentOwners(publication, firstOwner,
-                                                 publicationWithDifferentOwner, secondOwner);
+        Publication publication = PublicationGenerator.randomPublication();
+        Publication publicationWithDifferentOwner =
+            publication.copy()
+                .withResourceOwner(new ResourceOwner(randomString(), randomUri()))
+                .build();
+
+        return saveAndPublishPublications(publication, publicationWithDifferentOwner);
     }
 
-    private List<Publication> savePublicationsOfDifferentOwners(Publication publication,
-                                                                UserInstance firstOwner,
-                                                                Publication publicationWithDifferentOwner,
-                                                                UserInstance secondOwner)
-        throws ApiGatewayException {
-        var publications = Stream.of(
-                createPublicationsForOwner(firstOwner, Stream.of(publication)),
-                createPublicationsForOwner(secondOwner, Stream.of(publicationWithDifferentOwner)))
-            .flatMap(Collection::stream)
+    private List<Publication> saveAndPublishPublications(Publication... publications) {
+        return Arrays.stream(publications)
+            .map(attempt(this::createPublishedPublication))
+            .map(Try::orElseThrow)
             .collect(Collectors.toList());
+    }
 
-        for (Publication pub : publications) {
-            publishPublication(pub);
-        }
-        return publications;
+    private Publication createPublishedPublication(Publication pub) throws ApiGatewayException {
+        UserInstance userInstance = extractUserInstance(pub);
+        var createdPublication = resourceService.createPublication(userInstance, pub);
+        resourceService.publishPublication(extractUserInstance(createdPublication), createdPublication.getIdentifier());
+        return resourceService.getPublication(userInstance, createdPublication.getIdentifier());
     }
 
     private List<Publication> publishedPublicationsOfDifferentPublisher() throws ApiGatewayException {
-        Publication publication = publicationWithoutIdentifier();
-        UserInstance firstOwner = extractUserInstance(publication);
-        Publication publicationWithDifferentPublisher = publication
-            .copy()
-            .withOwner(SOME_OTHER_OWNER)
-            .withPublisher(
-                new Organization.Builder().withId(SOME_OTHER_PUBLISHER)
-                    .build())
-            .build();
-        UserInstance secondOwner = extractUserInstance(publicationWithDifferentPublisher);
-        return savePublicationsOfDifferentOwners(publication, firstOwner,
-                                                 publicationWithDifferentPublisher, secondOwner);
+        Publication publication = PublicationGenerator.randomPublication();
+        Publication publicationWithDifferentPublisher = PublicationGenerator.randomPublication();
+        return saveAndPublishPublications(publication, publicationWithDifferentPublisher);
     }
 
     private List<Publication> createPublicationsForOwner(UserInstance userInstance,
