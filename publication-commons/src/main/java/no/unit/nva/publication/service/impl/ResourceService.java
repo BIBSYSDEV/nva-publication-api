@@ -32,8 +32,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
@@ -76,6 +78,7 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
+    private final AffiliationSelectionService affiliationService;
 
     public ResourceService(AmazonDynamoDB client,
                            HttpClient externalServicesHttpClient,
@@ -89,9 +92,7 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        var affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
-        //Will be removed in the next PR
-        attempt(() -> affiliationService.fetchAffiliation("For PMD to stop complaining"));
+        this.affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
     }
 
     public ResourceService(AmazonDynamoDB client,
@@ -100,12 +101,16 @@ public class ResourceService extends ServiceWithTransactions {
         this(client, externalServicesHttpClient, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
-    public Publication createPublication(Publication inputData) throws TransactionFailedException {
+    public Publication createPublication(UserInstance userInstance, Publication inputData)
+        throws ApiGatewayException {
         Instant currentTime = clockForTimestamps.instant();
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
+        newResource.setResourceOwner(createResourceOwner(userInstance));
+        newResource.setPublisher(createOrganization(userInstance));
         newResource.setCreatedDate(currentTime);
         newResource.setModifiedDate(currentTime);
+        newResource.setStatus(PublicationStatus.DRAFT);
         return insertResource(newResource);
     }
 
@@ -169,10 +174,8 @@ public class ResourceService extends ServiceWithTransactions {
 
     public List<DataEntry> refreshResources(List<DataEntry> dataEntries) {
         final List<DataEntry> refreshedEntries = refreshRowVersion(dataEntries);
-
         List<WriteRequest> writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
-
         return refreshedEntries;
     }
 
@@ -219,6 +222,17 @@ public class ResourceService extends ServiceWithTransactions {
     @Override
     protected Clock getClock() {
         return clockForTimestamps;
+    }
+
+    private Organization createOrganization(UserInstance userInstance) {
+        return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
+    }
+
+    private ResourceOwner createResourceOwner(UserInstance userInstance)
+        throws ApiGatewayException {
+        return this.affiliationService.fetchAffiliation(userInstance.getUserIdentifier())
+            .map(affiliation -> new ResourceOwner(userInstance.getUserIdentifier(), affiliation))
+            .orElse(new ResourceOwner(userInstance.getUserIdentifier(), null));
     }
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {

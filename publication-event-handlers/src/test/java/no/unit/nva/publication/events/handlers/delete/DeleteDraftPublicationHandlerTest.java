@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,6 +20,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,7 +42,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        HttpClient httpClient = new FakeHttpClient();
+        HttpClient httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
@@ -97,6 +99,6 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
         Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier();
         publicationToCreate.setStatus(status);
-        return resourceService.createPublication(publicationToCreate);
+        return resourceService.createPublication(extractUserInstance(publicationToCreate),publicationToCreate);
     }
 }

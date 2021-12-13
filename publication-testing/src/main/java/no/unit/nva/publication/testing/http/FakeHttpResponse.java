@@ -6,17 +6,17 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.util.Optional;
 import javax.net.ssl.SSLSession;
-import nva.commons.core.ioutils.IoUtils;
 
 public class FakeHttpResponse<T> implements HttpResponse<T> {
 
     private final HttpRequest inputRequest;
+    private final T responseBody;
 
-    public FakeHttpResponse(HttpRequest request) {
+    public FakeHttpResponse(HttpRequest request, T responseBody) {
         this.inputRequest = request;
+        this.responseBody = responseBody;
     }
 
     @Override
@@ -39,10 +39,9 @@ public class FakeHttpResponse<T> implements HttpResponse<T> {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T body() {
-        return (T)IoUtils.stringFromResources(Path.of("http","fake_person_api_response.json"));
+        return responseBody;
     }
 
     @Override

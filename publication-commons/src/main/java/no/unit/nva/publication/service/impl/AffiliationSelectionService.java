@@ -23,14 +23,18 @@ public final class AffiliationSelectionService {
     }
 
     public Optional<URI> fetchAffiliation(String feideId)
-        throws IOException, ApiGatewayException, InterruptedException {
-        var affiliations = fetchAffiliationUris(feideId);
-        return OrgUnitId.extractMostLikelyAffiliationForUser(affiliations)
-            .map(OrgUnitId::getUnitId);
+        throws ApiGatewayException {
+        try {
+            var affiliations = fetchAffiliationUris(feideId);
+            return OrgUnitId.extractMostLikelyAffiliationForUser(affiliations)
+                .map(OrgUnitId::getUnitId);
+        } catch (InterruptedException | IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private List<OrgUnitId> fetchAffiliationUris(String feideId)
-        throws IOException, InterruptedException, ApiGatewayException {
+        throws IOException, ApiGatewayException, InterruptedException {
         return personApiClient.fetchAffiliationsForUser(feideId)
             .stream()
             .map(OrgUnitId::new)

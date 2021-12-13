@@ -39,7 +39,10 @@ test {
     failFast = true
     testLogging {
         events 'skipped', 'passed', 'failed'
+        showCauses true
+        exceptionFormat "full"
     }
+
 
     finalizedBy jacocoTestReport
     //TODO: investigate the usage of a BuildConfig file with BuildConfig plugin

@@ -15,14 +15,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.UUID;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -50,7 +51,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         init();
         prepareEnvironment();
-        var httpClient = new FakeHttpClient();
+        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment);
         outputStream = new ByteArrayOutputStream();
@@ -64,7 +65,8 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsAcceptedWhenOnDraftPublication() throws IOException, ApiGatewayException {
-        Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
+
+        Publication publication = createPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
@@ -79,9 +81,16 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
+    private Publication createPublication() throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance =
+            new UserInstance(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
+        return publicationService.createPublication(userInstance,publication);
+    }
+
     @Test
     void handleRequestReturnsBadRequestWhenOnPublishedPublication() throws IOException, ApiGatewayException {
-        Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
+        Publication publication = createPublication();
 
         publicationService.publishPublication(createUserInstance(publication), publication.getIdentifier());
 
@@ -121,7 +130,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handleRequestReturnsErrorWhenCallerIsNotOwnerOfPublication() throws IOException, ApiGatewayException {
-        Publication createdPublication = publicationService.createPublication(publicationWithoutIdentifier());
+        Publication createdPublication = createPublication();
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
@@ -141,7 +150,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     @Test
     void handleRequestReturnsBadRequestdWhenAlreadyMarkedForDeletionPublication()
         throws IOException, ApiGatewayException {
-        Publication publication = publicationService.createPublication(publicationWithoutIdentifier());
+        Publication publication = createPublication();
         markForDeletion(publication);
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)

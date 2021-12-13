@@ -5,6 +5,8 @@ import static no.unit.nva.publication.PublicationServiceConfig.PATH_SEPARATOR;
 import static no.unit.nva.publication.PublicationServiceConfig.URI_EMPTY_FRAGMENT;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -27,7 +29,6 @@ import java.util.Map;
 import no.unit.nva.doirequest.list.ListDoiRequestsHandler;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
@@ -40,9 +41,11 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,14 +72,15 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
     private DoiRequestService doiRequestService;
 
     @BeforeEach
-    public void initialize() throws TransactionFailedException {
+    public void initialize() throws ApiGatewayException {
         super.init();
-        HttpClient httpClient = new FakeHttpClient();
-        resourcesService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
+
+        resourcesService = new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, httpClient,Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, Clock.systemDefaultZone());
         environment = setupEnvironment();
-        handler = new CreateMessageHandler(client,new FakeHttpClient(), environment);
+        handler = new CreateMessageHandler(client, externalServicesHttpClient, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
     }
@@ -193,11 +197,11 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
     private InputStream createListDoiRequestsHttpQuery() throws JsonProcessingException {
         UserInstance publicationOwner = extractOwner(samplePublication);
         return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
-                   .withFeideId(publicationOwner.getUserIdentifier())
-                   .withCustomerId(publicationOwner.getOrganizationUri().toString())
-                   .withQueryParameters(Map.of("role", "Creator"))
-                   .withRoles("Creator")
-                   .build();
+            .withFeideId(publicationOwner.getUserIdentifier())
+            .withCustomerId(publicationOwner.getOrganizationUri().toString())
+            .withQueryParameters(Map.of("role", "Creator"))
+            .withRoles("Creator")
+            .build();
     }
 
     private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
@@ -235,10 +239,10 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
     private InputStream createInput(CreateMessageRequest requestBody)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(messageTestsObjectMapper)
-                   .withBody(requestBody)
-                   .withFeideId(SOME_CURATOR)
-                   .withCustomerId(samplePublication.getPublisher().getId().toString())
-                   .build();
+            .withBody(requestBody)
+            .withFeideId(SOME_CURATOR)
+            .withCustomerId(samplePublication.getPublisher().getId().toString())
+            .build();
     }
 
     private CreateMessageRequest createSampleMessage(Publication savedPublication, String message) {
@@ -253,11 +257,9 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
         return requestBody;
     }
 
-    private Publication createSamplePublication() throws TransactionFailedException {
-        return resourcesService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
-    }
-
-    private String randomString() {
-        return FAKER.lorem().sentence();
+    private Publication createSamplePublication() throws ApiGatewayException {
+        Publication publication = PublicationGenerator.randomPublication();
+        UserInstance userInstance = extractUserInstance(publication);
+        return resourcesService.createPublication(userInstance, publication);
     }
 }

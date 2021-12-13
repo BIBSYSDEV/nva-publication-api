@@ -1,6 +1,6 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.TestingUtils.createRandomOrgUnitId;
+import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -28,7 +28,7 @@ class AffiliationSelectionServiceTest {
     @BeforeEach
     public void init() {
         feideId = randomString();
-        singleOrgUnitId = createRandomOrgUnitId();
+        singleOrgUnitId = randomOrgUnitId();
         responseWithOneUserAffiliation = PersonApiResponseBodyMock.createResponse(feideId, singleOrgUnitId).toString();
     }
 

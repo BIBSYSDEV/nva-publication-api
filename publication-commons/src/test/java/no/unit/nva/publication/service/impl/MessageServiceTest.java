@@ -1,6 +1,8 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
+import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -34,6 +36,8 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,20 +65,22 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     private MessageService messageService;
     private ResourceService resourceService;
+    private UserInstance owner;
 
     @BeforeEach
     public void initialize() {
         super.init();
         Clock clock = mockClock();
         messageService = new MessageService(client, clock);
-        var httpClient = new FakeHttpClient();
+        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         resourceService = new ResourceService(client, httpClient, clock);
+        owner = randomUserInstance();
     }
 
     @Test
-    public void createSimpleMessageStoresNewMessageInDatabase() throws TransactionFailedException, NotFoundException {
-        var publication = createSamplePublication();
-        var owner = extractOwner(publication);
+    public void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
+
+        var publication = createDraftPublication(owner);
         var messageText = randomString();
 
         var messageIdentifier = createSimpleMessage(publication, messageText);
@@ -88,9 +94,8 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     @Test
     public void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
-        throws TransactionFailedException, NotFoundException {
-        var publication = createSamplePublication();
-        var owner = extractOwner(publication);
+        throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
         var messageText = randomString();
         var messageIdentifier = createDoiRequestMessage(publication, messageText);
         var savedMessage = fetchMessage(owner, messageIdentifier);
@@ -106,13 +111,12 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     @Test
     public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
-        throws TransactionFailedException {
-        var insertedPublication = createSamplePublication();
+        throws ApiGatewayException {
+        var insertedPublication = createDraftPublication(owner);
         var insertedMessages = insertSampleMessages(insertedPublication);
 
-        var userInstance = extractOwner(insertedPublication);
         var resourceConversationOpt =
-            messageService.getMessagesForResource(userInstance, insertedPublication.getIdentifier());
+            messageService.getMessagesForResource(owner, insertedPublication.getIdentifier());
 
         assertThat(resourceConversationOpt.isPresent(), is(true));
         var resourceConversation = resourceConversationOpt.orElseThrow();
@@ -127,9 +131,9 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     @Test
     public void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
-        throws TransactionFailedException {
+        throws ApiGatewayException {
         messageService = serviceProducingDuplicateIdentifiers();
-        var publication = createSamplePublication();
+        var publication = createDraftPublication(owner);
 
         var actualIdentifier = createSimpleMessage(publication, randomString());
 
@@ -141,11 +145,11 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByOwnerAndIdReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
-        Publication publication = createSamplePublication();
+    public void getMessageByOwnerAndIdReturnsStoredMessage() throws ApiGatewayException {
+        Publication publication = createDraftPublication(owner);
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
-        var savedMessage = fetchMessage(extractOwner(publication), messageIdentifier);
+        var savedMessage = fetchMessage(extractUserInstance(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -153,13 +157,12 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByKeyReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
-
-        var publication = createSamplePublication();
+    public void getMessageByKeyReturnsStoredMessage() throws ApiGatewayException {
+        var publication = createDraftPublication(owner);
         var messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
 
-        var savedMessage = messageService.getMessage(extractOwner(publication), messageIdentifier);
+        var savedMessage = messageService.getMessage(extractUserInstance(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -167,12 +170,12 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByIdAndOwnerReturnsStoredMessage() throws TransactionFailedException, NotFoundException {
-        Publication publication = createSamplePublication();
+    public void getMessageByIdAndOwnerReturnsStoredMessage() throws ApiGatewayException {
+        Publication publication = createDraftPublication(owner);
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
         var sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
-        var savedMessage = fetchMessage(extractOwner(publication), sampleMessageUri);
+        var savedMessage = fetchMessage(extractUserInstance(publication), sampleMessageUri);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -205,14 +208,14 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesForUserReturnsAllMessagesConnectedToUser() throws TransactionFailedException {
-        var publication1 = createSamplePublication();
-        var publication2 = createSamplePublication();
+    public void listMessagesForUserReturnsAllMessagesConnectedToUser() throws ApiGatewayException {
+        var publication1 = createDraftPublication(owner);
+        var publication2 = createDraftPublication(owner);
 
         var messagesForPublication1 = insertSampleMessages(publication1);
         var messagesForPublication2 = insertSampleMessages(publication2);
 
-        var actualMessages = messageService.listMessagesForUser(extractOwner(publication1));
+        var actualMessages = messageService.listMessagesForUser(extractUserInstance(publication1));
         var expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
         var expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
         var expectedMessages = List.of(
@@ -289,7 +292,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
         for (Publication createdPublication : createdPublications) {
             SortableIdentifier messageIdentifier = createSimpleMessage(createdPublication, randomString());
-            UserInstance owner = extractOwner(createdPublication);
+            UserInstance owner = extractUserInstance(createdPublication);
             Message savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
@@ -306,7 +309,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     private List<Publication> persistPublications(List<Publication> newPublications) {
         return newPublications.stream()
-            .map(attempt(pub -> resourceService.createPublication(pub)))
+            .map(attempt(pub -> createPublication(resourceService, pub)))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
@@ -315,12 +318,20 @@ public class MessageServiceTest extends ResourcesLocalTest {
         return () -> SOME_IDENTIFIER;
     }
 
-    private Publication createSamplePublication() throws TransactionFailedException {
-        return resourceService.createPublication(PublicationGenerator.publicationWithoutIdentifier());
+    private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
+        var publication = createPublicationForUser(owner);
+        return resourceService.createPublication(owner,publication);
+    }
+
+
+    private Publication createPublication(ResourceService resourceService, Publication publication)
+        throws ApiGatewayException {
+        UserInstance userInstance = extractUserInstance(publication);
+        return resourceService.createPublication(userInstance, publication);
     }
 
     private List<Message> insertSampleMessages(Publication publication) {
-        var publicationOwner = extractOwner(publication);
+        var publicationOwner = extractUserInstance(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
             .map(ignoredValue -> randomString())
             .map(message -> createSimpleMessage(publication, message))
@@ -339,7 +350,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
-        var publicationOwner = extractOwner(publication);
+        var publicationOwner = extractUserInstance(publication);
         var sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createDoiRequestMessage(publication, message, sender);
     }
@@ -349,7 +360,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private SortableIdentifier createSimpleMessage(Publication publication, String message) {
-        var publicationOwner = extractOwner(publication);
+        var publicationOwner = extractUserInstance(publication);
         var sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createSimpleMessage(publication, message, sender);
     }

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.fetch;
 
 import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractOwner;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -82,7 +82,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, Publication
     }
 
     private DoiRequest fetchDoiRequest(Publication publication) {
-        UserInstance owner = extractOwner(publication);
+        UserInstance owner = extractUserInstance(publication);
         SortableIdentifier resourceIdentifier = publication.getIdentifier();
         return attempt(() -> doiRequestService.getDoiRequestByResourceIdentifier(owner, resourceIdentifier))
                    .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)

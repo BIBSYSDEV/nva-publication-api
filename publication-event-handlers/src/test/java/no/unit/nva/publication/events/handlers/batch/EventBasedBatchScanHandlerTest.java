@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -26,20 +27,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
-import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,8 +80,8 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldUpdateDataEntriesWhenValidRequestIsReceived()
-        throws TransactionFailedException, NotFoundException {
-        Publication createdPublication = resourceService.createPublication(PublicationGenerator.randomPublication());
+        throws ApiGatewayException {
+        Publication createdPublication = createPublication(PublicationGenerator.randomPublication());
         Resource initialResource = resourceService.getResourceByIdentifier(createdPublication.getIdentifier());
         final String initialRowVersion = initialResource.getRowVersion();
 
@@ -93,7 +96,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldEmitNewScanEventWhenDatabaseScanningIsNotComplete() throws TransactionFailedException {
+    void shouldEmitNewScanEventWhenDatabaseScanningIsNotComplete() throws ApiGatewayException {
         createRandomResources(2);
         handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
         var emittedEvent = consumeLatestEmittedEvent();
@@ -102,7 +105,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldNotSendScanEventWhenDatabaseScanningIsComplete()
-        throws TransactionFailedException {
+        throws ApiGatewayException {
         createRandomResources(2);
         handler.handleRequest(createInitialScanRequest(LARGE_PAGE), output, context);
         assertThat(eventBridgeClient.getRequestEntries(), is(empty()));
@@ -110,7 +113,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
 
     @Test
     void shouldStartScanningFromSuppliedStartMarkerWhenStartMakerIsNotNull()
-        throws TransactionFailedException {
+        throws ApiGatewayException {
         createRandomResources(5);
         handler.handleRequest(createInitialScanRequest(ONE_ENTRY_PER_EVENT), output, context);
 
@@ -125,7 +128,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldNotGoIntoInfiniteLoop() throws TransactionFailedException {
+    void shouldNotGoIntoInfiniteLoop() throws ApiGatewayException {
         createRandomResources(20);
         pushInitialEntryInEventBridge(new ScanDatabaseRequest(ONE_ENTRY_PER_EVENT, START_FROM_BEGINNING));
         while (thereAreMoreEventsInEventBridge()) {
@@ -149,14 +152,20 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(expectedExceptionMessage));
     }
 
-    private void createRandomResources(int numberOfResources) throws TransactionFailedException {
+    private void createRandomResources(int numberOfResources) throws ApiGatewayException {
         for (int i = 0; i < numberOfResources; i++) {
-            resourceService.createPublication(PublicationGenerator.randomPublication());
+            createPublication(PublicationGenerator.randomPublication());
         }
     }
 
+    private Publication createPublication(Publication publication) throws ApiGatewayException {
+        UserInstance userInstance = extractUserInstance(publication);
+        return resourceService.createPublication(userInstance, publication);
+    }
+
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
-        return new ResourceService(dynamoDbClient, new FakeHttpClient(), clock) {
+        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
+        return new ResourceService(dynamoDbClient, externalServicesHttpClient, clock) {
             @Override
             public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
                 if (nonNull(startMarker)) {
