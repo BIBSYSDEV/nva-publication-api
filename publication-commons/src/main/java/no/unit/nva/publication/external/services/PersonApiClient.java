@@ -31,10 +31,10 @@ import org.zalando.problem.Status;
 
 public class PersonApiClient {
 
-    public static final String ERROR_WITH_PERSON_SERVICE_COMMINUCATION = "Error communicating with Person service";
+    public static final String ERROR_WITH_PERSON_SERVICE_COMMUNICATION = "Error communicating with Person service";
     public static final String PERSON_SERVICE_RESPONSE = "Person Service response:";
     public static final String USER_AFFILIATIONS_FIELD = "/orgunitids";
-    public static final String PATH_TO_PESON_SERVICE_PROXY = "person";
+    public static final String PATH_TO_PERSON_SERVICE_PROXY = "person";
     private static final Logger logger = LoggerFactory.getLogger(PersonApiClient.class);
     private final HttpClient httpClient;
 
@@ -54,7 +54,7 @@ public class PersonApiClient {
         if (!Objects.equals(HttpURLConnection.HTTP_OK, response.statusCode())) {
             var errorReport = generateErrorReport(response);
             logger.warn(PERSON_SERVICE_RESPONSE + errorReport);
-            throw new BadGatewayException(ERROR_WITH_PERSON_SERVICE_COMMINUCATION);
+            throw new BadGatewayException(ERROR_WITH_PERSON_SERVICE_COMMUNICATION);
         }
     }
 
@@ -75,7 +75,7 @@ public class PersonApiClient {
 
     private URI createPersonServiceQuery(String feideId) {
         return new UriWrapper("https", API_HOST)
-            .addChild(PATH_TO_PESON_SERVICE_PROXY)
+            .addChild(PATH_TO_PERSON_SERVICE_PROXY)
             .addQueryParameter("feideid", feideId)
             .getUri();
     }

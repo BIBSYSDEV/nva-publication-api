@@ -21,10 +21,10 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
-  CustomDomain:
+  ApiDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: Custom API to connect this lambda to
-    Default: CustomDomain
+    Description: The Api domain
+    Default: /NVA/ApiDomain
   CustomDomainBasePath:
     Type: String
     Description: Base path mapping in CustomDomain
@@ -343,8 +343,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -366,7 +366,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -394,8 +394,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -439,8 +439,8 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -462,7 +462,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -483,7 +483,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -507,7 +507,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -529,7 +529,7 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
           API_SCHEME: 'https'
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
@@ -552,7 +552,7 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
       Role: !GetAtt LambdaRole.Arn
       Events:
@@ -575,7 +575,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -597,7 +597,7 @@ Resources:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -652,7 +652,7 @@ Resources:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           BASE_PATH: !Ref CustomDomainBasePath
-          DOMAIN_NAME: !Ref CustomDomain
+          DOMAIN_NAME: !Ref ApiDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -689,8 +689,8 @@ Resources:
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
-          API_HOST: !Sub 'api.${CustomDomain}'
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -727,8 +727,8 @@ Resources:
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
-          API_HOST: !Sub 'api.${CustomDomain}'
-          ID_NAMESPACE: !Sub 'https://api.${CustomDomain}/${CustomDomainBasePath}'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
         EventBridgeEvent:
@@ -831,7 +831,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -901,7 +901,7 @@ Resources:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
-          API_HOST: !Ref CustomDomain
+          API_HOST: !Ref ApiDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
       Events:
         EventBridgeEvent:
@@ -967,7 +967,7 @@ Resources:
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           TABLE_NAME: !Ref NvaResourcesTable
           BATCH_EMISSION_INTERVAL_MILLIS: 0
-          DOMAIN_NAME: !Ref CustomDomain
+          DOMAIN_NAME: !Ref ApiDomain
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -1104,6 +1104,6 @@ Resources:
         - WithSuffix
         - !Sub ${CustomDomainBasePath}-${Suffix}
         - !Sub ${CustomDomainBasePath}
-      DomainName: !Sub api.${CustomDomain}
+      DomainName: !Ref ApiDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
