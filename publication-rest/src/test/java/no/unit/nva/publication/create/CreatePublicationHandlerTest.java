@@ -80,6 +80,18 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
+    void requestToHandlerReturnsMinRequiredFieldsWhenDoesNotContainABodyRequestContainsEmptyResource()
+        throws Exception {
+        InputStream inputStream = createPublicationRequest(null);
+        handler.handleRequest(inputStream, outputStream, context);
+
+        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
+        var publicationResponse = actual.getBodyObject(PublicationResponse.class);
+        assertExistenceOfMinimumRequiredFields(publicationResponse);
+    }
+
+    @Test
     void requestToHandlerReturnsMinRequiredFieldsWhenRequestContainsEmptyResource() throws Exception {
         CreatePublicationRequest request = createEmptyPublicationRequest();
         InputStream inputStream = createPublicationRequest(request);

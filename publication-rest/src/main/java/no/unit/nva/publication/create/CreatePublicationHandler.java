@@ -7,6 +7,7 @@ import com.google.common.net.HttpHeaders;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
+import java.util.Optional;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -62,7 +63,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
                                                Context context) throws ApiGatewayException {
 
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
-        Publication newPublication = input.toPublication();
+        Publication newPublication = Optional.ofNullable(input)
+            .map(CreatePublicationRequest::toPublication)
+            .orElseGet(Publication::new);
         Publication createdPublication = publicationService.createPublication(userInstance, newPublication);
         setLocationHeader(createdPublication.getIdentifier());
 
@@ -84,5 +87,4 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
             getLocation(identifier).toString())
         );
     }
-
 }
