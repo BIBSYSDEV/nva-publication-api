@@ -337,7 +337,7 @@ Resources:
       CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Runtime: java11
-      MemorySize: 1408
+      MemorySize: 1798
       Environment:
         Variables:
           ALLOWED_ORIGIN: '*'
