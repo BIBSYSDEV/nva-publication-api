@@ -1,14 +1,14 @@
 [versions]
 
-nva = { strictly = '1.16.29' }
-nvaDatamodel = { strictly = '0.14.21' }
+nva = { strictly = '1.16.30' }
+nvaDatamodel = { strictly = '0.14.22' }
 jackson = { strictly = '2.13.0' }
 awsSdk = { strictly = '1.12.129' }
 awsSdk2 = { strictly = '2.17.99' }
 log4jApi = { strictly = '2.17.0' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }
-awsLambdaCore = { stictly = '1.2.1' }
+awsLambdaCore = { strictly = '1.2.1' }
 awsLambdaEvents = { strictly = '3.9.0' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
