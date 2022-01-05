@@ -8,8 +8,6 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
-
-import no.unit.nva.expansion.ExpansionConstants;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -18,7 +16,6 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeName(TYPE)
 public final class ExpandedMessage implements WithOrganizationScope, ExpandedDataEntry {
@@ -29,11 +26,9 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     private URI customerId;
     private MessageStatus status;
     private String sender;
-    private SortableIdentifier resourceIdentifier;
-    private URI resourceId;
     private String text;
     private Instant createdTime;
-    private String resourceTitle;
+    private PublicationSummary publicationSummary;
     private MessageType messageType;
     private Set<URI> organizationIds;
 
@@ -46,12 +41,19 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         ExpandedMessage expandedMessage = ExpandedMessage.fromMessage(message);
         Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message);
         expandedMessage.setOrganizationIds(organizationIds);
-        URI resourceId =  new UriWrapper(ExpansionConstants.ID_NAMESPACE)
-                .addChild(expandedMessage.getIdentifier().toString()).getUri();
-        expandedMessage.setResourceId(resourceId);
         return expandedMessage;
     }
 
+
+    @JacocoGenerated
+    public PublicationSummary getPublicationSummary() {
+        return publicationSummary;
+    }
+
+    @JacocoGenerated
+    public void setPublicationSummary(PublicationSummary publicationSummary) {
+        this.publicationSummary = publicationSummary;
+    }
 
     @JacocoGenerated
     public MessageType getMessageType() {
@@ -113,25 +115,6 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         this.sender = sender;
     }
 
-    @JacocoGenerated
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
-
-    @JacocoGenerated
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-
-    @JacocoGenerated
-    public URI getResourceId() {
-        return resourceId;
-    }
-
-    @JacocoGenerated
-    public void setResourceId(URI resourceId) {
-        this.resourceId = resourceId;
-    }
 
     @JacocoGenerated
     public String getText() {
@@ -153,15 +136,6 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         this.createdTime = createdTime;
     }
 
-    @JacocoGenerated
-    public String getResourceTitle() {
-        return resourceTitle;
-    }
-
-    @JacocoGenerated
-    public void setResourceTitle(String resourceTitle) {
-        this.resourceTitle = resourceTitle;
-    }
 
     @Override
     public Set<URI> getOrganizationIds() {
@@ -175,25 +149,24 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
 
     public Message toMessage() {
         Message message = new Message();
-        message.setMessageType(this.getMessageType());
-        message.setCreatedTime(this.getCreatedTime());
-        message.setIdentifier(this.getIdentifier());
-        message.setCustomerId(this.getCustomerId());
-        message.setOwner(this.getOwner());
-        message.setResourceIdentifier(this.getResourceIdentifier());
-        message.setSender(this.getSender());
-        message.setResourceTitle(this.getResourceTitle());
+        message.setMessageType(getMessageType());
+        message.setCreatedTime(getCreatedTime());
+        message.setIdentifier(getIdentifier());
+        message.setCustomerId(getCustomerId());
+        message.setOwner(getOwner());
+        message.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getId()));
+        message.setSender(getSender());
+        message.setResourceTitle(getPublicationSummary().getTitle());
         message.setStatus(this.getStatus());
         message.setText(this.getText());
         return message;
     }
 
-    @JacocoGenerated
+
+
     @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-                            getResourceIdentifier(), getResourceId(),
-                            getText(), getCreatedTime(), getResourceTitle(), getMessageType(), getOrganizationIds());
+    public SortableIdentifier retrieveIdentifier() {
+        return getIdentifier();
     }
 
     @JacocoGenerated
@@ -211,31 +184,30 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && getStatus() == that.getStatus()
                && Objects.equals(getSender(), that.getSender())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && Objects.equals(getResourceId(), that.getResourceId())
                && Objects.equals(getText(), that.getText())
                && Objects.equals(getCreatedTime(), that.getCreatedTime())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
+               && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
                && getMessageType() == that.getMessageType()
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
     }
 
+    @JacocoGenerated
     @Override
-    public SortableIdentifier retrieveIdentifier() {
-        return getIdentifier();
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(), getText(),
+                            getCreatedTime(), getPublicationSummary(), getMessageType(), getOrganizationIds());
     }
 
     // should not become public. An ExpandedMessage needs an Expansion service to be complete
     private static ExpandedMessage fromMessage(Message message) {
         ExpandedMessage expandedMessage = new ExpandedMessage();
+        expandedMessage.setPublicationSummary(PublicationSummary.create(message));
         expandedMessage.setMessageType(message.getMessageType());
         expandedMessage.setCreatedTime(message.getCreatedTime());
         expandedMessage.setIdentifier(message.getIdentifier());
         expandedMessage.setCustomerId(message.getCustomerId());
         expandedMessage.setOwner(message.getOwner());
-        expandedMessage.setResourceIdentifier(message.getResourceIdentifier());
         expandedMessage.setSender(message.getSender());
-        expandedMessage.setResourceTitle(message.getResourceTitle());
         expandedMessage.setStatus(message.getStatus());
         expandedMessage.setText(message.getText());
         return expandedMessage;

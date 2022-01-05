@@ -38,7 +38,7 @@ public class MigrationTests extends ResourcesLocalTest {
         throws TransactionFailedException, NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         publication.setResourceOwner(null);
-        var expectedResourceOwner= publication.getOwner();
+        var expectedResourceOwner = publication.getOwner();
         var savedPublication = resourceService.insertPreexistingPublication(publication);
         assertThat(savedPublication.getResourceOwner(), is(nullValue()));
         migrateResources();
