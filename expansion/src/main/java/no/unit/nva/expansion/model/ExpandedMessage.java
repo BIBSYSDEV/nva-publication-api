@@ -8,6 +8,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
+
+import no.unit.nva.expansion.ExpansionConstants;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -16,6 +18,7 @@ import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeName(TYPE)
 public final class ExpandedMessage implements WithOrganizationScope, ExpandedDataEntry {
@@ -27,6 +30,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     private MessageStatus status;
     private String sender;
     private SortableIdentifier resourceIdentifier;
+    private URI resourceId;
     private String text;
     private Instant createdTime;
     private String resourceTitle;
@@ -42,6 +46,9 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         ExpandedMessage expandedMessage = ExpandedMessage.fromMessage(message);
         Set<URI> organizationIds = resourceExpansionService.getOrganizationIds(message);
         expandedMessage.setOrganizationIds(organizationIds);
+        URI resourceId =  new UriWrapper(ExpansionConstants.ID_NAMESPACE)
+                .addChild(expandedMessage.getIdentifier().toString()).getUri();
+        expandedMessage.setResourceId(resourceId);
         return expandedMessage;
     }
 
@@ -117,6 +124,16 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     }
 
     @JacocoGenerated
+    public URI getResourceId() {
+        return resourceId;
+    }
+
+    @JacocoGenerated
+    public void setResourceId(URI resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    @JacocoGenerated
     public String getText() {
         return text;
     }
@@ -175,7 +192,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-                            getResourceIdentifier(),
+                            getResourceIdentifier(), getResourceId(),
                             getText(), getCreatedTime(), getResourceTitle(), getMessageType(), getOrganizationIds());
     }
 
@@ -195,6 +212,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
                && getStatus() == that.getStatus()
                && Objects.equals(getSender(), that.getSender())
                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getResourceId(), that.getResourceId())
                && Objects.equals(getText(), that.getText())
                && Objects.equals(getCreatedTime(), that.getCreatedTime())
                && Objects.equals(getResourceTitle(), that.getResourceTitle())

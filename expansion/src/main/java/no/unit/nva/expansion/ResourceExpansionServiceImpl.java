@@ -1,14 +1,6 @@
 package no.unit.nva.expansion;
 
-import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
@@ -20,6 +12,16 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.apigateway.exceptions.NotFoundException;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
