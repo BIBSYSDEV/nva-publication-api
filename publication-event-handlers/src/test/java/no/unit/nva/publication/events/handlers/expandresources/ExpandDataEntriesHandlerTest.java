@@ -206,6 +206,11 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return null;
             }
+
+            @Override
+            public URI getResourceId(SortableIdentifier sortableIdentifier) {
+                return null;
+            }
         };
     }
 

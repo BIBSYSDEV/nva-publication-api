@@ -34,6 +34,8 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private SortableIdentifier identifier;
     @JsonProperty
     private SortableIdentifier resourceIdentifier;
+    @JsonProperty
+    private URI resourceId;
     @JsonProperty()
     private DoiRequestStatus status;
     @JsonProperty()
@@ -70,6 +72,8 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
         Set<URI> ids = resourceExpansionService.getOrganizationIds(doiRequest);
         expandedDoiRequest.setOrganizationIds(ids);
+        URI resourceId = resourceExpansionService.getResourceId(doiRequest.getResourceIdentifier());
+        expandedDoiRequest.setResourceId(resourceId);
         return expandedDoiRequest;
     }
 
@@ -101,6 +105,16 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @JacocoGenerated
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
+    }
+
+    @JacocoGenerated
+    public URI getResourceId() {
+        return resourceId;
+    }
+
+    @JacocoGenerated
+    public void setResourceId(URI resourceId) {
+        this.resourceId = resourceId;
     }
 
     @JacocoGenerated
@@ -258,7 +272,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
-                            getModifiedDate(),
+                            getModifiedDate(), getResourceId(),
                             getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
                             getResourceModifiedDate(),
                             getResourcePublicationInstance(), getResourcePublicationDate(),
@@ -278,6 +292,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         ExpandedDoiRequest that = (ExpandedDoiRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
                && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && Objects.equals(getResourceId(), that.getResourceId())
                && getStatus() == that.getStatus()
                && getResourceStatus() == that.getResourceStatus()
                && Objects.equals(getModifiedDate(), that.getModifiedDate())

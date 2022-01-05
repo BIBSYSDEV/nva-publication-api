@@ -13,6 +13,7 @@ import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.ConnectedToResource;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -20,6 +21,7 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.paths.UriWrapper;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -59,5 +61,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 .collect(Collectors.toSet());
         }
         return Collections.emptySet();
+    }
+
+    @Override
+    public URI getResourceId(SortableIdentifier identifier) {
+        return new UriWrapper(ExpansionConstants.ID_NAMESPACE).addChild(identifier.toString()).getUri();
     }
 }
