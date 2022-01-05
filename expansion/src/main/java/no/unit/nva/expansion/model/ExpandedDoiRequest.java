@@ -1,31 +1,20 @@
 package no.unit.nva.expansion.model;
 
-import static java.util.Collections.emptySet;
-import static java.util.Objects.nonNull;
 import static no.unit.nva.expansion.model.ExpandedDoiRequest.TYPE;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-
-import no.unit.nva.expansion.ExpansionConstants;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
 import no.unit.nva.model.DoiRequestStatus;
-import no.unit.nva.model.PublicationDate;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeName(TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -35,14 +24,8 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
 
     @JsonProperty
     private SortableIdentifier identifier;
-    @JsonProperty
-    private SortableIdentifier resourceIdentifier;
-    @JsonProperty
-    private URI resourceId;
     @JsonProperty()
     private DoiRequestStatus status;
-    @JsonProperty()
-    private PublicationStatus resourceStatus;
     @JsonProperty
     private Instant modifiedDate;
     @JsonProperty
@@ -52,20 +35,10 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private URI customerId;
     @JsonProperty
     private String owner;
-
-    private String resourceTitle;
-    @JsonProperty
-    private Instant resourceModifiedDate;
-    @JsonProperty
-    private PublicationInstance<? extends Pages> resourcePublicationInstance;
-    @JsonProperty
-    private PublicationDate resourcePublicationDate;
-    @JsonProperty
-    private String resourcePublicationYear;
-    @JsonProperty
+    @JsonProperty("publication")
+    private PublicationSummary publicationSummary;
+    @JsonProperty("doi")
     private URI doi;
-    @JsonProperty
-    private List<Contributor> contributors;
     @JsonProperty
     private Set<URI> organizationIds;
 
@@ -75,20 +48,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
         Set<URI> ids = resourceExpansionService.getOrganizationIds(doiRequest);
         expandedDoiRequest.setOrganizationIds(ids);
-        URI resourceId =  new UriWrapper(ExpansionConstants.ID_NAMESPACE)
-                .addChild(expandedDoiRequest.getIdentifier().toString()).getUri();
-        expandedDoiRequest.setResourceId(resourceId);
         return expandedDoiRequest;
-    }
-
-    @JacocoGenerated
-    public List<Contributor> getContributors() {
-        return contributors;
-    }
-
-    @JacocoGenerated
-    public void setContributors(List<Contributor> contributors) {
-        this.contributors = contributors;
     }
 
     @JacocoGenerated
@@ -102,26 +62,6 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @JacocoGenerated
-    public SortableIdentifier getResourceIdentifier() {
-        return resourceIdentifier;
-    }
-
-    @JacocoGenerated
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
-    }
-
-    @JacocoGenerated
-    public URI getResourceId() {
-        return resourceId;
-    }
-
-    @JacocoGenerated
-    public void setResourceId(URI resourceId) {
-        this.resourceId = resourceId;
-    }
-
-    @JacocoGenerated
     public DoiRequestStatus getStatus() {
         return status;
     }
@@ -129,16 +69,6 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     @JacocoGenerated
     public void setStatus(DoiRequestStatus status) {
         this.status = status;
-    }
-
-    @JacocoGenerated
-    public PublicationStatus getResourceStatus() {
-        return resourceStatus;
-    }
-
-    @JacocoGenerated
-    public void setResourceStatus(PublicationStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
     }
 
     @JacocoGenerated
@@ -182,54 +112,13 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @JacocoGenerated
-    public String getResourceTitle() {
-        return resourceTitle;
+    public PublicationSummary getPublicationSummary() {
+        return publicationSummary;
     }
 
     @JacocoGenerated
-    public void setResourceTitle(String resourceTitle) {
-        this.resourceTitle = resourceTitle;
-    }
-
-    @JacocoGenerated
-    public Instant getResourceModifiedDate() {
-        return resourceModifiedDate;
-    }
-
-    @JacocoGenerated
-    public void setResourceModifiedDate(Instant resourceModifiedDate) {
-        this.resourceModifiedDate = resourceModifiedDate;
-    }
-
-    @JacocoGenerated
-    public PublicationInstance<? extends Pages> getResourcePublicationInstance() {
-        return resourcePublicationInstance;
-    }
-
-    @JacocoGenerated
-    public void setResourcePublicationInstance(
-        PublicationInstance<? extends Pages> resourcePublicationInstance) {
-        this.resourcePublicationInstance = resourcePublicationInstance;
-    }
-
-    @JacocoGenerated
-    public PublicationDate getResourcePublicationDate() {
-        return resourcePublicationDate;
-    }
-
-    @JacocoGenerated
-    public void setResourcePublicationDate(PublicationDate resourcePublicationDate) {
-        this.resourcePublicationDate = resourcePublicationDate;
-    }
-
-    @JacocoGenerated
-    public String getResourcePublicationYear() {
-        return resourcePublicationYear;
-    }
-
-    @JacocoGenerated
-    public void setResourcePublicationYear(String resourcePublicationYear) {
-        this.resourcePublicationYear = resourcePublicationYear;
+    public void setPublicationSummary(PublicationSummary publicationSummary) {
+        this.publicationSummary = publicationSummary;
     }
 
     @JacocoGenerated
@@ -242,11 +131,13 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         this.doi = doi;
     }
 
+    @JacocoGenerated
     @Override
     public Set<URI> getOrganizationIds() {
-        return nonNull(organizationIds) ? organizationIds : emptySet();
+        return organizationIds;
     }
 
+    @JacocoGenerated
     @Override
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
@@ -255,33 +146,33 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     public DoiRequest toDoiRequest() {
         DoiRequest doiRequest = new DoiRequest();
         doiRequest.setDoi(this.getDoi());
-        doiRequest.setContributors(this.getContributors());
+        doiRequest.setContributors(this.getPublicationSummary().getContributors());
         doiRequest.setCreatedDate(this.getCreatedDate());
         doiRequest.setIdentifier(this.getIdentifier());
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
-        doiRequest.setResourceIdentifier(this.getResourceIdentifier());
-        doiRequest.setResourceModifiedDate(this.getResourceModifiedDate());
-        doiRequest.setResourcePublicationDate(this.getResourcePublicationDate());
-        doiRequest.setResourcePublicationInstance(this.getResourcePublicationInstance());
-        doiRequest.setResourcePublicationYear(this.getResourcePublicationYear());
-        doiRequest.setResourceStatus(this.getResourceStatus());
-        doiRequest.setResourceTitle(this.getResourceTitle());
+        doiRequest.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getId()));
+        doiRequest.setResourceModifiedDate(this.getPublicationSummary().getModifiedDate());
+        doiRequest.setResourcePublicationDate(this.getPublicationSummary().getPublicationDate());
+        doiRequest.setResourcePublicationInstance(this.getPublicationSummary().getPublicationInstance());
+        doiRequest.setResourcePublicationYear(this.getPublicationSummary().getPublicationYear());
+        doiRequest.setResourceStatus(this.getPublicationSummary().getStatus());
+        doiRequest.setResourceTitle(this.getPublicationSummary().getTitle());
         doiRequest.setStatus(this.getStatus());
         return doiRequest;
+    }
+
+    @Override
+    public SortableIdentifier retrieveIdentifier() {
+        return getIdentifier();
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getResourceStatus(),
-                            getModifiedDate(), getResourceId(),
-                            getCreatedDate(), getCustomerId(), getOwner(), getResourceTitle(),
-                            getResourceModifiedDate(),
-                            getResourcePublicationInstance(), getResourcePublicationDate(),
-                            getResourcePublicationYear(),
-                            getDoi(), getContributors(), getOrganizationIds());
+        return Objects.hash(getIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(),
+                            getCustomerId(), getOwner(), getPublicationSummary(), getDoi(), getOrganizationIds());
     }
 
     @JacocoGenerated
@@ -295,46 +186,26 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         }
         ExpandedDoiRequest that = (ExpandedDoiRequest) o;
         return Objects.equals(getIdentifier(), that.getIdentifier())
-               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
-               && Objects.equals(getResourceId(), that.getResourceId())
                && getStatus() == that.getStatus()
-               && getResourceStatus() == that.getResourceStatus()
                && Objects.equals(getModifiedDate(), that.getModifiedDate())
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getCustomerId(), that.getCustomerId())
                && Objects.equals(getOwner(), that.getOwner())
-               && Objects.equals(getResourceTitle(), that.getResourceTitle())
-               && Objects.equals(getResourceModifiedDate(), that.getResourceModifiedDate())
-               && Objects.equals(getResourcePublicationInstance(), that.getResourcePublicationInstance())
-               && Objects.equals(getResourcePublicationDate(), that.getResourcePublicationDate())
-               && Objects.equals(getResourcePublicationYear(), that.getResourcePublicationYear())
+               && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
                && Objects.equals(getDoi(), that.getDoi())
-               && Objects.equals(getContributors(), that.getContributors())
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
-    }
-
-    @Override
-    public SortableIdentifier retrieveIdentifier() {
-        return getIdentifier();
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest) {
         ExpandedDoiRequest request = new ExpandedDoiRequest();
         request.setDoi(doiRequest.getDoi());
-        request.setContributors(doiRequest.getContributors());
+        request.setPublicationSummary(PublicationSummary.create(doiRequest));
         request.setCreatedDate(doiRequest.getCreatedDate());
         request.setIdentifier(doiRequest.getIdentifier());
         request.setCustomerId(doiRequest.getCustomerId());
         request.setModifiedDate(doiRequest.getModifiedDate());
         request.setOwner(doiRequest.getOwner());
-        request.setResourceIdentifier(doiRequest.getResourceIdentifier());
-        request.setResourceModifiedDate(doiRequest.getResourceModifiedDate());
-        request.setResourcePublicationDate(doiRequest.getResourcePublicationDate());
-        request.setResourcePublicationInstance(doiRequest.getResourcePublicationInstance());
-        request.setResourcePublicationYear(doiRequest.getResourcePublicationYear());
-        request.setResourceStatus(doiRequest.getResourceStatus());
-        request.setResourceTitle(doiRequest.getResourceTitle());
         request.setStatus(doiRequest.getStatus());
         return request;
     }
