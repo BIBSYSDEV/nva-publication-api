@@ -1,19 +1,10 @@
 package no.unit.nva.expansion;
 
-import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.ConnectedToResource;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -21,7 +12,16 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import nva.commons.core.paths.UriWrapper;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -61,10 +61,5 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 .collect(Collectors.toSet());
         }
         return Collections.emptySet();
-    }
-
-    @Override
-    public URI getResourceId(SortableIdentifier identifier) {
-        return new UriWrapper(ExpansionConstants.ID_NAMESPACE).addChild(identifier.toString()).getUri();
     }
 }

@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import no.unit.nva.expansion.ExpansionConstants;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -23,6 +25,7 @@ import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeName(TYPE)
 @SuppressWarnings("PMD.TooManyFields")
@@ -72,7 +75,8 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
         Set<URI> ids = resourceExpansionService.getOrganizationIds(doiRequest);
         expandedDoiRequest.setOrganizationIds(ids);
-        URI resourceId = resourceExpansionService.getResourceId(doiRequest.getResourceIdentifier());
+        URI resourceId =  new UriWrapper(ExpansionConstants.ID_NAMESPACE)
+                .addChild(expandedDoiRequest.getIdentifier().toString()).getUri();
         expandedDoiRequest.setResourceId(resourceId);
         return expandedDoiRequest;
     }
