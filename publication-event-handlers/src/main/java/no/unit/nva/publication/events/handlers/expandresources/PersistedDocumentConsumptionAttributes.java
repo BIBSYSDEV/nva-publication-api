@@ -7,6 +7,7 @@ import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
@@ -39,6 +40,9 @@ public class PersistedDocumentConsumptionAttributes {
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
             return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedMessage) {
+            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
+        } else if (expandedEntry instanceof ExpandedResourceConversation) {
+            //TODO: use different index?
             return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
         }
         throw new UnsupportedOperationException(

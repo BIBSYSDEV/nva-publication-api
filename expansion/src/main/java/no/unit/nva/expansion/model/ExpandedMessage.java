@@ -44,7 +44,6 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         return expandedMessage;
     }
 
-
     @JacocoGenerated
     public PublicationSummary getPublicationSummary() {
         return publicationSummary;

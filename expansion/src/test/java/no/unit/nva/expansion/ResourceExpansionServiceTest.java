@@ -25,11 +25,14 @@ import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -75,6 +78,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0");
     private ResourceExpansionService service;
     private ResourceService resourceService;
+    private MessageService messageService;
     private FakeHttpClient<String> externalServicesHttpClient;
 
     @BeforeEach
@@ -96,14 +100,17 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         initializeServices();
         Publication createdPublication = createPublication(RESOURCE_OWNER_INSTITUTION_AFFILIATION);
 
-        Message message = Message.supportMessage(extractUserInstance(createdPublication),
-                                                 createdPublication,
-                                                 randomString(),
-                                                 SortableIdentifier.next(),
-                                                 CLOCK);
-        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
-        assertThat(expandedMessage.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
+        Message message = createSimpleMessage(createdPublication);
+
+        ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
+        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
         assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService();
+    }
+
+    private Message createSimpleMessage(Publication createdPublication) throws TransactionFailedException, NotFoundException {
+        UserInstance userInstance = extractUserInstance(createdPublication);
+        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance, createdPublication, randomString());
+        return messageService.getMessage(userInstance, identifier);
     }
 
     @Test
@@ -124,13 +131,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnExpandedMessageWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit() throws Exception {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
 
-        Message message = Message.supportMessage(extractUserInstance(createdPublication),
-                                                 createdPublication,
-                                                 randomString(),
-                                                 SortableIdentifier.next(),
-                                                 CLOCK);
-        ExpandedMessage expandedMessage = (ExpandedMessage) service.expandEntry(message);
-        assertThat(expandedMessage.getOrganizationIds(), containsInAnyOrder(
+        Message message = createSimpleMessage(createdPublication);
+
+        ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
+        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(
             CRISTIN_ORG_ID,
             CRISTIN_ORG_PARENT_ID,
             CRISTIN_ORG_GRAND_PARENT_ID
@@ -172,7 +176,8 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private void initializeServices() {
         resourceService = new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
-        service = new ResourceExpansionServiceImpl(externalServicesHttpClient, resourceService);
+        messageService = new MessageService(client, Clock.systemDefaultZone());
+        service = new ResourceExpansionServiceImpl(externalServicesHttpClient, resourceService, messageService);
     }
 
     private void assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService() {
@@ -190,6 +195,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private DataEntry generateResourceUpdate(Class<?> resourceUpdateType) throws ApiGatewayException {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
+
         if (Resource.class.equals(resourceUpdateType)) {
             return Resource.fromPublication(createdPublication);
         }
@@ -197,7 +203,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             return createDoiRequest(createdPublication);
         }
         if (Message.class.equals(resourceUpdateType)) {
-            return createMessage(createdPublication);
+            return createSimpleMessage(createdPublication);
         }
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }
@@ -206,10 +212,5 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resource = Resource.fromPublication(createdPublication);
 
         return DoiRequest.newDoiRequestForResource(resource);
-    }
-
-    private Message createMessage(Publication createdPublication) {
-        SortableIdentifier messageIdentifier = SortableIdentifier.next();
-        return Message.supportMessage(SAMPLE_SENDER, createdPublication, SOME_MESSAGE, messageIdentifier, CLOCK);
     }
 }

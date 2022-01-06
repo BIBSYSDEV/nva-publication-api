@@ -30,6 +30,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
@@ -120,8 +121,8 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
         assertThat(resourceConversationOpt.isPresent(), is(true));
         var resourceConversation = resourceConversationOpt.orElseThrow();
-        var actualPublication = resourceConversation.getPublication();
-        var expectedPublication = constructExpectedPublication(insertedPublication);
+        var actualPublication = resourceConversation.getPublicationSummary();
+        var expectedPublication = PublicationSummary.fromPublication(constructExpectedPublication(insertedPublication));
 
         assertThat(actualPublication, is(equalTo(expectedPublication)));
 

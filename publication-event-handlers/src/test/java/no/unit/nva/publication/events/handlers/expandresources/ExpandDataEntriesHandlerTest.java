@@ -16,6 +16,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -78,6 +79,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private static final String INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE =
         stringFromResources(Path.of("expandResources", "cristin_grand_parent_org.json"));
     private ResourceService resourceService;
+    private MessageService messageService;
 
     @BeforeEach
     public void init() {
@@ -90,9 +92,11 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
                                               INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE);
 
         resourceService = new ResourceService(client, httpClient, CLOCK);
+        messageService = new MessageService(client, CLOCK);
+
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(httpClient, resourceService);
+            new ResourceExpansionServiceImpl(httpClient, resourceService, messageService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }

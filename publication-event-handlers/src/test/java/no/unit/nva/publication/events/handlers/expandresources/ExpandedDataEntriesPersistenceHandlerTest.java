@@ -29,8 +29,10 @@ import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
@@ -110,7 +112,8 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return Stream.of(
             new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
             new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
-            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX));
+            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX),
+            new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX));
     }
 
     private static ExpandedResource randomResource() throws JsonProcessingException {
@@ -132,8 +135,17 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return ExpandedMessage.create(message, resourceExpansionService);
     }
 
+    private static ExpandedResourceConversation randomResourceConversation()  throws NotFoundException {
+        var publication = PublicationGenerator.randomPublication();
+        //TODO: create proper ExpandedResourceConversation
+        var expandedResourceConversation = new ExpandedResourceConversation();
+        expandedResourceConversation.setPublicationSummary(PublicationSummary.fromPublication(publication));
+        expandedResourceConversation.setIdentifier(publication.getIdentifier());
+        return expandedResourceConversation;
+    }
+
     private static ResourceExpansionServiceImpl fakeExpansionService() {
-        return new ResourceExpansionServiceImpl(null, null) {
+        return new ResourceExpansionServiceImpl(null, null, null) {
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());
