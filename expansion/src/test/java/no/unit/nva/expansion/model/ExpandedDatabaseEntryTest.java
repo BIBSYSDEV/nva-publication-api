@@ -78,7 +78,7 @@ class ExpandedDatabaseEntryTest {
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
         expandedResourceConversation.setPublicationSummary(PublicationSummary.fromPublication(publication));
-        expandedResourceConversation.setIdentifier(publication.getIdentifier());
+        expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
         return expandedResourceConversation;
     }
 }

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -93,21 +92,23 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnExpandedMessageWithInstitutionsUriWhenPersonIsAffiliatedOnlyToInstitution() throws Exception {
+    void shouldReturnExpandedResourceConversationWithInstitutionsUriWhenPersonIsAffiliatedOnlyToInstitution()
+            throws Exception {
         externalServicesHttpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_INSTITUTION,
                                                           INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE
         );
         initializeServices();
         Publication createdPublication = createPublication(RESOURCE_OWNER_INSTITUTION_AFFILIATION);
 
-        Message message = createSimpleMessage(createdPublication);
+        Message message = createMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
         assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService();
     }
 
-    private Message createSimpleMessage(Publication createdPublication) throws TransactionFailedException, NotFoundException {
+    private Message createMessage(Publication createdPublication)
+            throws TransactionFailedException, NotFoundException {
         UserInstance userInstance = extractUserInstance(createdPublication);
         SortableIdentifier identifier = messageService.createSimpleMessage(userInstance, createdPublication, randomString());
         return messageService.getMessage(userInstance, identifier);
@@ -128,10 +129,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnExpandedMessageWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit() throws Exception {
+    void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit() throws Exception {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
 
-        Message message = createSimpleMessage(createdPublication);
+        Message message = createMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(
@@ -203,7 +204,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             return createDoiRequest(createdPublication);
         }
         if (Message.class.equals(resourceUpdateType)) {
-            return createSimpleMessage(createdPublication);
+            return createMessage(createdPublication);
         }
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }

@@ -27,7 +27,6 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -104,7 +103,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
 
     private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException,
                                                                               NotFoundException {
-        return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
+        return Stream.of(randomResource(), randomDoiRequest(), randomResourceConversation());
     }
 
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
@@ -112,7 +111,6 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return Stream.of(
             new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
             new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
-            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX),
             new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX));
     }
 
@@ -127,20 +125,12 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
-    private static ExpandedMessage randomMessage() throws NotFoundException {
-        var randomUser = new UserInstance(randomString(), randomUri());
-        var publication = PublicationGenerator.randomPublication();
-        var clock = Clock.systemDefaultZone();
-        var message = supportMessage(randomUser, publication, randomString(), SortableIdentifier.next(), clock);
-        return ExpandedMessage.create(message, resourceExpansionService);
-    }
-
     private static ExpandedResourceConversation randomResourceConversation()  throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
         expandedResourceConversation.setPublicationSummary(PublicationSummary.fromPublication(publication));
-        expandedResourceConversation.setIdentifier(publication.getIdentifier());
+        expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
         return expandedResourceConversation;
     }
 

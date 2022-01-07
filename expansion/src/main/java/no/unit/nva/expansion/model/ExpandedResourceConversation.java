@@ -1,5 +1,6 @@
 package no.unit.nva.expansion.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
@@ -11,10 +12,11 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 import java.net.URI;
 import java.util.Set;
 
-@JsonTypeName("ResourceConversation")
+@JsonTypeName("PublicationConversation")
 public class ExpandedResourceConversation extends ResourceConversation implements WithOrganizationScope, ExpandedDataEntry {
 
-    private SortableIdentifier identifier;
+    @JsonProperty("identifier")
+    private SortableIdentifier publicationIdentifier;
     private Set<URI> organizationIds;
 
     public ExpandedResourceConversation() {
@@ -35,7 +37,7 @@ public class ExpandedResourceConversation extends ResourceConversation implement
         expanded.setPublicationSummary(resourceConversation.getPublicationSummary());
         expanded.setMessageCollections(resourceConversation.getMessageCollections());
         expanded.setOldestMessage(resourceConversation.getOldestMessage());
-        expanded.setIdentifier(resourceConversation.getPublicationSummary().getIdentifier());
+        expanded.setPublicationIdentifier(resourceConversation.getPublicationSummary().getIdentifier());
         return expanded;
     }
 
@@ -51,14 +53,14 @@ public class ExpandedResourceConversation extends ResourceConversation implement
 
     @Override
     public SortableIdentifier retrieveIdentifier() {
-        return identifier;
+        return publicationIdentifier;
     }
 
-    public SortableIdentifier getIdentifier() {
-        return identifier;
+    public SortableIdentifier getPublicationIdentifier() {
+        return publicationIdentifier;
     }
 
-    public void setIdentifier(SortableIdentifier identifier) {
-        this.identifier = identifier;
+    public void setPublicationIdentifier(SortableIdentifier publicationIdentifier) {
+        this.publicationIdentifier = publicationIdentifier;
     }
 }
