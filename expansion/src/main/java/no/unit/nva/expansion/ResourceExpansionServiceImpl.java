@@ -5,6 +5,7 @@ import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -25,7 +26,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -58,8 +58,9 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private ExpandedResourceConversation createExpandedResourceConversation(Message message) throws NotFoundException {
         UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
-        ResourceConversation messagesForResource = attempt(() -> messageService
-                .getMessagesForResource(userInstance, message.getResourceIdentifier())).get().orElseThrow();
+        SortableIdentifier publicationIdentifier = message.getResourceIdentifier();
+        ResourceConversation messagesForResource =
+                messageService.getMessagesForResource(userInstance, publicationIdentifier).orElseThrow();
         return ExpandedResourceConversation.create(messagesForResource, message, this);
     }
 

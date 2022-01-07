@@ -307,13 +307,11 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private PublicationSummary[] constructExpectedPublicationSummaries(List<Message> savedMessages) {
-        List<PublicationSummary> expectedPublicationSummaries = savedMessages
-            .stream()
-            .map(PublicationSummary::create)
-            .collect(Collectors.toList());
-        PublicationSummary[] expectedPublicationSummariesArray = new PublicationSummary[NUMBER_OF_PUBLICATIONS];
-        expectedPublicationSummaries.toArray(expectedPublicationSummariesArray);
-        return expectedPublicationSummariesArray;
+        return savedMessages
+                .stream()
+                .map(PublicationSummary::create)
+                .collect(Collectors.toList())
+                .toArray(PublicationSummary[]::new);
     }
 
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {

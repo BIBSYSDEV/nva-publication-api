@@ -39,7 +39,6 @@ public class PersistedDocumentConsumptionAttributes {
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
             return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedResourceConversation) {
-            //TODO: use different index?
             return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
         }
         throw new UnsupportedOperationException(
