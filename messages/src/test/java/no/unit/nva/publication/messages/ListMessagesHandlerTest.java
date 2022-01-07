@@ -309,7 +309,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private PublicationSummary[] constructExpectedPublicationSummaries(List<Message> savedMessages) {
         List<PublicationSummary> expectedPublicationSummaries = savedMessages
             .stream()
-            .map(this::createPublicationDescription)
+            .map(PublicationSummary::create)
             .collect(Collectors.toList());
         PublicationSummary[] expectedPublicationSummariesArray = new PublicationSummary[NUMBER_OF_PUBLICATIONS];
         expectedPublicationSummaries.toArray(expectedPublicationSummariesArray);
@@ -329,10 +329,6 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         MessageDto[] expectedMessagesArray = new MessageDto[savedMessages.size()];
         expectedMessages.toArray(expectedMessagesArray);
         return expectedMessagesArray;
-    }
-
-    private PublicationSummary createPublicationDescription(Message message) {
-        return ResourceConversation.createPublicationSummary(message);
     }
 
     private List<Message> insertSampleMessagesForSingleOwner() {

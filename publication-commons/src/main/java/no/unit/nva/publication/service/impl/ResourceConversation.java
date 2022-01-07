@@ -10,10 +10,6 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.Message;
@@ -42,7 +38,7 @@ public class ResourceConversation implements JsonSerializable {
      * ResourceConversation} with the oldest message is at the top of the list.
      *
      * @param messages a collection of messages.
-     * @return a list of {@link ResourceConversation} instnaces with the oldest conversation on top.
+     * @return a list of {@link ResourceConversation} instances with the oldest conversation on top.
      */
     public static List<ResourceConversation> fromMessageList(Collection<Message> messages) {
         return messages.stream()
@@ -52,22 +48,6 @@ public class ResourceConversation implements JsonSerializable {
                    .map(ResourceConversation::newConversationForResource)
                    .sorted(ResourceConversation::conversationWithOldestMessageFirst)
                    .collect(Collectors.toList());
-    }
-
-    public static PublicationSummary createPublicationSummary(Message mostRecentMessage) {
-        String resourceTitleInMostRecentMessage = mostRecentMessage.getResourceTitle();
-        Organization publisher = constructPublisher(mostRecentMessage);
-        EntityDescription entityDescription = constructEntityDescription(resourceTitleInMostRecentMessage);
-
-        Publication publication = new Publication.Builder()
-                   .withOwner(mostRecentMessage.getOwner())
-                   .withPublisher(publisher)
-                   .withEntityDescription(entityDescription)
-                   .withIdentifier(mostRecentMessage.getResourceIdentifier())
-                   .build();
-
-        //TODO: remove use of Publication.Builder above
-        return PublicationSummary.fromPublication(publication);
     }
 
     public List<MessageCollection> getMessageCollections() {
@@ -151,18 +131,12 @@ public class ResourceConversation implements JsonSerializable {
         messages.sort(ResourceConversation::oldestMessageOnTop);
         Message mostRecentMessage = newestMessage(messages);
         Message oldestMessage = messages.get(OLDEST_MESSAGE);
-        PublicationSummary publicationSummary = createPublicationSummary(mostRecentMessage);
+        PublicationSummary publicationSummary = PublicationSummary.create(mostRecentMessage);
         return createResourceConversation(messages, publicationSummary, oldestMessage);
     }
 
     private static int oldestMessageOnTop(Message left, Message right) {
         return left.getCreatedTime().compareTo(right.getCreatedTime());
-    }
-
-    private static EntityDescription constructEntityDescription(String title) {
-        return new EntityDescription.Builder()
-                   .withMainTitle(title)
-                   .build();
     }
 
     private static ResourceConversation createResourceConversation(List<Message> messages,
@@ -179,9 +153,5 @@ public class ResourceConversation implements JsonSerializable {
 
     private static List<MessageCollection> createMessageCollections(List<Message> messages) {
         return MessageCollection.groupMessagesByType(messages);
-    }
-
-    private static Organization constructPublisher(Message message) {
-        return new Builder().withId(message.getCustomerId()).build();
     }
 }

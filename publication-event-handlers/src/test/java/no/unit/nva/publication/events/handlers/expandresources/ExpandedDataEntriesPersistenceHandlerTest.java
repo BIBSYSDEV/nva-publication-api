@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
@@ -29,13 +28,11 @@ import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -129,7 +126,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
-        expandedResourceConversation.setPublicationSummary(PublicationSummary.fromPublication(publication));
+        expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
         expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
         return expandedResourceConversation;
     }

@@ -50,13 +50,17 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof DoiRequest) {
             return ExpandedDoiRequest.create((DoiRequest) dataEntry, this);
         } else if (dataEntry instanceof Message) {
-            Message message = (Message) dataEntry;
-            UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
-            ResourceConversation messagesForResource = attempt(() -> messageService.getMessagesForResource(userInstance, message.getResourceIdentifier())).get().orElseThrow();
-            return ExpandedResourceConversation.create(messagesForResource, message, this);
+            return createExpandedResourceConversation((Message) dataEntry);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
+    }
+
+    private ExpandedResourceConversation createExpandedResourceConversation(Message message) throws NotFoundException {
+        UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
+        ResourceConversation messagesForResource = attempt(() -> messageService
+                .getMessagesForResource(userInstance, message.getResourceIdentifier())).get().orElseThrow();
+        return ExpandedResourceConversation.create(messagesForResource, message, this);
     }
 
     @Override

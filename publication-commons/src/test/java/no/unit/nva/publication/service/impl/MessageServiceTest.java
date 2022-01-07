@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.Period;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -122,7 +123,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
         assertThat(resourceConversationOpt.isPresent(), is(true));
         var resourceConversation = resourceConversationOpt.orElseThrow();
         var actualPublication = resourceConversation.getPublicationSummary();
-        var expectedPublication = PublicationSummary.fromPublication(constructExpectedPublication(insertedPublication));
+        var expectedPublication = PublicationSummary.create(constructExpectedPublication(insertedPublication));
 
         assertThat(actualPublication, is(equalTo(expectedPublication)));
 
@@ -257,6 +258,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
         var entityDescription =
             new EntityDescription.Builder()
                 .withMainTitle(insertedPublication.getEntityDescription().getMainTitle())
+                .withContributors(Collections.emptyList())
                 .build();
 
         return new Publication.Builder()

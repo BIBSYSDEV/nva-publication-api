@@ -13,7 +13,8 @@ import java.net.URI;
 import java.util.Set;
 
 @JsonTypeName("PublicationConversation")
-public class ExpandedResourceConversation extends ResourceConversation implements WithOrganizationScope, ExpandedDataEntry {
+public class ExpandedResourceConversation extends ResourceConversation
+        implements WithOrganizationScope, ExpandedDataEntry {
 
     @JsonProperty("identifier")
     private SortableIdentifier publicationIdentifier;
@@ -23,7 +24,9 @@ public class ExpandedResourceConversation extends ResourceConversation implement
         super();
     }
 
-    public static ExpandedResourceConversation create(ResourceConversation resourceConversation, Message message, ResourceExpansionService resourceExpansionService)
+    public static ExpandedResourceConversation create(ResourceConversation resourceConversation,
+                                                      Message message,
+                                                      ResourceExpansionService resourceExpansionService)
             throws NotFoundException {
         ExpandedResourceConversation expandedResourceConversation =
                 ExpandedResourceConversation.fromResourceConversation(resourceConversation);
@@ -37,7 +40,7 @@ public class ExpandedResourceConversation extends ResourceConversation implement
         expanded.setPublicationSummary(resourceConversation.getPublicationSummary());
         expanded.setMessageCollections(resourceConversation.getMessageCollections());
         expanded.setOldestMessage(resourceConversation.getOldestMessage());
-        expanded.setPublicationIdentifier(resourceConversation.getPublicationSummary().getIdentifier());
+        expanded.setPublicationIdentifier(resourceConversation.getPublicationSummary().getPublicationIdentifier());
         return expanded;
     }
 

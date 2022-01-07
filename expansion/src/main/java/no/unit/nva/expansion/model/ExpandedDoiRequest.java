@@ -12,6 +12,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
@@ -152,7 +153,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         doiRequest.setCustomerId(this.getCustomerId());
         doiRequest.setModifiedDate(this.getModifiedDate());
         doiRequest.setOwner(this.getOwner());
-        doiRequest.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getId()));
+        doiRequest.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getPublicationId()));
         doiRequest.setResourceModifiedDate(this.getPublicationSummary().getModifiedDate());
         doiRequest.setResourcePublicationDate(this.getPublicationSummary().getPublicationDate());
         doiRequest.setResourcePublicationInstance(this.getPublicationSummary().getPublicationInstance());

@@ -59,7 +59,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         List<PublicationSummary> publicationsByOwner;
         publicationsByOwner = resourceService.getPublicationsByOwner(userInstance)
                                   .stream()
-                                  .map(PublicationSummary::fromPublication)
+                                  .map(PublicationSummary::create)
                                   .collect(Collectors.toList());
 
         return new PublicationsByOwnerResponse(publicationsByOwner);

@@ -7,12 +7,11 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.storage.model.DoiRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -32,25 +31,24 @@ public class PublicationSummaryTest {
     @Test
     public void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
-        PublicationSummary summary = PublicationSummary.fromPublication(publication);
+        PublicationSummary summary = PublicationSummary.create(publication);
         assertThat(summary, doesNotHaveEmptyValues());
-        assertThat(summary.getIdentifier(), is(equalTo(publication.getIdentifier())));
-        assertThat(summary.getMainTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
+        assertThat(summary.getPublicationIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(summary.getTitle(), is(equalTo(publication.getEntityDescription().getMainTitle())));
         assertThat(summary.getOwner(), is(equalTo(publication.getOwner())));
         assertThat(summary.getStatus(), is(equalTo(publication.getStatus())));
         assertThat(summary.getCreatedDate(), is(equalTo(publication.getCreatedDate())));
         assertThat(summary.getModifiedDate(), is(equalTo(publication.getModifiedDate())));
     }
-    
+
+    @Test
+    public void shouldCreatePublicationSummaryFromDoiRequest() {
+        DoiRequest doiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication(), SortableIdentifier.next());
+        PublicationSummary publicationSummary = PublicationSummary.create(doiRequest);
+        assertThat(publicationSummary.getPublicationIdentifier(), is(equalTo(doiRequest.getIdentifier())));
+    }
+
     private PublicationSummary publicationSummary() {
-        Instant now = Instant.now();
-        return new PublicationSummary.Builder()
-                   .withCreatedDate(now)
-                   .withModifiedDate(now)
-                   .withIdentifier(SortableIdentifier.next())
-                   .withMainTitle("Main Title")
-                   .withOwner("Owner")
-                   .withStatus(PublicationStatus.DRAFT)
-                   .build();
+        return PublicationSummary.create(PublicationGenerator.randomPublication());
     }
 }

@@ -77,7 +77,7 @@ class ExpandedDatabaseEntryTest {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
-        expandedResourceConversation.setPublicationSummary(PublicationSummary.fromPublication(publication));
+        expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
         expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
         return expandedResourceConversation;
     }
