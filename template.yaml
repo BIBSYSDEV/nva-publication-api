@@ -367,6 +367,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -463,6 +464,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         PutEvent:
@@ -484,6 +486,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -508,6 +511,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -532,6 +536,7 @@ Resources:
           API_HOST: !Ref ApiDomain
           API_SCHEME: 'https'
           TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -554,6 +559,7 @@ Resources:
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         GetEvent:
@@ -576,6 +582,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -598,6 +605,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
         ApiEvent:
@@ -768,6 +776,7 @@ Resources:
           HANDLER_EVENTS_FOLDER: 'ignored'
           API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -834,6 +843,7 @@ Resources:
           TABLE_NAME: !Ref NvaResourcesTable
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -905,6 +915,7 @@ Resources:
           API_SCHEME: https
           API_HOST: !Ref ApiDomain
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
