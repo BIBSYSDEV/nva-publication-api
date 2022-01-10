@@ -35,11 +35,11 @@ public class PersistedDocumentConsumptionAttributes {
 
     public static PersistedDocumentConsumptionAttributes createAttributes(ExpandedDataEntry expandedEntry) {
         if (expandedEntry instanceof ExpandedResource) {
-            return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
-            return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.identifyExpandedEntry());
         } else if (expandedEntry instanceof ExpandedResourceConversation) {
-            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
+            return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.identifyExpandedEntry());
         }
         throw new UnsupportedOperationException(
             UNSUPPORTED_TYPE_ERROR_MESSAGE + expandedEntry.getClass().getSimpleName());

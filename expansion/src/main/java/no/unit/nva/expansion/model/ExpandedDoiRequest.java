@@ -165,7 +165,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     }
 
     @Override
-    public SortableIdentifier retrieveIdentifier() {
+    public SortableIdentifier identifyExpandedEntry() {
         return getIdentifier();
     }
 
