@@ -7,12 +7,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.core.JacocoGenerated;
@@ -25,7 +24,8 @@ import nva.commons.core.SingletonCollector;
 public class ResourceConversation implements JsonSerializable {
 
     private static final int OLDEST_MESSAGE = 0;
-    private Publication publication;
+    @JsonProperty("publication")
+    private PublicationSummary publicationSummary;
     private List<MessageCollection> messageCollections;
     @JsonIgnore
     private MessageDto oldestMessage;
@@ -38,7 +38,7 @@ public class ResourceConversation implements JsonSerializable {
      * ResourceConversation} with the oldest message is at the top of the list.
      *
      * @param messages a collection of messages.
-     * @return a list of {@link ResourceConversation} instnaces with the oldest conversation on top.
+     * @return a list of {@link ResourceConversation} instances with the oldest conversation on top.
      */
     public static List<ResourceConversation> fromMessageList(Collection<Message> messages) {
         return messages.stream()
@@ -48,19 +48,6 @@ public class ResourceConversation implements JsonSerializable {
                    .map(ResourceConversation::newConversationForResource)
                    .sorted(ResourceConversation::conversationWithOldestMessageFirst)
                    .collect(Collectors.toList());
-    }
-
-    public static Publication createPublicationDescription(Message mostRecentMessage) {
-        String resourceTitleInMostRecentMessage = mostRecentMessage.getResourceTitle();
-        Organization publisher = constructPublisher(mostRecentMessage);
-        EntityDescription entityDescription = constructEntityDescription(resourceTitleInMostRecentMessage);
-
-        return new Publication.Builder()
-                   .withOwner(mostRecentMessage.getOwner())
-                   .withPublisher(publisher)
-                   .withEntityDescription(entityDescription)
-                   .withIdentifier(mostRecentMessage.getResourceIdentifier())
-                   .build();
     }
 
     public List<MessageCollection> getMessageCollections() {
@@ -75,18 +62,18 @@ public class ResourceConversation implements JsonSerializable {
         return this.getOldestMessage().getDate().compareTo(that.getOldestMessage().getDate());
     }
 
-    public Publication getPublication() {
-        return publication;
+    public PublicationSummary getPublicationSummary() {
+        return publicationSummary;
     }
 
-    public void setPublication(Publication publication) {
-        this.publication = publication;
+    public void setPublicationSummary(PublicationSummary publicationSummary) {
+        this.publicationSummary = publicationSummary;
     }
 
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getPublication(), getMessageCollections());
+        return Objects.hash(getPublicationSummary(), getMessageCollections());
     }
 
     @JacocoGenerated
@@ -99,7 +86,7 @@ public class ResourceConversation implements JsonSerializable {
             return false;
         }
         ResourceConversation that = (ResourceConversation) o;
-        return Objects.equals(getPublication(), that.getPublication())
+        return Objects.equals(getPublicationSummary(), that.getPublicationSummary())
                && Objects.equals(getMessageCollections(), that.getMessageCollections());
     }
 
@@ -144,26 +131,20 @@ public class ResourceConversation implements JsonSerializable {
         messages.sort(ResourceConversation::oldestMessageOnTop);
         Message mostRecentMessage = newestMessage(messages);
         Message oldestMessage = messages.get(OLDEST_MESSAGE);
-        Publication publication = createPublicationDescription(mostRecentMessage);
-        return createResourceConversation(messages, publication, oldestMessage);
+        PublicationSummary publicationSummary = PublicationSummary.create(mostRecentMessage);
+        return createResourceConversation(messages, publicationSummary, oldestMessage);
     }
 
     private static int oldestMessageOnTop(Message left, Message right) {
         return left.getCreatedTime().compareTo(right.getCreatedTime());
     }
 
-    private static EntityDescription constructEntityDescription(String title) {
-        return new EntityDescription.Builder()
-                   .withMainTitle(title)
-                   .build();
-    }
-
     private static ResourceConversation createResourceConversation(List<Message> messages,
-                                                                   Publication publication,
+                                                                   PublicationSummary publicationSummary,
                                                                    Message oldestMessage) {
         final List<MessageCollection> conversationMessages = createMessageCollections(messages);
         ResourceConversation result = new ResourceConversation();
-        result.setPublication(publication);
+        result.setPublicationSummary(publicationSummary);
         result.setMessageCollections(conversationMessages);
         result.setOldestMessage(MessageDto.fromMessage(oldestMessage));
 
@@ -172,9 +153,5 @@ public class ResourceConversation implements JsonSerializable {
 
     private static List<MessageCollection> createMessageCollections(List<Message> messages) {
         return MessageCollection.groupMessagesByType(messages);
-    }
-
-    private static Organization constructPublisher(Message message) {
-        return new Builder().withId(message.getCustomerId()).build();
     }
 }

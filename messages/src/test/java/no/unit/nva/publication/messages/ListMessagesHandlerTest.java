@@ -38,6 +38,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageCollection;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -263,9 +264,9 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private void assertThatResourceDescriptionsContainIdentifierAndTitle(List<Message> savedMessages,
                                                                          ResourceConversation[] responseObjects) {
 
-        List<Publication> actualPublicationDescriptions = extractPublicationDescriptionFromResponse(responseObjects);
-        Publication[] expectedPublicationDescriptions = constructExpectedPublicationDescriptions(savedMessages);
-        assertThat(actualPublicationDescriptions, containsInAnyOrder(expectedPublicationDescriptions));
+        List<PublicationSummary> actualPublicationSummaries = extractPublicationSummaryFromResponse(responseObjects);
+        PublicationSummary[] expectedPublicationSummaries = constructExpectedPublicationSummaries(savedMessages);
+        assertThat(actualPublicationSummaries, containsInAnyOrder(expectedPublicationSummaries));
     }
 
     private void assertThatResponseContainsAllExpectedMessages(List<Message> savedMessages,
@@ -299,20 +300,18 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         return new UserInstance(message.getOwner(), message.getCustomerId());
     }
 
-    private List<Publication> extractPublicationDescriptionFromResponse(ResourceConversation[] responseObjects) {
+    private List<PublicationSummary> extractPublicationSummaryFromResponse(ResourceConversation[] responseObjects) {
         return Arrays.stream(responseObjects)
-            .map(ResourceConversation::getPublication)
+            .map(ResourceConversation::getPublicationSummary)
             .collect(Collectors.toList());
     }
 
-    private Publication[] constructExpectedPublicationDescriptions(List<Message> savedMessages) {
-        List<Publication> expectedPublicationDescriptions = savedMessages
-            .stream()
-            .map(this::createPublicationDescription)
-            .collect(Collectors.toList());
-        Publication[] expectedPublicationDescriptionsArray = new Publication[NUMBER_OF_PUBLICATIONS];
-        expectedPublicationDescriptions.toArray(expectedPublicationDescriptionsArray);
-        return expectedPublicationDescriptionsArray;
+    private PublicationSummary[] constructExpectedPublicationSummaries(List<Message> savedMessages) {
+        return savedMessages
+                .stream()
+                .map(PublicationSummary::create)
+                .collect(Collectors.toList())
+                .toArray(PublicationSummary[]::new);
     }
 
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
@@ -328,10 +327,6 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         MessageDto[] expectedMessagesArray = new MessageDto[savedMessages.size()];
         expectedMessages.toArray(expectedMessagesArray);
         return expectedMessagesArray;
-    }
-
-    private Publication createPublicationDescription(Message message) {
-        return ResourceConversation.createPublicationDescription(message);
     }
 
     private List<Message> insertSampleMessagesForSingleOwner() {

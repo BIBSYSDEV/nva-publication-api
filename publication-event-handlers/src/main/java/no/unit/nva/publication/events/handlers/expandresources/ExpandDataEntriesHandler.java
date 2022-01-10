@@ -18,6 +18,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -80,7 +81,14 @@ public class ExpandDataEntriesHandler
 
     @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService(HttpClient httpClient) {
-        return new ResourceExpansionServiceImpl(httpClient, defaultResourceService(httpClient));
+        return new ResourceExpansionServiceImpl(httpClient,
+                defaultResourceService(httpClient),
+                defaultMessageService());
+    }
+
+    @JacocoGenerated
+    private static MessageService defaultMessageService() {
+        return new MessageService(defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
@@ -27,14 +26,13 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -102,7 +100,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
 
     private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException,
                                                                               NotFoundException {
-        return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
+        return Stream.of(randomResource(), randomDoiRequest(), randomResourceConversation());
     }
 
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
@@ -110,7 +108,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return Stream.of(
             new PersistedEntryWithExpectedType(randomResource(), RESOURCES_INDEX),
             new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
-            new PersistedEntryWithExpectedType(randomMessage(), MESSAGES_INDEX));
+            new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX));
     }
 
     private static ExpandedResource randomResource() throws JsonProcessingException {
@@ -124,16 +122,17 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
-    private static ExpandedMessage randomMessage() throws NotFoundException {
-        var randomUser = new UserInstance(randomString(), randomUri());
+    private static ExpandedResourceConversation randomResourceConversation()  throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
-        var clock = Clock.systemDefaultZone();
-        var message = supportMessage(randomUser, publication, randomString(), SortableIdentifier.next(), clock);
-        return ExpandedMessage.create(message, resourceExpansionService);
+        //TODO: create proper ExpandedResourceConversation
+        var expandedResourceConversation = new ExpandedResourceConversation();
+        expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
+        expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
+        return expandedResourceConversation;
     }
 
     private static ResourceExpansionServiceImpl fakeExpansionService() {
-        return new ResourceExpansionServiceImpl(null, null) {
+        return new ResourceExpansionServiceImpl(null, null, null) {
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());

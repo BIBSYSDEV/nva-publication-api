@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
-import no.unit.nva.expansion.model.ExpandedMessage;
 import no.unit.nva.expansion.model.ExpandedResource;
+import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
 
@@ -38,7 +38,7 @@ public class PersistedDocumentConsumptionAttributes {
             return new PersistedDocumentConsumptionAttributes(RESOURCES_INDEX, expandedEntry.retrieveIdentifier());
         } else if (expandedEntry instanceof ExpandedDoiRequest) {
             return new PersistedDocumentConsumptionAttributes(DOI_REQUESTS_INDEX, expandedEntry.retrieveIdentifier());
-        } else if (expandedEntry instanceof ExpandedMessage) {
+        } else if (expandedEntry instanceof ExpandedResourceConversation) {
             return new PersistedDocumentConsumptionAttributes(MESSAGES_INDEX, expandedEntry.retrieveIdentifier());
         }
         throw new UnsupportedOperationException(

@@ -11,6 +11,7 @@ import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
@@ -43,7 +44,6 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         expandedMessage.setOrganizationIds(organizationIds);
         return expandedMessage;
     }
-
 
     @JacocoGenerated
     public PublicationSummary getPublicationSummary() {
@@ -154,7 +154,7 @@ public final class ExpandedMessage implements WithOrganizationScope, ExpandedDat
         message.setIdentifier(getIdentifier());
         message.setCustomerId(getCustomerId());
         message.setOwner(getOwner());
-        message.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getId()));
+        message.setResourceIdentifier(SortableIdentifier.fromUri(this.getPublicationSummary().getPublicationId()));
         message.setSender(getSender());
         message.setResourceTitle(getPublicationSummary().getTitle());
         message.setStatus(this.getStatus());

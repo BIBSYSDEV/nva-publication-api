@@ -18,6 +18,7 @@ import no.unit.nva.expansion.FakeResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -31,7 +32,7 @@ class ExpandedDatabaseEntryTest {
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
 
     public static Stream<ExpandedDataEntry> entryProvider() throws JsonProcessingException, NotFoundException {
-        return Stream.of(randomResource(), randomDoiRequest(), randomMessage());
+        return Stream.of(randomResource(), randomDoiRequest(), randomMessage(), randomResourceConversation());
     }
 
     @ParameterizedTest(name = "should return identifier using a non serializable method")
@@ -70,5 +71,14 @@ class ExpandedDatabaseEntryTest {
         var clock = Clock.systemDefaultZone();
         var message = supportMessage(randomUser, publication, randomString(), SortableIdentifier.next(), clock);
         return ExpandedMessage.create(message, resourceExpansionService);
+    }
+
+    private static ExpandedResourceConversation randomResourceConversation() {
+        var publication = PublicationGenerator.randomPublication();
+        //TODO: create proper ExpandedResourceConversation
+        var expandedResourceConversation = new ExpandedResourceConversation();
+        expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
+        expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
+        return expandedResourceConversation;
     }
 }
