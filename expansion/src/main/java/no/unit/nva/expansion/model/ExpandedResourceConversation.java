@@ -16,7 +16,7 @@ import java.util.Set;
 public class ExpandedResourceConversation extends ResourceConversation
         implements WithOrganizationScope, ExpandedDataEntry {
 
-    @JsonProperty("identifier")
+    @JsonProperty("publicationIdentifier")
     private SortableIdentifier publicationIdentifier;
     private Set<URI> organizationIds;
 
