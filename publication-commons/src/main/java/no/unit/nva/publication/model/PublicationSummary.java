@@ -79,21 +79,23 @@ public class PublicationSummary {
 
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
-        publicationSummary.setContributors(publication.getEntityDescription().getContributors());
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
         publicationSummary.setPublicationIdentifier(publication.getIdentifier());
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
-        if (nonNull(publication.getEntityDescription().getDate())) {
-            publicationSummary.setPublicationDate(publication.getEntityDescription().getDate());
-            publicationSummary.setPublicationYear(publication.getEntityDescription().getDate().getYear());
-        }
-        publicationSummary.setTitle(publication.getEntityDescription().getMainTitle());
         publicationSummary.setOwner(publication.getOwner());
-        if (nonNull(publication.getEntityDescription().getReference())) {
-            publicationSummary.setPublicationInstance(publication.getEntityDescription().getReference().getPublicationInstance());
-        }
         publicationSummary.setStatus(publication.getStatus());
+        if (nonNull(publication.getEntityDescription())) {
+            publicationSummary.setContributors(publication.getEntityDescription().getContributors());
+            publicationSummary.setPublicationDate(publication.getEntityDescription().getDate());
+            publicationSummary.setTitle(publication.getEntityDescription().getMainTitle());
+            if (nonNull(publication.getEntityDescription().getDate())) {
+                publicationSummary.setPublicationYear(publication.getEntityDescription().getDate().getYear());
+            }
+            if (nonNull(publication.getEntityDescription().getReference())) {
+                publicationSummary.setPublicationInstance(publication.getEntityDescription().getReference().getPublicationInstance());
+            }
+        }
         return publicationSummary;
     }
 
