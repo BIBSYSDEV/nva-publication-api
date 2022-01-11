@@ -81,7 +81,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     }
 
     @Override
-    public SortableIdentifier retrieveIdentifier() {
+    public SortableIdentifier identifyExpandedEntry() {
         return SortableIdentifier.fromUri(fetchId());
     }
 

@@ -27,5 +27,10 @@ public interface ExpandedDataEntry extends JsonSerializable {
         }
     }
 
-    SortableIdentifier retrieveIdentifier();
+    /**
+     * An identifier that identifies the specific entry uniquely. It is meant to be used only
+     * for persisting entries for usage from other services (such as the Search service or Analytics services)
+     * @return a unique identifier.
+     */
+    SortableIdentifier identifyExpandedEntry();
 }
