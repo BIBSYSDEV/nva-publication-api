@@ -32,7 +32,7 @@ public class PublicationSummary {
     private URI publicationId;
     @JsonProperty("identifier")
     private SortableIdentifier publicationIdentifier;
-    @JsonProperty
+    @JsonProperty("mainTitle")
     private String title;
     @JsonProperty
     private String owner;
