@@ -1,11 +1,11 @@
 [versions]
 
-nva = { strictly = '1.16.30' }
-nvaDatamodel = { strictly = '0.14.22' }
+nva = { strictly = '1.18.4' }
+nvaDatamodel = { strictly = '0.14.23' }
 jackson = { strictly = '2.13.0' }
 awsSdk = { strictly = '1.12.129' }
-awsSdk2 = { strictly = '2.17.99' }
-log4jApi = { strictly = '2.17.0' }
+awsSdk2 = { strictly = '2.17.105' }
+log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }
 awsLambdaCore = { strictly = '1.2.1' }
@@ -69,13 +69,11 @@ aws-sdk2-httpClientApi = { group = 'software.amazon.awssdk', name = 'http-client
 aws-sdk2-utils = { group = 'software.amazon.awssdk', name = 'utils', version.ref = 'awsSdk2' }
 aws-sdk2-auth = { group = 'software.amazon.awssdk', name = 'auth', version.ref = 'awsSdk2' }
 aws-sdk2-sqs = { group = 'software.amazon.awssdk', name = 'sqs', version.ref = 'awsSdk2' }
+aws-apache-client = { group = 'software.amazon.awssdk', name = 'apache-client', version.ref = 'awsSdk2' }
 
 aws-ion = { group = 'software.amazon.ion', name = 'ion-java', version.ref = 'awsIon' }
 
 apache-commons-collections = { group = 'org.apache.commons', name = 'commons-collections4', version.ref = 'apacheCommons' }
-
-log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4jApi' }
-slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
@@ -101,8 +99,14 @@ cucumber-java8 = { group = 'io.cucumber', name = 'cucumber-java8', version.ref =
 cucumber-junit = { group = 'io.cucumber', name = 'cucumber-junit', version.ref = 'cucumber' }
 cucumber-picocontainer = { group = 'io.cucumber', name = 'cucumber-picocontainer', version.ref = 'cucumber' }
 
-[bundles]
-testing = ["junit-jupiter-params", "junit-jupiter-api", "junit-vintage-engine",
-           "junit-jupiter-engine", "mockito-core", "hamcrest-base", "hamcrest-core",
-            "logutils", "nva-testutils","nva-datamodel-testutils","javers", "zalando"]
+log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.ref = 'log4j' }
+log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
+log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
+slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
+[bundles]
+testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine',
+           'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core',
+            'logutils', 'nva-testutils','nva-datamodel-testutils','javers', 'zalando']
+
+logging = ['log4j-core','log4j-api','log4j-slf4j18-impl','slf4j-api']

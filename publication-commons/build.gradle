@@ -22,14 +22,13 @@ dependencies {
     implementation libs.jackson.databind
     implementation libs.jackson.annotations
     implementation libs.guava
-    implementation libs.log4j.api
     implementation libs.zalando
 
     runtimeOnly libs.jackson.core
     runtimeOnly libs.jackson.datatype.jdk8
     runtimeOnly libs.jackson.datatype.jsr310
     runtimeOnly libs.jackson.module.parameter.names
-
+    implementation libs.bundles.logging
 
     testImplementation libs.jackson.core
     testImplementation libs.nva.datamodel.testutils
