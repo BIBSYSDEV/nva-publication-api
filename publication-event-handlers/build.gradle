@@ -31,7 +31,6 @@ dependencies {
     implementation libs.aws.sdk2.core
     implementation libs.aws.apache.client
 
-
     implementation libs.jackson.annotations
     implementation libs.jackson.databind
     implementation libs.jackson.core
