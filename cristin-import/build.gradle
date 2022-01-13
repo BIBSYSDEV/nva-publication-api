@@ -33,6 +33,7 @@ dependencies {
     implementation libs.aws.sdk2.regions
 
     implementation libs.typesafe.config
+    implementation libs.bundles.logging
 
     testImplementation project(":storage-model")
     testImplementation project(":publication-testing")

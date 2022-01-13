@@ -29,7 +29,7 @@ public enum AccessRight {
         if (index.containsKey(formattedString)) {
             return index.get(formattedString);
         } else {
-            throw new RuntimeException("Unknown Access Right:"+accessRight);
+            throw new RuntimeException("Unknown Access Right:" + accessRight);
         }
     }
 

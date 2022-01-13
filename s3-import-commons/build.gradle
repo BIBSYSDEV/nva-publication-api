@@ -23,6 +23,7 @@ dependencies {
     implementation libs.aws.ion
 
     implementation libs.apache.commons.collections
+    implementation libs.bundles.logging
 
     runtimeOnly libs.jackson.datatype.jsr310
     runtimeOnly libs.jackson.datatype.jdk8
