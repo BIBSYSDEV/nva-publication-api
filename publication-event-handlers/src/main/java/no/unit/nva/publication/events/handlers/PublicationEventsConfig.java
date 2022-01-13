@@ -11,7 +11,6 @@ public final class PublicationEventsConfig {
     public static final String EVENTS_BUCKET = ENVIRONMENT.readEnv("EVENTS_BUCKET");
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
 
-
     private PublicationEventsConfig() {
 
     }
