@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
-public class AnalyticsIntegration extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
+public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String EXPECTED_EVENT_TOPIC_ERROR_MESSAGE =
         "The event topic is not the expected. Expected topic is "
@@ -29,15 +29,15 @@ public class AnalyticsIntegration extends DestinationsEventBridgeEventHandler<Ev
     public static final String CONTEXT = "@context";
     public static final EventReference EMPTY_EVENT = null;
     public static final String TYPE_FIELD = "type";
-    private final static Logger logger = LoggerFactory.getLogger(AnalyticsIntegration.class);
+    private final static Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
     private final S3Client s3Client;
 
     @JacocoGenerated
-    public AnalyticsIntegration() {
+    public AnalyticsIntegrationHandler() {
         this(S3Driver.defaultS3Client().build());
     }
 
-    public AnalyticsIntegration(S3Client s3Client) {
+    public AnalyticsIntegrationHandler(S3Client s3Client) {
         super(EventReference.class);
         this.s3Client = s3Client;
     }

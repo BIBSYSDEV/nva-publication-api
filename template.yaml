@@ -757,7 +757,40 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
-
+  AnalyticsIntegrationHandler:
+    DependsOn: EventsLambdaPermissions
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.persistence.AnalyticsIntegrationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1400
+      ReservedConcurrentExecutions: 5
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
+          IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
+          API_SCHEME: 'https'
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+          PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
+              detail:
+                responsePayload:
+                  topic: [ "PublicationService.ExpandedDataEntry.Update" ]
+      EventInvokeConfig:
+        DestinationConfig:
+          OnFailure:
+            Type: SQS
+            Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
   EventBasedBatchScanHandlerTest:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function

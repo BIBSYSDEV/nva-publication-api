@@ -55,7 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-class AnalyticsIntegrationTest extends ResourcesLocalTest {
+class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
@@ -63,7 +63,7 @@ class AnalyticsIntegrationTest extends ResourcesLocalTest {
         IoUtils.stringFromResources(
             Path.of("expandResources", "cristin_grand_parent_org.json"));
     public static final String JSONLD_CONTEXT = "@context";
-    private AnalyticsIntegration analyticsIntegration;
+    private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
     private FakeS3Client s3Client;
     private S3Driver s3Driver;
@@ -77,7 +77,7 @@ class AnalyticsIntegrationTest extends ResourcesLocalTest {
         this.dynamoClient = super.client;
         this.outputStream = new ByteArrayOutputStream();
         this.s3Client = new FakeS3Client();
-        this.analyticsIntegration = new AnalyticsIntegration(s3Client);
+        this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
         resourceService = new ResourceService(dynamoClient, setupPersonServiceResponses(), Clock.systemDefaultZone());
         this.resourceExpansionService = setupResourceExpansionService();
