@@ -15,6 +15,7 @@ dependencies {
 
     implementation libs.jackson.databind
     implementation libs.jackson.core
+    implementation libs.bundles.logging
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core

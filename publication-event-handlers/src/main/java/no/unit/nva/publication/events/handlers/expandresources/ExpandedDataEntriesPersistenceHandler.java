@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.ENVIRONMENT;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocument.createIndexDocument;
+import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static no.unit.nva.s3.S3Driver.GZIP_ENDING;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -22,7 +22,7 @@ public class ExpandedDataEntriesPersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
-    public static final String PERSISTED_ENTRIES_BUCKET = ENVIRONMENT.readEnv("PERSISTED_ENTRIES_BUCKET");
+
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
     private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
