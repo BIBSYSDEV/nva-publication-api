@@ -2,7 +2,6 @@ package no.unit.nva.expansion.model;
 
 import static java.util.Collections.emptySet;
 import static java.util.Objects.nonNull;
-import static no.unit.nva.expansion.model.ExpandedMessage.TYPE;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
@@ -18,7 +17,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeName(TYPE)
+@JsonTypeName(ExpandedMessage.TYPE)
 public final class ExpandedMessage implements WithOrganizationScope, ExpandedDataEntry {
 
     public static final String TYPE = "Message";

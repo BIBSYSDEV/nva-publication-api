@@ -28,15 +28,15 @@ import nva.commons.core.JsonSerializable;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
-@JsonTypeName("Publication")
+@JsonTypeName(ExpandedResource.TYPE)
 public final class ExpandedResource implements JsonSerializable, ExpandedDataEntry {
 
     // The ExpandedResource differs from ExpandedDoiRequest and ExpandedMessage
     // because is does not extend the Resource or Publication class,
     // but it contains its data as an inner Json Node.
     public static final String ID_FIELD_NAME = "id";
+    public static final String TYPE = "Publication";
     private static final UriRetriever uriRetriever = new UriRetriever();
-
     @JsonAnySetter
     private final Map<String, Object> allFields;
 
@@ -84,7 +84,6 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     public SortableIdentifier identifyExpandedEntry() {
         return SortableIdentifier.fromUri(fetchId());
     }
-
 
     public URI fetchId() {
         return URI.create(objectMapper.convertValue(this.allFields, ObjectNode.class).at(ID_JSON_PTR).textValue());

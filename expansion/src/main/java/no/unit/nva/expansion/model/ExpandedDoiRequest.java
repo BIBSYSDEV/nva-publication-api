@@ -1,6 +1,5 @@
 package no.unit.nva.expansion.model;
 
-import static no.unit.nva.expansion.model.ExpandedDoiRequest.TYPE;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -17,7 +16,7 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
-@JsonTypeName(TYPE)
+@JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
 public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedDataEntry {
 
