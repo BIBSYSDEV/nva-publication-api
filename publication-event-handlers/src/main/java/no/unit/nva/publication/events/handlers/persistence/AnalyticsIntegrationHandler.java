@@ -49,6 +49,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         if (topicIsInvalid(input)) {
             logErrorMessageAndThrowException(event);
         }
+        logger.info("event:"+attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
         var s3Driver = createS3Driver(input);
         var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
         return readPublicationAndRemoveJsonLdContext(inputFileLocation, s3Driver)
