@@ -51,6 +51,11 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         }
         var s3Driver = createS3Driver(input);
         var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
+        return processEventStoreResultsAndEmitEventWithStoredResultsUri(s3Driver, inputFileLocation);
+    }
+
+    private EventReference processEventStoreResultsAndEmitEventWithStoredResultsUri(S3Driver s3Driver,
+                                                                                    UnixPath inputFileLocation) {
         return readPublicationAndRemoveJsonLdContext(inputFileLocation, s3Driver)
             .map(publication -> storePublicationInAnalyticsFolder(s3Driver, publication, inputFileLocation))
             .map(this::createEventWithOutputFileUri)
