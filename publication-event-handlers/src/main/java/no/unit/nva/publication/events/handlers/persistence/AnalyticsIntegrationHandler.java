@@ -29,7 +29,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     public static final String CONTEXT = "@context";
     public static final EventReference EMPTY_EVENT = null;
     public static final String TYPE_FIELD = "type";
-    private final static Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
     private final S3Client s3Client;
 
     @JacocoGenerated
