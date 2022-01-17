@@ -49,7 +49,10 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         if (topicIsInvalid(input)) {
             logErrorMessageAndThrowException(event);
         }
+        //this line will be deleted after we have verfied that things work as they should.
+        logger.info("input:"+attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(input)));
         var s3Driver = createS3Driver(input);
+
         var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
         return processEventStoreResultsAndEmitEventWithStoredResultsUri(s3Driver, inputFileLocation);
     }
