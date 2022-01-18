@@ -52,7 +52,6 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         }
         //this line will be deleted after we have verfied that things work as they should.
         logger.info("input:" + attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
-
         var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
         return processEventStoreResultsAndEmitEventWithStoredResultsUri(s3Driver, inputFileLocation);
     }
