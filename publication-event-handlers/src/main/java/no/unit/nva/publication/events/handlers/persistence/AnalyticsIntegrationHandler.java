@@ -1,6 +1,7 @@
 package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
+import static no.unit.nva.publication.events.handlers.persistence.PersistenceConfig.PERSISTED_ENTRIES_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -29,8 +30,8 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     public static final String CONTEXT = "@context";
     public static final EventReference EMPTY_EVENT = null;
     public static final String TYPE_FIELD = "type";
-    private final static Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
-    private final S3Client s3Client;
+    private static final Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
+    private final S3Driver s3Driver;
 
     @JacocoGenerated
     public AnalyticsIntegrationHandler() {
@@ -39,7 +40,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
 
     public AnalyticsIntegrationHandler(S3Client s3Client) {
         super(EventReference.class);
-        this.s3Client = s3Client;
+        this.s3Driver = new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET);
     }
 
     @Override
@@ -49,9 +50,14 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         if (topicIsInvalid(input)) {
             logErrorMessageAndThrowException(event);
         }
-        logger.info("event:"+attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
-        var s3Driver = createS3Driver(input);
+        //this line will be deleted after we have verfied that things work as they should.
+        logger.info("input:" + attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
         var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
+        return processEventStoreResultsAndEmitEventWithStoredResultsUri(s3Driver, inputFileLocation);
+    }
+
+    private EventReference processEventStoreResultsAndEmitEventWithStoredResultsUri(S3Driver s3Driver,
+                                                                                    UnixPath inputFileLocation) {
         return readPublicationAndRemoveJsonLdContext(inputFileLocation, s3Driver)
             .map(publication -> storePublicationInAnalyticsFolder(s3Driver, publication, inputFileLocation))
             .map(this::createEventWithOutputFileUri)
@@ -81,11 +87,6 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
 
     private EventReference createEventWithOutputFileUri(URI outputFileUri) {
         return new EventReference(ANALYTICS_ENTRY_PERSISTED_EVENT_TOPIC, outputFileUri);
-    }
-
-    private S3Driver createS3Driver(EventReference input) {
-        var bucket = input.getUri().getHost();
-        return new S3Driver(s3Client, bucket);
     }
 
     private ObjectNode parseAsJson(String contents) {
