@@ -31,7 +31,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     public static final EventReference EMPTY_EVENT = null;
     public static final String TYPE_FIELD = "type";
     private static final Logger logger = LoggerFactory.getLogger(AnalyticsIntegrationHandler.class);
-    private final S3Driver s3Driver;
+    private final S3Client s3Client;
 
     @JacocoGenerated
     public AnalyticsIntegrationHandler() {
@@ -40,7 +40,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
 
     public AnalyticsIntegrationHandler(S3Client s3Client) {
         super(EventReference.class);
-        this.s3Driver = new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET);
+        this.s3Client = s3Client;
     }
 
     @Override
@@ -50,39 +50,42 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         if (topicIsInvalid(input)) {
             logErrorMessageAndThrowException(event);
         }
-        //this line will be deleted after we have verfied that things work as they should.
+        //this line will be deleted after we have verified that things work as they should.
         logger.info("input:" + attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(input)).orElseThrow());
-        var inputFileLocation = new UriWrapper(input.getUri()).toS3bucketPath();
-        return processEventStoreResultsAndEmitEventWithStoredResultsUri(s3Driver, inputFileLocation);
+        return processInputEvent(input.getUri());
     }
 
-    private EventReference processEventStoreResultsAndEmitEventWithStoredResultsUri(S3Driver s3Driver,
-                                                                                    UnixPath inputFileLocation) {
-        return readPublicationAndRemoveJsonLdContext(inputFileLocation, s3Driver)
-            .map(publication -> storePublicationInAnalyticsFolder(s3Driver, publication, inputFileLocation))
+    private EventReference processInputEvent(URI inputFileLocation) {
+        return readPublicationAndRemoveJsonLdContext(inputFileLocation)
+            .map(fileContents -> storePublicationInAnalyticsFolder(fileContents, inputFileLocation))
             .map(this::createEventWithOutputFileUri)
             .orElse(EMPTY_EVENT);
     }
 
-    private Optional<String> readPublicationAndRemoveJsonLdContext(UnixPath inputFileLocation, S3Driver s3Driver) {
-        var contents = s3Driver.getFile(inputFileLocation);
-        var json = parseAsJson(contents);
-        return expandedResourceIsPublication(json)
-                   ? removeJsonLdContext(json)
-                   : ignoreNotInterestingEntries();
+    private Optional<String> readPublicationAndRemoveJsonLdContext(URI inputFileLocation) {
+        return Optional.ofNullable(readFileContents(inputFileLocation))
+            .map(this::parseAsJson)
+            .filter(this::expandedResourceIsPublication)
+            .map(this::removeJsonLdContext)
+            .orElseGet(this::ignoreNotInterestingEntries);
     }
 
-    private URI storePublicationInAnalyticsFolder(S3Driver s3Driver,
-                                                  String publication,
-                                                  UnixPath inputFileLocation) {
+    private String readFileContents(URI inputFileLocation) {
+        var s3Driver = new S3Driver(s3Client, inputFileLocation.getHost());
+        var inputFilePathInsideBucket = new UriWrapper(inputFileLocation).toS3bucketPath();
+        return s3Driver.getFile(inputFilePathInsideBucket);
+    }
 
+    private URI storePublicationInAnalyticsFolder(String publication, URI inputFileLocation) {
+        var writeS3Driver = new S3Driver(s3Client, PERSISTED_ENTRIES_BUCKET);
         return attempt(() -> constructOutputPath(inputFileLocation))
-            .map(outputFilePath -> s3Driver.insertFile(outputFilePath, publication))
+            .map(outputFilePath -> writeS3Driver.insertFile(outputFilePath, publication))
             .orElseThrow();
     }
 
-    private UnixPath constructOutputPath(UnixPath inputFileLocation) {
-        return PersistenceConfig.ANALYTICS_FOLDER.addChild(inputFileLocation.getFilename());
+    private UnixPath constructOutputPath(URI inputFileLocation) {
+        var filename = new UriWrapper(inputFileLocation).getFilename();
+        return PersistenceConfig.ANALYTICS_FOLDER.addChild(filename);
     }
 
     private EventReference createEventWithOutputFileUri(URI outputFileUri) {
