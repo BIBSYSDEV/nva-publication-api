@@ -67,7 +67,12 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
             .map(this::parseAsJson)
             .filter(this::expandedResourceIsPublication)
             .map(this::removeJsonLdContext)
+            .map(this::writeJsonInAthenaFriendlyWay)
             .orElseGet(this::ignoreNotInterestingEntries);
+    }
+
+    private Optional<String> writeJsonInAthenaFriendlyWay(ObjectNode json) {
+        return Optional.of(attempt(() -> JsonUtils.singleLineObjectMapper.writeValueAsString(json)).orElseThrow());
     }
 
     private String readFileContents(URI inputFileLocation) {
@@ -96,9 +101,9 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
         return (ObjectNode) attempt(() -> JsonUtils.dtoObjectMapper.readTree(contents)).orElseThrow();
     }
 
-    private Optional<String> removeJsonLdContext(ObjectNode json) {
+    private ObjectNode removeJsonLdContext(ObjectNode json) {
         json.remove(CONTEXT);
-        return Optional.of(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(json)).orElseThrow());
+        return json;
     }
 
     private Optional<String> ignoreNotInterestingEntries() {
