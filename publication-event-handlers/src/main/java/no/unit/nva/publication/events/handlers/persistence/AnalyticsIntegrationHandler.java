@@ -63,9 +63,11 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     }
 
     private Optional<String> readPublicationAndRemoveJsonLdContext(URI inputFileLocation) {
-        String contents = readFileContents(inputFileLocation);
-        var json = parseAsJson(contents);
-        return expandedResourceIsPublication(json) ? removeJsonLdContext(json) : ignoreNotInterestingEntries();
+        return Optional.ofNullable(readFileContents(inputFileLocation))
+            .map(this::parseAsJson)
+            .filter(this::expandedResourceIsPublication)
+            .map(this::removeJsonLdContext)
+            .orElseGet(this::ignoreNotInterestingEntries);
     }
 
     private String readFileContents(URI inputFileLocation) {
