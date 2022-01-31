@@ -37,4 +37,7 @@ dependencies {
 
 }
 
+test{
+    environment "ALLOWED_ORIGIN", "*"
+}
 
