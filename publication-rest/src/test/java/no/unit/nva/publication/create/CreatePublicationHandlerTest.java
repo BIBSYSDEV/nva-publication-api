@@ -40,7 +40,6 @@ import org.junit.jupiter.api.Test;
 
 public class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final String HTTPS = "https";
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
