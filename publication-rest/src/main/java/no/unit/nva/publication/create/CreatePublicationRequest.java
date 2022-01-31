@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.net.URI;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import no.unit.nva.WithContext;
 import no.unit.nva.WithFile;
 import no.unit.nva.WithMetadata;
 import no.unit.nva.file.model.FileSet;
+import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResearchProject;
@@ -22,6 +24,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
     private JsonNode context;
     private List<ResearchProject> projects;
     private List<URI> subjects;
+    private Set<AdditionalIdentifier> additionalIdentifiers;
 
     public static CreatePublicationRequest fromPublication(Publication publication) {
         CreatePublicationRequest createPublicationRequest = new CreatePublicationRequest();
@@ -29,15 +32,25 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         createPublicationRequest.setFileSet(publication.getFileSet());
         createPublicationRequest.setProjects(publication.getProjects());
         createPublicationRequest.setSubjects(publication.getSubjects());
+        createPublicationRequest.setAdditionalIdentifiers(publication.getAdditionalIdentifiers());
         return createPublicationRequest;
+    }
+
+    public Set<AdditionalIdentifier> getAdditionalIdentifiers() {
+        return additionalIdentifiers;
+    }
+
+    public void setAdditionalIdentifiers(Set<AdditionalIdentifier> additionalIdentifiers) {
+        this.additionalIdentifiers = additionalIdentifiers;
     }
 
     public Publication toPublication() {
         Publication publication = new Publication();
-        publication.setEntityDescription(entityDescription);
-        publication.setFileSet(fileSet);
-        publication.setProjects(projects);
-        publication.setSubjects(subjects);
+        publication.setEntityDescription(getEntityDescription());
+        publication.setFileSet(getFileSet());
+        publication.setProjects(getProjects());
+        publication.setSubjects(getSubjects());
+        publication.setAdditionalIdentifiers(getAdditionalIdentifiers());
         return publication;
     }
 
@@ -101,12 +114,11 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
         this.context = context;
     }
 
-
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(),
-                            getSubjects());
+        return Objects.hash(getEntityDescription(), getFileSet(), getContext(), getProjects(), getSubjects(),
+                            getAdditionalIdentifiers());
     }
 
     @JacocoGenerated
@@ -123,6 +135,7 @@ public class CreatePublicationRequest implements WithMetadata, WithFile, WithCon
                && Objects.equals(getFileSet(), that.getFileSet())
                && Objects.equals(getContext(), that.getContext())
                && Objects.equals(getProjects(), that.getProjects())
-               && Objects.equals(getSubjects(), that.getSubjects());
+               && Objects.equals(getSubjects(), that.getSubjects())
+               && Objects.equals(getAdditionalIdentifiers(), that.getAdditionalIdentifiers());
     }
 }
