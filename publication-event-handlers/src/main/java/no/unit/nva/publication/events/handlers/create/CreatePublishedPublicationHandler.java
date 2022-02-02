@@ -1,33 +1,29 @@
-package no.unit.nva.publication.create;
+package no.unit.nva.publication.events.handlers.create;
 
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.HttpURLConnection;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.events.handlers.EventHandler;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import nva.commons.apigateway.ApiGatewayHandler;
-import nva.commons.apigateway.RequestInfo;
+import no.unit.nva.publication.create.CreatePublicationRequest;
+import nva.commons.core.attempt.Try;
 
 public class CreatePublishedPublicationHandler extends
-                                               ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
+                                               EventHandler<CreatePublicationRequest, PublicationResponse> {
 
     public CreatePublishedPublicationHandler() {
         super(CreatePublicationRequest.class);
     }
 
     @Override
-    protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
+    protected PublicationResponse processInput(CreatePublicationRequest input,
+                                               AwsEventBridgeEvent<CreatePublicationRequest> event,
                                                Context context) {
-        return attempt(input::toPublication)
+        return Try.attempt(input::toPublication)
             .map(this::addArbitraryIdentifier)
             .map(PublicationResponse::fromPublication)
             .orElseThrow();
-    }
-
-    @Override
-    protected Integer getSuccessStatusCode(CreatePublicationRequest input, PublicationResponse output) {
-        return HttpURLConnection.HTTP_CREATED;
     }
 
     private Publication addArbitraryIdentifier(Publication p) {

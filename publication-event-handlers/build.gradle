@@ -3,6 +3,7 @@ dependencies {
     implementation project(":storage-model")
     implementation project(":expansion")
     implementation project(":publication-commons")
+    implementation project(":publication-rest")
 
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
