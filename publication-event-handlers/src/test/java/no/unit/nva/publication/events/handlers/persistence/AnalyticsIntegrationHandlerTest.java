@@ -47,7 +47,7 @@ import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;

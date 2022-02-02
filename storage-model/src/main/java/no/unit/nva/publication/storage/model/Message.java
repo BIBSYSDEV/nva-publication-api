@@ -15,7 +15,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.MessageDao;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Message implements WithIdentifier,

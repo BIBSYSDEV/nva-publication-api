@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import no.unit.nva.model.Contributor;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
 public class ContributorFlattenedDetails implements JsonSerializable {

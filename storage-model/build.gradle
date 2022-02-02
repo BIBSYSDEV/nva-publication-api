@@ -4,6 +4,7 @@ dependencies {
     implementation project(":publication-constants")
     implementation libs.aws.sdk.dynamodb
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
 
     implementation libs.jackson.annotations

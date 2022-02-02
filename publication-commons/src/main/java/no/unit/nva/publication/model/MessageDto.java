@@ -13,7 +13,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 public class MessageDto implements JsonSerializable {
 

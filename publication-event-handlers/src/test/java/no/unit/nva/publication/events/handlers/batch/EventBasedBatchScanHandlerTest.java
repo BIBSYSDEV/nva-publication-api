@@ -48,6 +48,7 @@ import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
@@ -215,7 +216,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
         event.setAccount(randomString());
         event.setVersion(randomString());
         event.setSource(randomString());
-        event.setRegion(randomElement(Regions.values()));
+        event.setRegion(randomElement(Region.regions()));
         event.setDetail(scanDatabaseRequest);
         return IoUtils.stringToStream(event.toJsonString());
     }
