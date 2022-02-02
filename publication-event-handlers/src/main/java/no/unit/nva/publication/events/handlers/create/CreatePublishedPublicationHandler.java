@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.create;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.events.handlers.EventHandler;
@@ -20,7 +21,7 @@ public class CreatePublishedPublicationHandler extends
     protected PublicationResponse processInput(CreatePublicationRequest input,
                                                AwsEventBridgeEvent<CreatePublicationRequest> event,
                                                Context context) {
-        return Try.attempt(input::toPublication)
+        return attempt(input::toPublication)
             .map(this::addArbitraryIdentifier)
             .map(PublicationResponse::fromPublication)
             .orElseThrow();
