@@ -44,7 +44,7 @@ class CreatePublishedPublicationHandlerTest {
     void shouldReceiveAnEventReferenceAndReadFileFromS3() throws IOException {
         var samplePublication = sampleCreatePublicationRequest();
         var s3FileUri = storeRequestInS3(samplePublication);
-        PublicationResponse response = sendMessageToEventHandler(s3FileUri);
+        var response = sendMessageToEventHandler(s3FileUri);
 
         String actualSampleValue = response.getEntityDescription().getMainTitle();
         String expectedSampleValue = samplePublication.getEntityDescription().getMainTitle();
