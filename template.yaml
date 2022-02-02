@@ -837,7 +837,7 @@ Resources:
       Runtime: java11
       MemorySize: 1400
       Role: !GetAtt LambdaRole.Arn
-      Timeout: 30
+      Timeout: 900
       ReservedConcurrentExecutions: 1
       Environment:
         Variables:
