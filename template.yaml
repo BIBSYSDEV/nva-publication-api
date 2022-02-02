@@ -329,21 +329,6 @@ Resources:
           Parameters:
             Location: ./docs/openapi.yaml
 
-  NvaPublicationInternalApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      AccessLogSetting:
-        DestinationArn: !GetAtt ApiAccessLogGroup.Arn
-        Format: '{ "apiId": "$context.apiId", "requestId": "$context.requestId", "requestTime": "$context.requestTime", "requestTimeEpoch": "$context.requestTimeEpoch", "httpMethod": "$context.httpMethod", "path": "$context.path", "status": "$context.status",  "error.message": "$context.error.message" }'
-      StageName: Prod
-      EndpointConfiguration: REGIONAL
-      DefinitionBody:
-        'Fn::Transform':
-          Name: AWS::Include
-          Parameters:
-            Location: ./docs/internal-api.yaml
-
-
   #================================ApiGateway handlers====================================================
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
@@ -368,28 +353,7 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-  NvaCreatePublishedPublicationFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publication-rest
-      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
-      Runtime: java11
-      MemorySize: 1798
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-          API_SCHEME: https
-          API_HOST: !Ref ApiDomain
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /
-            Method: post
-            RestApiId: !Ref NvaPublicationInternalApi
+
 
   NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
@@ -1060,6 +1024,31 @@ Resources:
               detail:
                 topic: ["PublicationService.DataImport.DataEntry"]
                 subtopic: ["PublicationService.CristinData.DataEntry"]
+
+  NvaCreatePublishedPublicationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-rest
+      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1798
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          API_SCHEME: https
+          API_HOST: !Ref ApiDomain
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        EventBridgeEvent:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !GetAtt InternalBus.Name
+            Pattern:
+              detail:
+                topic: [ "PublicationService.DataImport.DataEntry" ]
+                subtopic: [ "PublicationService.ScopusData.DataEntry" ]
 
 
 
