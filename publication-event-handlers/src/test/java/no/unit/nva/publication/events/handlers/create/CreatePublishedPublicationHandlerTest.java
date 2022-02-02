@@ -32,12 +32,12 @@ class CreatePublishedPublicationHandlerTest {
     @Test
     void shouldReturnAPublicationResponseWhenRequestIsReceived()
         throws IOException {
-        Publication publication = new Publication();
+        var publication = new Publication();
         var request = CreatePublicationRequest.fromPublication(publication);
         var inputStream = createRequest(request);
         handler.handleRequest(inputStream, outputStream, CONTEXT);
-        String responseString = outputStream.toString();
-        PublicationResponse response = JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
+        var responseString = outputStream.toString();
+        var response = JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
 
         assertThat(response, is(not(nullValue())));
     }
