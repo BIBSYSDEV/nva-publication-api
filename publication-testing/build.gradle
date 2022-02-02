@@ -6,6 +6,7 @@ dependencies {
         exclude group:'com.github.bibsysdev', module:'core'
     }
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.nva.s3
     implementation libs.nva.language

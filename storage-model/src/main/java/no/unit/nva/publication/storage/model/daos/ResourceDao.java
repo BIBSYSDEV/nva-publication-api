@@ -14,7 +14,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
 @JsonTypeName(ResourceDao.TYPE)

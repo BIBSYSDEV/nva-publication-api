@@ -16,7 +16,7 @@ import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.model.Publication;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

@@ -1,6 +1,7 @@
 dependencies {
     implementation libs.nva.datamodel.core
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation libs.jackson.annotations
 

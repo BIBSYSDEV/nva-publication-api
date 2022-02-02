@@ -1,7 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
 import java.net.URI;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 /**
  *  Class used internally in the Resource service to represent a user.

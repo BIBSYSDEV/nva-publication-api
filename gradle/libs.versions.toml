@@ -1,7 +1,7 @@
 [versions]
 
-nva = { strictly = '1.18.4' }
-nvaDatamodel = { strictly = '0.14.23' }
+nva = { strictly = '1.20.7' }
+nvaDatamodel = { strictly = '0.15.1' }
 jackson = { strictly = '2.13.0' }
 awsSdk = { strictly = '1.12.129' }
 awsSdk2 = { strictly = '2.17.105' }
@@ -29,6 +29,7 @@ javers = { strictly = '6.2.4' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
+nva-json = { group = 'com.github.bibsysdev', name = 'json', version.ref = 'nva' }
 nva-identifiers = { group = 'com.github.bibsysdev', name = 'identifiers', version.ref = 'nva' }
 nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nva' }
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
@@ -42,12 +43,14 @@ nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 
 nva-language = {group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
 nva-testutils = {group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
 
-jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
-jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson' }
 jackson-core = { group = 'com.fasterxml.jackson.core', name = 'jackson-core', version.ref = 'jackson' }
 jackson-datatype-jdk8 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jdk8', version.ref = 'jackson' }
 jackson-datatype-jsr310 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jsr310', version.ref = 'jackson' }
+jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-databind', version.ref = 'jackson' }
+jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
+jackson-datatype-problem = { group = 'org.zalando', name = 'jackson-datatype-problem', version.ref = 'zalandoProblem' }
+
 
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }
 aws-lambda-events = { group = 'com.amazonaws', name = 'aws-lambda-java-events', version.ref = 'awsLambdaEvents' }
@@ -110,3 +113,4 @@ testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine',
             'logutils', 'nva-testutils','nva-datamodel-testutils','javers', 'zalando']
 
 logging = ['log4j-core','log4j-api','log4j-slf4j18-impl','slf4j-api']
+jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']

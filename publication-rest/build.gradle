@@ -8,6 +8,7 @@ dependencies {
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.identifiers
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'

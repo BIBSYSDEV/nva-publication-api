@@ -9,7 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 public class PersistedDocument implements JsonSerializable {
 

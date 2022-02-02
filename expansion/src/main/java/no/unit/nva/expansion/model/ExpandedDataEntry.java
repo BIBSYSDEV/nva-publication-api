@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import no.unit.nva.identifiers.SortableIdentifier;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.commons.json.JsonUtils;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonSubTypes({

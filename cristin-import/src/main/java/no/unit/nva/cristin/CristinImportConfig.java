@@ -3,7 +3,7 @@ package no.unit.nva.cristin;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 
 public final class CristinImportConfig {
 
