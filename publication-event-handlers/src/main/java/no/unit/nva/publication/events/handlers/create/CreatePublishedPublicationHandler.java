@@ -28,7 +28,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     protected PublicationResponse processInput(EventReference eventDetail,
                                                AwsEventBridgeEvent<EventReference> event,
                                                Context context) {
-        String input = readEventBodyFromS3(eventDetail);
+        var input = readEventBodyFromS3(eventDetail);
 
         return attempt(() -> parseInput(input))
             .map(CreatePublicationRequest::toPublication)
@@ -38,7 +38,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     }
 
     private String readEventBodyFromS3(EventReference eventBody) {
-        String s3Bucket = eventBody.getUri().getHost();
+        var s3Bucket = eventBody.getUri().getHost();
         var s3Driver = new S3Driver(s3Client, s3Bucket);
         return s3Driver.getFile(new UriWrapper(eventBody.getUri()).toS3bucketPath());
     }
