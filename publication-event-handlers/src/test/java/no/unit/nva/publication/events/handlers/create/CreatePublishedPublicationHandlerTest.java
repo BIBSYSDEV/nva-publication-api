@@ -67,8 +67,7 @@ class CreatePublishedPublicationHandlerTest {
         return s3Driver.insertFile(UnixPath.of(randomString()), json);
     }
 
-    private PublicationResponse parseResponse(String responseString)
-        throws com.fasterxml.jackson.core.JsonProcessingException {
+    private PublicationResponse parseResponse(String responseString) throws JsonProcessingException {
         return JsonUtils.dtoObjectMapper.readValue(responseString, PublicationResponse.class);
     }
 }
