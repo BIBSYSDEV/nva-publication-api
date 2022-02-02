@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.exceptions.ExceptionUtils;
 
 public class ImportResult<I> implements JsonSerializable {

@@ -11,6 +11,7 @@ dependencies {
 
     implementation libs.nva.eventhandlers
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation libs.nva.s3
     implementation libs.nva.secrets
     implementation libs.nva.apigateway

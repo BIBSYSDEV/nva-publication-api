@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.time.Instant;
 import java.util.Map;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 
 public class ScanDatabaseRequest implements JsonSerializable {

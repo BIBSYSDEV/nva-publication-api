@@ -3,7 +3,7 @@ package no.unit.nva.publication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.http.HttpClient;
 import nva.commons.core.Environment;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 
 public final class PublicationServiceConfig {
 

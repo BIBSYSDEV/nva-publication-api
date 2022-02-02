@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.Publication;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 @Data
 @Builder(

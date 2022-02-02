@@ -15,7 +15,7 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
 /**

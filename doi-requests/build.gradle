@@ -4,10 +4,10 @@ dependencies {
     implementation project(":storage-model")
     implementation project(":publication-commons")
 
-
     implementation libs.nva.apigateway
     implementation libs.nva.identifiers
     implementation libs.nva.core
+    implementation libs.nva.json
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }

@@ -10,7 +10,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.paths.UnixPath;
 

@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;

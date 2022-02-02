@@ -10,7 +10,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonSerializable;
+import no.unit.nva.commons.json.JsonSerializable;
 
 @JsonTypeName(DoiRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")

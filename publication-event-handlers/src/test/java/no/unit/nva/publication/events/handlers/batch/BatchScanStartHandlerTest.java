@@ -9,7 +9,7 @@ import java.io.IOException;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;

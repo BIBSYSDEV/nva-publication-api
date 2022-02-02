@@ -14,7 +14,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.JsonUtils;
+import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;

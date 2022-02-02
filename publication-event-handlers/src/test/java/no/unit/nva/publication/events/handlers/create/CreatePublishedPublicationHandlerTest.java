@@ -6,15 +6,14 @@ import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.create.CreatePublicationRequest;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
-import nva.commons.core.JsonUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
