@@ -8,7 +8,6 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.create.CreatePublicationRequest;
-import nva.commons.core.attempt.Try;
 
 public class CreatePublishedPublicationHandler extends
                                                EventHandler<CreatePublicationRequest, PublicationResponse> {
