@@ -1,0 +1,12 @@
+{
+  "entityDescription": {
+    "reference": {
+      "publicationContext": {
+        "publisher": {
+          "type": "UnconfirmedPublisher",
+          "name": "Publishing House"
+        }
+      }
+    }
+  }
+}

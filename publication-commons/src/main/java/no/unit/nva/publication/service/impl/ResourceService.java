@@ -1,14 +1,7 @@
 package no.unit.nva.publication.service.impl;
 
-import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
-import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
-import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Item;
-import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.BatchWriteItemRequest;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
@@ -21,20 +14,7 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Lists;
-import java.net.http.HttpClient;
-import java.time.Clock;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -61,6 +41,24 @@ import nva.commons.core.attempt.Try;
 import nva.commons.core.exceptions.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.net.http.HttpClient;
+import java.time.Clock;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.Resource.resourceQueryObject;
+import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
+import static nva.commons.core.attempt.Try.attempt;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.AvoidDuplicateLiterals"})
 public class ResourceService extends ServiceWithTransactions {
@@ -298,24 +296,11 @@ public class ResourceService extends ServiceWithTransactions {
 
     private List<DataEntry> extractDatabaseEntries(ScanResult response) {return response.getItems()
             .stream()
-            .map(item->correctParsingErrors(item))
+            .map(CorrectParsingErrors::apply)
             .map(value -> parseAttributeValuesMap(value, Dao.class))
             .map(Dao::getData)
             .map(DataEntry.class::cast)
             .collect(Collectors.toList());
-    }
-
-    private Map<String, AttributeValue> correctParsingErrors(Map<String, AttributeValue> item) {
-        var json= ItemUtils.toItem(item).toJSON();
-        var objectNode= (ObjectNode) attempt(()-> JsonUtils.dtoObjectMapper.readTree(json)).orElseThrow();
-        var newObjectNode = correctParsingErrors(objectNode);
-        var jsonAgain = attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(newObjectNode)).orElseThrow();
-        return ItemUtils.toAttributeValues(Item.fromJSON(jsonAgain));
-
-    }
-
-    private ObjectNode correctParsingErrors(ObjectNode objectNode) {
-        return objectNode;
     }
 
     private Publication insertResource(Resource newResource) throws TransactionFailedException {
