@@ -178,7 +178,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
 
         SortableIdentifier savedPublicationIdentifier =
             resourceService
-                .createPublicationWhilePersistingEntryFromLegacySystems(inputPublication)
+                .createPublicationFromImportedEntry(inputPublication)
                 .getIdentifier();
         Publication savedPublication = resourceService.getPublicationByIdentifier(savedPublicationIdentifier);
 

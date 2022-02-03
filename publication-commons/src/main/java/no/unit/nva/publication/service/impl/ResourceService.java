@@ -122,7 +122,7 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationWhilePersistingEntryFromLegacySystems(Publication inputData)
+    public Publication createPublicationFromImportedEntry(Publication inputData)
         throws TransactionFailedException {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());

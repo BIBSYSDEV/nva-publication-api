@@ -159,7 +159,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private Publication createPublication(Publication publication)
         throws TransactionFailedException {
-        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(publication);
+        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     private void avoidCongestionInDatabase() {
