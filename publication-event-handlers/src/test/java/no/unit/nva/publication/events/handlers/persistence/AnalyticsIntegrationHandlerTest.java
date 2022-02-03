@@ -28,6 +28,7 @@ import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
@@ -47,7 +48,6 @@ import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
@@ -101,7 +101,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var analyticsFilePath = new UriWrapper(analyticsObjectEvent.getUri()).toS3bucketPath();
         var publicationString = s3Driver.getFile(analyticsFilePath);
         var storedPublication = JsonUtils.dtoObjectMapper.readValue(publicationString, ExpandedResource.class);
-        assertThat(publicationString,not(containsString(JSONLD_CONTEXT)));
+        assertThat(publicationString, not(containsString(JSONLD_CONTEXT)));
         assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(inputEvent, storedPublication);
     }
 

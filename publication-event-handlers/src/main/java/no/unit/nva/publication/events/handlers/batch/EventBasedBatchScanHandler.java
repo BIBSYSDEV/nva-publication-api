@@ -58,8 +58,6 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
             .build();
     }
 
-
-
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,
                                                                 ListingResult<DataEntry> result) {

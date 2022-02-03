@@ -69,7 +69,7 @@ class UpdateDoiStatusHandlerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(BAD_EVENT_WITH_DATE_IN_FUTURE);
 
         var actualException = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(eventInputStream, outputStream, context));
+                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException.getMessage(), is(equalTo("Modified doi is in the future, bailing!")));
     }
 
@@ -78,7 +78,7 @@ class UpdateDoiStatusHandlerTest {
         var inputStream = new ByteArrayInputStream(new byte[0]);
 
         var actualException = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
+                                           () -> handler.handleRequest(inputStream, outputStream, context));
         assertThat(actualException.getCause(), is(instanceOf(MismatchedInputException.class)));
         assertThat(actualException.getMessage(), containsString("No content to map due to end-of-input"));
     }
@@ -89,7 +89,8 @@ class UpdateDoiStatusHandlerTest {
             .inputStreamFromResources(BAD_EVENT_WITH_BAD_PAYLOAD_NOT_MATCHING_POJO);
 
         IllegalArgumentException actualException = assertThrows(IllegalArgumentException.class,
-            () -> handler.handleRequest(eventInputStream, outputStream, context));
+                                                                () -> handler.handleRequest(eventInputStream,
+                                                                                            outputStream, context));
 
         assertThat(actualException.getMessage(), is(equalTo(String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
                                                                           EMPTY_OBJECT))));
@@ -104,7 +105,7 @@ class UpdateDoiStatusHandlerTest {
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
 
         var actualException = assertThrows(DependencyRemoteNvaApiException.class,
-            () -> handler.handleRequest(eventInputStream, outputStream, context));
+                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException, is(instanceOf(DependencyRemoteNvaApiException.class)));
     }
 
@@ -123,7 +124,7 @@ class UpdateDoiStatusHandlerTest {
 
         var eventInputStream = IoUtils.inputStreamFromResources(OK_EVENT);
         var actualException = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(eventInputStream, outputStream, context));
+                                           () -> handler.handleRequest(eventInputStream, outputStream, context));
         assertThat(actualException.getMessage(), containsString(expectedMessage));
         assertThat(testAppender.getMessages(), containsString(expectedMessage));
     }
@@ -166,9 +167,9 @@ class UpdateDoiStatusHandlerTest {
         handler.handleRequest(eventInputStream, outputStream, context);
 
         assertThat(logger.getMessages(), containsString(String.format(UpdateDoiStatusProcess.UPDATED_PUBLICATION_FORMAT,
-            PUBLICATION_IDENTIFIER_IN_RESOURCES,
-            EXAMPLE_DOI,
-            EXAMPLE_DOI_MODIFIED_DATE
+                                                                      PUBLICATION_IDENTIFIER_IN_RESOURCES,
+                                                                      EXAMPLE_DOI,
+                                                                      EXAMPLE_DOI_MODIFIED_DATE
         )));
     }
 

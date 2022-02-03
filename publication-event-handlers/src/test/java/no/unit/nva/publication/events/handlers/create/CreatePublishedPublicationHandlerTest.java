@@ -76,7 +76,6 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
             .build();
 
         assertThat(savedPublication, is(equalTo(expectedPublication)));
-
     }
 
     private Publication extractSavedPublicationFromDatabase() throws JsonProcessingException, NotFoundException {

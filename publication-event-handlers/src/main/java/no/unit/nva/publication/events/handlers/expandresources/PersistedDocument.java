@@ -7,9 +7,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import nva.commons.core.JacocoGenerated;
-import no.unit.nva.commons.json.JsonSerializable;
 
 public class PersistedDocument implements JsonSerializable {
 

@@ -21,10 +21,10 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 public class EventBridgePublisher implements EventPublisher {
 
     public static final String EVENT_SOURCE = "aws-dynamodb-stream-eventbridge-fanout";
+    public static final int ENTRIES_PER_REQUEST = 7;
     private static final ObjectMapper objectMapper = new ObjectMapper()
         .setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private static final Logger logger = LoggerFactory.getLogger(EventBridgePublisher.class);
-    public static final int ENTRIES_PER_REQUEST = 7;
     private final EventBridgeRetryClient eventBridge;
     private final EventPublisher failedEventPublisher;
     private final String eventBusName;

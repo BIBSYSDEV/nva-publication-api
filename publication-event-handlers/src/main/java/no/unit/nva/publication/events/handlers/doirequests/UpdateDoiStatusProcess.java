@@ -39,7 +39,7 @@ public class UpdateDoiStatusProcess {
         if (isInvalidPayloadFormat(request)) {
             throw new IllegalArgumentException(
                 String.format(ERROR_BAD_DOI_UPDATE_HOLDER_FORMAT,
-                    nonNull(request) ? request.toJsonString() : NO_REQUEST_PAYLOAD));
+                              nonNull(request) ? request.toJsonString() : NO_REQUEST_PAYLOAD));
         }
         this.resourceService = resourceService;
         this.request = request.getItem();
@@ -74,9 +74,9 @@ public class UpdateDoiStatusProcess {
 
     private void logPublicationDoiUpdate() {
         logger.info(String.format(UPDATED_PUBLICATION_FORMAT,
-            publication.getIdentifier(),
-            publication.getDoi(),
-            publication.getModifiedDate()));
+                                  publication.getIdentifier(),
+                                  publication.getDoi(),
+                                  publication.getModifiedDate()));
     }
 
     private boolean isInvalidPayloadFormat(DoiUpdateHolder request) {

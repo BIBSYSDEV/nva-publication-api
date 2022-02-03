@@ -44,10 +44,6 @@ public class ScanDatabaseRequest implements JsonSerializable {
                    : DEFAULT_PAGE_SIZE;
     }
 
-    private boolean pageSizeWithinLimits(int pageSize) {
-        return pageSize > 0 && pageSize <= MAX_PAGE_SIZE;
-    }
-
     public Map<String, AttributeValue> getStartMarker() {
         return startMarker;
     }
@@ -70,5 +66,9 @@ public class ScanDatabaseRequest implements JsonSerializable {
             .time(Instant.now())
             .source(invokedFunctionArn)
             .build();
+    }
+
+    private boolean pageSizeWithinLimits(int pageSize) {
+        return pageSize > 0 && pageSize <= MAX_PAGE_SIZE;
     }
 }

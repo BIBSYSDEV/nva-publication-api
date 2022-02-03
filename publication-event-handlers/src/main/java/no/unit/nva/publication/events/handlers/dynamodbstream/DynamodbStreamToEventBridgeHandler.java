@@ -22,9 +22,8 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 public class DynamodbStreamToEventBridgeHandler implements RequestHandler<DynamodbEvent, Void> {
 
     public static final String AWS_REGION = "AWS_REGION";
-    private final EventPublisher eventPublisher;
     public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
-
+    private final EventPublisher eventPublisher;
 
     @JacocoGenerated
     public DynamodbStreamToEventBridgeHandler() {
@@ -33,6 +32,12 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     protected DynamodbStreamToEventBridgeHandler(EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
+    }
+
+    @Override
+    public Void handleRequest(DynamodbEvent event, Context context) {
+        eventPublisher.publish(event);
+        return null;
     }
 
     @JacocoGenerated
@@ -70,16 +75,10 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
             .region(Region.of(System.getenv(AWS_REGION)))
             .credentialsProvider(EnvironmentVariableCredentialsProvider.create())
             .overrideConfiguration(ClientOverrideConfiguration.builder()
-                .apiCallAttemptTimeout(Duration.ofSeconds(1))
-                .retryPolicy(RetryPolicy.builder().numRetries(10).build())
-                .build())
+                                       .apiCallAttemptTimeout(Duration.ofSeconds(1))
+                                       .retryPolicy(RetryPolicy.builder().numRetries(10).build())
+                                       .build())
             .httpClientBuilder(UrlConnectionHttpClient.builder())
             .build();
-    }
-
-    @Override
-    public Void handleRequest(DynamodbEvent event, Context context) {
-        eventPublisher.publish(event);
-        return null;
     }
 }

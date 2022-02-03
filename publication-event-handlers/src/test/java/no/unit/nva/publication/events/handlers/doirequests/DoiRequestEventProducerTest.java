@@ -1,27 +1,5 @@
 package no.unit.nva.publication.events.handlers.doirequests;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonPointer;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import no.unit.nva.events.handlers.EventParser;
-import no.unit.nva.events.models.AwsEventBridgeDetail;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
-import no.unit.nva.model.Publication;
-import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
-import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import nva.commons.core.ioutils.IoUtils;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.diff.Diff;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
-import java.io.ByteArrayOutputStream;
-import java.net.URI;
-import java.nio.file.Path;
-
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.EMPTY_EVENT;
 import static no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer.NO_RESOURCE_IDENTIFIER_ERROR;
@@ -35,6 +13,26 @@ import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.nio.file.Path;
+import no.unit.nva.events.handlers.EventParser;
+import no.unit.nva.events.models.AwsEventBridgeDetail;
+import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.model.Publication;
+import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.events.bodies.DoiUpdateRequestEvent;
+import nva.commons.core.ioutils.IoUtils;
+import org.javers.core.Javers;
+import org.javers.core.JaversBuilder;
+import org.javers.core.diff.Diff;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 class DoiRequestEventProducerTest {
 
@@ -54,9 +52,9 @@ class DoiRequestEventProducerTest {
     private static final String RESOURCE_UPDATE_NEW_IMAGE_ONLY_WITH_DOI =
         "doirequests/resource_update_event_new_image_only_with_doi.json";
     private static final String RESOURCE_UPDATE_EVENT_WITHOUT_IDENTIFIER =
-            "doirequests/resource_update_event_without_identifier.json";
+        "doirequests/resource_update_event_without_identifier.json";
     private static final String RESOURCE_UPDATE_EVENT_DOI_REQUEST_APPROVED =
-            "doirequests/resource_update_event_doi_request_approved_for_published_publication.json";
+        "doirequests/resource_update_event_doi_request_approved_for_published_publication.json";
     private static final String EVENT_PUBLICATION_UPDATED_ONLY_BY_MODIFIED_DATE =
         "doirequests/resource_update_event_old_and_new_present_with_doi_and_different_modified_date.json";
 

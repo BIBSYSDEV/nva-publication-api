@@ -22,7 +22,6 @@ import nva.commons.core.JacocoGenerated;
 //TODO: rename class to DynamoJsonToInternalModelEventHandler
 public final class DynamodbStreamRecordDaoMapper {
 
-
     private DynamodbStreamRecordDaoMapper() {
 
     }
@@ -40,10 +39,10 @@ public final class DynamodbStreamRecordDaoMapper {
         Item item = toItem(attributeMap);
         DynamoEntry dynamoEntry = objectMapper.readValue(item.toJSON(), DynamoEntry.class);
         return Optional.of(dynamoEntry)
-                .filter(entry -> isDao(dynamoEntry))
-                .map(dao -> ((Dao<?>) dao).getData())
-                .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate)
-                .map(data -> (DataEntry) data);
+            .filter(entry -> isDao(dynamoEntry))
+            .map(dao -> ((Dao<?>) dao).getData())
+            .filter(DynamodbStreamRecordDaoMapper::isResourceUpdate)
+            .map(data -> (DataEntry) data);
     }
 
     private static boolean isDao(DynamoEntry dynamoEntry) {
@@ -73,7 +72,6 @@ public final class DynamodbStreamRecordDaoMapper {
         return objectMapper.readValue(jsonString, javaType);
     }
 
-
     @JacocoGenerated
     private static <T> Map<String, T> toSimpleMapValue(
         Map<String, com.amazonaws.services.dynamodbv2.model.AttributeValue> values) {
@@ -90,8 +88,8 @@ public final class DynamodbStreamRecordDaoMapper {
         return result;
     }
 
-    @SuppressWarnings({"unchecked","PMD.CognitiveComplexity"})
-    private  static <T> T toSimpleValue(com.amazonaws.services.dynamodbv2.model.AttributeValue value) {
+    @SuppressWarnings({"unchecked", "PMD.CognitiveComplexity"})
+    private static <T> T toSimpleValue(com.amazonaws.services.dynamodbv2.model.AttributeValue value) {
         if (value == null) {
             return null;
         }
@@ -118,9 +116,9 @@ public final class DynamodbStreamRecordDaoMapper {
         } else if (value.getNS() != null) {
             Set<BigDecimal> set = new LinkedHashSet<>(value.getNS().size());
             value.getNS()
-                    .stream()
-                    .map(BigDecimal::new)
-                    .forEach(set::add);
+                .stream()
+                .map(BigDecimal::new)
+                .forEach(set::add);
             T t = (T) set;
             return t;
         } else if (value.getBS() != null) {

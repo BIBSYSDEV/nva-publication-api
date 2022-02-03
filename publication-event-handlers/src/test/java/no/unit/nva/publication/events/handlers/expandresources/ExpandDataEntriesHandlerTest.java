@@ -1,7 +1,25 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
+import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
+import static nva.commons.core.ioutils.IoUtils.stringFromResources;
+import static nva.commons.core.ioutils.IoUtils.stringToStream;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
+import static org.hamcrest.core.StringContains.containsString;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Path;
+import java.time.Clock;
+import java.util.Set;
 import no.unit.nva.events.handlers.EventParser;
 import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
@@ -34,26 +52,6 @@ import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.Path;
-import java.time.Clock;
-import java.util.Set;
-
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
-import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.StringContains.containsString;
-import static org.mockito.Mockito.mock;
-
 public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
@@ -63,11 +61,6 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
     public static final Clock CLOCK = Clock.systemDefaultZone();
-    private ByteArrayOutputStream output;
-    private ExpandDataEntriesHandler expandResourceHandler;
-    private S3Driver s3Driver;
-    private FakeS3Client s3Client;
-
     private static final URI AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE =
         URI.create("https://api.cristin.no/v2/units/194.63.10.0");
     private static final String PERSON_API_RESPONSE_WITH_UNIT =
@@ -78,6 +71,10 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         stringFromResources(Path.of("expandResources", "cristin_parent_org.json"));
     private static final String INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE =
         stringFromResources(Path.of("expandResources", "cristin_grand_parent_org.json"));
+    private ByteArrayOutputStream output;
+    private ExpandDataEntriesHandler expandResourceHandler;
+    private S3Driver s3Driver;
+    private FakeS3Client s3Client;
     private ResourceService resourceService;
     private MessageService messageService;
 
@@ -99,14 +96,6 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             new ResourceExpansionServiceImpl(httpClient, resourceService, messageService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
-    }
-
-    private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
-        var publication = PublicationGenerator.randomPublication().copy()
-            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
-            .withResourceOwner(new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
-            .build();
-        return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
 
     @Test
@@ -178,6 +167,14 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         assertThat(eventReference, is(equalTo(emptyEvent())));
     }
 
+    private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
+        var publication = PublicationGenerator.randomPublication().copy()
+            .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
+            .withResourceOwner(new ResourceOwner(randomString(), AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE))
+            .build();
+        return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
+    }
+
     private EventReference emptyEvent() {
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
@@ -212,7 +209,6 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return null;
             }
-
         };
     }
 

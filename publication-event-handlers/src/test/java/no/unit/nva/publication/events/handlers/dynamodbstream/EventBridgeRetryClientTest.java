@@ -90,14 +90,6 @@ public class EventBridgeRetryClientTest {
         verify(eventBridge).putEvents(request);
     }
 
-
-    private void prepareMocksWithSuccessfulResponse() {
-        PutEventsResponse response = PutEventsResponse.builder()
-            .failedEntryCount(0)
-            .build();
-        when(eventBridge.putEvents(any(PutEventsRequest.class))).thenReturn(response);
-    }
-
     @Test
     public void putEventsRetriesOnFailure() {
         var successEntry = createPutEventsRequestEntry("success entry");
@@ -150,6 +142,13 @@ public class EventBridgeRetryClientTest {
         verify(eventBridge, times(3)).putEvents(putEventsRequestArgumentCaptor.capture());
         List<PutEventsRequest> expected = asList(request, failedRequest, failedRequest);
         assertEquals(putEventsRequestArgumentCaptor.getAllValues(), expected);
+    }
+
+    private void prepareMocksWithSuccessfulResponse() {
+        PutEventsResponse response = PutEventsResponse.builder()
+            .failedEntryCount(0)
+            .build();
+        when(eventBridge.putEvents(any(PutEventsRequest.class))).thenReturn(response);
     }
 
     private PutEventsRequest createPutEventsRequest(List<PutEventsRequestEntry> requestEntries) {
