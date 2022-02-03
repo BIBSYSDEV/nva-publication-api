@@ -15,6 +15,7 @@ dependencies {
     implementation libs.nva.s3
     implementation libs.nva.secrets
     implementation libs.nva.apigateway
+    implementation libs.nva.testutils // used in CreatePublishedPublicationsHandler
 
     implementation libs.aws.core
     implementation libs.aws.lambda.java.core
@@ -59,4 +60,5 @@ test{
     environment "IDENTITY_SERVICE_SECRET_KEY","someSecretKey"
     environment "PERSISTED_ENTRIES_BUCKET", "persistedEntries"
     environment "AWS_REGION", "AWS_REGION"
+    environment "TABLE_NAME", "ResourcesTable"
 }
