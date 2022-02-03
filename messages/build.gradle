@@ -1,5 +1,3 @@
-
-
 dependencies {
 
     implementation project(":publication-commons")
@@ -26,5 +24,9 @@ dependencies {
     testImplementation libs.javafaker
     testImplementation libs.zalando
     testImplementation libs.nva.testutils
+}
+
+test {
+    environment "AWS_REGION", "eu-west-1"
 }
 

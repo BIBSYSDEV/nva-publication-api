@@ -28,6 +28,7 @@ public class MigrationTests extends ResourcesLocalTest {
     public void init() {
         super.init();
         affiliationUri = RandomPersonServiceResponse.randomUri();
+
         var externalServicesHttpClient =
             new FakeHttpClient<>(new RandomPersonServiceResponse(affiliationUri).toString());
         this.resourceService = new ResourceService(client, externalServicesHttpClient, CLOCK);

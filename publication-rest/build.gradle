@@ -40,5 +40,6 @@ dependencies {
 
 test{
     environment "ALLOWED_ORIGIN", "*"
+    environment "AWS_REGION", "eu-west-1"
 }
 

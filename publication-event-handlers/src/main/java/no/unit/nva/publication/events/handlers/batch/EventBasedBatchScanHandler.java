@@ -1,11 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import static no.unit.nva.publication.PublicationServiceConfig.defaultResourceService;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.time.Clock;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
@@ -62,19 +58,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
             .build();
     }
 
-    @JacocoGenerated
-    private static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(), EXTERNAL_SERVICES_HTTP_CLIENT, Clock.systemDefaultZone());
-    }
 
-    @JacocoGenerated
-    private static AmazonDynamoDB defaultDynamoDbClient() {
-        return AmazonDynamoDBClientBuilder
-            .standard()
-            .withRegion(PublicationEventsConfig.AWS_REGION)
-            .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
-            .build();
-    }
 
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,

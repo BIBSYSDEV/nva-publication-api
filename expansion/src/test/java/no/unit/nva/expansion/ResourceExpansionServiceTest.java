@@ -50,11 +50,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static final String SOME_SENDER = "some@sender";
     public static final URI SOME_ORG = URI.create("https://example.org/123");
-    public static final String SOME_MESSAGE = "someMessage";
     public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
-    public static final Clock CLOCK = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-
-    public static final String NOT_FOUND = "Not found";
     public static final URI RESOURCE_OWNER_UNIT_AFFILIATION = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
     public static final URI RESOURCE_OWNER_INSTITUTION_AFFILIATION =
         URI.create("https://api.cristin.no/v2/institutions/194");
