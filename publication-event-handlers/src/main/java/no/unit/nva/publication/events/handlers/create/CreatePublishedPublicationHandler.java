@@ -60,10 +60,10 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         return randomString() + "@unit.no";
     }
 
-    private Publication storeAsPublishedPublication(Publication pub) throws TransactionFailedException {
+    private Publication storeAsPublishedPublication(Publication publication) throws TransactionFailedException {
         //TODO: rename the method createPublicationWhilePersistingEntryFromLegacySystems to something that is
         // meaningful
-        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(pub);
+        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(publication);
     }
 
     private String readEventBodyFromS3(EventReference eventBody) {
