@@ -61,4 +61,5 @@ test{
     environment "PERSISTED_ENTRIES_BUCKET", "persistedEntries"
     environment "AWS_REGION", "AWS_REGION"
     environment "TABLE_NAME", "ResourcesTable"
+    environment "AWS_REGION", "eu-west-1"
 }

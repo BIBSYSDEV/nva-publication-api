@@ -22,4 +22,5 @@ test {
     environment "IDENTITY_SERVICE_SECRET_KEY", "secretKey"
     environment "API_HOST", "api.dev.nva.aws.unit.no"
     environment "ID_NAMESPACE", "https://api.dev.nva.aws.unit.no/publication"
+    environment "AWS_REGION", "eu-west-1"
 }

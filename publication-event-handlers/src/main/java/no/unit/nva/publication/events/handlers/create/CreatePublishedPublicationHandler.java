@@ -1,5 +1,7 @@
 package no.unit.nva.publication.events.handlers.create;
 
+import static no.unit.nva.publication.PublicationServiceConfig.DEFAULT_DYNAMODB_CLIENT;
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.events.handlers.create.HardCodedValues.HARDCODED_OWNER_AFFILIATION;
 import static no.unit.nva.publication.events.handlers.create.HardCodedValues.UNIT_CUSTOMER_ID;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -22,6 +24,7 @@ import no.unit.nva.publication.create.CreatePublicationRequest;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
 
@@ -29,6 +32,13 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
 
     private final S3Client s3Client;
     private final ResourceService resourceService;
+
+    @JacocoGenerated
+    public CreatePublishedPublicationHandler() {
+        this(S3Driver.defaultS3Client().build(),
+             DEFAULT_DYNAMODB_CLIENT,
+             EXTERNAL_SERVICES_HTTP_CLIENT);
+    }
 
     public CreatePublishedPublicationHandler(S3Client s3Client, AmazonDynamoDB dynamoClient, HttpClient httpClient) {
         super(EventReference.class);
