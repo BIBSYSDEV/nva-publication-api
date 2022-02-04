@@ -49,11 +49,6 @@ public class ExpandDataEntriesHandler
         this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService(defaultHttpClient()));
     }
 
-    @JacocoGenerated
-    private static HttpClient defaultHttpClient() {
-        return HttpClient.newBuilder().build();
-    }
-
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
         this(new S3Driver(s3Client, EVENTS_BUCKET), resourceExpansionService);
     }
@@ -80,10 +75,15 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
+    private static HttpClient defaultHttpClient() {
+        return HttpClient.newBuilder().build();
+    }
+
+    @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService(HttpClient httpClient) {
         return new ResourceExpansionServiceImpl(httpClient,
-                defaultResourceService(httpClient),
-                defaultMessageService());
+                                                defaultResourceService(httpClient),
+                                                defaultMessageService());
     }
 
     @JacocoGenerated

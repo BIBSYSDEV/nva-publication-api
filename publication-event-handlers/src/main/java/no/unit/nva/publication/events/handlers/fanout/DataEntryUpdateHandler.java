@@ -33,19 +33,19 @@ public class DataEntryUpdateHandler
         AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
         Context context) {
         String eventJson = attempt(() -> PublicationEventsConfig.objectMapper
-                .writeValueAsString(event))
-                .orElseThrow();
+            .writeValueAsString(event))
+            .orElseThrow();
         logger.info("event:" + eventJson);
 
         DataEntryUpdateEvent output = new DataEntryUpdateEvent(
-                input.getEventName(),
-                getDao(input.getDynamodb().getOldImage()),
-                getDao(input.getDynamodb().getNewImage())
+            input.getEventName(),
+            getDao(input.getDynamodb().getOldImage()),
+            getDao(input.getDynamodb().getNewImage())
         );
 
         String outputJson = attempt(() -> PublicationEventsConfig.objectMapper
-                .writeValueAsString(output))
-                .orElseThrow();
+            .writeValueAsString(output))
+            .orElseThrow();
         logger.info("output" + outputJson);
         return output;
     }

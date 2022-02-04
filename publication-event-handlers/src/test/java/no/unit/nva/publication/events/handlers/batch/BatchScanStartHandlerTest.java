@@ -6,12 +6,11 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.io.IOException;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
-import no.unit.nva.commons.json.JsonUtils;
 import nva.commons.core.ioutils.IoUtils;
-import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 class BatchScanStartHandlerTest {

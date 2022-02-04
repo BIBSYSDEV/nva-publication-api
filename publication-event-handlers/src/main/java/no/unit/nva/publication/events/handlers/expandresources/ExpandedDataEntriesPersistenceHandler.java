@@ -22,10 +22,9 @@ public class ExpandedDataEntriesPersistenceHandler
     extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC = "PublicationService.ExpandedEntry.Persisted";
-
+    private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
     private final S3Driver s3Reader;
     private final S3Driver s3Writer;
-    private static final Logger logger = LoggerFactory.getLogger(ExpandedDataEntriesPersistenceHandler.class);
 
     @JacocoGenerated
     public ExpandedDataEntriesPersistenceHandler() {

@@ -70,7 +70,7 @@ public class DeleteDraftPublicationHandler
         if (nonNull(publication.getDoi())) {
             throwPublicationHasDoiError();
         }
-        return new UserInstance(publication.getOwner(),publication.getPublisher().getId());
+        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
     }
 
     private void throwPublicationHasDoiError() {

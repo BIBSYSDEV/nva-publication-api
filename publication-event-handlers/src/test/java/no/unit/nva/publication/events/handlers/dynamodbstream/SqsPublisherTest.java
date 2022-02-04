@@ -4,8 +4,6 @@ import static org.mockito.Mockito.verify;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import java.util.Collections;
 import java.util.UUID;
-import no.unit.nva.publication.events.handlers.dynamodbstream.EventPublisher;
-import no.unit.nva.publication.events.handlers.dynamodbstream.SqsEventPublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -15,9 +13,9 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 public class SqsPublisherTest {
 
-    private static final String QUEUE_URL = UUID.randomUUID().toString();
     public static final String EVENT_NAME = "test";
     public static final String EVENT_BODY = "{\"records\":[{\"eventName\":\"test\"}]}";
+    private static final String QUEUE_URL = UUID.randomUUID().toString();
     @Mock
     private SqsClient sqs;
 

@@ -6,10 +6,10 @@ import no.unit.nva.events.models.AwsEventBridgeDetail;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.storage.model.DataEntry;
+import no.unit.nva.publication.storage.model.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletionProcessInitializationHandler
@@ -34,7 +34,7 @@ public class DeletionProcessInitializationHandler
 
     private boolean isDraftForDeletion(Publication publication) {
         return publication != null
-                && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
+               && publication.getStatus().equals(PublicationStatus.DRAFT_FOR_DELETION);
     }
 
     private Publication toPublication(DataEntry dataEntry) {

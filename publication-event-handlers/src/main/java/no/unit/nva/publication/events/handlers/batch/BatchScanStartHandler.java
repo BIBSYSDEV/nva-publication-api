@@ -19,10 +19,10 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResponse;
 
 public class BatchScanStartHandler implements RequestStreamHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(BatchScanStartHandler.class);
     public static final String INFORMATION_MESSAGE =
         "Starting scanning with pageSize equal to: %s. Set 'pageSize' between [1,1000] "
         + "if you want a different pageSize value.";
+    private static final Logger logger = LoggerFactory.getLogger(BatchScanStartHandler.class);
     private final EventBridgeClient client;
 
     @JacocoGenerated

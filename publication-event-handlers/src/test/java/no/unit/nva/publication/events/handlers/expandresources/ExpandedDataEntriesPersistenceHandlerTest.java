@@ -5,7 +5,6 @@ import static no.unit.nva.publication.events.handlers.expandresources.ExpandedDa
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.DOI_REQUESTS_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.MESSAGES_INDEX;
 import static no.unit.nva.publication.events.handlers.expandresources.PersistedDocumentConsumptionAttributes.RESOURCES_INDEX;
-import static no.unit.nva.publication.storage.model.Message.supportMessage;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -122,7 +121,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
     }
 
-    private static ExpandedResourceConversation randomResourceConversation()  throws NotFoundException {
+    private static ExpandedResourceConversation randomResourceConversation() throws NotFoundException {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();

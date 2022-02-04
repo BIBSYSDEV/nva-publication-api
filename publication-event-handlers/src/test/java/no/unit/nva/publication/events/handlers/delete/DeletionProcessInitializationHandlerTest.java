@@ -56,7 +56,7 @@ public class DeletionProcessInitializationHandlerTest {
         handler.handleRequest(inputStream, outputStream, context);
 
         ResourceDraftedForDeletionEvent response =
-            objectMapper.readValue(outputStream.toString(),ResourceDraftedForDeletionEvent.class);
+            objectMapper.readValue(outputStream.toString(), ResourceDraftedForDeletionEvent.class);
         assertThat(response, nullValue());
     }
 

@@ -13,5 +13,4 @@ public final class PublicationEventsConfig {
     private PublicationEventsConfig() {
 
     }
-
 }

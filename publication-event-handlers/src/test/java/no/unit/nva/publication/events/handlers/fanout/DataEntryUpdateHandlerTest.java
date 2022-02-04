@@ -69,7 +69,7 @@ public class DataEntryUpdateHandlerTest {
         DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
 
         InputStream inputStream = IoUtils.inputStreamFromResources(
-                DYNAMODBEVENT_OLD_IMAGE_JSON);
+            DYNAMODBEVENT_OLD_IMAGE_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 
@@ -104,7 +104,7 @@ public class DataEntryUpdateHandlerTest {
             DYNAMODBEVENT_INVALID_IMAGE_JSON);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-            () -> handler.handleRequest(inputStream, outputStream, context));
+                                                  () -> handler.handleRequest(inputStream, outputStream, context));
 
         assertThat(exception.getMessage(), containsString(DataEntryUpdateHandler.MAPPING_ERROR));
     }
@@ -113,7 +113,7 @@ public class DataEntryUpdateHandlerTest {
     public void handleRequestReturnsPublicationUpdateEventWhenImageHasEmptyAttributeValues() {
         DataEntryUpdateHandler handler = new DataEntryUpdateHandler();
         InputStream inputStream = IoUtils.inputStreamFromResources(
-                DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON);
+            DYNAMODBEVENT_EMPTY_ATTRIBUTE_VALUE_JSON);
 
         handler.handleRequest(inputStream, outputStream, context);
 

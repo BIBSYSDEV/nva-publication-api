@@ -20,19 +20,19 @@ public class ResourceDraftedForDeletionEvent {
     /**
      * Constructor for DeletePublicationEvent.
      *
-     * @param topic topic
-     * @param identifier    identifier
-     * @param status    status
-     * @param doi   doi
-     * @param customerId    customerId
+     * @param topic      topic
+     * @param identifier identifier
+     * @param status     status
+     * @param doi        doi
+     * @param customerId customerId
      */
     @JsonCreator
     public ResourceDraftedForDeletionEvent(
-            @JsonProperty("topic") String topic,
-            @JsonProperty("identifier") SortableIdentifier identifier,
-            @JsonProperty("status") String status,
-            @JsonProperty("doi") URI doi,
-            @JsonProperty("customerId") URI customerId) {
+        @JsonProperty("topic") String topic,
+        @JsonProperty("identifier") SortableIdentifier identifier,
+        @JsonProperty("status") String status,
+        @JsonProperty("doi") URI doi,
+        @JsonProperty("customerId") URI customerId) {
         this.topic = topic;
         this.identifier = identifier;
         this.status = status;
@@ -67,6 +67,12 @@ public class ResourceDraftedForDeletionEvent {
 
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(topic, identifier, status, doi, customerId);
+    }
+
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -76,15 +82,9 @@ public class ResourceDraftedForDeletionEvent {
         }
         ResourceDraftedForDeletionEvent that = (ResourceDraftedForDeletionEvent) o;
         return topic.equals(that.topic)
-                && identifier.equals(that.identifier)
-                && status.equals(that.status)
-                && Objects.equals(doi, that.doi)
-                && Objects.equals(customerId, that.customerId);
-    }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(topic, identifier, status, doi, customerId);
+               && identifier.equals(that.identifier)
+               && status.equals(that.status)
+               && Objects.equals(doi, that.doi)
+               && Objects.equals(customerId, that.customerId);
     }
 }

@@ -26,7 +26,7 @@
         }
       },
       "newImage": {
-        "id":  null
+        "id": null
       },
       "sequenceNumber": "200000000025410353361",
       "sizeBytes": 2124,
@@ -34,7 +34,7 @@
     },
     "eventSourceARN": "arn:aws:dynamodb:eu-west-1:11111111111:table/rono_nva_resources/stream/2020-10-30T11:40:11.302"
   }
-  }
+}
 }
 
 

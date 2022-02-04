@@ -2,13 +2,12 @@ package no.unit.nva.publication.events.bodies;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.DataEntry;
 import nva.commons.core.JacocoGenerated;
-
-import java.util.Objects;
 
 public class DataEntryUpdateEvent {
 
@@ -30,15 +29,15 @@ public class DataEntryUpdateEvent {
     /**
      * Constructor for creating DynamoEntryUpdateEvent.
      *
-     * @param action     eventName from DynamodbStreamRecord
+     * @param action  eventName from DynamodbStreamRecord
      * @param oldData old data
      * @param newData new data
      */
     @JsonCreator
     public DataEntryUpdateEvent(
-            @JsonProperty(ACTION) String action,
-            @JsonProperty(OLD_DATA) DataEntry oldData,
-            @JsonProperty(NEW_DATA) DataEntry newData) {
+        @JsonProperty(ACTION) String action,
+        @JsonProperty(OLD_DATA) DataEntry oldData,
+        @JsonProperty(NEW_DATA) DataEntry newData) {
 
         this.action = action;
         this.oldData = oldData;
@@ -59,6 +58,12 @@ public class DataEntryUpdateEvent {
 
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getTopic(), getTopic(), getOldData(), getNewData());
+    }
+
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -72,13 +77,6 @@ public class DataEntryUpdateEvent {
                && Objects.equals(getOldData(), that.getOldData())
                && Objects.equals(getNewData(), that.getNewData());
     }
-
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getTopic(), getTopic(), getOldData(), getNewData());
-    }
-
 
     @JsonProperty("topic")
     private String getTopic() {

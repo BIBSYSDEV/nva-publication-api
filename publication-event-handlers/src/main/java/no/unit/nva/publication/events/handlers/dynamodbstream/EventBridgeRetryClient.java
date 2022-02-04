@@ -15,16 +15,15 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsResultEntry;
 
 public class EventBridgeRetryClient {
 
+    private static final Logger logger = LoggerFactory.getLogger(EventBridgeRetryClient.class);
     private final EventBridgeClient eventBridge;
     private final int maxAttempt;
-
-    private static final Logger logger = LoggerFactory.getLogger(EventBridgeRetryClient.class);
 
     /**
      * Constructor for EventBridgeRetryClient.
      *
-     * @param eventBridge   eventBridge
-     * @param maxAttempt    maxAttempt
+     * @param eventBridge eventBridge
+     * @param maxAttempt  maxAttempt
      */
     public EventBridgeRetryClient(EventBridgeClient eventBridge, int maxAttempt) {
         this.eventBridge = eventBridge;
@@ -34,8 +33,8 @@ public class EventBridgeRetryClient {
     /**
      * Put events on EventBridge EventBus.
      *
-     * @param request   request
-     * @return  list of PutEventsRequestEntry
+     * @param request request
+     * @return list of PutEventsRequestEntry
      */
     public List<PutEventsRequestEntry> putEvents(final PutEventsRequest request) {
         PutEventsRequest requestCopy = request;
