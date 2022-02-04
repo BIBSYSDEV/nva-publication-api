@@ -1,16 +1,26 @@
 package no.unit.nva.publication.events.handlers.create;
 
+import static no.unit.nva.publication.events.handlers.create.HardCodedValues.HARDCODED_OWNER_AFFILIATION;
+import static no.unit.nva.publication.events.handlers.create.HardCodedValues.UNIT_CUSTOMER_ID;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.http.HttpClient;
+import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
-import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
+import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.create.CreatePublicationRequest;
+import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.paths.UriWrapper;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -18,10 +28,12 @@ import software.amazon.awssdk.services.s3.S3Client;
 public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponse> {
 
     private final S3Client s3Client;
+    private final ResourceService resourceService;
 
-    public CreatePublishedPublicationHandler(S3Client s3Client) {
+    public CreatePublishedPublicationHandler(S3Client s3Client, AmazonDynamoDB dynamoClient, HttpClient httpClient) {
         super(EventReference.class);
         this.s3Client = s3Client;
+        this.resourceService = new ResourceService(dynamoClient, httpClient, Clock.systemDefaultZone());
     }
 
     @Override
@@ -32,20 +44,32 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
 
         return attempt(() -> parseInput(input))
             .map(CreatePublicationRequest::toPublication)
-            .map(this::addArbitraryIdentifierToAvoidExceptionWhenGeneratingResponse)
+            .map(this::addOwnerAndPublisher)
+            .map(this::storeAsPublishedPublication)
             .map(PublicationResponse::fromPublication)
             .orElseThrow();
+    }
+
+    private Publication addOwnerAndPublisher(Publication publication) {
+        Organization customer = new Builder().withId(UNIT_CUSTOMER_ID).build();
+        ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
+        return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
+    }
+
+    private String randomUnitUser() {
+        return randomString() + "@unit.no";
+    }
+
+    private Publication storeAsPublishedPublication(Publication publication) throws TransactionFailedException {
+        //TODO: rename the method createPublicationWhilePersistingEntryFromLegacySystems to something that is
+        // meaningful
+        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(publication);
     }
 
     private String readEventBodyFromS3(EventReference eventBody) {
         var s3Bucket = eventBody.getUri().getHost();
         var s3Driver = new S3Driver(s3Client, s3Bucket);
         return s3Driver.getFile(new UriWrapper(eventBody.getUri()).toS3bucketPath());
-    }
-
-    private Publication addArbitraryIdentifierToAvoidExceptionWhenGeneratingResponse(Publication p) {
-        p.setIdentifier(SortableIdentifier.next());
-        return p;
     }
 
     private CreatePublicationRequest parseInput(String input) throws JsonProcessingException {
