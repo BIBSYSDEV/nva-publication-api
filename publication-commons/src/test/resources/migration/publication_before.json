@@ -1,0 +1,12 @@
+{
+  "data": {
+    "id": "123",
+    "entityDescription": {
+      "reference": {
+        "publicationContext": {
+          "publisher": "Publishing House"
+        }
+      }
+    }
+  }
+}
