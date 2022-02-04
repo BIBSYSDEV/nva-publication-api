@@ -1,0 +1,15 @@
+{
+  "data": {
+    "id": "123",
+    "entityDescription": {
+      "reference": {
+        "publicationContext": {
+          "publisher": {
+            "type": "UnconfirmedPublisher",
+            "name": "Publishing House"
+          }
+        }
+      }
+    }
+  }
+}

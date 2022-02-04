@@ -1025,7 +1025,7 @@ Resources:
                 topic: ["PublicationService.DataImport.DataEntry"]
                 subtopic: ["PublicationService.CristinData.DataEntry"]
 
-  NvaCreatePublishedPublicationFunction:
+  CreatePublishedPublicationHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-rest
@@ -1041,7 +1041,7 @@ Resources:
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
-        EventBridgeEvent:
+        Event:
           Type: EventBridgeRule
           Properties:
             EventBusName: !GetAtt InternalBus.Name
