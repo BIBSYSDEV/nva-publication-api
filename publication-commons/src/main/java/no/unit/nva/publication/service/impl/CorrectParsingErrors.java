@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
