@@ -61,9 +61,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     }
 
     private Publication storeAsPublishedPublication(Publication publication) throws TransactionFailedException {
-        //TODO: rename the method createPublicationWhilePersistingEntryFromLegacySystems to something that is
-        // meaningful
-        return resourceService.createPublicationWhilePersistingEntryFromLegacySystems(publication);
+        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     private String readEventBodyFromS3(EventReference eventBody) {
