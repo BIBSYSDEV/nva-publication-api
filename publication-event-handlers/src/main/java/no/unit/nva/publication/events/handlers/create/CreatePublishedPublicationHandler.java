@@ -45,7 +45,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         return attempt(() -> parseInput(input))
             .map(CreatePublicationRequest::toPublication)
             .map(this::addOwnerAndPublisher)
-            .map(this::storePublicationAsPublishedPublication)
+            .map(this::storeAsPublishedPublication)
             .map(PublicationResponse::fromPublication)
             .orElseThrow();
     }
@@ -60,10 +60,8 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         return randomString() + "@unit.no";
     }
 
-    private Publication storePublicationAsPublishedPublication(Publication pub) throws TransactionFailedException {
-        //TODO: rename the method createPublicationWhilePersistingEntryFromLegacySystems to something that is
-        // meaningful
-        return resourceService.createPublicationFromImportedEntry(pub);
+    private Publication storeAsPublishedPublication(Publication publication) throws TransactionFailedException {
+        return resourceService.createPublicationFromImportedEntry(publication);
     }
 
     private String readEventBodyFromS3(EventReference eventBody) {
