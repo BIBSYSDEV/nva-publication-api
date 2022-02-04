@@ -7,7 +7,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 
 import java.util.Map;
+import java.util.Objects;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
@@ -42,7 +44,7 @@ public final class CorrectParsingErrors {
         var publicationContextObjectNode = objectNode.at(DATA_ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_CONTEXT);
         if (!publicationContextObjectNode.isMissingNode()) {
             var publisherNode = publicationContextObjectNode.get(PUBLISHER);
-            if (publisherNode != null && publisherNode.isTextual()) {
+            if (nonNull(publisherNode) && publisherNode.isTextual()) {
                 ObjectNode publisherObjectNode = dtoObjectMapper.createObjectNode();
                 publisherObjectNode.put(TYPE, UnconfirmedPublisher.class.getSimpleName());
                 publisherObjectNode.put(NAME, publisherNode.textValue());
