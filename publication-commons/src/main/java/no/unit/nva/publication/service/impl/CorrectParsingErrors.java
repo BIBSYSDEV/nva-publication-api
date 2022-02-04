@@ -8,12 +8,14 @@ import no.unit.nva.model.contexttypes.UnconfirmedPublisher;
 
 import java.util.Map;
 
+import static java.util.Objects.nonNull;
 import static no.unit.nva.commons.json.JsonUtils.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
 
 public final class CorrectParsingErrors {
 
-    public static final String ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_CONTEXT = "/entityDescription/reference/publicationContext";
+    public static final String DATA_ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_CONTEXT =
+            "/data/entityDescription/reference/publicationContext";
     public static final String PUBLISHER = "publisher";
     public static final String TYPE = "type";
     public static final String NAME = "name";
@@ -38,10 +40,10 @@ public final class CorrectParsingErrors {
     }
 
     private static void replacePublisherStringWithPublisherObject(ObjectNode objectNode) {
-        var publicationContextObjectNode = objectNode.at(ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_CONTEXT);
+        var publicationContextObjectNode = objectNode.at(DATA_ENTITY_DESCRIPTION_REFERENCE_PUBLICATION_CONTEXT);
         if (!publicationContextObjectNode.isMissingNode()) {
             var publisherNode = publicationContextObjectNode.get(PUBLISHER);
-            if (publisherNode.isTextual()) {
+            if (nonNull(publisherNode) && publisherNode.isTextual()) {
                 ObjectNode publisherObjectNode = dtoObjectMapper.createObjectNode();
                 publisherObjectNode.put(TYPE, UnconfirmedPublisher.class.getSimpleName());
                 publisherObjectNode.put(NAME, publisherNode.textValue());
