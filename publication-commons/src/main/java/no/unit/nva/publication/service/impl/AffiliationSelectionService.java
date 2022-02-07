@@ -28,6 +28,7 @@ public final class AffiliationSelectionService {
 
     public Optional<URI> fetchAffiliation(String feideId)
         throws ApiGatewayException {
+        logger.debug("Fetching affiliation feideid:{}", feideId);
         try {
             var affiliations = fetchAffiliationUris(feideId);
             return OrgUnitId.extractMostLikelyAffiliationForUser(affiliations)
@@ -39,9 +40,9 @@ public final class AffiliationSelectionService {
 
     private List<OrgUnitId> fetchAffiliationUris(String feideId)
         throws IOException, ApiGatewayException, InterruptedException {
-        logger.debug("Fetching affiliation uris for feideid:{}", feideId);
         return personApiClient.fetchAffiliationsForUser(feideId)
             .stream()
+            .peek(uri -> logger.debug("Found affiliation uri:{}",uri))
             .map(OrgUnitId::new)
             .collect(Collectors.toList());
     }
