@@ -15,6 +15,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -24,10 +26,13 @@ import no.unit.nva.identifiers.SortableIdentifier;
 })
 public interface JoinWithResource {
 
+    Logger logger = LoggerFactory.getLogger(JoinWithResource.class);
     String LAST_PRINTABLE_ASCII_CHAR = "~";
 
     @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME)
     default String getByCustomerAndResourcePartitionKey() {
+        logger.debug("CustomerId:"+getCustomerId());
+        logger.debug("ResourceIdentifier:"+ getResourceIdentifier());
         return
             CUSTOMER_INDEX_FIELD_PREFIX
             + KEY_FIELDS_DELIMITER
