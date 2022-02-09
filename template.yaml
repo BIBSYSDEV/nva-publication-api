@@ -1044,11 +1044,10 @@ Resources:
         Event:
           Type: EventBridgeRule
           Properties:
-            EventBusName: !GetAtt InternalBus.Name
+            EventBusName: !Ref NewNvaEventBusArn
             Pattern:
               detail:
-                topic: [ "PublicationService.DataImport.DataEntry" ]
-                subtopic: [ "PublicationService.ScopusData.DataEntry" ]
+                topic: [ "FatchDoi.DataImport.Scopus" ]
 
 
 
