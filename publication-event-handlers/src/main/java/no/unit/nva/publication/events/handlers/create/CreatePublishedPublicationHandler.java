@@ -17,7 +17,6 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.create.CreatePublicationRequest;
@@ -26,12 +25,15 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponse> {
 
     private final S3Client s3Client;
     private final ResourceService resourceService;
+    private static final Logger logger = LoggerFactory.getLogger(CreatePublishedPublicationHandler.class);
 
     @JacocoGenerated
     public CreatePublishedPublicationHandler() {
@@ -61,9 +63,12 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     }
 
     private Publication addOwnerAndPublisher(Publication publication) {
-        Organization customer = new Builder().withId(UNIT_CUSTOMER_ID).build();
+        Organization customer = new Organization.Builder().withId(UNIT_CUSTOMER_ID).build();
         ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
-        return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
+        var publicationCopy = publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
+        String message = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(publicationCopy)).orElseThrow();
+        logger.debug("Publication to be stored" + message);
+        return publicationCopy;
     }
 
     private String randomUnitUser() {

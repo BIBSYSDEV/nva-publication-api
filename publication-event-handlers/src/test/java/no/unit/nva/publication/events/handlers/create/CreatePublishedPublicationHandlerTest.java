@@ -78,6 +78,8 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         assertThat(savedPublication, is(equalTo(expectedPublication)));
     }
 
+
+
     private Publication extractSavedPublicationFromDatabase() throws JsonProcessingException, NotFoundException {
         var savedPublicationIdentifier = parseResponse(outputStream.toString()).getIdentifier();
         return this.publicationService.getPublicationByIdentifier(savedPublicationIdentifier);
@@ -104,6 +106,9 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
             .withPublishedDate(null)
             .withLink(null)
             .withIndexedDate(null)
+            .withPublisher(null)
+            .withResourceOwner(null)
+            .withOwner(null)
             .build();
     }
 
