@@ -1029,7 +1029,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-rest
-      Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
+      Handler: no.unit.nva.publication.create.CreatePublishedPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1798
       Environment:
