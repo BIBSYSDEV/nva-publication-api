@@ -333,7 +333,7 @@ Resources:
   NvaCreatePublicationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-event-handlers
+      CodeUri: publication-rest
       Handler: no.unit.nva.publication.create.CreatePublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1798
@@ -1028,7 +1028,7 @@ Resources:
   CreatePublishedPublicationHandler:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: publication-rest
+      CodeUri: publication-event-handlers
       Handler: no.unit.nva.publication.events.handlers.create.CreatePublishedPublicationHandler::handleRequest
       Runtime: java11
       MemorySize: 1798
