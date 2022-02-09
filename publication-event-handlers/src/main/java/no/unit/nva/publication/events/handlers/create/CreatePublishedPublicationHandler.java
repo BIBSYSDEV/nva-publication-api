@@ -25,15 +25,12 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class CreatePublishedPublicationHandler extends EventHandler<EventReference, PublicationResponse> {
 
     private final S3Client s3Client;
     private final ResourceService resourceService;
-    private static final Logger logger = LoggerFactory.getLogger(CreatePublishedPublicationHandler.class);
 
     @JacocoGenerated
     public CreatePublishedPublicationHandler() {
@@ -65,10 +62,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     private Publication addOwnerAndPublisher(Publication publication) {
         Organization customer = new Organization.Builder().withId(UNIT_CUSTOMER_ID).build();
         ResourceOwner resourceOwner = new ResourceOwner(randomUnitUser(), HARDCODED_OWNER_AFFILIATION);
-        var publicationCopy = publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
-        String message = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(publicationCopy)).orElseThrow();
-        logger.debug("Publication to be stored" + message);
-        return publicationCopy;
+        return publication.copy().withPublisher(customer).withResourceOwner(resourceOwner).build();
     }
 
     private String randomUnitUser() {
