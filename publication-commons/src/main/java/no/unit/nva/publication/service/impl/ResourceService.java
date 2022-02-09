@@ -15,6 +15,7 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
@@ -132,6 +133,8 @@ public class ResourceService extends ServiceWithTransactions {
         newResource.setCreatedDate(inputData.getCreatedDate());
         newResource.setModifiedDate(inputData.getModifiedDate());
         newResource.setStatus(PublicationStatus.PUBLISHED);
+        String message = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(newResource)).orElseThrow();
+        logger.debug("Resource to be stored:" + message);
         return insertResource(newResource);
     }
 
