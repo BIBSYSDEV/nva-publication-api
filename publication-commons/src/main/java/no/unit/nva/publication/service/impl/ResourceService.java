@@ -291,8 +291,8 @@ public class ResourceService extends ServiceWithTransactions {
             .withExpressionAttributeValues(Dao.scanFilterExpressionAttributeValues());
     }
 
-
-    private List<DataEntry> extractDatabaseEntries(ScanResult response) {return response.getItems()
+    private List<DataEntry> extractDatabaseEntries(ScanResult response) {
+        return response.getItems()
             .stream()
             .map(CorrectParsingErrors::apply)
             .map(value -> parseAttributeValuesMap(value, Dao.class))
