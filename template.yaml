@@ -1049,6 +1049,22 @@ Resources:
               detail:
                 topic: [ "FatchDoi.DataImport.Scopus" ]
 
+  ScopusDeletionEventHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-event-handlers
+      Handler: no.unit.nva.publication.events.handlers.delete.ScopusDeletionEventHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1798
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        Event:
+          Type: EventBridgeRule
+          Properties:
+            EventBusName: !Ref NewNvaEventBusArn
+            Pattern:
+              detail:
+                topic: [ "FetchDoi.Delete.Scopus" ]
 
 
   #==========================Manually triggered functions=============================================
