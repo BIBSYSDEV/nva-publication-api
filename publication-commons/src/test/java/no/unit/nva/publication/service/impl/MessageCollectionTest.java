@@ -69,10 +69,10 @@ class MessageCollectionTest {
     }
 
     @Test
-    void messageCollectionDoesNotContainInternalMessageStructuresWhenSerialized() throws JsonProcessingException {
+    void messageCollectionPreservesInternalMessageStructureButDoesExposeItInSerialization() throws JsonProcessingException {
         var samplePublication = PublicationGenerator.randomPublication();
         var messageTexts = List.of(randomString(), randomString(), randomString());
-        MessageCollection messageCollection = createSupportMessagesCollection(samplePublication, messageTexts);
+        var messageCollection = createSupportMessagesCollection(samplePublication, messageTexts);
         var serialization = dtoObjectMapper.writeValueAsString(messageCollection);
         var json = dtoObjectMapper.readTree(serialization);
 
