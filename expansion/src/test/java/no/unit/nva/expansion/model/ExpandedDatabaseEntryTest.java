@@ -8,6 +8,7 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -19,6 +20,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -30,6 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ExpandedDatabaseEntryTest {
 
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
+    private static final  MessageService messageService = mock(MessageService.class);
 
     public static Stream<ExpandedDataEntryWithAssociatedPublication> entryProvider()
         throws JsonProcessingException, NotFoundException {
@@ -50,7 +53,7 @@ class ExpandedDatabaseEntryTest {
 
     private static ExpandedDoiRequest randomDoiRequest(Publication publication) throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
     }
 
     private static ExpandedMessage randomMessage(Publication publication) throws NotFoundException {

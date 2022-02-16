@@ -99,6 +99,7 @@ public interface JoinWithResource {
      * {@link com.amazonaws.services.dynamodbv2.model.QueryRequest#withKeyConditions(Map)}
      *     method.
      */
+    //TODO: type should be an enum
     default Map<String, Condition> byResource(String selectedType) {
         Condition partitionKeyCondition = new Condition()
                                               .withAttributeValueList(

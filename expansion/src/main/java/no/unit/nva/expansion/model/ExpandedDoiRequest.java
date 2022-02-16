@@ -6,13 +6,19 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequestStatus;
+import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.MessageType;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
@@ -41,14 +47,26 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private URI doi;
     @JsonProperty
     private Set<URI> organizationIds;
+    @JsonProperty("messages")
+    private MessageCollection doiRequestMessages;
 
     public static ExpandedDoiRequest create(DoiRequest doiRequest,
-                                            ResourceExpansionService resourceExpansionService)
+                                            ResourceExpansionService resourceExpansionService,
+                                            MessageService messageService)
         throws NotFoundException {
-        ExpandedDoiRequest expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
-        Set<URI> ids = resourceExpansionService.getOrganizationIds(doiRequest);
-        expandedDoiRequest.setOrganizationIds(ids);
+        var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
+        expandedDoiRequest.setDoiRequestMessages(fetchDoiRequestMessagesForResource(messageService, doiRequest));
+        expandedDoiRequest
+            .setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, resourceExpansionService));
         return expandedDoiRequest;
+    }
+
+    public MessageCollection getDoiRequestMessages() {
+        return doiRequestMessages;
+    }
+
+    public void setDoiRequestMessages(MessageCollection doiRequestMessages) {
+        this.doiRequestMessages = doiRequestMessages;
     }
 
     @JacocoGenerated
@@ -194,6 +212,27 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
+    }
+
+    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
+                                                                ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
+        return resourceExpansionService.getOrganizationIds(doiRequest);
+    }
+
+    private static MessageCollection fetchDoiRequestMessagesForResource(MessageService messageService,
+                                                                        DoiRequest doiRequest) {
+
+        UserInstance userInstance = UserInstance.fromDoiRequest(doiRequest);
+        return fetchAllMessagesForResource(messageService, doiRequest, userInstance)
+            .map(conversation -> conversation.getMessageCollectionOfType(MessageType.DOI_REQUEST))
+            .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
+    }
+
+    private static Optional<ResourceConversation> fetchAllMessagesForResource(MessageService messageService,
+                                                                              DoiRequest doiRequest,
+                                                                              UserInstance userInstance) {
+        return messageService.getMessagesForResource(userInstance, doiRequest.getResourceIdentifier());
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete

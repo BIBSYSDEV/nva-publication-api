@@ -5,6 +5,7 @@ import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractU
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -30,7 +31,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -54,6 +57,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     public static final URI RESOURCE_OWNER_UNIT_AFFILIATION = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
     public static final URI RESOURCE_OWNER_INSTITUTION_AFFILIATION =
         URI.create("https://api.cristin.no/v2/institutions/194");
+    public static final Clock CLOCK = Clock.systemDefaultZone();
     private static final UserInstance SAMPLE_SENDER = sampleSender();
     private static final String PERSON_API_RESPONSE_WITH_UNIT =
         stringFromResources(Path.of("fake_person_api_response_with_unit.json"));
@@ -71,9 +75,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0");
     private static final URI CRISTIN_ORG_GRAND_PARENT_ID = URI.create(
         "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0");
-    private ResourceExpansionService service;
+    private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
+    private DoiRequestService doiRequestService;
     private FakeHttpClient<String> externalServicesHttpClient;
 
     @BeforeEach
@@ -89,25 +94,19 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     @Test
     void shouldReturnExpandedResourceConversationWithInstitutionsUriWhenPersonIsAffiliatedOnlyToInstitution()
-            throws Exception {
+        throws Exception {
         externalServicesHttpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_INSTITUTION,
                                                           INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE
         );
         initializeServices();
         Publication createdPublication = createPublication(RESOURCE_OWNER_INSTITUTION_AFFILIATION);
 
-        Message message = createMessage(createdPublication);
+        Message message = sendSupportMessage(createdPublication);
 
-        ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
+        ExpandedResourceConversation expandedResourceConversation =
+            (ExpandedResourceConversation) expansionService.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
         assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService();
-    }
-
-    private Message createMessage(Publication createdPublication)
-            throws TransactionFailedException, NotFoundException {
-        UserInstance userInstance = extractUserInstance(createdPublication);
-        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance, createdPublication, randomString());
-        return messageService.getMessage(userInstance, identifier);
     }
 
     @Test
@@ -116,7 +115,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
 
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(createdPublication));
-        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) service.expandEntry(doiRequest);
+        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) expansionService.expandEntry(doiRequest);
         assertThat(expandedDoiRequest.getOrganizationIds(), containsInAnyOrder(
             CRISTIN_ORG_ID,
             CRISTIN_ORG_PARENT_ID,
@@ -125,12 +124,13 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit() throws Exception {
+    void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit()
+        throws Exception {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
+        Message message = sendSupportMessage(createdPublication);
 
-        Message message = createMessage(createdPublication);
-
-        ExpandedResourceConversation expandedResourceConversation = (ExpandedResourceConversation) service.expandEntry(message);
+        ExpandedResourceConversation expandedResourceConversation =
+            (ExpandedResourceConversation) expansionService.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(
             CRISTIN_ORG_ID,
             CRISTIN_ORG_PARENT_ID,
@@ -144,7 +144,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throws JsonProcessingException, NotFoundException {
         Publication publication = PublicationGenerator.randomPublication(instanceType);
         Resource resourceUpdate = Resource.fromPublication(publication);
-        ExpandedResource indexDoc = (ExpandedResource) service.expandEntry(resourceUpdate);
+        ExpandedResource indexDoc = (ExpandedResource) expansionService.expandEntry(resourceUpdate);
         assertThat(indexDoc.fetchId(), is(not(nullValue())));
     }
 
@@ -153,8 +153,25 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldProcessAllResourceUpdateTypes(Class<?> resourceUpdateType)
         throws IOException, ApiGatewayException {
         DataEntry resource = generateResourceUpdate(resourceUpdateType);
-        service.expandEntry(resource);
-        assertDoesNotThrow(() -> service.expandEntry(resource));
+        expansionService.expandEntry(resource);
+        assertDoesNotThrow(() -> expansionService.expandEntry(resource));
+    }
+
+    @Test
+    void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequest() throws ApiGatewayException, JsonProcessingException {
+        var samplePublication = PublicationGenerator.randomPublication();
+        var userInstance = extractUserInstance(samplePublication);
+        samplePublication = resourceService.createPublication(userInstance, samplePublication);
+        var doiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
+        var expectedDoiRequestMessageIdentifiers = sendSomeDoiRequestMessages(samplePublication);
+        var expandedDoiRequest = expandDoiRequest(userInstance, doiRequestIdentifier);
+
+        var messagesIdentifiersInExpandedDoiRequest = expandedDoiRequest.getDoiRequestMessages().getMessages()
+            .stream()
+            .map(MessageDto::getMessageIdentifier)
+            .collect(Collectors.toList());
+        assertThat(messagesIdentifiersInExpandedDoiRequest,
+                   contains(expectedDoiRequestMessageIdentifiers.toArray(SortableIdentifier[]::new)));
     }
 
     private static List<Class<?>> listResourceUpdateTypes() {
@@ -171,10 +188,41 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 
+    private Message sendSupportMessage(Publication createdPublication)
+        throws TransactionFailedException, NotFoundException {
+        UserInstance userInstance = UserInstance.fromPublication(createdPublication);
+        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance,
+                                                                           createdPublication,
+                                                                           randomString());
+        return messageService.getMessage(userInstance, identifier);
+    }
+
+    private List<SortableIdentifier> sendSomeDoiRequestMessages(Publication samplePublication)
+        throws TransactionFailedException {
+        return List.of(
+            sendSomeDoiRequestMessage(samplePublication),
+            sendSomeDoiRequestMessage(samplePublication)
+        );
+    }
+
+    private ExpandedDoiRequest expandDoiRequest(UserInstance userInstance, SortableIdentifier doiRequestIdentifier)
+        throws NotFoundException, JsonProcessingException {
+        var doiRequestDataEntry = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        return (ExpandedDoiRequest) expansionService.expandEntry(doiRequestDataEntry);
+    }
+
+    private SortableIdentifier sendSomeDoiRequestMessage(Publication samplePublication)
+        throws TransactionFailedException {
+        var userInstance = extractUserInstance(samplePublication);
+        return messageService.createDoiRequestMessage(userInstance, samplePublication, randomString());
+    }
+
     private void initializeServices() {
-        resourceService = new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
-        messageService = new MessageService(client, Clock.systemDefaultZone());
-        service = new ResourceExpansionServiceImpl(externalServicesHttpClient, resourceService, messageService);
+        resourceService = new ResourceService(client, externalServicesHttpClient, CLOCK);
+        messageService = new MessageService(client, CLOCK);
+        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, CLOCK);
+        expansionService = new ResourceExpansionServiceImpl(externalServicesHttpClient, resourceService,
+                                                            messageService);
     }
 
     private void assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService() {
@@ -200,7 +248,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             return createDoiRequest(createdPublication);
         }
         if (Message.class.equals(resourceUpdateType)) {
-            return createMessage(createdPublication);
+            return sendSupportMessage(createdPublication);
         }
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }

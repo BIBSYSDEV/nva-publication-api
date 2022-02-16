@@ -28,7 +28,9 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.events.handlers.testutils.FakeMessageService;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
@@ -44,6 +46,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ExpandedDataEntriesPersistenceHandlerTest {
 
     private static final ResourceExpansionService resourceExpansionService = fakeExpansionService();
+    //TODO: rewrite tests to include a local database instance instead of mocked services.
+    private static final MessageService messageService = new FakeMessageService();
     private static final String HELP_MESSAGE = String.format("%s should be compared for equality only as json "
                                                              + "objects", ExpandedResource.class.getSimpleName());
     private ExpandedDataEntriesPersistenceHandler handler;
@@ -118,10 +122,10 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     private static ExpandedDoiRequest randomDoiRequest() throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
     }
 
-    private static ExpandedResourceConversation randomResourceConversation() throws NotFoundException {
+    private static ExpandedResourceConversation randomResourceConversation() {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
