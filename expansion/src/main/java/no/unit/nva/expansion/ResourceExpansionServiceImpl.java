@@ -74,10 +74,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
 
     private ExpandedDataEntry updateResourceConversations(Message message) throws NotFoundException {
-        if (MessageType.DOI_REQUEST.equals(message.getMessageType())) {
+        if (isDoiRequestMessage(message)) {
             return updateDoiRequestConversation(message);
         }
         return updateExpandedGeneralSupportConversation(message);
+    }
+
+    private boolean isDoiRequestMessage(Message message) {
+        return MessageType.DOI_REQUEST.equals(message.getMessageType());
     }
 
     private ExpandedDoiRequest updateDoiRequestConversation(Message message) throws NotFoundException {
