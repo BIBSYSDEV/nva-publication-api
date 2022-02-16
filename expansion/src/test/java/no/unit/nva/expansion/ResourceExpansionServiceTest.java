@@ -128,12 +128,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit()
         throws Exception {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
-
         Message message = createMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation =
-            (ExpandedResourceConversation) expansionService.expandEntry(
-                message);
+            (ExpandedResourceConversation) expansionService.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(
             CRISTIN_ORG_ID,
             CRISTIN_ORG_PARENT_ID,
