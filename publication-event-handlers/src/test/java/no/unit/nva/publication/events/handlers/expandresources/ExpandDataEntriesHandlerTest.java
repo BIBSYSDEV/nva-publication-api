@@ -34,6 +34,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -77,6 +78,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private FakeS3Client s3Client;
     private ResourceService resourceService;
     private MessageService messageService;
+    private DoiRequestService doiRequestService;
 
     @BeforeEach
     public void init() {
@@ -90,10 +92,11 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
         resourceService = new ResourceService(client, httpClient, CLOCK);
         messageService = new MessageService(client, CLOCK);
+        doiRequestService = new DoiRequestService(client, httpClient, CLOCK);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(httpClient, resourceService, messageService);
+            new ResourceExpansionServiceImpl(httpClient, resourceService, messageService, doiRequestService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }

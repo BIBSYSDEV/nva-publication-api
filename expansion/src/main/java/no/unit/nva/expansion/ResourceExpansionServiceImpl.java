@@ -15,12 +15,14 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.ConnectedToResource;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -32,13 +34,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private final ResourceService resourceService;
     private final MessageService messageService;
     private final HttpClient externalServicesHttpClient;
+    private final DoiRequestService doiRequestService;
 
     public ResourceExpansionServiceImpl(HttpClient externalServicesHttpClient,
                                         ResourceService resourceService,
-                                        MessageService messageService) {
+                                        MessageService messageService,
+                                        DoiRequestService doiRequestService) {
         this.externalServicesHttpClient = externalServicesHttpClient;
         this.resourceService = resourceService;
         this.messageService = messageService;
+        this.doiRequestService = doiRequestService;
     }
 
     @Override
@@ -48,7 +53,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof DoiRequest) {
             return ExpandedDoiRequest.create((DoiRequest) dataEntry, this, messageService);
         } else if (dataEntry instanceof Message) {
-            return createExpandedResourceConversation((Message) dataEntry);
+            return updateResourceConversations((Message) dataEntry);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
@@ -68,11 +73,33 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return Collections.emptySet();
     }
 
-    private ExpandedResourceConversation createExpandedResourceConversation(Message message) throws NotFoundException {
+    private ExpandedDataEntry updateResourceConversations(Message message) throws NotFoundException {
+        if (MessageType.DOI_REQUEST.equals(message.getMessageType())) {
+            return updateDoiRequestConversation(message);
+        }
+        return updateExpandedGeneralSupportConversation(message);
+    }
+
+    private ExpandedDoiRequest updateDoiRequestConversation(Message message) throws NotFoundException {
+        var doiRequest =
+            doiRequestService.getDoiRequestByResourceIdentifier(UserInstance.fromMessage(message),
+                                                                message.getResourceIdentifier());
+
+        return ExpandedDoiRequest.create(doiRequest, this, messageService);
+    }
+
+    private ExpandedResourceConversation updateExpandedGeneralSupportConversation(Message message)
+        throws NotFoundException {
         UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
         SortableIdentifier publicationIdentifier = message.getResourceIdentifier();
         ResourceConversation messagesForResource =
-            messageService.getMessagesForResource(userInstance, publicationIdentifier).orElseThrow();
+            messageService.getMessagesForResource(userInstance, publicationIdentifier)
+                .map(this::keepOnlyGeneralSupportMessages)
+                .orElseThrow();
         return ExpandedResourceConversation.create(messagesForResource, message, this);
+    }
+
+    private ResourceConversation keepOnlyGeneralSupportMessages(ResourceConversation conversation) {
+        return conversation.ofMessageTypes(MessageType.generalSupportMessageTypes().toArray(MessageType[]::new));
     }
 }

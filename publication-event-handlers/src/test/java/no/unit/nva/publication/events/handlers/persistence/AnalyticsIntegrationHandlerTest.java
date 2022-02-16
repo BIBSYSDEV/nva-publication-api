@@ -38,6 +38,7 @@ import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -72,6 +73,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private AmazonDynamoDB dynamoClient;
     private MessageService messageService;
+    private DoiRequestService doiRequestService;
 
     @BeforeEach()
     public void init() {
@@ -81,8 +83,12 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.s3Client = new FakeS3Client();
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
-        resourceService = new ResourceService(dynamoClient, setupPersonServiceResponses(), CLOCK);
+
+        HttpClient externalServicesHttpClient = setupPersonServiceResponses();
+        resourceService = new ResourceService(dynamoClient, externalServicesHttpClient, CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
+        doiRequestService = new DoiRequestService(dynamoClient, externalServicesHttpClient, CLOCK);
+
         this.resourceExpansionService = setupResourceExpansionService();
     }
 
@@ -121,7 +127,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
         return new ResourceExpansionServiceImpl(setupHttpResponsesToOrganizationService(),
                                                 resourceService,
-                                                notImportantMessageService);
+                                                notImportantMessageService,
+                                                doiRequestService);
     }
 
     private HttpClient setupPersonServiceResponses() {

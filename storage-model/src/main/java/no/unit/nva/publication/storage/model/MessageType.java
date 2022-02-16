@@ -1,6 +1,10 @@
 package no.unit.nva.publication.storage.model;
 
+import static java.util.function.Predicate.not;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
 import nva.commons.core.JacocoGenerated;
 
 public enum MessageType {
@@ -22,6 +26,12 @@ public enum MessageType {
             }
         }
         throw new IllegalArgumentException(INVALID_MESSAGE_TYPE_ERROR + value);
+    }
+
+    public static Set<MessageType> generalSupportMessageTypes() {
+        return Arrays.stream(MessageType.values())
+            .filter(not(DOI_REQUEST::equals))
+            .collect(Collectors.toSet());
     }
 
     @JsonValue

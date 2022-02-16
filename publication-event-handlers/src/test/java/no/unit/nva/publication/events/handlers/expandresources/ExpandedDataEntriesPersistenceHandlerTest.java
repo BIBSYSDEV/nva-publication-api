@@ -122,7 +122,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     private static ExpandedDoiRequest randomDoiRequest() throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
 
     private static ExpandedResourceConversation randomResourceConversation() {
@@ -135,7 +135,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     }
 
     private static ResourceExpansionServiceImpl fakeExpansionService() {
-        return new ResourceExpansionServiceImpl(null, null, null) {
+        return new ResourceExpansionServiceImpl(null, null, null, null) {
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());

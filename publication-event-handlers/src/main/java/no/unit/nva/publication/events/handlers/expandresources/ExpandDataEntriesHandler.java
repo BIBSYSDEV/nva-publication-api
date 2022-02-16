@@ -18,6 +18,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -44,9 +45,11 @@ public class ExpandDataEntriesHandler
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
 
+
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
-        this(new S3Driver(EVENTS_BUCKET), defaultResourceExpansionService(defaultHttpClient()));
+        this(new S3Driver(EVENTS_BUCKET),
+             defaultResourceExpansionService(defaultHttpClient(),defaultDynamoDbClient()));
     }
 
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
@@ -80,20 +83,27 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService(HttpClient httpClient) {
+    private static ResourceExpansionService defaultResourceExpansionService(
+        HttpClient httpClient, AmazonDynamoDB dynamoDbClient) {
         return new ResourceExpansionServiceImpl(httpClient,
-                                                defaultResourceService(httpClient),
-                                                defaultMessageService());
+                                                defaultResourceService(httpClient,dynamoDbClient),
+                                                defaultMessageService(dynamoDbClient),
+                                                defaultDoiRequestService(httpClient,dynamoDbClient));
     }
 
     @JacocoGenerated
-    private static MessageService defaultMessageService() {
-        return new MessageService(defaultDynamoDbClient(), Clock.systemDefaultZone());
+    private static DoiRequestService defaultDoiRequestService(HttpClient httpClient,AmazonDynamoDB dynamoDbClient) {
+        return new DoiRequestService(dynamoDbClient,httpClient,Clock.systemDefaultZone());
     }
 
     @JacocoGenerated
-    private static ResourceService defaultResourceService(HttpClient httpClient) {
-        return new ResourceService(defaultDynamoDbClient(), httpClient, Clock.systemDefaultZone());
+    private static MessageService defaultMessageService(AmazonDynamoDB dynamoDbClient) {
+        return new MessageService(dynamoDbClient, Clock.systemDefaultZone());
+    }
+
+    @JacocoGenerated
+    private static ResourceService defaultResourceService(HttpClient httpClient, AmazonDynamoDB dynamoDb) {
+        return new ResourceService(dynamoDb, httpClient, Clock.systemDefaultZone());
     }
 
     @JacocoGenerated
