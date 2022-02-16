@@ -7,7 +7,7 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceConversation;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.ConnectedToResource;
 import no.unit.nva.publication.storage.model.DataEntry;

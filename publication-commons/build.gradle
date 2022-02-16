@@ -31,15 +31,9 @@ dependencies {
     runtimeOnly libs.jackson.module.parameter.names
     implementation libs.bundles.logging
 
-    testImplementation libs.jackson.core
-    testImplementation libs.nva.datamodel.testutils
+    testImplementation libs.bundles.testing
     testImplementation project(":publication-testing")
-    testImplementation libs.nva.testutils
-    testImplementation libs.logutils
-    testImplementation libs.javafaker
-    testImplementation(libs.javers) {
-        because "For comparing java objects and detailing the differences in readable way"
-    }
+
 }
 
 test{

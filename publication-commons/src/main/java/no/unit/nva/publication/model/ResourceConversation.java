@@ -1,21 +1,19 @@
-package no.unit.nva.publication.service.impl;
+package no.unit.nva.publication.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import nva.commons.core.JacocoGenerated;
-import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
 /**
@@ -42,12 +40,21 @@ public class ResourceConversation implements JsonSerializable {
      */
     public static List<ResourceConversation> fromMessageList(Collection<Message> messages) {
         return messages.stream()
-                   .collect(groupByResource())
-                   .values()
-                   .stream()
-                   .map(ResourceConversation::newConversationForResource)
-                   .sorted(ResourceConversation::conversationWithOldestMessageFirst)
-                   .collect(Collectors.toList());
+            .collect(groupByResource())
+            .values()
+            .stream()
+            .map(ResourceConversation::newConversationForResource)
+            .sorted(ResourceConversation::conversationWithOldestMessageFirst)
+            .collect(Collectors.toList());
+    }
+
+    public ResourceConversation ofMessageTypes(MessageType... messageTypes) {
+        var desiredMessageTypes = Set.of(messageTypes);
+        var messages = this.messageCollections.stream()
+            .filter(collection -> desiredMessageTypes.contains(collection.getMessageType()))
+            .flatMap(collection -> collection.getMessagesInternalStructure().stream())
+            .collect(Collectors.toList());
+        return fromMessageList(messages).stream().collect(SingletonCollector.collect());
     }
 
     public List<MessageCollection> getMessageCollections() {
@@ -114,9 +121,9 @@ public class ResourceConversation implements JsonSerializable {
 
     public List<MessageDto> allMessages() {
         return this.getMessageCollections()
-                   .stream()
-                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
-                   .collect(Collectors.toList());
+            .stream()
+            .flatMap(messageCollection -> messageCollection.getMessages().stream())
+            .collect(Collectors.toList());
     }
 
     private static Message newestMessage(List<Message> messages) {

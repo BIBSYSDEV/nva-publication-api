@@ -11,13 +11,16 @@ import com.github.javafaker.Faker;
 import java.net.URI;
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -25,15 +28,15 @@ import org.junit.jupiter.api.Test;
 
 class ResourceConversationTest {
 
-    private static final int NUMBER_OF_PUBLICATIONS = 3;
     public static final boolean WITH_IDENTIFIER = true;
     public static final Faker FAKER = Faker.instance();
     public static final int SMALL_WAITING_TIME = 2;
-
     public static final String USER_IDENTIFIER = "userIdentifier";
     public static final URI SOME_PUBLISHER = URI.create("https://www.example.org");
     public static final UserInstance SOME_USER = new UserInstance(USER_IDENTIFIER, SOME_PUBLISHER);
     public static final int SINGLE_OBJECT = 0;
+    public static final int RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE = 0;
+    private static final int NUMBER_OF_PUBLICATIONS = 3;
 
     @Test
     public void returnsListOfResourceConversationsForEachMentionedResource() {
@@ -44,9 +47,9 @@ class ResourceConversationTest {
         List<ResourceConversation> conversations = ResourceConversation.fromMessageList(allMessages);
         MessageDto oldestMessage = conversations.get(0).getOldestMessage();
         var expectedOldestMessage = allMessages
-                                        .stream()
-                                        .min(Comparator.comparing(Message::getCreatedTime))
-                                        .orElseThrow();
+            .stream()
+            .min(Comparator.comparing(Message::getCreatedTime))
+            .orElseThrow();
 
         assertThat(oldestMessage.getMessageIdentifier(), is(equalTo(expectedOldestMessage.getIdentifier())));
         assertThat(oldestMessage.getMessageIdentifier(), is(not(nullValue())));
@@ -61,11 +64,37 @@ class ResourceConversationTest {
         var resourceConversation = ResourceConversation.fromMessageList(messageList);
 
         var actualMessages = resourceConversation
-                                 .get(SINGLE_OBJECT)
-                                 .getMessageCollectionOfType(MessageType.DOI_REQUEST)
-                                 .getMessages();
+            .get(SINGLE_OBJECT)
+            .getMessageCollectionOfType(MessageType.DOI_REQUEST)
+            .getMessages();
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
         assertThat(actualMessages, contains(MessageDto.fromMessage(doiRequestMessage)));
+    }
+
+    @Test
+    void shouldReturnNewResourceConversationContainingMessagesOfOnlySpecifiedTypes() {
+        var publication = PublicationGenerator.publicationWithIdentifier();
+        var inputSupportMessages = List.of(supportMessage(publication), supportMessage(publication));
+        var inputDoiRequestMessages = List.of(doiRequestMessage(publication), doiRequestMessage(publication));
+
+        var allMessages = Stream.of(inputSupportMessages, inputDoiRequestMessages)
+            .flatMap(Collection::stream)
+            .collect(Collectors.toList());
+
+        var resourceConversation = ResourceConversation.fromMessageList(allMessages)
+            .get(RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE);
+
+        var doiRequestConversationMessages = resourceConversation.ofMessageTypes(MessageType.DOI_REQUEST)
+                .allMessages()
+                .stream()
+                .map(MessageDto::getText)
+                .collect(Collectors.toList());
+        var expectedDoiRequestConversationMessages = inputDoiRequestMessages
+            .stream()
+            .map(Message::getText)
+            .collect(Collectors.toList())
+            .toArray(String[]::new);
+        assertThat(doiRequestConversationMessages, contains(expectedDoiRequestConversationMessages));
     }
 
     private Message doiRequestMessage(Publication publication) {

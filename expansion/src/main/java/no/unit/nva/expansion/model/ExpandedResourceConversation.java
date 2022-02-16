@@ -7,7 +7,7 @@ import java.util.Set;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.service.impl.ResourceConversation;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
