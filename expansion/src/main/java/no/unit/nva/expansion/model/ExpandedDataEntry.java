@@ -12,7 +12,6 @@ import no.unit.nva.commons.json.JsonUtils;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = ExpandedResource.TYPE, value = ExpandedResource.class),
     @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
-    @JsonSubTypes.Type(name = ExpandedMessage.TYPE, value = ExpandedMessage.class),
     @JsonSubTypes.Type(name = ExpandedResourceConversation.TYPE, value = ExpandedResourceConversation.class),
 })
 public interface ExpandedDataEntry extends JsonSerializable {
