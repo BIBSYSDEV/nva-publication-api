@@ -38,7 +38,6 @@ class ExpandedDatabaseEntryTest {
         throws JsonProcessingException, NotFoundException {
         return Stream.of(ExpandedDataEntryWithAssociatedPublication.create(ExpandedResource.class),
                          ExpandedDataEntryWithAssociatedPublication.create(ExpandedDoiRequest.class),
-                         ExpandedDataEntryWithAssociatedPublication.create(ExpandedMessage.class),
                          ExpandedDataEntryWithAssociatedPublication.create(ExpandedResourceConversation.class)
         );
     }
@@ -56,12 +55,6 @@ class ExpandedDatabaseEntryTest {
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
     }
 
-    private static ExpandedMessage randomMessage(Publication publication) throws NotFoundException {
-        var randomUser = new UserInstance(randomString(), randomUri());
-        var clock = Clock.systemDefaultZone();
-        var message = supportMessage(randomUser, publication, randomString(), SortableIdentifier.next(), clock);
-        return ExpandedMessage.create(message, resourceExpansionService);
-    }
 
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
         //TODO: create proper ExpandedResourceConversation
@@ -112,10 +105,7 @@ class ExpandedDatabaseEntryTest {
                     new ExpandedDataEntryWithAssociatedPublication(publication,
                                                                    ExpandedResource.fromPublication(publication));
             }
-
-            if (expandedDataEntryClass.equals(ExpandedMessage.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(publication, randomMessage(publication));
-            } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
+            else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
