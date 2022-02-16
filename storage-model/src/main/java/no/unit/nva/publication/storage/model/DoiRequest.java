@@ -24,6 +24,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.Reference;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -48,6 +49,7 @@ public class DoiRequest
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
 
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
+    private static final URI UNKNOWN_USER_AFFILIATION = null ;
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -332,15 +334,14 @@ public class DoiRequest
             .withId(getCustomerId())
             .build();
 
-        return new
-                   Publication.Builder()
+        return new Publication.Builder()
             .withIdentifier(getResourceIdentifier())
             .withModifiedDate(getResourceModifiedDate())
             .withDoi(getDoi())
             .withStatus(getResourceStatus())
             .withEntityDescription(entityDescription)
             .withPublisher(customer)
-            .withOwner(getOwner())
+            .withResourceOwner(new ResourceOwner(getOwner(),UNKNOWN_USER_AFFILIATION))
             .withDoiRequest(doiRequest)
             .build();
     }

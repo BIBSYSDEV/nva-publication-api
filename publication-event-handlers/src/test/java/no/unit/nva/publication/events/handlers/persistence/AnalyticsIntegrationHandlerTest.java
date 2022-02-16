@@ -63,6 +63,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         IoUtils.stringFromResources(
             Path.of("expandResources", "cristin_grand_parent_org.json"));
     public static final String JSONLD_CONTEXT = "@context";
+    public static final Clock CLOCK = Clock.systemDefaultZone();
     private AnalyticsIntegrationHandler analyticsIntegration;
     private ByteArrayOutputStream outputStream;
     private FakeS3Client s3Client;
@@ -70,6 +71,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private AmazonDynamoDB dynamoClient;
+    private MessageService messageService;
 
     @BeforeEach()
     public void init() {
@@ -79,7 +81,8 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.s3Client = new FakeS3Client();
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
-        resourceService = new ResourceService(dynamoClient, setupPersonServiceResponses(), Clock.systemDefaultZone());
+        resourceService = new ResourceService(dynamoClient, setupPersonServiceResponses(), CLOCK);
+        messageService = new MessageService(dynamoClient, CLOCK);
         this.resourceExpansionService = setupResourceExpansionService();
     }
 
@@ -166,7 +169,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         Publication samplePublication = insertSamplePublication();
 
         var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(samplePublication));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
 
     private Publication insertSamplePublication() throws ApiGatewayException {

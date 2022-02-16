@@ -48,7 +48,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         if (dataEntry instanceof Resource) {
             return ExpandedResource.fromPublication(dataEntry.toPublication());
         } else if (dataEntry instanceof DoiRequest) {
-            return ExpandedDoiRequest.create((DoiRequest) dataEntry, this);
+            return ExpandedDoiRequest.create((DoiRequest) dataEntry, this,messageService);
         } else if (dataEntry instanceof Message) {
             return createExpandedResourceConversation((Message) dataEntry);
         }

@@ -2,9 +2,10 @@ package no.unit.nva.publication.storage.model;
 
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.model.Publication;
 
 /**
- *  Class used internally in the Resource service to represent a user.
+ * Class used internally in the Resource service to represent a user.
  */
 public class UserInstance implements JsonSerializable {
 
@@ -16,6 +17,13 @@ public class UserInstance implements JsonSerializable {
         this.organizationUri = organizationUri;
     }
 
+    public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
+        return new UserInstance(doiRequest.getOwner(), doiRequest.getCustomerId());
+    }
+
+    public static UserInstance fromPublication(Publication publication) {
+        return new UserInstance(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
+    }
 
     public URI getOrganizationUri() {
         return organizationUri;
