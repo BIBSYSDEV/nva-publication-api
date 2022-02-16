@@ -51,6 +51,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -222,8 +223,8 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThat(messagesIdentifiersInExpandedDoiRequest,
                    contains(samplePublication.getDoiRequestMessageIdentifiers()));
-        assertThat(Arrays.asList(samplePublication.getSupportMessageIdentifiers()),
-                   everyItem(not(is(in(messagesIdentifiersInExpandedDoiRequest)))));
+        assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+            samplePublication.getSupportMessageIdentifiers(), messagesIdentifiersInExpandedDoiRequest);
     }
 
     private void assertThatSupportConversationIncludesSupportMessagesAndExcludesDoiRequestMessages(
@@ -237,8 +238,13 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
 
         assertThat(actualMessageIdentifiers, contains(samplePublication.getSupportMessageIdentifiers()));
-        assertThat(Arrays.asList(samplePublication.getDoiRequestMessageIdentifiers()),
-                   everyItem(not(in(actualMessageIdentifiers))));
+        assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+            samplePublication.getDoiRequestMessageIdentifiers(), actualMessageIdentifiers);
+    }
+
+    private <T> void assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+        T[] nonDesiredArray, Collection<T> actualCollection) {
+        assertThat(Arrays.asList(nonDesiredArray), everyItem(not(is(in(actualCollection)))));
     }
 
     private List<SortableIdentifier> extractMessageIdenfiersFromExpandedDoiRequest(
