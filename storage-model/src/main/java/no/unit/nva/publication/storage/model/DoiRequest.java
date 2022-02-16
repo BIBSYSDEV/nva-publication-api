@@ -49,7 +49,7 @@ public class DoiRequest
     public static final String MISSING_RESOURCE_REFERENCE_ERROR = "Resource identifier cannot be null or empty";
 
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
-    private static final URI UNKNOWN_USER_AFFILIATION = null ;
+    private static final URI UNKNOWN_USER_AFFILIATION = null;
 
     @JsonProperty
     private SortableIdentifier identifier;

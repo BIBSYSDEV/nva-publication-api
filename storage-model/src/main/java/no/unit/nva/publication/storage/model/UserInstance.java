@@ -25,6 +25,10 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
     }
 
+    public static UserInstance fromMessage(Message message) {
+        return new UserInstance(message.getOwner(),message.getCustomerId());
+    }
+
     public URI getOrganizationUri() {
         return organizationUri;
     }

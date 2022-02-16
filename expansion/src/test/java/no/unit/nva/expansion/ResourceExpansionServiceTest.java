@@ -3,13 +3,16 @@ package no.unit.nva.expansion;
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.UNSUPPORTED_TYPE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.collection.IsIn.in;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -21,8 +24,11 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
@@ -31,6 +37,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -44,6 +51,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -82,7 +90,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private FakeHttpClient<String> externalServicesHttpClient;
 
     @BeforeEach
-    void setUp() throws Exception {
+    void setUp() {
         super.init();
         externalServicesHttpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_UNIT,
                                                           INSTITUTION_PROXY_ORG_RESPONSE,
@@ -158,20 +166,39 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequest() throws ApiGatewayException, JsonProcessingException {
-        var samplePublication = PublicationGenerator.randomPublication();
-        var userInstance = extractUserInstance(samplePublication);
-        samplePublication = resourceService.createPublication(userInstance, samplePublication);
-        var doiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
-        var expectedDoiRequestMessageIdentifiers = sendSomeDoiRequestMessages(samplePublication);
-        var expandedDoiRequest = expandDoiRequest(userInstance, doiRequestIdentifier);
+    void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequestWhenDoiRequestIsCreated()
+        throws ApiGatewayException, JsonProcessingException {
+        var samplePublication = createSamplePUblicationWithConversations();
+        var expandedDoiRequestConversation =
+            (ExpandedDoiRequest) expansionService.expandEntry(samplePublication.getDoiRequest());
 
-        var messagesIdentifiersInExpandedDoiRequest = expandedDoiRequest.getDoiRequestMessages().getMessages()
-            .stream()
-            .map(MessageDto::getMessageIdentifier)
-            .collect(Collectors.toList());
-        assertThat(messagesIdentifiersInExpandedDoiRequest,
-                   contains(expectedDoiRequestMessageIdentifiers.toArray(SortableIdentifier[]::new)));
+        assertThatExpandedDoiRequestContainsOnlyDoiRequestMessagesAndNotAnyOfTheSupportMessages(
+            samplePublication, expandedDoiRequestConversation);
+    }
+
+    @Test
+    void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequestWhenDoiRequestMessageIsSent()
+        throws ApiGatewayException, JsonProcessingException {
+        var samplePublication =
+            createSamplePUblicationWithConversations();
+        var expandedDoiRequestConversation =
+            (ExpandedDoiRequest) expansionService.expandEntry(samplePublication.getLastDoiRequestMessage());
+
+        assertThatExpandedDoiRequestContainsOnlyDoiRequestMessagesAndNotAnyOfTheSupportMessages(
+            samplePublication, expandedDoiRequestConversation);
+    }
+
+    @Test
+    void shouldIncludeSupportMessagesAndExcludeAllDoiRequestMessagesFromGeneralSupportConversations()
+        throws ApiGatewayException, JsonProcessingException {
+        var samplePublication =
+            createSamplePUblicationWithConversations();
+
+        var expandedGeneralSupportConversation =
+            (ExpandedResourceConversation) expansionService.expandEntry(samplePublication.getLastSupportMessage());
+
+        assertThatSupportConversationIncludesSupportMessagesAndExcludesDoiRequestMessages(
+            samplePublication, expandedGeneralSupportConversation);
     }
 
     private static List<Class<?>> listResourceUpdateTypes() {
@@ -186,6 +213,68 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     private static UserInstance sampleSender() {
         return new UserInstance(SOME_SENDER, SOME_ORG);
+    }
+
+    private void assertThatExpandedDoiRequestContainsOnlyDoiRequestMessagesAndNotAnyOfTheSupportMessages(
+        PublicationWithDoiRequestAndAllTypesOfMessages samplePublication,
+        ExpandedDoiRequest expandedDoiRequestConversation) {
+        var messagesIdentifiersInExpandedDoiRequest =
+            extractMessageIdenfiersFromExpandedDoiRequest(expandedDoiRequestConversation);
+
+        assertThat(messagesIdentifiersInExpandedDoiRequest,
+                   contains(samplePublication.getDoiRequestMessageIdentifiers()));
+        assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+            samplePublication.getSupportMessageIdentifiers(), messagesIdentifiersInExpandedDoiRequest);
+    }
+
+    private void assertThatSupportConversationIncludesSupportMessagesAndExcludesDoiRequestMessages(
+        PublicationWithDoiRequestAndAllTypesOfMessages samplePublication,
+        ExpandedResourceConversation expandedGeneralSupportConversation) {
+        var actualMessageIdentifiers = expandedGeneralSupportConversation.getMessageCollections()
+            .stream()
+            .map(MessageCollection::getMessages)
+            .flatMap(Collection::stream)
+            .map(MessageDto::getMessageIdentifier)
+            .collect(Collectors.toList());
+
+        assertThat(actualMessageIdentifiers, contains(samplePublication.getSupportMessageIdentifiers()));
+        assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+            samplePublication.getDoiRequestMessageIdentifiers(), actualMessageIdentifiers);
+    }
+
+    private <T> void assertThatNoItemInNonDesiredCollectionExistsInTheActualCollection(
+        T[] nonDesiredArray, Collection<T> actualCollection) {
+        assertThat(Arrays.asList(nonDesiredArray), everyItem(not(is(in(actualCollection)))));
+    }
+
+    private List<SortableIdentifier> extractMessageIdenfiersFromExpandedDoiRequest(
+        ExpandedDoiRequest expandedDoiRequest) {
+        return expandedDoiRequest
+            .getDoiRequestMessages()
+            .getMessages()
+            .stream()
+            .map(MessageDto::getMessageIdentifier)
+            .collect(Collectors.toList());
+    }
+
+    private PublicationWithDoiRequestAndAllTypesOfMessages createSamplePUblicationWithConversations()
+        throws ApiGatewayException {
+        return new PublicationWithDoiRequestAndAllTypesOfMessages(resourceService, doiRequestService, messageService)
+            .create();
+    }
+
+    private Message fetchLastMessage(UserInstance userInstance, List<SortableIdentifier> generalSupportMessages)
+        throws NotFoundException {
+        var lastMessageIdentifier = generalSupportMessages.get(generalSupportMessages.size() - 1);
+        return messageService.getMessage(userInstance, lastMessageIdentifier);
+    }
+
+    private List<SortableIdentifier> sendGeneralSupportMessages(Publication samplePublication)
+        throws TransactionFailedException, NotFoundException {
+        return List.of(sendSupportMessage(samplePublication), sendSupportMessage(samplePublication))
+            .stream()
+            .map(Message::getIdentifier)
+            .collect(Collectors.toList());
     }
 
     private Message sendSupportMessage(Publication createdPublication)
@@ -205,10 +294,9 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         );
     }
 
-    private ExpandedDoiRequest expandDoiRequest(UserInstance userInstance, SortableIdentifier doiRequestIdentifier)
+    private ExpandedDoiRequest expandDoiRequest(DoiRequest doiRequest)
         throws NotFoundException, JsonProcessingException {
-        var doiRequestDataEntry = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        return (ExpandedDoiRequest) expansionService.expandEntry(doiRequestDataEntry);
+        return (ExpandedDoiRequest) expansionService.expandEntry(doiRequest);
     }
 
     private SortableIdentifier sendSomeDoiRequestMessage(Publication samplePublication)
@@ -221,8 +309,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, externalServicesHttpClient, CLOCK);
         messageService = new MessageService(client, CLOCK);
         doiRequestService = new DoiRequestService(client, externalServicesHttpClient, CLOCK);
-        expansionService = new ResourceExpansionServiceImpl(externalServicesHttpClient, resourceService,
-                                                            messageService);
+        expansionService = new ResourceExpansionServiceImpl(externalServicesHttpClient,
+                                                            resourceService,
+                                                            messageService,
+                                                            doiRequestService);
     }
 
     private void assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService() {
@@ -257,5 +347,108 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resource = Resource.fromPublication(createdPublication);
 
         return DoiRequest.newDoiRequestForResource(resource);
+    }
+
+    private static class PublicationWithDoiRequestAndAllTypesOfMessages {
+
+        private final ResourceService resourceService;
+        private final DoiRequestService doiRequestService;
+        private final MessageService messageService;
+        private Publication publication;
+        private DoiRequest doiRequest;
+        private UserInstance userInstance;
+        private List<Message> doiRequestMessages;
+        private List<Message> supportMessages;
+
+        public PublicationWithDoiRequestAndAllTypesOfMessages(
+            ResourceService resourceService,
+            DoiRequestService doiRequestService,
+            MessageService messageService
+
+        ) {
+
+            this.resourceService = resourceService;
+            this.doiRequestService = doiRequestService;
+            this.messageService = messageService;
+        }
+
+        public Publication getPublication() {
+            return publication;
+        }
+
+        public DoiRequest getDoiRequest() {
+            return doiRequest;
+        }
+
+        public UserInstance getUserInstance() {
+            return userInstance;
+        }
+
+        public List<Message> getDoiRequestMessages() {
+            return doiRequestMessages;
+        }
+
+        public List<Message> getSupportMessages() {
+            return supportMessages;
+        }
+
+        public Message getLastDoiRequestMessage() {
+            return doiRequestMessages.get(doiRequestMessages.size() - 1);
+        }
+
+        public Message getLastSupportMessage() {
+            return supportMessages.get(supportMessages.size() - 1);
+        }
+
+        public PublicationWithDoiRequestAndAllTypesOfMessages create() throws ApiGatewayException {
+            var sample = PublicationGenerator.randomPublication();
+            userInstance = UserInstance.fromPublication(sample);
+            publication = resourceService.createPublication(userInstance, sample);
+
+            var doiRequestIdentifier = doiRequestService.createDoiRequest(publication);
+            doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+
+            doiRequestMessages = createSampleDoiRequestMessages();
+            supportMessages = createSampleSupportMessages();
+            return this;
+        }
+
+        public SortableIdentifier[] getSupportMessageIdentifiers() {
+            return getSupportMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
+                .toArray(SortableIdentifier[]::new);
+        }
+
+        public SortableIdentifier[] getDoiRequestMessageIdentifiers() {
+            return getDoiRequestMessages().stream().map(Message::getIdentifier).collect(Collectors.toList())
+                .toArray(SortableIdentifier[]::new);
+        }
+
+        private List<Message> createSampleSupportMessages() {
+            return smallStream()
+                .map(ignored -> createSupportMessage())
+                .collect(Collectors.toList());
+        }
+
+        private List<Message> createSampleDoiRequestMessages() {
+            return smallStream()
+                .map(ignored -> createDoiRequestMessage())
+                .collect(Collectors.toList());
+        }
+
+        private Message createSupportMessage() {
+            return attempt(() -> messageService.createSimpleMessage(userInstance, publication, randomString()))
+                .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
+                .orElseThrow();
+        }
+
+        private Message createDoiRequestMessage() {
+            return attempt(() -> messageService.createDoiRequestMessage(userInstance, publication, randomString()))
+                .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
+                .orElseThrow();
+        }
+
+        private Stream<Integer> smallStream() {
+            return IntStream.range(0, 2).boxed();
+        }
     }
 }
