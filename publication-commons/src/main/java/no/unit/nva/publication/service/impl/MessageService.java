@@ -24,6 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;

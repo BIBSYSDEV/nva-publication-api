@@ -17,6 +17,7 @@ import no.unit.nva.commons.json.JsonSerializable;
 
 public class MessageDto implements JsonSerializable {
 
+    public static final String TEXT_FIELD = "text";
     @JsonProperty("id")
     private URI messageId;
     @JsonProperty("identifier")
@@ -25,7 +26,7 @@ public class MessageDto implements JsonSerializable {
     private String senderIdentifier;
     @JsonProperty("owner")
     private String ownerIdentifier;
-    @JsonProperty("text")
+    @JsonProperty(TEXT_FIELD)
     private String text;
     @JsonProperty("date")
     private Instant date;

@@ -23,9 +23,10 @@ junit = { strictly = '5.8.2' }
 mockito = { strictly = '3.12.4' }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.3' }
-nva-language ={strictly = '1.0'}
-guava = {strictly= '31.0.1-jre'}
+nva-language = { strictly = '1.0' }
+guava = { strictly = '31.0.1-jre' }
 javers = { strictly = '6.2.4' }
+hamcrestJackson = { strictly = '1.2.0' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -40,8 +41,8 @@ nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-jav
 nva-datamodel-testutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodel' }
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
 nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nva' }
-nva-language = {group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
-nva-testutils = {group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
+nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
+nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
 
 jackson-core = { group = 'com.fasterxml.jackson.core', name = 'jackson-core', version.ref = 'jackson' }
 jackson-datatype-jdk8 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jdk8', version.ref = 'jackson' }
@@ -80,15 +81,17 @@ apache-commons-collections = { group = 'org.apache.commons', name = 'commons-col
 
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
-guava = { group= 'com.google.guava', name= 'guava', version.ref = 'guava'}
+guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
 dynamodDbLocal = { group = 'com.amazonaws', name = 'DynamoDBLocal', version.ref = 'dynamoDbLocal' }
 javafaker = { group = 'com.github.javafaker', name = 'javafaker', version = { strictly = '1.0.2' } }
-javers = { group = 'org.javers', name = 'javers-core', version.ref = 'javers'}
+javers = { group = 'org.javers', name = 'javers-core', version.ref = 'javers' }
 zalando = { group = 'org.zalando', name = 'problem', version.ref = 'zalandoProblem' }
 typesafe-config = { group = 'com.typesafe', name = 'config', version.ref = 'configTypesafe' }
+hamcrest-jackson = { group = 'com.spotify', name = 'hamcrest-jackson', version.ref = 'hamcrestJackson' }
+
 
 junit-jupiter-params = { group = 'org.junit.jupiter', name = 'junit-jupiter-params', version.ref = 'junit' }
 junit-jupiter-api = { group = 'org.junit.jupiter', name = 'junit-jupiter-api', version.ref = 'junit' }
@@ -108,9 +111,9 @@ log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
 
 [bundles]
-testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine',
-           'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core',
-            'logutils', 'nva-testutils','nva-datamodel-testutils','javers', 'zalando']
+testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine','guava',
+    'junit-jupiter-engine', 'mockito-core', 'hamcrest-base', 'hamcrest-core','hamcrest-jackson',
+    'logutils', 'nva-testutils', 'nva-datamodel-testutils', 'javers', 'javafaker','zalando']
 
-logging = ['log4j-core','log4j-api','log4j-slf4j18-impl','slf4j-api']
+logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']

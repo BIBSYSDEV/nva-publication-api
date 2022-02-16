@@ -9,7 +9,7 @@ import java.time.Clock;
 import java.util.Collections;
 import java.util.List;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.ResourceConversation;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
