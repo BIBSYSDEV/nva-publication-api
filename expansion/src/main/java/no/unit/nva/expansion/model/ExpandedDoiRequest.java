@@ -55,26 +55,10 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                                             MessageService messageService)
         throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
-        var doiRequestMessages = fetchDoiRequestMessagesForResource(messageService, doiRequest);
-        expandedDoiRequest.setDoiRequestMessages(doiRequestMessages);
-        var organizationIdsForViewingScope = resourceExpansionService.getOrganizationIds(doiRequest);
-        expandedDoiRequest.setOrganizationIds(organizationIdsForViewingScope);
+        expandedDoiRequest.setDoiRequestMessages(fetchDoiRequestMessagesForResource(messageService, doiRequest));
+        expandedDoiRequest
+            .setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, resourceExpansionService));
         return expandedDoiRequest;
-    }
-
-    private static MessageCollection fetchDoiRequestMessagesForResource(MessageService messageService,
-                                                                        DoiRequest doiRequest) {
-
-        UserInstance userInstance = UserInstance.fromDoiRequest(doiRequest);
-        return fetchAllMessagesForResource(messageService, doiRequest, userInstance)
-            .map(conversation -> conversation.getMessageCollectionOfType(MessageType.DOI_REQUEST))
-            .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
-    }
-
-    private static Optional<ResourceConversation> fetchAllMessagesForResource(MessageService messageService,
-                                                                         DoiRequest doiRequest,
-                                                                         UserInstance userInstance) {
-        return messageService.getMessagesForResource(userInstance, doiRequest.getResourceIdentifier());
     }
 
     public MessageCollection getDoiRequestMessages() {
@@ -228,6 +212,27 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                && Objects.equals(getPublicationSummary(), that.getPublicationSummary())
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
+    }
+
+    private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
+                                                                ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
+        return resourceExpansionService.getOrganizationIds(doiRequest);
+    }
+
+    private static MessageCollection fetchDoiRequestMessagesForResource(MessageService messageService,
+                                                                        DoiRequest doiRequest) {
+
+        UserInstance userInstance = UserInstance.fromDoiRequest(doiRequest);
+        return fetchAllMessagesForResource(messageService, doiRequest, userInstance)
+            .map(conversation -> conversation.getMessageCollectionOfType(MessageType.DOI_REQUEST))
+            .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
+    }
+
+    private static Optional<ResourceConversation> fetchAllMessagesForResource(MessageService messageService,
+                                                                              DoiRequest doiRequest,
+                                                                              UserInstance userInstance) {
+        return messageService.getMessagesForResource(userInstance, doiRequest.getResourceIdentifier());
     }
 
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete

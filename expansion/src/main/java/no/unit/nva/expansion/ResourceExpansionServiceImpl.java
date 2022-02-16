@@ -1,13 +1,21 @@
 package no.unit.nva.expansion;
 
+import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import no.unit.nva.expansion.model.ExpandedDataEntry;
 import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.ConnectedToResource;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -16,16 +24,6 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
-
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
@@ -48,20 +46,12 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         if (dataEntry instanceof Resource) {
             return ExpandedResource.fromPublication(dataEntry.toPublication());
         } else if (dataEntry instanceof DoiRequest) {
-            return ExpandedDoiRequest.create((DoiRequest) dataEntry, this,messageService);
+            return ExpandedDoiRequest.create((DoiRequest) dataEntry, this, messageService);
         } else if (dataEntry instanceof Message) {
             return createExpandedResourceConversation((Message) dataEntry);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
-    }
-
-    private ExpandedResourceConversation createExpandedResourceConversation(Message message) throws NotFoundException {
-        UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
-        SortableIdentifier publicationIdentifier = message.getResourceIdentifier();
-        ResourceConversation messagesForResource =
-                messageService.getMessagesForResource(userInstance, publicationIdentifier).orElseThrow();
-        return ExpandedResourceConversation.create(messagesForResource, message, this);
     }
 
     @Override
@@ -76,5 +66,13 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
                 .collect(Collectors.toSet());
         }
         return Collections.emptySet();
+    }
+
+    private ExpandedResourceConversation createExpandedResourceConversation(Message message) throws NotFoundException {
+        UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
+        SortableIdentifier publicationIdentifier = message.getResourceIdentifier();
+        ResourceConversation messagesForResource =
+            messageService.getMessagesForResource(userInstance, publicationIdentifier).orElseThrow();
+        return ExpandedResourceConversation.create(messagesForResource, message, this);
     }
 }

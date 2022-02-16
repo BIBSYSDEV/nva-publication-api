@@ -101,11 +101,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         initializeServices();
         Publication createdPublication = createPublication(RESOURCE_OWNER_INSTITUTION_AFFILIATION);
 
-        Message message = createMessage(createdPublication);
+        Message message = sendSupportMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation =
-            (ExpandedResourceConversation) expansionService.expandEntry(
-                message);
+            (ExpandedResourceConversation) expansionService.expandEntry(message);
         assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
         assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService();
     }
@@ -128,7 +127,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit()
         throws Exception {
         Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
-        Message message = createMessage(createdPublication);
+        Message message = sendSupportMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation =
             (ExpandedResourceConversation) expansionService.expandEntry(message);
@@ -164,7 +163,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var userInstance = extractUserInstance(samplePublication);
         samplePublication = resourceService.createPublication(userInstance, samplePublication);
         var doiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
-        var expectedDoiRequestMessageIdentifiers = createSomeDoiRequestMessages(samplePublication);
+        var expectedDoiRequestMessageIdentifiers = sendSomeDoiRequestMessages(samplePublication);
         var expandedDoiRequest = expandDoiRequest(userInstance, doiRequestIdentifier);
 
         var messagesIdentifiersInExpandedDoiRequest = expandedDoiRequest.getDoiRequestMessages().getMessages()
@@ -189,30 +188,30 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return new UserInstance(SOME_SENDER, SOME_ORG);
     }
 
-    private Message createMessage(Publication createdPublication)
+    private Message sendSupportMessage(Publication createdPublication)
         throws TransactionFailedException, NotFoundException {
-        UserInstance userInstance = extractUserInstance(createdPublication);
-        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance, createdPublication,
+        UserInstance userInstance = UserInstance.fromPublication(createdPublication);
+        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance,
+                                                                           createdPublication,
                                                                            randomString());
         return messageService.getMessage(userInstance, identifier);
     }
 
-    private List<SortableIdentifier> createSomeDoiRequestMessages(Publication samplePublication)
+    private List<SortableIdentifier> sendSomeDoiRequestMessages(Publication samplePublication)
         throws TransactionFailedException {
         return List.of(
-            sendRandomDoiRequestMessage(samplePublication),
-            sendRandomDoiRequestMessage(samplePublication)
+            sendSomeDoiRequestMessage(samplePublication),
+            sendSomeDoiRequestMessage(samplePublication)
         );
     }
 
     private ExpandedDoiRequest expandDoiRequest(UserInstance userInstance, SortableIdentifier doiRequestIdentifier)
         throws NotFoundException, JsonProcessingException {
         var doiRequestDataEntry = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
-        var expandedDoiRequest = (ExpandedDoiRequest) expansionService.expandEntry(doiRequestDataEntry);
-        return expandedDoiRequest;
+        return (ExpandedDoiRequest) expansionService.expandEntry(doiRequestDataEntry);
     }
 
-    private SortableIdentifier sendRandomDoiRequestMessage(Publication samplePublication)
+    private SortableIdentifier sendSomeDoiRequestMessage(Publication samplePublication)
         throws TransactionFailedException {
         var userInstance = extractUserInstance(samplePublication);
         return messageService.createDoiRequestMessage(userInstance, samplePublication, randomString());
@@ -249,7 +248,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             return createDoiRequest(createdPublication);
         }
         if (Message.class.equals(resourceUpdateType)) {
-            return createMessage(createdPublication);
+            return sendSupportMessage(createdPublication);
         }
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }
