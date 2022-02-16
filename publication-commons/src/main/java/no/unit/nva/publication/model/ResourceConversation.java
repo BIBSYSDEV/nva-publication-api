@@ -31,15 +31,6 @@ public class ResourceConversation implements JsonSerializable {
     public ResourceConversation() {
     }
 
-    public ResourceConversation ofMessageTypes(MessageType ...messageTypes){
-        var desiredMessageTypes = Set.of(messageTypes);
-        var messages=this.messageCollections.stream()
-            .filter(collection->desiredMessageTypes.contains(collection.getMessageType()))
-            .flatMap(collection->collection.getMessagesInternalStructure().stream())
-            .collect(Collectors.toList());
-        return fromMessageList(messages).stream().collect(SingletonCollector.collect());
-    }
-
     /**
      * Returns a list of {@link ResourceConversation} objects by grouping the messages by resource. The {@link
      * ResourceConversation} with the oldest message is at the top of the list.
@@ -49,12 +40,21 @@ public class ResourceConversation implements JsonSerializable {
      */
     public static List<ResourceConversation> fromMessageList(Collection<Message> messages) {
         return messages.stream()
-                   .collect(groupByResource())
-                   .values()
-                   .stream()
-                   .map(ResourceConversation::newConversationForResource)
-                   .sorted(ResourceConversation::conversationWithOldestMessageFirst)
-                   .collect(Collectors.toList());
+            .collect(groupByResource())
+            .values()
+            .stream()
+            .map(ResourceConversation::newConversationForResource)
+            .sorted(ResourceConversation::conversationWithOldestMessageFirst)
+            .collect(Collectors.toList());
+    }
+
+    public ResourceConversation ofMessageTypes(MessageType... messageTypes) {
+        var desiredMessageTypes = Set.of(messageTypes);
+        var messages = this.messageCollections.stream()
+            .filter(collection -> desiredMessageTypes.contains(collection.getMessageType()))
+            .flatMap(collection -> collection.getMessagesInternalStructure().stream())
+            .collect(Collectors.toList());
+        return fromMessageList(messages).stream().collect(SingletonCollector.collect());
     }
 
     public List<MessageCollection> getMessageCollections() {
@@ -121,9 +121,9 @@ public class ResourceConversation implements JsonSerializable {
 
     public List<MessageDto> allMessages() {
         return this.getMessageCollections()
-                   .stream()
-                   .flatMap(messageCollection -> messageCollection.getMessages().stream())
-                   .collect(Collectors.toList());
+            .stream()
+            .flatMap(messageCollection -> messageCollection.getMessages().stream())
+            .collect(Collectors.toList());
     }
 
     private static Message newestMessage(List<Message> messages) {
