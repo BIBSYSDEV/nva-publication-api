@@ -1,5 +1,39 @@
 package no.unit.nva.publication.fetch;
 
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
+import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequest;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.ReadResourceService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.http.FakeHttpClient;
+import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import org.apache.http.entity.ContentType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.http.HttpClient;
+import java.time.Clock;
+import java.util.Map;
+
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
@@ -22,36 +56,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.http.HttpClient;
-import java.time.Clock;
-import java.util.Map;
-import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequest;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.ReadResourceService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
-import no.unit.nva.testutils.HandlerRequestBuilder;
-import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
-import org.apache.http.entity.ContentType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.zalando.problem.Problem;
 
 public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
@@ -96,6 +100,19 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier), output, context);
         GatewayResponse<PublicationResponse> gatewayResponse = parseHandlerResponse();
+        assertEquals(SC_OK, gatewayResponse.getStatusCode());
+        assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
+        assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+    }
+
+    @Test
+    public void shouldReturnOkResponseWithXmlBodyOnValidInput() throws IOException, ApiGatewayException {
+        var createdPublication = createPublication();
+        var publicationIdentifier = createdPublication.getIdentifier().toString();
+
+        var headers = Map.of(HttpHeaders.ACCEPT, MediaType.XML_UTF_8.toString());
+        fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers), output, context);
+        var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -171,7 +188,8 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
             doiRequestService.createDoiRequest(resourceOwner, createdPublication.getIdentifier());
         InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
         fetchPublicationHandler.handleRequest(input, output, context);
-        GatewayResponse<PublicationResponse> response = GatewayResponse.fromOutputStream(output);
+        GatewayResponse<PublicationResponse> response = GatewayResponse
+                .fromOutputStream(output, PublicationResponse.class);
         PublicationResponse publicationDto = response.getBodyObject(PublicationResponse.class);
 
         DoiRequest actualDoiRequest = publicationDto.getDoiRequest();
@@ -185,13 +203,18 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         return restApiMapper.readValue(output.toString(), PARAMETERIZED_GATEWAY_RESPONSE_TYPE);
     }
 
-    private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
-        Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+    private InputStream generateHandlerRequest(String publicationIdentifier, Map<String, String> headers)
+            throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-            .withHeaders(headers)
-            .withPathParameters(pathParameters)
-            .build();
+                .withHeaders(headers)
+                .withPathParameters(pathParameters)
+                .build();
+    }
+
+    private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {
+        Map<String, String> headers = Map.of(CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
+        return generateHandlerRequest(publicationIdentifier, headers);
     }
 
     private InputStream generateHandlerRequestWithMissingPathParameter() throws JsonProcessingException {

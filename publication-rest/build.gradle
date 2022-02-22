@@ -16,7 +16,6 @@ dependencies {
 
     implementation libs.jackson.databind
     implementation libs.jackson.core
-    implementation libs.jackson.dataformat.xml
     implementation libs.bundles.logging
 
 

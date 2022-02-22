@@ -4,17 +4,15 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.google.common.net.MediaType;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
 import no.unit.nva.model.Publication;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.RequestInfo;
@@ -67,11 +65,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
-        SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        Publication publication = resourceService.getPublicationByIdentifier(identifier);
-        DoiRequest doiRequest = fetchDoiRequest(publication);
+        var identifier = RequestUtil.getIdentifier(requestInfo);
+        var publication = resourceService.getPublicationByIdentifier(identifier);
+        var doiRequest = fetchDoiRequest(publication);
         publication.setDoiRequest(doiRequest);
-        PublicationResponse publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+        var publicationResponse = PublicationMapper
+                .convertValue(publication, PublicationResponse.class);
 
         return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
@@ -79,7 +78,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     @Override
     protected Map<MediaType, ObjectMapper> getObjectMappers() {
         return Map.of(
-                MediaType.XML_UTF_8, new XmlMapper()
+                MediaType.XML_UTF_8, PublicationServiceConfig.xmlMapper
         );
     }
 
@@ -108,8 +107,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
     }
 
     private DoiRequest fetchDoiRequest(Publication publication) {
-        UserInstance owner = extractUserInstance(publication);
-        SortableIdentifier resourceIdentifier = publication.getIdentifier();
+        var owner = extractUserInstance(publication);
+        var resourceIdentifier = publication.getIdentifier();
         return attempt(() -> doiRequestService.getDoiRequestByResourceIdentifier(owner, resourceIdentifier))
                    .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)
                    .map(Publication::getDoiRequest)
