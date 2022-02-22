@@ -1,13 +1,11 @@
 package no.unit.nva.publication.fetch;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
-import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.HttpURLConnection;
-import java.time.Clock;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.google.common.net.MediaType;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -18,12 +16,22 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
+import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
-public class FetchPublicationHandler extends ApiGatewayHandler<Void, PublicationResponse> {
+import java.net.HttpURLConnection;
+import java.time.Clock;
+import java.util.List;
+import java.util.Map;
+
+import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
+import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static nva.commons.core.attempt.Try.attempt;
+
+public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private final ResourceService resourceService;
@@ -56,18 +64,36 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, Publication
     }
 
     @Override
-    protected PublicationResponse processInput(Void input, RequestInfo requestInfo, Context context)
+    protected String processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
 
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         Publication publication = resourceService.getPublicationByIdentifier(identifier);
         DoiRequest doiRequest = fetchDoiRequest(publication);
         publication.setDoiRequest(doiRequest);
-        return PublicationMapper.convertValue(publication, PublicationResponse.class);
+        PublicationResponse publicationResponse = PublicationMapper.convertValue(publication, PublicationResponse.class);
+
+        return attempt(() -> getObjectMapper(requestInfo).writeValueAsString(publicationResponse)).orElseThrow();
     }
 
     @Override
-    protected Integer getSuccessStatusCode(Void input, PublicationResponse output) {
+    protected Map<MediaType, ObjectMapper> getObjectMappers() {
+        return Map.of(
+                MediaType.XML_UTF_8, new XmlMapper()
+        );
+    }
+
+    @Override
+    protected List<MediaType> listSupportedMediaTypes() {
+        return List.of(
+            MediaType.JSON_UTF_8,
+            MediaTypes.APPLICATION_JSON_LD,
+            MediaType.XML_UTF_8
+        );
+    }
+
+    @Override
+    protected Integer getSuccessStatusCode(Void input, String output) {
         return HttpURLConnection.HTTP_OK;
     }
 
