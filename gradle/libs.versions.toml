@@ -1,6 +1,6 @@
 [versions]
 
-nva = { strictly = '1.20.9' }
+nva = { strictly = '1.20.14' }
 nvaDatamodel = { strictly = '0.15.1' }
 jackson = { strictly = '2.13.0' }
 awsSdk = { strictly = '1.12.129' }
@@ -51,6 +51,7 @@ jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-datab
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
 jackson-datatype-problem = { group = 'org.zalando', name = 'jackson-datatype-problem', version.ref = 'zalandoProblem' }
+jackson-dataformat-xml = { group = 'com.fasterxml.jackson.dataformat', name = 'jackson-dataformat-xml', version.ref = 'jackson' }
 
 
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }
