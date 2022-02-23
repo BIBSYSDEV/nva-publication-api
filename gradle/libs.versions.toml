@@ -2,6 +2,7 @@
 
 nva = { strictly = '1.20.14' }
 nvaDatamodel = { strictly = '0.15.1' }
+nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.13.0' }
 awsSdk = { strictly = '1.12.129' }
 awsSdk2 = { strictly = '2.17.105' }
@@ -27,6 +28,7 @@ nva-language = { strictly = '1.0' }
 guava = { strictly = '31.0.1-jre' }
 javers = { strictly = '6.2.4' }
 hamcrestJackson = { strictly = '1.2.0' }
+jaxb = { strictly = '2.3.0' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -43,6 +45,8 @@ nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }
 nva-secrets = { group = 'com.github.bibsysdev', name = 'secrets', version.ref = 'nva' }
 nva-language = { group = 'com.github.bibsysdev', name = 'nva-language', version.ref = 'nva-language' }
 nva-testutils = { group = 'com.github.bibsysdev', name = 'nvatestutils', version.ref = 'nva' }
+nva-doi-partner-data = { group = 'com.github.BIBSYSDEV.nva-doi-partner-data', name = 'datacite-transform', version.ref = 'nvaDoiPartnerData' }
+
 
 jackson-core = { group = 'com.fasterxml.jackson.core', name = 'jackson-core', version.ref = 'jackson' }
 jackson-datatype-jdk8 = { group = 'com.fasterxml.jackson.datatype', name = 'jackson-datatype-jdk8', version.ref = 'jackson' }
@@ -83,6 +87,8 @@ apache-commons-collections = { group = 'org.apache.commons', name = 'commons-col
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
+jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
+
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
