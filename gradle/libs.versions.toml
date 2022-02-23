@@ -1,6 +1,6 @@
 [versions]
 
-nva = { strictly = '1.20.14' }
+nva = { strictly = '1.20.15' }
 nvaDatamodel = { strictly = '0.15.1' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.13.0' }
@@ -29,6 +29,7 @@ guava = { strictly = '31.0.1-jre' }
 javers = { strictly = '6.2.4' }
 hamcrestJackson = { strictly = '1.2.0' }
 jaxb = { strictly = '2.3.0' }
+jakarta = { strictly = '2.3.2' }
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -55,7 +56,6 @@ jackson-databind = { group = 'com.fasterxml.jackson.core', name = 'jackson-datab
 jackson-annotations = { group = 'com.fasterxml.jackson.core', name = 'jackson-annotations', version.ref = 'jackson' }
 jackson-module-parameter-names = { group = 'com.fasterxml.jackson.module', name = 'jackson-module-parameter-names', version.ref = 'jackson' }
 jackson-datatype-problem = { group = 'org.zalando', name = 'jackson-datatype-problem', version.ref = 'zalandoProblem' }
-jackson-dataformat-xml = { group = 'com.fasterxml.jackson.dataformat', name = 'jackson-dataformat-xml', version.ref = 'jackson' }
 
 
 aws-lambda-java-core = { group = 'com.amazonaws', name = 'aws-lambda-java-core', version.ref = 'awsLambdaCore' }
@@ -87,8 +87,10 @@ apache-commons-collections = { group = 'org.apache.commons', name = 'commons-col
 commons-validator = { group = 'commons-validator', name = 'commons-validator', version.ref = 'commonsValidator' }
 jsonld = { group = 'com.github.jsonld-java', name = 'jsonld-java', version.ref = 'jsonld' }
 guava = { group = 'com.google.guava', name = 'guava', version.ref = 'guava' }
-jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
 
+jaxb-api = { group = 'javax.xml.bind', name = 'jaxb-api', version.ref = 'jaxb' }
+jaxb-runtime = { group = 'org.glassfish.jaxb', name = 'jaxb-runtime', version.ref = 'jaxb' }
+jakarta-xml-bind-api = { group = 'jakarta.xml.bind', name = 'jakarta.xml.bind-api', version.ref = 'jakarta' }
 
 hamcrest-base = { group = 'org.hamcrest', name = 'hamcrest', version.ref = 'hamcrest' }
 hamcrest-core = { group = 'org.hamcrest', name = 'hamcrest-core', version.ref = 'hamcrest' }
@@ -124,3 +126,4 @@ testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine','
 
 logging = ['log4j-core', 'log4j-api', 'log4j-slf4j18-impl', 'slf4j-api']
 jackson = ['jackson-core', 'jackson-datatype-jdk8', 'jackson-datatype-jsr310', 'jackson-databind', 'jackson-annotations', 'jackson-module-parameter-names', 'jackson-datatype-problem']
+jaxb = ['jaxb-api', 'jaxb-runtime', 'jakarta-xml-bind-api']
