@@ -1,0 +1,12 @@
+dependencies {
+
+    implementation libs.jaxb.api
+    implementation libs.nva.doi.partner.data
+    implementation libs.nva.core
+    implementation libs.nva.identifiers
+    implementation(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+
+    testImplementation libs.bundles.testing
+}
