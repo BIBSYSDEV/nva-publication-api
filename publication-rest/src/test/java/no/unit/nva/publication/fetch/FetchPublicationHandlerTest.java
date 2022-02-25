@@ -4,7 +4,6 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.DoiRequest;
@@ -19,6 +18,7 @@ import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.MediaTypes;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import org.apache.http.entity.ContentType;
@@ -66,6 +66,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
             GatewayResponse.class,
             PublicationResponse.class);
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
+    public static final String DATECITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite.org/schema/kernel-4\">";
 
     private ResourceService publicationService;
     private Context context;
@@ -106,16 +107,17 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void shouldReturnOkResponseWithXmlBodyOnValidInput() throws IOException, ApiGatewayException {
+    public void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput() throws IOException, ApiGatewayException {
         var createdPublication = createPublication();
         var publicationIdentifier = createdPublication.getIdentifier().toString();
 
-        var headers = Map.of(HttpHeaders.ACCEPT, MediaType.XML_UTF_8.toString());
+        var headers = Map.of(HttpHeaders.ACCEPT, MediaTypes.APPLICATION_DATACITE_XML.toString());
         fetchPublicationHandler.handleRequest(generateHandlerRequest(publicationIdentifier, headers), output, context);
         var gatewayResponse = parseHandlerResponse();
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertTrue(gatewayResponse.getHeaders().containsKey(CONTENT_TYPE));
         assertTrue(gatewayResponse.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN));
+        assertTrue(gatewayResponse.getBody().contains(DATECITE_XML_RESOURCE_ELEMENT));
     }
 
     @Test

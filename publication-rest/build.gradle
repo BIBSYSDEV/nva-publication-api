@@ -5,6 +5,7 @@ dependencies {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
     implementation(project(':storage-model'))
+    implementation(project(':datacite-commons'))
 
     implementation libs.nva.apigateway
     implementation libs.nva.core
@@ -13,7 +14,9 @@ dependencies {
     implementation(libs.nva.datamodel.core) {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
+    implementation libs.nva.doi.partner.data
 
+    implementation libs.bundles.jaxb
     implementation libs.jackson.databind
     implementation libs.jackson.core
     implementation libs.bundles.logging
