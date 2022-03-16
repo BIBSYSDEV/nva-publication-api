@@ -1,6 +1,7 @@
 package no.unit.nva.publication.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.PublicationMapper;
 import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
@@ -20,6 +22,8 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicationRequest, PublicationResponse> {
 
@@ -29,6 +33,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private final ResourceService publicationService;
     private final String apiHost;
+    private final static Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -58,6 +63,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
+        logger.info(attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
 
         var userInstance = RequestUtil.extractUserInstance(requestInfo);
         var newPublication = Optional.ofNullable(input)
