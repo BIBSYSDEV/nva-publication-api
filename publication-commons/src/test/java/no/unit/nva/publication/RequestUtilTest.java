@@ -17,143 +17,143 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.Test;
 
-public class RequestUtilTest {
-    
+class RequestUtilTest {
+
     public static final String VALUE = "value";
     public static final String AUTHORIZER = "authorizer";
     public static final String CLAIMS = "claims";
     public static final String SOME_USER = "some@user";
     public static final String SOME_ORG = "https://some.org.example.org";
-    
+
     @Test
-    public void canGetIdentifierFromRequest() throws ApiGatewayException {
+    void canGetIdentifierFromRequest() throws ApiGatewayException {
         SortableIdentifier uuid = SortableIdentifier.next();
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setPathParameters(Map.of(RequestUtil.IDENTIFIER, uuid.toString()));
-        
+
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        
+
         assertEquals(uuid, identifier);
     }
-    
+
     @Test
-    public void getIdentifierOnInvalidRequestThrowsException() {
+    void getIdentifierOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(BadRequestException.class, () -> RequestUtil.getIdentifier(requestInfo));
     }
-    
+
     @Test
-    public void canGetCustomerIdFromRequest() throws Exception {
+    void canGetCustomerIdFromRequest() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_CUSTOMER_ID, VALUE));
-        
+        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CURRENT_CUSTOMER, VALUE));
+
         URI customerId = RequestUtil.getCustomerId(requestInfo);
-        
+
         assertEquals(URI.create(VALUE), customerId);
     }
-    
+
     @Test
-    public void getCustomerIdOnMissingNodeRequestThrowsException() throws Exception {
+    void getCustomerIdOnMissingNodeRequestThrowsException() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextWithMissingNode());
-        
+
         assertThrows(BadRequestException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
-    
+
     @Test
-    public void getCustomerIdOnInvalidRequestThrowsException() {
+    void getCustomerIdOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(BadRequestException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
-    
+
     @Test
-    public void canGetOwnerFromRequest() throws Exception {
+    void canGetOwnerFromRequest() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CUSTOM_FEIDE_ID, VALUE));
-        
+        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.NVA_USERNAME_CLAIM, VALUE));
+
         String owner = RequestUtil.getOwner(requestInfo);
-        
+
         assertEquals(VALUE, owner);
     }
-    
+
     @Test
-    public void extractUserInstanceReturnsUserInstanceWithOwnerIdentifierAndOrgId() throws JsonProcessingException {
+    void extractUserInstanceReturnsUserInstanceWithOwnerIdentifierAndOrgId() throws JsonProcessingException {
         RequestInfo requestInfo = new RequestInfo();
         var claims = Map.of(
-            RequestUtil.CUSTOM_CUSTOMER_ID, SOME_ORG,
-            RequestUtil.CUSTOM_FEIDE_ID, SOME_USER
+            RequestUtil.CURRENT_CUSTOMER, SOME_ORG,
+            RequestUtil.NVA_USERNAME_CLAIM, SOME_USER
         );
         requestInfo.setRequestContext(getRequestContextForClaim(claims));
         UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
         assertThat(userInstance.getUserIdentifier(), is(equalTo(SOME_USER)));
         assertThat(userInstance.getOrganizationUri(), is(equalTo(URI.create(SOME_ORG))));
     }
-    
+
     @Test
-    public void getOwnerOnMissingNodeRequestThrowsException() throws Exception {
+    void getOwnerOnMissingNodeRequestThrowsException() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextWithMissingNode());
-        
+
         assertThrows(BadRequestException.class, () -> RequestUtil.getOwner(requestInfo));
     }
-    
+
     @Test
-    public void getOwnerOnInvalidRequestThrowsException() {
+    void getOwnerOnInvalidRequestThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
         assertThrows(BadRequestException.class, () -> RequestUtil.getOwner(requestInfo));
     }
-    
+
     @Test
-    public void getPageSizeRequestInvalidRangeThrowsException() {
+    void getPageSizeRequestInvalidRangeThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
-        
+
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE, "-1");
         requestInfo.setQueryParameters(queryParameters);
-        
+
         assertThrows(BadRequestException.class, () -> RequestUtil.getPageSize(requestInfo));
     }
-    
+
     @Test
-    public void getPageSizeRequestInvalidValueThrowsException() {
+    void getPageSizeRequestInvalidValueThrowsException() {
         RequestInfo requestInfo = new RequestInfo();
-        
+
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE, "-abc");
         requestInfo.setQueryParameters(queryParameters);
-        
+
         assertThrows(BadRequestException.class, () -> RequestUtil.getPageSize(requestInfo));
     }
-    
+
     @Test
-    public void getPageSizeRequestEmptyValueReturnsDefault() throws Exception {
+    void getPageSizeRequestEmptyValueReturnsDefault() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        
+
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE, "");
         requestInfo.setQueryParameters(queryParameters);
-        
+
         assertEquals(RequestUtil.DEFAULT_PAGESIZE, RequestUtil.getPageSize(requestInfo));
     }
-    
+
     @Test
-    public void getPageSizeRequestOKValue() throws Exception {
+    void getPageSizeRequestOKValue() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        
+
         Map<String, String> queryParameters = Map.of(RequestUtil.PAGESIZE, "3");
         requestInfo.setQueryParameters(queryParameters);
-        
+
         assertEquals(3, RequestUtil.getPageSize(requestInfo));
     }
-    
+
     private JsonNode getRequestContextWithMissingNode() throws JsonProcessingException {
         Map<String, Map<String, JsonNode>> map = Map.of(
             AUTHORIZER, Map.of(CLAIMS, dtoObjectMapper.createObjectNode().nullNode())
         );
         return dtoObjectMapper.readTree(dtoObjectMapper.writeValueAsString(map));
     }
-    
+
     private JsonNode getRequestContextForClaim(String key, String value) throws JsonProcessingException {
         return getRequestContextForClaim(Map.of(key, value));
     }
-    
+
     private JsonNode getRequestContextForClaim(Map<String, String> claimKeyValuePairs) throws JsonProcessingException {
         Map<String, Map<String, Map<String, String>>> map = Map.of(
             AUTHORIZER, Map.of(

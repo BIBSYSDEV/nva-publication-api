@@ -93,16 +93,16 @@ public class OrganizationResponseObject {
     }
 
     private static URI transformOrganizationUri(URI organizationUri) {
-        var institutionIdentifier = new UriWrapper(organizationUri).getFilename();
-        return new UriWrapper(ORGANIZATION_PROXY_URI)
+        var institutionIdentifier = UriWrapper.fromUri(organizationUri).getLastPathElement();
+        return UriWrapper.fromUri(ORGANIZATION_PROXY_URI)
             .addChild(institutionIdentifier)
             .getUri();
     }
 
     private static URI transformInstitutionUriToOrgUri(URI organizationUri) {
-        var institutionNumber = new UriWrapper(organizationUri).getFilename();
+        var institutionNumber = UriWrapper.fromUri(organizationUri).getLastPathElement();
         var institutionIdentifier = String.format(MOST_COMMON_INSTITUTION_IDENTIFIER_TEMPLATE, institutionNumber);
-        return new UriWrapper(ORGANIZATION_PROXY_URI)
+        return UriWrapper.fromUri(ORGANIZATION_PROXY_URI)
             .addChild(institutionIdentifier)
             .getUri();
     }
@@ -121,13 +121,14 @@ public class OrganizationResponseObject {
                 addImmediateAncestorsToOrganizationsForVisiting(httpClient, notYetVisited, currentOrganization);
                 resultSet.push(currentOrganization);
             }
-            return new HashSet<URI>(resultSet);
+            return new HashSet<>(resultSet);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void addImmediateAncestorsToOrganizationsForVisiting(HttpClient httpClient, Stack<URI> notYetVisited,
+    private void addImmediateAncestorsToOrganizationsForVisiting(HttpClient httpClient,
+                                                                 Stack<URI> notYetVisited,
                                                                  URI currentUri)
         throws IOException, InterruptedException {
         HttpResponse<String> response = resolveUri(httpClient, currentUri);

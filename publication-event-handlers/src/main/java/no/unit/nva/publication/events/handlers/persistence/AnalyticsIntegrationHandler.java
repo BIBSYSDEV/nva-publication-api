@@ -89,7 +89,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     }
 
     private UnixPath constructOutputPath(URI inputFileLocation) {
-        var filename = UriWrapper.fromUri(inputFileLocation).getFilename();
+        var filename = UriWrapper.fromUri(inputFileLocation).getLastPathElement();
         return PersistenceConfig.ANALYTICS_FOLDER.addChild(filename);
     }
 

@@ -55,7 +55,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
+class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "identifier";
 
@@ -96,7 +96,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner()
+    void handlerUpdatesPublicationWhenInputIsValidAndUserIsResourceOwner()
         throws IOException,ApiGatewayException {
         publication = PublicationGenerator.publicationWithoutIdentifier();
         Publication savedPublication = createSamplePublication();
@@ -106,7 +106,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = ownerUpdatesOwnPublication(publicationUpdate.getIdentifier(), publicationUpdate);
 
         updatePublicationHandler.handleRequest(inputStream, output, context);
-        GatewayResponse<PublicationResponse> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output,PublicationResponse.class);
         final PublicationResponse body = gatewayResponse.getBodyObject(PublicationResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
@@ -118,7 +118,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
-    public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
+    void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         InputStream event = generateInputStreamMissingPathParameters().build();
         updatePublicationHandler.handleRequest(event, output, context);
         GatewayResponse<Problem> gatewayResponse = toGatewayResponseProblem();
@@ -128,7 +128,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+    void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
         updatePublicationHandler = new UpdatePublicationHandler(publicationService, environment);
@@ -144,7 +144,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler logs error details on unexpected exception")
-    public void handlerLogsErrorDetailsOnUnexpectedException()
+    void handlerLogsErrorDetailsOnUnexpectedException()
         throws IOException, ApiGatewayException {
         final TestAppender appender = createAppenderForLogMonitoring();
         publicationService = serviceFailsOnModifyRequestWithRuntimeError();
@@ -164,14 +164,14 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerReturnsBadRequestWhenIdentifierInPathDiffersFromIdentifierInBody() throws IOException {
+    void handlerReturnsBadRequestWhenIdentifierInPathDiffersFromIdentifierInBody() throws IOException {
 
         SortableIdentifier someOtherIdentifier = SortableIdentifier.next();
 
         InputStream event = ownerUpdatesOwnPublication(someOtherIdentifier, publication);
 
         updatePublicationHandler.handleRequest(event, output, context);
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output,Problem.class);
         Problem problem = gatewayResponse.getBodyObject(Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(UpdatePublicationHandler.IDENTIFIER_MISMATCH_ERROR_MESSAGE));
@@ -218,7 +218,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream event = userUpdatesPublicationOfOtherInstitution(publicationUpdate);
         updatePublicationHandler.handleRequest(event, output, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(output);
+        var response = GatewayResponse.fromOutputStream(output,Problem.class);
         Problem problem = response.getBodyObject(Problem.class);
 
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
@@ -229,7 +229,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withFeideId(SOME_CURATOR)
+            .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withCustomerId(randomUri().toString())
             .withBody(publicationUpdate)
@@ -241,7 +241,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withFeideId(SOME_CURATOR)
+            .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withCustomerId(publicationUpdate.getPublisher().getId().toString())
             .withBody(publicationUpdate)
@@ -255,7 +255,7 @@ public class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
 
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withFeideId(publicationUpdate.getOwner())
+            .withNvaUsername(publicationUpdate.getOwner())
             .withCustomerId(publicationUpdate.getPublisher().getId().toString())
             .withBody(publicationUpdate)
             .withPathParameters(pathParameters)

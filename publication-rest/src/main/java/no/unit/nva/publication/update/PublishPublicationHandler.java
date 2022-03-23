@@ -57,7 +57,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     protected PublishPublicationStatusResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String user = requestInfo.getFeideId().orElse(null);
+        String user = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         UserInstance userInstance = new UserInstance(user, customerId);
         addAdditionalHeaders(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));

@@ -71,13 +71,13 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withFeideId(publication.getOwner())
+            .withNvaUsername(publication.getOwner())
             .withCustomerId(publication.getPublisher().getId().toString())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Void.class);
         assertEquals(HttpStatus.SC_ACCEPTED, gatewayResponse.getStatusCode());
     }
 
@@ -97,13 +97,13 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withFeideId(publication.getOwner())
+            .withNvaUsername(publication.getOwner())
             .withCustomerId(publication.getPublisher().getId().toString())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
         assertThat(gatewayResponse.getStatusCode(), is(equalTo((HttpURLConnection.HTTP_BAD_REQUEST))));
     }
 
@@ -119,12 +119,12 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
             .withCustomerId(SOME_CUSTOMER.toString())
-            .withFeideId(SOME_USER)
+            .withNvaUsername(SOME_USER)
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
@@ -135,13 +135,13 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, createdPublication.getIdentifier().toString()))
-            .withFeideId(SOME_USER)
+            .withNvaUsername(SOME_USER)
             .withCustomerId(createdPublication.getPublisher().getId().toString())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
         // Return BadRequest because Dynamo cannot distinguish between the primary key (containing the user info)
         // being wrong or the status of the resource not being "DRAFT"
         assertEquals(HttpURLConnection.HTTP_BAD_REQUEST, gatewayResponse.getStatusCode());
@@ -156,13 +156,13 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withFeideId(publication.getOwner())
+            .withNvaUsername(publication.getOwner())
             .withCustomerId(publication.getPublisher().getId().toString())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<Problem> gatewayResponse = GatewayResponse.fromOutputStream(outputStream);
+        var gatewayResponse = GatewayResponse.fromOutputStream(outputStream,Problem.class);
         assertEquals(HttpStatus.SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 

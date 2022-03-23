@@ -50,7 +50,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
+    void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
         Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT_FOR_DELETION);
 
         ByteArrayInputStream inputStream = getInputStreamForEvent(
@@ -66,7 +66,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleRequestThrowsRuntimeExceptionOnServiceException() {
+    void handleRequestThrowsRuntimeExceptionOnServiceException() {
         SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
             DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
@@ -78,7 +78,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
+    void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
         SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
             DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
@@ -97,7 +97,10 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
-        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier();
+        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
+            .withDoiRequest(null)
+            .withDoi(null)
+            .build();
         publicationToCreate.setStatus(status);
         return resourceService.createPublication(extractUserInstance(publicationToCreate), publicationToCreate);
     }

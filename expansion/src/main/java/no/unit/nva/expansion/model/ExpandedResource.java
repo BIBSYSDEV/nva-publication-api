@@ -134,7 +134,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
         String jsonString = objectMapper.writeValueAsString(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(jsonString);
-        URI id = new UriWrapper(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI id =  UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
         json.put(ID_FIELD_NAME, id.toString());
         return json;
     }

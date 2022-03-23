@@ -31,7 +31,7 @@ public final class DoiRequestUtils {
         return builder
                    .withResourceIdentifier(resource.getIdentifier())
                    .withDoi(resource.getDoi())
-                   .withOwner(resource.getOwner())
+                   .withOwner(resource.getResourceOwner().getOwner())
                    .withResourceModifiedDate(resource.getModifiedDate())
                    .withResourcePublicationDate(extractPublicationDate(resource))
                    .withCustomerId(resource.getCustomerId())

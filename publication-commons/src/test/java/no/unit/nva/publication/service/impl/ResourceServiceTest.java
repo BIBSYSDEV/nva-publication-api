@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIdentifier;
 import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.TestingUtils.extractUserInstance;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_BY_IDENTIFIER_NOT_FOUND_ERROR_PREFIX;
@@ -113,15 +114,15 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     public static final Javers JAVERS = JaversBuilder.javers().build();
     public static final int BIG_PAGE = 10;
     public static final URI UNIMPORTANT_AFFILIATION = null;
-    private static final URI SOME_ORG = URI.create(PublicationGenerator.PUBLISHER_ID);
-    public static final UserInstance SAMPLE_USER = new UserInstance(PublicationGenerator.OWNER, SOME_ORG);
+    public static final URI AFFILIATION_NOT_IMPORTANT = null;
+    private static final URI SOME_ORG = randomUri();
+    public static final UserInstance SAMPLE_USER = new UserInstance(randomString(), SOME_ORG);
     private static final URI SOME_OTHER_ORG = URI.create("https://example.org/789-ABC");
     private static final Instant RESOURCE_CREATION_TIME = Instant.parse("1900-12-03T10:15:30.00Z");
     private static final Instant RESOURCE_MODIFICATION_TIME = Instant.parse("2000-01-03T00:00:18.00Z");
     private static final Instant RESOURCE_SECOND_MODIFICATION_TIME = Instant.parse("2010-01-03T02:00:25.00Z");
     private static final Instant RESOURCE_THIRD_MODIFICATION_TIME = Instant.parse("2020-01-03T06:00:32.00Z");
     private static final URI SOME_LINK = URI.create("http://www.example.com/someLink");
-    public static final URI AFFILIATION_NOT_IMPORTANT = null;
     private ResourceService resourceService;
     private Clock clock;
     private DoiRequestService doiRequestService;
@@ -148,7 +149,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
         throws TransactionFailedException, NotFoundException {
-        Publication inputPublication = publicationWithoutIdentifier();
+        Publication inputPublication = generatePublication();
         assertThat(inputPublication.getSubjects(), is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
         Instant publicationPredefinedTime = Instant.now();
@@ -168,7 +169,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
         throws TransactionFailedException, NotFoundException {
-        Publication inputPublication = publicationWithoutIdentifier();
+        Publication inputPublication = generatePublication();
         Instant predefinedPublishTime = Instant.now();
 
         inputPublication.setPublishedDate(predefinedPublishTime);
@@ -192,15 +193,12 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceReturnsResourceWithCreatedAndModifiedDateSetByThePlatform() throws ApiGatewayException {
 
-        Publication resource = PublicationGenerator.randomPublication();
-        resource.setDoiRequest(null);
+        Publication resource = generatePublication();
+
         UserInstance userInstance = extractUserInstance(resource);
         Publication savedResource = resourceService.createPublication(userInstance, resource);
         Publication readResource = resourceService.getPublication(savedResource);
         Publication expectedResource = expectedResourceFromSampleResource(resource, savedResource);
-
-        Diff diff = JAVERS.compare(expectedResource, savedResource);
-        assertThat(diff.prettyPrint(), diff.getChanges().size(), is(0));
 
         assertThat(savedResource, is(equalTo(expectedResource)));
         assertThat(readResource, is(equalTo(expectedResource)));
@@ -210,12 +208,12 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void createResourceThrowsTransactionFailedExceptionWhenResourceWithSameIdentifierExists()
         throws ApiGatewayException {
-        final Publication sampleResource = publicationWithIdentifier();
+        final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
             .withPublisher(anotherPublisher())
-            .withOwner(ANOTHER_OWNER)
+            .withResourceOwner(new ResourceOwner(SOME_OTHER_USER,null))
             .build();
-        ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers();
+        ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers(sampleResource.getIdentifier());
 
         Publication savedResource = createPublication(resourceService, sampleResource);
         Executable action = () -> createPublication(resourceService, collidingResource);
@@ -882,6 +880,12 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         assertThat(logger.getMessages(), containsString(sampleResource.getIdentifier().toString()));
     }
 
+    private Publication generatePublication() {
+        var publication = PublicationGenerator.publicationWithoutIdentifier();
+        publication.setDoiRequest(null);
+        return publication;
+    }
+
     private Publication createPublication(ResourceService resourceService, Publication sampleResource)
         throws ApiGatewayException {
         UserInstance userInstance = extractUserInstance(sampleResource);
@@ -1078,8 +1082,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         return new Organization.Builder().withId(sampleResource.getPublisher().getId()).build();
     }
 
-    private ResourceService resourceServiceProvidingDuplicateIdentifiers() {
-        Supplier<SortableIdentifier> duplicateIdSupplier = () -> SOME_IDENTIFIER;
+    private ResourceService resourceServiceProvidingDuplicateIdentifiers(SortableIdentifier identifier) {
+        Supplier<SortableIdentifier> duplicateIdSupplier = () -> identifier;
         return new ResourceService(client, httpClient, clock, duplicateIdSupplier);
     }
 
@@ -1119,7 +1123,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createSampleResourceWithoutDoi() throws ApiGatewayException {
-        var originalResource = publicationWithIdentifier();
+        var originalResource = publicationWithIdentifier().copy().withDoi(null).build();
         return createPublication(resourceService, originalResource);
     }
 

@@ -89,7 +89,7 @@ public class PublishPublicationHandlerTest {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(getRequestHeaders())
-            .withFeideId(randomString())
+            .withNvaUsername(randomString())
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
             .build();

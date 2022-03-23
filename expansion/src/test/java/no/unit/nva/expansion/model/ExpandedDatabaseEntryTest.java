@@ -32,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ExpandedDatabaseEntryTest {
 
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
-    private static final  MessageService messageService = mock(MessageService.class);
+    private static final MessageService messageService = mock(MessageService.class);
 
     public static Stream<ExpandedDataEntryWithAssociatedPublication> entryProvider()
         throws JsonProcessingException, NotFoundException {
@@ -52,9 +52,8 @@ class ExpandedDatabaseEntryTest {
 
     private static ExpandedDoiRequest randomDoiRequest(Publication publication) throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
-
 
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
         //TODO: create proper ExpandedResourceConversation
@@ -104,8 +103,7 @@ class ExpandedDatabaseEntryTest {
                 return
                     new ExpandedDataEntryWithAssociatedPublication(publication,
                                                                    ExpandedResource.fromPublication(publication));
-            }
-            else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
+            } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,

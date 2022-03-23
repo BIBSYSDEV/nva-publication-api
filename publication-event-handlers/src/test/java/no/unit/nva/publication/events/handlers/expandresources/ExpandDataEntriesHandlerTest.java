@@ -216,7 +216,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     private DataEntry fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
-        var resourceUpdateString = s3Driver.getFile(new UriWrapper(uriWithEventPayload).toS3bucketPath());
+        var resourceUpdateString = s3Driver.getFile(UriWrapper.fromUri(uriWithEventPayload).toS3bucketPath());
         Publication publication =
             objectMapper.readValue(resourceUpdateString, Publication.class);
         return Resource.fromPublication(publication);

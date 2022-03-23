@@ -2,7 +2,6 @@ package no.unit.nva.publication.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
-import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,12 +37,12 @@ import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CreatePublicationHandlerTest extends ResourcesLocalTest {
+class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
-    private String testFeideId;
+    private String testUserName;
     private URI testOrgId;
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
@@ -67,7 +66,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         samplePublication = PublicationGenerator.randomPublication();
-        testFeideId = samplePublication.getOwner();
+        testUserName = samplePublication.getResourceOwner().getOwner();
         testOrgId = samplePublication.getPublisher().getId();
     }
 
@@ -77,7 +76,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
@@ -89,7 +88,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
@@ -108,7 +107,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getFileSet(), is(equalTo(filesetInCreationRequest)));
@@ -122,7 +121,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
 
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
 
@@ -178,14 +177,14 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
-        assertThat(publicationResponse.getOwner(), is(equalTo(testFeideId)));
-        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testFeideId)));
+        assertThat(publicationResponse.getOwner(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withFeideId(testFeideId)
+            .withNvaUsername(testUserName)
             .withCustomerId(testOrgId.toString())
             .withBody(request)
             .build();

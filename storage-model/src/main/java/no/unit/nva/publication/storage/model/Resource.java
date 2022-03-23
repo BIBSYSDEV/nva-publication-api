@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import no.unit.nva.file.model.FileSet;
@@ -31,13 +30,12 @@ import nva.commons.core.JacocoGenerated;
 public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, DataEntry {
 
     public static final String TYPE = "Resource";
+    public static final URI NOT_IMPORTANT = null;
 
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
     private PublicationStatus status;
-    @JsonProperty
-    private String owner;
     @JsonProperty
     private ResourceOwner resourceOwner;
     @JsonProperty
@@ -80,12 +78,12 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return resource;
     }
 
-    public static Resource emptyResource(String userIdentifier,
+    public static Resource emptyResource(String username,
                                          URI organizationId,
                                          SortableIdentifier resourceIdentifier) {
         Resource resource = new Resource();
         resource.setPublisher(new Organization.Builder().withId(organizationId).build());
-        resource.setOwner(userIdentifier);
+        resource.setResourceOwner(new ResourceOwner(username, NOT_IMPORTANT));
         resource.setIdentifier(resourceIdentifier);
         return resource;
     }
@@ -93,7 +91,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
     public static Resource fromPublication(Publication publication) {
         return Resource.builder()
             .withIdentifier(publication.getIdentifier())
-            .withOwner(publication.getOwner())
             .withResourceOwner(publication.getResourceOwner())
             .withCreatedDate(publication.getCreatedDate())
             .withModifiedDate(publication.getModifiedDate())
@@ -258,7 +255,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return Resource.builder()
             .withIdentifier(getIdentifier())
             .withStatus(getStatus())
-            .withOwner(getOwner())
             .withResourceOwner(getResourceOwner())
             .withResourceOwner(getResourceOwner())
             .withPublisher(getPublisher())
@@ -281,7 +277,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
     public Publication toPublication() {
         return new Publication.Builder()
             .withIdentifier(getIdentifier())
-            .withOwner(getOwner())
             .withResourceOwner(getResourceOwner())
             .withStatus(getStatus())
             .withCreatedDate(getCreatedDate())
@@ -324,13 +319,10 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         return nonNull(this.getPublisher()) ? this.getPublisher().getId() : null;
     }
 
+    @JsonIgnore
     @Override
     public String getOwner() {
-        return Optional.ofNullable(getResourceOwner()).map(ResourceOwner::getOwner).orElse(owner);
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
+        return getResourceOwner().getOwner();
     }
 
     public List<URI> getSubjects() {
@@ -343,7 +335,7 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
 
     @Override
     public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getOwner(), getResourceOwner(), getPublisher(),
+        return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(),
                             getCreatedDate(),
                             getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
                             getProjects(),
@@ -361,7 +353,6 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         Resource resource = (Resource) o;
         return Objects.equals(getIdentifier(), resource.getIdentifier())
                && getStatus() == resource.getStatus()
-               && Objects.equals(getOwner(), resource.getOwner())
                && Objects.equals(getResourceOwner(), resource.getResourceOwner())
                && Objects.equals(getPublisher(), resource.getPublisher())
                && Objects.equals(getCreatedDate(), resource.getCreatedDate())

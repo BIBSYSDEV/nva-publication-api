@@ -29,10 +29,10 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
@@ -89,7 +89,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         throws ApiGatewayException, IOException {
         Publication publication = createPublication();
         sendRequest(publication, publication.getResourceOwner());
-        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream,Void.class);
         String doiRequestIdentifier = extractLocationHeader(response);
         DoiRequest doiRequest = readDoiRequestDirectlyFromService(publication, doiRequestIdentifier);
         assertThat(doiRequest, is(not(nullValue())));
@@ -102,7 +102,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
         sendRequest(publication, NOT_THE_RESOURCE_OWNER);
 
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         Problem problem = response.getBodyObject(Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
         assertThat(problem.getDetail(), is(equalTo(CreateDoiRequestHandler.USER_IS_NOT_OWNER_ERROR)));
@@ -113,12 +113,12 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         CreateDoiRequest request = new CreateDoiRequest(null, null);
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                                       .withBody(request)
-                                      .withFeideId(NOT_THE_RESOURCE_OWNER.getOwner())
+                                      .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
                                       .withCustomerId(SOME_PUBLISHER.toString())
                                       .build();
 
         handler.handleRequest(inputStream, outputStream, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpStatus.SC_BAD_REQUEST)));
     }
 
@@ -132,7 +132,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         outputStream = new ByteArrayOutputStream();
         sendRequest(publication, publication.getResourceOwner());
 
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
@@ -173,7 +173,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
         return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                    .withCustomerId(publication.getPublisher().getId().toString())
-                   .withFeideId(owner.getOwner())
+                   .withNvaUsername(owner.getOwner())
                    .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
                    .withBody(request)
                    .build();

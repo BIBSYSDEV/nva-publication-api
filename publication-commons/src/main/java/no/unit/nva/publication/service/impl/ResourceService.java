@@ -256,10 +256,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry) throws ApiGatewayException {
-        var userInstance = new UserInstance(dataEntry.getOwner(), dataEntry.getPublisher().getId());
-        var resourceOwner = createResourceOwner(userInstance);
-        dataEntry.setResourceOwner(resourceOwner);
+    private Resource migrateResource(Resource dataEntry)  {
         return dataEntry;
     }
 

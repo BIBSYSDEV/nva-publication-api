@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.Test;
 
 class ResourceConversationTest {
 
-    public static final boolean WITH_IDENTIFIER = true;
     public static final Faker FAKER = Faker.instance();
     public static final int SMALL_WAITING_TIME = 2;
     public static final String USER_IDENTIFIER = "userIdentifier";
@@ -41,7 +41,7 @@ class ResourceConversationTest {
     @Test
     public void returnsListOfResourceConversationsForEachMentionedResource() {
         var publications =
-            PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, WITH_IDENTIFIER);
+            samplePublicationsOfDifferentOwners();
         var allMessages = twoMessagesPerPublication(publications);
 
         List<ResourceConversation> conversations = ResourceConversation.fromMessageList(allMessages);
@@ -54,6 +54,13 @@ class ResourceConversationTest {
         assertThat(oldestMessage.getMessageIdentifier(), is(equalTo(expectedOldestMessage.getIdentifier())));
         assertThat(oldestMessage.getMessageIdentifier(), is(not(nullValue())));
     }
+
+    private List<Publication> samplePublicationsOfDifferentOwners() {
+        return IntStream.range(0, ResourceConversationTest.NUMBER_OF_PUBLICATIONS).boxed()
+            .map(ignored -> PublicationGenerator.randomPublication())
+            .collect(Collectors.toList());
+    }
+
 
     @Test
     public void getRequestMessagesReturnsMessagesOfSpecifiedType() {
@@ -85,10 +92,10 @@ class ResourceConversationTest {
             .get(RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE);
 
         var doiRequestConversationMessages = resourceConversation.ofMessageTypes(MessageType.DOI_REQUEST)
-                .allMessages()
-                .stream()
-                .map(MessageDto::getText)
-                .collect(Collectors.toList());
+            .allMessages()
+            .stream()
+            .map(MessageDto::getText)
+            .collect(Collectors.toList());
         var expectedDoiRequestConversationMessages = inputDoiRequestMessages
             .stream()
             .map(Message::getText)

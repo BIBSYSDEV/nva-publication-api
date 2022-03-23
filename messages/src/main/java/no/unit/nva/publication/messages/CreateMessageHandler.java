@@ -118,7 +118,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
 
     private UserInstance createSender(RequestInfo requestInfo) {
-        String loggedInUser = requestInfo.getFeideId().orElseThrow();
+        String loggedInUser = requestInfo.getNvaUsername();
         URI orgUri = requestInfo.getCustomerId().map(URI::create).orElseThrow();
         return new UserInstance(loggedInUser, orgUri);
     }

@@ -107,7 +107,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
         analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
-        var analyticsFilePath = new UriWrapper(analyticsObjectEvent.getUri()).toS3bucketPath();
+        var analyticsFilePath = UriWrapper.fromUri(analyticsObjectEvent.getUri()).toS3bucketPath();
         var publicationString = s3Driver.getFile(analyticsFilePath);
         var storedPublication = JsonUtils.dtoObjectMapper.readValue(publicationString, ExpandedResource.class);
         assertThat(publicationString, not(containsString(JSONLD_CONTEXT)));
@@ -151,9 +151,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     private String[] splitFilenameFromFileEnding(EventReference inputEvent) {
-        return new UriWrapper(inputEvent.getUri())
+        return UriWrapper.fromUri(inputEvent.getUri())
             .toS3bucketPath()
-            .getFilename()
+            .getLastPathElement()
             .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
     }
 

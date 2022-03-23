@@ -76,7 +76,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
     private String readEventBodyFromS3(EventReference eventBody) {
         var s3Bucket = eventBody.getUri().getHost();
         var s3Driver = new S3Driver(s3Client, s3Bucket);
-        return s3Driver.getFile(new UriWrapper(eventBody.getUri()).toS3bucketPath());
+        return s3Driver.getFile(UriWrapper.fromUri(eventBody.getUri()).toS3bucketPath());
     }
 
     private CreatePublicationRequest parseInput(String input) throws JsonProcessingException {

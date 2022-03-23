@@ -88,7 +88,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String user = requestInfo.getFeideId().orElse(null);
+        String user = requestInfo.getNvaUsername();
         return new UserInstance(user, customerId);
     }
 

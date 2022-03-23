@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -10,15 +11,14 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -33,7 +33,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     public static final String ROLE_QUERY_PARAMETER = "role";
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
-    public static final String EMPTY_STRING = "";
+
     private final DoiRequestService doiRequestService;
     private final MessageService messageService;
 
@@ -59,13 +59,13 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context)
         throws BadRequestException {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String role = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
-        String userId = requestInfo.getFeideId().orElse(null);
-        String userRoles = requestInfo.getAssignedRoles().orElse(EMPTY_STRING);
+        String requestedRole = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
+        String userId = requestInfo.getNvaUsername();
+
         UserInstance userInstance = new UserInstance(userId, customerId);
-        if (userIsACurator(role, userRoles)) {
+        if (userIsACurator(requestedRole, requestInfo)) {
             return fetchDoiRequestsForCurator(userInstance);
-        } else if (userIsACreator(role, userRoles)) {
+        } else if (userIsACreator(requestedRole)) {
             return fetchDoiRequestsForUser(userInstance);
         }
 
@@ -91,24 +91,15 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         return new Publication[0];
     }
 
-    private boolean userIsACreator(String requestedRole, String userRolesCsv) {
-        return userHasRequestedRole(requestedRole, userRolesCsv, CREATOR_ROLE);
+    private boolean userIsACreator(String requestedRole) {
+        return CREATOR_ROLE.equals(requestedRole);
     }
 
-    private boolean userIsACurator(String role, String userRolesCsv) {
-        return userHasRequestedRole(role, userRolesCsv, CURATOR_ROLE);
+    private boolean userIsACurator(String requestedRole, RequestInfo requestInfo) {
+        return CURATOR_ROLE.equals(requestedRole) &&
+               requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
 
-    private boolean userHasRequestedRole(String requestedRole, String userRolesCsv, String systemDefinedRole) {
-        boolean userHasRequestedRole = userHasRequestedRole(requestedRole, userRolesCsv);
-        return requestedRole.equals(systemDefinedRole) && userHasRequestedRole;
-    }
-
-    private boolean userHasRequestedRole(String role, String userRolesCsv) {
-        String userRolesUpperCased = userRolesCsv.toUpperCase(Locale.getDefault());
-        String requestedRole = role.toUpperCase(Locale.getDefault());
-        return userRolesUpperCased.contains(requestedRole);
-    }
 
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForUser(userInstance);

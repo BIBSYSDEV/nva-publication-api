@@ -21,8 +21,8 @@ public final class RequestUtil {
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
     public static final String PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER = "pageSize is not a valid positive integer: ";
     public static final String AUTHORIZER_CLAIMS = "/authorizer/claims/";
-    public static final String CUSTOM_FEIDE_ID = "custom:feideId";
-    public static final String CUSTOM_CUSTOMER_ID = "custom:customerId";
+    public static final String NVA_USERNAME_CLAIM = "custom:nvaUsername";
+    public static final String CURRENT_CUSTOMER = "custom:customerId";
     public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
         "Missing claim in requestContext: ";
     public static final String PAGESIZE = "pagesize";
@@ -70,7 +70,7 @@ public final class RequestUtil {
     private static BadRequestException logErrorAndThrowException(RequestInfo requestInfo) {
         String requestInfoJsonString = attempt(() -> dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow();
         logger.debug("RequestInfo object:" + requestInfoJsonString);
-        return new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_CUSTOMER_ID);
+        return new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CURRENT_CUSTOMER);
     }
 
     /**
@@ -81,11 +81,11 @@ public final class RequestUtil {
      * @throws ApiGatewayException exception thrown if value is missing
      */
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
-        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + CUSTOM_FEIDE_ID);
+        JsonNode jsonNode = requestInfo.getRequestContext().at(AUTHORIZER_CLAIMS + NVA_USERNAME_CLAIM);
         if (!jsonNode.isMissingNode()) {
             return jsonNode.textValue();
         }
-        throw new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CUSTOM_FEIDE_ID, null);
+        throw new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + NVA_USERNAME_CLAIM, null);
     }
 
     /**
@@ -119,7 +119,7 @@ public final class RequestUtil {
 
     public static UserInstance extractUserInstance(RequestInfo requestInfo) {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String useIdentifier = requestInfo.getFeideId().orElse(null);
+        String useIdentifier = requestInfo.getNvaUsername();
         return new UserInstance(useIdentifier, customerId);
     }
 }

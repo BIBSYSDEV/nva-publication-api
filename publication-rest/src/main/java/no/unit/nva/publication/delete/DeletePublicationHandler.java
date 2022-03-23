@@ -42,7 +42,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String owner = requestInfo.getFeideId().orElseThrow();
+        String owner = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElseThrow();
         UserInstance userInstance = new UserInstance(owner, customerId);
 

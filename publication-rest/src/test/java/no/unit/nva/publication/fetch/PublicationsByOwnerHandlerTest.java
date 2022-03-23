@@ -76,7 +76,7 @@ public class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(
             inputStream(), output, context);
 
-        GatewayResponse<PublicationsByOwnerResponse> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output,PublicationsByOwnerResponse.class);
         assertEquals(SC_OK, gatewayResponse.getStatusCode());
         assertThat(gatewayResponse.getHeaders(), hasKey(CONTENT_TYPE));
         assertThat(gatewayResponse.getHeaders(), hasKey(ACCESS_CONTROL_ALLOW_ORIGIN));
@@ -84,16 +84,16 @@ public class PublicationsByOwnerHandlerTest {
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
-    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
+    void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
-        GatewayResponse<Void> gatewayResponse = GatewayResponse.fromOutputStream(output);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output,Void.class);
         assertEquals(SC_BAD_REQUEST, gatewayResponse.getStatusCode());
     }
 
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+    void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException {
         when(resourceService.getPublicationsByOwner(any(UserInstance.class)))
             .thenThrow(NullPointerException.class);
@@ -110,7 +110,7 @@ public class PublicationsByOwnerHandlerTest {
         event.put("requestContext",
                   singletonMap("authorizer",
                                singletonMap("claims",
-                                            Map.of(RequestUtil.CUSTOM_FEIDE_ID, OWNER, RequestUtil.CUSTOM_CUSTOMER_ID,
+                                            Map.of(RequestUtil.NVA_USERNAME_CLAIM, OWNER, RequestUtil.CURRENT_CUSTOMER,
                                                    VALID_ORG_NUMBER))));
         event.put("headers", singletonMap(CONTENT_TYPE,
                                           ContentType.APPLICATION_JSON.getMimeType()));

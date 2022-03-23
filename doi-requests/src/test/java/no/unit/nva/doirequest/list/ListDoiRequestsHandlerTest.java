@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.list;
 
+import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CREATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
@@ -59,7 +60,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
+class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
 
     public static final String SOME_CURATOR = "SomeCurator";
     public static final String SOME_OTHER_OWNER = "someOther@owner.no";
@@ -95,8 +96,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerReturnsListOfDoiRequestsWhenUserIsCuratorAndThereAreDoiRequestsForSamePublisher()
-        throws ApiGatewayException, IOException {
+    void handlerReturnsListOfDoiRequestsWhenUserIsCuratorAndThereAreDoiRequestsForSamePublisher()
+        throws IOException {
         List<Publication> publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         List<DoiRequest> expectedDoiRequests = createDoiRequests(publications);
 
@@ -112,13 +113,13 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     public List<Publication> parseResponse() throws com.fasterxml.jackson.core.JsonProcessingException {
-        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream,Publication[].class);
         return Arrays.asList(response.getBodyObject(Publication[].class));
     }
 
     @Test
-    public void handlerReturnsListOfDoiRequestsOnlyForTheCuratorsOrganization()
-        throws ApiGatewayException, IOException {
+    void handlerReturnsListOfDoiRequestsOnlyForTheCuratorsOrganization()
+        throws IOException {
         List<Publication> publications = publishedPublicationsOfDifferentPublisher();
         List<DoiRequest> createdDoiRequests = createDoiRequests(publications);
 
@@ -144,7 +145,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoDoiRequests()
+    void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoDoiRequests()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
@@ -161,8 +162,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsReturnsOnlyDoiRequestsOwnedByTheUserWhenRequestIsFromNotACurator()
-        throws ApiGatewayException, IOException {
+    void listDoiRequestsReturnsOnlyDoiRequestsOwnedByTheUserWhenRequestIsFromNotACurator()
+        throws IOException {
         List<Publication> publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         List<DoiRequest> doiRequests = createDoiRequests(publications);
 
@@ -186,7 +187,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoValidRole()
+    void listDoiRequestsReturnsEmptyListForUserWhenUserHasNoValidRole()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
@@ -203,7 +204,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForUserReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
+    void listDoiRequestsForUserReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
         throws ApiGatewayException, IOException {
         List<Publication> publications = createPublishedPublicationsOfSameOwner();
         createDoiRequests(publications);
@@ -218,8 +219,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForCuratorReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
-        throws ApiGatewayException, IOException {
+    void listDoiRequestsForCuratorReturnsDtosWithMessagesIncludedWhenThereAreDoiRequestMessagesForTheDoiRequest()
+        throws IOException {
         var publications = createPublishedPublicationsOfSamePublisherButDifferentOwner();
         createDoiRequests(publications);
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
@@ -232,7 +233,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForUserReturnsDtosContainingOnlyDoiRequestsMessagesAndNotOtherTypeOfMessages()
+    void listDoiRequestsForUserReturnsDtosContainingOnlyDoiRequestsMessagesAndNotOtherTypeOfMessages()
         throws ApiGatewayException, IOException {
         final var publications = createPublishedPublicationsOfSameOwner();
         final var publicationsOwner = extractUserInstance(publications.get(0));
@@ -277,7 +278,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         throws IOException {
         InputStream input = createRequest(commonPublisherId, userIdentifier, curatorRole);
         handler.handleRequest(input, outputStream, context);
-        GatewayResponse<Publication[]> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream,Publication[].class);
 
         Publication[] doiRequestDtos = response.getBodyObject(Publication[].class);
         return extractMessageTexts(doiRequestDtos);
@@ -327,8 +328,8 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         throws com.fasterxml.jackson.core.JsonProcessingException {
         return new HandlerRequestBuilder<Void>(doiRequestsObjectMapper)
             .withCustomerId(customerId.toString())
-            .withFeideId(userIdentifier)
-            .withRoles(userRole)
+            .withNvaUsername(userIdentifier)
+            .withAccessRight(APPROVE_DOI_REQUEST.toString())
             .withQueryParameters(
                 Map.of(ROLE_QUERY_PARAMETER, userRole))
             .build();
@@ -370,10 +371,11 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         return publications;
     }
 
-    private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() throws ApiGatewayException {
+    private List<Publication> createPublishedPublicationsOfSamePublisherButDifferentOwner() {
         Publication publication = PublicationGenerator.randomPublication();
         Publication publicationWithDifferentOwner =
             publication.copy()
+                .withPublisher(publication.getPublisher())
                 .withResourceOwner(new ResourceOwner(randomString(), randomUri()))
                 .build();
 
@@ -394,7 +396,7 @@ public class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         return resourceService.getPublication(userInstance, createdPublication.getIdentifier());
     }
 
-    private List<Publication> publishedPublicationsOfDifferentPublisher() throws ApiGatewayException {
+    private List<Publication> publishedPublicationsOfDifferentPublisher() {
         Publication publication = PublicationGenerator.randomPublication();
         Publication publicationWithDifferentPublisher = PublicationGenerator.randomPublication();
         return saveAndPublishPublications(publication, publicationWithDifferentPublisher);

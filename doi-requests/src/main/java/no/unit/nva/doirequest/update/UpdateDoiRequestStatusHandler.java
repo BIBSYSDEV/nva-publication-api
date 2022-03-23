@@ -1,5 +1,6 @@
 package no.unit.nva.doirequest.update;
 
+import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -13,7 +14,6 @@ import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -88,15 +88,11 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
 
     private boolean userIsNotAuthorized(RequestInfo requestInfo) {
-        return
-            !(
-                requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
-                && requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString())
-            );
+        return !requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
 
     private UserInstance createUserInstance(RequestInfo requestInfo) {
-        String user = requestInfo.getFeideId().orElse(null);
+        String user = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         return new UserInstance(user, customerId);
     }
