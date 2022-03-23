@@ -90,8 +90,8 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private boolean userIsNotAuthorized(RequestInfo requestInfo) {
         return
             !(
-                requestInfo.userHasAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
-                && requestInfo.userHasAccessRight(AccessRight.REJECT_DOI_REQUEST.toString())
+                requestInfo.userIsAuthorized(AccessRight.APPROVE_DOI_REQUEST.toString())
+                && requestInfo.userIsAuthorized(AccessRight.REJECT_DOI_REQUEST.toString())
             );
     }
 

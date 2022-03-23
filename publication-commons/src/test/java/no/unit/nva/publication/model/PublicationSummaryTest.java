@@ -15,11 +15,11 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class PublicationSummaryTest {
+class PublicationSummaryTest {
     
     @Test
     @DisplayName("objectMapper Can Write And Read PublicationSummary")
-    public void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
+    void objectMapperCanWriteAndReadPublicationSummary() throws JsonProcessingException {
         PublicationSummary publicationSummary = publicationSummary();
         String content = dtoObjectMapper.writeValueAsString(publicationSummary);
         PublicationSummary processedPublicationSummary =
@@ -29,7 +29,7 @@ public class PublicationSummaryTest {
     }
     
     @Test
-    public void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
+    void fromPublicationReturnsPublicationSummaryWithoutEmptyFields() {
         Publication publication = PublicationGenerator.publicationWithIdentifier();
         PublicationSummary summary = PublicationSummary.create(publication);
         assertThat(summary, doesNotHaveEmptyValues());
@@ -42,8 +42,9 @@ public class PublicationSummaryTest {
     }
 
     @Test
-    public void shouldCreatePublicationSummaryFromDoiRequest() {
-        DoiRequest doiRequest = DoiRequest.fromPublication(PublicationGenerator.randomPublication(), SortableIdentifier.next());
+    void shouldCreatePublicationSummaryFromDoiRequest() {
+        DoiRequest doiRequest =
+            DoiRequest.fromPublication(PublicationGenerator.randomPublication(), SortableIdentifier.next());
         PublicationSummary publicationSummary = PublicationSummary.create(doiRequest);
         assertThat(publicationSummary.getPublicationIdentifier(), is(equalTo(doiRequest.getIdentifier())));
     }

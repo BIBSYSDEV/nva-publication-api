@@ -30,10 +30,9 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     public static final String LOCATION_TEMPLATE = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
     public static final String API_HOST = "API_HOST";
-
+    private static final Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
     private final ResourceService publicationService;
     private final String apiHost;
-    private final static Logger logger = LoggerFactory.getLogger(CreatePublicationHandler.class);
 
     /**
      * Default constructor for CreatePublicationHandler.
@@ -63,7 +62,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
     @Override
     protected PublicationResponse processInput(CreatePublicationRequest input, RequestInfo requestInfo,
                                                Context context) throws ApiGatewayException {
-        logger.info(attempt(()->JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
+        logger.info(attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow());
 
         var userInstance = RequestUtil.extractUserInstance(requestInfo);
         var newPublication = Optional.ofNullable(input)

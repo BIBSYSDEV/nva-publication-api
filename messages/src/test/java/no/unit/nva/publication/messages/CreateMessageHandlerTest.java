@@ -86,7 +86,7 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
+    void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
 
@@ -98,7 +98,7 @@ public class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
+    void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
         throws IOException, URISyntaxException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
 

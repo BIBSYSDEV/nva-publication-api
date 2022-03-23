@@ -69,7 +69,8 @@ class MessageCollectionTest {
     }
 
     @Test
-    void messageCollectionPreservesInternalMessageStructureButDoesExposeItInSerialization() throws JsonProcessingException {
+    void messageCollectionPreservesInternalMessageStructureButDoesExposeItInSerialization()
+        throws JsonProcessingException {
         var samplePublication = PublicationGenerator.randomPublication();
         var messageTexts = List.of(randomString(), randomString(), randomString());
         var messageCollection = createSupportMessagesCollection(samplePublication, messageTexts);

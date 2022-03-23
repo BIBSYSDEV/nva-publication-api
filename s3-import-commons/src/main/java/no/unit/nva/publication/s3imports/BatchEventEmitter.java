@@ -98,11 +98,7 @@ public class BatchEventEmitter<T> {
      */
     public List<PutEventsResult> emitEvents(int numberOfEmittedEventsPerRequest) {
         checkBus();
-        List<PutEventsResult> failedEvents = tryManyTimesToEmitTheEventRequests(numberOfEmittedEventsPerRequest);
-        if (failedEvents != null) {
-            return failedEvents;
-        }
-        return Collections.emptyList();
+        return tryManyTimesToEmitTheEventRequests(numberOfEmittedEventsPerRequest);
     }
 
     protected List<PutEventsRequest> getPutEventsRequests() {
@@ -153,7 +149,7 @@ public class BatchEventEmitter<T> {
         if (!failedEvents.isEmpty()) {
             return failedEvents;
         }
-        return null;
+        return Collections.emptyList();
     }
 
     private List<PutEventsRequest> collectRequestsForResending(List<PutEventsResult> failedEvents) {

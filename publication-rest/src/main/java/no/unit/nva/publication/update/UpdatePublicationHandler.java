@@ -19,7 +19,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import org.apache.http.HttpStatus;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
@@ -102,11 +101,9 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
 
-        return requestInfo.getAccessRights()
-            .stream()
-            .filter(StringUtils::isNotBlank)
-            .map(AccessRight::fromString)
-            .anyMatch(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES::equals);
+        var accessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString();
+        return requestInfo.userIsAuthorized(accessRight) ;
+
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

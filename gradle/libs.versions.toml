@@ -1,11 +1,11 @@
 [versions]
 
-nva = { strictly = '1.20.15' }
-nvaDatamodel = { strictly = '0.15.1' }
+nva = { strictly = '1.20.23-alpha7' }
+nvaDatamodel = { strictly = '0.15.2' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
-jackson = { strictly = '2.13.0' }
+jackson = { strictly = '2.13.1' }
 awsSdk = { strictly = '1.12.129' }
-awsSdk2 = { strictly = '2.17.105' }
+awsSdk2 = { strictly = '2.17.152' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }

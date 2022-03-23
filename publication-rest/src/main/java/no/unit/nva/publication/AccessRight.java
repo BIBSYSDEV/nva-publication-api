@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+import nva.commons.core.JacocoGenerated;
 
 public enum AccessRight {
 
@@ -25,6 +26,7 @@ public enum AccessRight {
      * @return an AccessRight instance.
      */
     @JsonCreator
+    @JacocoGenerated
     public static AccessRight fromString(String accessRight) {
 
         String formattedString = formatString(accessRight);

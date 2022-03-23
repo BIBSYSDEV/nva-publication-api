@@ -77,7 +77,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
 
     private String readFileContents(URI inputFileLocation) {
         var s3Driver = new S3Driver(s3Client, inputFileLocation.getHost());
-        var inputFilePathInsideBucket = new UriWrapper(inputFileLocation).toS3bucketPath();
+        var inputFilePathInsideBucket = UriWrapper.fromUri(inputFileLocation).toS3bucketPath();
         return s3Driver.getFile(inputFilePathInsideBucket);
     }
 
@@ -89,7 +89,7 @@ public class AnalyticsIntegrationHandler extends DestinationsEventBridgeEventHan
     }
 
     private UnixPath constructOutputPath(URI inputFileLocation) {
-        var filename = new UriWrapper(inputFileLocation).getFilename();
+        var filename = UriWrapper.fromUri(inputFileLocation).getFilename();
         return PersistenceConfig.ANALYTICS_FOLDER.addChild(filename);
     }
 
