@@ -7,7 +7,6 @@ import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.CURATOR_ROLE;
 import static no.unit.nva.doirequest.list.ListDoiRequestsHandler.ROLE_QUERY_PARAMETER;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -208,7 +207,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
         final var doiRequestMessages = createDoiRequestMessagesForPublications(publications);
 
         URI commonPublisherId = publications.get(FIRST_ELEMENT).getPublisher().getId();
-        String commonOwner = publications.get(FIRST_ELEMENT).getOwner();
+        String commonOwner = publications.get(FIRST_ELEMENT).getResourceOwner().getOwner();
         List<String> actualMessages = sendRequestAndReadMessages(commonOwner, commonPublisherId, CREATOR_ROLE);
 
         String[] expectedMessages = extractMessageTexts(doiRequestMessages);
@@ -233,7 +232,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     void listDoiRequestsForUserReturnsDtosContainingOnlyDoiRequestsMessagesAndNotOtherTypeOfMessages()
         throws ApiGatewayException, IOException {
         final var publications = createPublishedPublicationsOfSameOwner();
-        final var publicationsOwner = extractUserInstance(publications.get(0));
+        final var publicationsOwner = UserInstance.fromPublication(publications.get(0));
         final var publicationsOwnerIdentifier = publicationsOwner.getUserIdentifier();
         final var commonPublisherId = publicationsOwner.getOrganizationUri();
 
@@ -266,7 +265,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private Message createSupportMessage(Publication pub) throws TransactionFailedException, NotFoundException {
-        UserInstance owner = extractUserInstance(pub);
+        UserInstance owner = UserInstance.fromPublication(pub);
         var messageIdentifier = messageService.createSimpleMessage(owner, pub, randomString());
         return messageService.getMessage(owner, messageIdentifier);
     }
@@ -311,7 +310,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private MessageDto createDoiRequestMessage(Publication pub) throws TransactionFailedException, NotFoundException {
-        UserInstance owner = extractUserInstance(pub);
+        UserInstance owner = UserInstance.fromPublication(pub);
         var messageID = messageService.createDoiRequestMessage(owner, pub, randomString());
         Message message = messageService.getMessage(owner, messageID);
         return MessageDto.fromMessage(message);
@@ -387,9 +386,10 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublishedPublication(Publication pub) throws ApiGatewayException {
-        UserInstance userInstance = extractUserInstance(pub);
+        UserInstance userInstance = UserInstance.fromPublication(pub);
         var createdPublication = resourceService.createPublication(userInstance, pub);
-        resourceService.publishPublication(extractUserInstance(createdPublication), createdPublication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(createdPublication),
+                                           createdPublication.getIdentifier());
         return resourceService.getPublication(userInstance, createdPublication.getIdentifier());
     }
 
@@ -409,7 +409,8 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private void publishPublication(Publication pub) throws ApiGatewayException {
-        UserInstance userInstance = UserInstance.create(pub.getOwner(), pub.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(pub.getResourceOwner().getOwner(),
+                                                        pub.getPublisher().getId());
         resourceService.publishPublication(userInstance, pub.getIdentifier());
     }
 
@@ -421,7 +422,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance createUserInstance(Publication pub) {
-        return UserInstance.create(pub.getOwner(), pub.getPublisher().getId());
+        return UserInstance.create(pub.getResourceOwner().getOwner(), pub.getPublisher().getId());
     }
 
     private void setupClock() {

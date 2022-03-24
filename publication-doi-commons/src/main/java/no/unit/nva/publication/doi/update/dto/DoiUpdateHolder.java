@@ -3,8 +3,8 @@ package no.unit.nva.publication.doi.update.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import nva.commons.core.JacocoGenerated;
 import no.unit.nva.commons.json.JsonSerializable;
+import nva.commons.core.JacocoGenerated;
 
 public class DoiUpdateHolder implements JsonSerializable {
 

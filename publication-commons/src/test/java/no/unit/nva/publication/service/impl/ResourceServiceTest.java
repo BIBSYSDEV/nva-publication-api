@@ -78,9 +78,7 @@ import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.SingletonCollector;
@@ -125,13 +123,11 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     private Clock clock;
     private DoiRequestService doiRequestService;
     private MessageService messageService;
-    private URI affiliationUri;
 
     @BeforeEach
     public void init() {
         super.init();
         Clock clock = setupClock();
-        affiliationUri = RandomPersonServiceResponse.randomUri();
         resourceService = new ResourceService(client,  clock);
         doiRequestService = new DoiRequestService(client, clock);
         messageService = new MessageService(client, clock, SortableIdentifier::next);
@@ -216,7 +212,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         assertThrows(TransactionFailedException.class, action);
 
         assertThat(sampleResource.getIdentifier(), is(equalTo(collidingResource.getIdentifier())));
-        assertThat(sampleResource.getOwner(), is(not(equalTo(collidingResource.getOwner()))));
+        assertThat(sampleResource.getResourceOwner().getOwner(),
+                   is(not(equalTo(collidingResource.getResourceOwner().getOwner()))));
         assertThat(sampleResource.getPublisher().getId(), is(not(equalTo(collidingResource.getPublisher().getId()))));
     }
 
@@ -397,7 +394,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         List<Publication> actualResources = resourceService.getPublicationsByOwner(userInstance);
         HashSet<Publication> actualResourcesSet = new HashSet<>(actualResources);
 
-        assertThat(actualResourcesSet, is(equalTo(userResources)));
+        assertThat(actualResourcesSet, containsInAnyOrder(userResources.toArray(Publication[]::new)));
     }
 
     @Test
@@ -679,7 +676,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         resource.getEntityDescription().setMainTitle(ANOTHER_TITLE);
         resourceService.updatePublication(resource);
 
-        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(resource.getResourceOwner(), resource.getPublisher().getId());
         DoiRequest updatedDoiRequest = doiRequestService
             .getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());
 
@@ -879,6 +876,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     private Publication generatePublication() {
         var publication = PublicationGenerator.publicationWithoutIdentifier();
         publication.setDoiRequest(null);
+        publication.setOwner(null);
         return publication;
     }
 
@@ -1067,7 +1065,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         return sampleResource.copy()
             .withIdentifier(savedResource.getIdentifier())
             .withPublisher(organizationWithoutLabels(sampleResource))
-            .withResourceOwner(new ResourceOwner(sampleResource.getResourceOwner().getOwner(), affiliationUri))
+            .withResourceOwner(sampleResource.getResourceOwner())
             .withCreatedDate(RESOURCE_CREATION_TIME)
             .withModifiedDate(RESOURCE_CREATION_TIME)
             .withStatus(PublicationStatus.DRAFT)

@@ -9,8 +9,6 @@ import static org.hamcrest.Matchers.is;
 import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
-import java.net.MalformedURLException;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.SingletonCollector;

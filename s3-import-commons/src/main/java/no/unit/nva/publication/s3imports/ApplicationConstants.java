@@ -1,5 +1,6 @@
 package no.unit.nva.publication.s3imports;
 
+import java.time.Clock;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UnixPath;
@@ -7,8 +8,6 @@ import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
 import software.amazon.awssdk.services.s3.S3Client;
-
-import java.time.Clock;
 
 public final class ApplicationConstants {
 

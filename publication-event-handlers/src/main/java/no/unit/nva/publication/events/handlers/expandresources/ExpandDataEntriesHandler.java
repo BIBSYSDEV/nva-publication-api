@@ -7,7 +7,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.events.handlers.DestinationsEventBridgeEventHandler;
@@ -45,7 +44,6 @@ public class ExpandDataEntriesHandler
     private final S3Driver s3Driver;
     private final ResourceExpansionService resourceExpansionService;
 
-
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
         this(new S3Driver(EVENTS_BUCKET),
@@ -78,11 +76,6 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
-    private static HttpClient defaultHttpClient() {
-        return HttpClient.newBuilder().build();
-    }
-
-    @JacocoGenerated
     private static ResourceExpansionService defaultResourceExpansionService(AmazonDynamoDB dynamoDbClient) {
         return new ResourceExpansionServiceImpl(defaultResourceService(dynamoDbClient),
                                                 defaultMessageService(dynamoDbClient),
@@ -91,7 +84,7 @@ public class ExpandDataEntriesHandler
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB dynamoDbClient) {
-        return new DoiRequestService(dynamoDbClient,Clock.systemDefaultZone());
+        return new DoiRequestService(dynamoDbClient, Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

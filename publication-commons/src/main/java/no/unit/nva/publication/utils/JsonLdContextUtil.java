@@ -1,4 +1,4 @@
-package no.unit.nva.publication;
+package no.unit.nva.publication.utils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -3,7 +3,6 @@ package no.unit.nva.publication.messages;
 import static no.unit.nva.publication.messages.ListMessagesHandler.APPROVE_DOI_REQUEST;
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -44,7 +43,6 @@ import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.ResourceServiceUtils;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
@@ -138,7 +136,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
-            createSampleMessagesFromPublications(publications, ResourceServiceUtils::extractUserInstance);
+            createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
 
         final var expectedResponse = constructExpectedResponse(messages);
 
@@ -159,7 +157,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         throws IOException {
         var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
-            createSampleMessagesFromPublications(publications, ResourceServiceUtils::extractUserInstance);
+            createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
 
         var orgURI = messages.get(0).getCustomerId();
         var curator = someCurator(orgURI);
@@ -254,7 +252,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(ResourceService resourceService, Publication p) throws ApiGatewayException {
-        return resourceService.createPublication(extractUserInstance(p), p);
+        return resourceService.createPublication(UserInstance.fromPublication(p), p);
     }
 
     private Publication createPublication(UserInstance userInstance) throws ApiGatewayException {
@@ -373,7 +371,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     private Message createMessage(Publication publication, UserInstance sender)
         throws TransactionFailedException, NotFoundException {
         var messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
-        return messageService.getMessage(extractUserInstance(publication), messageIdentifier);
+        return messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
     }
 
     private InputStream sampleListRequest() throws JsonProcessingException {

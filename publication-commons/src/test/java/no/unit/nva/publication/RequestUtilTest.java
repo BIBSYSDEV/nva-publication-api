@@ -1,9 +1,6 @@
 package no.unit.nva.publication;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,9 +9,9 @@ import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import org.junit.jupiter.api.Test;
 
 class RequestUtilTest {
@@ -24,6 +21,8 @@ class RequestUtilTest {
     public static final String CLAIMS = "claims";
     public static final String SOME_USER = "some@user";
     public static final String SOME_ORG = "https://some.org.example.org";
+    public static final String INJECT_CLAIM_FOR_TOP_LEVEL_ORG_CRISTIN_ID = "custom:topOrgCristinId";
+    public static final String INJECT_NVA_USERNAME_CLAIM = "custom:nvaUsername";
 
     @Test
     void canGetIdentifierFromRequest() throws ApiGatewayException {
@@ -69,38 +68,18 @@ class RequestUtilTest {
     @Test
     void canGetOwnerFromRequest() throws Exception {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.NVA_USERNAME_CLAIM, VALUE));
+        requestInfo.setRequestContext(getRequestContextForClaim(INJECT_NVA_USERNAME_CLAIM, VALUE));
 
         String owner = RequestUtil.getOwner(requestInfo);
 
         assertEquals(VALUE, owner);
     }
 
-    @Test
-    void extractUserInstanceReturnsUserInstanceWithOwnerIdentifierAndOrgId() throws JsonProcessingException {
-        RequestInfo requestInfo = new RequestInfo();
-        var claims = Map.of(
-            RequestUtil.CURRENT_CUSTOMER, SOME_ORG,
-            RequestUtil.NVA_USERNAME_CLAIM, SOME_USER
-        );
-        requestInfo.setRequestContext(getRequestContextForClaim(claims));
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
-        assertThat(userInstance.getUserIdentifier(), is(equalTo(SOME_USER)));
-        assertThat(userInstance.getOrganizationUri(), is(equalTo(URI.create(SOME_ORG))));
-    }
 
     @Test
-    void getOwnerOnMissingNodeRequestThrowsException() throws Exception {
+    void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextWithMissingNode());
-
-        assertThrows(BadRequestException.class, () -> RequestUtil.getOwner(requestInfo));
-    }
-
-    @Test
-    void getOwnerOnInvalidRequestThrowsException() {
-        RequestInfo requestInfo = new RequestInfo();
-        assertThrows(BadRequestException.class, () -> RequestUtil.getOwner(requestInfo));
+        assertThrows(UnauthorizedException.class, () -> RequestUtil.getOwner(requestInfo));
     }
 
     @Test

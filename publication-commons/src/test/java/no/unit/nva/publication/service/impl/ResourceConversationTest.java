@@ -1,6 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
 import static org.hamcrest.core.Is.is;
@@ -135,7 +134,7 @@ class ResourceConversationTest {
 
     private Message createMessage(Publication publication) {
         waitForAvoidingSameTimeStampInMessages();
-        return Message.supportMessage(extractUserInstance(publication),
+        return Message.supportMessage(UserInstance.fromPublication(publication),
                                       publication,
                                       randomString(),
                                       SortableIdentifier.next(),

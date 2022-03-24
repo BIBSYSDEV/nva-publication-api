@@ -2,10 +2,10 @@ package no.unit.nva.publication.update;
 
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -155,7 +154,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createSamplePublication() throws ApiGatewayException {
-        UserInstance userInstance = extractUserInstance(publication);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
         return publicationService.createPublication(userInstance, publication);
     }
 
@@ -221,15 +220,34 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), is(equalTo("Unauthorized")));
     }
 
+    @Test
+    void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
+        var event = requestWithoutUsername(randomPublication());
+        updatePublicationHandler.handleRequest(event, output, context);
+        var response = GatewayResponse.fromOutputStream(output,Problem.class);
+        assertThat(response.getStatusCode(),is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+
+    private InputStream requestWithoutUsername(Publication publicationUpdate)
+        throws JsonProcessingException {
+        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        return new HandlerRequestBuilder<Publication>(restApiMapper)
+            .withPathParameters(pathParameters)
+            .withCustomerId(randomUri().toString())
+            .withBody(publicationUpdate)
+            .build();
+    }
+
+
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withCustomerId(randomUri().toString())
             .withBody(publicationUpdate)
             .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+            .withNvaUsername(SOME_CURATOR)
             .build();
     }
 

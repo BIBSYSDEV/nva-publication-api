@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
 import no.unit.nva.file.model.FileSet;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
@@ -71,7 +70,8 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public Publication updatePublication(Publication publication) throws TransactionFailedException {
         Resource resource = Resource.fromPublication(publication);
-        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getCustomerId());
+        UserInstance userInstance = UserInstance.create(resource.getResourceOwner().getOwner(),
+                                                        resource.getCustomerId());
 
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
         Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(userInstance, resource);

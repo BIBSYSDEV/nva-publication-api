@@ -4,7 +4,6 @@ import static com.spotify.hamcrest.jackson.IsJsonObject.jsonObject;
 import static com.spotify.hamcrest.jackson.IsJsonText.jsonText;
 import static com.spotify.hamcrest.jackson.JsonMatchers.jsonMissing;
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
@@ -27,6 +26,7 @@ import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
+import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.Test;
 
@@ -100,7 +100,7 @@ class MessageCollectionTest {
     }
 
     private Message createSupportMessage(Publication samplePublication, String text) {
-        var userInstance = extractUserInstance(samplePublication);
+        var userInstance = UserInstance.fromPublication(samplePublication);
         return Message.supportMessage(userInstance, samplePublication, text, SortableIdentifier.next(), CLOCK);
     }
 }

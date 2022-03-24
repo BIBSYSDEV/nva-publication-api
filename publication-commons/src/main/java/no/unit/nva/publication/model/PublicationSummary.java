@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -7,7 +8,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -21,8 +21,6 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-
-import static java.util.Objects.nonNull;
 
 @JsonTypeName(PublicationSummary.TYPE)
 public class PublicationSummary {
@@ -83,7 +81,7 @@ public class PublicationSummary {
         publicationSummary.setPublicationIdentifier(publication.getIdentifier());
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
-        publicationSummary.setOwner(publication.getOwner());
+        publicationSummary.setOwner(publication.getResourceOwner().getOwner());
         publicationSummary.setStatus(publication.getStatus());
         if (nonNull(publication.getEntityDescription())) {
             publicationSummary.setContributors(publication.getEntityDescription().getContributors());

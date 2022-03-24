@@ -5,7 +5,6 @@ import static no.unit.nva.publication.PublicationServiceConfig.PATH_SEPARATOR;
 import static no.unit.nva.publication.PublicationServiceConfig.URI_EMPTY_FRAGMENT;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.PUBLICATION_NOT_FOUND_CLIENT_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -228,7 +227,8 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance extractOwner(Publication samplePublication) {
-        return UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        return UserInstance.create(samplePublication.getResourceOwner().getOwner(),
+                                   samplePublication.getPublisher().getId());
     }
 
     private InputStream createInput(CreateMessageRequest requestBody)
@@ -254,7 +254,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
 
     private Publication createSamplePublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = extractUserInstance(publication);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
         return resourcesService.createPublication(userInstance, publication);
     }
 }

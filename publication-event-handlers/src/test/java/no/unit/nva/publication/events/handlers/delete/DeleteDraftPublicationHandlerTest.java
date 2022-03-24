@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.publication.storage.model.UserInstance.fromPublication;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -98,6 +98,6 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
             .withDoi(null)
             .build();
         publicationToCreate.setStatus(status);
-        return resourceService.createPublication(extractUserInstance(publicationToCreate), publicationToCreate);
+        return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }
 }

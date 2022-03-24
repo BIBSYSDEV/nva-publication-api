@@ -3,6 +3,8 @@ package no.unit.nva.publication.storage.model;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
+import nva.commons.core.JacocoGenerated;
 
 /**
  * Class used internally in the Resource service to represent a user.
@@ -24,8 +26,8 @@ public class UserInstance implements JsonSerializable {
         return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI);
     }
 
-    public static UserInstance create(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId) {
-        return new UserInstance(userIdentifier, organizationUri, topLevelOrgCristinId);
+    public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
+        return new UserInstance(resourceOwner.getOwner(), organizationUri, resourceOwner.getOwnerAffiliation());
     }
 
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
@@ -33,9 +35,7 @@ public class UserInstance implements JsonSerializable {
     }
 
     public static UserInstance fromPublication(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner().getOwner(),
-                                   publication.getPublisher().getId(),
-                                   publication.getResourceOwner().getOwnerAffiliation());
+        return UserInstance.create(publication.getResourceOwner(),publication.getPublisher().getId());
     }
 
     public static UserInstance fromMessage(Message message) {
@@ -50,6 +50,7 @@ public class UserInstance implements JsonSerializable {
         return userIdentifier;
     }
 
+    @JacocoGenerated
     public URI getTopLevelOrgCristinId() {
         return topLevelOrgCristinId;
     }

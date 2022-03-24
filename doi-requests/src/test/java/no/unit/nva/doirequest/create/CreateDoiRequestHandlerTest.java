@@ -1,7 +1,6 @@
 package no.unit.nva.doirequest.create;
 
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -37,8 +36,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -144,7 +141,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         sendRequest(publication, publication.getResourceOwner(), expectedMessageText);
 
         Optional<ResourceConversation> resourceMessages = messageService.getMessagesForResource(
-            extractUserInstance(publication),
+            UserInstance.fromPublication(publication),
             publication.getIdentifier());
 
         MessageDto savedMessage = resourceMessages.orElseThrow().allMessages().get(SINGLE_MESSAGE);
@@ -180,7 +177,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier)
         throws NotFoundException {
-        UserInstance userInstance = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(publication.getResourceOwner().getOwner(),
+                                                        publication.getPublisher().getId());
 
         return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
             doiRequestIdentifier));
@@ -203,7 +201,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
-        return resourceService.createPublication(extractUserInstance(publication),publication);
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
 
     }
 }

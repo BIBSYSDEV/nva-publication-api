@@ -45,6 +45,6 @@ public final class TestingUtils {
     }
 
     public static UserInstance extractUserInstance(Publication publication) {
-        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner(),publication.getPublisher().getId());
     }
 }

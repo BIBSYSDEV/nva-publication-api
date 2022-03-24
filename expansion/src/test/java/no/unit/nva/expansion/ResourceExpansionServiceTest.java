@@ -1,14 +1,11 @@
 package no.unit.nva.expansion;
 
 import static no.unit.nva.expansion.ResourceExpansionServiceImpl.UNSUPPORTED_TYPE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -19,8 +16,6 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Arrays;
 import java.util.Collection;
@@ -47,7 +42,6 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,88 +51,45 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
-    public static final URI RESOURCE_OWNER_UNIT_AFFILIATION = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
-    public static final URI RESOURCE_OWNER_INSTITUTION_AFFILIATION =
-        URI.create("https://api.cristin.no/v2/institutions/194");
     public static final Clock CLOCK = Clock.systemDefaultZone();
 
-    private static final String PERSON_API_RESPONSE_WITH_UNIT =
-        stringFromResources(Path.of("fake_person_api_response_with_unit.json"));
-    private static final String PERSON_API_RESPONSE_WITH_INSTITUTION =
-        stringFromResources(Path.of("fake_person_api_response_with_institution.json"));
-    private static final String INSTITUTION_PROXY_ORG_RESPONSE =
-        stringFromResources(Path.of("cristin_org.json"));
-    private static final String INSTITUTION_PROXY_PARENT_ORG_RESPONSE =
-        stringFromResources(Path.of("cristin_parent_org.json"));
-    private static final String INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE =
-        stringFromResources(Path.of("cristin_grand_parent_org.json"));
-    private static final URI CRISTIN_ORG_ID = URI.create(
-        "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.10.0");
-    private static final URI CRISTIN_ORG_PARENT_ID = URI.create(
-        "https://api.dev.nva.aws.unit.no/cristin/organization/194.63.0.0");
-    private static final URI CRISTIN_ORG_GRAND_PARENT_ID = URI.create(
-        "https://api.dev.nva.aws.unit.no/cristin/organization/194.0.0.0");
+
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
     private DoiRequestService doiRequestService;
-    private FakeHttpClient<String> externalServicesHttpClient;
 
     @BeforeEach
     void setUp() {
         super.init();
-        externalServicesHttpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_UNIT,
-                                                          INSTITUTION_PROXY_ORG_RESPONSE,
-                                                          INSTITUTION_PROXY_PARENT_ORG_RESPONSE,
-                                                          INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE
-        );
+
         initializeServices();
     }
 
     @Test
     void shouldReturnExpandedResourceConversationWithInstitutionsUriWhenPersonIsAffiliatedOnlyToInstitution()
         throws Exception {
-        externalServicesHttpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_INSTITUTION,
-                                                          INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE
-        );
         initializeServices();
-        Publication createdPublication = createPublication(RESOURCE_OWNER_INSTITUTION_AFFILIATION);
 
+        Publication createdPublication = createPublication();
+        var expectedResourceOwnerAffiliation= createdPublication.getResourceOwner().getOwnerAffiliation();
         Message message = sendSupportMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation =
             (ExpandedResourceConversation) expansionService.expandEntry(message);
-        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(CRISTIN_ORG_GRAND_PARENT_ID));
-        assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService();
+        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(expectedResourceOwnerAffiliation));
+
     }
 
     @Test
-    void shouldReturnExpandedDoiRequestWithAllRelatedAffiliationsWhenResourceOwnerIsAffiliatedWithAUnit()
+    void shouldReturnExpandedDoiRequestWithAffiliationContainedInCreatedPublication()
         throws Exception {
-        Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
+        Publication createdPublication = createPublication();
+        var expectedOrgId = createdPublication.getResourceOwner().getOwnerAffiliation();
 
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(createdPublication));
         ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) expansionService.expandEntry(doiRequest);
-        assertThat(expandedDoiRequest.getOrganizationIds(), containsInAnyOrder(
-            CRISTIN_ORG_ID,
-            CRISTIN_ORG_PARENT_ID,
-            CRISTIN_ORG_GRAND_PARENT_ID
-        ));
-    }
-
-    @Test
-    void shouldReturnExpandedResourceConversationWithAllRelatedAffiliationWhenOwnersAffiliationIsUnit()
-        throws Exception {
-        Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
-        Message message = sendSupportMessage(createdPublication);
-
-        ExpandedResourceConversation expandedResourceConversation =
-            (ExpandedResourceConversation) expansionService.expandEntry(message);
-        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(
-            CRISTIN_ORG_ID,
-            CRISTIN_ORG_PARENT_ID,
-            CRISTIN_ORG_GRAND_PARENT_ID
-        ));
+        assertThat(expandedDoiRequest.getOrganizationIds(), containsInAnyOrder(expectedOrgId));
     }
 
     @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")
@@ -272,21 +223,16 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                             doiRequestService);
     }
 
-    private void assertThatHttpClientWasCalledOnceByAffiliationServiceAndOnceByExpansionService() {
-        assertThat(externalServicesHttpClient.getCallCounter().get(), is(equalTo(2)));
-    }
 
-    private Publication createPublication(URI resourceOwnerAffiliation) throws ApiGatewayException {
+
+    private Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = extractUserInstance(publication);
-        var createdPublication = resourceService.createPublication(userInstance, publication);
-        assertThat(createdPublication.getResourceOwner().getOwnerAffiliation(), is(equalTo(
-            resourceOwnerAffiliation)));
-        return createdPublication;
+        var userInstance = UserInstance.fromPublication(publication);
+        return resourceService.createPublication(userInstance, publication);
     }
 
     private DataEntry generateResourceUpdate(Class<?> resourceUpdateType) throws ApiGatewayException {
-        Publication createdPublication = createPublication(RESOURCE_OWNER_UNIT_AFFILIATION);
+        Publication createdPublication = createPublication();
 
         if (Resource.class.equals(resourceUpdateType)) {
             return Resource.fromPublication(createdPublication);

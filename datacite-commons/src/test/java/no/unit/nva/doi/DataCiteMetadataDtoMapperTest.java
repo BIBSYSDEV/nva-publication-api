@@ -1,5 +1,10 @@
 package no.unit.nva.doi;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.notNullValue;
+import java.net.URI;
+import java.util.List;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.EntityDescription;
@@ -13,13 +18,6 @@ import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.transformer.dto.DataCiteMetadataDto;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-
-import java.net.URI;
-import java.util.List;
-
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.notNullValue;
 
 public class DataCiteMetadataDtoMapperTest {
 

@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -240,9 +239,9 @@ public class ResourceService extends ServiceWithTransactions {
         return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
     }
 
-    private ResourceOwner createResourceOwner(UserInstance userInstance)
-        throws ApiGatewayException {
-        return new ResourceOwner(userInstance.getUserIdentifier(),userInstance.getTopLevelOrgCristinId());
+    private ResourceOwner createResourceOwner(UserInstance userInstance) {
+        return new ResourceOwner(userInstance.getUserIdentifier(),
+                                 userInstance.getTopLevelOrgCristinId());
     }
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {

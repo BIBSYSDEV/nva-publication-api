@@ -1,8 +1,6 @@
 package no.unit.nva.doirequest.list;
 
 import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -96,8 +94,8 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     }
 
     private boolean userIsACurator(String requestedRole, RequestInfo requestInfo) {
-        return CURATOR_ROLE.equals(requestedRole) &&
-               requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
+        return CURATOR_ROLE.equals(requestedRole)
+               && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
 
 
@@ -130,7 +128,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     private Publication addMessagesToPublicationDto(Publication dto) {
         Stream<ResourceConversation> messages =
-            messageService.getMessagesForResource(extractUserInstance(dto), dto.getIdentifier()).stream();
+            messageService.getMessagesForResource(UserInstance.fromPublication(dto), dto.getIdentifier()).stream();
         List<DoiRequestMessage> doiRequestMessages = transformToLegacyDoiRequestMessagesDto(messages);
         dto.getDoiRequest().setMessages(doiRequestMessages);
         return dto;

@@ -6,7 +6,6 @@ import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUES
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
 import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -32,6 +31,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -155,7 +155,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
         return doiRequestService
-            .getDoiRequestByResourceIdentifier(extractUserInstance(publication), publication.getIdentifier());
+            .getDoiRequestByResourceIdentifier(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
 
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
@@ -204,13 +204,13 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = createDraftPublicationAndDoiRequest();
-        resourceService.publishPublication(extractUserInstance(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         return publication;
     }
 
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
-        var userInstance = extractUserInstance(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         publication = resourceService.createPublication(userInstance, publication);
         doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
         return publication;

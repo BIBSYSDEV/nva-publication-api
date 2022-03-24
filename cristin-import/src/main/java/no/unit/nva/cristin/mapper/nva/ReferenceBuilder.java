@@ -1,7 +1,18 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
+import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
+import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
+import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
+import static nva.commons.core.attempt.Try.attempt;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
+import java.net.URI;
+import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
 import no.unit.nva.cristin.mapper.PeriodicalBuilder;
@@ -17,19 +28,6 @@ import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import nva.commons.doi.DoiConverter;
 import nva.commons.doi.DoiValidator;
-
-import java.net.URI;
-import java.util.Optional;
-
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isBook;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isChapter;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isEvent;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isJournal;
-import static no.unit.nva.cristin.mapper.CristinMainCategory.isReport;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreeMaster;
-import static no.unit.nva.cristin.mapper.CristinSecondaryCategory.isDegreePhd;
-import static no.unit.nva.cristin.mapper.nva.exceptions.ExceptionHandling.castToCorrectRuntimeException;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ReferenceBuilder extends CristinMappingModule {
 

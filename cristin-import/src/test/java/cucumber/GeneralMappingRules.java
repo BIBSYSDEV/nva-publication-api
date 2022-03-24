@@ -39,7 +39,6 @@ import no.unit.nva.model.Project;
 import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.ResearchProject;
 import nva.commons.core.SingletonCollector;
-import org.hamcrest.collection.IsEmptyCollection;
 
 public class GeneralMappingRules {
 

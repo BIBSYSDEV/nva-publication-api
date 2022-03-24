@@ -339,7 +339,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         return DoiRequest.builder()
             .withIdentifier(actualDoiRequest.getIdentifier())
             .withResourceIdentifier(emptyPublication.getIdentifier())
-            .withOwner(emptyPublication.getOwner())
+            .withOwner(emptyPublication.getResourceOwner().getOwner())
             .withCustomerId(emptyPublication.getPublisher().getId())
             .withStatus(DoiRequestStatus.REQUESTED)
             .withResourceStatus(PublicationStatus.DRAFT)
@@ -386,6 +386,6 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
     }
 }

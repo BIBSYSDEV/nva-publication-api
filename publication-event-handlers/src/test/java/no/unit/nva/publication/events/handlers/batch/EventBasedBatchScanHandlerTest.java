@@ -1,7 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static java.util.Objects.nonNull;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
@@ -156,7 +155,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = extractUserInstance(publication);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
     }
 

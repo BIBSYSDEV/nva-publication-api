@@ -1,6 +1,7 @@
 package no.unit.nva.cristin.mapper;
 
-
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
+import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -8,9 +9,6 @@ import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.cristin.mapper.nva.exceptions.HrcsException;
 import nva.commons.core.JacocoGenerated;
-
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_ACTIVITIES_MAP;
-import static no.unit.nva.cristin.lambda.constants.MappingConstants.HRCS_CATEGORIES_MAP;
 
 @Data
 @Builder(

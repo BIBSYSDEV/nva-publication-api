@@ -1,7 +1,9 @@
 package no.unit.nva.publication.update;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -16,6 +18,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpStatus;
@@ -67,11 +70,18 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private Publication fetchExistingPublication(RequestInfo requestInfo,
                                                  SortableIdentifier identifierInPath) throws ApiGatewayException {
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
+        UserInstance userInstance = extractUserInstance(requestInfo);
 
         return userCanEditOtherPeoplesPublications(requestInfo)
                    ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
                    : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+    }
+
+    private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
+        return attempt(() -> requestInfo.getCustomerId().orElseThrow())
+            .map(URI::create)
+            .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
+            .orElseThrow(fail -> new UnauthorizedException());
     }
 
     private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
@@ -100,8 +110,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
 
         var accessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString();
-        return requestInfo.userIsAuthorized(accessRight) ;
-
+        return requestInfo.userIsAuthorized(accessRight);
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

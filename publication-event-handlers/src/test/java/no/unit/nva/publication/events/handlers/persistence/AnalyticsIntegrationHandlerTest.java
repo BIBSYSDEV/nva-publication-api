@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -160,7 +159,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private Publication insertSamplePublication() throws ApiGatewayException {
         var samplePublication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = extractUserInstance(samplePublication);
+        UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = resourceService.createPublication(userInstance, samplePublication);
         return samplePublication;
     }

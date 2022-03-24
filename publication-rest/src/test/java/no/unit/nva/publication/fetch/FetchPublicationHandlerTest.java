@@ -4,7 +4,6 @@ import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
@@ -179,7 +178,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
         throws ApiGatewayException, IOException {
         Publication createdPublication = createPublication();
-        UserInstance resourceOwner = extractUserInstance(createdPublication);
+        UserInstance resourceOwner = UserInstance.fromPublication(createdPublication);
         SortableIdentifier doiRequestIdentifier =
             doiRequestService.createDoiRequest(resourceOwner, createdPublication.getIdentifier());
         InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
@@ -231,7 +230,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = extractUserInstance(publication);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
         SortableIdentifier publicationIdentifier =
             publicationService.createPublication(userInstance, publication).getIdentifier();
         return publicationService.getPublicationByIdentifier(publicationIdentifier);

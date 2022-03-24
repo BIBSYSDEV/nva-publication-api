@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -149,7 +148,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         Publication publication = createDraftPublication(owner);
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
-        var savedMessage = fetchMessage(extractUserInstance(publication), messageIdentifier);
+        var savedMessage = fetchMessage(UserInstance.fromPublication(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -162,7 +161,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
 
-        var savedMessage = messageService.getMessage(extractUserInstance(publication), messageIdentifier);
+        var savedMessage = messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -175,7 +174,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
         var sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
-        var savedMessage = fetchMessage(extractUserInstance(publication), sampleMessageUri);
+        var savedMessage = fetchMessage(UserInstance.fromPublication(publication), sampleMessageUri);
         var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
                                                              messageText);
 
@@ -215,7 +214,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var messagesForPublication1 = insertSampleMessages(publication1);
         var messagesForPublication2 = insertSampleMessages(publication2);
 
-        var actualMessages = messageService.listMessagesForUser(extractUserInstance(publication1));
+        var actualMessages = messageService.listMessagesForUser(UserInstance.fromPublication(publication1));
         var expectedMessagesForPublication1 = constructExpectedMessages(messagesForPublication1);
         var expectedMessagesFromPublication2 = constructExpectedMessages(messagesForPublication2);
         var expectedMessages = List.of(
@@ -261,7 +260,7 @@ class MessageServiceTest extends ResourcesLocalTest {
 
         return new Publication.Builder()
             .withIdentifier(insertedPublication.getIdentifier())
-            .withOwner(insertedPublication.getOwner())
+            .withResourceOwner(insertedPublication.getResourceOwner())
             .withPublisher(insertedPublication.getPublisher())
             .withEntityDescription(entityDescription)
             .build();
@@ -293,7 +292,7 @@ class MessageServiceTest extends ResourcesLocalTest {
 
         for (Publication createdPublication : createdPublications) {
             SortableIdentifier messageIdentifier = createSimpleMessage(createdPublication, randomString());
-            UserInstance owner = extractUserInstance(createdPublication);
+            UserInstance owner = UserInstance.fromPublication(createdPublication);
             Message savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
@@ -327,12 +326,12 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     private Publication createPublication(ResourceService resourceService, Publication publication)
         throws ApiGatewayException {
-        UserInstance userInstance = extractUserInstance(publication);
+        UserInstance userInstance = UserInstance.fromPublication(publication);
         return resourceService.createPublication(userInstance, publication);
     }
 
     private List<Message> insertSampleMessages(Publication publication) {
-        var publicationOwner = extractUserInstance(publication);
+        var publicationOwner = UserInstance.fromPublication(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
             .map(ignoredValue -> randomString())
             .map(message -> createSimpleMessage(publication, message))
@@ -351,7 +350,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
-        var publicationOwner = extractUserInstance(publication);
+        var publicationOwner = UserInstance.fromPublication(publication);
         var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createDoiRequestMessage(publication, message, sender);
     }
@@ -361,7 +360,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private SortableIdentifier createSimpleMessage(Publication publication, String message) {
-        var publicationOwner = extractUserInstance(publication);
+        var publicationOwner = UserInstance.fromPublication(publication);
         var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createSimpleMessage(publication, message, sender);
     }

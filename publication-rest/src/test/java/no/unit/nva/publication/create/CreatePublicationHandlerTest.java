@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -35,6 +36,7 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
@@ -134,6 +136,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(diff.prettyPrint(), actualPublicationResponse, is(equalTo(expectedPublicationResponse)));
     }
 
+    @Test
+    void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
+        var event = requestWithoutUsername(createEmptyPublicationRequest());
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(),is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
+    }
+
     private PublicationResponse constructResponseSettingFieldsThatAreNotCopiedByTheRequest(
         Publication samplePublication, PublicationResponse actualPublicationResponse) {
         var expectedPublication = setAllFieldsThatAreNotCopiedFromTheCreateRequest(samplePublication,
@@ -189,6 +199,14 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
             .withNvaUsername(testUserName)
             .withCustomerId(testOrgId.toString())
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
+            .withBody(request)
+            .build();
+    }
+
+    private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
+
+        return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
+            .withCustomerId(testOrgId.toString())
             .withBody(request)
             .build();
     }
