@@ -16,7 +16,7 @@ class DoiRequestDaoTest {
     private static final String SAMPLE_USER = "some@onwer";
     private static final String SAMPLE_PUBLISHER_IDENTIFIER = "somePublsherId";
     private static final URI SAMPLE_PUBLISHER = URI.create("https://some.example.org/" + SAMPLE_PUBLISHER_IDENTIFIER);
-    private static final UserInstance SAMPLE_USER_INSTANCE = new UserInstance(SAMPLE_USER, SAMPLE_PUBLISHER);
+    private static final UserInstance SAMPLE_USER_INSTANCE = UserInstance.create(SAMPLE_USER, SAMPLE_PUBLISHER);
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     
     @Test

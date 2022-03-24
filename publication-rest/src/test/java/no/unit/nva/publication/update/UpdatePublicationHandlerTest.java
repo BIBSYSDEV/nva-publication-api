@@ -41,8 +41,6 @@ import no.unit.nva.publication.AccessRight;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -73,7 +71,6 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private Publication publication;
     private Environment environment;
-    private HttpClient httpClient;
 
     /**
      * Set up environment.
@@ -85,8 +82,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        publicationService = new ResourceService(client,  Clock.systemDefaultZone());
         context = mock(Context.class);
 
         output = new ByteArrayOutputStream();
@@ -273,7 +269,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService serviceFailsOnModifyRequestWithRuntimeError() {
-        return new ResourceService(client,httpClient, Clock.systemDefaultZone()) {
+        return new ResourceService(client, Clock.systemDefaultZone()) {
             @Override
             public Publication updatePublication(Publication publicationUpdate) {
                 throw new RuntimeException(SOME_MESSAGE);

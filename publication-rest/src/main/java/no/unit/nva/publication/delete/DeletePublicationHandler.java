@@ -44,7 +44,7 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         String owner = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElseThrow();
-        UserInstance userInstance = new UserInstance(owner, customerId);
+        UserInstance userInstance = UserInstance.create(owner, customerId);
 
         resourceService.markPublicationForDeletion(userInstance, identifier);
 
@@ -58,8 +58,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     private static ResourceService defaultService() {
-        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(),
-                                   EXTERNAL_SERVICES_HTTP_CLIENT,
-                                   Clock.systemDefaultZone());
+        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(),Clock.systemDefaultZone());
     }
 }

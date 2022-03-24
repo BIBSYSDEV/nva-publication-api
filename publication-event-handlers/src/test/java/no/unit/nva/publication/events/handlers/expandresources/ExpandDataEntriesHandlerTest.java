@@ -42,7 +42,6 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -64,39 +63,24 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private static final URI AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE =
         URI.create("https://api.cristin.no/v2/units/194.63.10.0");
-    private static final String PERSON_API_RESPONSE_WITH_UNIT =
-        stringFromResources(Path.of("expandResources", "fake_person_api_response_with_unit.json"));
-    private static final String INSTITUTION_PROXY_ORG_RESPONSE =
-        stringFromResources(Path.of("expandResources", "cristin_org.json"));
-    private static final String INSTITUTION_PROXY_PARENT_ORG_RESPONSE =
-        stringFromResources(Path.of("expandResources", "cristin_parent_org.json"));
-    private static final String INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE =
-        stringFromResources(Path.of("expandResources", "cristin_grand_parent_org.json"));
     private ByteArrayOutputStream output;
     private ExpandDataEntriesHandler expandResourceHandler;
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-    private MessageService messageService;
-    private DoiRequestService doiRequestService;
 
     @BeforeEach
     public void init() {
         super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        var httpClient = new FakeHttpClient<>(PERSON_API_RESPONSE_WITH_UNIT,
-                                              INSTITUTION_PROXY_ORG_RESPONSE,
-                                              INSTITUTION_PROXY_PARENT_ORG_RESPONSE,
-                                              INSTITUTION_PROXY_GRAND_PARENT_ORG_RESPONSE);
-
-        resourceService = new ResourceService(client, httpClient, CLOCK);
-        messageService = new MessageService(client, CLOCK);
-        doiRequestService = new DoiRequestService(client, httpClient, CLOCK);
+        resourceService = new ResourceService(client,  CLOCK);
+        MessageService messageService = new MessageService(client, CLOCK);
+        DoiRequestService doiRequestService = new DoiRequestService(client, CLOCK);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(httpClient, resourceService, messageService, doiRequestService);
+            new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
@@ -184,7 +168,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private Message sampleMessage() {
         Publication publication = PublicationGenerator.randomPublication();
-        UserInstance someUser = new UserInstance(randomString(), randomUri());
+        UserInstance someUser = UserInstance.create(randomString(), randomUri());
         Clock clock = Clock.systemDefaultZone();
         return Message.supportMessage(someUser, publication, randomString(), SortableIdentifier.next(), clock);
     }

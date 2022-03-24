@@ -35,7 +35,7 @@ public final class PublicationServiceConfig {
 
     @JacocoGenerated
     public static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(), EXTERNAL_SERVICES_HTTP_CLIENT, Clock.systemDefaultZone());
+        return new ResourceService(defaultDynamoDbClient(),  Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

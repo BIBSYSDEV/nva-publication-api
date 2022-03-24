@@ -1,39 +1,5 @@
 package no.unit.nva.publication.fetch;
 
-import com.amazonaws.services.lambda.runtime.Context;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JavaType;
-import com.google.common.net.HttpHeaders;
-import no.unit.nva.api.PublicationResponse;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequest;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.ReadResourceService;
-import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
-import no.unit.nva.testutils.HandlerRequestBuilder;
-import nva.commons.apigateway.GatewayResponse;
-import nva.commons.apigateway.MediaTypes;
-import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
-import org.apache.http.entity.ContentType;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.zalando.problem.Problem;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.http.HttpClient;
-import java.time.Clock;
-import java.util.Map;
-
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
@@ -56,6 +22,35 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.google.common.net.HttpHeaders;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.time.Clock;
+import java.util.Map;
+import no.unit.nva.api.PublicationResponse;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.DoiRequest;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.ReadResourceService;
+import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.testutils.HandlerRequestBuilder;
+import nva.commons.apigateway.GatewayResponse;
+import nva.commons.apigateway.MediaTypes;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.core.Environment;
+import org.apache.http.entity.ContentType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
 public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
@@ -65,9 +60,9 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         .constructParametricType(
             GatewayResponse.class,
             PublicationResponse.class);
+    public static final String DATECITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite"
+                                                               + ".org/schema/kernel-4\">";
     private static final String IDENTIFIER_NULL_ERROR = "Identifier is not a valid UUID: null";
-    public static final String DATECITE_XML_RESOURCE_ELEMENT = "<resource xmlns=\"http://datacite.org/schema/kernel-4\">";
-
     private ResourceService publicationService;
     private Context context;
 
@@ -85,9 +80,8 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         environment = mock(Environment.class);
         when(environment.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
-        HttpClient httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, httpClient, Clock.systemDefaultZone());
+        publicationService = new ResourceService(client, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         context = mock(Context.class);
         output = new ByteArrayOutputStream();
         fetchPublicationHandler = new FetchPublicationHandler(publicationService, doiRequestService, environment);
@@ -107,7 +101,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput() throws IOException, ApiGatewayException {
+    void shouldReturnOkResponseWithDataCiteXmlBodyOnValidInput() throws IOException, ApiGatewayException {
         var createdPublication = createPublication();
         var publicationIdentifier = createdPublication.getIdentifier().toString();
 
@@ -122,7 +116,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns NotFound Response On Publication Missing")
-    public void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException {
+    void handlerReturnsNotFoundResponseOnPublicationMissing() throws IOException {
 
         fetchPublicationHandler.handleRequest(generateHandlerRequest(IDENTIFIER_VALUE), output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -138,7 +132,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Empty Input")
-    public void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
+    void handlerReturnsBadRequestResponseOnEmptyInput() throws IOException {
         InputStream inputStream = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withBody(null)
             .withHeaders(null)
@@ -153,7 +147,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns BadRequest Response On Missing Path Param")
-    public void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
+    void handlerReturnsBadRequestResponseOnMissingPathParam() throws IOException {
         InputStream inputStream = generateHandlerRequestWithMissingPathParameter();
         fetchPublicationHandler.handleRequest(inputStream, output, context);
         GatewayResponse<Problem> gatewayResponse = parseFailureResponse();
@@ -164,7 +158,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     @Test
     @DisplayName("handler Returns InternalServerError Response On Unexpected Exception")
-    public void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
+    void handlerReturnsInternalServerErrorResponseOnUnexpectedException()
         throws IOException, ApiGatewayException {
         ResourceService serviceThrowingException = spy(publicationService);
         doThrow(new NullPointerException())
@@ -182,7 +176,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
+    void handlerReturnsPublicationWithDoiRequestWhenDoiRequestIsPresent()
         throws ApiGatewayException, IOException {
         Publication createdPublication = createPublication();
         UserInstance resourceOwner = extractUserInstance(createdPublication);
@@ -191,7 +185,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
         InputStream input = generateHandlerRequest(createdPublication.getIdentifier().toString());
         fetchPublicationHandler.handleRequest(input, output, context);
         GatewayResponse<PublicationResponse> response = GatewayResponse
-                .fromOutputStream(output, PublicationResponse.class);
+            .fromOutputStream(output, PublicationResponse.class);
         PublicationResponse publicationDto = response.getBodyObject(PublicationResponse.class);
 
         DoiRequest actualDoiRequest = publicationDto.getDoiRequest();
@@ -206,12 +200,12 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier, Map<String, String> headers)
-            throws JsonProcessingException {
+        throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
-                .withHeaders(headers)
-                .withPathParameters(pathParameters)
-                .build();
+            .withHeaders(headers)
+            .withPathParameters(pathParameters)
+            .build();
     }
 
     private InputStream generateHandlerRequest(String publicationIdentifier) throws JsonProcessingException {

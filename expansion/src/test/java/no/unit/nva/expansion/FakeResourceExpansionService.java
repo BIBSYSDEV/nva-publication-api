@@ -8,7 +8,7 @@ import no.unit.nva.publication.storage.model.DataEntry;
 public class FakeResourceExpansionService extends ResourceExpansionServiceImpl {
 
     public FakeResourceExpansionService() {
-        super(null, null, null, null);
+        super(null, null, null);
     }
 
     @Override

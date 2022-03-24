@@ -36,8 +36,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.stubs.FakeContext;
 import no.unit.nva.stubs.FakeEventBridgeClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -163,8 +161,7 @@ class EventBasedBatchScanHandlerTest extends ResourcesLocalTest {
     }
 
     private ResourceService mockResourceService(AmazonDynamoDB dynamoDbClient) {
-        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        return new ResourceService(dynamoDbClient, externalServicesHttpClient, clock) {
+        return new ResourceService(dynamoDbClient,  clock) {
             @Override
             public ListingResult<DataEntry> scanResources(int pageSize, Map<String, AttributeValue> startMarker) {
                 if (nonNull(startMarker)) {

@@ -42,7 +42,7 @@ public class MessageTypeTest {
     void parsingMessageValueFromJsonIsCaseTolerant() throws JsonProcessingException {
         Publication publication = publicationWithIdentifier();
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
-        UserInstance owner = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        UserInstance owner = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
         Message message = Message.doiRequestMessage(owner, publication, randomString(), messageIdentifier,
                                                     Clock.systemDefaultZone());
 

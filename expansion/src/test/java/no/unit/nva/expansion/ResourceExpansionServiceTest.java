@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -51,22 +50,18 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.testing.http.FakeHttpClient;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
-import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ResourceExpansionServiceTest extends ResourcesLocalTest {
+class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
-    public static final String SOME_SENDER = "some@sender";
-    public static final URI SOME_ORG = URI.create("https://example.org/123");
-    public static final Instant MESSAGE_CREATION_TIME = Instant.parse("2007-12-03T10:15:30.00Z");
     public static final URI RESOURCE_OWNER_UNIT_AFFILIATION = URI.create("https://api.cristin.no/v2/units/194.63.10.0");
     public static final URI RESOURCE_OWNER_INSTITUTION_AFFILIATION =
         URI.create("https://api.cristin.no/v2/institutions/194");
     public static final Clock CLOCK = Clock.systemDefaultZone();
-    private static final UserInstance SAMPLE_SENDER = sampleSender();
+
     private static final String PERSON_API_RESPONSE_WITH_UNIT =
         stringFromResources(Path.of("fake_person_api_response_with_unit.json"));
     private static final String PERSON_API_RESPONSE_WITH_INSTITUTION =
@@ -168,7 +163,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     @Test
     void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequestWhenDoiRequestIsCreated()
         throws ApiGatewayException, JsonProcessingException {
-        var samplePublication = createSamplePUblicationWithConversations();
+        var samplePublication = createSamplePublicationWithConversations();
         var expandedDoiRequestConversation =
             (ExpandedDoiRequest) expansionService.expandEntry(samplePublication.getDoiRequest());
 
@@ -180,7 +175,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldIncludeAllDoiRequestMessagesInExpandedDoiRequestWhenDoiRequestMessageIsSent()
         throws ApiGatewayException, JsonProcessingException {
         var samplePublication =
-            createSamplePUblicationWithConversations();
+            createSamplePublicationWithConversations();
         var expandedDoiRequestConversation =
             (ExpandedDoiRequest) expansionService.expandEntry(samplePublication.getLastDoiRequestMessage());
 
@@ -192,7 +187,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
     void shouldIncludeSupportMessagesAndExcludeAllDoiRequestMessagesFromGeneralSupportConversations()
         throws ApiGatewayException, JsonProcessingException {
         var samplePublication =
-            createSamplePUblicationWithConversations();
+            createSamplePublicationWithConversations();
 
         var expandedGeneralSupportConversation =
             (ExpandedResourceConversation) expansionService.expandEntry(samplePublication.getLastSupportMessage());
@@ -211,15 +206,11 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return PublicationInstanceBuilder.listPublicationInstanceTypes();
     }
 
-    private static UserInstance sampleSender() {
-        return new UserInstance(SOME_SENDER, SOME_ORG);
-    }
-
     private void assertThatExpandedDoiRequestContainsOnlyDoiRequestMessagesAndNotAnyOfTheSupportMessages(
         PublicationWithDoiRequestAndAllTypesOfMessages samplePublication,
         ExpandedDoiRequest expandedDoiRequestConversation) {
         var messagesIdentifiersInExpandedDoiRequest =
-            extractMessageIdenfiersFromExpandedDoiRequest(expandedDoiRequestConversation);
+            extractMessageIdentifiersFromExpandedDoiRequest(expandedDoiRequestConversation);
 
         assertThat(messagesIdentifiersInExpandedDoiRequest,
                    contains(samplePublication.getDoiRequestMessageIdentifiers()));
@@ -247,7 +238,7 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         assertThat(Arrays.asList(nonDesiredArray), everyItem(not(is(in(actualCollection)))));
     }
 
-    private List<SortableIdentifier> extractMessageIdenfiersFromExpandedDoiRequest(
+    private List<SortableIdentifier> extractMessageIdentifiersFromExpandedDoiRequest(
         ExpandedDoiRequest expandedDoiRequest) {
         return expandedDoiRequest
             .getDoiRequestMessages()
@@ -257,24 +248,10 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
 
-    private PublicationWithDoiRequestAndAllTypesOfMessages createSamplePUblicationWithConversations()
+    private PublicationWithDoiRequestAndAllTypesOfMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
         return new PublicationWithDoiRequestAndAllTypesOfMessages(resourceService, doiRequestService, messageService)
             .create();
-    }
-
-    private Message fetchLastMessage(UserInstance userInstance, List<SortableIdentifier> generalSupportMessages)
-        throws NotFoundException {
-        var lastMessageIdentifier = generalSupportMessages.get(generalSupportMessages.size() - 1);
-        return messageService.getMessage(userInstance, lastMessageIdentifier);
-    }
-
-    private List<SortableIdentifier> sendGeneralSupportMessages(Publication samplePublication)
-        throws TransactionFailedException, NotFoundException {
-        return List.of(sendSupportMessage(samplePublication), sendSupportMessage(samplePublication))
-            .stream()
-            .map(Message::getIdentifier)
-            .collect(Collectors.toList());
     }
 
     private Message sendSupportMessage(Publication createdPublication)
@@ -286,31 +263,11 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return messageService.getMessage(userInstance, identifier);
     }
 
-    private List<SortableIdentifier> sendSomeDoiRequestMessages(Publication samplePublication)
-        throws TransactionFailedException {
-        return List.of(
-            sendSomeDoiRequestMessage(samplePublication),
-            sendSomeDoiRequestMessage(samplePublication)
-        );
-    }
-
-    private ExpandedDoiRequest expandDoiRequest(DoiRequest doiRequest)
-        throws NotFoundException, JsonProcessingException {
-        return (ExpandedDoiRequest) expansionService.expandEntry(doiRequest);
-    }
-
-    private SortableIdentifier sendSomeDoiRequestMessage(Publication samplePublication)
-        throws TransactionFailedException {
-        var userInstance = extractUserInstance(samplePublication);
-        return messageService.createDoiRequestMessage(userInstance, samplePublication, randomString());
-    }
-
     private void initializeServices() {
-        resourceService = new ResourceService(client, externalServicesHttpClient, CLOCK);
+        resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client, CLOCK);
-        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, CLOCK);
-        expansionService = new ResourceExpansionServiceImpl(externalServicesHttpClient,
-                                                            resourceService,
+        doiRequestService = new DoiRequestService(client, CLOCK);
+        expansionService = new ResourceExpansionServiceImpl(resourceService,
                                                             messageService,
                                                             doiRequestService);
     }
@@ -372,16 +329,8 @@ public class ResourceExpansionServiceTest extends ResourcesLocalTest {
             this.messageService = messageService;
         }
 
-        public Publication getPublication() {
-            return publication;
-        }
-
         public DoiRequest getDoiRequest() {
             return doiRequest;
-        }
-
-        public UserInstance getUserInstance() {
-            return userInstance;
         }
 
         public List<Message> getDoiRequestMessages() {

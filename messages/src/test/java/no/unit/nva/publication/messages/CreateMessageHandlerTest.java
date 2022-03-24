@@ -38,8 +38,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -72,13 +70,12 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() throws ApiGatewayException {
         super.init();
-        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
 
-        resourcesService = new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
+        resourcesService = new ResourceService(client,  Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client,  Clock.systemDefaultZone());
         environment = setupEnvironment();
-        handler = new CreateMessageHandler(client, externalServicesHttpClient, environment);
+        handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
     }
@@ -231,7 +228,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance extractOwner(Publication samplePublication) {
-        return new UserInstance(samplePublication.getOwner(), samplePublication.getPublisher().getId());
+        return UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
     }
 
     private InputStream createInput(CreateMessageRequest requestBody)

@@ -81,7 +81,7 @@ class ExpandedResourceTest {
         Publication publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        URI expectedUri = new UriWrapper(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI expectedUri = UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
         URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }

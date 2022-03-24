@@ -71,7 +71,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
 
     public Publication updatePublication(Publication publication) throws TransactionFailedException {
         Resource resource = Resource.fromPublication(publication);
-        UserInstance userInstance = new UserInstance(resource.getOwner(), resource.getCustomerId());
+        UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getCustomerId());
 
         TransactWriteItem updateResourceTransactionItem = updateResource(resource);
         Optional<TransactWriteItem> updateDoiRequestTransactionItem = updateDoiRequest(userInstance, resource);

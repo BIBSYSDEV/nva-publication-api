@@ -120,6 +120,6 @@ public final class RequestUtil {
     public static UserInstance extractUserInstance(RequestInfo requestInfo) {
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
         String useIdentifier = requestInfo.getNvaUsername();
-        return new UserInstance(useIdentifier, customerId);
+        return UserInstance.create(useIdentifier, customerId);
     }
 }

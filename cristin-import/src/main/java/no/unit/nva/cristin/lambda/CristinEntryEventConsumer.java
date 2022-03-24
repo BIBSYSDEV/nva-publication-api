@@ -10,7 +10,6 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
@@ -59,8 +58,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private static final Logger logger = LoggerFactory.getLogger(CristinEntryEventConsumer.class);
     private static final Clock CLOCK = Clock.systemDefaultZone();
-    //imported cristin entries have for now no owner. Calling the Person proxy will only increase the cost of import.
-    private static final HttpClient CLIENT_AVOIDING_REQUESTS_FOR_RESOURCES_WITHOUT_OWNERS = new FakeHttpClient();
+
 
     private final ResourceService resourceService;
     private final S3Client s3Client;
@@ -72,7 +70,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     @JacocoGenerated
     protected CristinEntryEventConsumer(AmazonDynamoDB dynamoDbClient, S3Client s3Client) {
-        this(new ResourceService(dynamoDbClient, CLIENT_AVOIDING_REQUESTS_FOR_RESOURCES_WITHOUT_OWNERS, CLOCK),
+        this(new ResourceService(dynamoDbClient, CLOCK),
              s3Client);
     }
 
@@ -166,8 +164,8 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         int sleepTime = spreadWriteRequests();
         try {
             Thread.sleep(sleepTime);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (InterruptedException exception) {
+            throw new RuntimeException(exception);
         }
     }
 

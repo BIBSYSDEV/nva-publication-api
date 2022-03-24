@@ -104,7 +104,7 @@ public class ResourceTest {
 
     @Test
     public void queryObjectReturnsResourceWithIdentifierAndPublisher() {
-        UserInstance userInstance = new UserInstance(SOME_OWNER, SOME_HOST);
+        UserInstance userInstance = UserInstance.create(SOME_OWNER, SOME_HOST);
         Resource resource = Resource.resourceQueryObject(userInstance, sampleIdentifier);
         assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
         assertThat(resource.getPublisher().getId(), is(equalTo(SOME_HOST)));

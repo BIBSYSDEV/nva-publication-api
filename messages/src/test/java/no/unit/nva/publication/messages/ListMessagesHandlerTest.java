@@ -47,8 +47,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.service.impl.ResourceServiceUtils;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -82,8 +80,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         output = new ByteArrayOutputStream();
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        resourceService = new ResourceService(client,  Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         var environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
@@ -116,7 +113,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     @Test
     void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
-        var userInstance = new UserInstance(randomString(), randomUri());
+        var userInstance = UserInstance.create(randomString(), randomUri());
         var publications = createSamplePublicationsForSingleOwner(userInstance);
         var messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         var moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
@@ -306,7 +303,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance extractPublicationOwner(Message message) {
-        return new UserInstance(message.getOwner(), message.getCustomerId());
+        return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
 
     private List<PublicationSummary> extractPublicationSummaryFromResponse(ResourceConversation[] responseObjects) {
@@ -339,7 +336,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private List<Message> insertSampleMessagesForSingleOwner() {
-        UserInstance userInstance = new UserInstance(randomString(), randomUri());
+        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
         List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
         return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
@@ -349,7 +346,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance someCurator(URI orgId) {
-        return new UserInstance(SOME_OTHER_USER, orgId);
+        return UserInstance.create(SOME_OTHER_USER, orgId);
     }
 
     private List<Message> createSampleMessagesFromPublications(List<Publication> publications,

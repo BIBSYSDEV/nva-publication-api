@@ -20,8 +20,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.create.CreatePublicationRequest;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -46,9 +44,8 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
         this.outputStream = new ByteArrayOutputStream();
         FakeS3Client fakeS3Client = new FakeS3Client();
         this.s3Driver = new S3Driver(fakeS3Client, "notimportant");
-        FakeHttpClient<String> httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        this.handler = new CreatePublishedPublicationHandler(fakeS3Client, client, httpClient);
-        this.publicationService = new ResourceService(super.client, httpClient, Clock.systemDefaultZone());
+        this.handler = new CreatePublishedPublicationHandler(fakeS3Client, client);
+        this.publicationService = new ResourceService(super.client,  Clock.systemDefaultZone());
     }
 
     @Test

@@ -61,7 +61,7 @@ class DataEntryTest {
     }
 
     private static Message randomMessage(Publication publication) {
-        var user = new UserInstance(randomString(), randomUri());
+        var user = UserInstance.create(randomString(), randomUri());
         var clock = Clock.systemDefaultZone();
         return Message.supportMessage(user, publication, randomString(), SortableIdentifier.next(), clock);
     }

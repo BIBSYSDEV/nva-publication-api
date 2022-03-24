@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.dynamodbv2.model.TransactionCanceledException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
@@ -40,8 +39,6 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -49,7 +46,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-public class DoiRequestServiceTest extends ResourcesLocalTest {
+class DoiRequestServiceTest extends ResourcesLocalTest {
 
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
@@ -60,7 +57,6 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     private Clock mockClock;
     private ResourceService resourceService;
     private DoiRequestService doiRequestService;
-    private HttpClient httpClient;
     private UserInstance owner;
     private UserInstance notTheResourceOwner;
 
@@ -68,7 +64,6 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     public void initialize() {
         super.init();
         this.mockClock = mock(Clock.class);
-        this.httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
         this.owner = randomUserInstance();
         this.notTheResourceOwner = randomUserInstance();
         when(mockClock.instant())
@@ -76,12 +71,12 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-        this.resourceService = new ResourceService(client,httpClient, mockClock);
-        this.doiRequestService = new DoiRequestService(client, httpClient,mockClock);
+        this.resourceService = new ResourceService(client, mockClock);
+        this.doiRequestService = new DoiRequestService(client, mockClock);
     }
 
     @Test
-    public void createDoiRequestStoresNewDoiRequestForPublishedResource()
+    void createDoiRequestStoresNewDoiRequestForPublishedResource()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
 
@@ -92,14 +87,14 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
+    void createDoiRequestCreatesNewDoiRequestForPublicationWithoutMetadata()
         throws ApiGatewayException {
         Publication emptyPublication = emptyPublication(owner);
         UserInstance userInstance = createUserInstance(emptyPublication);
         doiRequestService.createDoiRequest(userInstance, emptyPublication.getIdentifier());
 
         DoiRequest actualDoiRequest =
-            doiRequestService.getDoiRequestByResourceIdentifier(userInstance,emptyPublication.getIdentifier());
+            doiRequestService.getDoiRequestByResourceIdentifier(userInstance, emptyPublication.getIdentifier());
 
         DoiRequest expectedDoiRequest = expectedDoiRequestForEmptyPublication(emptyPublication, actualDoiRequest);
 
@@ -107,7 +102,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
+    void createDoiRequestThrowsExceptionWhenTheUserIsNotTheResourceOwner()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
 
@@ -117,7 +112,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsBadRequestExceptionWhenPublicationIdIsEmpty() {
+    void createDoiRequestThrowsBadRequestExceptionWhenPublicationIdIsEmpty() {
 
         Executable action = () -> doiRequestService.createDoiRequest(owner, null);
         BadRequestException exception = assertThrows(BadRequestException.class, action);
@@ -125,7 +120,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsTransactionFailedExceptionWhenDoiRequestAlreadyExists()
+    void createDoiRequestThrowsTransactionFailedExceptionWhenDoiRequestAlreadyExists()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
 
@@ -138,7 +133,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestThrowsExceptionWhenDuplicateIdentifierIsCreated()
+    void createDoiRequestThrowsExceptionWhenDuplicateIdentifierIsCreated()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
 
@@ -146,7 +141,6 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
         Supplier<SortableIdentifier> identifierSupplier = () -> duplicateIdentifier;
         DoiRequestService doiRequestServiceProducingDuplicates =
             new DoiRequestService(client,
-                                  httpClient,
                                   mockClock,
                                   identifierSupplier);
 
@@ -159,7 +153,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws ApiGatewayException {
+    void createDoiRequestDoesNotThrowExceptionWhenResourceIsNotPublished() throws ApiGatewayException {
         Publication publication = createDraftPublication(owner);
         Executable action = () -> doiRequestService.createDoiRequest(owner, publication.getIdentifier());
         assertDoesNotThrow(action);
@@ -167,11 +161,11 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
 
     private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
         Publication publication = createPublicationForUser(owner);
-        return resourceService.createPublication(owner,publication);
+        return resourceService.createPublication(owner, publication);
     }
 
     @Test
-    public void listDoiRequestsForPublishedResourcesReturnsAllDoiRequestsWithStatusRequestedForPublishedResources()
+    void listDoiRequestsForPublishedResourcesReturnsAllDoiRequestsWithStatusRequestedForPublishedResources()
         throws ApiGatewayException {
         Publication publishedPublication = createPublishedPublication(owner);
         Publication draftPublication = createDraftPublication(owner);
@@ -190,17 +184,17 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     public UserInstance createSampleCurator(Publication publication) {
-        return new UserInstance(randomString(), publication.getPublisher().getId());
+        return UserInstance.create(randomString(), publication.getPublisher().getId());
     }
 
     @Test
-    public void listDoiRequestsForPublishedResourcesDoesNotReturnDoiRequestsFromDifferentOrganization()
+    void listDoiRequestsForPublishedResourcesDoesNotReturnDoiRequestsFromDifferentOrganization()
         throws ApiGatewayException {
         Publication publishedPublication = createPublishedPublication(owner);
 
         createDoiRequest(publishedPublication);
 
-        UserInstance irrelevantCurator = new UserInstance(randomString(), SOME_OTHER_PUBLISHER);
+        UserInstance irrelevantCurator = UserInstance.create(randomString(), SOME_OTHER_PUBLISHER);
         List<DoiRequest> resultForIrrelevantUser =
             doiRequestService.listDoiRequestsForPublishedPublications(irrelevantCurator);
         assertThat(resultForIrrelevantUser, is(emptyCollectionOf(DoiRequest.class)));
@@ -214,7 +208,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForUserReturnsDoiRequestsWithStatusRequested() throws ApiGatewayException {
+    void listDoiRequestsForUserReturnsDoiRequestsWithStatusRequested() throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
         createDoiRequest(publication);
 
@@ -227,7 +221,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listDoiRequestsForUserReturnsAllRelevantDoiRequests() throws ApiGatewayException {
+    void listDoiRequestsForUserReturnsAllRelevantDoiRequests() throws ApiGatewayException {
         int endExclusive = 10;
         List<Publication> publications = IntStream.range(0, endExclusive).boxed()
             .map(attempt(i -> createDraftPublication(owner)))
@@ -246,7 +240,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
+    void updateDoiRequestUpdatesDoiRequestStatusInDatabase()
         throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
         UserInstance userInstance = createUserInstance(publication);
@@ -261,7 +255,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void updateDoiRequestUpdatesModifiedDateOfDoiRequest()
+    void updateDoiRequestUpdatesModifiedDateOfDoiRequest()
         throws ApiGatewayException {
         Publication publication = createPublishedPublication(owner);
         resourceService.publishPublication(owner, publication.getIdentifier());
@@ -276,7 +270,7 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void updateDoiRequestUpdatesStatusIndexForDoiRequest()
+    void updateDoiRequestUpdatesStatusIndexForDoiRequest()
         throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
         UserInstance someUser = createUserInstance(publication);
@@ -295,14 +289,14 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getDoiRequestThrowsNotFoundExceptionWhenDoiRequestWasNotFound() {
+    void getDoiRequestThrowsNotFoundExceptionWhenDoiRequestWasNotFound() {
         UserInstance someUser = randomUserInstance();
         Executable action = () -> doiRequestService.getDoiRequest(someUser, SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
     }
 
     @Test
-    public void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
+    void updateDoiRequestThrowsBadRequestExceptionWhenPublicationIsDraft()
         throws ApiGatewayException {
         Publication publication = createDraftPublication(owner);
         createDoiRequest(publication);
@@ -361,12 +355,12 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
 
     private Publication emptyPublication(UserInstance userInstance) throws ApiGatewayException {
         Publication publication = new Publication.Builder()
-            .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(),randomOrgUnitId()))
+            .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
             .withPublisher(createOrganization(userInstance.getOrganizationUri()))
             .withStatus(PublicationStatus.DRAFT)
             .build();
 
-        Publication emptyPublication = resourceService.createPublication(extractUserInstance(publication),publication);
+        Publication emptyPublication = resourceService.createPublication(extractUserInstance(publication), publication);
         skipPublicationUpdate();
 
         return emptyPublication;
@@ -375,8 +369,8 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     private Publication createPublishedPublication(UserInstance owner)
         throws ApiGatewayException {
         Publication publication = createPublicationForUser(owner);
-        publication = resourceService.createPublication(owner,publication);
-        resourceService.publishPublication(owner,publication.getIdentifier());
+        publication = resourceService.createPublication(owner, publication);
+        resourceService.publishPublication(owner, publication.getIdentifier());
         return publication;
     }
 
@@ -392,8 +386,6 @@ public class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     private UserInstance createUserInstance(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
     }
-
-
 }

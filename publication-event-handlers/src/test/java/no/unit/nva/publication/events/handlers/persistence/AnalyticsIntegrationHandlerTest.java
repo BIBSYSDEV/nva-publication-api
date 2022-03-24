@@ -24,8 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
@@ -44,12 +42,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +55,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
-    public static final String TOP_LEVEL_ORGANIZATION_FOR_AVOIDING_SUBSEQUENT_CALLS_TO_ORGANIZATION_SERVICE =
-        IoUtils.stringFromResources(
-            Path.of("expandResources", "cristin_grand_parent_org.json"));
     public static final String JSONLD_CONTEXT = "@context";
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private AnalyticsIntegrationHandler analyticsIntegration;
@@ -84,10 +76,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
-        HttpClient externalServicesHttpClient = setupPersonServiceResponses();
-        resourceService = new ResourceService(dynamoClient, externalServicesHttpClient, CLOCK);
+        resourceService = new ResourceService(dynamoClient,  CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
-        doiRequestService = new DoiRequestService(dynamoClient, externalServicesHttpClient, CLOCK);
+        doiRequestService = new DoiRequestService(dynamoClient,  CLOCK);
 
         this.resourceExpansionService = setupResourceExpansionService();
     }
@@ -125,19 +116,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private ResourceExpansionServiceImpl setupResourceExpansionService() {
         var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
-        return new ResourceExpansionServiceImpl(setupHttpResponsesToOrganizationService(),
-                                                resourceService,
-                                                notImportantMessageService,
-                                                doiRequestService);
-    }
-
-    private HttpClient setupPersonServiceResponses() {
-        var personServiceResponse = new RandomPersonServiceResponse().toString();
-        return new FakeHttpClient<>(personServiceResponse);
-    }
-
-    private HttpClient setupHttpResponsesToOrganizationService() {
-        return new FakeHttpClient<>(TOP_LEVEL_ORGANIZATION_FOR_AVOIDING_SUBSEQUENT_CALLS_TO_ORGANIZATION_SERVICE);
+        return new ResourceExpansionServiceImpl(resourceService,notImportantMessageService,doiRequestService);
     }
 
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,

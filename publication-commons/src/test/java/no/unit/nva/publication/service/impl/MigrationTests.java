@@ -4,33 +4,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class MigrationTests extends ResourcesLocalTest {
+class MigrationTests extends ResourcesLocalTest {
 
     public static final Map<String, AttributeValue> START_FROM_BEGINNING = null;
     private static final Clock CLOCK = Clock.systemDefaultZone();
     private ResourceService resourceService;
-    private URI affiliationUri;
 
     @BeforeEach
     public void init() {
         super.init();
-        affiliationUri = RandomPersonServiceResponse.randomUri();
-
-        var externalServicesHttpClient =
-            new FakeHttpClient<>(new RandomPersonServiceResponse(affiliationUri).toString());
-        this.resourceService = new ResourceService(client, externalServicesHttpClient, CLOCK);
+        this.resourceService = new ResourceService(client, CLOCK);
     }
 
     @Test

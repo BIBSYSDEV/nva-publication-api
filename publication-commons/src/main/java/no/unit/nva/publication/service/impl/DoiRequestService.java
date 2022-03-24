@@ -67,23 +67,19 @@ public class DoiRequestService extends ServiceWithTransactions {
     private final String tableName;
     private final Supplier<SortableIdentifier> identifierProvider;
 
-    public DoiRequestService(AmazonDynamoDB client,
-                             HttpClient externalServicesHttpClient,
-                             Clock clock) {
+    public DoiRequestService(AmazonDynamoDB client,Clock clock) {
         this(client,
-             externalServicesHttpClient,
              clock,
              DEFAULT_IDENTIFIER_PROVIDER);
     }
 
     protected DoiRequestService(AmazonDynamoDB client,
-                                HttpClient externalServicesHttpClient,
                                 Clock clock,
                                 Supplier<SortableIdentifier> identifierProvider) {
         super();
         this.client = client;
         this.clock = clock;
-        this.resourceService = new ResourceService(client,externalServicesHttpClient, clock);
+        this.resourceService = new ResourceService(client, clock);
         this.tableName = RESOURCES_TABLE_NAME;
         this.identifierProvider = identifierProvider;
     }

@@ -38,8 +38,6 @@ import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -47,7 +45,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-public class MessageServiceTest extends ResourcesLocalTest {
+class MessageServiceTest extends ResourcesLocalTest {
 
     public static final Faker FAKER = new Faker();
     public static final String SOME_SENDER = "some@user";
@@ -75,13 +73,12 @@ public class MessageServiceTest extends ResourcesLocalTest {
         super.init();
         Clock clock = mockClock();
         messageService = new MessageService(client, clock);
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, clock);
+        resourceService = new ResourceService(client, clock);
         owner = randomUserInstance();
     }
 
     @Test
-    public void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
+    void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
 
         var publication = createDraftPublication(owner);
         var messageText = randomString();
@@ -96,7 +93,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
+    void createDoiRequestMessageStoresNewMessageInDatabaseIndicatingThatIsConnectedToTheRespectiveDoiRequest()
         throws ApiGatewayException {
         var publication = createDraftPublication(owner);
         var messageText = randomString();
@@ -113,7 +110,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
+    void getMessagesByResourceIdentifierReturnsAllMessagesRelatedToResource()
         throws ApiGatewayException {
         var insertedPublication = createDraftPublication(owner);
         var insertedMessages = insertSampleMessages(insertedPublication);
@@ -133,7 +130,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
+    void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
         throws ApiGatewayException {
         messageService = serviceProducingDuplicateIdentifiers();
         var publication = createDraftPublication(owner);
@@ -148,7 +145,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByOwnerAndIdReturnsStoredMessage() throws ApiGatewayException {
+    void getMessageByOwnerAndIdReturnsStoredMessage() throws ApiGatewayException {
         Publication publication = createDraftPublication(owner);
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
@@ -160,7 +157,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByKeyReturnsStoredMessage() throws ApiGatewayException {
+    void getMessageByKeyReturnsStoredMessage() throws ApiGatewayException {
         var publication = createDraftPublication(owner);
         var messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
@@ -173,7 +170,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void getMessageByIdAndOwnerReturnsStoredMessage() throws ApiGatewayException {
+    void getMessageByIdAndOwnerReturnsStoredMessage() throws ApiGatewayException {
         Publication publication = createDraftPublication(owner);
         String messageText = randomString();
         var messageIdentifier = createSimpleMessage(publication, messageText);
@@ -186,7 +183,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() throws NotFoundException {
+    void listMessagesForCustomerAndStatusListsAllMessagesForGivenCustomerAndStatus() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInSameOrg();
         var savedMessages = createOneMessagePerPublication(createdPublications);
 
@@ -198,7 +195,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() throws NotFoundException {
+    void listMessagesForCustomerAndStatusReturnsMessagesOfSingleCustomer() throws NotFoundException {
         var createdPublications = createPublicationsOfDifferentOwnersInDifferentOrg();
         var allMessagesOfAllCustomers = createOneMessagePerPublication(createdPublications);
 
@@ -211,7 +208,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesForUserReturnsAllMessagesConnectedToUser() throws ApiGatewayException {
+    void listMessagesForUserReturnsAllMessagesConnectedToUser() throws ApiGatewayException {
         var publication1 = createDraftPublication(owner);
         var publication2 = createDraftPublication(owner);
 
@@ -355,7 +352,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
         var publicationOwner = extractUserInstance(publication);
-        var sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
+        var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createDoiRequestMessage(publication, message, sender);
     }
 
@@ -365,7 +362,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
 
     private SortableIdentifier createSimpleMessage(Publication publication, String message) {
         var publicationOwner = extractUserInstance(publication);
-        var sender = new UserInstance(SOME_SENDER, publicationOwner.getOrganizationUri());
+        var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
         return createSimpleMessage(publication, message, sender);
     }
 
@@ -386,7 +383,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     private Message constructExpectedSimpleMessage(SortableIdentifier messageIdentifier,
                                                    Publication publication,
                                                    String messageText) {
-        var sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
+        var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
         return Message.supportMessage(sender, publication, messageText, messageIdentifier, clock);
     }
@@ -394,7 +391,7 @@ public class MessageServiceTest extends ResourcesLocalTest {
     private Message constructExpectedDoiRequestMessage(SortableIdentifier messageIdentifier,
                                                        Publication publication,
                                                        String messageText) {
-        var sender = new UserInstance(SOME_SENDER, publication.getPublisher().getId());
+        var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
         return Message.doiRequestMessage(sender, publication, messageText, messageIdentifier, clock);
     }

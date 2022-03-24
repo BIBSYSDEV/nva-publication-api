@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -19,8 +18,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +39,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        HttpClient httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        resourceService = new ResourceService(client,  Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);

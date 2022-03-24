@@ -71,7 +71,7 @@ public class WithPrimaryKeyTest extends ResourcesLocalTest {
     }
 
     private static UserInstance createSampleUser(ResourceDao resource) {
-        return new UserInstance(resource.getOwner(), resource.getCustomerId());
+        return UserInstance.create(resource.getOwner(), resource.getCustomerId());
     }
 
     private static List<ResourceDao> sampleResourcesOfSameOwner() {

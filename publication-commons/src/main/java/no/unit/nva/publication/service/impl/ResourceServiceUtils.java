@@ -51,7 +51,7 @@ public final class ResourceServiceUtils {
     public static UserInstance extractUserInstance(Publication publication) {
         String owner = publication.getOwner();
         URI customerId = publication.getPublisher().getId();
-        return new UserInstance(owner, customerId);
+        return UserInstance.create(owner, customerId);
     }
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,

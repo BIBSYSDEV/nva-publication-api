@@ -32,8 +32,6 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -66,11 +64,10 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, clock);
 
+        doiRequestService = new DoiRequestService(client, clock);
         handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
-        resourceService = new ResourceService(client, externalServicesHttpClient, clock);
+        resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
@@ -83,7 +80,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
 
-        var response = GatewayResponse.fromOutputStream(outputStream,Void.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
 
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
@@ -98,7 +95,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var request = createUnauthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
 
-        var response = GatewayResponse.fromOutputStream(outputStream,Void.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
@@ -108,7 +105,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var publication = createDraftPublicationAndDoiRequest();
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
@@ -121,7 +118,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         publication.setIdentifier(SortableIdentifier.next());
         var request = createAuthorizedRestRequestWithInvalidIdentifier(publication);
         handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(INVALID_PUBLICATION_ID_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
@@ -134,7 +131,7 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         publication.setIdentifier(SortableIdentifier.next());
         var request = createAuthorizedRestRequestWithNoRequestedChange(publication);
         handler.handleRequest(request, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream,Problem.class);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(NO_CHANGE_REQUESTED_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));

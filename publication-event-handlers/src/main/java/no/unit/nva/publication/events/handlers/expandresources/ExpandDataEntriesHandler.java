@@ -49,7 +49,7 @@ public class ExpandDataEntriesHandler
     @JacocoGenerated
     public ExpandDataEntriesHandler() {
         this(new S3Driver(EVENTS_BUCKET),
-             defaultResourceExpansionService(defaultHttpClient(),defaultDynamoDbClient()));
+             defaultResourceExpansionService(defaultDynamoDbClient()));
     }
 
     public ExpandDataEntriesHandler(S3Client s3Client, ResourceExpansionService resourceExpansionService) {
@@ -83,17 +83,15 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
-    private static ResourceExpansionService defaultResourceExpansionService(
-        HttpClient httpClient, AmazonDynamoDB dynamoDbClient) {
-        return new ResourceExpansionServiceImpl(httpClient,
-                                                defaultResourceService(httpClient,dynamoDbClient),
+    private static ResourceExpansionService defaultResourceExpansionService(AmazonDynamoDB dynamoDbClient) {
+        return new ResourceExpansionServiceImpl(defaultResourceService(dynamoDbClient),
                                                 defaultMessageService(dynamoDbClient),
-                                                defaultDoiRequestService(httpClient,dynamoDbClient));
+                                                defaultDoiRequestService(dynamoDbClient));
     }
 
     @JacocoGenerated
-    private static DoiRequestService defaultDoiRequestService(HttpClient httpClient,AmazonDynamoDB dynamoDbClient) {
-        return new DoiRequestService(dynamoDbClient,httpClient,Clock.systemDefaultZone());
+    private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB dynamoDbClient) {
+        return new DoiRequestService(dynamoDbClient,Clock.systemDefaultZone());
     }
 
     @JacocoGenerated
@@ -102,8 +100,8 @@ public class ExpandDataEntriesHandler
     }
 
     @JacocoGenerated
-    private static ResourceService defaultResourceService(HttpClient httpClient, AmazonDynamoDB dynamoDb) {
-        return new ResourceService(dynamoDb, httpClient, Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService(AmazonDynamoDB dynamoDb) {
+        return new ResourceService(dynamoDb, Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

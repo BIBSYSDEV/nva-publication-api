@@ -62,7 +62,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
         String requestedRole = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
         String userId = requestInfo.getNvaUsername();
 
-        UserInstance userInstance = new UserInstance(userId, customerId);
+        UserInstance userInstance = UserInstance.create(userId, customerId);
         if (userIsACurator(requestedRole, requestInfo)) {
             return fetchDoiRequestsForCurator(userInstance);
         } else if (userIsACreator(requestedRole)) {
@@ -84,7 +84,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client, Clock clock) {
-        return new DoiRequestService(client, EXTERNAL_SERVICES_HTTP_CLIENT, clock);
+        return new DoiRequestService(client,  clock);
     }
 
     private Publication[] emptyResult() {

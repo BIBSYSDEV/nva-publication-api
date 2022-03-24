@@ -29,7 +29,7 @@ public final class TestingUtils {
     }
 
     public static UserInstance randomUserInstance() {
-        return new UserInstance(randomString(), randomUri());
+        return UserInstance.create(randomString(), randomUri());
     }
 
     public static Publication createPublicationForUser(UserInstance userInstance) {
@@ -45,6 +45,6 @@ public final class TestingUtils {
     }
 
     public static UserInstance extractUserInstance(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
     }
 }

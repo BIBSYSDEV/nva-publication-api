@@ -1,11 +1,10 @@
 package no.unit.nva.expansion;
 
-import static no.unit.nva.expansion.OrganizationResponseObject.retrieveAllRelatedOrganizations;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,14 +32,12 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private final ResourceService resourceService;
     private final MessageService messageService;
-    private final HttpClient externalServicesHttpClient;
     private final DoiRequestService doiRequestService;
 
-    public ResourceExpansionServiceImpl(HttpClient externalServicesHttpClient,
-                                        ResourceService resourceService,
+    public ResourceExpansionServiceImpl(ResourceService resourceService,
                                         MessageService messageService,
                                         DoiRequestService doiRequestService) {
-        this.externalServicesHttpClient = externalServicesHttpClient;
+
         this.resourceService = resourceService;
         this.messageService = messageService;
         this.doiRequestService = doiRequestService;
@@ -66,11 +63,16 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
                 .stream()
-                .map(affiliation -> retrieveAllRelatedOrganizations(externalServicesHttpClient, affiliation))
+                .map(this::retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toSet());
         }
         return Collections.emptySet();
+    }
+
+    private List<URI> retrieveAllHigherLevelOrgsInTheFutureWhenResourceOwnerAffiliationIsNotAlwaysTopLevelOrg(
+        URI affiliation) {
+        return List.of(affiliation);
     }
 
     private ExpandedDataEntry updateResourceConversations(Message message) throws NotFoundException {
@@ -94,7 +96,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
 
     private ExpandedResourceConversation updateExpandedGeneralSupportConversation(Message message)
         throws NotFoundException {
-        UserInstance userInstance = new UserInstance(message.getOwner(), message.getCustomerId());
+        UserInstance userInstance = UserInstance.create(message.getOwner(), message.getCustomerId());
         SortableIdentifier publicationIdentifier = message.getResourceIdentifier();
         ResourceConversation messagesForResource =
             messageService.getMessagesForResource(userInstance, publicationIdentifier)

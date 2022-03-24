@@ -1,7 +1,6 @@
 package no.unit.nva.doirequest.update;
 
 import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -72,7 +71,6 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     @JacocoGenerated
     private static DoiRequestService defaultService() {
         return new DoiRequestService(AmazonDynamoDBClientBuilder.defaultClient(),
-                                     EXTERNAL_SERVICES_HTTP_CLIENT,
                                      Clock.systemDefaultZone());
     }
 
@@ -94,7 +92,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     private UserInstance createUserInstance(RequestInfo requestInfo) {
         String user = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        return new UserInstance(user, customerId);
+        return UserInstance.create(user, customerId);
     }
 
     private void updateDoiRequestStatus(UserInstance userInstance,

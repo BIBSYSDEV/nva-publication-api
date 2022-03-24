@@ -35,7 +35,6 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
             new Environment(),
             new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
-                EXTERNAL_SERVICES_HTTP_CLIENT,
                 Clock.systemDefaultZone()
             )
         );
@@ -59,7 +58,7 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
         String user = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        UserInstance userInstance = new UserInstance(user, customerId);
+        UserInstance userInstance = UserInstance.create(user, customerId);
         addAdditionalHeaders(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
 
         return resourceService.publishPublication(userInstance, identifier);

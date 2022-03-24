@@ -135,7 +135,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     }
 
     private static ResourceExpansionServiceImpl fakeExpansionService() {
-        return new ResourceExpansionServiceImpl(null, null, null, null) {
+        return new ResourceExpansionServiceImpl(null, null, null) {
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());

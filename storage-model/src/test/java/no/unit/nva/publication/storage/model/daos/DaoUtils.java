@@ -66,7 +66,7 @@ public final class DaoUtils {
 
     private static MessageDao sampleMessageDao() {
         SortableIdentifier identifier = SortableIdentifier.next();
-        UserInstance sender = new UserInstance(randomString(), randomUri());
+        UserInstance sender = UserInstance.create(randomString(), randomUri());
         Publication publication = PublicationGenerator.randomPublication();
         Message message = Message.doiRequestMessage(sender, publication, randomString(), identifier, clock);
         assertThat(message, doesNotHaveEmptyValues());

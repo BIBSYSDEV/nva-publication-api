@@ -73,9 +73,8 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
     public void initialize() {
         init();
         setupClock();
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, mockClock);
-        doiRequestService = new DoiRequestService(client,httpClient, mockClock);
+        resourceService = new ResourceService(client,  mockClock);
+        doiRequestService = new DoiRequestService(client, mockClock);
         messageService = new MessageService(client, mockClock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
@@ -181,7 +180,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest readDoiRequestDirectlyFromService(Publication publication, String doiRequestIdentifier)
         throws NotFoundException {
-        UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
 
         return doiRequestService.getDoiRequest(userInstance, new SortableIdentifier(
             doiRequestIdentifier));

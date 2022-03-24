@@ -2,6 +2,7 @@ package no.unit.nva.publication.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,8 +28,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
@@ -50,6 +49,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private Publication samplePublication;
+    private URI topLevelCristinOrgId;
 
     /**
      * Setting up test environment.
@@ -60,18 +60,18 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         Environment environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        ResourceService resourceService = new ResourceService(client, httpClient, CLOCK);
+        ResourceService resourceService = new ResourceService(client, CLOCK);
         handler = new CreatePublicationHandler(resourceService, environmentMock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         samplePublication = PublicationGenerator.randomPublication();
         testUserName = samplePublication.getResourceOwner().getOwner();
         testOrgId = samplePublication.getPublisher().getId();
+        topLevelCristinOrgId = randomUri();
     }
 
     @Test
-    void requestToHandlerReturnsMinRequiredFieldsWhenDoesNotContainABodyRequestContainsEmptyResource()
+    void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
@@ -179,13 +179,16 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
         assertThat(publicationResponse.getOwner(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
+
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
             .withNvaUsername(testUserName)
             .withCustomerId(testOrgId.toString())
+            .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
             .build();
     }

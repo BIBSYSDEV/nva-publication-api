@@ -79,7 +79,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
         String feideId = requestInfo.getNvaUsername();
         URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        return new UserInstance(feideId, customerId);
+        return UserInstance.create(feideId, customerId);
     }
 
     private ResourceConversation[] convertListToArray(List<ResourceConversation> result) {

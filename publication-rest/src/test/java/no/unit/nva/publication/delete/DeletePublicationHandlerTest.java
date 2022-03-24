@@ -1,7 +1,6 @@
 package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
-import static no.unit.nva.model.testing.PublicationGenerator.publicationWithoutIdentifier;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,8 +21,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import no.unit.nva.testutils.TestHeaders;
 import nva.commons.apigateway.GatewayResponse;
@@ -35,7 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.zalando.problem.Problem;
 
-public class DeletePublicationHandlerTest extends ResourcesLocalTest {
+class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String IDENTIFIER = "identifier";
     public static final String WILDCARD = "*";
@@ -51,8 +48,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     public void setUp() {
         init();
         prepareEnvironment();
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        publicationService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        publicationService = new ResourceService(client,  Clock.systemDefaultZone());
         handler = new DeletePublicationHandler(publicationService, environment);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
@@ -84,7 +80,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     private Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
         var userInstance =
-            new UserInstance(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
+            UserInstance.create(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
         return publicationService.createPublication(userInstance,publication);
     }
 
@@ -108,7 +104,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance createUserInstance(Publication publication) {
-        return new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        return UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
     }
 
     @Test
@@ -167,7 +163,7 @@ public class DeletePublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private void markForDeletion(Publication publication) throws ApiGatewayException {
-        UserInstance userInstance = new UserInstance(publication.getOwner(), publication.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
         publicationService.markPublicationForDeletion(userInstance, publication.getIdentifier());
     }
 }

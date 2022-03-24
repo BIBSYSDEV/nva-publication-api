@@ -25,7 +25,6 @@ import java.time.Clock;
 import java.util.List;
 
 import static com.google.common.net.MediaType.JSON_UTF_8;
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_DATACITE_XML;
 import static nva.commons.apigateway.MediaTypes.APPLICATION_JSON_LD;
@@ -113,12 +112,12 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client) {
-        return new DoiRequestService(client, EXTERNAL_SERVICES_HTTP_CLIENT, CLOCK);
+        return new DoiRequestService(client,  CLOCK);
     }
 
     @JacocoGenerated
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client, EXTERNAL_SERVICES_HTTP_CLIENT, CLOCK);
+        return new ResourceService(client,  CLOCK);
     }
 
     private DoiRequest fetchDoiRequest(Publication publication) {

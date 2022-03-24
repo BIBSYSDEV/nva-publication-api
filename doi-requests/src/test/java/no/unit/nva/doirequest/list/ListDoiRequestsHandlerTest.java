@@ -46,8 +46,6 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -83,14 +81,13 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     public void initialize() {
         init();
         setupClock();
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, mockClock);
+        resourceService = new ResourceService(client,  mockClock);
 
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         Environment environment = mockEnvironment();
 
-        doiRequestService = new DoiRequestService(client, httpClient, mockClock);
+        doiRequestService = new DoiRequestService(client, mockClock);
         messageService = new MessageService(client, mockClock);
         handler = new ListDoiRequestsHandler(environment, doiRequestService, messageService);
     }
@@ -360,7 +357,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     private List<Publication> createPublishedPublicationsOfSameOwner() throws ApiGatewayException {
         var owner = randomString();
         var publisher = randomUri();
-        var userInstance = new UserInstance(owner, publisher);
+        var userInstance = UserInstance.create(owner, publisher);
         Stream<Publication> publicationsToBeSaved = Stream.of(randomPublication(),
                                                               randomPublication());
         List<Publication> publications = createPublicationsForOwner(userInstance, publicationsToBeSaved);
@@ -412,7 +409,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private void publishPublication(Publication pub) throws ApiGatewayException {
-        UserInstance userInstance = new UserInstance(pub.getOwner(), pub.getPublisher().getId());
+        UserInstance userInstance = UserInstance.create(pub.getOwner(), pub.getPublisher().getId());
         resourceService.publishPublication(userInstance, pub.getIdentifier());
     }
 
@@ -424,7 +421,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance createUserInstance(Publication pub) {
-        return new UserInstance(pub.getOwner(), pub.getPublisher().getId());
+        return UserInstance.create(pub.getOwner(), pub.getPublisher().getId());
     }
 
     private void setupClock() {

@@ -78,10 +78,8 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-    private final AffiliationSelectionService affiliationService;
 
     public ResourceService(AmazonDynamoDB client,
-                           HttpClient externalServicesHttpClient,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
         super();
@@ -92,13 +90,11 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        this.affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
     }
 
     public ResourceService(AmazonDynamoDB client,
-                           HttpClient externalServicesHttpClient,
                            Clock clock) {
-        this(client, externalServicesHttpClient, clock, DEFAULT_IDENTIFIER_SUPPLIER);
+        this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -246,9 +242,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     private ResourceOwner createResourceOwner(UserInstance userInstance)
         throws ApiGatewayException {
-        return this.affiliationService.fetchAffiliation(userInstance.getUserIdentifier())
-            .map(affiliation -> new ResourceOwner(userInstance.getUserIdentifier(), affiliation))
-            .orElse(new ResourceOwner(userInstance.getUserIdentifier(), null));
+        return new ResourceOwner(userInstance.getUserIdentifier(),userInstance.getTopLevelOrgCristinId());
     }
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {

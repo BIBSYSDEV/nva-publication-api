@@ -3,7 +3,6 @@ package no.unit.nva.publication.fetch;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,7 +28,6 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
     public PublicationsByOwnerHandler() {
         this(new ResourceService(
                  AmazonDynamoDBClientBuilder.defaultClient(),
-                 HttpClient.newBuilder().build(),
                  Clock.systemDefaultZone()),
              new Environment());
     }
@@ -51,7 +49,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
 
         String owner = RequestUtil.getOwner(requestInfo);
         URI customerId = RequestUtil.getCustomerId(requestInfo);
-        UserInstance userInstance = new UserInstance(owner, customerId);
+        UserInstance userInstance = UserInstance.create(owner, customerId);
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
                                   owner,
                                   customerId));

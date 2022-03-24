@@ -33,7 +33,7 @@ class ResourceConversationTest {
     public static final int SMALL_WAITING_TIME = 2;
     public static final String USER_IDENTIFIER = "userIdentifier";
     public static final URI SOME_PUBLISHER = URI.create("https://www.example.org");
-    public static final UserInstance SOME_USER = new UserInstance(USER_IDENTIFIER, SOME_PUBLISHER);
+    public static final UserInstance SOME_USER = UserInstance.create(USER_IDENTIFIER, SOME_PUBLISHER);
     public static final int SINGLE_OBJECT = 0;
     public static final int RESOURCE_CONVERSATION_OF_SINGLE_RESOURCE = 0;
     private static final int NUMBER_OF_PUBLICATIONS = 3;

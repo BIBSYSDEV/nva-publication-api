@@ -35,11 +35,11 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     @JacocoGenerated
     public CreateMessageHandler() {
-        this(defaultClient(), EXTERNAL_SERVICES_HTTP_CLIENT, new Environment());
+        this(defaultClient(), new Environment());
     }
 
-    public CreateMessageHandler(AmazonDynamoDB client, HttpClient externalServicesHttpClient, Environment environment) {
-        this(environment, defaultMessageService(client), defaultResourceService(client, externalServicesHttpClient));
+    public CreateMessageHandler(AmazonDynamoDB client, Environment environment) {
+        this(environment, defaultMessageService(client), defaultResourceService(client));
     }
 
     public CreateMessageHandler(Environment environment,
@@ -72,9 +72,8 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
-    private static ResourceService defaultResourceService(AmazonDynamoDB client,
-                                                          HttpClient externalServicesHttpClient) {
-        return new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
+        return new ResourceService(client,  Clock.systemDefaultZone());
     }
 
     private static MessageService defaultMessageService(AmazonDynamoDB client) {
@@ -120,7 +119,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     private UserInstance createSender(RequestInfo requestInfo) {
         String loggedInUser = requestInfo.getNvaUsername();
         URI orgUri = requestInfo.getCustomerId().map(URI::create).orElseThrow();
-        return new UserInstance(loggedInUser, orgUri);
+        return UserInstance.create(loggedInUser, orgUri);
     }
 
     private Map<String, String> locationHeader(String messageIdentifier) {
