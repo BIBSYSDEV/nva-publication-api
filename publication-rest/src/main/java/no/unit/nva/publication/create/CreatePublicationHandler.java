@@ -76,7 +76,7 @@ public class CreatePublicationHandler extends ApiGatewayHandler<CreatePublicatio
 
     private UserInstance createUserInstanceFromLoginInformation(RequestInfo requestInfo) throws UnauthorizedException {
         var resourceOwner = createResourceOwner(requestInfo);
-        var customerId = requestInfo.getCustomerId().map(URI::create).orElseThrow();
+        var customerId = requestInfo.getCustomerId();
         return UserInstance.create(resourceOwner, customerId);
     }
 

@@ -1,15 +1,12 @@
 package no.unit.nva.publication;
 
 import static java.lang.Integer.parseInt;
-import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static nva.commons.core.attempt.Try.attempt;
-import java.net.URI;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.BadRequestException;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import nva.commons.core.attempt.Try;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,19 +47,6 @@ public final class RequestUtil {
         }
     }
 
-    /**
-     * Get customerId from requestContext authorizer claims.
-     *
-     * @param requestInfo requestInfo.
-     * @return the customerId
-     * @throws ApiGatewayException exception thrown if value is missing
-     */
-    public static URI getCustomerId(RequestInfo requestInfo) throws ApiGatewayException {
-        return requestInfo.getCustomerId()
-            .map(attempt(URI::create))
-            .flatMap(Try::toOptional)
-            .orElseThrow(() -> logErrorAndThrowException(requestInfo));
-    }
 
     /**
      * Get owner from requestContext authorizer claims.
@@ -104,10 +88,4 @@ public final class RequestUtil {
         }
     }
 
-
-    private static BadRequestException logErrorAndThrowException(RequestInfo requestInfo) {
-        String requestInfoJsonString = attempt(() -> dtoObjectMapper.writeValueAsString(requestInfo)).orElseThrow();
-        logger.debug("RequestInfo object:" + requestInfoJsonString);
-        return new BadRequestException(MISSING_CLAIM_IN_REQUEST_CONTEXT + CURRENT_CUSTOMER);
-    }
 }

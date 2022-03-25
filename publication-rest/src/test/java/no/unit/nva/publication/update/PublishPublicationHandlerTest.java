@@ -3,6 +3,7 @@ package no.unit.nva.publication.update;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -90,6 +91,7 @@ public class PublishPublicationHandlerTest {
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(getRequestHeaders())
             .withNvaUsername(randomString())
+            .withCustomerId(randomUri().toString())
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
             .build();

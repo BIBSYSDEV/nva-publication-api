@@ -16,6 +16,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import org.apache.http.HttpHeaders;
@@ -89,9 +90,9 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
         return !requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
 
-    private UserInstance createUserInstance(RequestInfo requestInfo) {
+    private UserInstance createUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         String user = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        URI customerId = requestInfo.getCustomerId();
         return UserInstance.create(user, customerId);
     }
 

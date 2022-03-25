@@ -23,6 +23,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -114,9 +115,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return new BadRequestException(exception.getMessage(), exception);
     }
 
-    private UserInstance createSender(RequestInfo requestInfo) {
+    private UserInstance createSender(RequestInfo requestInfo) throws UnauthorizedException {
         String loggedInUser = requestInfo.getNvaUsername();
-        URI orgUri = requestInfo.getCustomerId().map(URI::create).orElseThrow();
+        URI orgUri = requestInfo.getCustomerId();
         return UserInstance.create(loggedInUser, orgUri);
     }
 

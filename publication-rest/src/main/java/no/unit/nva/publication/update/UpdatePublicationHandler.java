@@ -3,7 +3,6 @@ package no.unit.nva.publication.update;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import java.time.Clock;
 import no.unit.nva.api.PublicationResponse;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -78,8 +77,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
-        return attempt(() -> requestInfo.getCustomerId().orElseThrow())
-            .map(URI::create)
+        return attempt(requestInfo::getCustomerId)
             .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
             .orElseThrow(fail -> new UnauthorizedException());
     }

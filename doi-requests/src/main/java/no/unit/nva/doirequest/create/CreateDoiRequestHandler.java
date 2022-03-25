@@ -24,6 +24,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -84,8 +85,8 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         return HttpURLConnection.HTTP_CREATED;
     }
 
-    private UserInstance extractUserInstance(RequestInfo requestInfo) {
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+    private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
+        URI customerId = requestInfo.getCustomerId();
         String user = requestInfo.getNvaUsername();
         return UserInstance.create(user, customerId);
     }

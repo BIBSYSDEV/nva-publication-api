@@ -48,7 +48,7 @@ public class PublicationsByOwnerHandler extends ApiGatewayHandler<Void, Publicat
         throws ApiGatewayException {
 
         String owner = RequestUtil.getOwner(requestInfo);
-        URI customerId = RequestUtil.getCustomerId(requestInfo);
+        URI customerId = requestInfo.getCustomerId();
         UserInstance userInstance = UserInstance.create(owner, customerId);
         logger.info(String.format("Requested publications for owner with feideId=%s and publisher with customerId=%s",
                                   owner,

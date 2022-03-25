@@ -46,23 +46,9 @@ class RequestUtilTest {
         RequestInfo requestInfo = new RequestInfo();
         requestInfo.setRequestContext(getRequestContextForClaim(RequestUtil.CURRENT_CUSTOMER, VALUE));
 
-        URI customerId = RequestUtil.getCustomerId(requestInfo);
+        URI customerId = requestInfo.getCustomerId();
 
         assertEquals(URI.create(VALUE), customerId);
-    }
-
-    @Test
-    void getCustomerIdOnMissingNodeRequestThrowsException() throws Exception {
-        RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setRequestContext(getRequestContextWithMissingNode());
-
-        assertThrows(BadRequestException.class, () -> RequestUtil.getCustomerId(requestInfo));
-    }
-
-    @Test
-    void getCustomerIdOnInvalidRequestThrowsException() {
-        RequestInfo requestInfo = new RequestInfo();
-        assertThrows(BadRequestException.class, () -> RequestUtil.getCustomerId(requestInfo));
     }
 
     @Test
@@ -74,7 +60,6 @@ class RequestUtilTest {
 
         assertEquals(VALUE, owner);
     }
-
 
     @Test
     void getOwnerThrowsUnauthorizedExceptionWhenOwnerCannotBeRetrieved() {

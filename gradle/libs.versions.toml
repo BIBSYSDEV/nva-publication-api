@@ -1,6 +1,6 @@
 [versions]
 
-nva = { strictly = '1.21.0-alpha8' }
+nva = { strictly = '1.21.0-alpha11' }
 nvaDatamodel = { strictly = '0.16.0' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
 jackson = { strictly = '2.13.1' }

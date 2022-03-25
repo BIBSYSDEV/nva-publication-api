@@ -1,5 +1,6 @@
 package no.unit.nva.publication.messages;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -15,6 +16,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -38,7 +40,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
 
     @Override
     protected ResourceConversation[] processInput(Void input, RequestInfo requestInfo, Context context)
-        throws BadRequestException {
+        throws BadRequestException, UnauthorizedException {
         UserInstance userInstance = extractUserInstanceFromRequest(requestInfo);
         List<ResourceConversation> conversations = fetchResourceConversations(requestInfo, userInstance);
         return convertListToArray(conversations);
@@ -60,15 +62,15 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
         if (userIsCurator(requestInfo)) {
             return
                 messageService.listMessagesForCurator(userInstance.getOrganizationUri(), MessageStatus.UNREAD);
-        } else if (userIsCreator(requestInfo)) {
+        } else if (bestEffortToIdentityCreatorsUntilTheyHaveTheirOwnAccessRight(requestInfo)) {
             return messageService.listMessagesForUser(userInstance);
         } else {
             return Collections.emptyList();
         }
     }
 
-    private boolean userIsCreator(RequestInfo requestInfo) {
-        return requestInfo.getCustomerId().isPresent();
+    private boolean bestEffortToIdentityCreatorsUntilTheyHaveTheirOwnAccessRight(RequestInfo requestInfo) {
+        return attempt(requestInfo::getCustomerId).isSuccess();
     }
 
     private boolean userIsCurator(RequestInfo requestInfo) throws BadRequestException {
@@ -76,9 +78,9 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
             && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST);
     }
 
-    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) {
+    private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) throws UnauthorizedException {
         String feideId = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
+        URI customerId = requestInfo.getCustomerId();
         return UserInstance.create(feideId, customerId);
     }
 

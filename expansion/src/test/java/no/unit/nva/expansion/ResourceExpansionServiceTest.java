@@ -53,7 +53,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
 
-
     private ResourceExpansionService expansionService;
     private ResourceService resourceService;
     private MessageService messageService;
@@ -72,13 +71,13 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         initializeServices();
 
         Publication createdPublication = createPublication();
-        var expectedResourceOwnerAffiliation= createdPublication.getResourceOwner().getOwnerAffiliation();
+        var expectedResourceOwnerAffiliation = createdPublication.getResourceOwner().getOwnerAffiliation();
         Message message = sendSupportMessage(createdPublication);
 
         ExpandedResourceConversation expandedResourceConversation =
             (ExpandedResourceConversation) expansionService.expandEntry(message);
-        assertThat(expandedResourceConversation.getOrganizationIds(), containsInAnyOrder(expectedResourceOwnerAffiliation));
-
+        assertThat(expandedResourceConversation.getOrganizationIds(),
+                   containsInAnyOrder(expectedResourceOwnerAffiliation));
     }
 
     @Test
@@ -222,8 +221,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
                                                             messageService,
                                                             doiRequestService);
     }
-
-
 
     private Publication createPublication() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
