@@ -2,9 +2,8 @@ package no.unit.nva.cristin.mapper;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedRoleException;
-
 import java.util.Arrays;
+import no.unit.nva.cristin.mapper.nva.exceptions.UnsupportedRoleException;
 
 public enum CristinContributorRoleCode {
     CREATOR("FORFATTER"),

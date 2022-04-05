@@ -11,17 +11,13 @@ import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Set;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.DoiRequestStatus;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.exceptions.IllegalDoiRequestUpdate;
 import org.junit.jupiter.api.Test;

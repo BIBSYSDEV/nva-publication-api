@@ -1,13 +1,11 @@
 package no.unit.nva.publication.messages;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import java.util.Optional;
@@ -25,6 +23,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -35,11 +34,11 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     @JacocoGenerated
     public CreateMessageHandler() {
-        this(defaultClient(), EXTERNAL_SERVICES_HTTP_CLIENT, new Environment());
+        this(defaultClient(), new Environment());
     }
 
-    public CreateMessageHandler(AmazonDynamoDB client, HttpClient externalServicesHttpClient, Environment environment) {
-        this(environment, defaultMessageService(client), defaultResourceService(client, externalServicesHttpClient));
+    public CreateMessageHandler(AmazonDynamoDB client, Environment environment) {
+        this(environment, defaultMessageService(client), defaultResourceService(client));
     }
 
     public CreateMessageHandler(Environment environment,
@@ -72,9 +71,8 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
-    private static ResourceService defaultResourceService(AmazonDynamoDB client,
-                                                          HttpClient externalServicesHttpClient) {
-        return new ResourceService(client, externalServicesHttpClient, Clock.systemDefaultZone());
+    private static ResourceService defaultResourceService(AmazonDynamoDB client) {
+        return new ResourceService(client,  Clock.systemDefaultZone());
     }
 
     private static MessageService defaultMessageService(AmazonDynamoDB client) {
@@ -117,10 +115,10 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         return new BadRequestException(exception.getMessage(), exception);
     }
 
-    private UserInstance createSender(RequestInfo requestInfo) {
-        String loggedInUser = requestInfo.getFeideId().orElseThrow();
-        URI orgUri = requestInfo.getCustomerId().map(URI::create).orElseThrow();
-        return new UserInstance(loggedInUser, orgUri);
+    private UserInstance createSender(RequestInfo requestInfo) throws UnauthorizedException {
+        String loggedInUser = requestInfo.getNvaUsername();
+        URI orgUri = requestInfo.getCustomerId();
+        return UserInstance.create(loggedInUser, orgUri);
     }
 
     private Map<String, String> locationHeader(String messageIdentifier) {

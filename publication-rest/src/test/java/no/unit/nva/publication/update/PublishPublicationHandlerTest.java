@@ -3,8 +3,10 @@ package no.unit.nva.publication.update;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static com.google.common.net.HttpHeaders.LOCATION;
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.service.impl.UpdateResourceService.PUBLISH_IN_PROGRESS;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.apache.http.HttpStatus.SC_ACCEPTED;
 import static org.apache.http.entity.ContentType.APPLICATION_JSON;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -58,13 +60,14 @@ public class PublishPublicationHandlerTest {
     }
 
     @Test
-    public void publishPublicationHandlerReturnsGatewayResponseWhenInputIsValid() throws Exception {
-        SortableIdentifier identifier = SortableIdentifier.next();
-        PublishPublicationStatusResponse status = mockPublishPublicationStatusResponse();
+    void publishPublicationHandlerReturnsGatewayResponseWhenInputIsValid() throws Exception {
+        var identifier = SortableIdentifier.next();
+        var status = mockPublishPublicationStatusResponse();
 
-        PublishPublicationHandler handler = callPublishPublicationHandler(identifier);
+        var handler = callPublishPublicationHandler(identifier);
 
-        GatewayResponse<PublishPublicationStatusResponse> actual = GatewayResponse.fromOutputStream(output);
+        var actualResponse =
+            GatewayResponse.fromOutputStream(output,PublishPublicationStatusResponse.class);
 
         GatewayResponse<PublishPublicationStatusResponse> expected = new GatewayResponse<>(
             restApiMapper.writeValueAsString(status),
@@ -72,11 +75,11 @@ public class PublishPublicationHandlerTest {
             SC_ACCEPTED
         );
 
-        assertEquals(expected, actual);
+        assertEquals(expected, actualResponse);
     }
 
     @Test
-    public void getLocationReturnsUri() {
+    void getLocationReturnsUri() {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         URI location = handler.getLocation(SortableIdentifier.next());
 
@@ -87,6 +90,8 @@ public class PublishPublicationHandlerTest {
         PublishPublicationHandler handler = new PublishPublicationHandler(environment, publicationService);
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(getRequestHeaders())
+            .withNvaUsername(randomString())
+            .withCustomerId(randomUri().toString())
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
             .build();

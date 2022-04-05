@@ -8,6 +8,9 @@ Description: >
 Globals:
   Function:
     Timeout: 20
+    Environment:
+      Variables:
+        COGNITO_URI: !Ref CognitoAuthorizationUri
     Architectures:
       - arm64
   Api:
@@ -21,6 +24,9 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Reference to Cognito UserPool for the stage
     Default: CognitoAuthorizerArn
+  CognitoAuthorizationUri:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: '/NVA/CognitoUri'
   ApiDomain:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: The Api domain
@@ -970,8 +976,6 @@ Resources:
 
 
   CristinEntriesEventEmitter:
-    DependsOn:
-      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -997,8 +1001,6 @@ Resources:
                 topic: [ "PublicationService.DataImport.Filename" ]
 
   CristinEntriesEventConsumer:
-    DependsOn:
-      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: cristin-import
@@ -1087,8 +1089,6 @@ Resources:
           HANDLER_EVENTS_FOLDER: 'ignored'
 
   CristinDataBulkImportFromS3:
-    DependsOn:
-      - InternalBus
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: s3-import-commons
@@ -1166,7 +1166,6 @@ Resources:
             cfnresponse.send(event, context, responseStatus, responseData)
 
   ApiGatewayCreateDeploymentCustomResource:
-    DependsOn: NvaPublicationApi
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt ApiGatewayCreateDeploymentLambda.Arn

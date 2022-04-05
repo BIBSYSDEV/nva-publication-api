@@ -1,8 +1,8 @@
 package no.unit.nva.publication.messages;
 
+import static no.unit.nva.publication.messages.ListMessagesHandler.APPROVE_DOI_REQUEST;
 import static no.unit.nva.publication.messages.ListMessagesHandler.CREATOR_ROLE;
 import static no.unit.nva.publication.messages.MessageTestsConfig.messageTestsObjectMapper;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.github.javafaker.Faker;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,18 +36,15 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.model.MessageCollection;
-import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.service.impl.ResourceServiceUtils;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
@@ -59,18 +55,16 @@ import nva.commons.core.attempt.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ListMessagesHandlerTest extends ResourcesLocalTest {
+class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     public static final String SAMPLE_USER = "some@user";
     public static final URI SOME_ORG = URI.create("https://example.com/123");
     public static final Context CONTEXT = mock(Context.class);
     public static final String SOME_OTHER_USER = "some@otheruser";
-    public static final Faker FAKER = Faker.instance();
     public static final String ALLOW_EVERYTHING = "*";
     public static final String CURATOR_ROLE = "Curator";
     public static final String ROLE_QUERY_PARAMETER = "role";
 
-    public static final boolean NO_IDENTIFIER = false;
     public static final String SOME_OTHER_ROLE = "SomeOtherRole";
     public static final URI NOT_IMPORTANT = null;
     private static final int NUMBER_OF_PUBLICATIONS = 3;
@@ -84,23 +78,22 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         output = new ByteArrayOutputStream();
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        resourceService = new ResourceService(client,  Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
         var environment = mockEnvironment();
         handler = new ListMessagesHandler(environment, messageService);
     }
 
     @Test
-    public void listMessagesReturnsOkWhenUserIsAuthenticated() throws IOException {
+    void listMessagesReturnsOkWhenUserIsAuthenticated() throws IOException {
         input = sampleListRequest();
         handler.handleRequest(input, output, CONTEXT);
-        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output);
+        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
     }
 
     @Test
-    public void listMessagesReturnsMessagesPerPublicationsForUser()
+    void listMessagesReturnsMessagesPerPublicationsForUser()
         throws IOException {
         var savedMessages = insertSampleMessagesForSingleOwner();
         var owner = extractPublicationOwner(savedMessages.get(0));
@@ -108,7 +101,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatResponseContainsAllExpectedMessages(savedMessages, responseObjects);
@@ -116,9 +109,9 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
+    void listMessagesReturnsResourceMessagesOrderedByOldestCreationDate()
         throws IOException {
-        var userInstance = new UserInstance(randomString(), randomUri());
+        var userInstance = UserInstance.create(randomString(), randomUri());
         var publications = createSamplePublicationsForSingleOwner(userInstance);
         var messages = createSampleMessagesFromPublications(publications, this::notTheOwner);
         var moreMessages = createSampleMessagesFromPublications(publications, this::notTheOwner);
@@ -131,7 +124,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         input = defaultUserRequest(owner.getUserIdentifier(), owner.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var responseObjects = response.getBodyObject(ResourceConversation[].class);
 
         assertThatMessagesInsideResponseObjectAreOrderedWithOldestFirst(responseObjects);
@@ -139,11 +132,11 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
+    void listMessagesShowsAllSupportMessagesOfAnOrgGroupedByPublicationWhenUserIsCurator()
         throws IOException {
-        var publications = createPublicationsOfDifferentOwners();
+        var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
-            createSampleMessagesFromPublications(publications,ResourceServiceUtils::extractUserInstance);
+            createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
 
         final var expectedResponse = constructExpectedResponse(messages);
 
@@ -153,18 +146,18 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         input = defaultCuratorRequest(curator.getUserIdentifier(), curator.getOrganizationUri());
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var body = response.getBodyObject(ResourceConversation[].class);
 
         assertThat(Arrays.asList(body), containsInAnyOrder(expectedResponse));
     }
 
     @Test
-    public void listMessagesReturnsEmptyListWhenUserIsNeitherCreatorOrCurator()
+    void listMessagesReturnsEmptyListWhenUserIsNeitherCreatorOrCurator()
         throws IOException {
-        var publications = createPublicationsOfDifferentOwners();
+        var publications = createPublicationsOfDifferentOwnersButSamplePublisher();
         final var messages =
-            createSampleMessagesFromPublications(publications,ResourceServiceUtils::extractUserInstance);
+            createSampleMessagesFromPublications(publications, UserInstance::fromPublication);
 
         var orgURI = messages.get(0).getCustomerId();
         var curator = someCurator(orgURI);
@@ -172,18 +165,26 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
         input = userRequest(curator.getUserIdentifier(), curator.getOrganizationUri(), SOME_OTHER_ROLE);
         handler.handleRequest(input, output, CONTEXT);
 
-        GatewayResponse<ResourceConversation[]> response = GatewayResponse.fromOutputStream(output);
+        var response = GatewayResponse.fromOutputStream(output, ResourceConversation[].class);
         var body = response.getBodyObject(ResourceConversation[].class);
 
         assertThat(Arrays.asList(body), is(empty()));
     }
 
-    private List<Publication> createPublicationsOfDifferentOwners() {
+    private List<Publication> createPublicationsOfDifferentOwnersButSamplePublisher() {
 
-        return PublicationGenerator.samplePublicationsOfDifferentOwners(NUMBER_OF_PUBLICATIONS, NO_IDENTIFIER)
+        var publisher = PublicationGenerator.randomPublication().getPublisher();
+        return samplePublicationsOfDifferentOwners()
             .stream()
+            .map(publication -> publication.copy().withPublisher(publisher).build())
             .map(attempt(p -> createPublication(resourceService, p)))
             .map(Try::orElseThrow)
+            .collect(Collectors.toList());
+    }
+
+    private List<Publication> samplePublicationsOfDifferentOwners() {
+        return IntStream.range(0, ListMessagesHandlerTest.NUMBER_OF_PUBLICATIONS).boxed()
+            .map(ignored -> PublicationGenerator.randomPublication())
             .collect(Collectors.toList());
     }
 
@@ -251,7 +252,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(ResourceService resourceService, Publication p) throws ApiGatewayException {
-        return resourceService.createPublication(extractUserInstance(p), p);
+        return resourceService.createPublication(UserInstance.fromPublication(p), p);
     }
 
     private Publication createPublication(UserInstance userInstance) throws ApiGatewayException {
@@ -288,16 +289,19 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private InputStream userRequest(String userIdentifier, URI organizationUri, String requestedRole)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
-            .withFeideId(userIdentifier)
+        var requestBuilder = new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
+            .withNvaUsername(userIdentifier)
             .withCustomerId(organizationUri.toString())
-            .withRoles(requestedRole)
-            .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole))
-            .build();
+            .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole));
+
+        if (CURATOR_ROLE.equals(requestedRole)) {
+            requestBuilder.withAccessRight(APPROVE_DOI_REQUEST);
+        }
+        return requestBuilder.build();
     }
 
     private UserInstance extractPublicationOwner(Message message) {
-        return new UserInstance(message.getOwner(), message.getCustomerId());
+        return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
 
     private List<PublicationSummary> extractPublicationSummaryFromResponse(ResourceConversation[] responseObjects) {
@@ -308,10 +312,10 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private PublicationSummary[] constructExpectedPublicationSummaries(List<Message> savedMessages) {
         return savedMessages
-                .stream()
-                .map(PublicationSummary::create)
-                .collect(Collectors.toList())
-                .toArray(PublicationSummary[]::new);
+            .stream()
+            .map(PublicationSummary::create)
+            .collect(Collectors.toList())
+            .toArray(PublicationSummary[]::new);
     }
 
     private List<MessageDto> extractAllMessagesFromResponse(ResourceConversation[] responseObjects) {
@@ -330,7 +334,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private List<Message> insertSampleMessagesForSingleOwner() {
-        UserInstance userInstance = new UserInstance(randomString(), randomUri());
+        UserInstance userInstance = UserInstance.create(randomString(), randomUri());
         List<Publication> publications = createSamplePublicationsForSingleOwner(userInstance);
         return createSampleMessagesFromPublications(publications, this::notTheOwner);
     }
@@ -340,7 +344,7 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private UserInstance someCurator(URI orgId) {
-        return new UserInstance(SOME_OTHER_USER, orgId);
+        return UserInstance.create(SOME_OTHER_USER, orgId);
     }
 
     private List<Message> createSampleMessagesFromPublications(List<Publication> publications,
@@ -367,9 +371,8 @@ public class ListMessagesHandlerTest extends ResourcesLocalTest {
     private Message createMessage(Publication publication, UserInstance sender)
         throws TransactionFailedException, NotFoundException {
         var messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
-        return messageService.getMessage(extractUserInstance(publication), messageIdentifier);
+        return messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
     }
-
 
     private InputStream sampleListRequest() throws JsonProcessingException {
         return defaultUserRequest(SAMPLE_USER, SOME_ORG);

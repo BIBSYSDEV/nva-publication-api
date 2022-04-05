@@ -2,9 +2,6 @@ package no.unit.nva.expansion.model;
 
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.IDENTIFIER_JSON_PTR;
-import static no.unit.nva.publication.storage.model.Message.supportMessage;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -12,7 +9,6 @@ import static org.mockito.Mockito.mock;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.time.Clock;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.FakeResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionService;
@@ -23,7 +19,6 @@ import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,7 +27,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ExpandedDatabaseEntryTest {
 
     private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
-    private static final  MessageService messageService = mock(MessageService.class);
+    private static final MessageService messageService = mock(MessageService.class);
 
     public static Stream<ExpandedDataEntryWithAssociatedPublication> entryProvider()
         throws JsonProcessingException, NotFoundException {
@@ -52,9 +47,8 @@ class ExpandedDatabaseEntryTest {
 
     private static ExpandedDoiRequest randomDoiRequest(Publication publication) throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
-        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService,messageService);
+        return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
-
 
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
         //TODO: create proper ExpandedResourceConversation
@@ -104,8 +98,7 @@ class ExpandedDatabaseEntryTest {
                 return
                     new ExpandedDataEntryWithAssociatedPublication(publication,
                                                                    ExpandedResource.fromPublication(publication));
-            }
-            else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
+            } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,

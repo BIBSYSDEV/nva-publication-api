@@ -1,11 +1,12 @@
 package no.unit.nva.doirequest.update;
 
+import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import static no.unit.nva.doirequest.DoiRequestsTestConfig.doiRequestsObjectMapper;
 import static no.unit.nva.doirequest.update.ApiUpdateDoiRequest.NO_CHANGE_REQUESTED_ERROR;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.API_PUBLICATION_PATH_IDENTIFIER;
 import static no.unit.nva.doirequest.update.UpdateDoiRequestStatusHandler.INVALID_PUBLICATION_ID_ERROR;
 import static no.unit.nva.publication.service.impl.DoiRequestService.UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -31,10 +32,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
-import no.unit.useraccessserivce.accessrights.AccessRight;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -43,9 +41,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
+class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
-    public static final String SOME_CURATOR = "some@curator.org";
+    public static final String SOME_CURATOR = randomString();
     public static final String INVALID_IDENTIFIER = "invalidIdentifier";
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_UPDATE_TIME = Instant.parse("2011-02-02T10:15:30.00Z");
@@ -66,24 +64,23 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_UPDATE_TIME)
             .thenReturn(DOI_REQUEST_CREATION_TIME)
             .thenReturn(DOI_REQUEST_UPDATE_TIME);
-        var externalServicesHttpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        doiRequestService = new DoiRequestService(client, externalServicesHttpClient, clock);
 
+        doiRequestService = new DoiRequestService(client, clock);
         handler = new UpdateDoiRequestStatusHandler(setupEnvironment(), doiRequestService);
-        resourceService = new ResourceService(client, externalServicesHttpClient, clock);
+        resourceService = new ResourceService(client, clock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
     }
 
     @Test
-    public void handleRequestUpdatesDoiStatusOfDoiRequestInDatabase()
+    void handleRequestUpdatesDoiStatusOfDoiRequestInDatabase()
         throws ApiGatewayException, IOException {
         var publication = createPublishedPublicationAndDoiRequest();
 
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
 
-        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
 
         var updatedDoiRequest = fetchDoiRequestDirectlyFromService(publication);
@@ -91,50 +88,50 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleReturnsForbiddenWhenUserDoesNotHaveApproveOrRejectAccessRights()
+    void handleReturnsForbiddenWhenUserDoesNotHaveApproveOrRejectAccessRights()
         throws ApiGatewayException, IOException {
         var publication = createPublishedPublicationAndDoiRequest();
 
         var request = createUnauthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
 
-        GatewayResponse<Void> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
     @Test
-    public void handlerReturnsBadRequestWhenPublicationIsDraft()
+    void handlerReturnsBadRequestWhenPublicationIsDraft()
         throws ApiGatewayException, IOException {
         var publication = createDraftPublicationAndDoiRequest();
         var request = createAuthorizedRestRequest(publication);
         handler.handleRequest(request, outputStream, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(UPDATE_DOI_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     @Test
-    public void handlerReturnsBadRequestForInvalidPublicationIdentifier()
+    void handlerReturnsBadRequestForInvalidPublicationIdentifier()
         throws ApiGatewayException, IOException {
         var publication = createDraftPublicationAndDoiRequest();
         publication.setIdentifier(SortableIdentifier.next());
         var request = createAuthorizedRestRequestWithInvalidIdentifier(publication);
         handler.handleRequest(request, outputStream, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(INVALID_PUBLICATION_ID_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
     }
 
     @Test
-    public void handlerReturnsBadRequestWhenNoChangeInDoiRequestStatusIsRequested()
+    void handlerReturnsBadRequestWhenNoChangeInDoiRequestStatusIsRequested()
         throws ApiGatewayException, IOException {
         var publication = createDraftPublicationAndDoiRequest();
         publication.setIdentifier(SortableIdentifier.next());
         var request = createAuthorizedRestRequestWithNoRequestedChange(publication);
         handler.handleRequest(request, outputStream, context);
-        GatewayResponse<Problem> response = GatewayResponse.fromOutputStream(outputStream);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         var problem = response.getBodyObject(Problem.class);
         assertThat(problem.getDetail(), containsString(NO_CHANGE_REQUESTED_ERROR));
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_BAD_REQUEST)));
@@ -158,7 +155,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest fetchDoiRequestDirectlyFromService(Publication publication) throws NotFoundException {
         return doiRequestService
-            .getDoiRequestByResourceIdentifier(extractUserInstance(publication), publication.getIdentifier());
+            .getDoiRequestByResourceIdentifier(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
 
     private InputStream createAuthorizedRestRequest(Publication publication) throws JsonProcessingException {
@@ -175,9 +172,8 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var pathParameters = createPathParameters(identifier);
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
             .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(SOME_CURATOR)
-            .withAccessRight(AccessRight.APPROVE_DOI_REQUEST.toString())
-            .withAccessRight(AccessRight.REJECT_DOI_REQUEST.toString())
+            .withNvaUsername(SOME_CURATOR)
+            .withAccessRight(APPROVE_DOI_REQUEST.toString())
             .withPathParameters(pathParameters)
             .withBody(body)
             .build();
@@ -188,7 +184,7 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
             .withCustomerId(publication.getPublisher().getId().toString())
-            .withFeideId(SOME_CURATOR)
+            .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withBody(body)
             .build();
@@ -208,13 +204,13 @@ public class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = createDraftPublicationAndDoiRequest();
-        resourceService.publishPublication(extractUserInstance(publication), publication.getIdentifier());
+        resourceService.publishPublication(UserInstance.fromPublication(publication), publication.getIdentifier());
         return publication;
     }
 
     private Publication createDraftPublicationAndDoiRequest() throws ApiGatewayException {
         var publication = PublicationGenerator.randomPublication();
-        var userInstance = extractUserInstance(publication);
+        var userInstance = UserInstance.fromPublication(publication);
         publication = resourceService.createPublication(userInstance, publication);
         doiRequestService.createDoiRequest(userInstance, publication.getIdentifier());
         return publication;

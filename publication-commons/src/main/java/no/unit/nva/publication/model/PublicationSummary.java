@@ -1,5 +1,6 @@
 package no.unit.nva.publication.model;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
@@ -7,7 +8,6 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Publication;
@@ -21,8 +21,6 @@ import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
-
-import static java.util.Objects.nonNull;
 
 @JsonTypeName(PublicationSummary.TYPE)
 public class PublicationSummary {
@@ -83,7 +81,7 @@ public class PublicationSummary {
         publicationSummary.setPublicationIdentifier(publication.getIdentifier());
         publicationSummary.setCreatedDate(publication.getCreatedDate());
         publicationSummary.setModifiedDate(publication.getModifiedDate());
-        publicationSummary.setOwner(publication.getOwner());
+        publicationSummary.setOwner(publication.getResourceOwner().getOwner());
         publicationSummary.setStatus(publication.getStatus());
         if (nonNull(publication.getEntityDescription())) {
             publicationSummary.setContributors(publication.getEntityDescription().getContributors());
@@ -93,7 +91,8 @@ public class PublicationSummary {
                 publicationSummary.setPublicationYear(publication.getEntityDescription().getDate().getYear());
             }
             if (nonNull(publication.getEntityDescription().getReference())) {
-                publicationSummary.setPublicationInstance(publication.getEntityDescription().getReference().getPublicationInstance());
+                publicationSummary.setPublicationInstance(
+                    publication.getEntityDescription().getReference().getPublicationInstance());
             }
         }
         return publicationSummary;
@@ -144,7 +143,7 @@ public class PublicationSummary {
     }
 
     public void setPublicationInstance(
-            PublicationInstance<? extends Pages> publicationInstance) {
+        PublicationInstance<? extends Pages> publicationInstance) {
         this.publicationInstance = publicationInstance;
     }
 
@@ -175,8 +174,9 @@ public class PublicationSummary {
     @JacocoGenerated
     @Override
     public int hashCode() {
-        return Objects.hash(getPublicationId(), getPublicationIdentifier(), getTitle(), getModifiedDate(), getPublicationInstance(), getPublicationDate(),
-                getPublicationYear(), getContributors(), getStatus());
+        return Objects.hash(getPublicationId(), getPublicationIdentifier(), getTitle(), getModifiedDate(),
+                            getPublicationInstance(), getPublicationDate(),
+                            getPublicationYear(), getContributors(), getStatus());
     }
 
     @JacocoGenerated
@@ -190,14 +190,14 @@ public class PublicationSummary {
         }
         PublicationSummary that = (PublicationSummary) o;
         return Objects.equals(getPublicationId(), that.getPublicationId())
-                && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
-                && Objects.equals(getTitle(), that.getTitle())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
-                && Objects.equals(getPublicationDate(), that.getPublicationDate())
-                && Objects.equals(getPublicationYear(), that.getPublicationYear())
-                && Objects.equals(getContributors(), that.getContributors())
-                && getStatus() == that.getStatus();
+               && Objects.equals(getPublicationIdentifier(), that.getPublicationIdentifier())
+               && Objects.equals(getTitle(), that.getTitle())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getPublicationInstance(), that.getPublicationInstance())
+               && Objects.equals(getPublicationDate(), that.getPublicationDate())
+               && Objects.equals(getPublicationYear(), that.getPublicationYear())
+               && Objects.equals(getContributors(), that.getContributors())
+               && getStatus() == that.getStatus();
     }
 
     private static URI extractPublicationId(ConnectedToResource connectedToResource) {
@@ -205,8 +205,8 @@ public class PublicationSummary {
     }
 
     private static URI toPublicationId(SortableIdentifier identifier) {
-        return new UriWrapper(PublicationServiceConfig.ID_NAMESPACE)
-                .addChild(identifier.toString()).getUri();
+        return UriWrapper.fromUri(PublicationServiceConfig.ID_NAMESPACE)
+            .addChild(identifier.toString()).getUri();
     }
 
     public Instant getCreatedDate() {

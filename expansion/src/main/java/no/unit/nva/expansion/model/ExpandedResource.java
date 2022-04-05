@@ -20,11 +20,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.expansion.utils.UriRetriever;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import nva.commons.core.JacocoGenerated;
-import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings("PMD.GodClass")
@@ -134,7 +134,7 @@ public final class ExpandedResource implements JsonSerializable, ExpandedDataEnt
     private static ObjectNode createJsonWithId(Publication publication) throws JsonProcessingException {
         String jsonString = objectMapper.writeValueAsString(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(jsonString);
-        URI id = new UriWrapper(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI id =  UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
         json.put(ID_FIELD_NAME, id.toString());
         return json;
     }

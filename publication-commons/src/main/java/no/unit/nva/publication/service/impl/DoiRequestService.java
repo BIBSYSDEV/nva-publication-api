@@ -23,7 +23,6 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,23 +66,19 @@ public class DoiRequestService extends ServiceWithTransactions {
     private final String tableName;
     private final Supplier<SortableIdentifier> identifierProvider;
 
-    public DoiRequestService(AmazonDynamoDB client,
-                             HttpClient externalServicesHttpClient,
-                             Clock clock) {
+    public DoiRequestService(AmazonDynamoDB client,Clock clock) {
         this(client,
-             externalServicesHttpClient,
              clock,
              DEFAULT_IDENTIFIER_PROVIDER);
     }
 
     protected DoiRequestService(AmazonDynamoDB client,
-                                HttpClient externalServicesHttpClient,
                                 Clock clock,
                                 Supplier<SortableIdentifier> identifierProvider) {
         super();
         this.client = client;
         this.clock = clock;
-        this.resourceService = new ResourceService(client,externalServicesHttpClient, clock);
+        this.resourceService = new ResourceService(client, clock);
         this.tableName = RESOURCES_TABLE_NAME;
         this.identifierProvider = identifierProvider;
     }

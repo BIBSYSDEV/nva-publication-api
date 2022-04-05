@@ -1,9 +1,8 @@
 package no.unit.nva.publication.s3imports;
 
-import nva.commons.core.JacocoGenerated;
-
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import nva.commons.core.JacocoGenerated;
 
 public class FileImportUtils {
 

@@ -9,12 +9,12 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.commons.json.JsonSerializable;
 import nva.commons.core.SingletonCollector;
 
 @JsonTypeName(ResourceDao.TYPE)

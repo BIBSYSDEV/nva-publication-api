@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
 import no.unit.nva.model.instancetypes.book.BookMonographContentType;
 import no.unit.nva.model.instancetypes.chapter.ChapterArticleContentType;
 import no.unit.nva.model.instancetypes.journal.JournalArticleContentType;

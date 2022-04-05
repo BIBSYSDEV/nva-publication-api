@@ -1,6 +1,5 @@
 package no.unit.nva.publication.update;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
@@ -35,7 +34,6 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
             new Environment(),
             new ResourceService(
                 AmazonDynamoDBClientBuilder.defaultClient(),
-                EXTERNAL_SERVICES_HTTP_CLIENT,
                 Clock.systemDefaultZone()
             )
         );
@@ -57,9 +55,9 @@ public class PublishPublicationHandler extends ApiGatewayHandler<Void, PublishPu
     protected PublishPublicationStatusResponse processInput(Void input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String user = requestInfo.getFeideId().orElse(null);
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        UserInstance userInstance = new UserInstance(user, customerId);
+        String user = requestInfo.getNvaUsername();
+        URI customerId = requestInfo.getCustomerId();
+        UserInstance userInstance = UserInstance.create(user, customerId);
         addAdditionalHeaders(() -> Map.of(HttpHeaders.LOCATION, getLocation(identifier).toString()));
 
         return resourceService.publishPublication(userInstance, identifier);

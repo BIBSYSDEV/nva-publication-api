@@ -12,7 +12,6 @@ import static no.unit.nva.cristin.lambda.constants.HardcodedValues.UNIT_CUSTOMER
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.PATH_CUSTOMER;
 import static no.unit.nva.publication.s3imports.FileImportUtils.timestampToString;
-import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -28,15 +27,11 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import no.unit.nva.cristin.AbstractCristinImportTest;
 import no.unit.nva.cristin.CristinDataGenerator;
@@ -60,7 +55,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
-import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.logutils.LogUtils;
@@ -69,7 +63,6 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.javers.core.diff.Diff;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -90,13 +83,11 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     private ByteArrayOutputStream outputStream;
     private ResourceService resourceService;
     private FakeS3Client s3Client;
-    private HttpClient httpClient;
 
     @BeforeEach
     public void init() {
         super.init();
-        httpClient = new FakeHttpClient();
-        resourceService = new ResourceService(super.client, httpClient, Clock.systemDefaultZone());
+        resourceService = new ResourceService(super.client, Clock.systemDefaultZone());
         s3Client = new FakeS3Client(new ConcurrentHashMap<>());
         handler = new CristinEntryEventConsumer(resourceService, s3Client);
         outputStream = new ByteArrayOutputStream();
@@ -412,24 +403,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
         assertDoesNotThrow(action);
     }
 
-    //This is a test-template to run local tests,
-    // the files needed to run the test has been removed
-    // and the test has been disabled.
-    @Disabled
-    @Test
-    public void runMappingsLocally() {
-        ObjectMapper mapper = new ObjectMapper();
-        List<String> listOfJsonObjects = IoUtils.linesfromResource(Path.of("100VitenskapeligForedrag.txt"));
-        var returnValue = listOfJsonObjects.stream()
-            .map(attempt(mapper::readTree))
-            .map(Try::orElseThrow)
-            .map(this::createEvent)
-            .map(eventJason -> stringToStream(eventJason.toString()))
-            .map(attempt(this::handleRequest))
-            .filter(Try::isSuccess)
-            .count();
-        System.out.println(returnValue);
-    }
 
     private static JavaType constructImportResultJavaType() {
 
@@ -441,22 +414,6 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
             .constructParametricType(ImportResult.class, eventType);
     }
 
-    private JsonNode createEvent(JsonNode actualObj) {
-        try {
-            String eventTemplateString = IoUtils.stringFromResources(Path.of("eventTemplate.json"));
-            ObjectNode eventTemplateJson = (ObjectNode) eventHandlerObjectMapper.readTree(eventTemplateString);
-            ((ObjectNode) eventTemplateJson.at("/detail")).set("contents", actualObj);
-            return eventTemplateJson;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private String handleRequest(InputStream eventJason) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        handler.handleRequest(eventJason, outputStream, CONTEXT);
-        return outputStream.toString();
-    }
 
     private UnixPath constructExpectedFilePathForEntryWithUnkownFields(
         AwsEventBridgeEvent<FileContentsEvent<Identifiable>> event,
@@ -528,7 +485,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private ResourceService resourceServiceThrowingExceptionWhenSavingResource() {
-        return new ResourceService(client, httpClient, Clock.systemDefaultZone()) {
+        return new ResourceService(client,  Clock.systemDefaultZone()) {
             @Override
             public Publication createPublicationFromImportedEntry(Publication publication) {
                 throw new RuntimeException(RESOURCE_EXCEPTION_MESSAGE);
@@ -545,7 +502,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
     private UserInstance createExpectedPublicationOwner() {
         UriWrapper customerId = new UriWrapper(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
-        return new UserInstance(HARDCODED_PUBLICATIONS_OWNER, customerId.getUri());
+        return UserInstance.create(HARDCODED_PUBLICATIONS_OWNER, customerId.getUri());
     }
 
     private CristinObject generatePublicationFromResource(String input) throws JsonProcessingException {

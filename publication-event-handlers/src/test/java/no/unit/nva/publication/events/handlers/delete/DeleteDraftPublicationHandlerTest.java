@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.delete;
 
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.publication.storage.model.UserInstance.fromPublication;
 import static nva.commons.core.ioutils.IoUtils.inputStreamFromResources;
 import static nva.commons.core.ioutils.IoUtils.streamToString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -19,8 +18,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ReadResourceService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,15 +39,14 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     @BeforeEach
     public void setUp() {
         super.init();
-        HttpClient httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        resourceService = new ResourceService(client, httpClient, Clock.systemDefaultZone());
+        resourceService = new ResourceService(client,  Clock.systemDefaultZone());
         handler = new DeleteDraftPublicationHandler(resourceService);
         outputStream = new ByteArrayOutputStream();
         context = Mockito.mock(Context.class);
     }
 
     @Test
-    public void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
+    void handleRequestDeletesPublicationWithoutDoiWhenStatusIsDraftForDeletion() throws ApiGatewayException {
         Publication publication = insertPublicationWithStatus(PublicationStatus.DRAFT_FOR_DELETION);
 
         ByteArrayInputStream inputStream = getInputStreamForEvent(
@@ -66,7 +62,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleRequestThrowsRuntimeExceptionOnServiceException() {
+    void handleRequestThrowsRuntimeExceptionOnServiceException() {
         SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
             DELETE_DRAFT_PUBLICATION_WITHOUT_DOI_JSON, identifier);
@@ -78,7 +74,7 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
+    void handleRequestThrowsRuntimeExceptionOnEventWithDoi() {
         SortableIdentifier identifier = SortableIdentifier.next();
         ByteArrayInputStream inputStream = getInputStreamForEvent(
             DELETE_DRAFT_PUBLICATION_WITH_DOI_JSON, identifier);
@@ -97,8 +93,11 @@ public class DeleteDraftPublicationHandlerTest extends ResourcesLocalTest {
     }
 
     private Publication insertPublicationWithStatus(PublicationStatus status) throws ApiGatewayException {
-        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier();
+        Publication publicationToCreate = PublicationGenerator.publicationWithoutIdentifier().copy()
+            .withDoiRequest(null)
+            .withDoi(null)
+            .build();
         publicationToCreate.setStatus(status);
-        return resourceService.createPublication(extractUserInstance(publicationToCreate), publicationToCreate);
+        return resourceService.createPublication(fromPublication(publicationToCreate), publicationToCreate);
     }
 }

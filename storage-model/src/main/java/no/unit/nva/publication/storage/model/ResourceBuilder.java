@@ -31,11 +31,6 @@ public final class ResourceBuilder {
         return this;
     }
 
-    public ResourceBuilder withOwner(String owner) {
-        resource.setOwner(owner);
-        return this;
-    }
-
     public ResourceBuilder withResourceOwner(ResourceOwner resourceOwner) {
         resource.setResourceOwner(resourceOwner);
         return this;

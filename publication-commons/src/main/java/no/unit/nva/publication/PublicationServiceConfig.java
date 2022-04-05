@@ -4,13 +4,12 @@ import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.http.HttpClient;
+import java.time.Clock;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.http.HttpClient;
-import java.time.Clock;
 
 public final class PublicationServiceConfig {
 
@@ -35,7 +34,7 @@ public final class PublicationServiceConfig {
 
     @JacocoGenerated
     public static ResourceService defaultResourceService() {
-        return new ResourceService(defaultDynamoDbClient(), EXTERNAL_SERVICES_HTTP_CLIENT, Clock.systemDefaultZone());
+        return new ResourceService(defaultDynamoDbClient(),  Clock.systemDefaultZone());
     }
 
     @JacocoGenerated

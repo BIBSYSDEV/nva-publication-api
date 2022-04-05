@@ -1,8 +1,8 @@
 package no.unit.nva.expansion;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import nva.commons.core.Environment;
 import no.unit.nva.commons.json.JsonUtils;
+import nva.commons.core.Environment;
 
 public final class ExpansionConfig {
 

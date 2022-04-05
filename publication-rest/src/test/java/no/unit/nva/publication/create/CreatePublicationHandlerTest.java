@@ -2,7 +2,7 @@ package no.unit.nva.publication.create;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.create.CreatePublicationHandler.API_HOST;
-import static no.unit.nva.publication.create.CreatePublicationHandler.API_SCHEME;
+import static no.unit.nva.publication.testing.http.RandomPersonServiceResponse.randomUri;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -28,8 +29,6 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
@@ -37,13 +36,14 @@ import org.javers.core.Javers;
 import org.javers.core.JaversBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.zalando.problem.Problem;
 
-public class CreatePublicationHandlerTest extends ResourcesLocalTest {
+class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
     public static final String NVA_UNIT_NO = "nva.unit.no";
     public static final String WILDCARD = "*";
     public static final Javers JAVERS = JaversBuilder.javers().build();
-    private String testFeideId;
+    private String testUserName;
     private URI testOrgId;
 
     public static final Clock CLOCK = Clock.systemDefaultZone();
@@ -51,6 +51,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private ByteArrayOutputStream outputStream;
     private Context context;
     private Publication samplePublication;
+    private URI topLevelCristinOrgId;
 
     /**
      * Setting up test environment.
@@ -61,23 +62,23 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         Environment environmentMock = mock(Environment.class);
         when(environmentMock.readEnv(ALLOWED_ORIGIN_ENV)).thenReturn(WILDCARD);
         when(environmentMock.readEnv(API_HOST)).thenReturn(NVA_UNIT_NO);
-        var httpClient = new FakeHttpClient<>(new RandomPersonServiceResponse().toString());
-        ResourceService resourceService = new ResourceService(client, httpClient, CLOCK);
+        ResourceService resourceService = new ResourceService(client, CLOCK);
         handler = new CreatePublicationHandler(resourceService, environmentMock);
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
         samplePublication = PublicationGenerator.randomPublication();
-        testFeideId = samplePublication.getOwner();
+        testUserName = samplePublication.getResourceOwner().getOwner();
         testOrgId = samplePublication.getPublisher().getId();
+        topLevelCristinOrgId = randomUri();
     }
 
     @Test
-    void requestToHandlerReturnsMinRequiredFieldsWhenDoesNotContainABodyRequestContainsEmptyResource()
+    void requestToHandlerReturnsMinRequiredFieldsWhenRequestBodyIsEmpty()
         throws Exception {
         var inputStream = createPublicationRequest(null);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
@@ -89,7 +90,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream, PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertExistenceOfMinimumRequiredFields(publicationResponse);
@@ -108,7 +109,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
         assertThat(actual.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_CREATED)));
         var publicationResponse = actual.getBodyObject(PublicationResponse.class);
         assertThat(publicationResponse.getFileSet(), is(equalTo(filesetInCreationRequest)));
@@ -122,7 +123,7 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         var inputStream = createPublicationRequest(request);
         handler.handleRequest(inputStream, outputStream, context);
 
-        GatewayResponse<PublicationResponse> actual = GatewayResponse.fromOutputStream(outputStream);
+        var actual = GatewayResponse.fromOutputStream(outputStream,PublicationResponse.class);
 
         var actualPublicationResponse = actual.getBodyObject(PublicationResponse.class);
 
@@ -133,6 +134,14 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(actualPublicationResponse.getIdentifier(), is(equalTo(expectedPublicationResponse.getIdentifier())));
         assertThat(actualPublicationResponse.getPublisher(), is(equalTo(expectedPublicationResponse.getPublisher())));
         assertThat(diff.prettyPrint(), actualPublicationResponse, is(equalTo(expectedPublicationResponse)));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserCannotBeIdentified() throws IOException {
+        var event = requestWithoutUsername(createEmptyPublicationRequest());
+        handler.handleRequest(event, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(),is(equalTo(HttpURLConnection.HTTP_UNAUTHORIZED)));
     }
 
     private PublicationResponse constructResponseSettingFieldsThatAreNotCopiedByTheRequest(
@@ -178,14 +187,25 @@ public class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
-        assertThat(publicationResponse.getOwner(), is(equalTo(testFeideId)));
-        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testFeideId)));
+        assertThat(publicationResponse.getOwner(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testUserName)));
+        assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
     }
 
     private InputStream createPublicationRequest(CreatePublicationRequest request) throws JsonProcessingException {
+
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withFeideId(testFeideId)
+            .withNvaUsername(testUserName)
+            .withCustomerId(testOrgId.toString())
+            .withTopLevelCristinOrgId(topLevelCristinOrgId)
+            .withBody(request)
+            .build();
+    }
+
+    private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
+
+        return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
             .withCustomerId(testOrgId.toString())
             .withBody(request)
             .build();

@@ -1,11 +1,10 @@
 package no.unit.nva.cristin.mapper.nva;
 
+import static java.util.Objects.isNull;
 import java.util.Optional;
 import no.unit.nva.cristin.mapper.CristinBookOrReportMetadata;
 import no.unit.nva.cristin.mapper.CristinJournalPublication;
 import no.unit.nva.cristin.mapper.CristinObject;
-
-import static java.util.Objects.isNull;
 
 /**
  * Class containing common functionality for the different modules implementing the mapping logic of Cristin entries to

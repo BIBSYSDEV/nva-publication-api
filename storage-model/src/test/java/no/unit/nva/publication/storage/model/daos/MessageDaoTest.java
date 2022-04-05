@@ -25,9 +25,9 @@ public class MessageDaoTest extends ResourcesLocalTest {
 
     public static final URI SAMPLE_ORG = URI.create("https://example.org/123");
     public static final String SAMPLE_SENDER_USERNAME = "some@sender";
-    public static final UserInstance SAMPLE_SENDER = new UserInstance(SAMPLE_SENDER_USERNAME, SAMPLE_ORG);
+    public static final UserInstance SAMPLE_SENDER = UserInstance.create(SAMPLE_SENDER_USERNAME, SAMPLE_ORG);
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
-    public static final UserInstance SAMPLE_OWNER = new UserInstance(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
+    public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
     public static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     public static final String SAMPLE_TEXT = "some text";
     public static final Instant MESSAGE_CREATE_TIME = Instant.now();

@@ -1,9 +1,8 @@
 package cucumber.utils.transformers;
 
 import io.cucumber.java.DataTableType;
-import no.unit.nva.cristin.mapper.CristinTags;
-
 import java.util.Map;
+import no.unit.nva.cristin.mapper.CristinTags;
 
 public class CristinTagsTransformer {
 

@@ -1,6 +1,5 @@
 package no.unit.nva.doirequest.create;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
@@ -10,7 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -26,6 +24,7 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
@@ -43,14 +42,14 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
 
     @JacocoGenerated
     public CreateDoiRequestHandler() {
-        this(AmazonDynamoDBClientBuilder.defaultClient(), EXTERNAL_SERVICES_HTTP_CLIENT, CLOCK);
+        this(AmazonDynamoDBClientBuilder.defaultClient(),  CLOCK);
     }
 
     @JacocoGenerated
-    private CreateDoiRequestHandler(AmazonDynamoDB client, HttpClient externalServicesHttpClient, Clock clock) {
+    private CreateDoiRequestHandler(AmazonDynamoDB client, Clock clock) {
         this(
-            new ResourceService(client, externalServicesHttpClient, clock),
-            new DoiRequestService(client, externalServicesHttpClient, clock),
+            new ResourceService(client,  clock),
+            new DoiRequestService(client,  clock),
             new MessageService(client, clock),
             new Environment());
     }
@@ -86,10 +85,10 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         return HttpURLConnection.HTTP_CREATED;
     }
 
-    private UserInstance extractUserInstance(RequestInfo requestInfo) {
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String user = requestInfo.getFeideId().orElse(null);
-        return new UserInstance(user, customerId);
+    private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
+        URI customerId = requestInfo.getCustomerId();
+        String user = requestInfo.getNvaUsername();
+        return UserInstance.create(user, customerId);
     }
 
     private Publication fetchPublication(CreateDoiRequest input, UserInstance owner) throws ApiGatewayException {

@@ -2,7 +2,6 @@ package no.unit.nva.publication.events.handlers.persistence;
 
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EXPANDED_ENTRY_UPDATED_EVENT_TOPIC;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
 import static no.unit.nva.testutils.EventBridgeEventBuilder.sampleLambdaDestinationsEvent;
 import static no.unit.nva.testutils.RandomDataGenerator.randomJson;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -24,8 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
@@ -44,12 +41,9 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.http.FakeHttpClient;
-import no.unit.nva.publication.testing.http.RandomPersonServiceResponse;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,9 +54,6 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     public static final int FILENAME_WIHOUT_FILE_ENDING = 0;
     public static final String FILENAME_AND_FILE_ENDING_SEPRATOR = "\\.";
-    public static final String TOP_LEVEL_ORGANIZATION_FOR_AVOIDING_SUBSEQUENT_CALLS_TO_ORGANIZATION_SERVICE =
-        IoUtils.stringFromResources(
-            Path.of("expandResources", "cristin_grand_parent_org.json"));
     public static final String JSONLD_CONTEXT = "@context";
     public static final Clock CLOCK = Clock.systemDefaultZone();
     private AnalyticsIntegrationHandler analyticsIntegration;
@@ -84,10 +75,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         this.analyticsIntegration = new AnalyticsIntegrationHandler(s3Client);
         this.s3Driver = new S3Driver(s3Client, "notImportant");
 
-        HttpClient externalServicesHttpClient = setupPersonServiceResponses();
-        resourceService = new ResourceService(dynamoClient, externalServicesHttpClient, CLOCK);
+        resourceService = new ResourceService(dynamoClient,  CLOCK);
         messageService = new MessageService(dynamoClient, CLOCK);
-        doiRequestService = new DoiRequestService(dynamoClient, externalServicesHttpClient, CLOCK);
+        doiRequestService = new DoiRequestService(dynamoClient,  CLOCK);
 
         this.resourceExpansionService = setupResourceExpansionService();
     }
@@ -107,7 +97,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
         InputStream event = sampleLambdaDestinationsEvent(inputEvent);
         analyticsIntegration.handleRequest(event, outputStream, mock(Context.class));
         var analyticsObjectEvent = objectMapper.readValue(outputStream.toString(), EventReference.class);
-        var analyticsFilePath = new UriWrapper(analyticsObjectEvent.getUri()).toS3bucketPath();
+        var analyticsFilePath = UriWrapper.fromUri(analyticsObjectEvent.getUri()).toS3bucketPath();
         var publicationString = s3Driver.getFile(analyticsFilePath);
         var storedPublication = JsonUtils.dtoObjectMapper.readValue(publicationString, ExpandedResource.class);
         assertThat(publicationString, not(containsString(JSONLD_CONTEXT)));
@@ -125,19 +115,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private ResourceExpansionServiceImpl setupResourceExpansionService() {
         var notImportantMessageService = new MessageService(dynamoClient, Clock.systemDefaultZone());
-        return new ResourceExpansionServiceImpl(setupHttpResponsesToOrganizationService(),
-                                                resourceService,
-                                                notImportantMessageService,
-                                                doiRequestService);
-    }
-
-    private HttpClient setupPersonServiceResponses() {
-        var personServiceResponse = new RandomPersonServiceResponse().toString();
-        return new FakeHttpClient<>(personServiceResponse);
-    }
-
-    private HttpClient setupHttpResponsesToOrganizationService() {
-        return new FakeHttpClient<>(TOP_LEVEL_ORGANIZATION_FOR_AVOIDING_SUBSEQUENT_CALLS_TO_ORGANIZATION_SERVICE);
+        return new ResourceExpansionServiceImpl(resourceService,notImportantMessageService,doiRequestService);
     }
 
     private void assertThatAnalyticsFileHasAsFilenameThePublicationIdentifier(EventReference inputEvent,
@@ -151,9 +129,9 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
     }
 
     private String[] splitFilenameFromFileEnding(EventReference inputEvent) {
-        return new UriWrapper(inputEvent.getUri())
+        return UriWrapper.fromUri(inputEvent.getUri())
             .toS3bucketPath()
-            .getFilename()
+            .getLastPathElement()
             .split(FILENAME_AND_FILE_ENDING_SEPRATOR);
     }
 
@@ -181,7 +159,7 @@ class AnalyticsIntegrationHandlerTest extends ResourcesLocalTest {
 
     private Publication insertSamplePublication() throws ApiGatewayException {
         var samplePublication = PublicationGenerator.randomPublication();
-        UserInstance userInstance = extractUserInstance(samplePublication);
+        UserInstance userInstance = UserInstance.fromPublication(samplePublication);
         samplePublication = resourceService.createPublication(userInstance, samplePublication);
         return samplePublication;
     }

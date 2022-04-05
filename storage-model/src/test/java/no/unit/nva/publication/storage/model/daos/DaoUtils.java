@@ -8,14 +8,12 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
-import java.net.MalformedURLException;
 import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.exceptions.InvalidIssnException;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -66,7 +64,7 @@ public final class DaoUtils {
 
     private static MessageDao sampleMessageDao() {
         SortableIdentifier identifier = SortableIdentifier.next();
-        UserInstance sender = new UserInstance(randomString(), randomUri());
+        UserInstance sender = UserInstance.create(randomString(), randomUri());
         Publication publication = PublicationGenerator.randomPublication();
         Message message = Message.doiRequestMessage(sender, publication, randomString(), identifier, clock);
         assertThat(message, doesNotHaveEmptyValues());

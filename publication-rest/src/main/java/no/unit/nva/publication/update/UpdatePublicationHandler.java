@@ -1,6 +1,6 @@
 package no.unit.nva.publication.update;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.time.Clock;
@@ -17,9 +17,9 @@ import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.StringUtils;
 import org.apache.http.HttpStatus;
 
 public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicationRequest, PublicationResponse> {
@@ -34,7 +34,6 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     public UpdatePublicationHandler() {
         this(new ResourceService(
                  AmazonDynamoDBClientBuilder.defaultClient(),
-                 EXTERNAL_SERVICES_HTTP_CLIENT,
                  Clock.systemDefaultZone()),
              new Environment());
     }
@@ -70,11 +69,17 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private Publication fetchExistingPublication(RequestInfo requestInfo,
                                                  SortableIdentifier identifierInPath) throws ApiGatewayException {
-        UserInstance userInstance = RequestUtil.extractUserInstance(requestInfo);
+        UserInstance userInstance = extractUserInstance(requestInfo);
 
         return userCanEditOtherPeoplesPublications(requestInfo)
                    ? fetchPublicationForPrivilegedUser(identifierInPath, userInstance)
                    : fetchPublicationForPublicationOwner(identifierInPath, userInstance);
+    }
+
+    private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
+        return attempt(requestInfo::getCustomerId)
+            .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
+            .orElseThrow(fail -> new UnauthorizedException());
     }
 
     private Publication fetchPublicationForPublicationOwner(SortableIdentifier identifierInPath,
@@ -102,11 +107,8 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
 
     private boolean userCanEditOtherPeoplesPublications(RequestInfo requestInfo) {
 
-        return requestInfo.getAccessRights()
-            .stream()
-            .filter(StringUtils::isNotBlank)
-            .map(AccessRight::fromString)
-            .anyMatch(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES::equals);
+        var accessRight = AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString();
+        return requestInfo.userIsAuthorized(accessRight);
     }
 
     private void validateRequest(SortableIdentifier identifierInPath, UpdatePublicationRequest input)

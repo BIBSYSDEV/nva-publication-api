@@ -9,11 +9,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.storage.model.Message;
 import nva.commons.core.JacocoGenerated;
-import no.unit.nva.commons.json.JsonSerializable;
 
 public class MessageDto implements JsonSerializable {
 

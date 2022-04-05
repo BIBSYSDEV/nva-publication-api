@@ -1,11 +1,11 @@
 [versions]
 
-nva = { strictly = '1.20.15' }
-nvaDatamodel = { strictly = '0.15.1' }
+nva = { strictly = '1.21.0-alpha11' }
+nvaDatamodel = { strictly = '0.16.0' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
-jackson = { strictly = '2.13.0' }
+jackson = { strictly = '2.13.1' }
 awsSdk = { strictly = '1.12.129' }
-awsSdk2 = { strictly = '2.17.105' }
+awsSdk2 = { strictly = '2.17.152' }
 log4j = { strictly = '2.17.1' }
 slf4j = { strictly = '1.8.0-beta4' }
 zalandoProblem = { strictly = '0.26.0' }
@@ -14,7 +14,6 @@ awsLambdaEvents = { strictly = '3.9.0' }
 # jsonld and awssdk have different versions. update libraries and check again
 httpcore = { require = '4.4.13' }
 dynamoDbLocal = { strictly = '1.15.0' }
-nvaUserAccessService = { require = '0.3.0' }
 awsIon = { strictly = '1.5.1' }
 commonsValidator = { strictly = '1.7' }
 apacheCommons = { strictly = '4.4' }
@@ -39,7 +38,7 @@ nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nva' }
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
 logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nva' }
-nva-user-access-rights = { group = 'com.github.bibsysdev.nva-user-access-service', name = 'user-access-rights', version.ref = 'nvaUserAccessService' }
+
 nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
 nva-datamodel-testutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodel' }
 nva-doi = { group = 'com.github.bibsysdev', name = 'doi', version.ref = 'nva' }

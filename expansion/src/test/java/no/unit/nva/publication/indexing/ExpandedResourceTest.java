@@ -38,7 +38,6 @@ import no.unit.nva.model.contexttypes.Publisher;
 import no.unit.nva.model.contexttypes.Series;
 import no.unit.nva.model.instancetypes.book.BookMonograph;
 import no.unit.nva.model.instancetypes.journal.FeatureArticle;
-
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
 import nva.commons.core.paths.UriWrapper;
@@ -81,7 +80,7 @@ class ExpandedResourceTest {
         Publication publication = PublicationGenerator.randomPublication(publicationInstance);
         var indexDocument = fromPublication(publication);
         ObjectNode json = (ObjectNode) objectMapper.readTree(indexDocument.toJsonString());
-        URI expectedUri = new UriWrapper(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
+        URI expectedUri = UriWrapper.fromUri(ID_NAMESPACE).addChild(publication.getIdentifier().toString()).getUri();
         URI actualUri = URI.create(json.at(PublicationJsonPointers.ID_JSON_PTR).textValue());
         assertThat(actualUri, is(equalTo(expectedUri)));
     }

@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
-import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 
@@ -46,12 +45,6 @@ public final class ResourceServiceUtils {
 
     static Organization userOrganization(UserInstance user) {
         return newOrganization(user.getOrganizationUri());
-    }
-
-    public static UserInstance extractUserInstance(Publication publication) {
-        String owner = publication.getOwner();
-        URI customerId = publication.getPublisher().getId();
-        return new UserInstance(owner, customerId);
     }
 
     static <T> Map<String, AttributeValue> conditionValueMapToAttributeValueMap(Map<String, Object> valuesMap,

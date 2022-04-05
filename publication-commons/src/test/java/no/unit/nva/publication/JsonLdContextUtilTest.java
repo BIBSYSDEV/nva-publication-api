@@ -4,6 +4,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Optional;
+import no.unit.nva.publication.utils.JsonLdContextUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -12,8 +12,8 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import no.unit.nva.model.Publication;
 import no.unit.nva.commons.json.JsonSerializable;
+import no.unit.nva.model.Publication;
 
 @Data
 @Builder(

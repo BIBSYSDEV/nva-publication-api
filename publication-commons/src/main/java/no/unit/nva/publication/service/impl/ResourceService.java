@@ -20,7 +20,6 @@ import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import com.amazonaws.services.dynamodbv2.model.WriteRequest;
 import com.google.common.collect.Lists;
-import java.net.http.HttpClient;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -78,10 +77,8 @@ public class ResourceService extends ServiceWithTransactions {
     private final Supplier<SortableIdentifier> identifierSupplier;
     private final ReadResourceService readResourceService;
     private final UpdateResourceService updateResourceService;
-    private final AffiliationSelectionService affiliationService;
 
     public ResourceService(AmazonDynamoDB client,
-                           HttpClient externalServicesHttpClient,
                            Clock clock,
                            Supplier<SortableIdentifier> identifierSupplier) {
         super();
@@ -92,13 +89,11 @@ public class ResourceService extends ServiceWithTransactions {
         this.readResourceService = new ReadResourceService(client, RESOURCES_TABLE_NAME);
         this.updateResourceService =
             new UpdateResourceService(client, RESOURCES_TABLE_NAME, clockForTimestamps, readResourceService);
-        this.affiliationService = AffiliationSelectionService.create(externalServicesHttpClient);
     }
 
     public ResourceService(AmazonDynamoDB client,
-                           HttpClient externalServicesHttpClient,
                            Clock clock) {
-        this(client, externalServicesHttpClient, clock, DEFAULT_IDENTIFIER_SUPPLIER);
+        this(client, clock, DEFAULT_IDENTIFIER_SUPPLIER);
     }
 
     public Publication createPublication(UserInstance userInstance, Publication inputData)
@@ -244,11 +239,9 @@ public class ResourceService extends ServiceWithTransactions {
         return new Organization.Builder().withId(userInstance.getOrganizationUri()).build();
     }
 
-    private ResourceOwner createResourceOwner(UserInstance userInstance)
-        throws ApiGatewayException {
-        return this.affiliationService.fetchAffiliation(userInstance.getUserIdentifier())
-            .map(affiliation -> new ResourceOwner(userInstance.getUserIdentifier(), affiliation))
-            .orElse(new ResourceOwner(userInstance.getUserIdentifier(), null));
+    private ResourceOwner createResourceOwner(UserInstance userInstance) {
+        return new ResourceOwner(userInstance.getUserIdentifier(),
+                                 userInstance.getTopLevelOrgCristinId());
     }
 
     private boolean thereAreMorePagesToScan(ScanResult scanResult) {
@@ -256,10 +249,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry) throws ApiGatewayException {
-        var userInstance = new UserInstance(dataEntry.getOwner(), dataEntry.getPublisher().getId());
-        var resourceOwner = createResourceOwner(userInstance);
-        dataEntry.setResourceOwner(resourceOwner);
+    private Resource migrateResource(Resource dataEntry)  {
         return dataEntry;
     }
 

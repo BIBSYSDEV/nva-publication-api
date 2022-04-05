@@ -1,7 +1,6 @@
 package no.unit.nva.doirequest.list;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
-import static no.unit.nva.publication.service.impl.ResourceServiceUtils.extractUserInstance;
+import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -10,21 +9,21 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import no.unit.nva.model.DoiRequestMessage;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageDto;
+import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -33,7 +32,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     public static final String ROLE_QUERY_PARAMETER = "role";
     public static final String CURATOR_ROLE = "Curator";
     public static final String CREATOR_ROLE = "Creator";
-    public static final String EMPTY_STRING = "";
+
     private final DoiRequestService doiRequestService;
     private final MessageService messageService;
 
@@ -57,15 +56,15 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     @Override
     protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context)
-        throws BadRequestException {
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElse(null);
-        String role = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
-        String userId = requestInfo.getFeideId().orElse(null);
-        String userRoles = requestInfo.getAssignedRoles().orElse(EMPTY_STRING);
-        UserInstance userInstance = new UserInstance(userId, customerId);
-        if (userIsACurator(role, userRoles)) {
+        throws BadRequestException, UnauthorizedException {
+        URI customerId = requestInfo.getCustomerId();
+        String requestedRole = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
+        String userId = requestInfo.getNvaUsername();
+
+        UserInstance userInstance = UserInstance.create(userId, customerId);
+        if (userIsACurator(requestedRole, requestInfo)) {
             return fetchDoiRequestsForCurator(userInstance);
-        } else if (userIsACreator(role, userRoles)) {
+        } else if (userIsACreator(requestedRole)) {
             return fetchDoiRequestsForUser(userInstance);
         }
 
@@ -84,31 +83,22 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     @JacocoGenerated
     private static DoiRequestService defaultDoiRequestService(AmazonDynamoDB client, Clock clock) {
-        return new DoiRequestService(client, EXTERNAL_SERVICES_HTTP_CLIENT, clock);
+        return new DoiRequestService(client,  clock);
     }
 
     private Publication[] emptyResult() {
         return new Publication[0];
     }
 
-    private boolean userIsACreator(String requestedRole, String userRolesCsv) {
-        return userHasRequestedRole(requestedRole, userRolesCsv, CREATOR_ROLE);
+    private boolean userIsACreator(String requestedRole) {
+        return CREATOR_ROLE.equals(requestedRole);
     }
 
-    private boolean userIsACurator(String role, String userRolesCsv) {
-        return userHasRequestedRole(role, userRolesCsv, CURATOR_ROLE);
+    private boolean userIsACurator(String requestedRole, RequestInfo requestInfo) {
+        return CURATOR_ROLE.equals(requestedRole)
+               && requestInfo.userIsAuthorized(APPROVE_DOI_REQUEST.toString());
     }
 
-    private boolean userHasRequestedRole(String requestedRole, String userRolesCsv, String systemDefinedRole) {
-        boolean userHasRequestedRole = userHasRequestedRole(requestedRole, userRolesCsv);
-        return requestedRole.equals(systemDefinedRole) && userHasRequestedRole;
-    }
-
-    private boolean userHasRequestedRole(String role, String userRolesCsv) {
-        String userRolesUpperCased = userRolesCsv.toUpperCase(Locale.getDefault());
-        String requestedRole = role.toUpperCase(Locale.getDefault());
-        return userRolesUpperCased.contains(requestedRole);
-    }
 
     private Publication[] fetchDoiRequestsForUser(UserInstance userInstance) {
         List<DoiRequest> doiRequests = doiRequestService.listDoiRequestsForUser(userInstance);
@@ -139,7 +129,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
 
     private Publication addMessagesToPublicationDto(Publication dto) {
         Stream<ResourceConversation> messages =
-            messageService.getMessagesForResource(extractUserInstance(dto), dto.getIdentifier()).stream();
+            messageService.getMessagesForResource(UserInstance.fromPublication(dto), dto.getIdentifier()).stream();
         List<DoiRequestMessage> doiRequestMessages = transformToLegacyDoiRequestMessagesDto(messages);
         dto.getDoiRequest().setMessages(doiRequestMessages);
         return dto;

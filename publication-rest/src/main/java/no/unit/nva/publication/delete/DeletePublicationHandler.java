@@ -1,6 +1,5 @@
 package no.unit.nva.publication.delete;
 
-import static no.unit.nva.publication.PublicationServiceConfig.EXTERNAL_SERVICES_HTTP_CLIENT;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.URI;
@@ -42,9 +41,9 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
     @Override
     protected Void processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
-        String owner = requestInfo.getFeideId().orElseThrow();
-        URI customerId = requestInfo.getCustomerId().map(URI::create).orElseThrow();
-        UserInstance userInstance = new UserInstance(owner, customerId);
+        String owner = requestInfo.getNvaUsername();
+        URI customerId = requestInfo.getCustomerId();
+        UserInstance userInstance = UserInstance.create(owner, customerId);
 
         resourceService.markPublicationForDeletion(userInstance, identifier);
 
@@ -58,8 +57,6 @@ public class DeletePublicationHandler extends ApiGatewayHandler<Void, Void> {
 
     @JacocoGenerated
     private static ResourceService defaultService() {
-        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(),
-                                   EXTERNAL_SERVICES_HTTP_CLIENT,
-                                   Clock.systemDefaultZone());
+        return new ResourceService(AmazonDynamoDBClientBuilder.defaultClient(),Clock.systemDefaultZone());
     }
 }

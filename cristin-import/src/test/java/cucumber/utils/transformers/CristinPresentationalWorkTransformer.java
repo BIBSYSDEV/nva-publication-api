@@ -1,9 +1,8 @@
 package cucumber.utils.transformers;
 
 import io.cucumber.java.DataTableType;
-import no.unit.nva.cristin.mapper.CristinPresentationalWork;
-
 import java.util.Map;
+import no.unit.nva.cristin.mapper.CristinPresentationalWork;
 
 public class CristinPresentationalWorkTransformer {
 

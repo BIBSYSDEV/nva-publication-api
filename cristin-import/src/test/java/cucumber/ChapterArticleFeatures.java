@@ -1,15 +1,13 @@
 package cucumber;
 
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
-import no.unit.nva.model.instancetypes.PeerReviewedMonograph;
-import no.unit.nva.model.instancetypes.PublicationInstance;
-import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import no.unit.nva.cristin.mapper.CristinBookOrReportPartMetadata;
+import no.unit.nva.model.instancetypes.PublicationInstance;
+import no.unit.nva.model.instancetypes.chapter.ChapterArticle;
 
 public class ChapterArticleFeatures {
 

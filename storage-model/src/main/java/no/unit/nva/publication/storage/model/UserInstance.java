@@ -3,30 +3,43 @@ package no.unit.nva.publication.storage.model;
 import java.net.URI;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
+import nva.commons.core.JacocoGenerated;
 
 /**
  * Class used internally in the Resource service to represent a user.
  */
 public class UserInstance implements JsonSerializable {
 
+    public static final URI UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI = null;
     private final URI organizationUri;
     private final String userIdentifier;
+    private final URI topLevelOrgCristinId;
 
-    public UserInstance(String userIdentifier, URI organizationUri) {
+    protected UserInstance(String userIdentifier, URI organizationUri, URI topLevelOrgCristinId) {
         this.userIdentifier = userIdentifier;
         this.organizationUri = organizationUri;
+        this.topLevelOrgCristinId = topLevelOrgCristinId;
+    }
+
+    public static UserInstance create(String userIdentifier, URI organizationUri) {
+        return new UserInstance(userIdentifier, organizationUri, UNDEFINED_TOP_LEVEL_ORG_CRISTIN_URI);
+    }
+
+    public static UserInstance create(ResourceOwner resourceOwner, URI organizationUri) {
+        return new UserInstance(resourceOwner.getOwner(), organizationUri, resourceOwner.getOwnerAffiliation());
     }
 
     public static UserInstance fromDoiRequest(DoiRequest doiRequest) {
-        return new UserInstance(doiRequest.getOwner(), doiRequest.getCustomerId());
+        return UserInstance.create(doiRequest.getOwner(), doiRequest.getCustomerId());
     }
 
     public static UserInstance fromPublication(Publication publication) {
-        return new UserInstance(publication.getResourceOwner().getOwner(),publication.getPublisher().getId());
+        return UserInstance.create(publication.getResourceOwner(),publication.getPublisher().getId());
     }
 
     public static UserInstance fromMessage(Message message) {
-        return new UserInstance(message.getOwner(),message.getCustomerId());
+        return UserInstance.create(message.getOwner(), message.getCustomerId());
     }
 
     public URI getOrganizationUri() {
@@ -35,5 +48,10 @@ public class UserInstance implements JsonSerializable {
 
     public String getUserIdentifier() {
         return userIdentifier;
+    }
+
+    @JacocoGenerated
+    public URI getTopLevelOrgCristinId() {
+        return topLevelOrgCristinId;
     }
 }

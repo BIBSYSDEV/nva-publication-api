@@ -2,7 +2,6 @@ package no.unit.nva.publication.external.services;
 
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInteger;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
