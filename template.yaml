@@ -47,9 +47,7 @@ Parameters:
   ExpandedEntriesPersistenceBucketName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/PersistedEntriesBucketName'
-  IdentityServiceInternalCommunicationSecretArn:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: '/NVA/UserServiceInternalApiKeyArn'
+
   MaxConcurrency:
     Type: Number
     Default: 100
