@@ -15,17 +15,12 @@ dependencies {
         exclude group: 'com.github.bibsysdev', module: 'nva-commons'
     }
 
-    implementation(libs.nva.datamodel.core) {
-        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
-    }
-
     implementation libs.nva.doi.partner.data
 
     implementation libs.bundles.jaxb
     implementation libs.jackson.databind
     implementation libs.jackson.core
     implementation libs.bundles.logging
-
 
     implementation libs.aws.sdk.dynamodb
     implementation libs.aws.lambda.java.core
