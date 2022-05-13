@@ -53,7 +53,7 @@ public class PublicationSummary {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setContributors(doiRequest.getContributors());
         publicationSummary.setPublicationId(extractPublicationId(doiRequest));
-        publicationSummary.setPublicationIdentifier(doiRequest.getIdentifier());
+        publicationSummary.setPublicationIdentifier(doiRequest.getResourceIdentifier());
         publicationSummary.setCreatedDate(doiRequest.getCreatedDate());
         publicationSummary.setModifiedDate(doiRequest.getResourceModifiedDate());
         publicationSummary.setPublicationDate(doiRequest.getResourcePublicationDate());

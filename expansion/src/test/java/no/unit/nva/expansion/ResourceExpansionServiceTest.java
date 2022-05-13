@@ -6,6 +6,7 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -44,6 +45,7 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -131,6 +133,24 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         assertThatExpandedDoiRequestContainsOnlyDoiRequestMessagesAndNotAnyOfTheSupportMessages(
             samplePublication, expandedDoiRequestConversation);
+    }
+
+
+    @Test
+    void shouldContainCorrectReferencesToReferencedPublicationWhenDoiRequestIsUpdated()
+        throws ApiGatewayException, JsonProcessingException {
+        var samplePublication =
+            createSamplePublicationWithConversations();
+        var expandedDoiRequestConversation =
+            (ExpandedDoiRequest) expansionService.expandEntry(samplePublication.getLastDoiRequestMessage());
+
+        var identifierInId =
+            UriWrapper.fromUri(expandedDoiRequestConversation.getPublicationSummary().getPublicationId())
+                .getLastPathElement();
+       assertThat(expandedDoiRequestConversation.getPublicationSummary().getPublicationIdentifier(),
+                  is(equalTo(samplePublication.getPublicationIdentifier())));
+
+       assertThat(identifierInId,is(equalTo(samplePublication.getPublicationIdentifier().toString())));
     }
 
     @Test
@@ -290,6 +310,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
 
         public Message getLastSupportMessage() {
             return supportMessages.get(supportMessages.size() - 1);
+        }
+
+        public SortableIdentifier getPublicationIdentifier(){
+            return publication.getIdentifier();
         }
 
         public PublicationWithDoiRequestAndAllTypesOfMessages create() throws ApiGatewayException {
