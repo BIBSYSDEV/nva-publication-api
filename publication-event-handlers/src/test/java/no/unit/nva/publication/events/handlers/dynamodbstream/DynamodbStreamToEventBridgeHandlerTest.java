@@ -4,6 +4,7 @@ import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStr
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +20,9 @@ import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
 public class DynamodbStreamToEventBridgeHandlerTest {
 
@@ -33,6 +37,7 @@ public class DynamodbStreamToEventBridgeHandlerTest {
     @BeforeEach
     public void init() {
         this.s3Client = new FakeS3Client();
+        createFailingS3Client();
         this.context = new FakeContext();
         this.eventPublisher = publisherThatPrintsToConsole();
         this.handler = new DynamodbStreamToEventBridgeHandler(s3Client, eventPublisher);
@@ -53,6 +58,24 @@ public class DynamodbStreamToEventBridgeHandlerTest {
         var expectedEventId = event.getRecords().stream().collect(SingletonCollector.collect()).getEventID();
         var actualEventId = savedEvent.getRecords().stream().collect(SingletonCollector.collect()).getEventID();
         assertThat(actualEventId, is(equalTo(expectedEventId)));
+    }
+
+    @Test
+    void shouldNotFailAndBreakCurrentFunctionalityWhenFailingToSaveInS3ForFutureFunctionality()
+        throws JsonProcessingException {
+        this.handler = new DynamodbStreamToEventBridgeHandler(createFailingS3Client(), eventPublisher);
+        var event = parseDynamoDbEvent(DYNAMODB_STREAM_EVENT);
+        assertDoesNotThrow(() -> handler.handleRequest(event, context));
+    }
+
+    private FakeS3Client createFailingS3Client() {
+        return new FakeS3Client() {
+            @SuppressWarnings("PMD.CloseResource")
+            @Override
+            public PutObjectResponse putObject(PutObjectRequest putObjectRequest, RequestBody requestBody) {
+                throw new RuntimeException();
+            }
+        };
     }
 
     private DynamodbEvent readEventSavedInS3(URI savedFile) throws JsonProcessingException {

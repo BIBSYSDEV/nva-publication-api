@@ -11,6 +11,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
 import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -48,9 +49,9 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     @Override
     public URI handleRequest(DynamodbEvent event, Context context) {
-        URI savedFile = storeEventInS3(event);
+        var savedFile = storeEventInS3(event);
         eventPublisher.publish(event);
-        return savedFile;
+        return savedFile.orElse(fail->null);
     }
 
     @JacocoGenerated
@@ -100,10 +101,13 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
             .build();
     }
 
-    private URI storeEventInS3(DynamodbEvent event) {
-        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
-        var json = attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(event)).orElseThrow();
+    private Try<URI> storeEventInS3(DynamodbEvent event) {
         var filename = UnixPath.of(DYNAMO_EVENTS_FOLDER_IN_BUCKET, UUID.randomUUID().toString());
-        return attempt(() -> s3Driver.insertFile(filename, json)).orElseThrow();
+        var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
+        return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(event))
+            .map(json->s3Driver.insertFile(filename,json));
+
+
+
     }
 }
