@@ -135,7 +135,6 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             samplePublication, expandedDoiRequestConversation);
     }
 
-
     @Test
     void shouldContainCorrectReferencesToReferencedPublicationWhenDoiRequestIsUpdated()
         throws ApiGatewayException, JsonProcessingException {
@@ -312,7 +311,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             return supportMessages.get(supportMessages.size() - 1);
         }
 
-        public SortableIdentifier getPublicationIdentifier(){
+        public SortableIdentifier getPublicationIdentifier() {
             return publication.getIdentifier();
         }
 

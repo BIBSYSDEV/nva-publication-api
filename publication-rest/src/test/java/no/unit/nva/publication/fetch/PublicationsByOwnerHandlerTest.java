@@ -32,10 +32,6 @@ import org.junit.jupiter.api.Test;
 
 public class PublicationsByOwnerHandlerTest {
 
-    public static final String OWNER = "junit";
-    public static final String VALID_ORG_NUMBER = "NO919477822";
-
-    private Environment environment;
     private ResourceService resourceService;
     private Context context;
 
@@ -45,7 +41,7 @@ public class PublicationsByOwnerHandlerTest {
 
     @BeforeEach
     public void setUp() {
-        environment = mock(Environment.class);
+        Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         resourceService = mock(ResourceService.class);
@@ -64,7 +60,7 @@ public class PublicationsByOwnerHandlerTest {
 
         InputStream input = new HandlerRequestBuilder<Void>(restApiMapper)
             .withNvaUsername(randomString())
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(randomUri())
             .build();
         publicationsByOwnerHandler.handleRequest(input, output, context);
 

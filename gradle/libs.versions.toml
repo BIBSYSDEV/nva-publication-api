@@ -1,14 +1,14 @@
 [versions]
 
-nva = { strictly = '1.22.0' }
-nvaDatamodel = { strictly = '0.16.0' }
+nva = { strictly = '1.24.9' }
+nvaDatamodel = { strictly = '0.16.9' }
 nvaDoiPartnerData = { strictly = '0.4.0' }
-jackson = { strictly = '2.13.1' }
-awsSdk = { strictly = '1.12.129' }
-awsSdk2 = { strictly = '2.17.152' }
-log4j = { strictly = '2.17.1' }
+jackson = { strictly = '2.13.3' }
+awsSdk = { strictly = '1.12.220' }
+awsSdk2 = { strictly = '2.17.191' }
+log4j = { strictly = '2.17.2' }
 slf4j = { strictly = '1.8.0-beta4' }
-zalandoProblem = { strictly = '0.26.0' }
+zalandoProblem = { strictly = '0.27.1' }
 awsLambdaCore = { strictly = '1.2.1' }
 awsLambdaEvents = { strictly = '3.9.0' }
 # jsonld and awssdk have different versions. update libraries and check again
@@ -24,7 +24,7 @@ mockito = { strictly = '3.12.4' }
 configTypesafe = { strictly = '1.4.1' }
 jsonld = { strictly = '0.13.3' }
 nva-language = { strictly = '1.0' }
-guava = { strictly = '31.0.1-jre' }
+guava = { strictly = '31.1-jre' }
 javers = { strictly = '6.2.4' }
 hamcrestJackson = { strictly = '1.2.0' }
 jaxb = { strictly = '2.3.0' }

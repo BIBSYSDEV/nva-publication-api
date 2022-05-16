@@ -197,7 +197,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
             .withNvaUsername(testUserName)
-            .withCustomerId(testOrgId.toString())
+            .withCustomerId(testOrgId)
             .withTopLevelCristinOrgId(topLevelCristinOrgId)
             .withBody(request)
             .build();
@@ -206,7 +206,7 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream requestWithoutUsername(CreatePublicationRequest request) throws JsonProcessingException {
 
         return new HandlerRequestBuilder<CreatePublicationRequest>(dtoObjectMapper)
-            .withCustomerId(testOrgId.toString())
+            .withCustomerId(testOrgId)
             .withBody(request)
             .build();
     }

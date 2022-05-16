@@ -77,7 +77,7 @@ public class UpdatePublicationHandler extends ApiGatewayHandler<UpdatePublicatio
     }
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
-        return attempt(requestInfo::getCustomerId)
+        return attempt(requestInfo::getCurrentCustomer)
             .map(customerId -> UserInstance.create(requestInfo.getNvaUsername(), customerId))
             .orElseThrow(fail -> new UnauthorizedException());
     }

@@ -110,7 +110,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
                                       .withBody(request)
                                       .withNvaUsername(NOT_THE_RESOURCE_OWNER.getOwner())
-                                      .withCustomerId(SOME_PUBLISHER.toString())
+                                      .withCustomerId(SOME_PUBLISHER)
                                       .build();
 
         handler.handleRequest(inputStream, outputStream, context);
@@ -168,7 +168,7 @@ public class CreateDoiRequestHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         CreateDoiRequest request = new CreateDoiRequest(publication.getIdentifier(), message);
         return new HandlerRequestBuilder<CreateDoiRequest>(doiRequestsObjectMapper)
-                   .withCustomerId(publication.getPublisher().getId().toString())
+                   .withCustomerId(publication.getPublisher().getId())
                    .withNvaUsername(owner.getOwner())
                    .withPathParameters(Map.of(RequestUtil.IDENTIFIER, publication.getIdentifier().toString()))
                    .withBody(request)

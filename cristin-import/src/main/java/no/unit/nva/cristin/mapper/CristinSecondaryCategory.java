@@ -186,9 +186,9 @@ public enum CristinSecondaryCategory {
     private static Map<CristinSecondaryCategory, JournalArticleContentType> createMapToJournalContentType() {
         return Map.of(JOURNAL_ARTICLE, JournalArticleContentType.PROFESSIONAL_ARTICLE,
                 POPULAR_ARTICLE, JournalArticleContentType.POPULAR_SCIENCE_ARTICLE,
-                ARTICLE, JournalArticleContentType.RESEARCH_ARTICLE,
-                ACADEMIC_REVIEW, JournalArticleContentType.REVIEW_ARTICLE,
-                SHORT_COMMUNICATION, JournalArticleContentType.RESEARCH_ARTICLE);
+                ARTICLE, JournalArticleContentType.ACADEMIC_ARTICLE,
+                ACADEMIC_REVIEW, JournalArticleContentType.ACADEMIC_LITERATURE_REVIEW,
+                SHORT_COMMUNICATION, JournalArticleContentType.ACADEMIC_ARTICLE);
     }
 
     private static Map<CristinSecondaryCategory, BookMonographContentType> createMapToBookMonographContentType() {

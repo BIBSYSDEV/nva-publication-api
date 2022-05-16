@@ -4,7 +4,6 @@ import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_R
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
-import java.net.URI;
 import java.time.Clock;
 import java.util.Collections;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -92,7 +91,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
 
     private UserInstance createUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
         String user = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCustomerId();
+        var customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(user, customerId);
     }
 

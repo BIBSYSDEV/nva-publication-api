@@ -68,7 +68,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getOwner())
-            .withCustomerId(publication.getPublisher().getId().toString())
+            .withCustomerId(publication.getPublisher().getId())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
@@ -94,7 +94,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getOwner())
-            .withCustomerId(publication.getPublisher().getId().toString())
+            .withCustomerId(publication.getPublisher().getId())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
@@ -114,7 +114,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
-            .withCustomerId(SOME_CUSTOMER.toString())
+            .withCustomerId(SOME_CUSTOMER)
             .withNvaUsername(SOME_USER)
             .build();
 
@@ -132,7 +132,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, createdPublication.getIdentifier().toString()))
             .withNvaUsername(SOME_USER)
-            .withCustomerId(createdPublication.getPublisher().getId().toString())
+            .withCustomerId(createdPublication.getPublisher().getId())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);
@@ -153,7 +153,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
             .withHeaders(TestHeaders.getRequestHeaders())
             .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
             .withNvaUsername(publication.getOwner())
-            .withCustomerId(publication.getPublisher().getId().toString())
+            .withCustomerId(publication.getPublisher().getId())
             .build();
 
         handler.handleRequest(inputStream, outputStream, context);

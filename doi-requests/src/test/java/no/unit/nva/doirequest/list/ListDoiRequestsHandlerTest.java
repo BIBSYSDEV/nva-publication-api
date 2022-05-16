@@ -19,6 +19,7 @@ import static org.hamcrest.core.IsIterableContaining.hasItem;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -321,11 +322,11 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createRequest(URI customerId, String userIdentifier, String userRole)
-        throws com.fasterxml.jackson.core.JsonProcessingException {
+        throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(doiRequestsObjectMapper)
-            .withCustomerId(customerId.toString())
+            .withCustomerId(customerId)
             .withNvaUsername(userIdentifier)
-            .withAccessRight(APPROVE_DOI_REQUEST.toString())
+            .withAccessRights(customerId,APPROVE_DOI_REQUEST.toString())
             .withQueryParameters(
                 Map.of(ROLE_QUERY_PARAMETER, userRole))
             .build();

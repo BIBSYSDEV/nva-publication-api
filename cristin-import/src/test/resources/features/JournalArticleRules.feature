@@ -11,12 +11,12 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     Then the NVA Resource has a Publication Instance of type "JournalArticle"
     And the NVA JournalArticle Resource has a Content type of type "<contentType>"
     Examples:
-      | secondarycategory | contentType             |
-      | ARTIKKEL_FAG      | Professional article    |
-      | ARTIKKEL          | Research article        |
-      | SHORTCOMM         | Research article        |
-      | ARTIKKEL_POP      | Popular science article |
-      | OVERSIKTSART      | Review article          |
+      | secondarycategory | contentType              |
+      | ARTIKKEL_FAG      | ProfessionalArticle      |
+      | ARTIKKEL          | AcademicArticle          |
+      | SHORTCOMM         | AcademicArticle          |
+      | ARTIKKEL_POP      | PopularScienceArticle    |
+      | OVERSIKTSART      | AcademicLiteratureReview |
 
   Scenario Outline: When a Cristin Result has been reported in NVI then it is considered to be peer reviewed.
     Given a valid Cristin Result with secondary category "<secondarycategory>"
@@ -30,6 +30,7 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
       | OVERSIKTSART      |
 
   Scenario: Map returns a Journal Article with printISSN copied from the Cristin Entrys's Journal Publication "issn" entry.
+
   Scenario: Cristin Entry's Journal Publication "issn" entry is copied to the NVA field  "printISSN".
     Given that the Cristin Result has a non empty Journal Publication
     And the Journal Publication has a "issn" entry equal to "1903-6523"
@@ -73,10 +74,10 @@ Feature: Mapping of "Article in business/trade/industry journal", "Academic arti
     When the Cristin Result is converted to an NVA Resource
     Then the Nva Resource, Journal Article, has a PublicationContext with issue equal to "<issue>"
     Examples:
-      | issue        |
-      | VI           |
-      | 123          |
-      | some volume  |
+      | issue       |
+      | VI          |
+      | 123         |
+      | some volume |
 
   Scenario: Cristin Entry's Journal Publication "doi" entry is copied as is in the Reference's doi entry.
     Given that the Cristin Result has a non empty Journal Publication

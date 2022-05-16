@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -233,7 +234,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withPathParameters(pathParameters)
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(randomUri())
             .withBody(publicationUpdate)
             .build();
     }
@@ -242,11 +243,12 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        URI customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withPathParameters(pathParameters)
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(customerId)
             .withBody(publicationUpdate)
-            .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+            .withAccessRights(customerId,AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
             .withNvaUsername(SOME_CURATOR)
             .build();
     }
@@ -254,12 +256,13 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
-            .withCustomerId(publicationUpdate.getPublisher().getId().toString())
+            .withCustomerId(customerId)
             .withBody(publicationUpdate)
-            .withAccessRight(AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
+            .withAccessRights(customerId,AccessRight.EDIT_OWN_INSTITUTION_RESOURCES.toString())
             .build();
     }
 
@@ -268,9 +271,10 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
 
+        var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withNvaUsername(publicationUpdate.getOwner())
-            .withCustomerId(publicationUpdate.getPublisher().getId().toString())
+            .withCustomerId(customerId)
             .withBody(publicationUpdate)
             .withPathParameters(pathParameters)
             .build();

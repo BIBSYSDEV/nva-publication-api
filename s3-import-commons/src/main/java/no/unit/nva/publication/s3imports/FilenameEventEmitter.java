@@ -30,6 +30,7 @@ import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -108,7 +109,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
     }
 
     private UriWrapper createErrorReportUri(ImportRequest request) {
-        UriWrapper inputFolderUri = new UriWrapper(request.getS3Location());
+        UriWrapper inputFolderUri =  UriWrapper.fromUri(request.getS3Location());
         UriWrapper bucketUri = inputFolderUri.getHost();
         return bucketUri
             .addChild(ERRORS_FOLDER)
@@ -119,7 +120,7 @@ public class FilenameEventEmitter implements RequestStreamHandler {
 
     private URI createUri(URI s3Location, UnixPath filename) {
         return Try.of(s3Location)
-            .map(UriWrapper::new)
+            .map(UriWrapper::fromUri)
             .map(UriWrapper::getHost)
             .map(uri -> uri.addChild(filename))
             .map(UriWrapper::getUri)

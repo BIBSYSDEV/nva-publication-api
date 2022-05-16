@@ -57,7 +57,7 @@ public class ListDoiRequestsHandler extends ApiGatewayHandler<Void, Publication[
     @Override
     protected Publication[] processInput(Void input, RequestInfo requestInfo, Context context)
         throws BadRequestException, UnauthorizedException {
-        URI customerId = requestInfo.getCustomerId();
+        URI customerId = requestInfo.getCurrentCustomer();
         String requestedRole = requestInfo.getQueryParameter(ROLE_QUERY_PARAMETER);
         String userId = requestInfo.getNvaUsername();
 

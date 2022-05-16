@@ -1,13 +1,11 @@
 package no.unit.nva.publication;
 
-import static java.lang.Integer.parseInt;
 import static nva.commons.core.attempt.Try.attempt;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.BadRequestException;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,33 +57,5 @@ public final class RequestUtil {
         return attempt(requestInfo::getNvaUsername).orElseThrow(fail -> new UnauthorizedException());
     }
 
-    /**
-     * Get pagesize from request query parameters.
-     *
-     * @param requestInfo requestInfo
-     * @return the pagesize if given, otherwise DEFAULT_PAGESIZE
-     * @throws ApiGatewayException exception thrown if value is not legal positive integer
-     */
-    public static int getPageSize(RequestInfo requestInfo) throws ApiGatewayException {
-        String pagesizeString = null;
-        try {
-            logger.debug("Trying to read pagesize...");
-            pagesizeString = requestInfo.getQueryParameters().get(PAGESIZE);
-            if (!Strings.isEmpty(pagesizeString)) {
-                logger.debug("got pagesize='" + pagesizeString + "'");
-                int pageSize = parseInt(pagesizeString);
-                if (pageSize > 0) {
-                    return pageSize;
-                } else {
-                    throw new BadRequestException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, null);
-                }
-            } else {
-                logger.debug(USING_DEFAULT_VALUE + DEFAULT_PAGESIZE);
-                return DEFAULT_PAGESIZE;
-            }
-        } catch (Exception e) {
-            throw new BadRequestException(PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER + pagesizeString, e);
-        }
-    }
 
 }

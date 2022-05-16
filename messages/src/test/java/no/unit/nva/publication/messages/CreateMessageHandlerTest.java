@@ -192,7 +192,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         UserInstance publicationOwner = extractOwner(samplePublication);
         return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
             .withNvaUsername(publicationOwner.getUserIdentifier())
-            .withCustomerId(publicationOwner.getOrganizationUri().toString())
+            .withCustomerId(publicationOwner.getOrganizationUri())
             .withQueryParameters(Map.of("role", "Creator"))
             .withRoles("Creator")
             .build();
@@ -236,7 +236,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         return new HandlerRequestBuilder<CreateMessageRequest>(messageTestsObjectMapper)
             .withBody(requestBody)
             .withNvaUsername(SOME_CURATOR)
-            .withCustomerId(samplePublication.getPublisher().getId().toString())
+            .withCustomerId(samplePublication.getPublisher().getId())
             .build();
     }
 

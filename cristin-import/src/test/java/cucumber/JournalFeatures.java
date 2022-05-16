@@ -27,7 +27,7 @@ import no.unit.nva.model.instancetypes.journal.JournalLeader;
 import no.unit.nva.model.instancetypes.journal.JournalLetter;
 import no.unit.nva.model.instancetypes.journal.JournalReview;
 import no.unit.nva.model.pages.Pages;
-import no.unit.nva.publication.s3imports.UriWrapper;
+import nva.commons.core.paths.UriWrapper;
 
 public class JournalFeatures {
 
@@ -195,7 +195,7 @@ public class JournalFeatures {
     public void theNvaResourceHasAReferenceObjectWithAJournalUriThatPointsToNvaNsdProxy() {
         Journal journal = extractJournal();
         String uriString = journal.getId().toString();
-        String nsdProxyUri = new UriWrapper(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH).getUri().toString();
+        String nsdProxyUri = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH).getUri().toString();
         assertThat(uriString, containsString(nsdProxyUri));
     }
 

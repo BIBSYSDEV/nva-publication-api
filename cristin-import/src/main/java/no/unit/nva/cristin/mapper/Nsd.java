@@ -5,7 +5,7 @@ import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PA
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NSD_PROXY_PATH_PUBLISHER;
 import static no.unit.nva.cristin.lambda.constants.MappingConstants.NVA_API_DOMAIN;
 import java.net.URI;
-import no.unit.nva.publication.s3imports.UriWrapper;
+import nva.commons.core.paths.UriWrapper;
 
 public class Nsd {
 
@@ -34,6 +34,6 @@ public class Nsd {
     }
 
     private UriWrapper nvaProxyUri() {
-        return new UriWrapper(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH);
+        return  UriWrapper.fromUri(NVA_API_DOMAIN).addChild(NSD_PROXY_PATH);
     }
 }
