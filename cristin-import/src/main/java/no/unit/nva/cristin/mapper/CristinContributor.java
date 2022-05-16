@@ -19,9 +19,9 @@ import no.unit.nva.model.Contributor;
 import no.unit.nva.model.Identity;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Role;
-import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
+import nva.commons.core.paths.UriWrapper;
 
 @Data
 @Builder(
@@ -60,17 +60,17 @@ public class CristinContributor {
 
         String fullName = constructFullName();
         Identity identity = new Identity.Builder()
-                                .withName(fullName)
-                                .withId(constructId())
-                                .build();
+            .withName(fullName)
+            .withId(constructId())
+            .build();
 
         return new Contributor.Builder()
-                   .withIdentity(identity)
-                   .withCorrespondingAuthor(false)
-                   .withAffiliations(extractAffiliations())
-                   .withRole(extractRoles())
-                   .withSequence(contributorOrder)
-                   .build();
+            .withIdentity(identity)
+            .withCorrespondingAuthor(false)
+            .withAffiliations(extractAffiliations())
+            .withRole(extractRoles())
+            .withSequence(contributorOrder)
+            .build();
     }
 
     private String constructFullName() {
@@ -101,15 +101,13 @@ public class CristinContributor {
             throw new ContributorWithoutAffiliationException();
         }
         return affiliations.stream()
-                   .map(CristinContributorsAffiliation::toNvaOrganization)
-                   .collect(Collectors.toList());
+            .map(CristinContributorsAffiliation::toNvaOrganization)
+            .collect(Collectors.toList());
     }
 
     private URI constructId() {
         return SHOULD_CREATE_CONTRIBUTOR_ID
-                   ? new UriWrapper(CRISTIN_PERSONS_URI)
-                         .addChild(identifier.toString())
-                         .getUri()
+                   ? UriWrapper.fromUri(CRISTIN_PERSONS_URI).addChild(identifier.toString()).getUri()
                    : null;
     }
 }

@@ -40,10 +40,9 @@ import no.unit.nva.model.PublicationDate;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResearchProject;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.language.LanguageMapper;
-
+import nva.commons.core.paths.UriWrapper;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.CouplingBetweenObjects"})
 public class CristinMapper extends CristinMappingModule {
@@ -97,7 +96,7 @@ public class CristinMapper extends CristinMappingModule {
     }
 
     private Organization extractOrganization() {
-        UriWrapper customerId = new UriWrapper(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        UriWrapper customerId =  UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
         return new Organization.Builder().withId(customerId.getUri()).build();
     }
 
@@ -110,7 +109,7 @@ public class CristinMapper extends CristinMappingModule {
     private Instant extractEntryLastModifiedDate() {
         return Optional.ofNullable(cristinObject.getEntryLastModifiedDate())
                 .map(ld -> ld.atStartOfDay().toInstant(zoneOffset()))
-                .orElseGet(() -> extractEntryCreationDate());
+                .orElseGet(this::extractEntryCreationDate);
     }
 
     private ZoneOffset zoneOffset() {

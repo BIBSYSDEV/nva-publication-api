@@ -91,7 +91,7 @@ public class PublishPublicationHandlerTest {
         InputStream input = new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(getRequestHeaders())
             .withNvaUsername(randomString())
-            .withCustomerId(randomUri().toString())
+            .withCustomerId(randomUri())
             .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
             .build();

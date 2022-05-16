@@ -291,11 +291,11 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         var requestBuilder = new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
             .withNvaUsername(userIdentifier)
-            .withCustomerId(organizationUri.toString())
+            .withCustomerId(organizationUri)
             .withQueryParameters(Map.of(ROLE_QUERY_PARAMETER, requestedRole));
 
         if (CURATOR_ROLE.equals(requestedRole)) {
-            requestBuilder.withAccessRight(APPROVE_DOI_REQUEST);
+            requestBuilder.withAccessRights(organizationUri,APPROVE_DOI_REQUEST);
         }
         return requestBuilder.build();
     }

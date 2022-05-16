@@ -86,7 +86,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     }
 
     private UserInstance extractUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
-        URI customerId = requestInfo.getCustomerId();
+        URI customerId = requestInfo.getCurrentCustomer();
         String user = requestInfo.getNvaUsername();
         return UserInstance.create(user, customerId);
     }

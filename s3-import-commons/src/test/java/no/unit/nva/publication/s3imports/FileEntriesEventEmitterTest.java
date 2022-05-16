@@ -44,6 +44,7 @@ import nva.commons.core.SingletonCollector;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
@@ -67,10 +68,10 @@ public class FileEntriesEventEmitterTest {
     private static final String INPUT_PATH = "/parent/folder";
     private static final String INPUT_FILENAME = "location.file";
     private static final URI INPUT_URI =
-        new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(INPUT_FILENAME).getUri();
+        UriWrapper.fromUri(S3_BUCKET).addChild(INPUT_PATH).addChild(INPUT_FILENAME).getUri();
     private static final String NON_EXISTING_FILE = "nonexistingfile.txt";
     private static final URI NON_EXISTING_FILE_URI =
-        new UriWrapper(S3_BUCKET).addChild(INPUT_PATH).addChild(NON_EXISTING_FILE).getUri();
+        UriWrapper.fromUri(S3_BUCKET).addChild(INPUT_PATH).addChild(NON_EXISTING_FILE).getUri();
     private static final String LINE_SEPARATOR = System.lineSeparator();
     private static final SampleObject[] FILE_01_CONTENTS = randomObjects().toArray(SampleObject[]::new);
     private static final Context CONTEXT = Mockito.mock(Context.class);

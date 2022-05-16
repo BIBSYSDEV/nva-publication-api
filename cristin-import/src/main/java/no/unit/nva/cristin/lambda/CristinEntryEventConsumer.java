@@ -27,12 +27,12 @@ import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
 import no.unit.nva.publication.s3imports.ImportResult;
-import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.Try;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient;
@@ -196,7 +196,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
 
     private UriWrapper constructErrorFileUri(AwsEventBridgeEvent<FileContentsEvent<JsonNode>> event,
                                              Exception exception) {
-        UriWrapper fileUri = new UriWrapper(event.getDetail().getFileUri());
+        UriWrapper fileUri = UriWrapper.fromUri(event.getDetail().getFileUri());
         Instant timestamp = event.getDetail().getTimestamp();
         UriWrapper bucket = fileUri.getHost();
         return bucket

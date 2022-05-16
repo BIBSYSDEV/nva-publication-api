@@ -49,7 +49,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.ImportResult;
-import no.unit.nva.publication.s3imports.UriWrapper;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
@@ -57,6 +56,7 @@ import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.SingletonCollector;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.javers.core.Javers;
@@ -456,7 +456,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
 
         String cristinObjectId = awsEvent.getDetail().getContents().get(ID_FIELD_NAME).asText();
         String errorReportFilename = cristinObjectId + JSON;
-        UriWrapper inputFile = new UriWrapper(awsEvent.getDetail().getFileUri());
+        UriWrapper inputFile =  UriWrapper.fromUri(awsEvent.getDetail().getFileUri());
         Instant timestamp = awsEvent.getDetail().getTimestamp();
         UriWrapper bucket = inputFile.getHost();
         return bucket.addChild(ERRORS_FOLDER)
@@ -501,7 +501,7 @@ public class CristinEntryEventConsumerTest extends AbstractCristinImportTest {
     }
 
     private UserInstance createExpectedPublicationOwner() {
-        UriWrapper customerId = new UriWrapper(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
+        UriWrapper customerId = UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PATH_CUSTOMER, UNIT_CUSTOMER_ID);
         return UserInstance.create(HARDCODED_PUBLICATIONS_OWNER, customerId.getUri());
     }
 

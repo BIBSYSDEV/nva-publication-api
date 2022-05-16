@@ -170,10 +170,11 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
         throws JsonProcessingException {
         var body = createUpdateRequest(doiRequestStatus);
         var pathParameters = createPathParameters(identifier);
+        var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
+            .withCustomerId(customerId)
             .withNvaUsername(SOME_CURATOR)
-            .withAccessRight(APPROVE_DOI_REQUEST.toString())
+            .withAccessRights(customerId,APPROVE_DOI_REQUEST.toString())
             .withPathParameters(pathParameters)
             .withBody(body)
             .build();
@@ -182,8 +183,9 @@ class UpdateDoiRequestStatusHandlerTest extends ResourcesLocalTest {
     private InputStream createUnauthorizedRestRequest(Publication publication) throws JsonProcessingException {
         var body = createUpdateRequest(DoiRequestStatus.APPROVED);
         var pathParameters = createPathParameters(publication.getIdentifier().toString());
+        var customerId = publication.getPublisher().getId();
         return new HandlerRequestBuilder<ApiUpdateDoiRequest>(doiRequestsObjectMapper)
-            .withCustomerId(publication.getPublisher().getId().toString())
+            .withCustomerId(customerId)
             .withNvaUsername(SOME_CURATOR)
             .withPathParameters(pathParameters)
             .withBody(body)

@@ -11,7 +11,7 @@ import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.cristin.lambda.constants.MappingConstants;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.s3imports.UriWrapper;
+import nva.commons.core.paths.UriWrapper;
 
 @Data
 @Builder(
@@ -63,7 +63,7 @@ public class CristinContributorsAffiliation {
                                                     departmentIdentifier.toString(),
                                                     subdepartmentIdentifier.toString(),
                                                     groupNumber.toString());
-        return new UriWrapper(MappingConstants.CRISTIN_ORG_URI)
+        return UriWrapper.fromUri(MappingConstants.CRISTIN_ORG_URI)
                    .addChild(affiliationCristinCode)
                    .getUri();
     }

@@ -117,7 +117,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
 
     private UserInstance createSender(RequestInfo requestInfo) throws UnauthorizedException {
         String loggedInUser = requestInfo.getNvaUsername();
-        URI orgUri = requestInfo.getCustomerId();
+        URI orgUri = requestInfo.getCurrentCustomer();
         return UserInstance.create(loggedInUser, orgUri);
     }
 

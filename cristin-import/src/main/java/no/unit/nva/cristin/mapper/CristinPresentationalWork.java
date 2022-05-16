@@ -9,8 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import no.unit.nva.model.ResearchProject;
-import no.unit.nva.publication.s3imports.UriWrapper;
 import nva.commons.core.JacocoGenerated;
+import nva.commons.core.paths.UriWrapper;
 
 @Data
 @Builder(
@@ -49,7 +49,7 @@ public class CristinPresentationalWork {
 
     public ResearchProject toNvaResearchProject() {
 
-        UriWrapper idUri = new UriWrapper(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
+        UriWrapper idUri =  UriWrapper.fromUri(NVA_API_DOMAIN).addChild(PROJECT, identifier.toString());
         return new ResearchProject.Builder()
             .withId(idUri.getUri())
             .withName(HARDCODED_RESEARCH_PROJECT_NAME)

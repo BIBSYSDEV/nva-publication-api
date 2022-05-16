@@ -29,6 +29,7 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.eventbridge.EventBridgeClient;
@@ -134,7 +135,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
     }
 
     private UriWrapper generateErrorReportUri(ImportRequest input, Try<List<PutEventsResult>> failedEntries) {
-        UriWrapper inputUri = new UriWrapper(input.extractPathFromS3Location().toString());
+        UriWrapper inputUri = UriWrapper.fromUri(input.extractPathFromS3Location().toString());
         UriWrapper bucket = inputUri.getHost();
 
         String errorType = failedEntries.isSuccess()
@@ -145,7 +146,7 @@ public class FileEntriesEventEmitter extends EventHandler<ImportRequest, String>
             .addChild(timestampToString(input.getTimestamp()))
             .addChild(errorType)
             .addChild(inputUri.getParent().map(UriWrapper::getPath).orElse(UnixPath.EMPTY_PATH))
-            .addChild(makeFileExtensionError(inputUri.getFilename()));
+            .addChild(makeFileExtensionError(inputUri.getLastPathElement()));
     }
 
     private String makeFileExtensionError(String filename) {

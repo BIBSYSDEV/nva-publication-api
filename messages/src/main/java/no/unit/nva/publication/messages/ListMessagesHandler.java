@@ -70,7 +70,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
     }
 
     private boolean bestEffortToIdentityCreatorsUntilTheyHaveTheirOwnAccessRight(RequestInfo requestInfo) {
-        return attempt(requestInfo::getCustomerId).isSuccess();
+        return attempt(requestInfo::getCurrentCustomer).isSuccess();
     }
 
     private boolean userIsCurator(RequestInfo requestInfo) throws BadRequestException {
@@ -80,7 +80,7 @@ public class ListMessagesHandler extends ApiGatewayHandler<Void, ResourceConvers
 
     private UserInstance extractUserInstanceFromRequest(RequestInfo requestInfo) throws UnauthorizedException {
         String feideId = requestInfo.getNvaUsername();
-        URI customerId = requestInfo.getCustomerId();
+        URI customerId = requestInfo.getCurrentCustomer();
         return UserInstance.create(feideId, customerId);
     }
 

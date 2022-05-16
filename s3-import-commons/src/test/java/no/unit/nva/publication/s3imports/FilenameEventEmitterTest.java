@@ -37,6 +37,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import nva.commons.core.ioutils.IoUtils;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
 import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
@@ -238,7 +239,7 @@ public class FilenameEventEmitterTest {
     private void assertThatBucketContainsOnlyInjectedInputFilesAndNotAnyGeneratedReportFiles(List<UnixPath> allFiles) {
         var expectedFilenamesInS3Bucket = injectedFiles
             .stream()
-            .map(UriWrapper::new)
+            .map(UriWrapper::fromUri)
             .map(UriWrapper::toS3bucketPath)
             .collect(Collectors.toList());
 
