@@ -41,7 +41,7 @@ public class PublicationsByOwnerHandlerTest {
 
     @BeforeEach
     public void setUp() {
-        Environment environment = mock(Environment.class);
+        var environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn("*");
 
         resourceService = mock(ResourceService.class);
