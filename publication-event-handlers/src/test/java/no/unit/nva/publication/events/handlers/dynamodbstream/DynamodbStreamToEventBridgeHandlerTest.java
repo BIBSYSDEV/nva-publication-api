@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
-import static no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
