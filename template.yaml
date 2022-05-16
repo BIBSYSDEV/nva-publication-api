@@ -41,7 +41,7 @@ Parameters:
   NewNvaEventBusName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBusName'
-  NewNvaEventsBucketsName:
+  NvaEventsBucketsName:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: '/NVA/Events/EventsBucketName'
   ExpandedEntriesPersistenceBucketName:
@@ -698,7 +698,7 @@ Resources:
       ReservedConcurrentExecutions: 64
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           TABLE_NAME: !Ref NvaResourcesTable
@@ -737,7 +737,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
@@ -774,7 +774,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
           API_SCHEME: 'https'
@@ -810,7 +810,7 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
           API_HOST: !Ref ApiDomain
           TABLE_NAME: !Ref NvaResourcesTable
@@ -844,7 +844,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: "not used"
       Events:
         EventBridgeEvent:
@@ -916,6 +916,7 @@ Resources:
       Tracing: Active
       Environment:
         Variables:
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
@@ -1083,7 +1084,7 @@ Resources:
       Environment:
         Variables:
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-          EVENTS_BUCKET: !Ref NewNvaEventsBucketsName
+          EVENTS_BUCKET: !Ref NvaEventsBucketsName
           HANDLER_EVENTS_FOLDER: 'ignored'
 
   CristinDataBulkImportFromS3:
