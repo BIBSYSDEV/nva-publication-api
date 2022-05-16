@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -9,7 +10,6 @@ import java.time.Duration;
 import java.util.UUID;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.s3.S3Driver;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Try;
 import nva.commons.core.paths.UnixPath;
@@ -32,7 +32,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     public static final String AWS_REGION = "AWS_REGION";
     public static final String DYNAMODB_UPDATE_EVENT_TOPIC = "PublicationService.Database.Update";
-    public static final String EVENTS_BUCKET = new Environment().readEnv("EVENTS_BUCKET");
     public static final String DYNAMO_EVENTS_FOLDER_IN_BUCKET = "dynamoEvents";
     private final EventPublisher eventPublisher;
     private final S3Client s3Client;
@@ -42,7 +41,8 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         this(defaultS3Client(), defaultEventBridgePublisher());
     }
 
-    protected DynamodbStreamToEventBridgeHandler(S3Client s3Client, EventPublisher eventPublisher) {
+    protected DynamodbStreamToEventBridgeHandler(S3Client s3Client,
+                                                 EventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
         this.s3Client = s3Client;
     }
@@ -51,7 +51,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
     public URI handleRequest(DynamodbEvent event, Context context) {
         var savedFile = storeEventInS3(event);
         eventPublisher.publish(event);
-        return savedFile.orElse(fail->null);
+        return savedFile.orElse(fail -> null);
     }
 
     @JacocoGenerated
@@ -105,9 +105,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         var filename = UnixPath.of(DYNAMO_EVENTS_FOLDER_IN_BUCKET, UUID.randomUUID().toString());
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(event))
-            .map(json->s3Driver.insertFile(filename,json));
-
-
-
+            .map(json -> s3Driver.insertFile(filename, json));
     }
 }
