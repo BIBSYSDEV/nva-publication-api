@@ -1,12 +1,12 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
 @JacocoGenerated
 public final class DynamoDbStreamEventsConstants {
 
-    public static final String EVENT_BUS_NAME = "EVENT_BUS_NAME";
     public static final String DLQ_URL = "DLQ_URL";
     public static final String MAX_ATTEMPT = "MAX_ATTEMPT";
     private static final Environment ENVIRONMENT = new Environment();

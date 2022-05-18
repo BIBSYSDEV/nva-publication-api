@@ -1,11 +1,11 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.publication.PublicationServiceConfig.defaultResourceService;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
-import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -20,8 +20,7 @@ import software.amazon.awssdk.services.eventbridge.model.PutEventsRequestEntry;
 public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest, Void> {
 
     public static final String DETAIL_TYPE = "NO_DETAIL_TYPE";
-    public static final String EVENT_BUS_NAME =
-        PublicationEventsConfig.ENVIRONMENT.readEnv("EVENT_BUS_NAME");
+
 
     private final ResourceService resourceService;
     private final EventBridgeClient eventBridgeClient;

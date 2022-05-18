@@ -1,5 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;
@@ -41,7 +42,7 @@ public class BatchScanStartHandler implements RequestStreamHandler {
             objectMapper.readValue(inputString, ScanDatabaseRequest.class);
         logger.info(String.format(INFORMATION_MESSAGE, scanRequest.getPageSize()));
         var event = scanRequest.createNewEventEntry(
-            EventBasedBatchScanHandler.EVENT_BUS_NAME,
+            EVENT_BUS_NAME,
             EventBasedBatchScanHandler.DETAIL_TYPE,
             context.getInvokedFunctionArn());
         PutEventsResponse response = sendEvent(event);
