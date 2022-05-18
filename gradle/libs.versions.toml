@@ -36,8 +36,8 @@ nva-json = { group = 'com.github.bibsysdev', name = 'json', version.ref = 'nva' 
 nva-identifiers = { group = 'com.github.bibsysdev', name = 'identifiers', version.ref = 'nva' }
 nva-s3 = { group = 'com.github.bibsysdev', name = 's3', version.ref = 'nva' }
 nva-apigateway = { group = 'com.github.bibsysdev', name = 'apigateway', version.ref = 'nva' }
-logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 nva-eventhandlers = { group = 'com.github.bibsysdev', name = 'eventhandlers', version.ref = 'nva' }
+logutils = { group = 'com.github.bibsysdev', name = 'logutils', version.ref = 'nva' }
 
 nva-datamodel-core = { group = 'com.github.bibsysdev', name = 'nva-datamodel-java', version.ref = 'nvaDatamodel' }
 nva-datamodel-testutils = { group = 'com.github.bibsysdev', name = 'nva-datamodel-testutils', version.ref = 'nvaDatamodel' }
