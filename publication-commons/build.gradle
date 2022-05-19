@@ -40,7 +40,7 @@ dependencies {
 test{
     environment "API_HOST", "api.dev.nva.aws.unit.no"
     environment "AWS_REGION", "eu-west-1"
-    environment "COGNITO_URI", "http://example.org"
+    environment "COGNITO_HOST", "http://example.org"
 }
 
 
