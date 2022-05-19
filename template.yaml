@@ -10,7 +10,7 @@ Globals:
     Timeout: 20
     Environment:
       Variables:
-        COGNITO_URI: !Ref CognitoAuthorizationUri
+        COGNITO_HOST: !Ref CognitoAuthorizationUri
     Architectures:
       - arm64
   Api:

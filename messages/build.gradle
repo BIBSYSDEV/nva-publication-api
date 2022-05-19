@@ -28,6 +28,6 @@ dependencies {
 
 test {
     environment "AWS_REGION", "eu-west-1"
-    environment "COGNITO_URI", "https://example.com"
+    environment "COGNITO_HOST", "https://example.com"
 }
 
