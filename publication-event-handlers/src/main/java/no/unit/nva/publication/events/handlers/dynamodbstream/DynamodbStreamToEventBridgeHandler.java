@@ -114,7 +114,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         return new EventBridgePublisher(
             defaultEventBridgeRetryClient(),
             defaultFailedEventPublisher(),
-            DynamoDbStreamEventsConstants.getEventBusName(),
+            EVENT_BUS_NAME,
             DYNAMODB_UPDATE_EVENT_TOPIC
         );
     }

@@ -1,6 +1,5 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
 import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 
@@ -13,11 +12,6 @@ public final class DynamoDbStreamEventsConstants {
 
     @JacocoGenerated
     private DynamoDbStreamEventsConstants() {
-    }
-
-    @JacocoGenerated
-    public static String getEventBusName() {
-        return getEnvValue(EVENT_BUS_NAME);
     }
 
     @JacocoGenerated
