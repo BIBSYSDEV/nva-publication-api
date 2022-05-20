@@ -845,6 +845,7 @@ Resources:
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
+          EVENT_BUS_NAME: !GetAtt InternalBus.Name
           HANDLER_EVENTS_FOLDER: "not used"
       Events:
         EventBridgeEvent:
