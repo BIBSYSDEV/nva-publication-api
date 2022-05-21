@@ -1,6 +1,6 @@
 package no.unit.nva.publication.events.handlers.batch;
 
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
+import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestStreamHandler;

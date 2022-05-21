@@ -90,18 +90,11 @@ class DynamodbStreamToEventBridgeHandlerTest {
     void shouldReturnEventContainingTheEventFileUriAndTheEventTopicForUsageWithLambdaDestinations()
         throws JsonProcessingException {
         var event = parseDynamoDbEvent(DYNAMODB_STREAM_EVENT);
-        var lambdaDestinationsEvent=handler.handleRequest(event, context);
+        var lambdaDestinationsEvent = handler.handleRequest(event, context);
         var s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
         var savedFileUri = fetchSavedFileUri(s3Driver);
         var publishedUri = lambdaDestinationsEvent.getUri();
         assertThat(publishedUri, is(equalTo(savedFileUri)));
-    }
-
-    private URI fetchSavedFileUri(S3Driver s3Driver) {
-        return s3Driver.listAllFiles(UnixPath.ROOT_PATH).stream()
-            .map(path -> UriWrapper.fromUri("s3://" + EVENTS_BUCKET).addChild(path))
-            .map(UriWrapper::getUri)
-            .collect(SingletonCollector.collect());
     }
 
     @Test
@@ -112,6 +105,13 @@ class DynamodbStreamToEventBridgeHandlerTest {
                                                               eventPublisher);
         var event = parseDynamoDbEvent(DYNAMODB_STREAM_EVENT);
         assertDoesNotThrow(() -> handler.handleRequest(event, context));
+    }
+
+    private URI fetchSavedFileUri(S3Driver s3Driver) {
+        return s3Driver.listAllFiles(UnixPath.ROOT_PATH).stream()
+            .map(path -> UriWrapper.fromUri("s3://" + EVENTS_BUCKET).addChild(path))
+            .map(UriWrapper::getUri)
+            .collect(SingletonCollector.collect());
     }
 
     private FakeS3Client createFailingS3Client() {
