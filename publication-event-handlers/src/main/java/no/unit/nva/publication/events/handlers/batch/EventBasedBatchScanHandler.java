@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.batch;
 
 import static no.unit.nva.publication.PublicationServiceConfig.defaultResourceService;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
+import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;

@@ -1,7 +1,7 @@
 package no.unit.nva.publication.events.handlers.dynamodbstream;
 
+import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
-import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENT_BUS_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.sqs.SqsClient;
 /**
  * Listens on DynamodbEvents from DynamoDB Stream trigger and forwards the DynamoDbStreamRecords to EventBridge.
  *
- * <p>Notice a DynamoDB stream can only have two streams attached before we it can lead into throttling and performance
+ * <p>Notice a DynamoDB stream can only have two streams attached before it can lead into throttling and performance
  * issues with DynamodDB, this is why we have this handler to publish it to EventBridge.
  */
 public class DynamodbStreamToEventBridgeHandler implements RequestHandler<DynamodbEvent, EventReference> {
@@ -63,45 +63,6 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
         publishNewEventDirectlyToEventBridge(context, newEvent);
         publishLegacyEvent(inputEvent);
         return publishNewEventAsLambdaDestination(newEvent);
-    }
-
-    private Try<EventReference> createNewEvent(DynamodbEvent inputEvent) {
-        return storeEventInS3(inputEvent).map(this::createEvent);
-    }
-
-    private EventReference publishNewEventAsLambdaDestination(Try<EventReference> newEvent) {
-        return newEvent.orElse(fail -> null);
-    }
-
-    private void publishLegacyEvent(DynamodbEvent inputEvent) {
-        eventPublisher.publish(inputEvent);
-    }
-
-    private void publishNewEventDirectlyToEventBridge(Context context, Try<EventReference> newEvent) {
-        newEvent.forEach(outputEvent->publishEventWithFileUri(context, outputEvent));
-    }
-
-    private void publishEventWithFileUri(Context context, EventReference eventReference) {
-        var putEventRequest = createPutEventRequest(context,eventReference);
-        eventBridgeClient.putEvents(putEventRequest);
-    }
-
-    private EventReference createEvent(URI uri) {
-        return new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, uri);
-    }
-
-    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
-        var entry = PutEventsRequestEntry.builder()
-            .eventBusName(EVENT_BUS_NAME)
-            .time(Instant.now())
-            .source(DYNAMO_DB_STREAM_SOURCE)
-            .detailType(DETAIL_TYPE_NOT_IMPORTANT)
-            .resources(context.getInvokedFunctionArn())
-            .detail(eventReference.toJsonString())
-            .build();
-        return PutEventsRequest.builder()
-            .entries(entry)
-            .build();
     }
 
     @JacocoGenerated
@@ -148,6 +109,45 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
                                        .retryPolicy(RetryPolicy.builder().numRetries(10).build())
                                        .build())
             .httpClientBuilder(UrlConnectionHttpClient.builder())
+            .build();
+    }
+
+    private Try<EventReference> createNewEvent(DynamodbEvent inputEvent) {
+        return storeEventInS3(inputEvent).map(this::createEvent);
+    }
+
+    private EventReference publishNewEventAsLambdaDestination(Try<EventReference> newEvent) {
+        return newEvent.orElse(fail -> null);
+    }
+
+    private void publishLegacyEvent(DynamodbEvent inputEvent) {
+        eventPublisher.publish(inputEvent);
+    }
+
+    private void publishNewEventDirectlyToEventBridge(Context context, Try<EventReference> newEvent) {
+        newEvent.forEach(outputEvent -> publishEventWithFileUri(context, outputEvent));
+    }
+
+    private void publishEventWithFileUri(Context context, EventReference eventReference) {
+        var putEventRequest = createPutEventRequest(context, eventReference);
+        eventBridgeClient.putEvents(putEventRequest);
+    }
+
+    private EventReference createEvent(URI uri) {
+        return new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, uri);
+    }
+
+    private PutEventsRequest createPutEventRequest(Context context, EventReference eventReference) {
+        var entry = PutEventsRequestEntry.builder()
+            .eventBusName(EVENT_BUS_NAME)
+            .time(Instant.now())
+            .source(DYNAMO_DB_STREAM_SOURCE)
+            .detailType(DETAIL_TYPE_NOT_IMPORTANT)
+            .resources(context.getInvokedFunctionArn())
+            .detail(eventReference.toJsonString())
+            .build();
+        return PutEventsRequest.builder()
+            .entries(entry)
             .build();
     }
 
