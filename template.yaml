@@ -915,6 +915,7 @@ Resources:
       Timeout: 360
       Runtime: java11
       Tracing: Active
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
