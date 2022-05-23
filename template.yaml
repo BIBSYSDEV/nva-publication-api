@@ -357,8 +357,6 @@ Resources:
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
-
-
   NvaCreateDoiRequestFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -632,6 +630,7 @@ Resources:
       Runtime: java11
       MemorySize: 512
       Role: !GetAtt LambdaRole.Arn
+      ReservedConcurrentExecutions: 1
       Events:
         EventBridgeEvent:
           Type: EventBridgeRule
@@ -659,6 +658,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.doirequests.DoiRequestEventProducer::handleRequest
       Runtime: java11
       MemorySize: 1400
+      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -841,6 +841,7 @@ Resources:
       Handler: no.unit.nva.publication.events.handlers.fanout.DataEntryUpdateHandler::handleRequest
       Runtime: java11
       MemorySize: 1400
+      ReservedConcurrentExecutions: 1
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
@@ -915,6 +916,7 @@ Resources:
       Timeout: 360
       Runtime: java11
       Tracing: Active
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
