@@ -2,6 +2,7 @@ package no.unit.nva.publication.events.handlers.dynamodbstream;
 
 import static no.unit.nva.publication.events.handlers.ConfigurationForPushingDirectlyToEventBridge.EVENT_BUS_NAME;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.defaultEventBridgeClient;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
@@ -40,7 +41,7 @@ public class DynamodbStreamToEventBridgeHandler implements RequestHandler<Dynamo
 
     @JacocoGenerated
     public DynamodbStreamToEventBridgeHandler() {
-        this(defaultS3Client(), null);
+        this(defaultS3Client(), defaultEventBridgeClient());
     }
 
     protected DynamodbStreamToEventBridgeHandler(S3Client s3Client, EventBridgeClient eventBridgeClient) {
