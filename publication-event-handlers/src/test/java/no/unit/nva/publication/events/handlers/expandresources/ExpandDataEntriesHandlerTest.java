@@ -1,12 +1,14 @@
 package no.unit.nva.publication.events.handlers.expandresources;
 
+import static no.unit.nva.model.PublicationStatus.DRAFT;
+import static no.unit.nva.publication.events.bodies.DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
 import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.objectMapper;
 import static no.unit.nva.publication.events.handlers.expandresources.ExpandDataEntriesHandler.EMPTY_EVENT_TOPIC;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static nva.commons.core.ioutils.IoUtils.stringFromResources;
-import static nva.commons.core.ioutils.IoUtils.stringToStream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -15,14 +17,14 @@ import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Set;
-import no.unit.nva.events.handlers.EventParser;
-import no.unit.nva.events.models.AwsEventBridgeDetail;
-import no.unit.nva.events.models.AwsEventBridgeEvent;
+import java.util.UUID;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
@@ -46,21 +48,18 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
-import nva.commons.core.paths.UriWrapper;
 import nva.commons.logutils.LogUtils;
-import nva.commons.logutils.TestAppender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
+class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     public static final Context CONTEXT = mock(Context.class);
-    public static final int SINGLE_EXPECTED_FILE = 0;
-    public static final String EVENT_WITH_NEW_PUBLISHED_RESOURCE = stringFromResources(
-        Path.of("expandResources/sample-event-old-is-draft-new-is-published.json"));
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
     public static final Clock CLOCK = Clock.systemDefaultZone();
+    public static final Publication DELETED_RESOURCE = null;
+    public static final Object EMPTY_IMAGE = null;
     private static final URI AFFILIATION_URI_FOUND_IN_FAKE_PERSON_API_RESPONSE =
         URI.create("https://api.cristin.no/v2/units/194.63.10.0");
     private ByteArrayOutputStream output;
@@ -74,7 +73,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
-        resourceService = new ResourceService(client,  CLOCK);
+        resourceService = new ResourceService(client, CLOCK);
         MessageService messageService = new MessageService(client, CLOCK);
         DoiRequestService doiRequestService = new DoiRequestService(client, CLOCK);
 
@@ -86,72 +85,106 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldSaveTheNewestResourceImageInS3WhenThereIsNewResourceImagePresentInTheEventAndIsNotDraftResource()
-        throws JsonProcessingException {
-        expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
-        var allFiles = s3Driver.listAllFiles(UnixPath.ROOT_PATH);
-        assertThat(allFiles.size(), is(equalTo(1)));
-        var contents = s3Driver.getFile(allFiles.get(SINGLE_EXPECTED_FILE));
-        var documentToIndex = objectMapper.readValue(contents, Publication.class);
-
-        DataEntry actualResource = Resource.fromPublication(documentToIndex);
-        DataEntry expectedImage = extractResourceUpdateFromEvent();
-        assertThat(actualResource, is(equalTo(expectedImage)));
+    void shouldProduceAnExpandedDataEntryWhenInputIsADataEntryUpdateWithANewImage() throws IOException {
+        var oldImage = createPublishedPublication();
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var response = parseHandlerResponse();
+        var eventBlobStoredInS3 = s3Driver.readEvent(response.getUri());
+        var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
+        assertThat(blobObject.identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
     }
 
     @Test
-    void shouldEmitEventThatContainsTheEventPayloadS3Uri()
-        throws JsonProcessingException {
-        expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
-        var updateEvent = parseEmittedEvent();
-        var uriWithEventPayload = updateEvent.getUri();
-        var actualResourceUpdate = fetchResourceUpdateFromS3(uriWithEventPayload);
-        var expectedResourceUpdate = extractResourceUpdateFromEvent();
-        assertThat(actualResourceUpdate, is(equalTo(expectedResourceUpdate)));
+    void shouldNotProduceAnExpandedDataEntryWhenInputIsADataEntryUpdateWithOnlyAnOldImage() throws IOException {
+        var oldImage = createPublishedPublication();
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, DELETED_RESOURCE);
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var response = parseHandlerResponse();
+        assertThat(response, is(equalTo(emptyEvent())));
     }
 
     @Test
-    void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() {
-        TestAppender logs = LogUtils.getTestingAppenderForRootLogger();
-        ResourceExpansionService failingService = createFailingService();
-        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, failingService);
-        expandResourceHandler.handleRequest(sampleEvent(), output, CONTEXT);
-        assertThat(logs.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
-        assertThat(logs.getMessages(), containsString(IDENTIFIER_IN_RESOURCE_FILE));
+    void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() throws IOException {
+        var oldImage = createPublishedPublication();
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+
+        var logger = LogUtils.getTestingAppenderForRootLogger();
+
+        expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService());
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+
+        assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
+        assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
     }
 
     @Test
-    void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws JsonProcessingException {
-        Publication publication = PublicationGenerator.randomPublication().copy()
-            .withStatus(PublicationStatus.DRAFT)
-            .build();
-        Resource resource = Resource.fromPublication(publication);
-        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(resource);
+    void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
+        var oldImage = createPublishedPublication().copy().withStatus(DRAFT).build();
+        var newImage = createUpdatedVersionOfPublication(oldImage);
+        var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
+
+        expandResourceHandler.handleRequest(request, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference, is(equalTo(emptyEvent())));
+    }
+
+    @Test
+    void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws IOException {
+        var newImage = doiRequestForDraftResource();
+        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
+        expandResourceHandler.handleRequest(event, output, CONTEXT);
+        var eventReference = parseHandlerResponse();
+        assertThat(eventReference, is(equalTo(emptyEvent())));
+    }
+
+    @Test
+    void shouldAlwaysEmitEventsForMessages() throws IOException {
+        var newImage = sampleMessage();
+        var event = emulateEventEmittedByDataEntryUpdateHandler(EMPTY_IMAGE, newImage);
         expandResourceHandler.handleRequest(event, output, CONTEXT);
         EventReference eventReference =
             objectMapper.readValue(output.toString(), EventReference.class);
         assertThat(eventReference, is(equalTo(emptyEvent())));
     }
 
-    @Test
-    void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws JsonProcessingException {
-        DoiRequest doiRequest = doiRequestForDraftResource();
-
-        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(doiRequest);
-        expandResourceHandler.handleRequest(event, output, CONTEXT);
-        EventReference eventReference =
-            objectMapper.readValue(output.toString(), EventReference.class);
-        assertThat(eventReference, is(equalTo(emptyEvent())));
+    private Publication createUpdatedVersionOfPublication(Publication oldImage) {
+        return oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build();
     }
 
-    @Test
-    void shouldAlwaysEmitEventsForMessages() throws JsonProcessingException {
-        Message someMessage = sampleMessage();
-        InputStream event = EventBridgeEventBuilder.sampleLambdaDestinationsEvent(someMessage);
-        expandResourceHandler.handleRequest(event, output, CONTEXT);
-        EventReference eventReference =
-            objectMapper.readValue(output.toString(), EventReference.class);
-        assertThat(eventReference, is(equalTo(emptyEvent())));
+    private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
+        throws IOException {
+        var blobUri = createSampleBlob(oldImage, newImage);
+        var event = new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri);
+        return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
+    }
+
+    private Publication createPublishedPublication() {
+        return PublicationGenerator.randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
+    }
+
+    private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
+        var oldImageResource = crateDataEntry(oldImage);
+        var newImageResource = crateDataEntry(newImage);
+        var dataEntryUpdateEvent =
+            new DataEntryUpdateEvent(RESOURCE_UPDATE_EVENT_TOPIC, oldImageResource, newImageResource);
+        var filePath = UnixPath.of(UUID.randomUUID().toString());
+        return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
+    }
+
+    private DataEntry crateDataEntry(Object image) {
+
+        if (image instanceof Publication) {
+            return Resource.fromPublication((Publication) image);
+        } else if (image instanceof DoiRequest) {
+            return (DoiRequest) image;
+        } else if (image instanceof Message) {
+            return (Message) image;
+        } else {
+            return null;
+        }
     }
 
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
@@ -175,14 +208,10 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
 
     private DoiRequest doiRequestForDraftResource() {
         Publication publication = PublicationGenerator.randomPublication().copy()
-            .withStatus(PublicationStatus.DRAFT)
+            .withStatus(DRAFT)
             .build();
         Resource resource = Resource.fromPublication(publication);
         return DoiRequest.newDoiRequestForResource(resource);
-    }
-
-    private InputStream sampleEvent() {
-        return stringToStream(EVENT_WITH_NEW_PUBLISHED_RESOURCE);
     }
 
     private ResourceExpansionService createFailingService() {
@@ -199,31 +228,7 @@ public class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         };
     }
 
-    private DataEntry fetchResourceUpdateFromS3(URI uriWithEventPayload) throws JsonProcessingException {
-        var resourceUpdateString = s3Driver.getFile(UriWrapper.fromUri(uriWithEventPayload).toS3bucketPath());
-        Publication publication =
-            objectMapper.readValue(resourceUpdateString, Publication.class);
-        return Resource.fromPublication(publication);
-    }
-
-    private EventReference parseEmittedEvent() throws JsonProcessingException {
+    private EventReference parseHandlerResponse() throws JsonProcessingException {
         return objectMapper.readValue(output.toString(), EventReference.class);
-    }
-
-    private DataEntry extractResourceUpdateFromEvent() {
-        var event =
-            parseEvent();
-        return event.getDetail().getResponsePayload().getNewData();
-    }
-
-    @SuppressWarnings("unchecked")
-    private AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> parseEvent() {
-        return (AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>>)
-                   newEventParser()
-                       .parse(AwsEventBridgeDetail.class, DataEntryUpdateEvent.class);
-    }
-
-    private EventParser<AwsEventBridgeDetail<DataEntryUpdateEvent>> newEventParser() {
-        return new EventParser<>(EVENT_WITH_NEW_PUBLISHED_RESOURCE, objectMapper);
     }
 }
