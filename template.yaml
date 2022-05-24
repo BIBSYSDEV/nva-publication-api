@@ -731,8 +731,6 @@ Resources:
               detail:
                 responsePayload:
                   topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
-                  newData:
-                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -741,6 +739,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
   ExpandedResourcesPersistenceHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
