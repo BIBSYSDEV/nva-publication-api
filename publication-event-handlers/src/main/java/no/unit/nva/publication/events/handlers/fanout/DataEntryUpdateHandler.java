@@ -31,6 +31,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
 
     public static final DataEntry NO_VALUE = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
+    public static final URI BLOB_IS_EMPTY = null;
     private final S3Driver s3Driver;
 
     public DataEntryUpdateHandler(S3Client s3Client) {
@@ -54,11 +55,10 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     }
 
     private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
-        if (blob.notEmpty()) {
-            var filePath = UnixPath.of(UUID.randomUUID().toString());
-            return s3Driver.insertFile(filePath, blob.toJsonString());
-        }
-        return null;
+        var filePath = UnixPath.of(UUID.randomUUID().toString());
+        return blob.notEmpty()
+                   ? s3Driver.insertFile(filePath, blob.toJsonString())
+                   : BLOB_IS_EMPTY;
     }
 
     private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
