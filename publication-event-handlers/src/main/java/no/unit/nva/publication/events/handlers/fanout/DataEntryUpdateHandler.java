@@ -32,6 +32,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     public static final DataEntry NO_VALUE = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
     public static final URI BLOB_IS_EMPTY = null;
+    public static final EventReference DO_NOT_EMIT_EVENT = null;
     private final S3Driver s3Driver;
 
     public DataEntryUpdateHandler(S3Client s3Client) {
@@ -51,7 +52,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         return attempt(() -> saveBlobToS3(blob))
             .toOptional()
             .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
-            .orElse(null);
+            .orElse(DO_NOT_EMIT_EVENT);
     }
 
     private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
