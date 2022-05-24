@@ -42,6 +42,7 @@ import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
+import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -76,15 +77,22 @@ public class DataEntryUpdateHandlerTest {
         s3Driver = new S3Driver(s3Client, EVENTS_BUCKET);
     }
 
-    @ParameterizedTest(name = "should return a DataEntryUpdateEvent when event contains a DynamoDbStreamRecord")
+    //Using event blobs (storing events in S3) helps us avoid AWS EventBridge message size limitations.
+    @ParameterizedTest(name = "should convert a DynamoDbStream to a DataEntryUpdate event")
     @MethodSource("dynamoDbEventProvider")
-    void shouldReadEventBlobFromUriInEventReference(Publication samplePublication, DynamodbStreamRecord dynamoRecord)
-        throws IOException {
+    void shouldConvertDynamoDbStreamToADataEntryUpdateEventAvoidingHardLimitsOnEventBridgeEventSize(
+        Publication samplePublication,
+        DynamodbStreamRecord dynamoRecord) throws IOException {
         var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(dynamoRecord);
         handler.handleRequest(event, outputStream, context);
-        var output = parseResponse();
-        var actualDataEntry = nonNull(output.getNewData()) ? output.getNewData() : output.getOldData();
-        assertThat(actualDataEntry.getIdentifier(), is(equalTo(samplePublication.getIdentifier())));
+        var response = parseResponse();
+        var blobUri = response.getUri();
+        var blob = s3Driver.getFile(UriWrapper.fromUri(blobUri).toS3bucketPath());
+        var eventBody = dtoObjectMapper.readValue(blob, DataEntryUpdateEvent.class);
+        var expectedIdentifier = nonNull(eventBody.getNewData())
+                                     ? eventBody.getNewData().getIdentifier()
+                                     : eventBody.getOldData().getIdentifier();
+        assertThat(expectedIdentifier, is(equalTo(samplePublication.getIdentifier())));
     }
 
     @ParameterizedTest
@@ -95,8 +103,7 @@ public class DataEntryUpdateHandlerTest {
 
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, context));
         var response = parseResponse();
-        assertThat(response.getNewData(), is(nullValue()));
-        assertThat(response.getOldData(), is(nullValue()));
+        assertThat(response, is(nullValue()));
     }
 
     private static Map<String, AttributeValue> randomDynamoEntry() {
@@ -185,8 +192,8 @@ public class DataEntryUpdateHandlerTest {
         return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), json);
     }
 
-    private DataEntryUpdateEvent parseResponse() {
-        return attempt(() -> objectMapper.readValue(outputStream.toString(), DataEntryUpdateEvent.class))
+    private EventReference parseResponse() {
+        return attempt(() -> objectMapper.readValue(outputStream.toString(), EventReference.class))
             .orElseThrow();
     }
 }

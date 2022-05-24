@@ -1,15 +1,18 @@
 package no.unit.nva.publication.events.bodies;
 
+import static java.util.Objects.nonNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.Resource;
 import nva.commons.core.JacocoGenerated;
 
-public class DataEntryUpdateEvent {
+public class DataEntryUpdateEvent implements JsonSerializable {
 
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
     public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
@@ -78,8 +81,13 @@ public class DataEntryUpdateEvent {
                && Objects.equals(getNewData(), that.getNewData());
     }
 
+    @JsonIgnore
+    public boolean notEmpty() {
+        return nonNull(oldData) || nonNull(newData);
+    }
+
     @JsonProperty("topic")
-    private String getTopic() {
+    public String getTopic() {
         String eventType = null;
         if (oldData instanceof Resource || newData instanceof Resource) {
             eventType = DataEntryUpdateEvent.RESOURCE_UPDATE_EVENT_TOPIC;
