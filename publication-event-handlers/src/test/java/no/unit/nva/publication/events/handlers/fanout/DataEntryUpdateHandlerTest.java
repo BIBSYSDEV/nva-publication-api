@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.events.models.EventReference;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
@@ -89,9 +90,7 @@ public class DataEntryUpdateHandlerTest {
         var blobUri = response.getUri();
         var blob = s3Driver.getFile(UriWrapper.fromUri(blobUri).toS3bucketPath());
         var eventBody = dtoObjectMapper.readValue(blob, DataEntryUpdateEvent.class);
-        var expectedIdentifier = nonNull(eventBody.getNewData())
-                                     ? eventBody.getNewData().getIdentifier()
-                                     : eventBody.getOldData().getIdentifier();
+        var expectedIdentifier = extractIdentifierFromPresentImage(eventBody);
         assertThat(expectedIdentifier, is(equalTo(samplePublication.getIdentifier())));
     }
 
@@ -178,6 +177,12 @@ public class DataEntryUpdateHandlerTest {
         var resource = Resource.fromPublication(publication);
         var identifierEntry = IdentifierEntry.create(resource);
         return convertToAttributeValueMap(identifierEntry);
+    }
+
+    private SortableIdentifier extractIdentifierFromPresentImage(DataEntryUpdateEvent eventBody) {
+        return nonNull(eventBody.getNewData())
+                   ? eventBody.getNewData().getIdentifier()
+                   : eventBody.getOldData().getIdentifier();
     }
 
     private InputStream emulateEventSentByDynamoDbStreamToEventBridgeHandler(DynamodbStreamRecord dynamoRecord)
