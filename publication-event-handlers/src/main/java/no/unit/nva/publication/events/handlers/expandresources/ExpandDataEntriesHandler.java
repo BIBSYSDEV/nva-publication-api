@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.S3Client;
 
 public class ExpandDataEntriesHandler
-    extends DestinationsEventBridgeEventHandler<DataEntryUpdateEvent, EventReference> {
+    extends DestinationsEventBridgeEventHandler<EventReference, EventReference> {
 
     public static final String ERROR_EXPANDING_RESOURCE_WARNING = "Error expanding resource:";
     public static final String HANDLER_EVENTS_FOLDER = "PublicationService-DataEntryExpansion";
@@ -55,22 +55,22 @@ public class ExpandDataEntriesHandler
     }
 
     private ExpandDataEntriesHandler(S3Driver s3Driver, ResourceExpansionService resourceExpansionService) {
-        super(DataEntryUpdateEvent.class);
+        super(EventReference.class);
         this.s3Driver = s3Driver;
         this.resourceExpansionService = resourceExpansionService;
     }
 
     @Override
-    protected EventReference processInputPayload(DataEntryUpdateEvent input,
-                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<DataEntryUpdateEvent>> event,
+    protected EventReference processInputPayload(EventReference input,
+                                                 AwsEventBridgeEvent<AwsEventBridgeDetail<EventReference>> event,
                                                  Context context) {
 
-        return Optional.ofNullable(input.getNewData())
+        var blobObject = readBlobFromS3(input);
+        return Optional.ofNullable(blobObject.getNewData())
             .filter(this::shouldBeEnriched)
-            .flatMap(this::transformToJson)
+            .flatMap(this::enrich)
             .map(this::insertEventBodyToS3)
             .stream()
-            .peek(uri -> logger.info("S3 URI:" + uri.toString()))
             .map(uri -> new EventReference(EXPANDED_ENTRY_UPDATED_EVENT_TOPIC, uri))
             .collect(SingletonCollector.collectOrElse(emptyEvent()));
     }
@@ -102,6 +102,11 @@ public class ExpandDataEntriesHandler
         return AmazonDynamoDBClientBuilder.defaultClient();
     }
 
+    private DataEntryUpdateEvent readBlobFromS3(EventReference input) {
+        var blobString = s3Driver.readEvent(input.getUri());
+        return DataEntryUpdateEvent.fromJson(blobString);
+    }
+
     private EventReference emptyEvent() {
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
@@ -111,18 +116,21 @@ public class ExpandDataEntriesHandler
             Resource resource = (Resource) entry;
             return PublicationStatus.PUBLISHED.equals(resource.getStatus());
         } else if (entry instanceof DoiRequest) {
-            DoiRequest doiRequest = (DoiRequest) entry;
-            return PublicationStatus.PUBLISHED.equals(doiRequest.getResourceStatus());
+            return isDoiRequestReadyForEvaluation((DoiRequest) entry);
         } else {
             return true;
         }
+    }
+
+    private boolean isDoiRequestReadyForEvaluation(DoiRequest doiRequest) {
+        return PublicationStatus.PUBLISHED.equals(doiRequest.getResourceStatus());
     }
 
     private URI insertEventBodyToS3(String string) {
         return attempt(() -> s3Driver.insertEvent(UnixPath.of(HANDLER_EVENTS_FOLDER), string)).orElseThrow();
     }
 
-    private Optional<String> transformToJson(DataEntry newData) {
+    private Optional<String> enrich(DataEntry newData) {
         return attempt(() -> createExpandedResourceUpdate(newData))
             .toOptional(fail -> logError(fail, newData));
     }

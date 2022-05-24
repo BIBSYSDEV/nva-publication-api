@@ -289,6 +289,24 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
+  DynamoDbStreamsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeStream
+              - dynamodb:ListStreams
+              - dynamodb:GetRecords
+            Resource: !GetAtt NvaResourcesTable.StreamArn
+
+
   EventsLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
@@ -672,7 +690,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.DoiRequest.Update" ]
@@ -711,12 +728,9 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
-                  newData:
-                    type: [ { "exists": true } ] # "exists" works only in leaf nodes.
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -725,6 +739,7 @@ Resources:
           OnFailure:
             Type: SQS
             Destination: !GetAtt ResourceExpansionHandlerDLQ.Arn
+
   ExpandedResourcesPersistenceHandler:
     DependsOn: EventsLambdaPermissions
     Type: AWS::Serverless::Function
@@ -750,7 +765,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.ExpandedDataEntry.Update" ]
@@ -787,7 +801,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.ExpandedDataEntry.Update" ]
@@ -853,12 +866,9 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !GetAtt InternalBus.Name
-            Pattern: {
-              "detail-type": [ "PublicationService.Database.Update" ],
-              "resources": [
-                !GetAtt NvaResourcesTable.StreamArn
-              ]
-            }
+            Pattern:
+              detail:
+                topic: [ "PublicationService.Database.Update" ]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -906,32 +916,23 @@ Resources:
             Destination: !GetAtt DeleteDraftPublicationHandlerDLQ.Arn
 
 
-  DynamodbEventFanoutStreamRecordsEventBridgeHandler:
+  DynamodbStreamToEventBridgeHandler:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: publication-event-handlers
-      # DynamodbStream -> Publish DynamodbEvent to EventBridge
       Handler: no.unit.nva.publication.events.handlers.dynamodbstream.DynamodbStreamToEventBridgeHandler::handleRequest
       MemorySize: 768
       Timeout: 360
       Runtime: java11
       Tracing: Active
       ReservedConcurrentExecutions: 1
+      Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           DLQ_URL: !Ref DynamodbEventFanoutStreamRecordsDLQ
           MAX_ATTEMPT: !Ref EventBridgeMaxAttempt
           EVENT_BUS_NAME: !GetAtt InternalBus.Name
-      Policies:
-        - SQSSendMessagePolicy:
-            QueueName: !GetAtt DynamodbEventFanoutStreamRecordsDLQ.QueueName
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action:
-                - events:PutEvents
-              Resource: '*'
       Events:
         FanoutSource:
           Type: DynamoDB
@@ -964,8 +965,6 @@ Resources:
           Properties:
             EventBusName: !Ref NewNvaEventBusName
             Pattern:
-              detail-type:
-                - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
                   topic:
@@ -1195,3 +1194,5 @@ Resources:
       DomainName: !Ref ApiDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
+
