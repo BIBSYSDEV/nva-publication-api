@@ -1195,3 +1195,38 @@ Resources:
       DomainName: !Ref ApiDomain
       RestApiId: !Ref NvaPublicationApi
       Stage: !Ref NvaPublicationApi.Stage
+
+  # Define the SQS queue
+  DebugQueue:
+    Type: AWS::SQS::Queue
+
+  # Define the event rule to filter for events
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "EventRule"
+      Name: !Sub "DebugRule-${AWS::AccountId}"
+      EventBusName: !GetAtt InternalBus.Arn
+      State: ENABLED
+      EventPattern:
+        account:
+          - !Sub '${AWS::AccountId}'
+      Targets:
+        - Arn: !GetAtt DebugQueue.Arn
+          Id: "SQSqueue"
+
+  # Allow EventBridge to invoke SQS
+  EventBridgeToToSqsPolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: SQS:SendMessage
+            Resource: !GetAtt DebugQueue.Arn
+      Queues:
+        - Ref: DebugQueue
+
+
