@@ -19,6 +19,7 @@ import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.s3.S3Driver;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.exceptions.ExceptionUtils;
 import nva.commons.core.paths.UnixPath;
@@ -34,6 +35,11 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     public static final URI BLOB_IS_EMPTY = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
     private final S3Driver s3Driver;
+
+    @JacocoGenerated
+    public DataEntryUpdateHandler() {
+        this(S3Driver.defaultS3Client().build());
+    }
 
     public DataEntryUpdateHandler(S3Client s3Client) {
         super(EventReference.class);
