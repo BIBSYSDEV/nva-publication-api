@@ -44,6 +44,7 @@ import no.unit.nva.testutils.EventBridgeEventBuilder;
 import nva.commons.core.paths.UnixPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 
@@ -54,12 +55,12 @@ public class DataEntryUpdateHandlerTest {
     private DataEntryUpdateHandler handler;
     private S3Driver s3Driver;
 
-    public static Stream<SampleTestInput> dynamoDbEventProvider() throws JsonProcessingException {
+    public static Stream<Arguments> dynamoDbEventProvider() throws JsonProcessingException {
         var samplePublication = createRandomPublicationWithoutLegacyDoiRequestEntry();
         return
-            Stream.of(new SampleTestInput(samplePublication, sampleDynamoRecord(samplePublication, null)),
-                      new SampleTestInput(samplePublication, sampleDynamoRecord(null, samplePublication)),
-                      new SampleTestInput(samplePublication, sampleDynamoRecord(samplePublication, samplePublication)));
+            Stream.of(Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, null)),
+                      Arguments.of(samplePublication, sampleDynamoRecord(null, samplePublication)),
+                      Arguments.of(samplePublication, sampleDynamoRecord(samplePublication, samplePublication)));
     }
 
     public static Stream<Map<String, AttributeValue>> notDaoProvider() throws JsonProcessingException {
@@ -77,26 +78,20 @@ public class DataEntryUpdateHandlerTest {
 
     @ParameterizedTest(name = "should return a DataEntryUpdateEvent when event contains a DynamoDbStreamRecord")
     @MethodSource("dynamoDbEventProvider")
-    void shouldReadEventBlobFromUriInEventReference(SampleTestInput testInput) throws IOException {
-        var publication = testInput.getPublication();
-
-        var blob = testInput.getDynamoRecord();
-        var blobUri = saveBlobInS3(blob);
-        var eventBody = new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, blobUri);
-        var event = EventBridgeEventBuilder.sampleEvent(eventBody);
+    void shouldReadEventBlobFromUriInEventReference(Publication samplePublication, DynamodbStreamRecord dynamoRecord)
+        throws IOException {
+        var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(dynamoRecord);
         handler.handleRequest(event, outputStream, context);
         var output = parseResponse();
         var actualDataEntry = nonNull(output.getNewData()) ? output.getNewData() : output.getOldData();
-        assertThat(actualDataEntry.getIdentifier(), is(equalTo(publication.getIdentifier())));
+        assertThat(actualDataEntry.getIdentifier(), is(equalTo(samplePublication.getIdentifier())));
     }
 
     @ParameterizedTest
     @MethodSource("notDaoProvider")
     void shouldNotThrowExceptionWhenEntryIsNotDao(Map<String, AttributeValue> notDao) throws IOException {
         var blob = sampleDynamoRecord(notDao, notDao);
-        var blobUri = saveBlobInS3(blob);
-        var eventBody = new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, blobUri);
-        var event = EventBridgeEventBuilder.sampleEvent(eventBody);
+        var event = emulateEventSentByDynamoDbStreamToEventBridgeHandler(blob);
 
         assertDoesNotThrow(() -> handler.handleRequest(event, outputStream, context));
         var response = parseResponse();
@@ -178,38 +173,20 @@ public class DataEntryUpdateHandlerTest {
         return convertToAttributeValueMap(identifierEntry);
     }
 
+    private InputStream emulateEventSentByDynamoDbStreamToEventBridgeHandler(DynamodbStreamRecord dynamoRecord)
+        throws IOException {
+        var blobUri = saveBlobInS3(dynamoRecord);
+        var eventBody = new EventReference(DYNAMODB_UPDATE_EVENT_TOPIC, blobUri);
+        return EventBridgeEventBuilder.sampleEvent(eventBody);
+    }
+
     private URI saveBlobInS3(DynamodbStreamRecord blob) throws IOException {
         var json = attempt(() -> dtoObjectMapper.writeValueAsString(blob)).orElseThrow();
         return s3Driver.insertFile(UnixPath.of(UUID.randomUUID().toString()), json);
     }
 
-    private InputStream randomEventBridgeEvent(Publication oldImage, Publication newImage)
-        throws JsonProcessingException {
-        return EventBridgeEventBuilder.sampleEvent(sampleDynamoRecord(oldImage, newImage));
-    }
-
     private DataEntryUpdateEvent parseResponse() {
         return attempt(() -> objectMapper.readValue(outputStream.toString(), DataEntryUpdateEvent.class))
             .orElseThrow();
-    }
-
-    private static class SampleTestInput {
-
-        private final Publication publication;
-        private final DynamodbStreamRecord dynamoRecord;
-
-        private SampleTestInput(Publication publication,
-                                DynamodbStreamRecord dynamoRecord) {
-            this.publication = publication;
-            this.dynamoRecord = dynamoRecord;
-        }
-
-        public Publication getPublication() {
-            return publication;
-        }
-
-        public DynamodbStreamRecord getDynamoRecord() {
-            return dynamoRecord;
-        }
     }
 }
