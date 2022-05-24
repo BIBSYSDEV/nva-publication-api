@@ -690,7 +690,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.DoiRequest.Update" ]
@@ -729,7 +728,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
@@ -768,7 +766,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.ExpandedDataEntry.Update" ]
@@ -805,7 +802,6 @@ Resources:
           Properties:
             EventBusName: !GetAtt InternalBus.Name
             Pattern:
-              detail-type: [ "Lambda Function Invocation Result - Success" ] #Lambda destinations detail-type
               detail:
                 responsePayload:
                   topic: [ "PublicationService.ExpandedDataEntry.Update" ]
@@ -871,12 +867,9 @@ Resources:
           Type: EventBridgeRule
           Properties:
             EventBusName: !GetAtt InternalBus.Name
-            Pattern: {
-              "detail-type": [ "PublicationService.Database.Update" ],
-              "resources": [
-                !GetAtt NvaResourcesTable.StreamArn
-              ]
-            }
+            Pattern:
+              detail:
+                topic: [ "PublicationService.Database.Update" ]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
@@ -973,8 +966,6 @@ Resources:
           Properties:
             EventBusName: !Ref NewNvaEventBusName
             Pattern:
-              detail-type:
-                - "Lambda Function Invocation Result - Success"
               detail:
                 responsePayload:
                   topic:
