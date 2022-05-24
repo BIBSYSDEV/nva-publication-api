@@ -63,7 +63,7 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
     }
 
     private EventReference logEvent(EventReference event) {
-        logger.info("Emitted Event:{}", event.toJsonString());
+        logger.debug("Emitted Event:{}", event.toJsonString());
         return event;
     }
 
