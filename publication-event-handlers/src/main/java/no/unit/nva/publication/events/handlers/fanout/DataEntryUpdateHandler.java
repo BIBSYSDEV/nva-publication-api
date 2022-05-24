@@ -1,64 +1,75 @@
 package no.unit.nva.publication.events.handlers.fanout;
 
+import static no.unit.nva.publication.events.handlers.PublicationEventsConfig.EVENTS_BUCKET;
 import static no.unit.nva.publication.events.handlers.fanout.DynamodbStreamRecordDaoMapper.toDao;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
-import com.amazonaws.services.lambda.runtime.events.DynamodbEvent;
+import com.amazonaws.services.lambda.runtime.events.DynamodbEvent.DynamodbStreamRecord;
 import com.amazonaws.services.lambda.runtime.events.models.dynamodb.AttributeValue;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
+import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.events.handlers.PublicationEventsConfig;
 import no.unit.nva.publication.storage.model.DataEntry;
-import nva.commons.core.JacocoGenerated;
+import no.unit.nva.s3.S3Driver;
+import nva.commons.core.attempt.Failure;
+import nva.commons.core.exceptions.ExceptionUtils;
+import nva.commons.core.paths.UriWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.s3.S3Client;
 
-public class DataEntryUpdateHandler
-    extends EventHandler<DynamodbEvent.DynamodbStreamRecord, DataEntryUpdateEvent> {
+public class DataEntryUpdateHandler extends EventHandler<EventReference, DataEntryUpdateEvent> {
 
     public static final String MAPPING_ERROR = "Error mapping Dynamodb Image to Publication";
     public static final DataEntry NO_VALUE = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
+    private final S3Client s3Client;
 
-    @JacocoGenerated
-    public DataEntryUpdateHandler() {
-        super(DynamodbEvent.DynamodbStreamRecord.class);
+    public DataEntryUpdateHandler(S3Client s3Client) {
+        super(EventReference.class);
+        this.s3Client = s3Client;
     }
 
     @Override
     protected DataEntryUpdateEvent processInput(
-        DynamodbEvent.DynamodbStreamRecord input,
-        AwsEventBridgeEvent<DynamodbEvent.DynamodbStreamRecord> event,
+        EventReference input,
+        AwsEventBridgeEvent<EventReference> event,
         Context context) {
-        String eventJson = attempt(() -> PublicationEventsConfig.objectMapper
-            .writeValueAsString(event))
-            .orElseThrow();
-        logger.info("event:" + eventJson);
+        var s3Content = readBlobFromS3(input);
+        var dynamoDbRecord= parseDynamoDbRecord(s3Content);
+        return convertToDataEntryUpdateEvent(dynamoDbRecord);
+    }
 
-        DataEntryUpdateEvent output = new DataEntryUpdateEvent(
-            input.getEventName(),
-            getDao(input.getDynamodb().getOldImage()),
-            getDao(input.getDynamodb().getNewImage())
+    private DataEntryUpdateEvent convertToDataEntryUpdateEvent(DynamodbStreamRecord dynamoDbRecord) {
+        return new DataEntryUpdateEvent(
+            dynamoDbRecord.getEventName(),
+            getDao(dynamoDbRecord.getDynamodb().getOldImage()),
+            getDao(dynamoDbRecord.getDynamodb().getNewImage())
         );
+    }
 
-        String outputJson = attempt(() -> PublicationEventsConfig.objectMapper
-            .writeValueAsString(output))
-            .orElseThrow();
-        logger.info("output" + outputJson);
-        return output;
+    private String readBlobFromS3(EventReference input) {
+        var s3Driver = new S3Driver(s3Client,EVENTS_BUCKET);
+        var filePath = UriWrapper.fromUri(input.getUri()).toS3bucketPath();
+        return s3Driver.getFile(filePath);
+    }
+
+    private DynamodbStreamRecord parseDynamoDbRecord(String s3Content) {
+        return attempt(()-> JsonUtils.dtoObjectMapper.readValue(s3Content, DynamodbStreamRecord.class)).orElseThrow();
     }
 
     private DataEntry getDao(Map<String, AttributeValue> image) {
-        if (image == null) {
-            return NO_VALUE;
-        }
-        try {
-            return toDao(image).orElse(NO_VALUE);
-        } catch (Exception e) {
-            logger.error(MAPPING_ERROR, e);
-            throw new RuntimeException(MAPPING_ERROR, e);
-        }
+        return attempt(()->toDao(image))
+            .toOptional(this::logFailureInDebugging)
+            .flatMap(Function.identity()).orElse(NO_VALUE);
+    }
+
+    private void logFailureInDebugging(Failure<Optional<DataEntry>> fail) {
+        logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
     }
 }
