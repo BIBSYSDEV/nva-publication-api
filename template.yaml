@@ -289,6 +289,24 @@ Resources:
               - s3:PutObjectAcl
             Resource: "*"
 
+  DynamoDbStreamsAccessPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub DynamoDbStreamAccessPolicy-${AWS::StackName}
+      Roles:
+        - !Ref LambdaRole
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetShardIterator
+              - dynamodb:DescribeStream
+              - dynamodb:ListStreams
+              - dynamodb:GetRecords
+            Resource: !GetAtt NvaResourcesTable.StreamArn
+
+
   EventsLambdaPermissions:
     Type: AWS::IAM::Policy
     Properties:
