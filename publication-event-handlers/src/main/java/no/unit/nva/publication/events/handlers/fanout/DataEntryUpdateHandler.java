@@ -58,7 +58,13 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         return attempt(() -> saveBlobToS3(blob))
             .toOptional()
             .map(blobUri -> new EventReference(blob.getTopic(), blobUri))
+            .map(this::logEvent)
             .orElse(DO_NOT_EMIT_EVENT);
+    }
+
+    private EventReference logEvent(EventReference event) {
+        logger.info("Emitted Event:{}", event.toJsonString());
+        return event;
     }
 
     private URI saveBlobToS3(DataEntryUpdateEvent blob) throws IOException {
