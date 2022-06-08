@@ -9,11 +9,15 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.apache.http.HttpStatus.SC_OK;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNot.not;
+import static org.hamcrest.text.IsEmptyString.emptyString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.amazonaws.services.lambda.runtime.Context;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +30,7 @@ import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.core.Environment;
+import nva.commons.logutils.LogUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -76,6 +81,17 @@ public class PublicationsByOwnerHandlerTest {
         publicationsByOwnerHandler.handleRequest(input, output, context);
         var gatewayResponse = GatewayResponse.fromOutputStream(output, Void.class);
         assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
+    }
+
+
+    @Test
+    void shouldLogExceptionWhenAuthorizationFails() throws IOException {
+        var messages = LogUtils.getTestingAppenderForRootLogger();
+        InputStream input = new HandlerRequestBuilder<Void>(restApiMapper).build();
+        publicationsByOwnerHandler.handleRequest(input, output, context);
+        var gatewayResponse = GatewayResponse.fromOutputStream(output, Void.class);
+        assertEquals(HttpURLConnection.HTTP_UNAUTHORIZED, gatewayResponse.getStatusCode());
+
     }
 
     private List<Publication> publicationSummaries() {

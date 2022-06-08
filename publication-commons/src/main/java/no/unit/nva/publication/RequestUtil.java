@@ -45,7 +45,6 @@ public final class RequestUtil {
         }
     }
 
-
     /**
      * Get owner from requestContext authorizer claims.
      *
@@ -54,8 +53,8 @@ public final class RequestUtil {
      * @throws ApiGatewayException exception thrown if value is missing
      */
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
-        return attempt(requestInfo::getNvaUsername).orElseThrow(fail -> new UnauthorizedException());
+        return attempt(requestInfo::getNvaUsername)
+            .toOptional(fail -> logger.warn("Could not authenticate user", fail.getException()))
+            .orElseThrow(UnauthorizedException::new);
     }
-
-
 }
