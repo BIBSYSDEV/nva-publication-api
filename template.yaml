@@ -767,7 +767,6 @@ Resources:
           EVENTS_BUCKET: !Ref NvaEventsBucketsName
           IDENTITY_SERVICE_SECRET_NAME: 'IdentityServiceSecret-' #TODO update when secret name is updated
           IDENTITY_SERVICE_SECRET_KEY: 'IdentityServiceSecretKey'
-          API_SCHEME: 'https'
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
           PERSISTED_ENTRIES_BUCKET: !Ref ExpandedEntriesPersistenceBucketName
       Events:
@@ -865,7 +864,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
-          API_SCHEME: https
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
         EventBridgeEvent:
@@ -928,7 +926,6 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref NvaResourcesTable
-          API_SCHEME: https
           AWC_ACCOUNT_ID: !Ref AWS::AccountId
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Events:
@@ -1011,7 +1008,6 @@ Resources:
         Variables:
           ALLOWED_ORIGIN: '*'
           TABLE_NAME: !Ref NvaResourcesTable
-          API_SCHEME: https
           ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
       Role: !GetAtt LambdaRole.Arn
       Events:
