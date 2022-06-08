@@ -1,7 +1,6 @@
-
 dependencies {
     //This package is added by SAM template in the runtime environment
-    implementation (project(':publication-commons')) {
+    implementation(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
     implementation(project(':storage-model'))
@@ -36,13 +35,13 @@ dependencies {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 
-    compileOnly (libs.aws.sdk.apigateway) {
+    compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
 
 }
 
-test{
+test {
     environment "ALLOWED_ORIGIN", "*"
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"
