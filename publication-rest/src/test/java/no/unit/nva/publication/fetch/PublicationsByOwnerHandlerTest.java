@@ -38,7 +38,6 @@ public class PublicationsByOwnerHandlerTest {
     private ByteArrayOutputStream output;
     private PublicationsByOwnerHandler publicationsByOwnerHandler;
 
-
     @BeforeEach
     public void setUp() {
         var environment = mock(Environment.class);
