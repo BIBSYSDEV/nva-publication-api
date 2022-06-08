@@ -1,7 +1,6 @@
-
 dependencies {
     //This package is added by SAM template in the runtime environment
-    implementation (project(':publication-commons')) {
+    implementation(project(':publication-commons')) {
         exclude group: "software.amazon.ion", module: "ion-java"
     }
     implementation(project(':storage-model'))
@@ -36,15 +35,22 @@ dependencies {
         because "aws-java-sdk-dynamodb needs and we are using it indirectly"
     }
 
-    compileOnly (libs.aws.sdk.apigateway) {
+    compileOnly(libs.aws.sdk.apigateway) {
         because "PMD complains for the com/amazonaws/regions/Regions class"
     }
 
 }
 
-test{
-    environment "ALLOWED_ORIGIN", "*"
+test {
+//    environment "ALLOWED_ORIGIN", "*"
     environment "AWS_REGION", "eu-west-1"
-    environment "COGNITO_HOST", "https://example.com"
+//    environment "COGNITO_HOST", "https://example.com"
+    environment "ALLOWED_ORIGIN", "*"
+    environment "API_HOST", "api.dev.nva.aws.unit.no"
+    environment "API_SCHEME", "https"
+    environment "COGNITO_HOST", "https://nva-dev.auth.eu-west-1.amazoncognito.com"
+    environment "ID_NAMESPACE", "https://api.dev.nva.aws.unit.no/publication"
+    environment "TABLE_NAME", "nva-resources-master-pipelines-NvaPublicationApiPipeline-1X7VZ86J1DUHD-nva-publication-api"
+
 }
 
