@@ -7,14 +7,14 @@ public enum ApprovePublicationRequestStatus {
 
     public static final String INVALID_APPROVE_PUBLICATION_REQUEST_STATUS_ERROR = "Invalid ApprovePublicationRequest status: ";
 
-    public static ApprovePublicationRequestStatus parse(String doiRequestStatus) {
+    public static ApprovePublicationRequestStatus parse(String requestStatus) {
 
         for (ApprovePublicationRequestStatus status : ApprovePublicationRequestStatus.values()) {
-            if (status.name().equalsIgnoreCase(doiRequestStatus)) {
+            if (status.name().equalsIgnoreCase(requestStatus)) {
                 return status;
             }
         }
-        throw new IllegalArgumentException(INVALID_APPROVE_PUBLICATION_REQUEST_STATUS_ERROR + doiRequestStatus);
+        throw new IllegalArgumentException(INVALID_APPROVE_PUBLICATION_REQUEST_STATUS_ERROR + requestStatus);
     }
 }
 

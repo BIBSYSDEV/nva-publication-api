@@ -26,13 +26,18 @@ public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
         this.data = data;
     }
 
-    public static ApprovePublicationRequestDao queryObject(URI sampleCustomer, String sampleUser) {
-        ApprovePublicationRequest approvePublicationRequest = new ApprovePublicationRequest();
+    public static ApprovePublicationRequestDao queryObject(URI customer, String user) {
+        ApprovePublicationRequest approvePublicationRequest = new ApprovePublicationRequest(SortableIdentifier.next());
+        approvePublicationRequest.setCustomerId(customer);
+        approvePublicationRequest.setOwner(user);
+
         return new ApprovePublicationRequestDao(approvePublicationRequest);
     }
 
-    public static ApprovePublicationRequestDao queryObject(URI sampleCustomer, String sampleUser, SortableIdentifier sampleEntryIdentifier) {
-        ApprovePublicationRequest approvePublicationRequest = new ApprovePublicationRequest();
+    public static ApprovePublicationRequestDao queryObject(URI customer, String user, SortableIdentifier identifier) {
+        ApprovePublicationRequest approvePublicationRequest = new ApprovePublicationRequest(identifier);
+        approvePublicationRequest.setCustomerId(customer);
+        approvePublicationRequest.setOwner(user);
         return new ApprovePublicationRequestDao(approvePublicationRequest);
     }
 
@@ -48,7 +53,7 @@ public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
 
     @Override
     public String getType() {
-        return TYPE;
+        return getContainedType();
     }
 
     @Override
@@ -75,6 +80,11 @@ public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
     protected String getOwner() {
         return data.getOwner();
     }
+
+    public static String getContainedType() {
+        return ApprovePublicationRequest.TYPE;
+    }
+
 
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {

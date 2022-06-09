@@ -25,7 +25,7 @@ class ApprovePublicationRequestDaoTest {
     @Test
     public void queryObjectWithOwnerAndResourceReturnsQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
         ApprovePublicationRequestDao queryObject = ApprovePublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
-        String expectedPrimaryPartitionKey = expectedDoiRequestPrimaryPartitionKey();
+        String expectedPrimaryPartitionKey = expectedPublicationRequestPrimaryPartitionKey();
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPrimaryPartitionKey)));
     }
 
@@ -34,19 +34,22 @@ class ApprovePublicationRequestDaoTest {
         SortableIdentifier sampleEntryIdentifier = SortableIdentifier.next();
         ApprovePublicationRequestDao queryObject = ApprovePublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
 
-        assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedDoiRequestPrimaryPartitionKey())));
+        assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
         assertThat(queryObject.getPrimaryKeySortKey(),
-                is(equalTo(expectedDoiRequestPrimarySortKey(sampleEntryIdentifier))));
+                is(equalTo(expectedPublicationRequestPrimarySortKey(sampleEntryIdentifier))));
     }
 
-    private String expectedDoiRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
-        return DoiRequestDao.getContainedType()
+
+
+
+    private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
+        return ApprovePublicationRequestDao.getContainedType()
                 + KEY_FIELDS_DELIMITER
                 + entryIdentifier.toString();
     }
 
-    private String expectedDoiRequestPrimaryPartitionKey() {
-        return DoiRequestDao.getContainedType()
+    private String expectedPublicationRequestPrimaryPartitionKey() {
+        return ApprovePublicationRequestDao.getContainedType()
                 + KEY_FIELDS_DELIMITER
                 + SAMPLE_CUSTOMER_IDENTIFIER
                 + KEY_FIELDS_DELIMITER

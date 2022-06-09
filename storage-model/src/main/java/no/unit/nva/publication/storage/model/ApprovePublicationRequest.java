@@ -1,13 +1,12 @@
 package no.unit.nva.publication.storage.model;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.storage.model.daos.ApprovePublicationRequestDao;
 import no.unit.nva.publication.storage.model.daos.Dao;
-import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Instant;
@@ -28,8 +27,10 @@ public class ApprovePublicationRequest
     private SortableIdentifier identifier;
     @JsonProperty
     private SortableIdentifier resourceIdentifier;
+
     @JsonProperty(STATUS_FIELD)
     private ApprovePublicationRequestStatus status;
+
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("owner")
@@ -41,6 +42,21 @@ public class ApprovePublicationRequest
 
     private String rowVersion;
 
+    @JacocoGenerated
+    public ApprovePublicationRequest() {
+        super();
+        setStatus(ApprovePublicationRequestStatus.PENDING);
+    }
+
+    public ApprovePublicationRequest(SortableIdentifier identifier) {
+        this();
+        setIdentifier(identifier);
+
+    }
+
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
+    }
 
     @Override
     public SortableIdentifier getResourceIdentifier() {
@@ -49,7 +65,9 @@ public class ApprovePublicationRequest
 
     @Override
     public Publication toPublication() {
-        return null;
+        return new Publication.Builder()
+                .withIdentifier(getResourceIdentifier())
+                .build();
     }
 
     @Override
@@ -94,6 +112,10 @@ public class ApprovePublicationRequest
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
+    }
+
+    public void setStatus(ApprovePublicationRequestStatus status) {
+        this.status = status;
     }
 
     @Override
