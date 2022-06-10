@@ -30,6 +30,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
+    @JsonSubTypes.Type(name = ApprovePublicationRequestDao.TYPE, value = ApprovePublicationRequestDao.class),
 })
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntry>
     implements DynamoEntry,
@@ -62,7 +63,9 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
     public static Map<String, AttributeValue> scanFilterExpressionAttributeValues() {
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE + KEY_FIELDS_DELIMITER),
-                      ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER));
+                      ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER),
+                ":ApprovePublicationRequest", new AttributeValue(ApprovePublicationRequestDao.TYPE + KEY_FIELDS_DELIMITER)
+        );
     }
 
     @Override

@@ -15,12 +15,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.storage.model.ApprovePublicationRequest;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
+    @JsonSubTypes.Type(name = "ApprovePublicationRequest", value = ApprovePublicationRequestDao.class),
 })
 public interface JoinWithResource {
 
@@ -37,7 +39,7 @@ public interface JoinWithResource {
             + KEY_FIELDS_DELIMITER
             + getResourceIdentifier().toString();
     }
-    
+
     @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByCustomerAndResourceSortKey() {
         return

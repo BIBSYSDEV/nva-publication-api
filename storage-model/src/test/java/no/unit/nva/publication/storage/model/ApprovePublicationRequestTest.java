@@ -2,6 +2,9 @@ package no.unit.nva.publication.storage.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.testing.PublicationGenerator;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -24,6 +27,14 @@ class ApprovePublicationRequestTest {
     private static final Instant NOW = Instant.now();
     public static final Clock CLOCK = fixedClock();
     private final ApprovePublicationRequest sampleRequest = sampleApprovePublicationRequest();
+    static Publication randomPublication;
+    static SortableIdentifier randomIdentifier;
+
+    @BeforeAll
+    static void beforeAll() {
+        randomPublication = PublicationGenerator.randomPublication();
+        randomIdentifier = SortableIdentifier.next();
+    }
 
 
     @Test
@@ -59,12 +70,7 @@ class ApprovePublicationRequestTest {
     }
 
     private ApprovePublicationRequest sampleApprovePublicationRequest() {
-        ApprovePublicationRequest approvePublicationRequest = new ApprovePublicationRequest(SortableIdentifier.next());
-        approvePublicationRequest.setCreatedDate(NOW);
-        approvePublicationRequest.setModifiedDate(NOW);
-        approvePublicationRequest.setResourceIdentifier(SortableIdentifier.next());
-        approvePublicationRequest.setRowVersion(UUID.randomUUID().toString());
-        return  approvePublicationRequest;
+        return ApprovePublicationRequest.fromPublication(randomPublication, randomIdentifier);
     }
 
 

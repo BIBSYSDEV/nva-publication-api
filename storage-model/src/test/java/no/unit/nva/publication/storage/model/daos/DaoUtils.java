@@ -11,6 +11,8 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import com.amazonaws.services.dynamodbv2.xspec.S;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
@@ -48,7 +50,14 @@ public final class DaoUtils {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         MessageDao messageDao = sampleMessageDao();
-        return Stream.of(resourceDao, doiRequestDao, messageDao);
+        ApprovePublicationRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
+        return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
+    }
+
+    private static ApprovePublicationRequestDao sampleApprovePublicationRequestDao() {
+        ApprovePublicationRequest approvePublicationRequest = ApprovePublicationRequest.newApprovePublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        ApprovePublicationRequestDao approvePublicationRequestDao =  new ApprovePublicationRequestDao(approvePublicationRequest);
+        return approvePublicationRequestDao;
     }
 
     public static DoiRequestDao doiRequestDao(Resource resource) {
