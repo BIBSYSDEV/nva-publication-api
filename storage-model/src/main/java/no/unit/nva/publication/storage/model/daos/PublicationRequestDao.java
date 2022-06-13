@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.ApprovePublicationRequest;
+import no.unit.nva.publication.storage.model.PublicationRequest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -14,58 +14,59 @@ import java.net.URI;
 import java.util.Objects;
 
 
-@JsonTypeName(ApprovePublicationRequestDao.TYPE)
+@JsonTypeName(PublicationRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
+public class PublicationRequestDao extends Dao<PublicationRequest>
         implements
         JoinWithResource,
         JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
-    public static final String TYPE = "ApprovePublicationRequest";
-    private ApprovePublicationRequest data;
+    public static final String TYPE = "PublicationRequest";
+    private PublicationRequest data;
 
 
     @JacocoGenerated
-    public ApprovePublicationRequestDao() {
+    public PublicationRequestDao() {
         super();
     }
 
-    public ApprovePublicationRequestDao(ApprovePublicationRequest data) {
+    public PublicationRequestDao(PublicationRequest data) {
+        super();
         this.data = data;
     }
 
-    public static ApprovePublicationRequestDao queryObject(URI publisherId, String owner, SortableIdentifier requestIdentifier) {
-        ApprovePublicationRequest apr = ApprovePublicationRequest.builder()
+    public static PublicationRequestDao queryObject(URI publisherId, String owner, SortableIdentifier requestIdentifier) {
+        PublicationRequest apr = PublicationRequest.builder()
                 .withIdentifier(requestIdentifier)
                 .withOwner(owner)
                 .withCustomerId(publisherId)
                 .build();
 
-        return new ApprovePublicationRequestDao(apr);
+        return new PublicationRequestDao(apr);
     }
 
-    public static ApprovePublicationRequestDao queryObject(URI publisherId, String owner) {
+    public static PublicationRequestDao queryObject(URI publisherId, String owner) {
         return queryObject(publisherId, owner, null);
     }
 
-    public static ApprovePublicationRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
-                                                                     SortableIdentifier resourceIdentifier) {
-        ApprovePublicationRequest apr = ApprovePublicationRequest.builder()
+    public static PublicationRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
+                                                                             SortableIdentifier resourceIdentifier) {
+        PublicationRequest apr = PublicationRequest.builder()
                 .withResourceIdentifier(resourceIdentifier)
                 .withOwner(resourceOwner.getUserIdentifier())
                 .withCustomerId(resourceOwner.getOrganizationUri())
                 .build();
-        return new ApprovePublicationRequestDao(apr);
+        return new PublicationRequestDao(apr);
     }
 
     @Override
-    public ApprovePublicationRequest getData() {
+    public PublicationRequest getData() {
         return data;
     }
 
     @Override
-    public void setData(ApprovePublicationRequest data) {
+    public void setData(PublicationRequest data) {
         this.data = data;
     }
 
@@ -100,13 +101,13 @@ public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
     }
 
     public static String getContainedType() {
-        return ApprovePublicationRequest.TYPE;
+        return PublicationRequest.TYPE;
     }
 
 
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + ApprovePublicationRequest.TYPE;
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublicationRequest.TYPE;
     }
 
     @Override
@@ -121,10 +122,10 @@ public class ApprovePublicationRequestDao extends Dao<ApprovePublicationRequest>
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ApprovePublicationRequestDao)) {
+        if (!(o instanceof PublicationRequestDao)) {
             return false;
         }
-        ApprovePublicationRequestDao that = (ApprovePublicationRequestDao) o;
+        PublicationRequestDao that = (PublicationRequestDao) o;
         return Objects.equals(getData(), that.getData());
     }
 

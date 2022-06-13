@@ -12,12 +12,11 @@ import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import com.amazonaws.services.dynamodbv2.xspec.S;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.ApprovePublicationRequest;
+import no.unit.nva.publication.storage.model.PublicationRequest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
@@ -50,13 +49,13 @@ public final class DaoUtils {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         MessageDao messageDao = sampleMessageDao();
-        ApprovePublicationRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
+        PublicationRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
 
-    private static ApprovePublicationRequestDao sampleApprovePublicationRequestDao() {
-        ApprovePublicationRequest approvePublicationRequest = ApprovePublicationRequest.newApprovePublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-        ApprovePublicationRequestDao approvePublicationRequestDao =  new ApprovePublicationRequestDao(approvePublicationRequest);
+    private static PublicationRequestDao sampleApprovePublicationRequestDao() {
+        PublicationRequest approvePublicationRequest = PublicationRequest.newPublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        PublicationRequestDao approvePublicationRequestDao =  new PublicationRequestDao(approvePublicationRequest);
         return approvePublicationRequestDao;
     }
 

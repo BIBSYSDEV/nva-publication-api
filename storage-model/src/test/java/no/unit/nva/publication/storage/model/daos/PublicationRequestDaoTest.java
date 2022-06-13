@@ -3,7 +3,7 @@ package no.unit.nva.publication.storage.model.daos;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.ApprovePublicationRequest;
+import no.unit.nva.publication.storage.model.PublicationRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 
-class ApprovePublicationRequestDaoTest {
+class PublicationRequestDaoTest {
 
 
 
@@ -33,8 +33,8 @@ class ApprovePublicationRequestDaoTest {
     @Test
     public void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
 
-        ApprovePublicationRequestDao queryObject =
-                ApprovePublicationRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
+        PublicationRequestDao queryObject =
+                PublicationRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
         String expectedPartitionKey = CUSTOMER_INDEX_FIELD_PREFIX
                 + KEY_FIELDS_DELIMITER
                 + SAMPLE_CUSTOMER_IDENTIFIER
@@ -50,7 +50,7 @@ class ApprovePublicationRequestDaoTest {
 
     @Test
     public void queryObjectWithOwnerAndResourceReturnsQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
-        ApprovePublicationRequestDao queryObject = ApprovePublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
+        PublicationRequestDao queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
         String expectedPrimaryPartitionKey = expectedPublicationRequestPrimaryPartitionKey();
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPrimaryPartitionKey)));
     }
@@ -58,7 +58,7 @@ class ApprovePublicationRequestDaoTest {
     @Test
     public void queryObjectWithOwnerResourceAndEntryIdentifierReturnsQueryObjectWithCompletePrimaryKey() {
         SortableIdentifier sampleEntryIdentifier = SortableIdentifier.next();
-        ApprovePublicationRequestDao queryObject = ApprovePublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
+        PublicationRequestDao queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
 
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
         assertThat(queryObject.getPrimaryKeySortKey(),
@@ -67,7 +67,7 @@ class ApprovePublicationRequestDaoTest {
 
     @Test
     public void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation() {
-        ApprovePublicationRequestDao aprDao = sampleApprovePublicationRequestDao();
+        PublicationRequestDao aprDao = sampleApprovePublicationRequestDao();
         assertThat(aprDao, doesNotHaveEmptyValues());
         Map<String, AttributeValue> dynamoMap = aprDao.toDynamoFormat();
         Dao<?> parsedDao = parseAttributeValuesMap(dynamoMap, aprDao.getClass());
@@ -77,10 +77,10 @@ class ApprovePublicationRequestDaoTest {
 
 
 
-    private static ApprovePublicationRequestDao sampleApprovePublicationRequestDao() {
-        ApprovePublicationRequest approvePublicationRequest = ApprovePublicationRequest.newApprovePublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-        ApprovePublicationRequestDao approvePublicationRequestDao =  new ApprovePublicationRequestDao(approvePublicationRequest);
-        return approvePublicationRequestDao;
+    private static PublicationRequestDao sampleApprovePublicationRequestDao() {
+        PublicationRequest approvePublicationRequest = PublicationRequest.newPublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        PublicationRequestDao publicationRequestDao =  new PublicationRequestDao(approvePublicationRequest);
+        return publicationRequestDao;
     }
 
 
@@ -88,13 +88,13 @@ class ApprovePublicationRequestDaoTest {
 
 
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
-        return ApprovePublicationRequestDao.getContainedType()
+        return PublicationRequestDao.getContainedType()
                 + KEY_FIELDS_DELIMITER
                 + entryIdentifier.toString();
     }
 
     private String expectedPublicationRequestPrimaryPartitionKey() {
-        return ApprovePublicationRequestDao.getContainedType()
+        return PublicationRequestDao.getContainedType()
                 + KEY_FIELDS_DELIMITER
                 + SAMPLE_CUSTOMER_IDENTIFIER
                 + KEY_FIELDS_DELIMITER

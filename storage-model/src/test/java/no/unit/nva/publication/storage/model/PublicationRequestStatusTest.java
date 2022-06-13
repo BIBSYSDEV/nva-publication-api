@@ -9,29 +9,29 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ApprovePublicationRequestStatusTest {
+class PublicationRequestStatusTest {
 
     @Test
     public void parseThrowsIllegalArgumentExceptionOnInvalidStatus() {
         String invalidStatus = "invalidStatus";
-        Executable action = () -> ApprovePublicationRequestStatus.parse(invalidStatus);
+        Executable action = () -> PublicationRequestStatus.parse(invalidStatus);
         var exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(),
-                containsString(ApprovePublicationRequestStatus.INVALID_APPROVE_PUBLICATION_REQUEST_STATUS_ERROR));
+                containsString(PublicationRequestStatus.INVALID_APPROVE_PUBLICATION_REQUEST_STATUS_ERROR));
         assertThat(exception.getMessage(), containsString(invalidStatus));
     }
 
     @Test
     public void parseReturnsStatusForValidInputIgnoringCase() {
         String validStatus = "pEnDiNg";
-        var actualStatus = ApprovePublicationRequestStatus.parse(validStatus);
+        var actualStatus = PublicationRequestStatus.parse(validStatus);
 
-        assertThat(actualStatus, is(equalTo(ApprovePublicationRequestStatus.PENDING)));
+        assertThat(actualStatus, is(equalTo(PublicationRequestStatus.PENDING)));
     }
 
     @Test
     public void toStringReturnsEnumValue() {
-        assertThat(ApprovePublicationRequestStatus.APPROVED.toString(), is(equalTo("APPROVED")));
+        assertThat(PublicationRequestStatus.APPROVED.toString(), is(equalTo("APPROVED")));
     }
 
 

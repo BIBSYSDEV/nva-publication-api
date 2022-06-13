@@ -4,14 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Contributor;
-import no.unit.nva.model.EntityDescription;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.Reference;
 import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.storage.model.daos.ApprovePublicationRequestDao;
+import no.unit.nva.publication.storage.model.daos.PublicationRequestDao;
 import no.unit.nva.publication.storage.model.daos.Dao;
+import nva.commons.core.JacocoGenerated;
 
 import java.net.URI;
 import java.time.Clock;
@@ -22,14 +20,14 @@ import java.util.Objects;
 import static no.unit.nva.publication.storage.model.DoiRequest.RESOURCE_STATUS_FIELD;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class ApprovePublicationRequest
+public class PublicationRequest
         implements WithIdentifier,
         RowLevelSecurity,
         WithStatus,
         DataEntry,
         ConnectedToResource {
 
-    public static final String TYPE = "ApprovePublicationRequest";
+    public static final String TYPE = "PublicationRequest";
     public static final String STATUS_FIELD = "status";
 
 
@@ -38,7 +36,7 @@ public class ApprovePublicationRequest
     @JsonProperty
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
-    private ApprovePublicationRequestStatus status;
+    private PublicationRequestStatus status;
     @JsonProperty("customerId")
     private URI customerId;
     @JsonProperty("owner")
@@ -55,21 +53,16 @@ public class ApprovePublicationRequest
     private Instant createdDate;
     private String rowVersion;
 
-    public ApprovePublicationRequest() {
+    public PublicationRequest() {
     }
 
-    public static ApprovePublicationRequest newApprovePublicationRequestResource(Resource resource) {
-        return newApprovePublicationRequestResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
+    public static PublicationRequest newPublicationRequestResource(Resource resource) {
+        return newPublicationRequestResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
     }
 
-    public static ApprovePublicationRequest newApprovePublicationRequestResource(Resource resource, Instant now) {
-        return newApprovePublicationRequestResource(SortableIdentifier.next(), resource, now);
-    }
-
-
-    public static ApprovePublicationRequest newApprovePublicationRequestResource(SortableIdentifier requestIdentifier,
-                                                                  Resource resource,
-                                                                  Instant now) {
+    public static PublicationRequest newPublicationRequestResource(SortableIdentifier requestIdentifier,
+                                                                   Resource resource,
+                                                                   Instant now) {
         return extractDataFromResource(builder(), resource)
                 .withIdentifier(requestIdentifier)
                 .withResourceIdentifier(resource.getIdentifier())
@@ -80,7 +73,7 @@ public class ApprovePublicationRequest
 
     }
 
-    public static ApprovePublicationRequest fromPublication(Publication publication, SortableIdentifier requestIdentifier) {
+    public static PublicationRequest fromPublication(Publication publication, SortableIdentifier requestIdentifier) {
         return  extractDataFromResource(builder(), Resource.fromPublication(publication))
                 .withIdentifier(requestIdentifier)
                 .build();
@@ -100,10 +93,7 @@ public class ApprovePublicationRequest
 
         return new Publication.Builder()
                 .withIdentifier(getResourceIdentifier())
-//                .withModifiedDate(getResourceModifiedDate())
                 .withStatus(getResourceStatus())
-//                .withEntityDescription(entityDescription)
-//                .withPublisher(getCustomerId())
                 .withResourceOwner(new ResourceOwner(getOwner(),null))
                 .build();
     }
@@ -121,7 +111,7 @@ public class ApprovePublicationRequest
 
     @Override
     public Dao<?> toDao() {
-        return new ApprovePublicationRequestDao(this);
+        return new PublicationRequestDao(this);
     }
 
     @Override
@@ -152,11 +142,11 @@ public class ApprovePublicationRequest
         this.identifier = identifier;
     }
 
-    public ApprovePublicationRequestStatus getStatus() {
+    public PublicationRequestStatus getStatus() {
         return status;
     }
 
-    public void setStatus(ApprovePublicationRequestStatus status) {
+    public void setStatus(PublicationRequestStatus status) {
         this.status = status;
     }
 
@@ -189,8 +179,6 @@ public class ApprovePublicationRequest
         this.resourceTitle = resourceTitle;
     }
 
-
-
     public Instant getModifiedDate() {
         return modifiedDate;
     }
@@ -209,9 +197,13 @@ public class ApprovePublicationRequest
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ApprovePublicationRequest)) return false;
-        ApprovePublicationRequest that = (ApprovePublicationRequest) o;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PublicationRequest)) {
+            return false;
+        }
+        PublicationRequest that = (PublicationRequest) o;
         return getIdentifier().equals(that.getIdentifier())
                 && getResourceIdentifier().equals(that.getResourceIdentifier())
                 && status == that.status && getCustomerId().equals(that.getCustomerId())
@@ -222,6 +214,7 @@ public class ApprovePublicationRequest
     }
 
     @Override
+    @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(),
                 getResourceIdentifier(),
@@ -233,22 +226,19 @@ public class ApprovePublicationRequest
                 getRowVersion());
     }
 
-    public static ApprovePublicationRequestBuilder builder() {
-        return new ApprovePublicationRequestBuilder();
+    public static PublicationRequestBuilder builder() {
+        return new PublicationRequestBuilder();
     }
 
-    static ApprovePublicationRequestBuilder extractDataFromResource(ApprovePublicationRequestBuilder builder, Resource resource) {
+    static PublicationRequestBuilder extractDataFromResource(PublicationRequestBuilder builder, Resource resource) {
         return builder
                 .withResourceIdentifier(resource.getIdentifier())
                 .withOwner(resource.getResourceOwner().getOwner())
-                .withStatus(ApprovePublicationRequestStatus.PENDING)
+                .withStatus(PublicationRequestStatus.PENDING)
                 .withCustomerId(resource.getCustomerId())
-//                .withResourcePublicationInstance(extractPublicationInstance(resource))
-//                .withResourcePublicationYear(extractPublicationYear(resource))
                 .withResourceStatus(resource.getStatus())
                 .withResourceTitle(DoiRequestUtils.extractMainTitle(resource))
                 .withContributors(DoiRequestUtils.extractContributors(resource))
                 .withRowVersion(DataEntry.nextRowVersion());
     }
-
 }

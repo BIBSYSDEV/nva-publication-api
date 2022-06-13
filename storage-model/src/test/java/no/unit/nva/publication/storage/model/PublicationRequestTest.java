@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.UUID;
 
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -19,14 +18,12 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.jupiter.api.Assertions.*;
 
-class ApprovePublicationRequestTest {
+class PublicationRequestTest {
 
     public static final String TYPE_FIELD = "type";
     private static final Instant NOW = Instant.now();
-    public static final Clock CLOCK = fixedClock();
-    private final ApprovePublicationRequest sampleRequest = sampleApprovePublicationRequest();
+    private final PublicationRequest sampleRequest = samplePublicationRequest();
     static Publication randomPublication;
     static SortableIdentifier randomIdentifier;
 
@@ -42,7 +39,7 @@ class ApprovePublicationRequestTest {
 
         JsonNode json = dynamoDbObjectMapper.convertValue(sampleRequest, JsonNode.class);
         assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
-        assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(ApprovePublicationRequest.TYPE)));
+        assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(PublicationRequest.TYPE)));
     }
 
     @Test
@@ -69,8 +66,8 @@ class ApprovePublicationRequestTest {
         return Clock.fixed(NOW, ZoneId.systemDefault());
     }
 
-    private ApprovePublicationRequest sampleApprovePublicationRequest() {
-        return ApprovePublicationRequest.fromPublication(randomPublication, randomIdentifier);
+    private PublicationRequest samplePublicationRequest() {
+        return PublicationRequest.fromPublication(randomPublication, randomIdentifier);
     }
 
 

@@ -52,6 +52,7 @@ public final class RequestUtil {
      * @return the owner
      * @throws ApiGatewayException exception thrown if value is missing
      */
+    @SuppressWarnings("PMD.InvalidLogMessageFormat")
     public static String getOwner(RequestInfo requestInfo) throws ApiGatewayException {
         return attempt(requestInfo::getNvaUsername)
             .toOptional(fail -> logger.warn("Could not authenticate user", fail.getException()))
