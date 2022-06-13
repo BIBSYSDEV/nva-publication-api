@@ -196,6 +196,7 @@ public class PublicationRequest
     }
 
     @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
