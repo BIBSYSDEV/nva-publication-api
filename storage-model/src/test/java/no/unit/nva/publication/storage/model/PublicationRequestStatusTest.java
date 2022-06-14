@@ -13,7 +13,7 @@ class PublicationRequestStatusTest {
 
     @Test
     public void parseThrowsIllegalArgumentExceptionOnInvalidStatus() {
-        String invalidStatus = "invalidStatus";
+        var invalidStatus = "invalidStatus";
         Executable action = () -> PublicationRequestStatus.parse(invalidStatus);
         var exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(),
@@ -23,7 +23,7 @@ class PublicationRequestStatusTest {
 
     @Test
     public void parseReturnsStatusForValidInputIgnoringCase() {
-        String validStatus = "pEnDiNg";
+        var validStatus = "pEnDiNg";
         var actualStatus = PublicationRequestStatus.parse(validStatus);
 
         assertThat(actualStatus, is(equalTo(PublicationRequestStatus.PENDING)));
