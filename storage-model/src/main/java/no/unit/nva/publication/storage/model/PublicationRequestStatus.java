@@ -1,12 +1,9 @@
 package no.unit.nva.publication.storage.model;
 
-import nva.commons.core.JacocoGenerated;
-
 import java.util.Set;
 
 import static java.util.Collections.emptySet;
 
-@JacocoGenerated
 public enum PublicationRequestStatus {
     PENDING,
     APPROVED,

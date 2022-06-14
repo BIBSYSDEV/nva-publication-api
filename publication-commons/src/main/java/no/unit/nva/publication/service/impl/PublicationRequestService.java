@@ -293,11 +293,11 @@ public class PublicationRequestService extends ServiceWithTransactions {
 
     private ApiGatewayException handleUpdatePublicationRequestFailure(Failure<UpdateItemResult> fail) {
         if (updateConditionFailed(fail.getException())) {
-            return new BadRequestException(UPDATE_PUBLICATION_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE);
+            return new no.unit.nva.publication.exception.BadRequestException(
+                    UPDATE_PUBLICATION_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE);
         }
         return new DynamoDBException(fail.getException());
     }
-
 
     @Override
     protected String getTableName() {
