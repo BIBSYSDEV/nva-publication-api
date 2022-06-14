@@ -1,6 +1,5 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.PublicationRequest;
@@ -9,7 +8,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.util.Map;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
@@ -22,8 +20,6 @@ import static org.hamcrest.core.IsEqual.equalTo;
 
 class PublicationRequestDaoTest {
 
-
-
     private static final String SAMPLE_USER = "some@onwer";
     private static final String SAMPLE_CUSTOMER_IDENTIFIER = "somePublsherId";
     private static final URI SAMPLE_CUSTOMER = URI.create("https://some.example.org/" + SAMPLE_CUSTOMER_IDENTIFIER);
@@ -31,11 +27,11 @@ class PublicationRequestDaoTest {
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
 
     @Test
-    public void queryByCustomerAndResourceIdentifierReturnsObjectWithPartitionKeyContainingPublisherAndResourceId() {
+    public void shouldReturnObjectWithPartitionKeyContainingPublisherAndResourceId() {
 
-        PublicationRequestDao queryObject =
+        var queryObject =
                 PublicationRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
-        String expectedPartitionKey = CUSTOMER_INDEX_FIELD_PREFIX
+        var expectedPartitionKey = CUSTOMER_INDEX_FIELD_PREFIX
                 + KEY_FIELDS_DELIMITER
                 + SAMPLE_CUSTOMER_IDENTIFIER
                 + KEY_FIELDS_DELIMITER
@@ -46,19 +42,17 @@ class PublicationRequestDaoTest {
         assertThat(queryObject.getByCustomerAndResourcePartitionKey(), is(equalTo(expectedPartitionKey)));
     }
 
-
-
     @Test
-    public void queryObjectWithOwnerAndResourceReturnsQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
-        PublicationRequestDao queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
-        String expectedPrimaryPartitionKey = expectedPublicationRequestPrimaryPartitionKey();
+    public void shouldReturnQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
+        var queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
+        var expectedPrimaryPartitionKey = expectedPublicationRequestPrimaryPartitionKey();
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPrimaryPartitionKey)));
     }
 
     @Test
-    public void queryObjectWithOwnerResourceAndEntryIdentifierReturnsQueryObjectWithCompletePrimaryKey() {
-        SortableIdentifier sampleEntryIdentifier = SortableIdentifier.next();
-        PublicationRequestDao queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
+    public void shouldReturnQueryObjectWithCompletePrimaryKey() {
+        var sampleEntryIdentifier = SortableIdentifier.next();
+        var queryObject = PublicationRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
 
         assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
         assertThat(queryObject.getPrimaryKeySortKey(),
@@ -66,26 +60,18 @@ class PublicationRequestDaoTest {
     }
 
     @Test
-    public void parseAttributeValuesMapCreatesDaoWithoutLossOfInformation() {
-        PublicationRequestDao aprDao = sampleApprovePublicationRequestDao();
+    public void shouldCreateDaoWithoutLossOfInformation() {
+        var aprDao = sampleApprovePublicationRequestDao();
         assertThat(aprDao, doesNotHaveEmptyValues());
-        Map<String, AttributeValue> dynamoMap = aprDao.toDynamoFormat();
-        Dao<?> parsedDao = parseAttributeValuesMap(dynamoMap, aprDao.getClass());
+        var dynamoMap = aprDao.toDynamoFormat();
+        var parsedDao = parseAttributeValuesMap(dynamoMap, aprDao.getClass());
         assertThat(parsedDao, is(equalTo(aprDao)));
     }
 
-
-
-
     private static PublicationRequestDao sampleApprovePublicationRequestDao() {
-        PublicationRequest approvePublicationRequest = PublicationRequest.newPublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-        PublicationRequestDao publicationRequestDao =  new PublicationRequestDao(approvePublicationRequest);
-        return publicationRequestDao;
+        var approvePublicationRequest = PublicationRequest.newPublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        return new PublicationRequestDao(approvePublicationRequest);
     }
-
-
-
-
 
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
         return PublicationRequestDao.getContainedType()
@@ -100,7 +86,4 @@ class PublicationRequestDaoTest {
                 + KEY_FIELDS_DELIMITER
                 + SAMPLE_USER;
     }
-
-
-
 }
