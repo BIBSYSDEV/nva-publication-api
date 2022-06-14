@@ -1,4 +1,4 @@
-package no.unit.nva.publication.approvalrequest.create;
+package no.unit.nva.publication.approvalrequest.list;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -16,9 +16,9 @@ import nva.commons.core.Environment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class CreateApprovalRequestHandlerTest {
+public class ListApprovalRequestHandlerTest {
 
-    private CreateApprovalRequestHandler handler;
+    private ListApprovalRequestHandler handler;
     private ByteArrayOutputStream outputStream;
     private Context context;
 
@@ -26,20 +26,18 @@ public class CreateApprovalRequestHandlerTest {
     public void initialize() {
         outputStream = new ByteArrayOutputStream();
         context = mock(Context.class);
-        handler = new CreateApprovalRequestHandler(new Environment());
+        handler = new ListApprovalRequestHandler(new Environment());
     }
 
     @Test
-    public void createDummyApprovalWithRandomStringReturnsCreated() throws IOException {
+    public void listDummyApprovalWithRandomStringReturnsOk() throws IOException {
         handler.handleRequest(createRequest(), outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
-        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_CREATED));
+        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_OK));
     }
 
     private InputStream createRequest() throws JsonProcessingException {
-        return new HandlerRequestBuilder<String>(JsonUtils.dtoObjectMapper)
-                   .withBody("Hello World")
-                   .build();
+        return new HandlerRequestBuilder<String>(JsonUtils.dtoObjectMapper).build();
     }
 
 }
