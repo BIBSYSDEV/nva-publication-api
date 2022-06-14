@@ -189,7 +189,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {
-        Publication publication = createPublicationForUser(owner);
+        var publication = createPublicationForUser(owner);
         return resourceService.createPublication(owner, publication);
     }
 
