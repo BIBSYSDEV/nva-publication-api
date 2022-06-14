@@ -17,8 +17,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
-import static no.unit.nva.publication.storage.model.DoiRequest.RESOURCE_STATUS_FIELD;
-
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublicationRequest
         implements WithIdentifier,
@@ -29,7 +27,8 @@ public class PublicationRequest
 
     public static final String TYPE = "PublicationRequest";
     public static final String STATUS_FIELD = "status";
-
+    public static final String MODIFIED_DATE_FIELD = "modifiedDate";
+    public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
 
     @JsonProperty
     private SortableIdentifier identifier;

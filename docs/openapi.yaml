@@ -258,7 +258,7 @@ paths:
     post:
       summary: Initiate a Update DOI Request process
       security:
-        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin']
+        - CognitoUserPool: ['https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cog|nito.signin.user.admin']
       requestBody:
         content:
           application/json:

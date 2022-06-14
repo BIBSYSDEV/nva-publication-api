@@ -1,11 +1,15 @@
 package no.unit.nva.publication.service.impl;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.PublicationRequest;
+import no.unit.nva.publication.storage.model.PublicationRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
@@ -16,6 +20,7 @@ import org.junit.jupiter.api.function.Executable;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
@@ -25,7 +30,10 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 class PublicationRequestServiceTest extends ResourcesLocalTest {
@@ -73,13 +81,88 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     void getPublicationRequestThrowsNotFoundExceptionWhenPublicationRequestWasNotFound() {
         UserInstance someUser = randomUserInstance();
         Executable action = () -> publicationRequestService
-                .getPublicationRequestByResourceIdentifier(someUser, SortableIdentifier.next());
+                .getPublicationRequest(someUser, SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
     }
 
+    @Test
+    void listPublicationRequestsForUserReturnsPublicationRequestsWithStatusPending() throws ApiGatewayException {
+        Publication publication = createPublication(owner);
+        createPublicationRequest(publication);
+
+        List<PublicationRequest> result = publicationRequestService.listPublicationRequestsForUser(owner);
+
+        var expectedPublicationRequest =
+                publicationRequestService.getPublicationRequest(owner, publication.getIdentifier());
+
+        assertThat(result, is(equalTo(List.of(expectedPublicationRequest))));
+    }
+
+    @Test
+    void updatePublicationRequestUpdatesPublicationRequestStatusInDatabase()
+            throws ApiGatewayException {
+        var publication = createPublication(owner);
+        UserInstance userInstance = createUserInstance(publication);
+        publicationRequestService.createPublicationRequest(publication);
+
+        PublicationRequestStatus expectedNewPublicationRequestStatus = PublicationRequestStatus.APPROVED;
+        publicationRequestService.updatePublicationRequest(userInstance, publication.getIdentifier(), expectedNewPublicationRequestStatus);
+
+        PublicationRequest updatedPublicationRequest = publicationRequestService.getPublicationRequest(userInstance, publication.getIdentifier());
+        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
+    }
+
+    @Test
+    void updatePublicationRequestThrowsBadRequestExceptionWhenItemUpdateFails() throws ApiGatewayException {
+
+        var publication = createPublication(owner);
+        UserInstance userInstance = createUserInstance(publication);
+        publicationRequestService.createPublicationRequest(publication);
+
+        UpdateItemRequest updateItemRequest = mock(UpdateItemRequest.class);
+
+        PublicationRequestService publicationRequestServiceSpy = spy(publicationRequestService);
+
+        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublicationRequest(
+                any(UserInstance.class),
+                any(SortableIdentifier.class),
+                any(PublicationRequestStatus.class));
+
+        doReturn(Boolean.TRUE).when(publicationRequestServiceSpy).updateConditionFailed(any());
+
+        Executable action =
+                () -> publicationRequestServiceSpy.updatePublicationRequest(userInstance, publication.getIdentifier(),
+                        PublicationRequestStatus.APPROVED);
+        assertThrows(no.unit.nva.publication.exception.BadRequestException.class, action);
+    }
+
+    @Test
+    void updatePublicationRequestThrowsDyamoDbExceptionWhenItemUpdateFails() throws ApiGatewayException {
+
+        var publication = createPublication(owner);
+        UserInstance userInstance = createUserInstance(publication);
+        publicationRequestService.createPublicationRequest(publication);
+
+        UpdateItemRequest updateItemRequest = mock(UpdateItemRequest.class);
+
+        PublicationRequestService publicationRequestServiceSpy = spy(publicationRequestService);
+
+        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublicationRequest(
+                any(UserInstance.class),
+                any(SortableIdentifier.class),
+                any(PublicationRequestStatus.class));
+
+
+        Executable action =
+                () -> publicationRequestServiceSpy.updatePublicationRequest(userInstance, publication.getIdentifier(),
+                        PublicationRequestStatus.APPROVED);
+        assertThrows(no.unit.nva.publication.exception.DynamoDBException.class, action);
+    }
+
+
     private PublicationRequest getPublicationRequest(Publication publication) throws NotFoundException {
         return publicationRequestService
-                .getPublicationRequestByResourceIdentifier(
+                .getPublicationRequest(
                         createUserInstance(publication),
                         publication.getIdentifier()
                 );
@@ -89,6 +172,11 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
         Publication publication = createPublicationForUser(owner);
         return resourceService.createPublication(owner, publication);
     }
+
+    private Publication updatePublication( Publication publication ) throws ApiGatewayException {
+        return resourceService.updatePublication(publication);
+    }
+
 
     private Publication createPublishedPublication(UserInstance owner)
             throws ApiGatewayException {
