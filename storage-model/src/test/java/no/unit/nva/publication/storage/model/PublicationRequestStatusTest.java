@@ -35,4 +35,11 @@ class PublicationRequestStatusTest {
     }
 
 
+    @Test
+    void shouldNotAllowApprovedToChange() {
+        final Executable executable =
+                () -> PublicationRequestStatus.APPROVED.changeStatus(PublicationRequestStatus.REJECTED);
+        assertThrows(IllegalArgumentException.class, executable);
+
+    }
 }

@@ -107,6 +107,30 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
+    void shouldFailWhenPublicationRequestStatusIsSetToRejectedAfterApprove()
+            throws ApiGatewayException {
+        var publication = createPublication(owner);
+        var userInstance = createUserInstance(publication);
+        publicationRequestService.createPublicationRequest(publication);
+
+
+        var expectedNewPublicationRequestStatus = PublicationRequestStatus.APPROVED;
+        publicationRequestService.updatePublicationRequest(userInstance, publication.getIdentifier(),
+                expectedNewPublicationRequestStatus);
+
+        var updatedPublicationRequest = publicationRequestService.getPublicationRequest(userInstance,
+                publication.getIdentifier());
+        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
+
+        Executable action =
+                () -> publicationRequestService.updatePublicationRequest(userInstance, publication.getIdentifier(),
+                        PublicationRequestStatus.REJECTED);
+        assertThrows(IllegalArgumentException.class, action);
+    }
+
+
+
+    @Test
     void shouldThrowBadRequestExceptionWhenItemUpdateFails() throws ApiGatewayException {
 
         var publication = createPublication(owner);
