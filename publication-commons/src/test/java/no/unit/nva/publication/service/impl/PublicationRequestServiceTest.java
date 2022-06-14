@@ -1,7 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
@@ -42,7 +40,6 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     private static final Instant PUBLICATION_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
 
-    private Clock mockClock;
     private ResourceService resourceService;
     private PublicationRequestService publicationRequestService;
     private UserInstance owner;
@@ -50,7 +47,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        this.mockClock = mock(Clock.class);
+        Clock mockClock = mock(Clock.class);
         this.owner = randomUserInstance();
         when(mockClock.instant())
                 .thenReturn(PUBLICATION_CREATION_TIME)
@@ -62,73 +59,61 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
 
     @Test
     void createPublicationRequestStoresNewPublicationRequestForResource() throws ApiGatewayException {
-        Publication publication = createPublication(owner);
+        var publication = createPublication(owner);
         createPublicationRequest(publication);
-        PublicationRequest publicationRequest = getPublicationRequest(publication);
+        var publicationRequest = getPublicationRequest(publication);
         assertThat(publicationRequest.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
         assertThat(publicationRequest, is(not(nullValue())));
     }
 
     @Test
-    void createPublicationRequestThrowsBadRequestForPublishedResource() throws ApiGatewayException {
-        Publication publication = createPublishedPublication(owner);
+    void createPublicationRequestThrowsBadRequestWhenResourceIsAlreadyPublished() throws ApiGatewayException {
+        var publication = createPublishedPublication(owner);
         Executable action = () -> publicationRequestService.createPublicationRequest(publication);
         assertThrows(BadRequestException.class, action);
     }
 
-
     @Test
     void getPublicationRequestThrowsNotFoundExceptionWhenPublicationRequestWasNotFound() {
-        UserInstance someUser = randomUserInstance();
         Executable action = () -> publicationRequestService
-                .getPublicationRequest(someUser, SortableIdentifier.next());
+                .getPublicationRequest(randomUserInstance(), SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
     }
 
     @Test
-    void listPublicationRequestsForUserReturnsPublicationRequestsWithStatusPending() throws ApiGatewayException {
-        Publication publication = createPublication(owner);
+    void shouldListPublicationRequestsForUserReturnsPublicationRequestsWithStatusPending() throws ApiGatewayException {
+        var publication = createPublication(owner);
         createPublicationRequest(publication);
-
-        List<PublicationRequest> result = publicationRequestService.listPublicationRequestsForUser(owner);
-
+        var result = publicationRequestService.listPublicationRequestsForUser(owner);
         var expectedPublicationRequest =
                 publicationRequestService.getPublicationRequest(owner, publication.getIdentifier());
-
         assertThat(result, is(equalTo(List.of(expectedPublicationRequest))));
     }
 
     @Test
-    void updatePublicationRequestUpdatesPublicationRequestStatusInDatabase()
+    void shouldUpdatePublicationRequestUpdatesPublicationRequestStatusInDatabase()
             throws ApiGatewayException {
         var publication = createPublication(owner);
-        UserInstance userInstance = createUserInstance(publication);
+        var userInstance = createUserInstance(publication);
         publicationRequestService.createPublicationRequest(publication);
 
-        PublicationRequestStatus expectedNewPublicationRequestStatus = PublicationRequestStatus.APPROVED;
-        publicationRequestService.updatePublicationRequest(userInstance, publication.getIdentifier(), expectedNewPublicationRequestStatus);
+        var expectedNewPublicationRequestStatus = PublicationRequestStatus.APPROVED;
+        publicationRequestService.updatePublicationRequest(userInstance, publication.getIdentifier(),
+                expectedNewPublicationRequestStatus);
 
-        PublicationRequest updatedPublicationRequest = publicationRequestService.getPublicationRequest(userInstance, publication.getIdentifier());
+        var updatedPublicationRequest = publicationRequestService.getPublicationRequest(userInstance,
+                publication.getIdentifier());
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
     }
 
     @Test
-    void updatePublicationRequestThrowsBadRequestExceptionWhenItemUpdateFails() throws ApiGatewayException {
+    void shouldThrowBadRequestExceptionWhenItemUpdateFails() throws ApiGatewayException {
 
         var publication = createPublication(owner);
-        UserInstance userInstance = createUserInstance(publication);
+        var userInstance = createUserInstance(publication);
         publicationRequestService.createPublicationRequest(publication);
-
-        UpdateItemRequest updateItemRequest = mock(UpdateItemRequest.class);
-
-        PublicationRequestService publicationRequestServiceSpy = spy(publicationRequestService);
-
-        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublicationRequest(
-                any(UserInstance.class),
-                any(SortableIdentifier.class),
-                any(PublicationRequestStatus.class));
-
-        doReturn(Boolean.TRUE).when(publicationRequestServiceSpy).updateConditionFailed(any());
+        var updateItemRequest = mock(UpdateItemRequest.class);
+        var publicationRequestServiceSpy = failingPublicationRequestService(updateItemRequest);
 
         Executable action =
                 () -> publicationRequestServiceSpy.updatePublicationRequest(userInstance, publication.getIdentifier(),
@@ -137,20 +122,15 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void updatePublicationRequestThrowsDyamoDbExceptionWhenItemUpdateFails() throws ApiGatewayException {
+    void shouldThrowDynamoDbExceptionWhenItemUpdateFails() throws ApiGatewayException {
 
         var publication = createPublication(owner);
-        UserInstance userInstance = createUserInstance(publication);
+        var userInstance = createUserInstance(publication);
         publicationRequestService.createPublicationRequest(publication);
 
-        UpdateItemRequest updateItemRequest = mock(UpdateItemRequest.class);
+        var updateItemRequest = mock(UpdateItemRequest.class);
 
-        PublicationRequestService publicationRequestServiceSpy = spy(publicationRequestService);
-
-        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublicationRequest(
-                any(UserInstance.class),
-                any(SortableIdentifier.class),
-                any(PublicationRequestStatus.class));
+        var publicationRequestServiceSpy = failingPublicationRequestServiceBecauseOfEmptyUpdateItemRequest(updateItemRequest);
 
 
         Executable action =
@@ -159,6 +139,22 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
         assertThrows(no.unit.nva.publication.exception.DynamoDBException.class, action);
     }
 
+    private PublicationRequestService failingPublicationRequestServiceBecauseOfEmptyUpdateItemRequest (
+            UpdateItemRequest updateItemRequest) throws NotFoundException {
+        var publicationRequestServiceSpy = spy(publicationRequestService);
+
+        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublicationRequest(
+                any(UserInstance.class),
+                any(SortableIdentifier.class),
+                any(PublicationRequestStatus.class));
+        return publicationRequestServiceSpy;
+    }
+
+    private PublicationRequestService failingPublicationRequestService(UpdateItemRequest updateItemRequest) throws NotFoundException {
+        var publicationRequestServiceSpy = failingPublicationRequestServiceBecauseOfEmptyUpdateItemRequest(updateItemRequest);
+        doReturn(Boolean.TRUE).when(publicationRequestServiceSpy).updateConditionFailed(any());
+        return publicationRequestServiceSpy;
+    }
 
     private PublicationRequest getPublicationRequest(Publication publication) throws NotFoundException {
         return publicationRequestService
@@ -173,26 +169,18 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
         return resourceService.createPublication(owner, publication);
     }
 
-    private Publication updatePublication( Publication publication ) throws ApiGatewayException {
-        return resourceService.updatePublication(publication);
-    }
-
-
-    private Publication createPublishedPublication(UserInstance owner)
-            throws ApiGatewayException {
-        Publication publication = createPublicationForUser(owner);
-        publication = resourceService.createPublication(owner, publication);
+    private Publication createPublishedPublication(UserInstance owner) throws ApiGatewayException {
+        var publication = createPublication(owner);
         publication.setStatus(PublicationStatus.PUBLISHED);
         return publication;
     }
 
-    private void createPublicationRequest(Publication publication)
-            throws TransactionFailedException, BadRequestException {
+    private void createPublicationRequest(Publication publication) throws TransactionFailedException,
+            BadRequestException {
         publicationRequestService.createPublicationRequest(publication);
     }
 
     private UserInstance createUserInstance(Publication publication) {
         return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
     }
-
 }
