@@ -164,18 +164,18 @@ public class PublicationRequestService extends ServiceWithTransactions {
     }
 
     private QueryRequest listPublicationRequestForUserQuery(UserInstance userInstance, int maxResultSize) {
-        String queryExpression = "#PK= :PK";
-        String filterExpression = "#data.#status = :pendingStatus OR #data.#status = :rejectedStatus";
+        var queryExpression = "#PK= :PK";
+        var filterExpression = "#data.#status = :pendingStatus OR #data.#status = :rejectedStatus";
 
-        Map<String, String> expressionAttributeNames =
+        var expressionAttributeNames =
                 Map.of(
                         "#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME,
                         "#data", PublicationRequestDao.CONTAINED_DATA_FIELD_NAME,
                         "#status", PublicationRequest.STATUS_FIELD);
 
-        String primaryKeyPartitionKeyValue = publicationRequestPrimaryKeyPartionKeyValue(userInstance);
+        var primaryKeyPartitionKeyValue = publicationRequestPrimaryKeyPartionKeyValue(userInstance);
 
-        Map<String, AttributeValue> expressionAttributeValues = Map.of(
+        var expressionAttributeValues = Map.of(
                 ":PK", new AttributeValue(primaryKeyPartitionKeyValue),
                 ":pendingStatus", new AttributeValue(PublicationRequestStatus.PENDING.toString()),
                 ":rejectedStatus", new AttributeValue(PublicationRequestStatus.REJECTED.toString())
