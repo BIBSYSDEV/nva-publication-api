@@ -616,6 +616,72 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  CreateApprovalRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-approval-request
+      Handler: no.unit.nva.publication.approvalrequest.create.CreateApprovalRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/approvalrequest
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdateApprovalRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-approval-request
+      Handler: no.unit.nva.publication.approvalrequest.update.UpdateApprovalRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/approvalrequest
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
+  ListApprovalRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publication-approval-request
+      Handler: no.unit.nva.publication.approvalrequest.list.ListApprovalRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/approvalrequest
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
 
   #==========================Event Lambda functions====================================================
 
