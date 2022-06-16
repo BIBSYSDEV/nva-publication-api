@@ -266,7 +266,7 @@ public class PublicationRequestService extends ServiceWithTransactions {
             var lastItems = parseListingPublicationRequestsQueryResult(queryResult);
             result.addAll(lastItems);
             startKey = queryResult.getLastEvaluatedKey();
-        } while (noMoreResults(startKey));
+        } while (hasMoreResults(startKey));
         return result;
     }
 
@@ -278,7 +278,7 @@ public class PublicationRequestService extends ServiceWithTransactions {
                 .collect(Collectors.toList());
     }
 
-    private boolean noMoreResults(Map<String, AttributeValue> startKey) {
+    private boolean hasMoreResults(Map<String, AttributeValue> startKey) {
         return startKey != null && !startKey.isEmpty();
     }
 
