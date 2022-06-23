@@ -16,13 +16,6 @@ task karateExecute(type: JavaExec) {
     main = "com.intuit.karate.cli.Main"
 }
 
-//tasks.named('karateTest') {
-//    useJUnitPlatform {
-//        includeTags 'KarateTest'
-//    }
-//}
-
-
 dependencies {
     implementation project(":storage-model")
     implementation project(":publication-commons")
@@ -72,44 +65,3 @@ test {
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
 }
-
-//task karateTest {
-//    useJUnitPlatform {
-//        includeTags('KarateTest')
-//    }
-//
-//    systemProperty "karate.options", System.properties.getProperty("karate.options")
-//    systemProperty "karate.env", System.properties.getProperty("karate.env")
-//    outputs.upToDateWhen { false }
-//}
-//
-//tasks.named('integrationTest') {
-//    useJUnitPlatform {
-//        includeTags 'KarateTest'
-//    }
-//    failFast = true
-//    testLogging {
-//        events 'skipped', 'passed', 'failed'
-//    }
-//    finalizedBy jacocoTestReport
-//}
-//
-//sourceSets {
-//
-//    test {
-//        resources {
-//            srcDir file('src/test/java')
-//            exclude '**/*.java'
-//        }
-//    }
-//}
-
-//def karateTest = tasks.register('karateTest', Test) {
-//    description = 'Runs karate integration tests.'
-//    group = 'verification'
-//    useJUnitPlatform {
-//        excludeTags 'KarateTest'
-//    }
-//    shouldRunAfter(tasks.named('test'))
-//}
-
