@@ -2,6 +2,7 @@ package no.unit.nva.publication.publishingrequest.create;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -14,7 +15,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.c
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.getPublicationIdentifier;
 
-public class CreatePublishingRequestHandler extends ApiGatewayHandler<String, Void> {
+public class CreatePublishingRequestHandler extends ApiGatewayHandler<Void, PublishingRequest> {
 
     private final PublishingRequestService requestService;
 
@@ -31,18 +32,20 @@ public class CreatePublishingRequestHandler extends ApiGatewayHandler<String, Vo
      */
     public CreatePublishingRequestHandler(PublishingRequestService requestService,
                                           Environment environment) {
-        super(String.class, environment);
+        super(Void.class, environment);
         this.requestService = requestService;
     }
 
     @Override
-    protected Void processInput(String input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
-        requestService.createPublishingRequest(createUserInstance(requestInfo), getPublicationIdentifier(requestInfo));
-        return null;
+    protected PublishingRequest processInput(Void input, RequestInfo requestInfo, Context context) throws ApiGatewayException {
+        final var userInstance = createUserInstance(requestInfo);
+        final var publicationIdentifier = getPublicationIdentifier(requestInfo);
+        requestService.createPublishingRequest(userInstance, publicationIdentifier);
+        return requestService.getPublishingRequest(userInstance, publicationIdentifier);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(String input, Void output) {
+    protected Integer getSuccessStatusCode(Void input, PublishingRequest output) {
         return HttpURLConnection.HTTP_CREATED;
     }
 
