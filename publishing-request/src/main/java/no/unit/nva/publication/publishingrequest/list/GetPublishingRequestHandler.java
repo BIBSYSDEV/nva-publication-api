@@ -33,10 +33,8 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
     @Override
     protected PublishingRequest processInput(Void input, RequestInfo requestInfo, Context context)
             throws ApiGatewayException {
-        var publicationIdentifier = getPublicationIdentifier(requestInfo);
-        var userInstance = createUserInstance(requestInfo);
         validateUserCanApprovePublishingRequest(requestInfo);
-        return requestService.getPublishingRequest(userInstance, publicationIdentifier);
+        return requestService.getPublishingRequest(createUserInstance(requestInfo), getPublicationIdentifier(requestInfo));
     }
 
     @Override
