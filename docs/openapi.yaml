@@ -316,7 +316,7 @@ paths:
         type: AWS_PROXY
   /publishingrequest:
     get:
-      summary: Find publishing request for logged in user
+      summary: List publishing request for authorized in user
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       responses:
@@ -325,10 +325,15 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                # TODO: Add schema
+                $ref: '#/components/schemas/PublishingRequests'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -351,17 +356,15 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-
-
-  /{identifier}/publishingrequest:
+  /{publicationIdentifier}/publishingrequest:
     parameters:
       - in: path
-        name: identifier
+        name: publicationIdentifier
         schema:
           type: string
           format: uuid
         required: true
-        description: UUID identifier of the publication related to the publishing request
+        description: Identifier of the publication related to the publishing request
     get:
       summary: retrieve publishing request for publication
       security:
@@ -372,10 +375,15 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                # TODO: Add schema
+                $ref: '#/components/schemas/PublishingRequest'
         '400':
           description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
@@ -402,21 +410,13 @@ paths:
       summary: Create an publishing request for publication
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: string
-              # TODO: Add schema
       responses:
         '201':
           description: Created
           content:
             application/json:
               schema:
-                type: string
-                # TODO: Add schema
+                $ref: '#/components/schemas/PublishingRequest'
         '400':
           description: Bad Request
           content:
@@ -445,10 +445,17 @@ paths:
           application/json:
             schema:
               type: string
-              # TODO: Add schema
+              enum:
+                - PENDING
+                - REJECT
+                - APPROVE
       responses:
         '202':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishingRequest'
         '400':
           description: Bad Request
           content:
@@ -558,6 +565,65 @@ components:
           enum:
             - DoiRequest
             - Support
+    Context:
+      type: string
+      pattern: 'https:\/\/.*$'
+      description: The JSON-LD context object for the data, which describes the object in the data and allows machine processing of the data at a semantic level
+    Id:
+      type: string
+      pattern: 'https:\/\/.*$'
+      description: The URI of the object ID
+    PublishingRequests:
+      type: object
+      properties:
+        '@context':
+          $ref: '#/components/schemas/Context'
+        id:
+          $ref: '#/components/schemas/Id'
+        size:
+          type: integer
+          format: int32
+          description: Number of results returned from query
+        firstRecord:
+          type: integer
+          format: int32
+          description: The first record in the current page
+        nextResults:
+          type: string
+          pattern: 'https:\/\/.*$'
+          description: URI to the next page in the query results
+        previousResults:
+          type: string
+          pattern: 'https:\/\/.*$'
+          description: URI to the previous page in the query results
+        hits:
+          type: array
+          description: The list of publishing requests returned by the query
+          items:
+            $ref: '#/components/schemas/PublishingRequest'
+    PublishingRequest:
+      type: object
+      properties:
+        identifier:
+          type: string
+        publicationIdentifier:
+          type: string
+        status:
+          type: string
+        customerId:
+          type: string
+        owner:
+          type: string
+        resourceTitle:
+          type: string
+        resourceStatus:
+          type: string
+        contributors:
+          type: object
+        modifiedDate:
+          type: string
+        createdDate:
+          type: string
   securitySchemes:
     CognitoUserPool:
       type: apiKey
