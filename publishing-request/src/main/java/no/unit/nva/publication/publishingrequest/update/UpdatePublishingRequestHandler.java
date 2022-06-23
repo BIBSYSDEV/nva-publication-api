@@ -2,8 +2,9 @@ package no.unit.nva.publication.publishingrequest.update;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.publishingrequest.ApiUpdatePublishingRequest;
+import no.unit.nva.publication.publishingrequest.UpdatePublishingRequest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -19,7 +20,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.d
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.getPublicationIdentifier;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 
-public class UpdatePublishingRequestHandler extends ApiGatewayHandler<ApiUpdatePublishingRequest, Void> {
+public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePublishingRequest, PublishingRequest> {
 
     private final PublishingRequestService requestService;
 
@@ -31,31 +32,31 @@ public class UpdatePublishingRequestHandler extends ApiGatewayHandler<ApiUpdateP
     }
 
     public UpdatePublishingRequestHandler(PublishingRequestService requestService, Environment environment) {
-        super(ApiUpdatePublishingRequest.class, environment);
+        super(UpdatePublishingRequest.class, environment);
         this.requestService = requestService;
     }
 
     @Override
-    protected Void processInput(ApiUpdatePublishingRequest input, RequestInfo requestInfo, Context context)
+    protected PublishingRequest processInput(UpdatePublishingRequest input, RequestInfo requestInfo, Context context)
             throws ApiGatewayException {
         input.validate();
         validateUserCanApprovePublishingRequest(requestInfo);
-        updatePublishingRequestStatus(
+        return updatePublishingRequestStatus(
                 createUserInstance(requestInfo),
                 input.getPublishingRequestStatus(),
                 getPublicationIdentifier(requestInfo));
-        return null;
     }
 
     @Override
-    protected Integer getSuccessStatusCode(ApiUpdatePublishingRequest input, Void output) {
+    protected Integer getSuccessStatusCode(UpdatePublishingRequest input, PublishingRequest output) {
         return HttpURLConnection.HTTP_ACCEPTED;
     }
 
-    private void updatePublishingRequestStatus(UserInstance userInstance,
+    private PublishingRequest updatePublishingRequestStatus(UserInstance userInstance,
                                                PublishingRequestStatus publishingRequestStatus,
                                                SortableIdentifier publicationIdentifier) throws ApiGatewayException {
         requestService.updatePublishingRequest(userInstance, publicationIdentifier, publishingRequestStatus);
+        return requestService.getPublishingRequest(userInstance, publicationIdentifier);
     }
 
 }

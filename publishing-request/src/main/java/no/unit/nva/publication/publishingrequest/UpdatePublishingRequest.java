@@ -5,7 +5,7 @@ import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 
 import java.util.Optional;
 
-public class ApiUpdatePublishingRequest {
+public class UpdatePublishingRequest {
 
     public static final String NO_CHANGE_REQUESTED_ERROR = "You must request changes to do";
     private PublishingRequestStatus publishingRequestStatus;

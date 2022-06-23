@@ -14,13 +14,13 @@ class ApiUpdatePublishingRequestTest {
 
     @Test
     void shouldThrowBadRequestExceptionWhenNoPublishingStatusIsAssigned() throws BadRequestException {
-        ApiUpdatePublishingRequest apiUpdatePublishingRequest = new ApiUpdatePublishingRequest();
+        UpdatePublishingRequest apiUpdatePublishingRequest = new UpdatePublishingRequest();
         assertThrows(BadRequestException.class, () -> apiUpdatePublishingRequest.validate());
     }
 
     @Test
     void shouldApiUpdatePublishingRequest() throws BadRequestException {
-        ApiUpdatePublishingRequest apiUpdatePublishingRequest = new ApiUpdatePublishingRequest();
+        UpdatePublishingRequest apiUpdatePublishingRequest = new UpdatePublishingRequest();
         apiUpdatePublishingRequest.setPublishingRequestStatus(PublishingRequestStatus.PENDING);
         apiUpdatePublishingRequest.validate();
         assertThat(apiUpdatePublishingRequest.getPublishingRequestStatus(), equalTo(PublishingRequestStatus.PENDING));

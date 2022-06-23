@@ -59,7 +59,7 @@ public class PublishingRequestTestUtils {
 
     public static InputStream createListPublishingRequest(Publication publication, URI customerId)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<ApiUpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
                 .withNvaUsername(publication.getOwner())
                 .withCustomerId(customerId)
                 .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
@@ -70,7 +70,7 @@ public class PublishingRequestTestUtils {
     public static InputStream createListPublishingRequestWithMissingAccessRightToApprove(Publication publication,
                                                                                          URI customerId)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<ApiUpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
                 .withNvaUsername(publication.getOwner())
                 .withCustomerId(customerId)
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
@@ -121,11 +121,11 @@ public class PublishingRequestTestUtils {
     }
 
     public static InputStream createUpdatePublishingRequestWithAccessRight(Publication publication,
-                                                                           ApiUpdatePublishingRequest updateRequest,
+                                                                           UpdatePublishingRequest updateRequest,
                                                                            URI customerId,
                                                                            String publicationIdentifier)
             throws JsonProcessingException {
-        final HandlerRequestBuilder<ApiUpdatePublishingRequest> builder = getRequestBuilder(publication,
+        final HandlerRequestBuilder<UpdatePublishingRequest> builder = getRequestBuilder(publication,
                 updateRequest,
                 customerId,
                 publicationIdentifier);
@@ -134,13 +134,13 @@ public class PublishingRequestTestUtils {
                 .build();
     }
 
-    private static HandlerRequestBuilder<ApiUpdatePublishingRequest>
+    private static HandlerRequestBuilder<UpdatePublishingRequest>
         getRequestBuilder(Publication publication,
-                          ApiUpdatePublishingRequest updateRequest,
+                          UpdatePublishingRequest updateRequest,
                           URI customerId,
                           String publicationIdentifier)
             throws JsonProcessingException {
-        return new HandlerRequestBuilder<ApiUpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
                 .withBody(updateRequest)
                 .withNvaUsername(publication.getOwner())
                 .withCustomerId(customerId)
@@ -148,7 +148,7 @@ public class PublishingRequestTestUtils {
     }
 
     public static InputStream createUpdatePublishingRequestMissingAccessRight(Publication publication,
-                                                                              ApiUpdatePublishingRequest updateRequest,
+                                                                              UpdatePublishingRequest updateRequest,
                                                                               URI customerId,
                                                                               String publicationIdentifier)
             throws JsonProcessingException {
@@ -156,8 +156,8 @@ public class PublishingRequestTestUtils {
     }
 
 
-    public static ApiUpdatePublishingRequest createUpdateRequest() {
-        var updateRequest = new ApiUpdatePublishingRequest();
+    public static UpdatePublishingRequest createUpdateRequest() {
+        var updateRequest = new UpdatePublishingRequest();
         updateRequest.setPublishingRequestStatus(PublishingRequestStatus.APPROVED);
         return updateRequest;
     }
