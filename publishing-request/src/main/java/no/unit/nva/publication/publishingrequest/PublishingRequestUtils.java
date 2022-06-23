@@ -21,16 +21,14 @@ public class PublishingRequestUtils {
 
 
     public static SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
-        String publicationIdentifierString = requestInfo.getPathParameter(API_PUBLICATION_PATH_IDENTIFIER);
+        var publicationIdentifierString = requestInfo.getPathParameter(API_PUBLICATION_PATH_IDENTIFIER);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
                 .orElseThrow(
                         fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
     }
 
     public static UserInstance createUserInstance(RequestInfo requestInfo) throws UnauthorizedException {
-        String user = requestInfo.getNvaUsername();
-        var customerId = requestInfo.getCurrentCustomer();
-        return UserInstance.create(user, customerId);
+        return UserInstance.create(requestInfo.getNvaUsername(), requestInfo.getCurrentCustomer());
     }
 
     private static boolean userIsNotAuthorized(RequestInfo requestInfo) {
@@ -43,13 +41,7 @@ public class PublishingRequestUtils {
         }
     }
 
-
-
-
     public static PublishingRequestService defaultRequestService() {
         return new PublishingRequestService(AmazonDynamoDBClientBuilder.defaultClient(),  Clock.systemDefaultZone());
     }
-
-
-
 }
