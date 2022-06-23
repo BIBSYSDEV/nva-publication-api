@@ -45,7 +45,7 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void createPublishingRequestReturnsCreated() throws IOException, ApiGatewayException {
+    public void shouldReturnCreatedWhenPostingPublishingRequest() throws IOException, ApiGatewayException {
         var publication = createAndPersistPublication(resourceService,
                 randomOrganization(),
                 randomResourceOwner());
