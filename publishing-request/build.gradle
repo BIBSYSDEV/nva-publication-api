@@ -1,20 +1,6 @@
 plugins {
     id 'org.unbroken-dome.test-sets' version '4.0.0'
 }
-testSets {
-    integrationTest
-    karateTest {
-        extendsFrom  integrationTest
-        dirName = 'karate'
-        systemProperty "karate.options", System.properties.getProperty("karate.options")
-        systemProperty "karate.env", System.properties.getProperty("karate.env")
-    }
-}
-
-task karateExecute(type: JavaExec) {
-    classpath = sourceSets.test.runtimeClasspath
-    main = "com.intuit.karate.cli.Main"
-}
 
 dependencies {
     implementation project(":storage-model")
@@ -48,19 +34,11 @@ dependencies {
 
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core
-
-    testImplementation libs.karate.core
-    testImplementation libs.karate.junit5
-
-    integrationTestImplementation libs.karate.core
-    integrationTestImplementation libs.karate.junit5
-
 }
 
 test {
-    useJUnitPlatform {
-        excludeTags 'KarateTest'
-    }
+    useJUnitPlatform()
+
     environment "AWS_REGION", "eu-west-1"
     environment "COGNITO_HOST", "https://example.com"
     environment "ALLOWED_ORIGIN", "*"
