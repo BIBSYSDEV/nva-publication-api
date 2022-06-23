@@ -57,7 +57,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createPublicationRequestStoresNewPublicationRequestForResource() throws ApiGatewayException {
+    void shouldCreatePublicationRequestWhenPublicationIsPublishable() throws ApiGatewayException {
         var publication = createPublication(owner);
         createPublicationRequest(publication);
         var publicationRequest = getPublicationRequest(publication);
@@ -66,14 +66,14 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void createPublicationRequestThrowsBadRequestWhenResourceIsAlreadyPublished() throws ApiGatewayException {
+    void shouldReturnBadRequestWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
         Executable action = () -> publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
         assertThrows(BadRequestException.class, action);
     }
 
     @Test
-    void getPublicationRequestThrowsNotFoundExceptionWhenPublicationRequestWasNotFound() {
+    void shouldReturnNotFoundWhenPublicationRequestWasNotFound() {
         Executable action = () -> publicationRequestService
                 .getPublishingRequest(randomUserInstance(), SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
