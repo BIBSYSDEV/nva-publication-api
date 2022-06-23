@@ -19,7 +19,7 @@ public class UniquePublicationRequestEntry extends UniquenessEntry {
         super(identifier);
     }
 
-    public static UniquePublicationRequestEntry create(PublicationRequestDao publicationRequestDao) {
+    public static UniquePublicationRequestEntry create(PublishingRequestDao publicationRequestDao) {
         return new UniquePublicationRequestEntry(publicationRequestDao.getResourceIdentifier().toString());
     }
 

@@ -30,7 +30,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = ResourceDao.TYPE, value = ResourceDao.class),
     @JsonSubTypes.Type(name = DoiRequestDao.TYPE, value = DoiRequestDao.class),
     @JsonSubTypes.Type(name = MessageDao.TYPE, value = MessageDao.class),
-    @JsonSubTypes.Type(name = PublicationRequestDao.TYPE, value = PublicationRequestDao.class),
+    @JsonSubTypes.Type(name = PublishingRequestDao.TYPE, value = PublishingRequestDao.class),
 })
 public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntry>
     implements DynamoEntry,
@@ -52,7 +52,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
         return "begins_with (#PK, :Resource) or "
                + "begins_with(#PK, :DoiRequest) or "
                + "begins_with(#PK, :Message) or "
-               + "begins_with(#PK, :PublicationRequest)";
+               + "begins_with(#PK, :PublishingRequest)";
     }
 
     // replaces the hash values in the filter expression with the actual key name
@@ -65,7 +65,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER),
-                ":PublicationRequest", new AttributeValue(PublicationRequestDao.TYPE + KEY_FIELDS_DELIMITER)
+                ":PublishingRequest", new AttributeValue(PublishingRequestDao.TYPE + KEY_FIELDS_DELIMITER)
         );
     }
 

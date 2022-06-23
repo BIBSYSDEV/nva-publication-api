@@ -23,7 +23,7 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_I
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
-    @JsonSubTypes.Type(name = "PublicationRequest", value = PublicationRequestDao.class),
+    @JsonSubTypes.Type(name = "PublishingRequest", value = PublishingRequestDao.class),
 })
 public interface JoinWithResource {
 

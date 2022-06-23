@@ -109,6 +109,20 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
+    public Publication createPublicationWithStatusFromInput(UserInstance userInstance, Publication inputData)
+            throws ApiGatewayException {
+        Instant currentTime = clockForTimestamps.instant();
+        Resource newResource = Resource.fromPublication(inputData);
+        newResource.setIdentifier(identifierSupplier.get());
+        newResource.setResourceOwner(createResourceOwner(userInstance));
+        newResource.setPublisher(createOrganization(userInstance));
+        newResource.setCreatedDate(currentTime);
+        newResource.setModifiedDate(currentTime);
+        return insertResource(newResource);
+    }
+
+
+
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
         throws TransactionFailedException {
         Resource newResource = Resource.fromPublication(inputData);

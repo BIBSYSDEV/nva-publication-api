@@ -29,6 +29,10 @@ javers = { strictly = '6.2.4' }
 hamcrestJackson = { strictly = '1.2.0' }
 jaxb = { strictly = '2.3.0' }
 jakarta = { strictly = '2.3.2' }
+karate-core = { strictly = '1.1.0' }
+karate-apache = { strictly = '0.9.6' }
+karate-junit5 = { strictly = '1.1.0' }
+
 
 [libraries]
 nva-core = { group = 'com.github.bibsysdev', name = 'core', version.ref = 'nva' }
@@ -117,6 +121,13 @@ log4j-core = { group = 'org.apache.logging.log4j', name = 'log4j-core', version.
 log4j-api = { group = 'org.apache.logging.log4j', name = 'log4j-api', version.ref = 'log4j' }
 log4j-slf4j18-impl = { group = 'org.apache.logging.log4j', name = 'log4j-slf4j18-impl', version.ref = 'log4j' }
 slf4j-api = { group = 'org.slf4j', name = 'slf4j-api', version.ref = 'slf4j' }
+
+karate-core = { group = 'com.intuit.karate', name = 'karate-core', version.ref = 'karate-core'}
+karate-apache = { group = 'com.intuit.karate', name = 'karate-apache', version.ref = 'karate-apache'}
+karate-junit5 = { group = 'com.intuit.karate', name = 'karate-junit5', version.ref = 'karate-junit5'}
+karate-parent = { group = 'com.intuit.karate', name =  'karate-parent', version.ref = 'karate-core'}
+
+
 
 [bundles]
 testing = ['junit-jupiter-params', 'junit-jupiter-api', 'junit-vintage-engine','guava',

@@ -314,17 +314,9 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-  /{identifier}/approvalrequest:
-    parameters:
-      - in: path
-        name: identifier
-        schema:
-          type: string
-          format: uuid
-        required: true
-        description: UUID identifier of the publication related to the approval request
+  /publishingrequest:
     get:
-      summary: Find approval request for publication
+      summary: Find publishing request for logged in user
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       responses:
@@ -355,12 +347,59 @@ paths:
                 $ref: '#/components/schemas/Problem'
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListApprovalRequestFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ListPublishingRequestFunction.Arn}/invocations
+        responses: { }
+        httpMethod: POST
+        type: AWS_PROXY
+
+
+  /{identifier}/publishingrequest:
+    parameters:
+      - in: path
+        name: identifier
+        schema:
+          type: string
+          format: uuid
+        required: true
+        description: UUID identifier of the publication related to the publishing request
+    get:
+      summary: retrieve publishing request for publication
+      security:
+        - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+                # TODO: Add schema
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '502':
+          description: Bad Gateway
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+      x-amazon-apigateway-integration:
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetPublishingRequestFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
     post:
-      summary: Create an approval request for publication
+      summary: Create an publishing request for publication
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
@@ -392,12 +431,12 @@ paths:
                 $ref: '#/components/schemas/Problem'
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateApprovalRequestFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreatePublishingRequestFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
     put:
-      summary: Update an approval request for publication
+      summary: Update status for a publishing request for publication
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
@@ -430,7 +469,7 @@ paths:
                 $ref: '#/components/schemas/Problem'
       x-amazon-apigateway-integration:
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdateApprovalRequestFunction.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UpdatePublishingRequestFunction.Arn}/invocations
         responses: { }
         httpMethod: POST
         type: AWS_PROXY

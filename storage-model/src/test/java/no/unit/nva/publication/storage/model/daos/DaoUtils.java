@@ -16,7 +16,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.PublicationRequest;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
@@ -49,14 +49,14 @@ public final class DaoUtils {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         MessageDao messageDao = sampleMessageDao();
-        PublicationRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
+        PublishingRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
 
-    private static PublicationRequestDao sampleApprovePublicationRequestDao() {
-        PublicationRequest approvePublicationRequest = PublicationRequest.newPublicationRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-        PublicationRequestDao approvePublicationRequestDao =  new PublicationRequestDao(approvePublicationRequest);
-        return approvePublicationRequestDao;
+    private static PublishingRequestDao sampleApprovePublicationRequestDao() {
+        PublishingRequest publishingRequest = PublishingRequest.newPublishingRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
+        PublishingRequestDao publishingRequestDao =  new PublishingRequestDao(publishingRequest);
+        return publishingRequestDao;
     }
 
     public static DoiRequestDao doiRequestDao(Resource resource) {
