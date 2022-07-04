@@ -63,7 +63,6 @@ public class CristinMapper extends CristinMappingModule {
             .withModifiedDate(extractEntryLastModifiedDate())
             .withPublishedDate(extractEntryCreationDate())
             .withPublisher(extractOrganization())
-            .withOwner(cristinObject.getPublicationOwner())
             .withResourceOwner(new ResourceOwner(cristinObject.getPublicationOwner(), HARDCODED_OWNER_AFFILIATION))
             .withStatus(PublicationStatus.PUBLISHED)
             .withLink(HARDCODED_SAMPLE_DOI)

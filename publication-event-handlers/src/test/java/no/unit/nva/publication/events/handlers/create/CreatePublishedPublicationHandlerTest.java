@@ -105,7 +105,6 @@ class CreatePublishedPublicationHandlerTest extends ResourcesLocalTest {
             .withIndexedDate(null)
             .withPublisher(null)
             .withResourceOwner(null)
-            .withOwner(null)
             .build();
     }
 

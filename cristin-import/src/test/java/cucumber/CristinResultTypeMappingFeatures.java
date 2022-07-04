@@ -70,8 +70,8 @@ public class CristinResultTypeMappingFeatures {
                 .getPublicationInstance();
         ChapterArticle chapterArticle = (ChapterArticle) instance;
         ChapterArticleContentType contentType = chapterArticle.getContentType();
-        String actuallType = contentType.getValue();
-        assertThat(actuallType, is(equalTo(expectedContentType)));
+        String actualType = contentType.getValue();
+        assertThat(actualType, is(equalTo(expectedContentType)));
     }
 
     @Given("the Cristin Result has a value for the date when it was reported in NVI.")

@@ -187,7 +187,6 @@ class CreatePublicationHandlerTest extends ResourcesLocalTest {
         assertThat(publicationResponse.getIdentifier(), is(not(nullValue())));
         assertThat(publicationResponse.getIdentifier(), is(instanceOf(SortableIdentifier.class)));
         assertThat(publicationResponse.getCreatedDate(), is(not(nullValue())));
-        assertThat(publicationResponse.getOwner(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwner(), is(equalTo(testUserName)));
         assertThat(publicationResponse.getResourceOwner().getOwnerAffiliation(), is(equalTo(topLevelCristinOrgId)));
         assertThat(publicationResponse.getPublisher().getId(), is(equalTo(testOrgId)));
