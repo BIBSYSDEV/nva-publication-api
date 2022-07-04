@@ -60,7 +60,7 @@ public class PublishingRequestTestUtils {
     public static InputStream createListPublishingRequest(Publication publication, URI customerId)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
@@ -71,7 +71,7 @@ public class PublishingRequestTestUtils {
                                                                                          URI customerId)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
                 .build();
@@ -94,7 +94,7 @@ public class PublishingRequestTestUtils {
     public static InputStream createPublishingRequest(Publication publication, URI customerId)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
                 .build();
@@ -103,7 +103,7 @@ public class PublishingRequestTestUtils {
     public static InputStream createGetPublishingRequest(Publication publication, URI customerId)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
@@ -114,7 +114,7 @@ public class PublishingRequestTestUtils {
                                                                                   URI customerId)
             throws JsonProcessingException {
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publication.getIdentifier().toString()))
                 .build();
@@ -142,7 +142,7 @@ public class PublishingRequestTestUtils {
             throws JsonProcessingException {
         return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
                 .withBody(updateRequest)
-                .withNvaUsername(publication.getOwner())
+                .withNvaUsername(publication.getResourceOwner().getOwner())
                 .withCustomerId(customerId)
                 .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, publicationIdentifier));
     }
@@ -172,6 +172,7 @@ public class PublishingRequestTestUtils {
         var publication = PublicationGenerator.randomPublication();
         publication.setPublisher(publisher);
         publication.setResourceOwner(resourceOwner);
-        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        var storeResult= resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        return resourceService.getPublication(storeResult);
     }
 }
