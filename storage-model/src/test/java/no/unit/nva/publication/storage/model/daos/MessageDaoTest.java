@@ -14,6 +14,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Organization.Builder;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
@@ -28,6 +29,8 @@ public class MessageDaoTest extends ResourcesLocalTest {
     public static final UserInstance SAMPLE_SENDER = UserInstance.create(SAMPLE_SENDER_USERNAME, SAMPLE_ORG);
     public static final String SAMPLE_OWNER_USERNAME = "some@owner";
     public static final UserInstance SAMPLE_OWNER = UserInstance.create(SAMPLE_OWNER_USERNAME, SAMPLE_ORG);
+    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SAMPLE_OWNER.getUserIdentifier(),
+            SAMPLE_OWNER.getOrganizationUri());
     public static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
     public static final String SAMPLE_TEXT = "some text";
     public static final Instant MESSAGE_CREATE_TIME = Instant.now();
@@ -75,7 +78,7 @@ public class MessageDaoTest extends ResourcesLocalTest {
     private Message insertSampleMessageInDatabase() {
         Organization publisher = new Builder().withId(SAMPLE_OWNER.getOrganizationUri()).build();
         Publication publication = new Publication.Builder()
-                                      .withOwner(SAMPLE_OWNER.getUserIdentifier())
+                                      .withResourceOwner(RANDOM_RESOURCE_OWNER)
                                       .withIdentifier(SAMPLE_RESOURCE_IDENTIFIER)
                                       .withPublisher(publisher)
                                       .build();

@@ -876,7 +876,6 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     private Publication generatePublication() {
         var publication = PublicationGenerator.publicationWithoutIdentifier();
         publication.setDoiRequest(null);
-        publication.setOwner(null);
         return publication;
     }
 

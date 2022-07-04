@@ -75,7 +75,6 @@ public class DataCiteMetadataDtoMapperTest {
             .withSequence(THE_CREATOR)
             .withAffiliations(List.of(SOME_PUBLISHER))
             .withIdentity(new Identity.Builder()
-                .withArpId(SOME_OTHER_ARP_ID)
                 .withName(THE_CREATOR_NAME)
                 .build())
             .build();
@@ -86,7 +85,6 @@ public class DataCiteMetadataDtoMapperTest {
             .withSequence(NOT_THE_CREATOR)
             .withAffiliations(List.of(SOME_PUBLISHER))
             .withIdentity(new Identity.Builder()
-                .withArpId(SOME_ARP_ID)
                 .withName(NOT_THE_CREATOR_NAME)
                 .build())
             .build();
