@@ -27,6 +27,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.EntityDescription;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.MessageDto;
@@ -57,6 +58,7 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     public static final String SOME_OTHER_OWNER = "someOther@owner";
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
+    public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SOME_OTHER_OWNER, SOME_OTHER_ORG);
 
     public static final String SAMPLE_HOST = "https://localhost/messages/";
 
@@ -279,7 +281,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         var someOtherOrg = new Organization.Builder().withId(SOME_OTHER_ORG).build();
         var publicationOfDifferentOrg = publicationOfSomeOrg
             .copy()
-            .withOwner(SOME_OTHER_OWNER)
+            .withResourceOwner(RANDOM_RESOURCE_OWNER)
             .withPublisher(someOtherOrg)
             .build();
         var newPublications = List.of(publicationOfSomeOrg, publicationOfDifferentOrg);
@@ -302,7 +304,7 @@ class MessageServiceTest extends ResourcesLocalTest {
     private List<Publication> createPublicationsOfDifferentOwnersInSameOrg() {
         var publicationOfSomeOwner = PublicationGenerator.publicationWithoutIdentifier();
         var publicationOfDifferentOwner = PublicationGenerator.publicationWithoutIdentifier()
-            .copy().withOwner(SOME_OTHER_OWNER).build();
+            .copy().withResourceOwner(RANDOM_RESOURCE_OWNER).build();
         var newPublications = List.of(publicationOfSomeOwner, publicationOfDifferentOwner);
         return persistPublications(newPublications);
     }

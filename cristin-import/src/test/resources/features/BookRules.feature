@@ -22,12 +22,12 @@ Feature: Book conversion rules
     And the NVA BookMonograph Resource has a Content type of type "<contentType>"
     Examples:
       | secondaryCategory | contentType               |
-      | MONOGRAFI         | Academic Monograph        |
+      | MONOGRAFI         | AcademicMonograph         |
       | LÆREBOK           | Textbook                  |
-      | FAGBOK            | Non-fiction Monograph     |
+      | FAGBOK            | NonFictionMonograph       |
       | LEKSIKON          | Encyclopedia              |
-      | POPVIT_BOK        | Popular Science Monograph |
-      | OPPSLAGSVERK      | Encyclopedia             |
+      | POPVIT_BOK        | PopularScienceMonograph   |
+      | OPPSLAGSVERK      | Encyclopedia              |
 
   Scenario: Cristin Result "Academic monograph" is converted to NVA Resource with Publication Context
   of type "Book"

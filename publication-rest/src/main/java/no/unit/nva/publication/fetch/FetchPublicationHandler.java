@@ -72,7 +72,8 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         return createResponse(requestInfo, publication);
     }
 
-    private String createResponse(RequestInfo requestInfo, Publication publication) throws UnsupportedAcceptHeaderException {
+    private String createResponse(RequestInfo requestInfo,
+                                  Publication publication) throws UnsupportedAcceptHeaderException {
         String response;
         var contentType = getDefaultResponseContentTypeHeaderValue(requestInfo);
         if (contentType.equals(APPLICATION_DATACITE_XML)) {
