@@ -47,7 +47,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAcceptGetRequestWithPublicationIdAndPublishingRequestIdAsPathParameters()
+    void shouldAcceptGetRequestWithPublicationIdentifierAndPublishingRequestIdentiferAsPathParameters()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistPublication(resourceService);
         var publishingRequestId = createAndPersistPublishingRequest(requestService, publication, context);
