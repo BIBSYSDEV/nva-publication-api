@@ -1,14 +1,11 @@
 package no.unit.nva.publication.publishingrequest.create;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_MESSAGE_PATH;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.mockEnvironment;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.randomResourceOwner;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.API_PUBLICATION_PATH_IDENTIFIER;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -57,13 +54,13 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         context = mock(Context.class);
         resourceService = new ResourceService(client, mockClock);
         requestService = new PublishingRequestService(client, mockClock);
-        handler = new CreatePublishingRequestHandler(requestService, mockEnvironment());
+        handler = new CreatePublishingRequestHandler(requestService);
     }
 
     @Test
     void shouldAcceptTypedSupportRequest() throws ApiGatewayException, IOException {
         var existingPublication =
-            createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+            createAndPersistPublication(resourceService);
 
         var apiRequest = ownerRequestsToPublishOwnPublication(existingPublication);
         handler.handleRequest(apiRequest, outputStream, context);
@@ -74,8 +71,7 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldPersistThePublishPublicationRequestWhenPublicationExistsAndTheOwnerIsDoingTheRequest()
         throws ApiGatewayException, IOException {
-        var existingPublication =
-            createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+        var existingPublication = createAndPersistPublication(resourceService);
         var apiRequest = ownerRequestsToPublishOwnPublication(existingPublication);
         handler.handleRequest(apiRequest, outputStream, context);
         var resourceOwner = UserInstance.fromPublication(existingPublication);
@@ -88,7 +84,7 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     void shouldReturnLocationHeaderWithUriOfPersistedPublishingRequest()
         throws ApiGatewayException, IOException {
         var existingPublication =
-            createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+            createAndPersistPublication(resourceService);
         var apiRequest = ownerRequestsToPublishOwnPublication(existingPublication);
         handler.handleRequest(apiRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
@@ -101,8 +97,7 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldNotRevealThatPublicationExistsWhenRequesterIsNotThePublicationOwner()
         throws IOException, ApiGatewayException {
-        var existingPublication =
-            createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+        var existingPublication = createAndPersistPublication(resourceService);
         var notOwner = randomString();
         var apiRequest = requestToPublishPublication(existingPublication, notOwner);
         handler.handleRequest(apiRequest, outputStream, context);
@@ -131,7 +126,7 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withBody(new PublicationPublishRequest())
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
-            .withPathParameters(Map.of(API_PUBLICATION_PATH_IDENTIFIER, existingPublication.getIdentifier().toString()))
+            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
             .build();
     }
 

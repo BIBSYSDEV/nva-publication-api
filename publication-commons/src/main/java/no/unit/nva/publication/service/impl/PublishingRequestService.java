@@ -49,8 +49,10 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class PublishingRequestService extends ServiceWithTransactions {
 
-    public static final String PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE = "Could not find a Publishing Request for Resource: ";
-    public static final String ALREADY_PUBLISHED_OR_DELETED_AND_CANNOT_BE_PUBLISHED = "Publication is already published or deleted, and cannot be published";
+    public static final String PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE =
+        "Could not find a Publishing Request for Resource: ";
+    public static final String ALREADY_PUBLISHED_OR_DELETED_AND_CANNOT_BE_PUBLISHED =
+        "Publication is already published or deleted, and cannot be published";
     public static final String UPDATE_PUBLISHING_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE =
             "Could not update Publishing Request status.";
 

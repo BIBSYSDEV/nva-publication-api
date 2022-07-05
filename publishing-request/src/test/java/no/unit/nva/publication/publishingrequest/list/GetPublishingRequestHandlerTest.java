@@ -1,6 +1,20 @@
 package no.unit.nva.publication.publishingrequest.list;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequest;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequestMissingAccessRightApprove;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.core.Is.is;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.time.Clock;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -12,30 +26,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.time.Clock;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequest;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequestMissingAccessRightApprove;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.mockEnvironment;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.randomResourceOwner;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
-
-public class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
+class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
 
     private GetPublishingRequestHandler handler;
     private Context context;
     private ResourceService resourceService;
     private Clock mockClock;
     PublishingRequestService requestService;
+    private ByteArrayOutputStream outputStream;
 
     @BeforeEach
     public void initialize() {
@@ -44,35 +42,42 @@ public class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
         context = mock(Context.class);
         resourceService = new ResourceService(client, mockClock);
         requestService = new PublishingRequestService(client, mockClock);
-        handler = new GetPublishingRequestHandler(requestService, mockEnvironment());
+        handler = new GetPublishingRequestHandler(requestService);
+        outputStream = new ByteArrayOutputStream();
     }
 
     @Test
-    public void shouldReturnPublishingRequestWithStatusPendingForNewPublishingRequest()
-            throws IOException, ApiGatewayException {
-        var publication = createAndPersistPublication(resourceService,
-                randomOrganization(),
-                randomResourceOwner());
-        createAndPersistPublishingRequest(requestService, publication, mockEnvironment(), context);
-        var outputStream = new ByteArrayOutputStream();
-        var getRequest = createGetPublishingRequest(publication, publication.getPublisher().getId());
+    void shouldAcceptGetRequestWithPublicationIdAndPublishingRequestIdAsPathParameters()
+        throws ApiGatewayException, IOException {
+        var publication = createAndPersistPublication(resourceService);
+        var publishingRequestId = createAndPersistPublishingRequest(requestService, publication, context);
+        var getRequest = createGetPublishingRequest(publishingRequestId, publication);
         handler.handleRequest(getRequest, outputStream, context);
-        var response =
-                GatewayResponse.fromOutputStream(outputStream, PublishingRequest.class);
-        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_OK));
-        assertThat(response.getBodyObject(PublishingRequest.class).getStatus(),
-                equalTo(PublishingRequestStatus.PENDING));
+        var response = GatewayResponse.fromOutputStream(outputStream, PublishingRequestDto.class);
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
     }
 
     @Test
-    public void shouldReturnUnauthorizedWhenUserIsMissingAccessRight()
-            throws IOException, ApiGatewayException {
-        var publication =
-                createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
-        createAndPersistPublishingRequest(requestService, publication, mockEnvironment(), context);
+    void shouldReturnPublishingRequestWithStatusPendingForNewPublishingRequest()
+        throws IOException, ApiGatewayException {
+        var publication = createAndPersistPublication(resourceService);
+        var publishingRequestId= createAndPersistPublishingRequest(requestService, publication, context);
+        var getRequest = createGetPublishingRequest(publishingRequestId,publication);
+        handler.handleRequest(getRequest, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, PublishingRequest.class);
+        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_OK));
+        var responseObject = response.getBodyObject(PublishingRequest.class);
+        assertThat(responseObject.getStatus(), equalTo(PublishingRequestStatus.PENDING));
+    }
+
+    @Test
+    void shouldReturnUnauthorizedWhenUserIsMissingAccessRight()
+        throws IOException, ApiGatewayException {
+        var publication = createAndPersistPublication(resourceService);
+        createAndPersistPublishingRequest(requestService, publication, context);
         var outputStream = new ByteArrayOutputStream();
         var getRequest =
-                createGetPublishingRequestMissingAccessRightApprove(publication, publication.getPublisher().getId());
+            createGetPublishingRequestMissingAccessRightApprove(publication, publication.getPublisher().getId());
         handler.handleRequest(getRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_UNAUTHORIZED));

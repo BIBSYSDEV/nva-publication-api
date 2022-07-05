@@ -1,22 +1,19 @@
 package no.unit.nva.publication.publishingrequest.list;
 
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.HttpURLConnection;
+import java.net.URI;
 import no.unit.nva.publication.publishingrequest.SearchResponse;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.HttpURLConnection;
-import java.net.URI;
-
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
-import static nva.commons.core.attempt.Try.attempt;
 
 public class ListPublishingRequestHandler extends ApiGatewayHandler<Void, SearchResponse<PublishingRequest>> {
 
@@ -24,11 +21,11 @@ public class ListPublishingRequestHandler extends ApiGatewayHandler<Void, Search
 
     @JacocoGenerated
     public ListPublishingRequestHandler() {
-        this(defaultRequestService(), new Environment());
+        this(defaultRequestService());
     }
 
-    public ListPublishingRequestHandler(PublishingRequestService requestService, Environment environment) {
-        super(Void.class, environment);
+    public ListPublishingRequestHandler(PublishingRequestService requestService) {
+        super(Void.class);
         this.requestService = requestService;
     }
 

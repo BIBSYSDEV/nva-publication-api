@@ -1,13 +1,12 @@
 package no.unit.nva.publication.storage.model;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
-
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 class PublishingRequestStatusTest {
 

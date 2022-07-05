@@ -1,6 +1,20 @@
 package no.unit.nva.publication.publishingrequest.update;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestMissingAccessRight;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestWithAccessRight;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdateRequest;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.mockito.Mockito.mock;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.time.Clock;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -8,25 +22,6 @@ import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.time.Clock;
-
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestMissingAccessRight;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestWithAccessRight;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdateRequest;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.mockEnvironment;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.randomResourceOwner;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
 
 public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
@@ -45,14 +40,14 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         context = mock(Context.class);
         resourceService = new ResourceService(client,  mockClock);
         requestService = new PublishingRequestService(client, mockClock);
-        updatePublishingRequestHandler = new UpdatePublishingRequestHandler(requestService, mockEnvironment());
+        updatePublishingRequestHandler = new UpdatePublishingRequestHandler(requestService);
     }
 
     @Test
     public void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
-        createAndPersistPublishingRequest(requestService, publication, mockEnvironment(), context);
+                createAndPersistPublication(resourceService);
+        createAndPersistPublishingRequest(requestService, publication, context);
         var updateRequest = createUpdateRequest();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         updatePublishingRequestHandler.handleRequest(
@@ -69,8 +64,8 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     public void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
-        createAndPersistPublishingRequest(requestService, publication, mockEnvironment(), context);
+                createAndPersistPublication(resourceService);
+        createAndPersistPublishingRequest(requestService, publication, context);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();
@@ -89,8 +84,8 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     public void shouldReturnBadRequestWhenIllegalIdentifier() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
-        createAndPersistPublishingRequest(requestService, publication, mockEnvironment(), context);
+                createAndPersistPublication(resourceService);
+        createAndPersistPublishingRequest(requestService, publication, context);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();

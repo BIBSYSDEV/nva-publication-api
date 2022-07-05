@@ -231,6 +231,8 @@ public class PublishingRequest
         return new PublishingRequestBuilder();
     }
 
+
+
     static PublishingRequestBuilder extractDataFromResource(PublishingRequestBuilder builder, Resource resource) {
         return builder
                 .withResourceIdentifier(resource.getIdentifier())

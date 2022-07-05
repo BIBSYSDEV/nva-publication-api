@@ -17,9 +17,7 @@ import java.util.Objects;
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublishingRequestDao extends Dao<PublishingRequest>
-        implements
-        JoinWithResource,
-        JsonSerializable {
+        implements JoinWithResource, JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
     public static final String TYPE = "PublishingRequest";

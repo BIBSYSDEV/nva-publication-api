@@ -16,7 +16,6 @@ import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -26,18 +25,16 @@ public class CreatePublishingRequestHandler extends ApiGatewayHandler<Publicatio
 
     @JacocoGenerated
     public CreatePublishingRequestHandler() {
-        this(defaultRequestService(), new Environment());
+        this(defaultRequestService());
     }
 
     /**
      * Constructor for MainHandler.
      *
      * @param requestService publicationService
-     * @param environment    environment
      */
-    public CreatePublishingRequestHandler(PublishingRequestService requestService,
-                                          Environment environment) {
-        super(PublicationPublishRequest.class, environment);
+    public CreatePublishingRequestHandler(PublishingRequestService requestService) {
+        super(PublicationPublishRequest.class);
         this.requestService = requestService;
     }
 

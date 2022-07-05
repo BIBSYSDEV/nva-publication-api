@@ -33,14 +33,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-class PublicationRequestServiceTest extends ResourcesLocalTest {
+class PublishingRequestServiceTest extends ResourcesLocalTest {
 
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
 
     private ResourceService resourceService;
-    private PublishingRequestService publicationRequestService;
+    private PublishingRequestService publishingRequestService;
     private UserInstance owner;
 
     @BeforeEach
@@ -53,14 +53,14 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
                 .thenReturn(PUBLICATION_REQUEST_CREATION_TIME)
                 .thenReturn(PUBLICATION_REQUEST_UPDATE_TIME);
         this.resourceService = new ResourceService(client, mockClock);
-        this.publicationRequestService = new PublishingRequestService(client, mockClock);
+        this.publishingRequestService = new PublishingRequestService(client, mockClock);
     }
 
     @Test
     void shouldCreatePublicationRequestWhenPublicationIsPublishable() throws ApiGatewayException {
         var publication = createPublication(owner);
-        createPublicationRequest(publication);
-        var publicationRequest = getPublicationRequest(publication);
+        createPublishRequest(publication);
+        var publicationRequest = getPublishRequest(publication);
         assertThat(publicationRequest.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
         assertThat(publicationRequest, is(not(nullValue())));
     }
@@ -68,13 +68,13 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnBadRequestWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
-        Executable action = () -> publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        Executable action = () -> publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
         assertThrows(BadRequestException.class, action);
     }
 
     @Test
     void shouldReturnNotFoundWhenPublicationRequestWasNotFound() {
-        Executable action = () -> publicationRequestService
+        Executable action = () -> publishingRequestService
                 .getPublishingRequest(randomUserInstance(), SortableIdentifier.next());
         assertThrows(NotFoundException.class, action);
     }
@@ -82,10 +82,10 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldListPublicationRequestsForUserReturnsPublicationRequestsWithStatusPending() throws ApiGatewayException {
         var publication = createPublication(owner);
-        createPublicationRequest(publication);
-        var result = publicationRequestService.listPublishingRequestsForUser(owner);
+        createPublishRequest(publication);
+        var result = publishingRequestService.listPublishingRequestsForUser(owner);
         var expectedPublicationRequest =
-                publicationRequestService.getPublishingRequest(owner, publication.getIdentifier());
+                publishingRequestService.getPublishingRequest(owner, publication.getIdentifier());
         assertThat(result, is(equalTo(List.of(expectedPublicationRequest))));
     }
 
@@ -94,14 +94,14 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
             throws ApiGatewayException {
         var publication = createPublication(owner);
         var userInstance = createUserInstance(publication);
-        publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
 
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        publicationRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
-                expectedNewPublicationRequestStatus);
+        publishingRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
+                                                         expectedNewPublicationRequestStatus);
 
-        var updatedPublicationRequest = publicationRequestService.getPublishingRequest(userInstance,
-                publication.getIdentifier());
+        var updatedPublicationRequest = publishingRequestService.getPublishingRequest(userInstance,
+                                                                                      publication.getIdentifier());
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
     }
 
@@ -110,20 +110,20 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
             throws ApiGatewayException {
         var publication = createPublication(owner);
         var userInstance = createUserInstance(publication);
-        publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
 
 
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        publicationRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
-                expectedNewPublicationRequestStatus);
+        publishingRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
+                                                         expectedNewPublicationRequestStatus);
 
-        var updatedPublicationRequest = publicationRequestService.getPublishingRequest(userInstance,
-                publication.getIdentifier());
+        var updatedPublicationRequest = publishingRequestService.getPublishingRequest(userInstance,
+                                                                                      publication.getIdentifier());
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
 
         Executable action =
-                () -> publicationRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
-                        PublishingRequestStatus.REJECTED);
+                () -> publishingRequestService.updatePublishingRequest(userInstance, publication.getIdentifier(),
+                                                                       PublishingRequestStatus.REJECTED);
         assertThrows(IllegalArgumentException.class, action);
     }
 
@@ -133,7 +133,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
 
         var publication = createPublication(owner);
         var userInstance = createUserInstance(publication);
-        publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
         var updateItemRequest = mock(UpdateItemRequest.class);
         var publicationRequestServiceSpy = failingPublicationRequestService(updateItemRequest);
 
@@ -148,7 +148,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
 
         var publication = createPublication(owner);
         var userInstance = createUserInstance(publication);
-        publicationRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
 
         var updateItemRequest = mock(UpdateItemRequest.class);
 
@@ -164,7 +164,7 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
 
     private PublishingRequestService failingPublicationRequestServiceBecauseOfEmptyUpdateItemRequest(
             UpdateItemRequest updateItemRequest) throws NotFoundException {
-        var publicationRequestServiceSpy = spy(publicationRequestService);
+        var publicationRequestServiceSpy = spy(publishingRequestService);
 
         doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublishingRequest(
                 any(UserInstance.class),
@@ -181,12 +181,9 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
         return publicationRequestServiceSpy;
     }
 
-    private PublishingRequest getPublicationRequest(Publication publication) throws NotFoundException {
-        return publicationRequestService
-                .getPublishingRequest(
-                        createUserInstance(publication),
-                        publication.getIdentifier()
-                );
+    private PublishingRequest getPublishRequest(Publication publication) throws NotFoundException {
+        return publishingRequestService
+            .getPublishingRequest(createUserInstance(publication), publication.getIdentifier());
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {
@@ -200,8 +197,8 @@ class PublicationRequestServiceTest extends ResourcesLocalTest {
         return resourceService.createPublicationWithStatusFromInput(owner, publication);
     }
 
-    private void createPublicationRequest(Publication publication) throws ApiGatewayException {
-        publicationRequestService.createPublishingRequest(createUserInstance(publication), publication.getIdentifier());
+    private void createPublishRequest(Publication publication) throws ApiGatewayException {
+        publishingRequestService.createPublishingRequest(createUserInstance(publication), publication.getIdentifier());
     }
 
     private UserInstance createUserInstance(Publication publication) {

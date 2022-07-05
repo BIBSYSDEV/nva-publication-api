@@ -1,6 +1,11 @@
 package no.unit.nva.publication.publishingrequest.update;
 
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.getPublicationIdentifier;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 import com.amazonaws.services.lambda.runtime.Context;
+import java.net.HttpURLConnection;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.publishingrequest.UpdatePublishingRequest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
@@ -10,15 +15,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.Environment;
 import nva.commons.core.JacocoGenerated;
-
-import java.net.HttpURLConnection;
-
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.getPublicationIdentifier;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 
 public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePublishingRequest, PublishingRequest> {
 
@@ -28,11 +25,11 @@ public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePubl
     @SuppressWarnings("unused")
     @JacocoGenerated
     public UpdatePublishingRequestHandler() {
-        this(defaultRequestService(), new Environment());
+        this(defaultRequestService());
     }
 
-    public UpdatePublishingRequestHandler(PublishingRequestService requestService, Environment environment) {
-        super(UpdatePublishingRequest.class, environment);
+    public UpdatePublishingRequestHandler(PublishingRequestService requestService) {
+        super(UpdatePublishingRequest.class);
         this.requestService = requestService;
     }
 

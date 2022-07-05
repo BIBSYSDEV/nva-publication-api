@@ -11,15 +11,14 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Clock;
 import java.util.Set;
 import java.util.stream.Stream;
-
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -54,9 +53,10 @@ public final class DaoUtils {
     }
 
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
-        PublishingRequest publishingRequest = PublishingRequest.newPublishingRequestResource(Resource.fromPublication(PublicationGenerator.randomPublication()));
-        PublishingRequestDao publishingRequestDao =  new PublishingRequestDao(publishingRequest);
-        return publishingRequestDao;
+        var publishingRequest =
+            PublishingRequest.newPublishingRequestResource(
+                Resource.fromPublication(PublicationGenerator.randomPublication()));
+        return new PublishingRequestDao(publishingRequest);
     }
 
     public static DoiRequestDao doiRequestDao(Resource resource) {

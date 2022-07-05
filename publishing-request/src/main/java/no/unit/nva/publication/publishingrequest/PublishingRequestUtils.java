@@ -16,12 +16,13 @@ import static nva.commons.core.attempt.Try.attempt;
 
 public class PublishingRequestUtils {
 
-    public static final String API_PUBLICATION_PATH_IDENTIFIER = "publicationIdentifier";
+    public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER = "publicationIdentifier";
+    public static final String PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER = "publishingRequestIdentifier";
     public static final String INVALID_PUBLICATION_ID_ERROR = "Invalid publication id: ";
 
 
     public static SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
-        var publicationIdentifierString = requestInfo.getPathParameter(API_PUBLICATION_PATH_IDENTIFIER);
+        var publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
                 .orElseThrow(
                         fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));
