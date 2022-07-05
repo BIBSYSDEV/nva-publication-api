@@ -22,7 +22,7 @@ public class PublishingRequestUtils {
 
 
     public static SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
-        var publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var publicationIdentifierString =
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
                 .orElseThrow(
                         fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));

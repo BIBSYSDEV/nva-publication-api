@@ -92,14 +92,14 @@ public class PublishingRequestTestUtils {
         var customerId = publication.getPublisher().getId();
         var publishingRequestUri = UriWrapper.fromUri(publishingRequestId);
         var publishingRequestIdentifier = publishingRequestUri.getLastPathElement();
-        var publicationIdentifier = extractPublicationIdentifierFromPublishingRequestId(publishingRequestUri);
+        var publicationIdentifier = publication.getIdentifier();
 
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
             .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(customerId)
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
             .withPathParameters(
-                Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publicationIdentifier,
+                Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publicationIdentifier.toString(),
                        PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingRequestIdentifier)
             )
             .build();

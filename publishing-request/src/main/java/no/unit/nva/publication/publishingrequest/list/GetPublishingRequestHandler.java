@@ -1,11 +1,13 @@
 package no.unit.nva.publication.publishingrequest.list;
 
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.getPublicationIdentifier;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -28,17 +30,26 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
 
     @Override
     protected PublishingRequestDto processInput(Void input, RequestInfo requestInfo, Context context)
-            throws ApiGatewayException {
+        throws ApiGatewayException {
         validateUserCanApprovePublishingRequest(requestInfo);
 
+        var userInfo = createUserInstance(requestInfo);
+        var publicationIdentifier =
+            parseIdentifierParameter(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
+        var publishingRequestIdentifier =
+            parseIdentifierParameter(requestInfo,PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
         var existingPublishingRequest =
-            requestService.getPublishingRequest(createUserInstance(requestInfo),getPublicationIdentifier(requestInfo));
+            requestService.getPublishingRequest(userInfo, publicationIdentifier, publishingRequestIdentifier);
         return PublishingRequestDto.fromPublishingRequest(existingPublishingRequest);
+    }
+
+    private SortableIdentifier parseIdentifierParameter(RequestInfo requestInfo,
+                                                        String publicationIdentifierPathParameter) {
+        return new SortableIdentifier(requestInfo.getPathParameter(publicationIdentifierPathParameter));
     }
 
     @Override
     protected Integer getSuccessStatusCode(Void input, PublishingRequestDto output) {
         return HttpURLConnection.HTTP_OK;
     }
-
 }

@@ -59,10 +59,29 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldCreatePublicationRequestWhenPublicationIsPublishable() throws ApiGatewayException {
         var publication = createPublication(owner);
-        createPublishRequest(publication);
-        var publicationRequest = getPublishRequest(publication);
+        createPublishingRequest(publication);
+        var publicationRequest = getPublishingRequest(publication);
         assertThat(publicationRequest.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
         assertThat(publicationRequest, is(not(nullValue())));
+    }
+
+    @Test
+    void shouldReturnPublishRequestIdentifierWhenCreatingNewPublishRequest() throws ApiGatewayException {
+        var publication = createPublication(owner);
+        var publishRequestIdentifier = createPublishingRequest(publication);
+        var publishRequest = getPublishingRequest(publication);
+        assertThat(publishRequest.getCreatedDate(), is(equalTo(PUBLICATION_REQUEST_CREATION_TIME)));
+        assertThat(publishRequestIdentifier,is(equalTo(publishRequest.getIdentifier())));
+    }
+
+    @Test
+    void shouldAllowCreationOfManyPublishingRequestsPerPublication() throws ApiGatewayException {
+        var publication = createPublication(owner);
+        var firstPublishRequestIdentifier = createPublishingRequest(publication);
+        var secondPublishRequestIdentifier = createPublishingRequest(publication);
+        var firstPublishingRequest = getPublishingRequest(publication);
+        var secondPublishingRequest = getPublishingRequest(publication);
+        assertThat(firstPublishingRequest.getIdentifier(),is(not(equalTo(secondPublishingRequest.getIdentifier()))));
     }
 
     @Test
@@ -82,7 +101,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldListPublicationRequestsForUserReturnsPublicationRequestsWithStatusPending() throws ApiGatewayException {
         var publication = createPublication(owner);
-        createPublishRequest(publication);
+        createPublishingRequest(publication);
         var result = publishingRequestService.listPublishingRequestsForUser(owner);
         var expectedPublicationRequest =
                 publishingRequestService.getPublishingRequest(owner, publication.getIdentifier());
@@ -166,7 +185,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             UpdateItemRequest updateItemRequest) throws NotFoundException {
         var publicationRequestServiceSpy = spy(publishingRequestService);
 
-        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createRequestForUpdatingPublishingRequest(
+        doReturn(updateItemRequest).when(publicationRequestServiceSpy).createUpdateDatabaseItemRequest(
                 any(UserInstance.class),
                 any(SortableIdentifier.class),
                 any(PublishingRequestStatus.class));
@@ -181,7 +200,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         return publicationRequestServiceSpy;
     }
 
-    private PublishingRequest getPublishRequest(Publication publication) throws NotFoundException {
+    private PublishingRequest getPublishingRequest(Publication publication)
+        throws NotFoundException {
         return publishingRequestService
             .getPublishingRequest(createUserInstance(publication), publication.getIdentifier());
     }
@@ -197,8 +217,9 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         return resourceService.createPublicationWithStatusFromInput(owner, publication);
     }
 
-    private void createPublishRequest(Publication publication) throws ApiGatewayException {
-        publishingRequestService.createPublishingRequest(createUserInstance(publication), publication.getIdentifier());
+    private SortableIdentifier createPublishingRequest(Publication publication) throws ApiGatewayException {
+        return publishingRequestService.createPublishingRequest(createUserInstance(publication),
+                                                           publication.getIdentifier());
     }
 
     private UserInstance createUserInstance(Publication publication) {
