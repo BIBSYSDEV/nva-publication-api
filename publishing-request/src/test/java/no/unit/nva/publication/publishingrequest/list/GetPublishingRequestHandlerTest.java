@@ -6,6 +6,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUti
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequestMissingAccessRightApprove;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -22,7 +23,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,8 +80,8 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenSuppliedUriContainsNonExistentIdentifiers() throws IOException {
         var unsavedPublication = PublicationGenerator.randomPublication();
-        var unsavedPublishingRequest = PublishingRequest.fromPublication(unsavedPublication,
-                                                                         SortableIdentifier.next());
+        var unsavedPublishingRequest = createPublishingRequest(unsavedPublication);
+        unsavedPublishingRequest.setIdentifier(SortableIdentifier.next());
         var getRequest = createGetPublishingRequest(unsavedPublishingRequest);
         handler.handleRequest(getRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
@@ -91,8 +91,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenSuppliedUriContainsInvalidIdentifier() throws IOException {
         var unsavedPublication = PublicationGenerator.randomPublication();
-        var unsavedPublishingRequest = PublishingRequest.fromPublication(unsavedPublication,
-                                                                         SortableIdentifier.next());
+        var unsavedPublishingRequest = createPublishingRequest(unsavedPublication);
         var getRequest = createGetPublishingRequest(unsavedPublishingRequest, randomString());
         handler.handleRequest(getRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);

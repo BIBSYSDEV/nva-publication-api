@@ -1,18 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import java.util.UUID;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.testing.PublicationGenerator;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
-import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -21,51 +10,64 @@ import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.notNullValue;
 import static org.hamcrest.core.IsNull.nullValue;
+import com.fasterxml.jackson.databind.JsonNode;
+import no.unit.nva.identifiers.SortableIdentifier;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 class PublishingRequestTest {
 
     public static final String TYPE_FIELD = "type";
-    private final PublishingRequest sampleRequest = samplePublishingRequest();
-    static Publication randomPublication;
     static SortableIdentifier randomIdentifier;
+    private final PublishingRequest sampleRequest = samplePublishingRequest();
 
     @BeforeAll
     static void beforeAll() {
-        randomPublication = PublicationGenerator.randomPublication();
         randomIdentifier = SortableIdentifier.next();
     }
 
-
-
-
     @Test
-    public void publishingRequestHasTypePublishingRequest() {
+    void publishingRequestHasTypePublishingRequest() {
         var json = dynamoDbObjectMapper.convertValue(sampleRequest, JsonNode.class);
         assertThat(json.get(TYPE_FIELD), is(not(nullValue())));
         assertThat(json.get(TYPE_FIELD).textValue(), is(equalTo(PublishingRequest.TYPE)));
     }
 
     @Test
-    public void publishingRequestHasReferenceToResource() {
+    void publishingRequestHasReferenceToResource() {
         assertThat(sampleRequest.getResourceIdentifier(), is(notNullValue()));
     }
 
     @Test
-    public void publishingRequestHasPublication() {
+    void publishingRequestHasPublication() {
         assertThat(sampleRequest.toPublication(), is(notNullValue()));
     }
 
     @Test
-    public void publishingRequestReturnsDAO() {
+    void publishingRequestReturnsDAO() {
         assertThat(sampleRequest.toDao(), is(notNullValue()));
     }
 
     @Test
-    public void publishingRequestHasStatus() {
+    void publishingRequestHasStatus() {
         assertThat(sampleRequest.getStatusString(), is(notNullValue()));
     }
 
+    @Test
+    void shouldReturnPublishingRequestWithAdequateInfoForCreatingEntryWhenSuppliedWithUserAndPublicationInfo(){
+        var userInstance = UserInstance.create(randomString(),randomUri());
+        var publicationIdentifier = SortableIdentifier.next();
+        var objectForCreatingNewEntry= PublishingRequest.create(userInstance,publicationIdentifier);
+        assertThat(objectForCreatingNewEntry.getResourceIdentifier(),is(equalTo(publicationIdentifier)));
+        assertThat(objectForCreatingNewEntry.getOwner(),is(equalTo(userInstance.getUserIdentifier())));
+        assertThat(objectForCreatingNewEntry.getCustomerId(),is(equalTo(userInstance.getOrganizationUri())));
+    }
+
     private PublishingRequest samplePublishingRequest() {
-        return PublishingRequest.fromPublication(randomPublication, randomIdentifier);
+        var userInstance = UserInstance.create(randomString(),randomUri());
+        return PublishingRequest.create(userInstance,
+                                        SortableIdentifier.next(),
+                                        SortableIdentifier.next(),
+                                        randomElement(PublishingRequestStatus.values()));
     }
 }

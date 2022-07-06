@@ -18,6 +18,7 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.PublishingRequest;
@@ -92,7 +93,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldReturnBadRequestWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
-        Executable action = () -> publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
+        var publishingRequest = TestingUtils.createPublishingRequest(publication);
+        Executable action = () -> publishingRequestService.createPublishingRequest(publishingRequest);
         assertThrows(BadRequestException.class, action);
     }
 
@@ -109,12 +111,10 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldPersistUpdatedStatusWhenPublishingRequestUpdateUpdatesStatus()
         throws ApiGatewayException {
         var publication = createPublication(owner);
-        var userInstance = UserInstance.fromPublication(publication);
-        var publishingRequest =
-            publishingRequestService.createPublishingRequest(owner, publication.getIdentifier());
 
+        var publishingRequest = createPublishingRequest(publication);
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var requestUpdate = PublishingRequest.create(userInstance,
+        var requestUpdate = PublishingRequest.create(UserInstance.fromPublication(publication),
                                                      publication.getIdentifier(),
                                                      publishingRequest.getIdentifier(),
                                                      expectedNewPublicationRequestStatus);
@@ -129,8 +129,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         throws ApiGatewayException {
         var publication = createPublication(owner);
         var userInstance = createUserInstance(publication);
-        var publishingRequest = publishingRequestService.createPublishingRequest(owner,
-                                                                                 publication.getIdentifier());
+        var publishingRequest =
+            publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
 
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
         var approvePublishingRequest = PublishingRequest.create(userInstance,
@@ -159,8 +159,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     }
 
     private PublishingRequest createPublishingRequest(Publication publication) throws ApiGatewayException {
-        return publishingRequestService.createPublishingRequest(createUserInstance(publication),
-                                                                publication.getIdentifier());
+        return publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
     }
 
     private UserInstance createUserInstance(Publication publication) {

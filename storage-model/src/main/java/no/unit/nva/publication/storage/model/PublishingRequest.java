@@ -26,6 +26,7 @@ public class PublishingRequest
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final SortableIdentifier UNDEFINED_IDENTIFIER = null;
+    public static final PublishingRequestStatus UNDEFINED_STATUS = null;
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -51,6 +52,12 @@ public class PublishingRequest
     }
 
     public static PublishingRequest create(UserInstance userInstance,
+                                           SortableIdentifier publicationIdentifier) {
+
+        return create(userInstance, publicationIdentifier, UNDEFINED_IDENTIFIER, UNDEFINED_STATUS);
+    }
+
+    public static PublishingRequest create(UserInstance userInstance,
                                            SortableIdentifier publicationIdentifier,
                                            SortableIdentifier publishingRequestIdentifier,
                                            PublishingRequestStatus publishingRequestStatus) {
@@ -71,11 +78,7 @@ public class PublishingRequest
         return newPublishingRequest;
     }
 
-    public static PublishingRequest fromPublication(Publication publication, SortableIdentifier requestIdentifier) {
-        var newPublishingRequest = extractDataFromResource(Resource.fromPublication(publication));
-        newPublishingRequest.setIdentifier(requestIdentifier);
-        return newPublishingRequest;
-    }
+
 
     public static PublishingRequest createQuery(UserInstance userInstance,
                                                 SortableIdentifier publicationIdentifier,
@@ -204,10 +207,10 @@ public class PublishingRequest
 
     private static PublishingRequest extractDataFromResource(Resource resource) {
         var userInstance = UserInstance.create(resource.getResourceOwner().getOwner(), resource.getPublisher().getId());
-        return PublishingRequest.create(userInstance,
-                                        resource.getIdentifier(),
-                                        UNDEFINED_IDENTIFIER,
-                                        PublishingRequestStatus.PENDING);
+        return create(userInstance,
+                      resource.getIdentifier(),
+                      UNDEFINED_IDENTIFIER,
+                      PublishingRequestStatus.PENDING);
     }
 
     private static PublishingRequest createPublishingRequestIdentifyingObject(UserInstance userInstance,

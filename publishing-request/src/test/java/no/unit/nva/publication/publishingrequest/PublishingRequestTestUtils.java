@@ -41,11 +41,14 @@ public class PublishingRequestTestUtils {
         return mockClock;
     }
 
+    public static PublishingRequest createPublishingRequest(Publication publication){
+        return PublishingRequest.create(UserInstance.fromPublication(publication),publication.getIdentifier());
+    }
+
     public static PublishingRequest createAndPersistPublishingRequest(PublishingRequestService requestService,
                                                                       Publication publication)
         throws ApiGatewayException {
-        var userInstance = UserInstance.fromPublication(publication);
-        return requestService.createPublishingRequest(userInstance, publication.getIdentifier());
+        return requestService.createPublishingRequest(createPublishingRequest(publication));
     }
 
     public static InputStream createGetPublishingRequest(PublishingRequest publishingRequest)

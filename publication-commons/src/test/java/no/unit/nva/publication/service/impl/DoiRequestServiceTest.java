@@ -2,7 +2,6 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.TestingUtils.createOrganization;
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
-import static no.unit.nva.publication.TestingUtils.extractUserInstance;
 import static no.unit.nva.publication.TestingUtils.randomOrgUnitId;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -360,7 +359,7 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
             .withStatus(PublicationStatus.DRAFT)
             .build();
 
-        Publication emptyPublication = resourceService.createPublication(extractUserInstance(publication), publication);
+        Publication emptyPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         skipPublicationUpdate();
 
         return emptyPublication;

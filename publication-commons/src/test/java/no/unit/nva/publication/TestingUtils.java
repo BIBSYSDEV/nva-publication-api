@@ -8,6 +8,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.UserInstance;
 
 public final class TestingUtils {
@@ -16,9 +17,6 @@ public final class TestingUtils {
 
     }
 
-    public static URI createOrgUnitId(int first, int second, int third, int fourth) {
-        return URI.create(String.format("https://example.org/some/path/%s.%s.%s.%s", first, second, third, fourth));
-    }
 
     public static URI randomOrgUnitId() {
         return URI.create(String.format("https://example.org/some/path/%s.%s.%s.%s",
@@ -44,7 +42,7 @@ public final class TestingUtils {
         return new Organization.Builder().withId(orgUri).build();
     }
 
-    public static UserInstance extractUserInstance(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner(),publication.getPublisher().getId());
+    public static PublishingRequest createPublishingRequest(Publication publication){
+        return PublishingRequest.create(UserInstance.fromPublication(publication),publication.getIdentifier());
     }
 }

@@ -29,11 +29,6 @@ public class CreatePublishingRequestHandler extends ApiGatewayHandler<Publicatio
         this(defaultRequestService());
     }
 
-    /**
-     * Constructor for MainHandler.
-     *
-     * @param requestService publicationService
-     */
     public CreatePublishingRequestHandler(PublishingRequestService requestService) {
         super(PublicationPublishRequest.class);
         this.requestService = requestService;
@@ -41,12 +36,14 @@ public class CreatePublishingRequestHandler extends ApiGatewayHandler<Publicatio
 
     @Override
     protected Void processInput(PublicationPublishRequest input,
-                                RequestInfo requestInfo, Context context) throws ApiGatewayException {
+                                RequestInfo requestInfo,
+                                Context context) throws ApiGatewayException {
         final var userInstance = createUserInstance(requestInfo);
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
 
-        var newPublishingRequest = requestService.createPublishingRequest(userInstance, publicationIdentifier);
+        var publishingRequest = PublishingRequest.create(userInstance,publicationIdentifier);
+        var newPublishingRequest = requestService.createPublishingRequest(publishingRequest);
 
         var persistedRequest = requestService.getPublishingRequest(newPublishingRequest);
         addLocationHeader(persistedRequest);

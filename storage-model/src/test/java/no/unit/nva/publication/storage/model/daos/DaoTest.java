@@ -168,7 +168,7 @@ public class DaoTest extends ResourcesLocalTest {
 
     @ParameterizedTest(name = "toDynamoFormat creates a Dynamo object preserving all information")
     @MethodSource("instanceProvider")
-    public void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao<?> originalDao) {
+    void toDynamoFormatCreatesADynamoJsonFormatObjectPreservingAllInformation(Dao<?> originalDao) {
 
         Map<String, AttributeValue> dynamoMap = originalDao.toDynamoFormat();
         client.putItem(RESOURCES_TABLE_NAME, dynamoMap);

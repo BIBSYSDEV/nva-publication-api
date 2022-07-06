@@ -63,14 +63,16 @@ public class PublishingRequestService extends ServiceWithTransactions {
         resourceService = new ReadResourceService(client, tableName);
     }
 
-    public PublishingRequest createPublishingRequest(UserInstance user, SortableIdentifier publicationIdentifier)
+    public PublishingRequest createPublishingRequest(PublishingRequest publishingRequest)
         throws ApiGatewayException {
-        return createPublishingRequest(getPublication(user, publicationIdentifier));
+        return createPublishingRequest(getPublication(publishingRequest));
     }
 
-    private Publication getPublication(UserInstance user, SortableIdentifier publicationIdentifier)
+    private Publication getPublication(PublishingRequest publishingRequest)
         throws ApiGatewayException {
-        return resourceService.getPublication(user, publicationIdentifier);
+        var userInstance = UserInstance.create(publishingRequest.getOwner(),
+                                               publishingRequest.getCustomerId());
+        return resourceService.getPublication(userInstance,publishingRequest.getResourceIdentifier());
     }
 
     private PublishingRequest createPublishingRequest(Publication publication)
