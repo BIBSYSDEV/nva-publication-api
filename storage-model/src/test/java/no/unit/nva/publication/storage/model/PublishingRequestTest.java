@@ -1,13 +1,20 @@
 package no.unit.nva.publication.storage.model;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -27,6 +34,9 @@ class PublishingRequestTest {
         randomPublication = PublicationGenerator.randomPublication();
         randomIdentifier = SortableIdentifier.next();
     }
+
+
+
 
     @Test
     public void publishingRequestHasTypePublishingRequest() {

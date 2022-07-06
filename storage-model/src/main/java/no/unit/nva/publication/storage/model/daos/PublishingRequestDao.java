@@ -34,28 +34,15 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
         this.data = data;
     }
 
-    public static PublishingRequestDao queryObject(URI publisherId, String owner, SortableIdentifier requestIdentifier) {
-        PublishingRequest apr = PublishingRequest.builder()
-                .withIdentifier(requestIdentifier)
-                .withOwner(owner)
-                .withCustomerId(publisherId)
-                .build();
-
-        return new PublishingRequestDao(apr);
-    }
-
-    public static PublishingRequestDao queryObject(URI publisherId, String owner) {
-        return queryObject(publisherId, owner, null);
+    public static PublishingRequestDao queryObject(PublishingRequest queryObject) {
+        return new PublishingRequestDao(queryObject);
     }
 
     public static PublishingRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                             SortableIdentifier resourceIdentifier) {
-        PublishingRequest apr = PublishingRequest.builder()
-                .withResourceIdentifier(resourceIdentifier)
-                .withOwner(resourceOwner.getUserIdentifier())
-                .withCustomerId(resourceOwner.getOrganizationUri())
-                .build();
-        return new PublishingRequestDao(apr);
+        var queryObject =
+            PublishingRequest.createQuery(resourceOwner,resourceIdentifier,null);
+        return new PublishingRequestDao(queryObject);
     }
 
     @Override

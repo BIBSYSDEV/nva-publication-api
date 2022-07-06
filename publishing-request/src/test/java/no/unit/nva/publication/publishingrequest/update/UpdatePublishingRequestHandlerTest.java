@@ -6,6 +6,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUti
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestMissingAccessRight;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestWithAccessRight;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdateRequest;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.extractPublishingRequestIdentifier;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -15,6 +16,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Clock;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -25,7 +27,6 @@ import org.junit.jupiter.api.Test;
 
 public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
-    public static final String ILLEGAL_PUBLICATION_IDENTIFIER = "asdasøldksaøkdsaøk";
     private UpdatePublishingRequestHandler updatePublishingRequestHandler;
 
     private Context context;
@@ -38,7 +39,7 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         init();
         mockClock = setupMockClock();
         context = mock(Context.class);
-        resourceService = new ResourceService(client,  mockClock);
+        resourceService = new ResourceService(client, mockClock);
         requestService = new PublishingRequestService(client, mockClock);
         updatePublishingRequestHandler = new UpdatePublishingRequestHandler(requestService);
     }
@@ -46,17 +47,16 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     public void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService);
-        createAndPersistPublishingRequest(requestService, publication, context);
+            createAndPersistPublication(resourceService);
+        var existingPublishingRequestLocation= createAndPersistPublishingRequest(requestService, publication, context);
+        var publishingRequestIdentifier =
+            extractPublishingRequestIdentifier(existingPublishingRequestLocation);
         var updateRequest = createUpdateRequest();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        updatePublishingRequestHandler.handleRequest(
-                createUpdatePublishingRequestWithAccessRight(publication,
-                        updateRequest,
-                        publication.getPublisher().getId(),
-                        publication.getIdentifier().toString()),
-                outputStream,
-                context);
+        var httpRequest = createUpdatePublishingRequestWithAccessRight(publication, updateRequest,
+                                                                       publication.getPublisher().getId(),
+                                                                       publishingRequestIdentifier);
+        updatePublishingRequestHandler.handleRequest(httpRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_ACCEPTED));
     }
@@ -64,40 +64,40 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     public void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService);
-        createAndPersistPublishingRequest(requestService, publication, context);
+            createAndPersistPublication(resourceService);
+        var requestLocation=createAndPersistPublishingRequest(requestService, publication, context);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();
         var updatePublishingRequest =
-                createUpdatePublishingRequestMissingAccessRight(publication,
-                        updateRequest,
-                        customerId,
-                        publication.getIdentifier().toString());
+            createUpdatePublishingRequestMissingAccessRight(publication,
+                                                            updateRequest,
+                                                            customerId,
+                                                            extractPublishingRequestIdentifier(requestLocation));
         updatePublishingRequestHandler.handleRequest(updatePublishingRequest,
-                outputStream,
-                context);
+                                                     outputStream,
+                                                     context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_UNAUTHORIZED));
     }
 
     @Test
-    public void shouldReturnBadRequestWhenIllegalIdentifier() throws IOException, ApiGatewayException {
+    public void shouldReturnNotFoundWhenIdentifierIsUnknown() throws IOException, ApiGatewayException {
         var publication =
-                createAndPersistPublication(resourceService);
+            createAndPersistPublication(resourceService);
         createAndPersistPublishingRequest(requestService, publication, context);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();
         var updatePublishingRequest =
-                createUpdatePublishingRequestWithAccessRight(publication,
-                        updateRequest,
-                        customerId,
-                        ILLEGAL_PUBLICATION_IDENTIFIER);
+            createUpdatePublishingRequestWithAccessRight(publication,
+                                                         updateRequest,
+                                                         customerId,
+                                                         SortableIdentifier.next());
         updatePublishingRequestHandler.handleRequest(updatePublishingRequest,
-                outputStream,
-                context);
+                                                     outputStream,
+                                                     context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
-        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_BAD_REQUEST));
+        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
     }
 }

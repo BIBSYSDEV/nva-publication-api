@@ -7,6 +7,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUti
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
@@ -22,6 +23,7 @@ import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.commons.json.JsonUtils;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
@@ -31,7 +33,6 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,14 +70,15 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistThePublishPublicationRequestWhenPublicationExistsAndTheOwnerIsDoingTheRequest()
+    void shouldPersistThePublishPublishingRequestWhenPublicationExistsAndTheOwnerIsDoingTheRequest()
         throws ApiGatewayException, IOException {
         var existingPublication = createAndPersistPublication(resourceService);
         var apiRequest = ownerRequestsToPublishOwnPublication(existingPublication);
         handler.handleRequest(apiRequest, outputStream, context);
-        var resourceOwner = UserInstance.fromPublication(existingPublication);
-        var persistedRequest =
-            requestService.getPublishingRequest(resourceOwner, existingPublication.getIdentifier());
+        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
+        var queryObject = createQueryObjectForCreatedPublishingRequest(existingPublication, response);
+        var persistedRequest = requestService.getPublishingRequest(queryObject);
+
         assertThat(persistedRequest.getResourceIdentifier(), is(equalTo(existingPublication.getIdentifier())));
     }
 
@@ -89,8 +91,10 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         handler.handleRequest(apiRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
         var actualLocationHeader = URI.create(response.getHeaders().get(HttpHeaders.LOCATION));
-        var publishingRequest = fetchPersistedPublishingRequest(existingPublication);
-        var expectedLocationHeader = createExpectedLocationHeader(existingPublication, publishingRequest);
+        var queryObject = createQueryObjectForCreatedPublishingRequest(existingPublication, response);
+        var persistedRequest = requestService.getPublishingRequest(queryObject);
+        var expectedLocationHeader = createExpectedLocationHeader(existingPublication, persistedRequest);
+
         assertThat(actualLocationHeader, is(equalTo(expectedLocationHeader)));
     }
 
@@ -105,6 +109,18 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_NOT_FOUND)));
     }
 
+    private PublishingRequest createQueryObjectForCreatedPublishingRequest(Publication existingPublication,
+                                                                           GatewayResponse<Void> response) {
+        var requestIdentifier = attempt(() -> response.getHeaders().get(HttpHeaders.LOCATION))
+            .map(UriWrapper::fromUri)
+            .map(UriWrapper::getLastPathElement)
+            .map(SortableIdentifier::new)
+            .orElseThrow();
+
+        var resourceOwner = UserInstance.fromPublication(existingPublication);
+        return PublishingRequest.createQuery(resourceOwner, existingPublication.getIdentifier(), requestIdentifier);
+    }
+
     private URI createExpectedLocationHeader(Publication existingPublication, PublishingRequest publishingRequest) {
         return UriWrapper.fromHost(API_HOST)
             .addChild(PUBLICATION_PATH)
@@ -114,19 +130,14 @@ public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .getUri();
     }
 
-    private PublishingRequest fetchPersistedPublishingRequest(Publication existingPublication)
-        throws NotFoundException {
-        var resourceOwner = UserInstance.fromPublication(existingPublication);
-        return requestService.getPublishingRequest(resourceOwner, existingPublication.getIdentifier());
-    }
-
     private InputStream requestToPublishPublication(Publication existingPublication, String requester)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<PublicationPublishRequest>(JsonUtils.dtoObjectMapper)
             .withBody(new PublicationPublishRequest())
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
+            .withPathParameters(
+                Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
             .build();
     }
 

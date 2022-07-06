@@ -2,33 +2,30 @@ package no.unit.nva.publication.storage.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Contributor;
-import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.model.ResourceOwner;
-import no.unit.nva.publication.storage.model.daos.PublishingRequestDao;
-import no.unit.nva.publication.storage.model.daos.Dao;
-import nva.commons.core.JacocoGenerated;
-
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.Objects;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
+import no.unit.nva.model.ResourceOwner;
+import no.unit.nva.publication.storage.model.daos.Dao;
+import no.unit.nva.publication.storage.model.daos.PublishingRequestDao;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublishingRequest
-        implements WithIdentifier,
-        RowLevelSecurity,
-        WithStatus,
-        DataEntry,
-        ConnectedToResource {
+    implements WithIdentifier,
+               RowLevelSecurity,
+               WithStatus,
+               DataEntry,
+               ConnectedToResource {
 
     public static final String TYPE = "PublishingRequest";
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
+    public static final SortableIdentifier UNDEFINED_IDENTIFIER = null;
 
     @JsonProperty
     private SortableIdentifier identifier;
@@ -40,12 +37,6 @@ public class PublishingRequest
     private URI customerId;
     @JsonProperty("owner")
     private String owner;
-    @JsonProperty("resourceTitle")
-    private String resourceTitle;
-    @JsonProperty(RESOURCE_STATUS_FIELD)
-    private PublicationStatus resourceStatus;
-    @JsonProperty
-    private List<Contributor> contributors;
     @JsonProperty
     private Instant modifiedDate;
     @JsonProperty
@@ -59,28 +50,39 @@ public class PublishingRequest
         return newPublishingRequestResource(SortableIdentifier.next(), resource, Clock.systemDefaultZone().instant());
     }
 
-    public static PublishingRequest newPublishingRequestResource(SortableIdentifier requestIdentifier,
-                                                                  Resource resource,
-                                                                  Instant now) {
-        return extractDataFromResource(builder(), resource)
-                .withIdentifier(requestIdentifier)
-                .withStatus(PublishingRequestStatus.PENDING)
-                .withResourceIdentifier(resource.getIdentifier())
-                .withModifiedDate(now)
-                .withCreatedDate(now)
-                .withRowVersion(DataEntry.nextRowVersion())
-                .build();
+    public static PublishingRequest create(UserInstance userInstance,
+                                           SortableIdentifier publicationIdentifier,
+                                           SortableIdentifier publishingRequestIdentifier,
+                                           PublishingRequestStatus publishingRequestStatus) {
+        PublishingRequest newPublishingRequest =
+            createPublishingRequestIdentifyingObject(userInstance, publicationIdentifier, publishingRequestIdentifier);
+        newPublishingRequest.setStatus(publishingRequestStatus);
+        return newPublishingRequest;
+    }
 
+    public static PublishingRequest newPublishingRequestResource(SortableIdentifier requestIdentifier,
+                                                                 Resource resource,
+                                                                 Instant now) {
+        var newPublishingRequest = extractDataFromResource(resource);
+        newPublishingRequest.setIdentifier(requestIdentifier);
+        newPublishingRequest.setModifiedDate(now);
+        newPublishingRequest.setCreatedDate(now);
+        newPublishingRequest.setRowVersion(DataEntry.nextRowVersion());
+        return newPublishingRequest;
     }
 
     public static PublishingRequest fromPublication(Publication publication, SortableIdentifier requestIdentifier) {
-        return  extractDataFromResource(builder(), Resource.fromPublication(publication))
-                .withIdentifier(requestIdentifier)
-                .build();
+        var newPublishingRequest = extractDataFromResource(Resource.fromPublication(publication));
+        newPublishingRequest.setIdentifier(requestIdentifier);
+        return newPublishingRequest;
     }
 
-    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
-        this.resourceIdentifier = resourceIdentifier;
+    public static PublishingRequest createQuery(UserInstance userInstance,
+                                                SortableIdentifier publicationIdentifier,
+                                                SortableIdentifier publishingRequestIdentifier) {
+        return createPublishingRequestIdentifyingObject(userInstance,
+                                                        publicationIdentifier,
+                                                        publishingRequestIdentifier);
     }
 
     @Override
@@ -88,14 +90,17 @@ public class PublishingRequest
         return resourceIdentifier;
     }
 
+    public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
+        this.resourceIdentifier = resourceIdentifier;
+    }
+
     @Override
     public Publication toPublication() {
 
         return new Publication.Builder()
-                .withIdentifier(getResourceIdentifier())
-                .withStatus(getResourceStatus())
-                .withResourceOwner(new ResourceOwner(getOwner(),null))
-                .build();
+            .withIdentifier(getResourceIdentifier())
+            .withResourceOwner(new ResourceOwner(getOwner(), null))
+            .build();
     }
 
     @Override
@@ -107,7 +112,6 @@ public class PublishingRequest
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
     }
-
 
     @Override
     public Dao<?> toDao() {
@@ -155,30 +159,6 @@ public class PublishingRequest
         return status.name();
     }
 
-    public PublicationStatus getResourceStatus() {
-        return resourceStatus;
-    }
-
-    public void setResourceStatus(PublicationStatus resourceStatus) {
-        this.resourceStatus = resourceStatus;
-    }
-
-    public List<Contributor> getContributors() {
-        return contributors;
-    }
-
-    public void setContributors(List<Contributor> contributors) {
-        this.contributors = contributors;
-    }
-
-    public String getResourceTitle() {
-        return resourceTitle;
-    }
-
-    public void setResourceTitle(String resourceTitle) {
-        this.resourceTitle = resourceTitle;
-    }
-
     public Instant getModifiedDate() {
         return modifiedDate;
     }
@@ -197,6 +177,13 @@ public class PublishingRequest
 
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
+                            getModifiedDate(), getCreatedDate(), getRowVersion());
+    }
+
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -205,43 +192,32 @@ public class PublishingRequest
             return false;
         }
         PublishingRequest that = (PublishingRequest) o;
-        return getIdentifier().equals(that.getIdentifier())
-                && getResourceIdentifier().equals(that.getResourceIdentifier())
-                && status == that.status && getCustomerId().equals(that.getCustomerId())
-                && getOwner().equals(that.getOwner())
-                && Objects.equals(getModifiedDate(), that.getModifiedDate())
-                && getCreatedDate().equals(that.getCreatedDate())
-                && Objects.equals(getRowVersion(), that.getRowVersion());
+        return Objects.equals(getIdentifier(), that.getIdentifier())
+               && Objects.equals(getResourceIdentifier(), that.getResourceIdentifier())
+               && getStatus() == that.getStatus()
+               && Objects.equals(getCustomerId(), that.getCustomerId())
+               && Objects.equals(getOwner(), that.getOwner())
+               && Objects.equals(getModifiedDate(), that.getModifiedDate())
+               && Objects.equals(getCreatedDate(), that.getCreatedDate())
+               && Objects.equals(getRowVersion(), that.getRowVersion());
     }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getIdentifier(),
-                getResourceIdentifier(),
-                status,
-                getCustomerId(),
-                getOwner(),
-                getModifiedDate(),
-                getCreatedDate(),
-                getRowVersion());
+    private static PublishingRequest extractDataFromResource(Resource resource) {
+        var userInstance = UserInstance.create(resource.getResourceOwner().getOwner(), resource.getPublisher().getId());
+        return PublishingRequest.create(userInstance,
+                                        resource.getIdentifier(),
+                                        UNDEFINED_IDENTIFIER,
+                                        PublishingRequestStatus.PENDING);
     }
 
-    public static PublishingRequestBuilder builder() {
-        return new PublishingRequestBuilder();
-    }
-
-
-
-    static PublishingRequestBuilder extractDataFromResource(PublishingRequestBuilder builder, Resource resource) {
-        return builder
-                .withResourceIdentifier(resource.getIdentifier())
-                .withOwner(resource.getResourceOwner().getOwner())
-                .withStatus(PublishingRequestStatus.PENDING)
-                .withCustomerId(resource.getCustomerId())
-                .withResourceStatus(resource.getStatus())
-                .withResourceTitle(DoiRequestUtils.extractMainTitle(resource))
-                .withContributors(DoiRequestUtils.extractContributors(resource))
-                .withRowVersion(DataEntry.nextRowVersion());
+    private static PublishingRequest createPublishingRequestIdentifyingObject(UserInstance userInstance,
+                                                                              SortableIdentifier publicationIdentifier,
+                                                                              SortableIdentifier publishingRequestIdentifier) {
+        var newPublishingRequest = new PublishingRequest();
+        newPublishingRequest.setOwner(userInstance.getUserIdentifier());
+        newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());
+        newPublishingRequest.setResourceIdentifier(publicationIdentifier);
+        newPublishingRequest.setIdentifier(publishingRequestIdentifier);
+        return newPublishingRequest;
     }
 }

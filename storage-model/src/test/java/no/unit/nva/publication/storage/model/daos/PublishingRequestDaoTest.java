@@ -42,20 +42,16 @@ class PublishingRequestDaoTest {
         assertThat(queryObject.getByCustomerAndResourcePartitionKey(), is(equalTo(expectedPartitionKey)));
     }
 
-    @Test
-    public void shouldReturnQueryObjectEnablingRetrievalOfAllDoiRequestsOfUser() {
-        var queryObject = PublishingRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER);
-        var expectedPrimaryPartitionKey = expectedPublicationRequestPrimaryPartitionKey();
-        assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPrimaryPartitionKey)));
-    }
 
     @Test
     public void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequestDao.queryObject(SAMPLE_CUSTOMER, SAMPLE_USER, sampleEntryIdentifier);
+        var queryObject=PublishingRequest.createQuery(UserInstance.create(SAMPLE_USER,SAMPLE_CUSTOMER),null,
+                                          sampleEntryIdentifier);
+        var queryDao = PublishingRequestDao.queryObject(queryObject);
 
-        assertThat(queryObject.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
-        assertThat(queryObject.getPrimaryKeySortKey(),
+        assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
+        assertThat(queryDao.getPrimaryKeySortKey(),
                 is(equalTo(expectedPublicationRequestPrimarySortKey(sampleEntryIdentifier))));
     }
 

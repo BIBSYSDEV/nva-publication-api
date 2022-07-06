@@ -9,6 +9,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -38,8 +39,10 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
             parseIdentifierParameter(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var publishingRequestIdentifier =
             parseIdentifierParameter(requestInfo,PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
+        var query = PublishingRequest.createQuery(userInfo, publicationIdentifier,
+                                                                publishingRequestIdentifier);
         var existingPublishingRequest =
-            requestService.getPublishingRequest(userInfo, publicationIdentifier, publishingRequestIdentifier);
+            requestService.getPublishingRequest(query);
         return PublishingRequestDto.fromPublishingRequest(existingPublishingRequest);
     }
 

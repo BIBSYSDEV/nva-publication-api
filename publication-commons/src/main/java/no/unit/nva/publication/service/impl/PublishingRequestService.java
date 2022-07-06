@@ -5,34 +5,25 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOME
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemResult;
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.DynamoDBException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.PublishingRequest;
-import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -41,7 +32,6 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
-import nva.commons.core.attempt.Failure;
 
 public class PublishingRequestService extends ServiceWithTransactions {
 
@@ -49,10 +39,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
         "Could not find a Publishing Request for Resource: ";
     public static final String ALREADY_PUBLISHED_OR_DELETED_AND_CANNOT_BE_PUBLISHED =
         "Publication is already published or deleted, and cannot be published";
-    public static final String UPDATE_PUBLISHING_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE =
-        "Could not update Publishing Request status.";
-
-    private static final int DEFAULT_QUERY_RESULT_SIZE = 10_000;
 
     private final AmazonDynamoDB client;
     private final Clock clock;
@@ -76,7 +62,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         resourceService = new ReadResourceService(client, tableName);
     }
 
-    public SortableIdentifier createPublishingRequest(UserInstance user, SortableIdentifier publicationIdentifier)
+    public PublishingRequest createPublishingRequest(UserInstance user, SortableIdentifier publicationIdentifier)
         throws ApiGatewayException {
         return createPublishingRequest(getPublication(user, publicationIdentifier));
     }
@@ -86,27 +72,16 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return resourceService.getPublication(user, publicationIdentifier);
     }
 
-    private SortableIdentifier createPublishingRequest(Publication publication)
+    private PublishingRequest createPublishingRequest(Publication publication)
         throws BadRequestException, TransactionFailedException {
         verifyPublicationIsPublishable(publication);
         var publishingRequest = createNewPublishingRequestEntry(publication);
         var request = createInsertionTransactionRequest(publishingRequest);
         sendTransactionWriteRequest(request);
-        return publishingRequest.getIdentifier();
+        return publishingRequest;
     }
 
-    public PublishingRequest getPublishingRequest(UserInstance userInstance,
-                                                  SortableIdentifier publicationIdentifier,
-                                                  SortableIdentifier publishingRequestIdentifier)
-        throws NotFoundException {
-        var queryObject = PublishingRequest.builder()
-                              .withCustomerId(userInstance.getOrganizationUri())
-                              .withResourceIdentifier(publicationIdentifier)
-                              .withIdentifier(publishingRequestIdentifier)
-                              .build();
-        return getPublishingRequest(queryObject);
-    }
-    private PublishingRequest getPublishingRequest(PublishingRequest queryObject)
+    public PublishingRequest getPublishingRequest(PublishingRequest queryObject)
         throws NotFoundException {
         var queryResult = getFromDatabase(queryObject);
         return attempt(queryResult::getItem)
@@ -114,31 +89,22 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .map(PublishingRequestDao::getData)
             .toOptional()
             .filter(request -> request.getResourceIdentifier().equals(queryObject.getResourceIdentifier()))
-            .orElseThrow(() -> handleFetchPublishingRequestByResoureError(queryObject.getIdentifier()));
+            .orElseThrow(() -> handleFetchPublishingRequestByResourceError(queryObject.getIdentifier()));
     }
 
-
     private GetItemResult getFromDatabase(PublishingRequest queryObject) {
-        var queryDao = PublishingRequestDao.queryObject(queryObject.getCustomerId(),
-                                                           queryObject.getOwner(),
-                                                           queryObject.getIdentifier());
+        var queryDao = PublishingRequestDao.queryObject(queryObject);
         var getItemRequest = new GetItemRequest()
             .withTableName(tableName)
             .withKey(queryDao.primaryKey());
         return client.getItem(getItemRequest);
     }
 
-    public List<PublishingRequest> listPublishingRequestsForUser(UserInstance userInstance) {
-        var query = listPublishingRequestForUserQuery(userInstance, DEFAULT_QUERY_RESULT_SIZE);
-        return performQueryWithPotentiallyManyResults(query);
-    }
-
     public void updatePublishingRequest(PublishingRequest requestUpdate) throws ApiGatewayException {
 
         var updateItemRequest = createUpdateDatabaseItemRequest(requestUpdate);
 
-        var item = attempt(() -> client.updateItem(updateItemRequest))
-            .orElseThrow(this::handleUpdatePublishingRequestFailure);
+        var item = client.updateItem(updateItemRequest);
         parseAttributeValuesMap(item.getAttributes(), PublishingRequestDao.class);
     }
 
@@ -174,33 +140,6 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return newPutTransactionItem(identifierEntry);
     }
 
-    private QueryRequest listPublishingRequestForUserQuery(UserInstance userInstance, int maxResultSize) {
-        var queryExpression = "#PK = :PK";
-        var filterExpression = "#data.#status = :pendingStatus OR #data.#status = :rejectedStatus";
-
-        var expressionAttributeNames =
-            Map.of(
-                "#PK", DatabaseConstants.PRIMARY_KEY_PARTITION_KEY_NAME,
-                "#data", PublishingRequestDao.CONTAINED_DATA_FIELD_NAME,
-                "#status", PublishingRequest.STATUS_FIELD);
-
-        var primaryKeyPartitionKeyValue = publishingRequestPrimaryKeyPartionKeyValue(userInstance);
-
-        var expressionAttributeValues = Map.of(
-            ":PK", new AttributeValue(primaryKeyPartitionKeyValue),
-            ":pendingStatus", new AttributeValue(PublishingRequestStatus.PENDING.toString()),
-            ":rejectedStatus", new AttributeValue(PublishingRequestStatus.REJECTED.toString())
-        );
-
-        return new QueryRequest()
-            .withTableName(tableName)
-            .withKeyConditionExpression(queryExpression)
-            .withFilterExpression(filterExpression)
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionAttributeValues)
-            .withLimit(maxResultSize);
-    }
-
     protected UpdateItemRequest createUpdateDatabaseItemRequest(PublishingRequest requestUpdate)
         throws NotFoundException {
         var now = nowAsString();
@@ -217,7 +156,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var conditionExpression = "#data.#resourceStatus <> :publishedStatus";
 
         var expressionAttributeNames = Map.of(
-            "#data", PublishingRequestDao.CONTAINED_DATA_FIELD_NAME,
+            "#data", CONTAINED_DATA_FIELD_NAME,
             "#status", PublishingRequest.STATUS_FIELD,
             "#modifiedDate", PublishingRequest.MODIFIED_DATE_FIELD,
             "#resourceStatus", PublishingRequest.RESOURCE_STATUS_FIELD,
@@ -255,51 +194,9 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return new PublishingRequestDao(publicationRequest);
     }
 
-    private String publishingRequestPrimaryKeyPartionKeyValue(UserInstance userInstance) {
-        var queryObject = PublishingRequestDao.queryObject(userInstance.getOrganizationUri(),
-                                                           userInstance.getUserIdentifier());
-        return queryObject.getPrimaryKeyPartitionKey();
-    }
-
-    private List<PublishingRequest> performQueryWithPotentiallyManyResults(QueryRequest query) {
-        Map<String, AttributeValue> startKey = null;
-        var result = new ArrayList<PublishingRequest>();
-        do {
-            query.withExclusiveStartKey(startKey);
-            var queryResult = client.query(query);
-            var lastItems = parseListingPublishingRequestsQueryResult(queryResult);
-            result.addAll(lastItems);
-            startKey = queryResult.getLastEvaluatedKey();
-        } while (hasMoreResults(startKey));
-        return result;
-    }
-
-    private List<PublishingRequest> parseListingPublishingRequestsQueryResult(QueryResult result) {
-        return result.getItems()
-            .stream()
-            .map(map -> parseAttributeValuesMap(map, PublishingRequestDao.class))
-            .map(PublishingRequestDao::getData)
-            .collect(Collectors.toList());
-    }
-
-    private boolean hasMoreResults(Map<String, AttributeValue> startKey) {
-        return startKey != null && !startKey.isEmpty();
-    }
-
-    protected boolean updateConditionFailed(Exception error) {
-        return error instanceof ConditionalCheckFailedException;
-    }
-
-    private static NotFoundException handleFetchPublishingRequestByResoureError(SortableIdentifier resourceIdentifier) {
+    private static NotFoundException handleFetchPublishingRequestByResourceError(
+        SortableIdentifier resourceIdentifier) {
         return new NotFoundException(PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
-    }
-
-    private ApiGatewayException handleUpdatePublishingRequestFailure(Failure<UpdateItemResult> fail) {
-        if (updateConditionFailed(fail.getException())) {
-            return new no.unit.nva.publication.exception.BadRequestException(
-                UPDATE_PUBLISHING_REQUEST_STATUS_CONDITION_FAILURE_MESSAGE);
-        }
-        return new DynamoDBException(fail.getException());
     }
 
     @Override

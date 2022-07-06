@@ -11,9 +11,4 @@ class PublishingRequestUtilsTest {
         assertNotNull(PublishingRequestUtils.defaultRequestService());
     }
 
-    @Test
-    void shouldReturnPublishingRequestUtilsToKeepTestCoverageHappy() {
-        assertNotNull(new PublishingRequestUtils());
-    }
-
 }
