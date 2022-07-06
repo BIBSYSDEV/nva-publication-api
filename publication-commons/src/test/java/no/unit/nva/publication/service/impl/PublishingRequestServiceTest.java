@@ -83,7 +83,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     @Test
     void shouldThrowExceptionOnMoreThanOnePublishingRequestsForTheSamePublication() throws ApiGatewayException {
         var publication = createPublication(owner);
-        var firstPublishingRequest = attempt(() -> createPublishingRequest(publication))
+        attempt(() -> createPublishingRequest(publication))
             .map(created -> publishingRequestService.getPublishingRequest(created))
             .orElseThrow();
         assertThrows(TransactionFailedException.class, () -> createPublishingRequest(publication));
