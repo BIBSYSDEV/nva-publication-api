@@ -1,21 +1,33 @@
 package no.unit.nva.publication.publishingrequest;
 
 import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import java.time.Clock;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 
 public final class PublishingRequestUtils {
 
     public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER = "publicationIdentifier";
     public static final String PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER = "publishingRequestIdentifier";
+    public static final String ILLEGAL_IDENTIFIER_ERROR = "Illegal identifier";
 
     private PublishingRequestUtils() {
 
+    }
+
+    public static SortableIdentifier parseIdentifierParameter(RequestInfo requestInfo,
+                                                              String publicationIdentifierPathParameter)
+        throws NotFoundException {
+        return attempt(() -> requestInfo.getPathParameter(publicationIdentifierPathParameter))
+            .map(SortableIdentifier::new)
+            .orElseThrow(fail -> new NotFoundException(ILLEGAL_IDENTIFIER_ERROR));
     }
 
     public static UserInstance createUserInstance(RequestInfo requestInfo) throws UnauthorizedException {

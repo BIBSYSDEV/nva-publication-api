@@ -4,6 +4,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.P
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.parseIdentifierParameter;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
@@ -46,10 +47,7 @@ public class GetPublishingRequestHandler extends ApiGatewayHandler<Void, Publish
         return PublishingRequestDto.fromPublishingRequest(existingPublishingRequest);
     }
 
-    private SortableIdentifier parseIdentifierParameter(RequestInfo requestInfo,
-                                                        String publicationIdentifierPathParameter) {
-        return new SortableIdentifier(requestInfo.getPathParameter(publicationIdentifierPathParameter));
-    }
+
 
     @Override
     protected Integer getSuccessStatusCode(Void input, PublishingRequestDto output) {

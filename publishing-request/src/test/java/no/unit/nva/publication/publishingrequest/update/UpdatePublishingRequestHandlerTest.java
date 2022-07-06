@@ -6,7 +6,6 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUti
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestMissingAccessRight;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestWithAccessRight;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdateRequest;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.extractPublishingRequestIdentifier;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -25,19 +24,18 @@ import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
+class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
     private UpdatePublishingRequestHandler updatePublishingRequestHandler;
 
     private Context context;
     private ResourceService resourceService;
-    private Clock mockClock;
     PublishingRequestService requestService;
 
     @BeforeEach
     public void initialize() {
         init();
-        mockClock = setupMockClock();
+        Clock mockClock = setupMockClock();
         context = mock(Context.class);
         resourceService = new ResourceService(client, mockClock);
         requestService = new PublishingRequestService(client, mockClock);
@@ -45,27 +43,25 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
+    void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
         var publication =
             createAndPersistPublication(resourceService);
-        var existingPublishingRequestLocation= createAndPersistPublishingRequest(requestService, publication, context);
-        var publishingRequestIdentifier =
-            extractPublishingRequestIdentifier(existingPublishingRequestLocation);
+        var existingPublishingRequest= createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         var httpRequest = createUpdatePublishingRequestWithAccessRight(publication, updateRequest,
                                                                        publication.getPublisher().getId(),
-                                                                       publishingRequestIdentifier);
+                                                                       existingPublishingRequest.getIdentifier());
         updatePublishingRequestHandler.handleRequest(httpRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_ACCEPTED));
     }
 
     @Test
-    public void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
+    void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
         var publication =
             createAndPersistPublication(resourceService);
-        var requestLocation=createAndPersistPublishingRequest(requestService, publication, context);
+        var existingPublishingRequest=createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();
@@ -73,7 +69,7 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             createUpdatePublishingRequestMissingAccessRight(publication,
                                                             updateRequest,
                                                             customerId,
-                                                            extractPublishingRequestIdentifier(requestLocation));
+                                                            existingPublishingRequest.getIdentifier());
         updatePublishingRequestHandler.handleRequest(updatePublishingRequest,
                                                      outputStream,
                                                      context);
@@ -82,10 +78,10 @@ public class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    public void shouldReturnNotFoundWhenIdentifierIsUnknown() throws IOException, ApiGatewayException {
+    void shouldReturnNotFoundWhenIdentifierIsUnknown() throws IOException, ApiGatewayException {
         var publication =
             createAndPersistPublication(resourceService);
-        createAndPersistPublishingRequest(requestService, publication, context);
+        createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();

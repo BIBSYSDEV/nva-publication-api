@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
+import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @JsonTypeName("PublishingRequest")
@@ -47,5 +49,25 @@ public class PublishingRequestDto {
 
     public PublishingRequestStatus getStatus() {
         return status;
+    }
+
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof PublishingRequestDto)) {
+            return false;
+        }
+        PublishingRequestDto that = (PublishingRequestDto) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier()) && Objects.equals(
+            getPublicationIdentifier(), that.getPublicationIdentifier()) && getStatus() == that.getStatus();
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getPublicationIdentifier(), getStatus());
     }
 }

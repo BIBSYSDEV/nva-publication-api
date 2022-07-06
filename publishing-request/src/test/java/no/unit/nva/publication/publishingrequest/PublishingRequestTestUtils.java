@@ -5,27 +5,20 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.P
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
-import static nva.commons.core.attempt.Try.attempt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import com.amazonaws.services.lambda.runtime.Context;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.net.HttpHeaders;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.publishingrequest.create.CreatePublishingRequestHandler;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
@@ -33,9 +26,7 @@ import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
-import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.core.paths.UriWrapper;
 
 public class PublishingRequestTestUtils {
 
@@ -50,67 +41,33 @@ public class PublishingRequestTestUtils {
         return mockClock;
     }
 
-    public static InputStream createListPublishingRequest(Publication publication)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(publication.getPublisher().getId())
-            .withAccessRights(publication.getPublisher().getId(), AccessRight.APPROVE_PUBLISH_REQUEST.toString())
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString()))
-            .build();
+    public static PublishingRequest createAndPersistPublishingRequest(PublishingRequestService requestService,
+                                                                      Publication publication)
+        throws ApiGatewayException {
+        var userInstance = UserInstance.fromPublication(publication);
+        return requestService.createPublishingRequest(userInstance, publication.getIdentifier());
     }
 
-    public static InputStream createListPublishingRequestWithMissingAccessRightToApprove(Publication publication,
-                                                                                         URI customerId)
+    public static InputStream createGetPublishingRequest(PublishingRequest publishingRequest)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(customerId)
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString()))
-            .build();
+        return createGetPublishingRequest(publishingRequest, publishingRequest.getIdentifier().toString());
     }
 
-    public static URI createAndPersistPublishingRequest(PublishingRequestService requestService,
-                                                        Publication publication,
-                                                        Context context) throws IOException {
-        var outputStream = new ByteArrayOutputStream();
-        var httpRequest = createPublishingRequest(publication);
-        new CreatePublishingRequestHandler(requestService).handleRequest(httpRequest, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        return Optional.of(response.getHeaders().get(HttpHeaders.LOCATION)).map(URI::create).orElseThrow();
-    }
-
-    public static InputStream createPublishingRequest(Publication publication)
+    public static InputStream createGetPublishingRequest(PublishingRequest publishingRequest,
+                                                         String identifierCandidate)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(publication.getPublisher().getId())
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString()))
-            .build();
-    }
-
-    public static InputStream createGetPublishingRequest(URI publishingRequestId, Publication publication)
-        throws JsonProcessingException {
-        var customerId = publication.getPublisher().getId();
-        var publishingRequestUri = UriWrapper.fromUri(publishingRequestId);
-        var publishingRequestIdentifier = publishingRequestUri.getLastPathElement();
-        var publicationIdentifier = publication.getIdentifier();
+        var customerId = publishingRequest.getCustomerId();
+        var publicationIdentifier = publishingRequest.getResourceIdentifier();
 
         return new HandlerRequestBuilder<Void>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
+            .withNvaUsername(publishingRequest.getOwner())
             .withCustomerId(customerId)
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
             .withPathParameters(
                 Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publicationIdentifier.toString(),
-                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingRequestIdentifier)
+                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, identifierCandidate)
             )
             .build();
-    }
-
-    public static SortableIdentifier extractPublishingRequestIdentifier(URI publishingRequestUri) {
-        return attempt(() -> UriWrapper.fromUri(publishingRequestUri).getLastPathElement())
-            .map(SortableIdentifier::new)
-            .orElseThrow();
     }
 
     public static InputStream createGetPublishingRequest(Publication publication,
@@ -154,20 +111,6 @@ public class PublishingRequestTestUtils {
             .build();
     }
 
-    private static HandlerRequestBuilder<UpdatePublishingRequest> getRequestBuilder(
-        Publication publication,
-        UpdatePublishingRequest updateRequest,
-        URI customerId,
-        SortableIdentifier publishingIdentifier)
-        throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
-            .withBody(updateRequest)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(customerId)
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
-                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingIdentifier.toString()));
-    }
-
     public static InputStream createUpdatePublishingRequestMissingAccessRight(Publication publication,
                                                                               UpdatePublishingRequest updateRequest,
                                                                               URI customerId,
@@ -186,6 +129,24 @@ public class PublishingRequestTestUtils {
         return new ResourceOwner(randomString(), randomUri());
     }
 
+    public static Publication createAndPersistPublication(ResourceService resourceService) throws ApiGatewayException {
+        return createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+    }
+
+    private static HandlerRequestBuilder<UpdatePublishingRequest> getRequestBuilder(
+        Publication publication,
+        UpdatePublishingRequest updateRequest,
+        URI customerId,
+        SortableIdentifier publishingIdentifier)
+        throws JsonProcessingException {
+        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
+            .withBody(updateRequest)
+            .withNvaUsername(publication.getResourceOwner().getOwner())
+            .withCustomerId(customerId)
+            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
+                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingIdentifier.toString()));
+    }
+
     private static Publication createAndPersistPublication(ResourceService resourceService,
                                                            Organization publisher,
                                                            ResourceOwner resourceOwner) throws ApiGatewayException {
@@ -194,9 +155,5 @@ public class PublishingRequestTestUtils {
         publication.setResourceOwner(resourceOwner);
         var storeResult = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
         return resourceService.getPublication(storeResult);
-    }
-
-    public static Publication createAndPersistPublication(ResourceService resourceService) throws ApiGatewayException {
-        return createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
     }
 }

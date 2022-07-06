@@ -1,11 +1,13 @@
 package no.unit.nva.publication.publishingrequest.list;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
+import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequestMissingAccessRightApprove;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.core.Is.is;
@@ -15,11 +17,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Clock;
+import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
-import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,17 +31,16 @@ import org.zalando.problem.Problem;
 
 class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
 
+    PublishingRequestService requestService;
     private GetPublishingRequestHandler handler;
     private Context context;
     private ResourceService resourceService;
-    private Clock mockClock;
-    PublishingRequestService requestService;
     private ByteArrayOutputStream outputStream;
 
     @BeforeEach
     public void initialize() {
         init();
-        mockClock = setupMockClock();
+        Clock mockClock = setupMockClock();
         context = mock(Context.class);
         resourceService = new ResourceService(client, mockClock);
         requestService = new PublishingRequestService(client, mockClock);
@@ -47,39 +49,53 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAcceptGetRequestWithPublicationIdentifierAndPublishingRequestIdentiferAsPathParameters()
+    void shouldAcceptGetRequestWithPublicationIdentifierAndPublishingRequestIdentifierAsPathParameters()
         throws ApiGatewayException, IOException {
         var publication = createAndPersistPublication(resourceService);
-        var publishingRequestId = createAndPersistPublishingRequest(requestService, publication, context);
-        var getRequest = createGetPublishingRequest(publishingRequestId, publication);
+        var publishingRequest = createAndPersistPublishingRequest(requestService, publication);
+        var getRequest = createGetPublishingRequest(publishingRequest);
         handler.handleRequest(getRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, PublishingRequestDto.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
-    }
+        var actualResponseObject = response.getBodyObject(PublishingRequestDto.class);
+        var expectedResponseObject = PublishingRequestDto.fromPublishingRequest(publishingRequest);
 
-    @Test
-    void shouldReturnPublishingRequestWithStatusPendingForNewPublishingRequest()
-        throws IOException, ApiGatewayException {
-        var publication = createAndPersistPublication(resourceService);
-        var publishingRequestId= createAndPersistPublishingRequest(requestService, publication, context);
-        var getRequest = createGetPublishingRequest(publishingRequestId,publication);
-        handler.handleRequest(getRequest, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, PublishingRequest.class);
-        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_OK));
-        var responseObject = response.getBodyObject(PublishingRequest.class);
-        assertThat(responseObject.getStatus(), equalTo(PublishingRequestStatus.PENDING));
+        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_OK)));
+        assertThat(actualResponseObject.getStatus(), equalTo(publishingRequest.getStatus()));
+        assertThat(actualResponseObject, is(equalTo(expectedResponseObject)));
     }
 
     @Test
     void shouldReturnUnauthorizedWhenUserIsMissingAccessRight()
         throws IOException, ApiGatewayException {
         var publication = createAndPersistPublication(resourceService);
-        createAndPersistPublishingRequest(requestService, publication, context);
+        createAndPersistPublishingRequest(requestService, publication);
         var outputStream = new ByteArrayOutputStream();
         var getRequest =
             createGetPublishingRequestMissingAccessRightApprove(publication, publication.getPublisher().getId());
         handler.handleRequest(getRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
-        assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_UNAUTHORIZED));
+        assertThat(response.getStatusCode(), equalTo(HTTP_UNAUTHORIZED));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenSuppliedUriContainsNonExistentIdentifiers() throws IOException {
+        var unsavedPublication = PublicationGenerator.randomPublication();
+        var unsavedPublishingRequest = PublishingRequest.fromPublication(unsavedPublication,
+                                                                         SortableIdentifier.next());
+        var getRequest = createGetPublishingRequest(unsavedPublishingRequest);
+        handler.handleRequest(getRequest, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), equalTo(HTTP_NOT_FOUND));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenSuppliedUriContainsInvalidIdentifier() throws IOException {
+        var unsavedPublication = PublicationGenerator.randomPublication();
+        var unsavedPublishingRequest = PublishingRequest.fromPublication(unsavedPublication,
+                                                                         SortableIdentifier.next());
+        var getRequest = createGetPublishingRequest(unsavedPublishingRequest, randomString());
+        handler.handleRequest(getRequest, outputStream, context);
+        var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
+        assertThat(response.getStatusCode(), equalTo(HTTP_NOT_FOUND));
     }
 }
