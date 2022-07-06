@@ -8,7 +8,6 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.p
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.validateUserCanApprovePublishingRequest;
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;

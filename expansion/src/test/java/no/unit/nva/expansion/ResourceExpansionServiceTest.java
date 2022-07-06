@@ -146,10 +146,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var identifierInId =
             UriWrapper.fromUri(expandedDoiRequestConversation.getPublicationSummary().getPublicationId())
                 .getLastPathElement();
-       assertThat(expandedDoiRequestConversation.getPublicationSummary().getPublicationIdentifier(),
-                  is(equalTo(samplePublication.getPublicationIdentifier())));
+        assertThat(expandedDoiRequestConversation.getPublicationSummary().getPublicationIdentifier(),
+                   is(equalTo(samplePublication.getPublicationIdentifier())));
 
-       assertThat(identifierInId,is(equalTo(samplePublication.getPublicationIdentifier().toString())));
+        assertThat(identifierInId, is(equalTo(samplePublication.getPublicationIdentifier().toString())));
     }
 
     @Test

@@ -18,6 +18,7 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
@@ -52,6 +53,21 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         this.publishingRequestService = new PublishingRequestService(client, mockClock);
     }
 
+    public PublishingRequest updatePublishingRequestStatus(PublishingRequest publishingRequest,
+                                                           PublishingRequestStatus newStatus) {
+
+        var newRequest = new PublishingRequest();
+        newRequest.setStatus(newStatus);
+        newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
+        newRequest.setIdentifier(publishingRequest.getIdentifier());
+        newRequest.setCreatedDate(publishingRequest.getCreatedDate());
+        newRequest.setOwner(publishingRequest.getOwner());
+        newRequest.setCustomerId(publishingRequest.getCustomerId());
+        newRequest.setRowVersion(publishingRequest.getRowVersion());
+        newRequest.setModifiedDate(publishingRequest.getModifiedDate());
+        return newRequest;
+    }
+
     @Test
     void shouldCreatePublicationRequestWhenPublicationIsPublishable() throws ApiGatewayException {
         var publication = createPublication(owner);
@@ -62,17 +78,15 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThat(publishingRequest, is(equalTo(createdRequest)));
     }
 
+    // This action fails with a TransactionFailedException which contains no information about why the transaction
+    // failed, which may fail because of multiple reasons including what we are testing for here.
     @Test
-    void shouldAllowCreationOfManyPublishingRequestsPerPublication() throws ApiGatewayException {
+    void shouldThrowExceptionOnMoreThanOnePublishingRequestsForTheSamePublication() throws ApiGatewayException {
         var publication = createPublication(owner);
         var firstPublishingRequest = attempt(() -> createPublishingRequest(publication))
             .map(created -> publishingRequestService.getPublishingRequest(created))
             .orElseThrow();
-        var secondPublishingRequest = attempt(() -> createPublishingRequest(publication))
-            .map(created -> publishingRequestService.getPublishingRequest(created))
-            .orElseThrow();
-
-        assertThat(firstPublishingRequest.getIdentifier(), is(not(equalTo(secondPublishingRequest.getIdentifier()))));
+        assertThrows(TransactionFailedException.class, () -> createPublishingRequest(publication));
     }
 
     @Test
@@ -131,21 +145,6 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             updatePublishingRequestStatus(updatedPublicationRequest, PublishingRequestStatus.REJECTED);
         Executable action = () -> publishingRequestService.updatePublishingRequest(rejectPublishingRequest);
         assertThrows(IllegalArgumentException.class, action);
-    }
-
-    public PublishingRequest updatePublishingRequestStatus(PublishingRequest publishingRequest,
-                                                           PublishingRequestStatus newStatus) {
-
-        var newRequest = new PublishingRequest();
-        newRequest.setStatus(newStatus);
-        newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
-        newRequest.setIdentifier(publishingRequest.getIdentifier());
-        newRequest.setCreatedDate(publishingRequest.getCreatedDate());
-        newRequest.setOwner(publishingRequest.getOwner());
-        newRequest.setCustomerId(publishingRequest.getCustomerId());
-        newRequest.setRowVersion(publishingRequest.getRowVersion());
-        newRequest.setModifiedDate(publishingRequest.getModifiedDate());
-        return newRequest;
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {

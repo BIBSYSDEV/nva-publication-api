@@ -12,6 +12,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonSubTypes({
     @JsonSubTypes.Type(IdentifierEntry.class),
     @JsonSubTypes.Type(UniqueDoiRequestEntry.class),
+    @JsonSubTypes.Type(UniquePublishingRequestEntry.class),
 })
 public abstract class UniquenessEntry implements DynamoEntry, WithPrimaryKey {
 

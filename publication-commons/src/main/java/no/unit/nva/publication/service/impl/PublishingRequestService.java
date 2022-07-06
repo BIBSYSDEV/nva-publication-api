@@ -28,6 +28,7 @@ import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.PublishingRequestDao;
+import no.unit.nva.publication.storage.model.daos.UniquePublishingRequestEntry;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.BadRequestException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -120,14 +121,20 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return PublishingRequest.newPublishingRequestResource(identifierProvider.get(), resource, clock.instant());
     }
 
-    private TransactWriteItemsRequest createInsertionTransactionRequest(PublishingRequest publicationRequest) {
-        var publicationRequestEntry = createPublishingRequestInsertionEntry(publicationRequest);
-        var identifierEntry = createUniqueIdentifierEntry(publicationRequest);
-
+    private TransactWriteItemsRequest createInsertionTransactionRequest(PublishingRequest publishingRequest) {
+        var publicationRequestEntry = createPublishingRequestInsertionEntry(publishingRequest);
+        var identifierEntry = createUniqueIdentifierEntry(publishingRequest);
+        var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(publishingRequest);
         return new TransactWriteItemsRequest()
             .withTransactItems(
                 identifierEntry,
-                publicationRequestEntry);
+                publicationRequestEntry,
+                publishingRequestUniquenessEntry);
+    }
+
+    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequest publishingRequest) {
+        var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
+        return newPutTransactionItem(publishingRequestUniquenessEntry);
     }
 
     private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequest publicationRequest) {

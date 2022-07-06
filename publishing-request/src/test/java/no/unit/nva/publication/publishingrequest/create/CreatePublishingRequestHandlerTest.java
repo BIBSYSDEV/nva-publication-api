@@ -38,7 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
+class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
     PublishingRequestService requestService;
     Clock mockClock;
