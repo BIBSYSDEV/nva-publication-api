@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
+
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -96,7 +97,7 @@ public abstract class ServiceWithTransactions {
 
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
-        throws TransactionFailedException {
+         {
         attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
             .orElseThrow(this::handleTransactionFailure);
     }

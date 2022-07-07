@@ -36,7 +36,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -110,7 +110,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
-        throws TransactionFailedException {
+         {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(inputData.getCreatedDate());
@@ -118,7 +118,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication createPublicationFromImportedEntry(Publication inputData)
-        throws TransactionFailedException {
+         {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -129,7 +129,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public Publication insertPreexistingPublication(Publication publication)
-        throws TransactionFailedException {
+         {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
     }
@@ -150,7 +150,7 @@ public class ResourceService extends ServiceWithTransactions {
 
     @SuppressWarnings(RAWTYPES)
     public void deleteDraftPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException, TransactionFailedException {
+        throws BadRequestException {
         List<Dao> daos = readResourceService
             .fetchResourceAndDoiRequestFromTheByResourceIndex(userInstance, resourceIdentifier);
 
@@ -195,11 +195,11 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException, TransactionFailedException {
+        throws NotFoundException {
         updateResourceService.updateOwner(identifier, oldOwner, newOwner);
     }
 
-    public Publication updatePublication(Publication resourceUpdate) throws TransactionFailedException {
+    public Publication updatePublication(Publication resourceUpdate) {
         return updateResourceService.updatePublication(resourceUpdate);
     }
 
@@ -291,7 +291,7 @@ public class ResourceService extends ServiceWithTransactions {
             .collect(Collectors.toList());
     }
 
-    private Publication insertResource(Resource newResource) throws TransactionFailedException {
+    private Publication insertResource(Resource newResource) {
         TransactWriteItem[] transactionItems = transactionItemsForNewResourceInsertion(newResource);
         TransactWriteItemsRequest putRequest = newTransactWriteItemsRequest(transactionItems);
         sendTransactionWriteRequest(putRequest);

@@ -13,7 +13,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -88,7 +88,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
 
     private URI sendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
-        throws TransactionFailedException, BadRequestException {
+        throws BadRequestException {
         try {
             var messageIdentifier = trySendMessage(input, sender, publication);
             return MessageDto.constructMessageId(messageIdentifier);
@@ -98,7 +98,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
 
     private SortableIdentifier trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
-        throws TransactionFailedException {
+         {
         MessageType messageType = parseMessageType(input);
         return MessageType.DOI_REQUEST.equals(messageType)
                    ? messageService.createDoiRequestMessage(sender, publication, input.getMessage())

@@ -32,6 +32,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;

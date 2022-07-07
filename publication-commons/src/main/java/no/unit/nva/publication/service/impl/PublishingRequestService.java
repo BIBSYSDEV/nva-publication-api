@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -163,7 +163,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     }
 
     private PublishingRequest createPublishingRequest(Publication publication)
-        throws TransactionFailedException, ConflictException {
+        throws  ConflictException {
         verifyPublicationIsPublishable(publication);
         var publishingRequest = createNewPublishingRequestEntry(publication);
         var request = createInsertionTransactionRequest(publishingRequest);

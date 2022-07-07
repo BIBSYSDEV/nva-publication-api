@@ -7,7 +7,6 @@ import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import java.time.Clock;
 import java.util.Map;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +26,7 @@ class MigrationTests extends ResourcesLocalTest {
 
     @Test
     void shouldWriteBackEntryAsIsWhenMigrating()
-        throws TransactionFailedException, NotFoundException {
+        throws NotFoundException {
         var publication = PublicationGenerator.randomPublication().copy().withDoiRequest(null).build();
         var savedPublication = resourceService.insertPreexistingPublication(publication);
         migrateResources();

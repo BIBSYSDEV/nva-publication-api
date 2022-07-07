@@ -7,7 +7,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateDto;
 import no.unit.nva.publication.doi.update.dto.DoiUpdateHolder;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.service.impl.ResourceService;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Failure;
@@ -50,7 +50,7 @@ public class UpdateDoiStatusProcess {
         validateInput();
     }
 
-    public void updateDoi() throws TransactionFailedException {
+    public void updateDoi() {
         publication.setModifiedDate(request.getModifiedDate());
         publication.setDoi(request.getDoi().orElseThrow());
         resourceService.updatePublication(publication);

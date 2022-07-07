@@ -17,7 +17,6 @@ public final class TestingUtils {
 
     }
 
-
     public static URI randomOrgUnitId() {
         return URI.create(String.format("https://example.org/some/path/%s.%s.%s.%s",
                                         randomInteger(),
@@ -42,7 +41,7 @@ public final class TestingUtils {
         return new Organization.Builder().withId(orgUri).build();
     }
 
-    public static PublishingRequest createPublishingRequest(Publication publication){
-        return PublishingRequest.create(UserInstance.fromPublication(publication),publication.getIdentifier());
+    public static PublishingRequest createPublishingRequest(Publication publication) {
+        return PublishingRequest.create(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
 }

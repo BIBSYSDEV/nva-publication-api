@@ -127,7 +127,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     public void init() {
         super.init();
         Clock clock = setupClock();
-        resourceService = new ResourceService(client,  clock);
+        resourceService = new ResourceService(client, clock);
         doiRequestService = new DoiRequestService(client, clock);
         messageService = new MessageService(client, clock, SortableIdentifier::next);
     }
@@ -139,7 +139,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void createResourceWithPredefinedCreationDateStoresResourceWithCreationDateEqualToInputsCreationDate()
-        throws TransactionFailedException, NotFoundException {
+        throws NotFoundException {
         Publication inputPublication = generatePublication();
         assertThat(inputPublication.getSubjects(), is(not(nullValue())));
         verifyThatResourceClockWillReturnPredefinedCreationTime();
@@ -159,7 +159,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
 
     @Test
     void createResourceWhilePersistingEntryFromLegacySystemsStoresResourceWithDatesEqualToEntryDates()
-        throws TransactionFailedException, NotFoundException {
+        throws NotFoundException {
         Publication inputPublication = generatePublication();
         Instant predefinedPublishTime = Instant.now();
 
@@ -202,7 +202,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         final Publication sampleResource = randomPublication();
         final Publication collidingResource = sampleResource.copy()
             .withPublisher(anotherPublisher())
-            .withResourceOwner(new ResourceOwner(SOME_OTHER_USER,null))
+            .withResourceOwner(new ResourceOwner(SOME_OTHER_USER, null))
             .build();
         ResourceService resourceService = resourceServiceProvidingDuplicateIdentifiers(sampleResource.getIdentifier());
 
@@ -352,7 +352,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         when(client.transactWriteItems(any(TransactWriteItemsRequest.class)))
             .thenThrow(expectedCause);
 
-        ResourceService failingService = new ResourceService(client,  clock);
+        ResourceService failingService = new ResourceService(client, clock);
 
         Publication resource = publicationWithIdentifier();
         Executable action = () -> createPublication(failingService, resource);
@@ -362,8 +362,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier()
-        throws TransactionFailedException {
+    void insertPreexistingPublicationIdentifierStoresPublicationInDatabaseWithoutChangingIdentifier() {
         Publication publication = publicationWithIdentifier();
         Publication savedPublication = resourceService.insertPreexistingPublication(publication);
         assertThat(savedPublication.getIdentifier(), is(equalTo(publication.getIdentifier())));
@@ -378,7 +377,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             .thenThrow(exptedMessage);
         Publication resource = publicationWithIdentifier();
 
-        ResourceService failingResourceService = new ResourceService(client,  clock);
+        ResourceService failingResourceService = new ResourceService(client, clock);
 
         Executable action = () -> failingResourceService.getPublication(resource);
         RuntimeException exception = assertThrows(RuntimeException.class, action);
@@ -412,7 +411,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         RuntimeException expectedException = new RuntimeException(expectedMessage);
         when(client.query(any(QueryRequest.class))).thenThrow(expectedException);
 
-        ResourceService failingResourceService = new ResourceService(client,  clock);
+        ResourceService failingResourceService = new ResourceService(client, clock);
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                                                   () -> failingResourceService.getPublicationsByOwner(SAMPLE_USER));
@@ -428,7 +427,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             .withItems(List.of(ItemUtils.toAttributeValues(invalidItem)));
         when(mockClient.query(any(QueryRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient,  clock);
+        ResourceService failingResourceService = new ResourceService(mockClient, clock);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         assertThatJsonProcessingErrorIsPropagatedUp(expectedExceptionClass,
@@ -443,7 +442,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         GetItemResult responseWithInvalidItem = new GetItemResult().withItem(ItemUtils.toAttributeValues(invalidItem));
         when(mockClient.getItem(any(GetItemRequest.class))).thenReturn(responseWithInvalidItem);
 
-        ResourceService failingResourceService = new ResourceService(mockClient,  clock);
+        ResourceService failingResourceService = new ResourceService(mockClient, clock);
         Class<JsonProcessingException> expectedExceptionClass = JsonProcessingException.class;
 
         SortableIdentifier someIdentifier = SortableIdentifier.next();
@@ -605,7 +604,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     void markPublicationForDeletionThrowsExceptionWhenDeletingPublishedPublication() throws ApiGatewayException {
         Publication resource = createPublishedResource();
         Executable action =
-            () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
+            () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
+                                                             resource.getIdentifier());
         BadRequestException exception = assertThrows(BadRequestException.class, action);
         assertThat(exception.getMessage(), containsString(RESOURCE_CANNOT_BE_DELETED_ERROR_MESSAGE));
         assertThat(exception.getMessage(), containsString(resource.getIdentifier().toString()));
@@ -616,7 +616,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         TestAppender testAppender = LogUtils.getTestingAppender(ResourceService.class);
         Publication resource = createPublishedResource();
         Executable action =
-            () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
+            () -> resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
+                                                             resource.getIdentifier());
         assertThrows(BadRequestException.class, action);
         assertThat(testAppender.getMessages(), containsString(ConditionalCheckFailedException.class.getName()));
     }
@@ -634,7 +635,8 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         Publication resource = createSampleResourceWithDoi();
 
         Publication resourceUpdate =
-            resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
+            resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource),
+                                                       resource.getIdentifier());
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
 
         Publication resourceForDeletion = resourceService.getPublication(resource);
@@ -646,9 +648,9 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     void markPublicationForDeletionReturnsUpdatedResourceCanMarkDraftForDeletion()
         throws ApiGatewayException {
         Publication resource = createSampleResourceWithDoi();
-
-        Publication resourceUpdate =
-            resourceService.markPublicationForDeletion(UserInstance.fromPublication(resource), resource.getIdentifier());
+        var userInstance = UserInstance.fromPublication(resource);
+        var resourceUpdate =
+            resourceService.markPublicationForDeletion(userInstance, resource.getIdentifier());
         assertThat(resourceUpdate.getStatus(), Matchers.is(Matchers.equalTo(PublicationStatus.DRAFT_FOR_DELETION)));
     }
 
@@ -668,7 +670,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesLinkedDoiRequestUponUpdate()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client,  clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
         DoiRequest originalDoiRequest = createDoiRequest(resource);
 
@@ -689,7 +691,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceUpdatesAllFieldsInDoiRequest()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client,  clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication initialPublication = createPublication(resourceService, PublicationGenerator.randomPublication());
         UserInstance userInstance = UserInstance.fromPublication(initialPublication);
         DoiRequest initialDoiRequest = createDoiRequest(initialPublication);
@@ -717,7 +719,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     @Test
     void updateResourceDoesNotCreateDoiRequestWhenItDoesNotPreexist()
         throws ApiGatewayException {
-        DoiRequestService doiRequestService = new DoiRequestService(client,  clock);
+        DoiRequestService doiRequestService = new DoiRequestService(client, clock);
         Publication resource = createSampleResourceWithDoi();
         UserInstance userInstance = UserInstance.create(resource.getOwner(), resource.getPublisher().getId());
 
@@ -945,7 +947,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         when(client.getItem(any(GetItemRequest.class)))
             .thenReturn(new GetItemResult().withItem(Collections.emptyMap()));
 
-        return new ResourceService(client,  clock);
+        return new ResourceService(client, clock);
     }
 
     private void assertThatIdentifierEntryHasBeenCreated() {
@@ -1004,7 +1006,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
     }
 
     private DoiRequest createDoiRequest(Publication resource)
-        throws BadRequestException, TransactionFailedException, NotFoundException {
+        throws BadRequestException, NotFoundException {
         UserInstance userInstance = UserInstance.fromPublication(resource);
         doiRequestService.createDoiRequest(userInstance, resource.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, resource.getIdentifier());

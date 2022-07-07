@@ -37,7 +37,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
@@ -265,7 +265,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
 
-    private Message createSupportMessage(Publication pub) throws TransactionFailedException, NotFoundException {
+    private Message createSupportMessage(Publication pub) throws NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
         var messageIdentifier = messageService.createSimpleMessage(owner, pub, randomString());
         return messageService.getMessage(owner, messageIdentifier);
@@ -310,7 +310,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
             .collect(Collectors.toList());
     }
 
-    private MessageDto createDoiRequestMessage(Publication pub) throws TransactionFailedException, NotFoundException {
+    private MessageDto createDoiRequestMessage(Publication pub) throws  NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
         var messageID = messageService.createDoiRequestMessage(owner, pub, randomString());
         Message message = messageService.getMessage(owner, messageID);
@@ -416,7 +416,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
     }
 
     private DoiRequest creteDoiRequest(Publication pub)
-        throws BadRequestException, TransactionFailedException, NotFoundException {
+        throws BadRequestException,  NotFoundException {
         UserInstance userInstance = createUserInstance(pub);
         doiRequestService.createDoiRequest(userInstance, pub.getIdentifier());
         return doiRequestService.getDoiRequestByResourceIdentifier(userInstance, pub.getIdentifier());

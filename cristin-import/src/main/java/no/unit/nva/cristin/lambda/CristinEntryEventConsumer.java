@@ -22,7 +22,6 @@ import no.unit.nva.cristin.mapper.Identifiable;
 import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
-import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.s3imports.ApplicationConstants;
 import no.unit.nva.publication.s3imports.FileContentsEvent;
 import no.unit.nva.publication.s3imports.FileEntriesEventEmitter;
@@ -156,7 +155,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
     }
 
     private Publication createPublication(Publication publication)
-        throws TransactionFailedException {
+        {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
 

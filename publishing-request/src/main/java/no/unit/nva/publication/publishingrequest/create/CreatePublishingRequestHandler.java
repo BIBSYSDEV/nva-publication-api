@@ -6,17 +6,20 @@ import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_MESSAGE_P
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
+import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.google.common.net.HttpHeaders;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -42,12 +45,26 @@ public class CreatePublishingRequestHandler extends ApiGatewayHandler<Publicatio
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
 
-        var publishingRequest = PublishingRequest.create(userInstance,publicationIdentifier);
-        var newPublishingRequest = requestService.createPublishingRequest(publishingRequest);
+        var publishingRequest = PublishingRequest.create(userInstance, publicationIdentifier);
+        var newPublishingRequest =
+            attempt(() -> requestService.createPublishingRequest(publishingRequest))
+                .orElseThrow(fail -> handleErrors(fail.getException()));
 
         var persistedRequest = requestService.getPublishingRequest(newPublishingRequest);
         addLocationHeader(persistedRequest);
         return null;
+    }
+
+    private ApiGatewayException handleErrors(Exception exception) {
+        if (exception instanceof TransactionFailedException) {
+            return new ConflictException(exception, exception.getMessage());
+        } else if (exception instanceof ApiGatewayException) {
+            return (ApiGatewayException) exception;
+        } else if (exception instanceof RuntimeException) {
+            throw (RuntimeException) exception;
+        } else {
+            throw new RuntimeException(exception);
+        }
     }
 
     private void addLocationHeader(PublishingRequest persistedRequest) {

@@ -34,6 +34,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
+
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -352,14 +353,14 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
         mockClock.instant();
     }
 
-    private Publication emptyPublication(UserInstance userInstance) throws ApiGatewayException {
+    private Publication emptyPublication(UserInstance owner) throws ApiGatewayException {
         Publication publication = new Publication.Builder()
             .withResourceOwner(new ResourceOwner(owner.getUserIdentifier(), randomOrgUnitId()))
-            .withPublisher(createOrganization(userInstance.getOrganizationUri()))
+            .withPublisher(createOrganization(owner.getOrganizationUri()))
             .withStatus(PublicationStatus.DRAFT)
             .build();
 
-        Publication emptyPublication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+        Publication emptyPublication = resourceService.createPublication(owner, publication);
         skipPublicationUpdate();
 
         return emptyPublication;
@@ -374,13 +375,13 @@ class DoiRequestServiceTest extends ResourcesLocalTest {
     }
 
     private void createDoiRequest(Publication publication)
-        throws BadRequestException, TransactionFailedException {
+        throws BadRequestException {
         doiRequestService.createDoiRequest(
             createUserInstance(publication), publication.getIdentifier());
     }
 
     private void createDoiRequest(Publication publication, UserInstance owner)
-        throws BadRequestException, TransactionFailedException {
+        throws BadRequestException {
         doiRequestService.createDoiRequest(owner, publication.getIdentifier());
     }
 

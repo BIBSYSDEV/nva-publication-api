@@ -8,7 +8,6 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -78,6 +77,10 @@ class MessageServiceTest extends ResourcesLocalTest {
         owner = randomUserInstance();
     }
 
+    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
+        return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
+    }
+
     @Test
     void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
 
@@ -141,8 +144,7 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(actualIdentifier, is(equalTo(SOME_IDENTIFIER)));
 
         Executable action = () -> createSimpleMessage(publication, randomString());
-        RuntimeException exception = assertThrows(RuntimeException.class, action);
-        assertThat(exception.getCause(), is(instanceOf(TransactionFailedException.class)));
+        assertThrows(TransactionFailedException.class, action);
     }
 
     @Test
@@ -225,10 +227,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
-    }
-
-    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
-        return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
     }
 
     private ResourceConversation[] constructExpectedCuratorsMessageView(
@@ -322,9 +320,8 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     private Publication createDraftPublication(UserInstance owner) throws ApiGatewayException {
         var publication = createPublicationForUser(owner);
-        return resourceService.createPublication(owner,publication);
+        return resourceService.createPublication(owner, publication);
     }
-
 
     private Publication createPublication(ResourceService resourceService, Publication publication)
         throws ApiGatewayException {

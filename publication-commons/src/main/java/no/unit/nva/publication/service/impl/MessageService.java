@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
@@ -36,7 +36,6 @@ import nva.commons.core.JacocoGenerated;
 import nva.commons.core.StringUtils;
 
 public class MessageService extends ServiceWithTransactions {
-
 
     public static final String EMPTY_MESSAGE_ERROR = "Message cannot be empty";
 
@@ -62,20 +61,19 @@ public class MessageService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
     }
 
-
-    public SortableIdentifier createSimpleMessage(UserInstance sender, Publication publication, String messageText)
-        throws TransactionFailedException {
+    public SortableIdentifier createSimpleMessage(UserInstance sender, Publication publication, String messageText) {
         Message message = createNewSimpleMessage(sender, publication, messageText);
         return writeMessageToDb(message);
     }
 
-    public SortableIdentifier createDoiRequestMessage(UserInstance sender, Publication publication, String messageText)
-        throws TransactionFailedException {
+    public SortableIdentifier createDoiRequestMessage(UserInstance sender,
+                                                      Publication publication,
+                                                      String messageText) {
         Message message = createNewDoiRequestMessage(sender, publication, messageText);
         return writeMessageToDb(message);
     }
 
-    public SortableIdentifier writeMessageToDb(Message message) throws TransactionFailedException {
+    public SortableIdentifier writeMessageToDb(Message message)  {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
@@ -156,23 +154,23 @@ public class MessageService extends ServiceWithTransactions {
 
     private List<Message> parseMessages(QueryResult queryResult) {
         return queryResult.getItems()
-                   .stream()
-                   .map(item -> parseAttributeValuesMap(item, MessageDao.class))
-                   .map(MessageDao::getData)
-                   .collect(Collectors.toList());
+            .stream()
+            .map(item -> parseAttributeValuesMap(item, MessageDao.class))
+            .map(MessageDao::getData)
+            .collect(Collectors.toList());
     }
 
     private QueryRequest queryForFetchingAllMessagesForAUser(MessageDao queryObject) {
         return new QueryRequest()
-                   .withTableName(tableName)
-                   .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
+            .withTableName(tableName)
+            .withKeyConditions(queryObject.primaryKeyPartitionKeyCondition());
     }
 
     private QueryRequest queryRequestForListingMessagesByCustomerAndStatus(MessageDao queryObject) {
         return new QueryRequest()
-                   .withTableName(tableName)
-                   .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
-                   .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
+            .withTableName(tableName)
+            .withIndexName(BY_TYPE_CUSTOMER_STATUS_INDEX_NAME)
+            .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
     }
 
     private Message createNewSimpleMessage(UserInstance sender, Publication publication, String messageText
@@ -212,14 +210,14 @@ public class MessageService extends ServiceWithTransactions {
         Map<String, Condition> keyCondition = queryObject.byResource(entityType);
 
         return new QueryRequest()
-                   .withTableName(RESOURCES_TABLE_NAME)
-                   .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-                   .withKeyConditions(keyCondition);
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withKeyConditions(keyCondition);
     }
 
     private GetItemRequest getMessageByPrimaryKey(MessageDao queryObject) {
         return new GetItemRequest()
-                   .withTableName(tableName)
-                   .withKey(queryObject.primaryKey());
+            .withTableName(tableName)
+            .withKey(queryObject.primaryKey());
     }
 }

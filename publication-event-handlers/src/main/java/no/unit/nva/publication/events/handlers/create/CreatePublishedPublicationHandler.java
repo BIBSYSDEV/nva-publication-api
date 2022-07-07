@@ -18,7 +18,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.create.CreatePublicationRequest;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
@@ -66,7 +66,7 @@ public class CreatePublishedPublicationHandler extends EventHandler<EventReferen
         return randomString() + "@unit.no";
     }
 
-    private Publication storeAsPublishedPublication(Publication publication) throws TransactionFailedException {
+    private Publication storeAsPublishedPublication(Publication publication)  {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
 
