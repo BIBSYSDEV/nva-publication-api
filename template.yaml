@@ -660,28 +660,6 @@ Resources:
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
-  ListPublishingRequestFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: publishing-request
-      Handler: no.unit.nva.publication.publishingrequest.list.ListPublishingRequestHandler::handleRequest
-      Runtime: java11
-      MemorySize: 1408
-      Timeout: 10
-      Environment:
-        Variables:
-          ALLOWED_ORIGIN: '*'
-          TABLE_NAME: !Ref NvaResourcesTable
-          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
-      Role: !GetAtt LambdaRole.Arn
-      Events:
-        GetEvent:
-          Type: Api
-          Properties:
-            Path: /{identifier}/publishingrequest
-            Method: get
-            RestApiId: !Ref NvaPublicationApi
-
   GetPublishingRequestFunction:
     Type: AWS::Serverless::Function
     Properties:

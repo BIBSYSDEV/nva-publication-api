@@ -25,7 +25,7 @@ class PublishingRequestDaoTest {
     private static final SortableIdentifier SAMPLE_RESOURCE_IDENTIFIER = SortableIdentifier.next();
 
     @Test
-    public void shouldReturnObjectWithPartitionKeyContainingPublisherAndResourceId() {
+    void shouldReturnObjectWithPartitionKeyContainingPublisherAndResourceId() {
 
         var queryObject =
             PublishingRequestDao.queryByCustomerAndResourceIdentifier(SAMPLE_USER_INSTANCE, SAMPLE_RESOURCE_IDENTIFIER);
@@ -41,7 +41,7 @@ class PublishingRequestDaoTest {
     }
 
     @Test
-    public void shouldReturnQueryObjectWithCompletePrimaryKey() {
+    void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
         var queryObject = PublishingRequest.createQuery(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER), null,
                                                         sampleEntryIdentifier);
@@ -53,7 +53,7 @@ class PublishingRequestDaoTest {
     }
 
     @Test
-    public void shouldCreateDaoWithoutLossOfInformation() {
+    void shouldCreateDaoWithoutLossOfInformation() {
         var aprDao = sampleApprovePublicationRequestDao();
         assertThat(aprDao, doesNotHaveEmptyValues());
         var dynamoMap = aprDao.toDynamoFormat();
@@ -64,7 +64,7 @@ class PublishingRequestDaoTest {
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publishingRequest = PublishingRequest.newPublishingRequestResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
-        return new PublishingRequestDao(publishingRequest);
+        return (PublishingRequestDao) publishingRequest.toDao();
     }
 
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {
