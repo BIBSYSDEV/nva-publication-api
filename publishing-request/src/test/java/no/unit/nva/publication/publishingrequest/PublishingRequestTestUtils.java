@@ -96,10 +96,11 @@ public class PublishingRequestTestUtils {
             .build();
     }
 
-    public static InputStream createUpdatePublishingRequestWithAccessRight(Publication publication,
-                                                                           UpdatePublishingRequest updateRequest,
-                                                                           URI customerId,
-                                                                           SortableIdentifier publishingRequestIdentifier
+    public static InputStream createUpdatePublishingRequestWithAccessRight(
+        Publication publication,
+        UpdatePublishingRequest updateRequest,
+        URI customerId,
+        SortableIdentifier publishingRequestIdentifier
     )
         throws JsonProcessingException {
         final HandlerRequestBuilder<UpdatePublishingRequest> builder = getRequestBuilder(publication,

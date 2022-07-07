@@ -3,6 +3,7 @@ package no.unit.nva.publication.fetch;
 import static com.google.common.net.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.fetch.FetchPublicationHandler.ALLOWED_ORIGIN_ENV;
 import static nva.commons.apigateway.ApiGatewayHandler.MESSAGE_FOR_RUNTIME_EXCEPTIONS_HIDING_IMPLEMENTATION_DETAILS_TO_API_CLIENTS;
 import static org.apache.http.HttpStatus.SC_BAD_REQUEST;
@@ -51,9 +52,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
-public class FetchPublicationHandlerTest extends ResourcesLocalTest {
+class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final String IDENTIFIER = "identifier";
     public static final String IDENTIFIER_VALUE = "0ea0dd31-c202-4bff-8521-afd42b1ad8db";
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_TYPE = restApiMapper.getTypeFactory()
         .constructParametricType(
@@ -200,7 +200,7 @@ public class FetchPublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream generateHandlerRequest(String publicationIdentifier, Map<String, String> headers)
         throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier);
+        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier);
         return new HandlerRequestBuilder<InputStream>(restApiMapper)
             .withHeaders(headers)
             .withPathParameters(pathParameters)

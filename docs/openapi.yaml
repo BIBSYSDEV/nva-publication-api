@@ -39,7 +39,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-  /{identifier}:
+  /{publicationIdentifier}:
     get:
       summary: Fetch Publication by Identifier
 
@@ -141,7 +141,7 @@ paths:
                   items:
                     $ref: '#/components/schemas/Publication'
 
-  /{identifier}/publish:
+  /{publicationIdentifier}/publish:
     put:
       summary: Publish Publication
       parameters:
