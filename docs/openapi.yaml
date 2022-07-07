@@ -344,6 +344,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
         '502':
           description: Bad Gateway
           content:
