@@ -1,0 +1,45 @@
+plugins {
+    id 'org.unbroken-dome.test-sets' version '4.0.0'
+}
+
+dependencies {
+    implementation project(":storage-model")
+    implementation project(":publication-commons")
+
+    implementation libs.nva.apigateway
+    implementation libs.nva.identifiers
+    implementation libs.nva.core
+    implementation libs.nva.json
+    implementation(libs.nva.datamodel.core) {
+        exclude group: 'com.github.bibsysdev', module: 'nva-commons'
+    }
+    implementation libs.aws.sdk.dynamodb
+
+    implementation libs.jackson.annotations
+    implementation libs.jackson.databind
+
+    implementation libs.guava
+    implementation libs.zalando
+    implementation libs.bundles.logging
+
+    runtimeOnly libs.jackson.core
+
+    testImplementation libs.nva.datamodel.testutils
+    testImplementation libs.jackson.core
+    testImplementation project(':publication-testing')
+    testImplementation libs.nva.testutils
+    testImplementation(libs.javafaker) {
+        because('For generating test data in tests. Another alternative is jfairy')
+    }
+
+    compileOnly libs.zalando
+    compileOnly libs.aws.lambda.java.core
+}
+
+test {
+    useJUnitPlatform()
+
+    environment "AWS_REGION", "eu-west-1"
+    environment "COGNITO_HOST", "https://example.com"
+    environment "ALLOWED_ORIGIN", "*"
+}

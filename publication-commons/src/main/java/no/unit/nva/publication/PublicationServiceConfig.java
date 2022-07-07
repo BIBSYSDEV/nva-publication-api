@@ -16,8 +16,13 @@ public final class PublicationServiceConfig {
     public static final Environment ENVIRONMENT = new Environment();
     public static final String URI_EMPTY_FRAGMENT = null;
     public static final String PATH_SEPARATOR = "/";
+    @Deprecated
     public static final String MESSAGE_PATH = "/messages";
+    public static final String PUBLICATION_PATH = "/publication";
+    public static final String SUPPORT_MESSAGE_PATH = "support-message";
+    public static final String PUBLICATION_IDENTIFIER_PATH_PARAMETER = "publicationIdentifier";
     public static final String API_HOST = ENVIRONMENT.readEnv("API_HOST");
+    @Deprecated
     public static final String ID_NAMESPACE = ENVIRONMENT.readEnv("ID_NAMESPACE");
     public static final String AWS_REGION = ENVIRONMENT.readEnv("AWS_REGION");
 

@@ -32,9 +32,9 @@ dependencies {
 
 test {
     useJUnitPlatform {
-        excludeTags("RemoteTest")
+        excludeTags "RemoteTest", "integrationTest", "KarateTest"
     }
-    failFast = false
+    failFast = true
     testLogging {
         events 'skipped', 'passed', 'failed'
         showCauses true

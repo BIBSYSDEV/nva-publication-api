@@ -1,6 +1,7 @@
 package no.unit.nva.doirequest.update;
 
 import static no.unit.nva.doirequest.DoiRequestRelatedAccessRights.APPROVE_DOI_REQUEST;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.lambda.runtime.Context;
@@ -23,12 +24,12 @@ import org.apache.http.HttpStatus;
 
 public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDoiRequest, Void> {
 
-    public static final String API_PUBLICATION_PATH_IDENTIFIER = "publicationIdentifier";
     public static final String INVALID_PUBLICATION_ID_ERROR = "Invalid publication id: ";
 
     public static final String API_HOST_ENV_VARIABLE = "API_HOST";
     private static final String LOCATION_TEMPLATE_PUBLICATION = "%s://%s/publication/%s";
     public static final String API_SCHEME = "https";
+
     private final String apiHost;
     private final DoiRequestService doiRequestService;
 
@@ -112,7 +113,7 @@ public class UpdateDoiRequestStatusHandler extends ApiGatewayHandler<ApiUpdateDo
     }
 
     private SortableIdentifier getPublicationIdentifier(RequestInfo requestInfo) throws BadRequestException {
-        String publicationIdentifierString = requestInfo.getPathParameter(API_PUBLICATION_PATH_IDENTIFIER);
+        String publicationIdentifierString = requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         return attempt(() -> new SortableIdentifier(publicationIdentifierString))
             .orElseThrow(
                 fail -> new BadRequestException(INVALID_PUBLICATION_ID_ERROR + publicationIdentifierString));

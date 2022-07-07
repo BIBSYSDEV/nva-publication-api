@@ -29,7 +29,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -137,7 +137,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
 
     @Test
     void handlerCreatesDoiRequestMessageWhenClientMarksMessageAsDoiRequestRelated()
-        throws IOException, BadRequestException, TransactionFailedException {
+        throws IOException, BadRequestException {
         createDoiRequestForSamplePublication();
         CreateMessageRequest requestBody = createDoiRequestMessage();
         postDoiRequestMessage(requestBody);
@@ -211,7 +211,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         return requestBody;
     }
 
-    private void createDoiRequestForSamplePublication() throws BadRequestException, TransactionFailedException {
+    private void createDoiRequestForSamplePublication() throws BadRequestException {
         doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
 

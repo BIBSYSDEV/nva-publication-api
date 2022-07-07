@@ -35,7 +35,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.DynamoDBException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
@@ -111,12 +111,12 @@ public class DoiRequestService extends ServiceWithTransactions {
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException, TransactionFailedException {
+        throws BadRequestException{
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
         return createDoiRequest(publication);
     }
 
-    public SortableIdentifier createDoiRequest(Publication publication) throws TransactionFailedException {
+    public SortableIdentifier createDoiRequest(Publication publication) {
         DoiRequest doiRequest = createNewDoiRequestEntry(publication);
         TransactWriteItemsRequest request = createInsertionTransactionRequest(doiRequest);
         sendTransactionWriteRequest(request);

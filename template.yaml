@@ -616,6 +616,72 @@ Resources:
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
+  CreatePublishingRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.create.CreatePublishingRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/publishingrequest
+            Method: post
+            RestApiId: !Ref NvaPublicationApi
+
+  UpdatePublishingRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.update.UpdatePublishingRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /{identifier}/publishingrequest
+            Method: put
+            RestApiId: !Ref NvaPublicationApi
+
+  GetPublishingRequestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: publishing-request
+      Handler: no.unit.nva.publication.publishingrequest.list.GetPublishingRequestHandler::handleRequest
+      Runtime: java11
+      MemorySize: 1408
+      Timeout: 10
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: '*'
+          TABLE_NAME: !Ref NvaResourcesTable
+          ID_NAMESPACE: !Sub 'https://${ApiDomain}/${CustomDomainBasePath}'
+      Role: !GetAtt LambdaRole.Arn
+      Events:
+        GetEvent:
+          Type: Api
+          Properties:
+            Path: /publishingrequest
+            Method: get
+            RestApiId: !Ref NvaPublicationApi
+
 
   #==========================Event Lambda functions====================================================
 

@@ -31,7 +31,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -146,10 +146,10 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         var identifierInId =
             UriWrapper.fromUri(expandedDoiRequestConversation.getPublicationSummary().getPublicationId())
                 .getLastPathElement();
-       assertThat(expandedDoiRequestConversation.getPublicationSummary().getPublicationIdentifier(),
-                  is(equalTo(samplePublication.getPublicationIdentifier())));
+        assertThat(expandedDoiRequestConversation.getPublicationSummary().getPublicationIdentifier(),
+                   is(equalTo(samplePublication.getPublicationIdentifier())));
 
-       assertThat(identifierInId,is(equalTo(samplePublication.getPublicationIdentifier().toString())));
+        assertThat(identifierInId, is(equalTo(samplePublication.getPublicationIdentifier().toString())));
     }
 
     @Test
@@ -224,7 +224,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private Message sendSupportMessage(Publication createdPublication)
-        throws TransactionFailedException, NotFoundException {
+        throws  NotFoundException {
         UserInstance userInstance = UserInstance.fromPublication(createdPublication);
         SortableIdentifier identifier = messageService.createSimpleMessage(userInstance,
                                                                            createdPublication,

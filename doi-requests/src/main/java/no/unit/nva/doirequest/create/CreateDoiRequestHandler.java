@@ -15,6 +15,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InternalErrorException;
+
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -99,8 +100,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
         }
     }
 
-    private void sendMessage(CreateDoiRequest input, UserInstance owner, Publication publication)
-        throws TransactionFailedException {
+    private void sendMessage(CreateDoiRequest input, UserInstance owner, Publication publication) {
         String message = input.getMessage();
         if (StringUtils.isNotBlank(message)) {
             messageService.createDoiRequestMessage(owner, publication, message);

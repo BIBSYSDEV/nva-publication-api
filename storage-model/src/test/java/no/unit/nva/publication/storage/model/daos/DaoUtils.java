@@ -18,6 +18,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -47,7 +48,15 @@ public final class DaoUtils {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         MessageDao messageDao = sampleMessageDao();
-        return Stream.of(resourceDao, doiRequestDao, messageDao);
+        PublishingRequestDao approvePublicationRequestDao = sampleApprovePublicationRequestDao();
+        return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
+    }
+
+    private static PublishingRequestDao sampleApprovePublicationRequestDao() {
+        var publishingRequest =
+            PublishingRequest.newPublishingRequestResource(
+                Resource.fromPublication(PublicationGenerator.randomPublication()));
+        return new PublishingRequestDao(publishingRequest);
     }
 
     public static DoiRequestDao doiRequestDao(Resource resource) {

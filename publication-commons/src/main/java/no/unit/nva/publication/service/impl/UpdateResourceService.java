@@ -26,7 +26,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.InvalidPublicationException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -68,7 +68,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
         this.readResourceService = readResourceService;
     }
 
-    public Publication updatePublication(Publication publication) throws TransactionFailedException {
+    public Publication updatePublication(Publication publication)  {
         Resource resource = Resource.fromPublication(publication);
         UserInstance userInstance = UserInstance.create(resource.getResourceOwner().getOwner(),
                                                         resource.getCustomerId());
@@ -86,7 +86,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     public void updateOwner(SortableIdentifier identifier, UserInstance oldOwner, UserInstance newOwner)
-        throws NotFoundException, TransactionFailedException {
+        throws NotFoundException {
         Resource existingResource = readResourceService.getResource(oldOwner, identifier);
         Resource newResource = updateResourceOwner(newOwner, existingResource);
         TransactWriteItem deleteAction = newDeleteTransactionItem(new ResourceDao(existingResource));
@@ -185,7 +185,7 @@ public class UpdateResourceService extends ServiceWithTransactions {
     }
 
     private void setResourceStatusToPublished(List<Dao> daos, ResourceDao resourceDao)
-        throws TransactionFailedException {
+         {
         List<TransactWriteItem> transactionItems = createUpdateTransactionItems(daos, resourceDao);
 
         TransactWriteItemsRequest transactWriteItemsRequest = newTransactWriteItemsRequest(transactionItems);

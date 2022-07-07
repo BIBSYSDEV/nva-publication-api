@@ -1,10 +1,5 @@
 package no.unit.nva.publication.storage.model.daos;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
 import com.amazonaws.services.dynamodbv2.model.Condition;
@@ -12,15 +7,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import no.unit.nva.identifiers.SortableIdentifier;
+
 import java.net.URI;
 import java.util.Map;
-import no.unit.nva.identifiers.SortableIdentifier;
+
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = "Resource", value = ResourceDao.class),
     @JsonSubTypes.Type(name = "DoiRequest", value = DoiRequestDao.class),
+    @JsonSubTypes.Type(name = "PublishingRequest", value = PublishingRequestDao.class),
 })
 public interface JoinWithResource {
 
@@ -37,7 +40,7 @@ public interface JoinWithResource {
             + KEY_FIELDS_DELIMITER
             + getResourceIdentifier().toString();
     }
-    
+
     @JsonProperty(BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME)
     default String getByCustomerAndResourceSortKey() {
         return

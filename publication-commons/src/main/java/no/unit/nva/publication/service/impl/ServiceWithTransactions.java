@@ -4,6 +4,7 @@ import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
+import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
+
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -30,7 +32,7 @@ public abstract class ServiceWithTransactions {
     public static final String DOUBLE_QUOTES = "\"";
     public static final String RAWTYPES = "rawtypes";
     
-    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = ResourceDao.CONTAINED_DATA_FIELD_NAME;
+    public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
     public static final String RESOURCE_FILE_SET_FIELD = "fileSet";
@@ -90,12 +92,12 @@ public abstract class ServiceWithTransactions {
     protected String nowAsString() {
         String jsonString = attempt(() -> dtoObjectMapper.writeValueAsString(getClock().instant()))
             .orElseThrow();
-        return jsonString.replaceAll(DOUBLE_QUOTES, EMPTY_STRING);
+        return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
 
     protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
-        throws TransactionFailedException {
+         {
         attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
             .orElseThrow(this::handleTransactionFailure);
     }

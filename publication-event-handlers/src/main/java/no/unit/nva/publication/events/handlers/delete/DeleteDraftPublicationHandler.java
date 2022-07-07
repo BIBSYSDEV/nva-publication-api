@@ -10,7 +10,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -55,7 +55,7 @@ public class DeleteDraftPublicationHandler
         try {
             UserInstance userInstance = fetchUserInformationForPublication(input);
             resourceService.deleteDraftPublication(userInstance, input.getIdentifier());
-        } catch (NotFoundException | BadRequestException | TransactionFailedException e) {
+        } catch (NotFoundException | BadRequestException e) {
             throw new RuntimeException(e);
         }
         return null;

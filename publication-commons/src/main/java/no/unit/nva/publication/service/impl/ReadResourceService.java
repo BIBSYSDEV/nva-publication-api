@@ -63,8 +63,7 @@ public class ReadResourceService {
         if (isNull(resourceIdentifier)) {
             throw new BadRequestException(EMPTY_RESOURCE_IDENTIFIER_ERROR);
         }
-        return getResource(userInstance, resourceIdentifier)
-            .toPublication();
+        return getResource(userInstance, resourceIdentifier).toPublication();
     }
 
     public Publication getPublication(Publication publication) throws NotFoundException {

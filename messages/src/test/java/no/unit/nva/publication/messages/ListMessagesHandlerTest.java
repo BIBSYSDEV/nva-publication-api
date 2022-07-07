@@ -35,7 +35,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.exception.TransactionFailedException;
+
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.model.PublicationSummary;
@@ -369,7 +369,7 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
     }
 
     private Message createMessage(Publication publication, UserInstance sender)
-        throws TransactionFailedException, NotFoundException {
+        throws NotFoundException {
         var messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
         return messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
     }
