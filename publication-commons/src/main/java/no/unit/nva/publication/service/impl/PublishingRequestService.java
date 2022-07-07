@@ -18,11 +18,12 @@ import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import java.time.Clock;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -97,6 +98,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var updateExpression = "SET"
                                + "#data.#status = :status, "
                                + "#data.#modifiedDate = :modifiedDate,"
+                               + "#data.#rowVersion = :rowVersion,"
                                + "#PK1 = :PK1 ,"
                                + "#SK1 = :SK1 ,"
                                + "#PK2 = :PK2 ,"
@@ -109,6 +111,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
             "#status", PublishingRequest.STATUS_FIELD,
             "#modifiedDate", PublishingRequest.MODIFIED_DATE_FIELD,
             "#resourceStatus", PublishingRequest.RESOURCE_STATUS_FIELD,
+            "#rowVersion", DataEntry.ROW_VERSION,
             "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
             "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
             "#PK2", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
@@ -120,6 +123,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
             ":status", new AttributeValue(dao.getData().getStatus().name()),
             ":modifiedDate", new AttributeValue(now),
             ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString()),
+            ":rowVersion", new AttributeValue(UUID.randomUUID().toString()),
             ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
             ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()),
             ":PK2", new AttributeValue(dao.getByCustomerAndResourcePartitionKey()),
@@ -163,7 +167,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     }
 
     private PublishingRequest createPublishingRequest(Publication publication)
-        throws  ConflictException {
+        throws ConflictException {
         verifyPublicationIsPublishable(publication);
         var publishingRequest = createNewPublishingRequestEntry(publication);
         var request = createInsertionTransactionRequest(publishingRequest);

@@ -13,13 +13,11 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.function.Consumer;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
-import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.AccessRight;
@@ -96,34 +94,22 @@ public class PublishingRequestTestUtils {
             .build();
     }
 
-    public static InputStream createUpdatePublishingRequestWithAccessRight(
-        Publication publication,
-        UpdatePublishingRequest updateRequest,
-        URI customerId,
-        SortableIdentifier publishingRequestIdentifier
+    public static InputStream createUpdatePublishingRequestWithAccessRight(PublishingRequestUpdate updateRequest,
+                                                                           PublishingRequest publishingRequest
     )
         throws JsonProcessingException {
-        final HandlerRequestBuilder<UpdatePublishingRequest> builder = getRequestBuilder(publication,
-                                                                                         updateRequest,
-                                                                                         customerId,
-                                                                                         publishingRequestIdentifier);
+        final HandlerRequestBuilder<PublishingRequestUpdate> builder =
+            requestWithPublishingRequestPathParameters(updateRequest,publishingRequest);
+        var customerId = publishingRequest.getCustomerId();
         return builder
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
             .build();
     }
 
-    public static InputStream createUpdatePublishingRequestMissingAccessRight(Publication publication,
-                                                                              UpdatePublishingRequest updateRequest,
-                                                                              URI customerId,
-                                                                              SortableIdentifier publishingIdentifier)
+    public static InputStream createUpdatePublishingRequestMissingAccessRight(PublishingRequestUpdate updateRequest,
+                                                                              PublishingRequest publishingRequest)
         throws JsonProcessingException {
-        return getRequestBuilder(publication, updateRequest, customerId, publishingIdentifier).build();
-    }
-
-    public static UpdatePublishingRequest createUpdateRequest() {
-        var updateRequest = new UpdatePublishingRequest();
-        updateRequest.setPublishingRequestStatus(PublishingRequestStatus.APPROVED);
-        return updateRequest;
+        return requestWithPublishingRequestPathParameters(updateRequest,publishingRequest).build();
     }
 
     public static Publication createAndPersistDraftPublication(ResourceService resourceService)
@@ -166,17 +152,21 @@ public class PublishingRequestTestUtils {
         return resourceService.getPublication(storedResult);
     }
 
-    private static HandlerRequestBuilder<UpdatePublishingRequest> getRequestBuilder(
-        Publication publication,
-        UpdatePublishingRequest updateRequest,
-        URI customerId,
-        SortableIdentifier publishingIdentifier)
+    private static HandlerRequestBuilder<PublishingRequestUpdate> requestWithPublishingRequestPathParameters(
+        PublishingRequestUpdate updateRequest,
+        PublishingRequest publishingRequest)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<UpdatePublishingRequest>(JsonUtils.dtoObjectMapper)
+        return new HandlerRequestBuilder<PublishingRequestUpdate>(JsonUtils.dtoObjectMapper)
             .withBody(updateRequest)
-            .withNvaUsername(publication.getResourceOwner().getOwner())
-            .withCustomerId(customerId)
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
-                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingIdentifier.toString()));
+            .withNvaUsername(publishingRequest.getOwner())
+            .withCustomerId(publishingRequest.getCustomerId())
+            .withPathParameters(pathParametersForPublishingRequest(publishingRequest));
+    }
+
+    private static Map<String, String> pathParametersForPublishingRequest(PublishingRequest publishingRequest) {
+        return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                      publishingRequest.getResourceIdentifier().toString(),
+                      PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+                      publishingRequest.getIdentifier().toString());
     }
 }

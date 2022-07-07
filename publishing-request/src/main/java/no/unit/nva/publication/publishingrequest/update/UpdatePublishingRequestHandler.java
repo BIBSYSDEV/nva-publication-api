@@ -8,7 +8,7 @@ import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.v
 import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.publishingrequest.UpdatePublishingRequest;
+import no.unit.nva.publication.publishingrequest.PublishingRequestUpdate;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -16,7 +16,7 @@ import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.core.JacocoGenerated;
 
-public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePublishingRequest, PublishingRequest> {
+public class UpdatePublishingRequestHandler extends ApiGatewayHandler<PublishingRequestUpdate, PublishingRequest> {
 
     private final PublishingRequestService requestService;
 
@@ -27,14 +27,13 @@ public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePubl
     }
 
     public UpdatePublishingRequestHandler(PublishingRequestService requestService) {
-        super(UpdatePublishingRequest.class);
+        super(PublishingRequestUpdate.class);
         this.requestService = requestService;
     }
 
     @Override
-    protected PublishingRequest processInput(UpdatePublishingRequest input, RequestInfo requestInfo, Context context)
+    protected PublishingRequest processInput(PublishingRequestUpdate input, RequestInfo requestInfo, Context context)
         throws ApiGatewayException {
-        input.validate();
         validateUserCanApprovePublishingRequest(requestInfo);
         var publicationIdentifier = identifierFromUriPath(requestInfo, PUBLICATION_IDENTIFIER_PATH_PARAMETER);
         var publishingRequestIdentifier =
@@ -53,7 +52,7 @@ public class UpdatePublishingRequestHandler extends ApiGatewayHandler<UpdatePubl
     }
 
     @Override
-    protected Integer getSuccessStatusCode(UpdatePublishingRequest input, PublishingRequest output) {
+    protected Integer getSuccessStatusCode(PublishingRequestUpdate input, PublishingRequest output) {
         return HttpURLConnection.HTTP_ACCEPTED;
     }
 
