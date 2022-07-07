@@ -18,7 +18,6 @@ import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.TestingUtils;
-
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.PublishingRequest;
@@ -52,21 +51,6 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             .thenReturn(PUBLICATION_REQUEST_UPDATE_TIME);
         this.resourceService = new ResourceService(client, mockClock);
         this.publishingRequestService = new PublishingRequestService(client, mockClock);
-    }
-
-    public PublishingRequest updatePublishingRequestStatus(PublishingRequest publishingRequest,
-                                                           PublishingRequestStatus newStatus) {
-
-        var newRequest = new PublishingRequest();
-        newRequest.setStatus(newStatus);
-        newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
-        newRequest.setIdentifier(publishingRequest.getIdentifier());
-        newRequest.setCreatedDate(publishingRequest.getCreatedDate());
-        newRequest.setOwner(publishingRequest.getOwner());
-        newRequest.setCustomerId(publishingRequest.getCustomerId());
-        newRequest.setRowVersion(publishingRequest.getRowVersion());
-        newRequest.setModifiedDate(publishingRequest.getModifiedDate());
-        return newRequest;
     }
 
     @Test
@@ -141,10 +125,23 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
 
         var updatedPublicationRequest = publishingRequestService.getPublishingRequest(approvePublishingRequest);
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
-        var rejectPublishingRequest =
-            updatePublishingRequestStatus(updatedPublicationRequest, PublishingRequestStatus.REJECTED);
+        var rejectPublishingRequest = rejectPublishingRequest(updatedPublicationRequest);
         Executable action = () -> publishingRequestService.updatePublishingRequest(rejectPublishingRequest);
         assertThrows(IllegalArgumentException.class, action);
+    }
+
+    private PublishingRequest rejectPublishingRequest(PublishingRequest publishingRequest) {
+
+        var newRequest = new PublishingRequest();
+        newRequest.setStatus(PublishingRequestStatus.REJECTED);
+        newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
+        newRequest.setIdentifier(publishingRequest.getIdentifier());
+        newRequest.setCreatedDate(publishingRequest.getCreatedDate());
+        newRequest.setOwner(publishingRequest.getOwner());
+        newRequest.setCustomerId(publishingRequest.getCustomerId());
+        newRequest.setRowVersion(publishingRequest.getRowVersion());
+        newRequest.setModifiedDate(publishingRequest.getModifiedDate());
+        return newRequest;
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {
