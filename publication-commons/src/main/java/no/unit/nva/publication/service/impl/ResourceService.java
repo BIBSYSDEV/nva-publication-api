@@ -109,20 +109,6 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationWithStatusFromInput(UserInstance userInstance, Publication inputData)
-            throws ApiGatewayException {
-        Instant currentTime = clockForTimestamps.instant();
-        Resource newResource = Resource.fromPublication(inputData);
-        newResource.setIdentifier(identifierSupplier.get());
-        newResource.setResourceOwner(createResourceOwner(userInstance));
-        newResource.setPublisher(createOrganization(userInstance));
-        newResource.setCreatedDate(currentTime);
-        newResource.setModifiedDate(currentTime);
-        return insertResource(newResource);
-    }
-
-
-
     public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
         throws TransactionFailedException {
         Resource newResource = Resource.fromPublication(inputData);
@@ -181,11 +167,10 @@ public class ResourceService extends ServiceWithTransactions {
         return new ListingResult<>(values, scanResult.getLastEvaluatedKey(), isTruncated);
     }
 
-    public List<DataEntry> refreshResources(List<DataEntry> dataEntries) {
+    public void refreshResources(List<DataEntry> dataEntries) {
         final var refreshedEntries = refreshAndMigrate(dataEntries);
         var writeRequests = createWriteRequestsForBatchJob(refreshedEntries);
         writeToS3InBatches(writeRequests);
-        return refreshedEntries;
     }
 
     public Publication getPublication(UserInstance userInstance, SortableIdentifier resourceIdentifier)
@@ -219,7 +204,8 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // update this method according to current needs.
-    public DataEntry migrate(DataEntry dataEntry) throws ApiGatewayException {
+    //TODO: redesign migration process?
+    public DataEntry migrate(DataEntry dataEntry) {
         return dataEntry instanceof Resource
                    ? migrateResource((Resource) dataEntry)
                    : dataEntry;
@@ -263,7 +249,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     // change this method depending on the current migration needs.
-    private Resource migrateResource(Resource dataEntry)  {
+    private Resource migrateResource(Resource dataEntry) {
         return dataEntry;
     }
 
@@ -450,7 +436,7 @@ public class ResourceService extends ServiceWithTransactions {
             .withExpressionAttributeNames(expressionAttributeNames)
             .withExpressionAttributeValues(expressionValuesMap)
             .withReturnValues(ReturnValue.ALL_NEW);
-        logger.info("DeleteRequest:" + request.toString());
+        logger.info("DeleteRequest:{}", request);
         return request;
     }
 

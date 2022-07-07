@@ -154,8 +154,9 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublication(UserInstance owner) throws ApiGatewayException {
         var publication = createPublication(owner);
-        publication.setStatus(PublicationStatus.PUBLISHED);
-        return resourceService.createPublicationWithStatusFromInput(owner, publication);
+        resourceService.publishPublication(owner,publication.getIdentifier());
+        return resourceService.getPublication(owner,publication.getIdentifier());
+
     }
 
     private PublishingRequest createPublishingRequest(Publication publication) throws ApiGatewayException {
