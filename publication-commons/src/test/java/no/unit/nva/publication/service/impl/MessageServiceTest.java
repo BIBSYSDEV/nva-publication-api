@@ -77,10 +77,6 @@ class MessageServiceTest extends ResourcesLocalTest {
         owner = randomUserInstance();
     }
 
-    public ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
-        return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
-    }
-
     @Test
     void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
 
@@ -227,6 +223,10 @@ class MessageServiceTest extends ResourcesLocalTest {
         );
 
         assertThat(actualMessages, is(equalTo(expectedMessages)));
+    }
+
+    private ResourceConversation constructExpectedMessages(List<Message> messagesForPublication) {
+        return ResourceConversation.fromMessageList(messagesForPublication).get(SINGLE_EXPECTED_ELEMENT);
     }
 
     private ResourceConversation[] constructExpectedCuratorsMessageView(
