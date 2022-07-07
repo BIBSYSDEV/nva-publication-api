@@ -108,6 +108,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
     }
 
+    //TODO: add the expected functionality test in the UpdateHandler.
     @Test
     void shouldFailWhenPublicationRequestStatusIsSetToRejectedAfterApprove()
         throws ApiGatewayException {
