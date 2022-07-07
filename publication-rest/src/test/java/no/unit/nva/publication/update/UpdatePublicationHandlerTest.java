@@ -5,6 +5,7 @@ import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
 import static no.unit.nva.publication.RequestUtil.IDENTIFIER_IS_NOT_A_VALID_UUID;
+import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
@@ -54,8 +55,6 @@ import org.junit.jupiter.api.Test;
 import org.zalando.problem.Problem;
 
 class UpdatePublicationHandlerTest extends ResourcesLocalTest {
-
-    public static final String IDENTIFIER = "identifier";
 
     public static final JavaType PARAMETERIZED_GATEWAY_RESPONSE_PROBLEM_TYPE =
         restApiMapper.getTypeFactory().constructParametricType(GatewayResponse.class, Problem.class);
@@ -231,7 +230,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream requestWithoutUsername(Publication publicationUpdate)
         throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withPathParameters(pathParameters)
             .withCustomerId(randomUri())
@@ -242,7 +241,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream userUpdatesPublicationOfOtherInstitution(Publication publicationUpdate)
         throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         URI customerId = randomUri();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withPathParameters(pathParameters)
@@ -255,7 +254,7 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
 
     private InputStream userUpdatesPublicationAndHasRightToUpdate(Publication publicationUpdate)
         throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationUpdate.getIdentifier().toString());
+        var pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationUpdate.getIdentifier().toString());
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
             .withNvaUsername(SOME_CURATOR)
@@ -269,11 +268,11 @@ class UpdatePublicationHandlerTest extends ResourcesLocalTest {
     private InputStream ownerUpdatesOwnPublication(SortableIdentifier publicationIdentifier,
                                                    Publication publicationUpdate)
         throws JsonProcessingException {
-        Map<String, String> pathParameters = Map.of(IDENTIFIER, publicationIdentifier.toString());
+        Map<String, String> pathParameters = Map.of(PUBLICATION_IDENTIFIER, publicationIdentifier.toString());
 
         var customerId = publicationUpdate.getPublisher().getId();
         return new HandlerRequestBuilder<Publication>(restApiMapper)
-            .withNvaUsername(publicationUpdate.getOwner())
+            .withNvaUsername(publicationUpdate.getResourceOwner().getOwner())
             .withCustomerId(customerId)
             .withBody(publicationUpdate)
             .withPathParameters(pathParameters)

@@ -46,7 +46,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
         var publication =
             PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
-        var existingPublishingRequest= createAndPersistPublishingRequest(requestService, publication);
+        var existingPublishingRequest = createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         var httpRequest = createUpdatePublishingRequestWithAccessRight(publication, updateRequest,
@@ -61,7 +61,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
         var publication =
             PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
-        var existingPublishingRequest=createAndPersistPublishingRequest(requestService, publication);
+        var existingPublishingRequest = createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
         var customerId = randomUri();

@@ -2,6 +2,7 @@ package no.unit.nva.publication.delete;
 
 import static java.util.Collections.singletonMap;
 import static no.unit.nva.publication.PublicationRestHandlersTestConfig.restApiMapper;
+import static no.unit.nva.publication.RequestUtil.PUBLICATION_IDENTIFIER;
 import static nva.commons.apigateway.ApiGatewayHandler.ALLOWED_ORIGIN_ENV;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -34,7 +35,6 @@ import org.zalando.problem.Problem;
 
 class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
-    public static final String IDENTIFIER = "identifier";
     public static final String WILDCARD = "*";
     public static final String SOME_USER = "some_other_user";
     public static final URI SOME_CUSTOMER = URI.create("https://www.example.org");
@@ -66,8 +66,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getOwner())
+            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+            .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
 
@@ -92,8 +92,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getOwner())
+            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+            .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
 
@@ -113,7 +113,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, identifier.toString()))
+            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, identifier.toString()))
             .withCustomerId(SOME_CUSTOMER)
             .withNvaUsername(SOME_USER)
             .build();
@@ -130,7 +130,7 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, createdPublication.getIdentifier().toString()))
+            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, createdPublication.getIdentifier().toString()))
             .withNvaUsername(SOME_USER)
             .withCustomerId(createdPublication.getPublisher().getId())
             .build();
@@ -151,8 +151,8 @@ class DeletePublicationHandlerTest extends ResourcesLocalTest {
 
         InputStream inputStream = new HandlerRequestBuilder<Publication>(restApiMapper)
             .withHeaders(TestHeaders.getRequestHeaders())
-            .withPathParameters(singletonMap(IDENTIFIER, publication.getIdentifier().toString()))
-            .withNvaUsername(publication.getOwner())
+            .withPathParameters(singletonMap(PUBLICATION_IDENTIFIER, publication.getIdentifier().toString()))
+            .withNvaUsername(publication.getResourceOwner().getOwner())
             .withCustomerId(publication.getPublisher().getId())
             .build();
 

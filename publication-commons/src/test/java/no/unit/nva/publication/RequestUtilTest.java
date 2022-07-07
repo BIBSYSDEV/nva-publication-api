@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import java.net.URI;
 import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.BadRequestException;
-import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
@@ -27,7 +25,7 @@ class RequestUtilTest {
     void canGetIdentifierFromRequest() throws ApiGatewayException {
         SortableIdentifier uuid = SortableIdentifier.next();
         RequestInfo requestInfo = new RequestInfo();
-        requestInfo.setPathParameters(Map.of(RequestUtil.IDENTIFIER, uuid.toString()));
+        requestInfo.setPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, uuid.toString()));
 
         SortableIdentifier identifier = RequestUtil.getIdentifier(requestInfo);
 

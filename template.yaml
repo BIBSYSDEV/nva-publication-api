@@ -419,7 +419,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{identifier}
+            Path: /{publicationIdentifier}
             Method: get
             RestApiId: !Ref NvaPublicationApi
 
@@ -462,7 +462,7 @@ Resources:
         PutEvent:
           Type: Api
           Properties:
-            Path: /{identifier}
+            Path: /{publicationIdentifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
@@ -483,7 +483,7 @@ Resources:
         PutEvent:
           Type: Api
           Properties:
-            Path: /{identifier}
+            Path: /{publicationIdentifier}
             Method: delete
             RestApiId: !Ref NvaPublicationApi
   NvaPublicationsByOwnerFunction:
@@ -570,7 +570,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{identifier}/publish
+            Path: /{publicationIdentifier}/publish
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
@@ -634,7 +634,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{identifier}/publishingrequest
+            Path: /{publicationIdentifier}/publishingrequest
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -656,7 +656,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{identifier}/publishingrequest
+            Path: /{publicationIdentifier}/publishingrequest
             Method: put
             RestApiId: !Ref NvaPublicationApi
 

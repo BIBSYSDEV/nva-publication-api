@@ -92,7 +92,7 @@ public class PublishPublicationHandlerTest {
             .withHeaders(getRequestHeaders())
             .withNvaUsername(randomString())
             .withCustomerId(randomUri())
-            .withPathParameters(Map.of(RequestUtil.IDENTIFIER, identifier.toString()))
+            .withPathParameters(Map.of(RequestUtil.PUBLICATION_IDENTIFIER, identifier.toString()))
             .withQueryParameters(Collections.emptyMap())
             .build();
         handler.handleRequest(input, output, context);

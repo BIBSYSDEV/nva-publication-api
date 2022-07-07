@@ -11,16 +11,8 @@ import org.slf4j.LoggerFactory;
 
 public final class RequestUtil {
 
-    public static final String IDENTIFIER = "identifier";
+    public static final String PUBLICATION_IDENTIFIER = "publicationIdentifier";
     public static final String IDENTIFIER_IS_NOT_A_VALID_UUID = "Identifier is not a valid UUID: ";
-    public static final String PAGESIZE_IS_NOT_A_VALID_POSITIVE_INTEGER = "pageSize is not a valid positive integer: ";
-
-    public static final String CURRENT_CUSTOMER = "custom:customerId";
-    public static final String MISSING_CLAIM_IN_REQUEST_CONTEXT =
-        "Missing claim in requestContext: ";
-    public static final String PAGESIZE = "pagesize";
-    public static final int DEFAULT_PAGESIZE = 10;
-    public static final String USING_DEFAULT_VALUE = ", using default value: ";
     private static final Logger logger = LoggerFactory.getLogger(RequestUtil.class);
 
     private RequestUtil() {
@@ -37,7 +29,7 @@ public final class RequestUtil {
         String identifier = null;
         try {
             logger.info("Trying to read Publication identifier...");
-            identifier = requestInfo.getPathParameters().get(IDENTIFIER);
+            identifier = requestInfo.getPathParameters().get(PUBLICATION_IDENTIFIER);
             logger.info("Requesting publication metadata for ID:" + identifier);
             return new SortableIdentifier(identifier);
         } catch (Exception e) {
