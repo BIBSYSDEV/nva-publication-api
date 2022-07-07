@@ -2,7 +2,6 @@ package no.unit.nva.publication.publishingrequest.list;
 
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createGetPublishingRequestMissingAccessRightApprove;
@@ -20,6 +19,7 @@ import java.net.HttpURLConnection;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -51,7 +51,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldAcceptGetRequestWithPublicationIdentifierAndPublishingRequestIdentifierAsPathParameters()
         throws ApiGatewayException, IOException {
-        var publication = createAndPersistPublication(resourceService);
+        var publication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         var publishingRequest = createAndPersistPublishingRequest(requestService, publication);
         var getRequest = createGetPublishingRequest(publishingRequest);
         handler.handleRequest(getRequest, outputStream, context);
@@ -67,7 +67,7 @@ class GetPublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnUnauthorizedWhenUserIsMissingAccessRight()
         throws IOException, ApiGatewayException {
-        var publication = createAndPersistPublication(resourceService);
+        var publication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         createAndPersistPublishingRequest(requestService, publication);
         var outputStream = new ByteArrayOutputStream();
         var getRequest =

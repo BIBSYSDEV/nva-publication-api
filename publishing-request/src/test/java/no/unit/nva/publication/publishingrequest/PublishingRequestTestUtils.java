@@ -1,10 +1,8 @@
 package no.unit.nva.publication.publishingrequest;
 
-import static no.unit.nva.model.testing.PublicationGenerator.randomOrganization;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER;
-import static no.unit.nva.testutils.RandomDataGenerator.randomString;
-import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
+import static nva.commons.core.attempt.Try.attempt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -13,11 +11,10 @@ import java.net.URI;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Map;
+import java.util.function.Consumer;
 import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -41,8 +38,8 @@ public class PublishingRequestTestUtils {
         return mockClock;
     }
 
-    public static PublishingRequest createPublishingRequest(Publication publication){
-        return PublishingRequest.create(UserInstance.fromPublication(publication),publication.getIdentifier());
+    public static PublishingRequest createPublishingRequest(Publication publication) {
+        return PublishingRequest.create(UserInstance.fromPublication(publication), publication.getIdentifier());
     }
 
     public static PublishingRequest createAndPersistPublishingRequest(PublishingRequestService requestService,
@@ -128,12 +125,44 @@ public class PublishingRequestTestUtils {
         return updateRequest;
     }
 
-    public static ResourceOwner randomResourceOwner() {
-        return new ResourceOwner(randomString(), randomUri());
+    public static Publication createAndPersistDraftPublication(ResourceService resourceService)
+        throws ApiGatewayException {
+        return createAndPersistPublicationAndThenActOnIt(resourceService, publication -> {
+        });
     }
 
-    public static Publication createAndPersistPublication(ResourceService resourceService) throws ApiGatewayException {
-        return createAndPersistPublication(resourceService, randomOrganization(), randomResourceOwner());
+    public static Publication createPersistAndPublishPublication(ResourceService resourceService)
+        throws ApiGatewayException {
+        return createAndPersistPublicationAndThenActOnIt(resourceService,
+                                                         publication -> publish(resourceService, publication));
+    }
+
+    public static Publication createAndPersistPublicationAndMarkForDeletion(ResourceService resourceService)
+        throws ApiGatewayException {
+        return createAndPersistPublicationAndThenActOnIt(resourceService,
+                                                         publication -> markForDeletion(resourceService, publication));
+    }
+
+    private static void publish(ResourceService resourceService, Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
+        attempt(() -> resourceService.publishPublication(userInstance, publication.getIdentifier()))
+            .orElseThrow();
+    }
+
+    private static void markForDeletion(ResourceService resourceService, Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
+        attempt(() -> resourceService.markPublicationForDeletion(userInstance, publication.getIdentifier()))
+            .orElseThrow();
+    }
+
+    private static Publication createAndPersistPublicationAndThenActOnIt(ResourceService resourceService,
+                                                                         Consumer<Publication> action)
+        throws ApiGatewayException {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var storedResult = resourceService.createPublication(userInstance, publication);
+        action.accept(storedResult);
+        return resourceService.getPublication(storedResult);
     }
 
     private static HandlerRequestBuilder<UpdatePublishingRequest> getRequestBuilder(
@@ -148,15 +177,5 @@ public class PublishingRequestTestUtils {
             .withCustomerId(customerId)
             .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
                                        PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER, publishingIdentifier.toString()));
-    }
-
-    private static Publication createAndPersistPublication(ResourceService resourceService,
-                                                           Organization publisher,
-                                                           ResourceOwner resourceOwner) throws ApiGatewayException {
-        var publication = PublicationGenerator.randomPublication();
-        publication.setPublisher(publisher);
-        publication.setResourceOwner(resourceOwner);
-        var storeResult = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
-        return resourceService.getPublication(storeResult);
     }
 }

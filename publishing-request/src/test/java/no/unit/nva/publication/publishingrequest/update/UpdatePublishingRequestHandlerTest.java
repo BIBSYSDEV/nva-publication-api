@@ -1,7 +1,6 @@
 package no.unit.nva.publication.publishingrequest.update;
 
 import static no.unit.nva.model.testing.PublicationGenerator.randomUri;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublishingRequest;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestMissingAccessRight;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createUpdatePublishingRequestWithAccessRight;
@@ -16,6 +15,7 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -45,7 +45,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnAcceptedWhenPublishingRequestIsApproved() throws IOException, ApiGatewayException {
         var publication =
-            createAndPersistPublication(resourceService);
+            PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         var existingPublishingRequest= createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -60,7 +60,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnUnauthorizedWhenUserHasNoAccessRight() throws IOException, ApiGatewayException {
         var publication =
-            createAndPersistPublication(resourceService);
+            PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         var existingPublishingRequest=createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();
@@ -80,7 +80,7 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldReturnNotFoundWhenIdentifierIsUnknown() throws IOException, ApiGatewayException {
         var publication =
-            createAndPersistPublication(resourceService);
+            PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = createUpdateRequest();
         var outputStream = new ByteArrayOutputStream();

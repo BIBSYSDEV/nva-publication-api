@@ -25,7 +25,7 @@ import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
-import nva.commons.apigateway.exceptions.BadRequestException;
+import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,11 +91,11 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnBadRequestWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
+    void shouldThrowConflictExceptionWhenPublicationIsAlreadyPublished() throws ApiGatewayException {
         var publication = createPublishedPublication(owner);
         var publishingRequest = TestingUtils.createPublishingRequest(publication);
         Executable action = () -> publishingRequestService.createPublishingRequest(publishingRequest);
-        assertThrows(BadRequestException.class, action);
+        assertThrows(ConflictException.class, action);
     }
 
     @Test
