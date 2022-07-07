@@ -83,7 +83,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenPublicationRequestWasNotFound() {
+    void shouldThrowNotFoundExceptionWhenPublicationRequestWasNotFound() {
         var userInstance = UserInstance.create(randomString(), randomUri());
         var queryObject =
             PublishingRequest.createQuery(userInstance, SortableIdentifier.next(), SortableIdentifier.next());
