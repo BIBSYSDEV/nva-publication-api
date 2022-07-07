@@ -17,7 +17,6 @@ import java.time.Clock;
 import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -154,9 +153,8 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
 
     private Publication createPublishedPublication(UserInstance owner) throws ApiGatewayException {
         var publication = createPublication(owner);
-        resourceService.publishPublication(owner,publication.getIdentifier());
-        return resourceService.getPublication(owner,publication.getIdentifier());
-
+        resourceService.publishPublication(owner, publication.getIdentifier());
+        return resourceService.getPublication(owner, publication.getIdentifier());
     }
 
     private PublishingRequest createPublishingRequest(Publication publication) throws ApiGatewayException {
