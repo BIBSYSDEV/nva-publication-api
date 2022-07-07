@@ -39,18 +39,22 @@ class PublishingRequestTest {
     }
 
     @Test
-    void publishingRequestHasPublication() {
-        assertThat(sampleRequest.toPublication(), is(notNullValue()));
+    void shouldBeConvertableToPublicationObject() {
+        var publication= sampleRequest.toPublication();
+        assertThat(sampleRequest.getResourceIdentifier(),is(equalTo(publication.getIdentifier())));
+        assertThat(sampleRequest.getOwner(),is(equalTo(publication.getResourceOwner().getOwner())));
+        assertThat(sampleRequest.getCustomerId(),is(equalTo(publication.getPublisher().getId())));
     }
 
     @Test
-    void publishingRequestReturnsDAO() {
-        assertThat(sampleRequest.toDao(), is(notNullValue()));
+    void shouldBeStorableInDynamoDb() {
+        assertThat(sampleRequest.toDao().getData(), is(equalTo(sampleRequest)));
     }
 
     @Test
-    void publishingRequestHasStatus() {
-        assertThat(sampleRequest.getStatusString(), is(notNullValue()));
+    void shouldBePossibleToIndexByStatus() {
+        var statusString = sampleRequest.getStatusString();
+        assertThat(statusString,is(equalTo(sampleRequest.getStatus().toString())));
     }
 
     @Test

@@ -1,8 +1,8 @@
 package no.unit.nva.publication.publishingrequest;
 
+import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import static nva.commons.apigateway.AccessRight.APPROVE_PUBLISH_REQUEST;
 import static nva.commons.core.attempt.Try.attempt;
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import java.time.Clock;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.NotAuthorizedException;
@@ -11,6 +11,7 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
+import nva.commons.core.JacocoGenerated;
 
 public final class PublishingRequestUtils {
 
@@ -40,8 +41,9 @@ public final class PublishingRequestUtils {
         }
     }
 
+    @JacocoGenerated
     public static PublishingRequestService defaultRequestService() {
-        return new PublishingRequestService(AmazonDynamoDBClientBuilder.defaultClient(), Clock.systemDefaultZone());
+        return new PublishingRequestService(defaultDynamoDbClient(), Clock.systemDefaultZone());
     }
 
     private static boolean userIsNotAuthorized(RequestInfo requestInfo) {

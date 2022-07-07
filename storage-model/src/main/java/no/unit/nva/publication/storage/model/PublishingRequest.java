@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.storage.model.daos.Dao;
@@ -103,6 +104,7 @@ public class PublishingRequest
         return new Publication.Builder()
             .withIdentifier(getResourceIdentifier())
             .withResourceOwner(new ResourceOwner(getOwner(), null))
+            .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
             .build();
     }
 

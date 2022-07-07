@@ -7,11 +7,11 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
-
+//TODO: test from handler
 class PublishingRequestStatusTest {
 
     @Test
-    public void parseThrowsIllegalArgumentExceptionOnInvalidStatus() {
+    void parseThrowsIllegalArgumentExceptionOnInvalidStatus() {
         var invalidStatus = "invalidStatus";
         Executable action = () -> PublishingRequestStatus.parse(invalidStatus);
         var exception = assertThrows(IllegalArgumentException.class, action);

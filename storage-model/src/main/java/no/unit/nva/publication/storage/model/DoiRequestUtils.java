@@ -42,7 +42,7 @@ public final class DoiRequestUtils {
                    .withContributors(extractContributors(resource));
     }
 
-    public static List<Contributor> extractContributors(Resource resource) {
+    private static List<Contributor> extractContributors(Resource resource) {
         return
             Optional.ofNullable(resource.getEntityDescription())
                 .map(EntityDescription::getContributors)
@@ -69,7 +69,7 @@ public final class DoiRequestUtils {
                    .orElse(null);
     }
 
-    public static String extractMainTitle(Resource resource) {
+    private static String extractMainTitle(Resource resource) {
         return Optional.of(resource)
                    .map(Resource::getEntityDescription)
                    .map(EntityDescription::getMainTitle)
