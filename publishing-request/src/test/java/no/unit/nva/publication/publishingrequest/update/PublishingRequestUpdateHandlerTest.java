@@ -22,6 +22,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.GatewayResponse;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 class PublishingRequestUpdateHandlerTest extends ResourcesLocalTest {
 
+    public static final PublishingRequestStatus IRRELEVANT = null;
     PublishingRequestService requestService;
     private UpdatePublishingRequestHandler updatePublishingRequestHandler;
     private Context context;
@@ -81,7 +83,7 @@ class PublishingRequestUpdateHandlerTest extends ResourcesLocalTest {
         var updateRequest = PublishingRequestUpdate.createApproved();
         var updatePublishingRequest =
             createUpdatePublishingRequestMissingAccessRight(updateRequest, existingPublishingRequest);
-        updatePublishingRequestHandler.handleRequest(updatePublishingRequest, outputStream,context);
+        updatePublishingRequestHandler.handleRequest(updatePublishingRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_UNAUTHORIZED));
     }
@@ -89,23 +91,23 @@ class PublishingRequestUpdateHandlerTest extends ResourcesLocalTest {
     @Test
     void shouldAllowOwnerToSendMessageRelatedToAnExistingPublishingRequestWhenStatusIsNotSpecified()
         throws IOException, ApiGatewayException {
-       fail();
+        fail();
     }
 
     @Test
     void shouldReturnNotFoundWhenIdentifierIsUnknown() throws IOException, ApiGatewayException {
-        var publication =
-            createAndPersistDraftPublication(resourceService);
+        var publication = createAndPersistDraftPublication(resourceService);
         createAndPersistPublishingRequest(requestService, publication);
         var updateRequest = PublishingRequestUpdate.createApproved();
-        var outputStream = new ByteArrayOutputStream();
+        var nonExistingIdentifier = SortableIdentifier.next();
         var requestWithUnknownIdentifier =
-            PublishingRequest.create(UserInstance.fromPublication(publication), SortableIdentifier.next());
+            PublishingRequest.create(UserInstance.fromPublication(publication),
+                                     publication.getIdentifier(),
+                                     nonExistingIdentifier,
+                                     IRRELEVANT);
         var updatePublishingRequest =
             createUpdatePublishingRequestWithAccessRight(updateRequest, requestWithUnknownIdentifier);
-        updatePublishingRequestHandler.handleRequest(updatePublishingRequest,
-                                                     outputStream,
-                                                     context);
+        updatePublishingRequestHandler.handleRequest(updatePublishingRequest, outputStream, context);
         var response = GatewayResponse.fromOutputStream(outputStream, String.class);
         assertThat(response.getStatusCode(), equalTo(HttpURLConnection.HTTP_NOT_FOUND));
     }
