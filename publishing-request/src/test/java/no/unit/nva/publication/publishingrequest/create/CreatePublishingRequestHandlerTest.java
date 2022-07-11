@@ -6,7 +6,6 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublicationAndMarkForDeletion;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createPersistAndPublishPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.service.impl.PublishingRequestService.ALREADY_PUBLISHED_ERROR;
 import static no.unit.nva.publication.service.impl.PublishingRequestService.MARKED_FOR_DELETION_ERROR;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
@@ -30,7 +29,9 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
@@ -77,9 +78,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var actualBody = httpResponse.getBodyObject(PublishingRequestCaseDto.class);
         var actualId = actualBody.getId();
         var persistedRequest = fetchCreatedRequestDirectlyFromService(actualId);
-
-        var expectedBody =
-            PublishingRequestCaseDto.create(persistedRequest.getIdentifier(), existingPublication.getIdentifier());
+        var expectedBody=PublishingRequestCaseDto.createResponseObject(persistedRequest);
         assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualBody, is(equalTo(expectedBody)));
     }
@@ -167,7 +166,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         .withBody(requestBody)
         .withNvaUsername(existingPublication.getResourceOwner().getOwner())
         .withCustomerId(existingPublication.getPublisher().getId())
-        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+        .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
                                    existingPublication.getIdentifier().toString()))
         .build();
     }
@@ -194,7 +193,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
             .withPathParameters(
-                Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
+                Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
             .build();
     }
 }

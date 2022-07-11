@@ -1,4 +1,4 @@
-package no.unit.nva.publication.publishingrequest.create;
+package no.unit.nva.publication.publishingrequest;
 
 import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
 import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
@@ -12,6 +12,7 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
+import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
@@ -24,29 +25,34 @@ public class PublishingRequestCaseDto {
     public static final String ID = "id";
     public static final String JSON_LD_CONTEXT =
         "https://bibsysdev.github.io/src/publication-service/publishing-request-context.json";
+    public static final String STATUS = "status";
 
     @JsonProperty(ID)
     private final URI id;
+    @JsonProperty(STATUS)
+    private final PublishingRequestStatus status;
 
     @JsonCreator
-    public PublishingRequestCaseDto(@JsonProperty(ID) URI caseId) {
+    public PublishingRequestCaseDto(@JsonProperty(ID) URI caseId,
+                                    @JsonProperty(STATUS) PublishingRequestStatus status) {
         this.id = caseId;
+        this.status = status;
     }
 
-    public static PublishingRequestCaseDto create(PublishingRequestCase request) {
-        return create(request.getIdentifier(), request.getResourceIdentifier());
+    public  static PublishingRequestCaseDto createResponseObject(PublishingRequestCase request) {
+        var id = createId(request);
+        return new PublishingRequestCaseDto(id,request.getStatus());
     }
 
-    public static PublishingRequestCaseDto create(SortableIdentifier requestIdentifier,
-                                                  SortableIdentifier publicationIdentifier) {
-        var id = UriWrapper.fromUri(API_HOST)
+    private static URI createId(PublishingRequestCase request) {
+        return UriWrapper.fromHost(API_HOST)
             .addChild(PUBLICATION_PATH)
-            .addChild(publicationIdentifier.toString())
+            .addChild(request.getResourceIdentifier().toString())
             .addChild(SUPPORT_CASE_PATH)
-            .addChild(requestIdentifier.toString())
+            .addChild(request.getIdentifier().toString())
             .getUri();
-        return new PublishingRequestCaseDto(id);
     }
+
 
     @JsonProperty(MESSAGES)
     public URI getMessagesEndpoint() {
@@ -79,5 +85,9 @@ public class PublishingRequestCaseDto {
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getId());
+    }
+
+    public PublishingRequestStatus getStatus() {
+        return status;
     }
 }

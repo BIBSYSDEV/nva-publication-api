@@ -192,6 +192,25 @@ public class PublishingRequestCase
                && Objects.equals(getRowVersion(), that.getRowVersion());
     }
 
+    public PublishingRequestCase approve() {
+        var copy = copy();
+        copy.setStatus(PublishingRequestStatus.APPROVED);
+        return copy;
+    }
+
+    private PublishingRequestCase copy() {
+        var copy = new PublishingRequestCase();
+        copy.setIdentifier(this.getIdentifier());
+        copy.setStatus(this.getStatus());
+        copy.setModifiedDate(this.getModifiedDate());
+        copy.setCreatedDate(this.getCreatedDate());
+        copy.setRowVersion(this.getRowVersion());
+        copy.setCustomerId(this.getCustomerId());
+        copy.setResourceIdentifier(this.getResourceIdentifier());
+        copy.setOwner(this.getOwner());
+        return copy;
+    }
+
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
