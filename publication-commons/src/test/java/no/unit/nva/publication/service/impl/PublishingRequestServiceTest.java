@@ -20,7 +20,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -86,7 +86,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldThrowNotFoundExceptionWhenPublicationRequestWasNotFound() {
         var userInstance = UserInstance.create(randomString(), randomUri());
         var queryObject =
-            PublishingRequest.createQuery(userInstance, SortableIdentifier.next(), SortableIdentifier.next());
+            PublishingRequestCase.createQuery(userInstance, SortableIdentifier.next(), SortableIdentifier.next());
         Executable action = () -> publishingRequestService.getPublishingRequest(queryObject);
         assertThrows(NotFoundException.class, action);
     }
@@ -98,10 +98,10 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
 
         var publishingRequest = createPublishingRequest(publication);
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var requestUpdate = PublishingRequest.create(UserInstance.fromPublication(publication),
-                                                     publication.getIdentifier(),
-                                                     publishingRequest.getIdentifier(),
-                                                     expectedNewPublicationRequestStatus);
+        var requestUpdate = PublishingRequestCase.createStatusUpdate(UserInstance.fromPublication(publication),
+                                                                     publication.getIdentifier(),
+                                                                     publishingRequest.getIdentifier(),
+                                                                     expectedNewPublicationRequestStatus);
 
         publishingRequestService.updatePublishingRequest(requestUpdate);
         var updatedPublicationRequest = publishingRequestService.getPublishingRequest(requestUpdate);
@@ -118,10 +118,10 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
             publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
 
         var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var approvePublishingRequest = PublishingRequest.create(userInstance,
-                                                                publication.getIdentifier(),
-                                                                publishingRequest.getIdentifier(),
-                                                                expectedNewPublicationRequestStatus);
+        var approvePublishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
+                                                                                publication.getIdentifier(),
+                                                                                publishingRequest.getIdentifier(),
+                                                                                expectedNewPublicationRequestStatus);
         publishingRequestService.updatePublishingRequest(approvePublishingRequest);
 
         var updatedPublicationRequest = publishingRequestService.getPublishingRequest(approvePublishingRequest);
@@ -131,9 +131,9 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThrows(IllegalArgumentException.class, action);
     }
 
-    private PublishingRequest rejectPublishingRequest(PublishingRequest publishingRequest) {
+    private PublishingRequestCase rejectPublishingRequest(PublishingRequestCase publishingRequest) {
 
-        var newRequest = new PublishingRequest();
+        var newRequest = new PublishingRequestCase();
         newRequest.setStatus(PublishingRequestStatus.REJECTED);
         newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
         newRequest.setIdentifier(publishingRequest.getIdentifier());
@@ -156,7 +156,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         return resourceService.getPublication(owner, publication.getIdentifier());
     }
 
-    private PublishingRequest createPublishingRequest(Publication publication) throws ApiGatewayException {
+    private PublishingRequestCase createPublishingRequest(Publication publication) throws ApiGatewayException {
         return publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
     }
 

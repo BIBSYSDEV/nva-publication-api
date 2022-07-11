@@ -45,6 +45,16 @@ class DataEntryTest {
         assertThat(tuple.right, is(equalTo(tuple.left)));
     }
 
+    //This test guarantees backwards compatibility and the requirements can change when optimistic concurrency control
+    // is implemented.
+    @ParameterizedTest(name = "should return the same hash code when two resources differ only in their row version")
+    @MethodSource("resourceProvider")
+    void shouldReturnTheSameHashCodeWhenTwoResourcesDifferOnlyInTheirRowVersion(Tuple tuple) {
+        assertThat(tuple.left, doesNotHaveEmptyValues());
+        assertThat(tuple.left.getRowVersion(), is(not(equalTo(tuple.right.getRowVersion()))));
+        assertThat(tuple.left.hashCode(), is(equalTo(tuple.right.hashCode())));
+    }
+
     @Test
     void shouldCreateNewRowVersionWhenRefreshed() {
         var publication = PublicationGenerator.randomPublication();

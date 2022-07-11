@@ -7,6 +7,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+
 //TODO: test from handler
 class PublishingRequestStatusTest {
 
@@ -16,7 +17,7 @@ class PublishingRequestStatusTest {
         Executable action = () -> PublishingRequestStatus.parse(invalidStatus);
         var exception = assertThrows(IllegalArgumentException.class, action);
         assertThat(exception.getMessage(),
-                containsString(PublishingRequestStatus.INVALID_APPROVE_PUBLISHING_REQUEST_STATUS_ERROR));
+                   containsString(PublishingRequestStatus.INVALID_APPROVE_PUBLISHING_REQUEST_STATUS_ERROR));
         assertThat(exception.getMessage(), containsString(invalidStatus));
     }
 
@@ -33,12 +34,10 @@ class PublishingRequestStatusTest {
         assertThat(PublishingRequestStatus.APPROVED.toString(), is(equalTo("APPROVED")));
     }
 
-
     @Test
     void shouldNotAllowApprovedToChange() {
         final Executable executable =
-                () -> PublishingRequestStatus.APPROVED.changeStatus(PublishingRequestStatus.REJECTED);
+            () -> PublishingRequestStatus.APPROVED.changeStatus(PublishingRequestStatus.REJECTED);
         assertThrows(IllegalArgumentException.class, executable);
-
     }
 }

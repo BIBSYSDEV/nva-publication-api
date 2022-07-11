@@ -13,7 +13,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.InvalidInputException;
-
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
@@ -72,7 +71,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     }
 
     private static ResourceService defaultResourceService(AmazonDynamoDB client) {
-        return new ResourceService(client,  Clock.systemDefaultZone());
+        return new ResourceService(client, Clock.systemDefaultZone());
     }
 
     private static MessageService defaultMessageService(AmazonDynamoDB client) {
@@ -97,9 +96,10 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
         }
     }
 
-    private SortableIdentifier trySendMessage(CreateMessageRequest input, UserInstance sender, Publication publication)
-         {
-        MessageType messageType = parseMessageType(input);
+    private SortableIdentifier trySendMessage(CreateMessageRequest input,
+                                              UserInstance sender,
+                                              Publication publication) {
+        var messageType = parseMessageType(input);
         return MessageType.DOI_REQUEST.equals(messageType)
                    ? messageService.createDoiRequestMessage(sender, publication, input.getMessage())
                    : messageService.createSimpleMessage(sender, publication, input.getMessage());

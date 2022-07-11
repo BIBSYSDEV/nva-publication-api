@@ -3,55 +3,61 @@ package no.unit.nva.publication.storage.model.daos;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
+import java.net.URI;
+import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.PublishingRequest;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
 
-import java.net.URI;
-import java.util.Objects;
-
-
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class PublishingRequestDao extends Dao<PublishingRequest>
-        implements JoinWithResource, JsonSerializable {
+public class PublishingRequestDao extends Dao<PublishingRequestCase>
+    implements JoinWithResource, JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
-    public static final String TYPE = "PublishingRequest";
-    private PublishingRequest data;
-
+    public static final String TYPE = "PublishingRequestCase";
+    private PublishingRequestCase data;
 
     @JacocoGenerated
     public PublishingRequestDao() {
         super();
     }
 
-    public PublishingRequestDao(PublishingRequest data) {
+    public PublishingRequestDao(PublishingRequestCase data) {
         super();
         this.data = data;
     }
 
-    public static PublishingRequestDao queryObject(PublishingRequest queryObject) {
+    public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
         return new PublishingRequestDao(queryObject);
     }
 
     public static PublishingRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                             SortableIdentifier resourceIdentifier) {
         var queryObject =
-            PublishingRequest.createQuery(resourceOwner,resourceIdentifier,null);
+            PublishingRequestCase.createQuery(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
     }
 
+    public static String getContainedType() {
+        return PublishingRequestCase.TYPE;
+    }
+
+    @JsonIgnore
+    public static String joinByResourceContainedOrderedType() {
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublishingRequestCase.TYPE;
+    }
+
     @Override
-    public PublishingRequest getData() {
+    public PublishingRequestCase getData() {
         return data;
     }
 
     @Override
-    public void setData(PublishingRequest data) {
+    public void setData(PublishingRequestCase data) {
         this.data = data;
     }
 
@@ -71,6 +77,11 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
     }
 
     @Override
+    protected String getOwner() {
+        return data.getOwner();
+    }
+
+    @Override
     public String joinByResourceOrderedType() {
         return joinByResourceContainedOrderedType();
     }
@@ -78,21 +89,6 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return data.getResourceIdentifier();
-    }
-
-    @Override
-    protected String getOwner() {
-        return data.getOwner();
-    }
-
-    public static String getContainedType() {
-        return PublishingRequest.TYPE;
-    }
-
-
-    @JsonIgnore
-    public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublishingRequest.TYPE;
     }
 
     @Override
@@ -119,6 +115,5 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
     public String toString() {
         return toJsonString();
     }
-
 }
 

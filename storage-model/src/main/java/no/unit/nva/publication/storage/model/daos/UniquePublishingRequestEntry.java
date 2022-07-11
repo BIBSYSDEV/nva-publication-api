@@ -2,7 +2,7 @@ package no.unit.nva.publication.storage.model.daos;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 
 @JsonTypeName("PublishingRequestEntry")
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -18,7 +18,7 @@ public class UniquePublishingRequestEntry extends UniquenessEntry {
         super(identifier);
     }
 
-    public static UniquePublishingRequestEntry create(PublishingRequest publishingRequest) {
+    public static UniquePublishingRequestEntry create(PublishingRequestCase publishingRequest) {
         return new UniquePublishingRequestEntry(publishingRequest.getResourceIdentifier().toString());
     }
 

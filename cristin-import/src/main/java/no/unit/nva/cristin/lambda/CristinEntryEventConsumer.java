@@ -154,8 +154,7 @@ public class CristinEntryEventConsumer extends EventHandler<FileContentsEvent<Js
         return attempt(() -> createPublication(publication));
     }
 
-    private Publication createPublication(Publication publication)
-        {
+    private Publication createPublication(Publication publication) {
         return resourceService.createPublicationFromImportedEntry(publication);
     }
 

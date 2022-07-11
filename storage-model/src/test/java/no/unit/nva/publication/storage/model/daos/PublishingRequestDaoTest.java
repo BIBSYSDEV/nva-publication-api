@@ -5,14 +5,17 @@ import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_I
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
+import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.PublishingRequest;
-import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
+import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +46,8 @@ class PublishingRequestDaoTest {
     @Test
     void shouldReturnQueryObjectWithCompletePrimaryKey() {
         var sampleEntryIdentifier = SortableIdentifier.next();
-        var queryObject = PublishingRequest.createQuery(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER), null,
-                                                        sampleEntryIdentifier);
+        var queryObject = PublishingRequestCase.createQuery(UserInstance.create(SAMPLE_USER, SAMPLE_CUSTOMER), null,
+                                                            sampleEntryIdentifier);
         var queryDao = PublishingRequestDao.queryObject(queryObject);
 
         assertThat(queryDao.getPrimaryKeyPartitionKey(), is(equalTo(expectedPublicationRequestPrimaryPartitionKey())));
@@ -62,8 +65,16 @@ class PublishingRequestDaoTest {
     }
 
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
-        var publishingRequest = PublishingRequest.newPublishingRequestResource(
-            Resource.fromPublication(PublicationGenerator.randomPublication()));
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var publishingRequest =
+            PublishingRequestCase.createStatusUpdate(userInstance,
+                                                     publication.getIdentifier(),
+                                                     SortableIdentifier.next(),
+                                                     randomElement(PublishingRequestStatus.values()));
+        publishingRequest.setRowVersion(UUID.randomUUID().toString());
+        publishingRequest.setCreatedDate(randomInstant());
+        publishingRequest.setModifiedDate(randomInstant());
         return (PublishingRequestDao) publishingRequest.toDao();
     }
 

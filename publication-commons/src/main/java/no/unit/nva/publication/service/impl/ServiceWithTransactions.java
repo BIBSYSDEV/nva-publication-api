@@ -17,7 +17,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
-
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
@@ -31,7 +30,7 @@ public abstract class ServiceWithTransactions {
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
     public static final String RAWTYPES = "rawtypes";
-    
+
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
@@ -39,29 +38,29 @@ public abstract class ServiceWithTransactions {
     public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
-    
+
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
 
         Put put = new Put()
-                      .withItem(data.toDynamoFormat())
-                      .withTableName(tableName)
-                      .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
-                      .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
+            .withItem(data.toDynamoFormat())
+            .withTableName(tableName)
+            .withConditionExpression(KEY_NOT_EXISTS_CONDITION)
+            .withExpressionAttributeNames(PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES);
         return new TransactWriteItem().withPut(put);
     }
-    
+
     protected <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T dynamoEntry) {
         return newPutTransactionItem(dynamoEntry, getTableName());
     }
-    
+
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(TransactWriteItem... transaction) {
         return newTransactWriteItemsRequest(Arrays.asList(transaction));
     }
-    
+
     protected static TransactWriteItemsRequest newTransactWriteItemsRequest(List<TransactWriteItem> transactionItems) {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
-    
+
     protected abstract String getTableName();
 
     protected abstract AmazonDynamoDB getClient();
@@ -95,9 +94,7 @@ public abstract class ServiceWithTransactions {
         return jsonString.replace(DOUBLE_QUOTES, EMPTY_STRING);
     }
 
-
-    protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest)
-         {
+    protected void sendTransactionWriteRequest(TransactWriteItemsRequest transactWriteItemsRequest) {
         attempt(() -> getClient().transactWriteItems(transactWriteItemsRequest))
             .orElseThrow(this::handleTransactionFailure);
     }

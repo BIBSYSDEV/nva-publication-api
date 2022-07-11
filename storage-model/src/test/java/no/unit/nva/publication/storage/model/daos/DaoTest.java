@@ -212,7 +212,7 @@ public class DaoTest extends ResourcesLocalTest {
         assertThat(actualItem, is(equalTo(sampleDao)));
     }
 
-    private static Stream<Dao<?>> instanceProvider() throws InvalidIssnException, MalformedURLException {
+    private static Stream<Dao<?>> instanceProvider()  {
         return DaoUtils.instanceProvider();
     }
 

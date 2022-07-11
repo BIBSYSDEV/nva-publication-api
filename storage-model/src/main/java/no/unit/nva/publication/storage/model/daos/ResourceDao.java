@@ -15,6 +15,7 @@ import no.unit.nva.model.AdditionalIdentifier;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.ResourceByIdentifier;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 
 @JsonTypeName(ResourceDao.TYPE)
@@ -115,11 +116,7 @@ public class ResourceDao extends Dao<Resource>
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(getData());
-    }
-
-    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -129,6 +126,12 @@ public class ResourceDao extends Dao<Resource>
         }
         ResourceDao that = (ResourceDao) o;
         return Objects.equals(getData(), that.getData());
+    }
+
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getData());
     }
 
     private boolean keyEqualsCristin(AdditionalIdentifier identifier) {

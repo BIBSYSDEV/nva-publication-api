@@ -36,7 +36,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.publication.exception.BadRequestException;
-
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.storage.model.DataEntry;
@@ -109,16 +108,14 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication createPublicationWithPredefinedCreationDate(Publication inputData)
-         {
+    public Publication createPublicationWithPredefinedCreationDate(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setCreatedDate(inputData.getCreatedDate());
         return insertResource(newResource);
     }
 
-    public Publication createPublicationFromImportedEntry(Publication inputData)
-         {
+    public Publication createPublicationFromImportedEntry(Publication inputData) {
         Resource newResource = Resource.fromPublication(inputData);
         newResource.setIdentifier(identifierSupplier.get());
         newResource.setPublishedDate(inputData.getPublishedDate());
@@ -128,8 +125,7 @@ public class ResourceService extends ServiceWithTransactions {
         return insertResource(newResource);
     }
 
-    public Publication insertPreexistingPublication(Publication publication)
-         {
+    public Publication insertPreexistingPublication(Publication publication) {
         Resource resource = Resource.fromPublication(publication);
         return insertResource(resource);
     }
