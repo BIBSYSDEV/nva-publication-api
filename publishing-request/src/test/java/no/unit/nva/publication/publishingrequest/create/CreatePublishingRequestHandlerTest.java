@@ -85,12 +85,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldPersistThePublishingRequestWhenOwnerOpensNewCase() {
-
-    }
-
-    @Test
-    void shouldNotRevealThatPublicationExistsWhenRequesterIsNotThePublicationOwner()
+    void shouldNotRevealThatPublicationExistsWhenRequesterIsThePublicationOwner()
         throws IOException, ApiGatewayException {
         var existingPublication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
         var notOwner = randomString();
@@ -167,16 +162,14 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
     private InputStream createHttpRequest(Publication existingPublication) throws JsonProcessingException {
         var requestBody = new NewPublishingRequest();
-        var httpRequest =
-            new HandlerRequestBuilder<NewPublishingRequest>(
-            JsonUtils.dtoObjectMapper)
-            .withBody(requestBody)
-            .withNvaUsername(existingPublication.getResourceOwner().getOwner())
-            .withCustomerId(existingPublication.getPublisher().getId())
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
-                                       existingPublication.getIdentifier().toString()))
-            .build();
-        return httpRequest;
+        return new HandlerRequestBuilder<NewPublishingRequest>(
+        JsonUtils.dtoObjectMapper)
+        .withBody(requestBody)
+        .withNvaUsername(existingPublication.getResourceOwner().getOwner())
+        .withCustomerId(existingPublication.getPublisher().getId())
+        .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                                   existingPublication.getIdentifier().toString()))
+        .build();
     }
 
     private <T> GatewayResponse<T> ownerCreatesPublishingRequestForDraftPublication(Publication draftPublication,
