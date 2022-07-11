@@ -8,7 +8,7 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 
 public final class TestingUtils {
@@ -41,7 +41,8 @@ public final class TestingUtils {
         return new Organization.Builder().withId(orgUri).build();
     }
 
-    public static PublishingRequest createPublishingRequest(Publication publication) {
-        return PublishingRequest.create(UserInstance.fromPublication(publication), publication.getIdentifier());
+    public static PublishingRequestCase createPublishingRequest(Publication publication) {
+        return PublishingRequestCase.createOpeningCaseObject(UserInstance.fromPublication(publication),
+                                                             publication.getIdentifier());
     }
 }

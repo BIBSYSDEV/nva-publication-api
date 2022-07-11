@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ResourceTest {
+class ResourceTest {
 
     public static final String SOME_OWNER = "some@owner.no";
     public static final URI SOME_HOST = URI.create("https://example.org/");
@@ -31,7 +31,7 @@ public class ResourceTest {
 
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
-    public void builderContainsAllFields(Class<?> publicationInstanceType) {
+    void builderContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
     }
@@ -39,7 +39,7 @@ public class ResourceTest {
 
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
-    public void copyContainsAllFields(Class<?> publicationInstanceType) {
+    void copyContainsAllFields(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         Resource copy = resource.copy().build();
         JsonNode resourceJson = dynamoDbObjectMapper.convertValue(resource, JsonNode.class);
@@ -51,7 +51,7 @@ public class ResourceTest {
 
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
-    public void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
+    void toDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Resource resource = sampleResource(publicationInstanceType);
         assertThat(resource, doesNotHaveEmptyValues());
         Publication publication = resource.toPublication();
@@ -64,7 +64,7 @@ public class ResourceTest {
 
     @ParameterizedTest
     @MethodSource("publicationInstanceProvider")
-    public void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
+    void fromDtoToDaoToDtoReturnsDtoWithoutLossOfInformation(Class<?> publicationInstanceType) {
         Publication expected = PublicationGenerator.randomPublication(publicationInstanceType);
         assertThat(expected, doesNotHaveEmptyValuesIgnoringFields(Set.of(DOI_REQUEST_FIELD)));
 
@@ -81,7 +81,7 @@ public class ResourceTest {
     }
 
     @Test
-    public void emptyResourceReturnsResourceWithTheMinimumNecessaryFieldsNotNull() {
+    void emptyResourceReturnsResourceWithTheMinimumNecessaryFieldsNotNull() {
 
         Resource emptyResource = Resource.emptyResource(SOME_OWNER, SOME_HOST, sampleIdentifier);
         assertThat(emptyResource.getIdentifier(), is(equalTo(sampleIdentifier)));
@@ -90,13 +90,13 @@ public class ResourceTest {
     }
 
     @Test
-    public void queryObjectReturnsResourceWithIdentifier() {
+    void queryObjectReturnsResourceWithIdentifier() {
         Resource resource = Resource.resourceQueryObject(sampleIdentifier);
         assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));
     }
 
     @Test
-    public void queryObjectReturnsResourceWithIdentifierAndPublisher() {
+    void queryObjectReturnsResourceWithIdentifierAndPublisher() {
         UserInstance userInstance = UserInstance.create(SOME_OWNER, SOME_HOST);
         Resource resource = Resource.resourceQueryObject(userInstance, sampleIdentifier);
         assertThat(resource.getIdentifier(), is(equalTo(sampleIdentifier)));

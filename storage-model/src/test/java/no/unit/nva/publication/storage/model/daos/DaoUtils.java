@@ -4,12 +4,14 @@ import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues
 import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Clock;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -18,7 +20,8 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
+import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -29,13 +32,11 @@ public final class DaoUtils {
 
     private static final Clock clock = Clock.systemDefaultZone();
 
-
     public static Resource sampleResource() {
         Publication publication = PublicationGenerator.randomPublication();
         var additionalIdentifier = Set.of(new AdditionalIdentifier(CRISTIN_SOURCE, randomString()));
         publication.setAdditionalIdentifiers(additionalIdentifier);
         return Resource.fromPublication(publication);
-
     }
 
     public static ResourceDao sampleResourceDao() {
@@ -52,23 +53,30 @@ public final class DaoUtils {
         return Stream.of(resourceDao, doiRequestDao, messageDao, approvePublicationRequestDao);
     }
 
-    private static PublishingRequestDao sampleApprovePublicationRequestDao() {
-        var publishingRequest =
-            PublishingRequest.newPublishingRequestResource(
-                Resource.fromPublication(PublicationGenerator.randomPublication()));
-        return new PublishingRequestDao(publishingRequest);
-    }
-
     public static DoiRequestDao doiRequestDao(Resource resource) {
         return attempt(() -> DoiRequest.newDoiRequestForResource(resource))
             .map(DoiRequestDao::new)
             .orElseThrow();
     }
 
-    protected static <R extends WithIdentifier & RowLevelSecurity & DataEntry> PutItemRequest toPutItemRequest(
+    static <R extends WithIdentifier & RowLevelSecurity & DataEntry> PutItemRequest toPutItemRequest(
         Dao<R> resource) {
         return new PutItemRequest().withTableName(RESOURCES_TABLE_NAME)
             .withItem(resource.toDynamoFormat());
+    }
+
+    private static PublishingRequestDao sampleApprovePublicationRequestDao() {
+        var publication = PublicationGenerator.randomPublication();
+        var userInstance = UserInstance.fromPublication(publication);
+        var publishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
+                                                                         publication.getIdentifier(),
+                                                                         SortableIdentifier.next(),
+                                                                         PublishingRequestStatus.APPROVED);
+
+        publishingRequest.setRowVersion(UUID.randomUUID().toString());
+        publishingRequest.setCreatedDate(randomInstant());
+        publishingRequest.setModifiedDate(randomInstant());
+        return (PublishingRequestDao) publishingRequest.toDao();
     }
 
     private static MessageDao sampleMessageDao() {

@@ -52,7 +52,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
         return "begins_with (#PK, :Resource) or "
                + "begins_with(#PK, :DoiRequest) or "
                + "begins_with(#PK, :Message) or "
-               + "begins_with(#PK, :PublishingRequest)";
+               + "begins_with(#PK, :PublishingRequestCase)";
     }
 
     // replaces the hash values in the filter expression with the actual key name
@@ -65,7 +65,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
         return Map.of(":Resource", new AttributeValue(ResourceDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":DoiRequest", new AttributeValue(DoiRequestDao.TYPE + KEY_FIELDS_DELIMITER),
                       ":Message", new AttributeValue(MessageDao.TYPE + KEY_FIELDS_DELIMITER),
-                ":PublishingRequest", new AttributeValue(PublishingRequestDao.TYPE + KEY_FIELDS_DELIMITER)
+                ":PublishingRequestCase", new AttributeValue(PublishingRequestDao.TYPE + KEY_FIELDS_DELIMITER)
         );
     }
 
@@ -82,7 +82,7 @@ public abstract class Dao<R extends WithIdentifier & RowLevelSecurity & DataEntr
 
     @Override
     @JacocoGenerated
-    public final String getPrimaryKeySortKey() {
+    public String getPrimaryKeySortKey() {
         return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 

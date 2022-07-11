@@ -24,8 +24,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.PublishingRequest;
-import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.PublishingRequestDao;
@@ -65,24 +64,24 @@ public class PublishingRequestService extends ServiceWithTransactions {
         resourceService = new ReadResourceService(client, tableName);
     }
 
-    public PublishingRequest createPublishingRequest(PublishingRequest publishingRequest)
+    public PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
         var associatePublication = fetchPublication(publishingRequest);
-        return createPublishingRequest(associatePublication);
+        return fromPublication(associatePublication);
     }
 
-    public PublishingRequest getPublishingRequest(PublishingRequest queryObject)
+    public PublishingRequestCase getPublishingRequest(PublishingRequestCase queryObject)
         throws NotFoundException {
+
         var queryResult = getFromDatabase(queryObject);
         return attempt(queryResult::getItem)
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
             .map(PublishingRequestDao::getData)
             .toOptional()
-            .filter(request -> request.getResourceIdentifier().equals(queryObject.getResourceIdentifier()))
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(queryObject.getIdentifier()));
     }
 
-    public void updatePublishingRequest(PublishingRequest requestUpdate) throws ApiGatewayException {
+    public void updatePublishingRequest(PublishingRequestCase requestUpdate) throws ApiGatewayException {
 
         var updateItemRequest = createUpdateDatabaseItemRequest(requestUpdate);
 
@@ -90,7 +89,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         parseAttributeValuesMap(item.getAttributes(), PublishingRequestDao.class);
     }
 
-    protected UpdateItemRequest createUpdateDatabaseItemRequest(PublishingRequest requestUpdate)
+    protected UpdateItemRequest createUpdateDatabaseItemRequest(PublishingRequestCase requestUpdate)
         throws NotFoundException {
         var now = nowAsString();
 
@@ -108,9 +107,9 @@ public class PublishingRequestService extends ServiceWithTransactions {
 
         var expressionAttributeNames = Map.of(
             "#data", CONTAINED_DATA_FIELD_NAME,
-            "#status", PublishingRequest.STATUS_FIELD,
-            "#modifiedDate", PublishingRequest.MODIFIED_DATE_FIELD,
-            "#resourceStatus", PublishingRequest.RESOURCE_STATUS_FIELD,
+            "#status", PublishingRequestCase.STATUS_FIELD,
+            "#modifiedDate", PublishingRequestCase.MODIFIED_DATE_FIELD,
+            "#resourceStatus", PublishingRequestCase.RESOURCE_STATUS_FIELD,
             "#rowVersion", DataEntry.ROW_VERSION,
             "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
             "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
@@ -160,13 +159,13 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return new NotFoundException(PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
     }
 
-    private Publication fetchPublication(PublishingRequest publishingRequest)
+    private Publication fetchPublication(PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
         var userInstance = UserInstance.create(publishingRequest.getOwner(), publishingRequest.getCustomerId());
         return resourceService.getPublication(userInstance, publishingRequest.getResourceIdentifier());
     }
 
-    private PublishingRequest createPublishingRequest(Publication publication)
+    private PublishingRequestCase fromPublication(Publication publication)
         throws ConflictException {
         verifyPublicationIsPublishable(publication);
         var publishingRequest = createNewPublishingRequestEntry(publication);
@@ -175,7 +174,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return publishingRequest;
     }
 
-    private GetItemResult getFromDatabase(PublishingRequest queryObject) {
+    private GetItemResult getFromDatabase(PublishingRequestCase queryObject) {
         var queryDao = PublishingRequestDao.queryObject(queryObject);
         var getItemRequest = new GetItemRequest()
             .withTableName(tableName)
@@ -192,12 +191,16 @@ public class PublishingRequestService extends ServiceWithTransactions {
         }
     }
 
-    private PublishingRequest createNewPublishingRequestEntry(Publication publication) {
-        var resource = Resource.fromPublication(publication);
-        return PublishingRequest.newPublishingRequestResource(identifierProvider.get(), resource, clock.instant());
+    private PublishingRequestCase createNewPublishingRequestEntry(Publication publication) {
+        var userInstance = UserInstance.fromPublication(publication);
+        var entry = PublishingRequestCase.createOpeningCaseObject(userInstance, publication.getIdentifier());
+        entry.setCreatedDate(clock.instant());
+        entry.setIdentifier(identifierProvider.get());
+        entry.setRowVersion(UUID.randomUUID().toString());
+        return entry;
     }
 
-    private TransactWriteItemsRequest createInsertionTransactionRequest(PublishingRequest publishingRequest) {
+    private TransactWriteItemsRequest createInsertionTransactionRequest(PublishingRequestCase publishingRequest) {
         var publicationRequestEntry = createPublishingRequestInsertionEntry(publishingRequest);
         var identifierEntry = createUniqueIdentifierEntry(publishingRequest);
         var publishingRequestUniquenessEntry = createPublishingRequestUniquenessEntry(publishingRequest);
@@ -208,22 +211,22 @@ public class PublishingRequestService extends ServiceWithTransactions {
                 publishingRequestUniquenessEntry);
     }
 
-    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequest publishingRequest) {
+    private TransactWriteItem createPublishingRequestUniquenessEntry(PublishingRequestCase publishingRequest) {
         var publishingRequestUniquenessEntry = UniquePublishingRequestEntry.create(publishingRequest);
         return newPutTransactionItem(publishingRequestUniquenessEntry);
     }
 
-    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequest publicationRequest) {
+    private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
         PublishingRequestDao dynamoEntry = new PublishingRequestDao(publicationRequest);
         return newPutTransactionItem(dynamoEntry);
     }
 
-    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequest publicationRequest) {
+    private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
         var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
         return newPutTransactionItem(identifierEntry);
     }
 
-    private PublishingRequestDao createUpdatedPublishingRequestDao(PublishingRequest requestUpdate)
+    private PublishingRequestDao createUpdatedPublishingRequestDao(PublishingRequestCase requestUpdate)
         throws NotFoundException {
         var publicationRequest = getPublishingRequest(requestUpdate);
         var existingStatus = publicationRequest.getStatus();

@@ -1,11 +1,12 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.PRIMARY_KEY_SORT_KEY_FORMAT;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -16,12 +17,12 @@ import java.util.Objects;
 
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
-public class PublishingRequestDao extends Dao<PublishingRequest>
+public class PublishingRequestDao extends Dao<PublishingRequestCase>
         implements JoinWithResource, JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
-    public static final String TYPE = "PublishingRequest";
-    private PublishingRequest data;
+    public static final String TYPE = "PublishingRequestCase";
+    private PublishingRequestCase data;
 
 
     @JacocoGenerated
@@ -29,29 +30,29 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
         super();
     }
 
-    public PublishingRequestDao(PublishingRequest data) {
+    public PublishingRequestDao(PublishingRequestCase data) {
         super();
         this.data = data;
     }
 
-    public static PublishingRequestDao queryObject(PublishingRequest queryObject) {
+    public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
         return new PublishingRequestDao(queryObject);
     }
 
     public static PublishingRequestDao queryByCustomerAndResourceIdentifier(UserInstance resourceOwner,
                                                                             SortableIdentifier resourceIdentifier) {
         var queryObject =
-            PublishingRequest.createQuery(resourceOwner,resourceIdentifier,null);
+            PublishingRequestCase.createQuery(resourceOwner, resourceIdentifier, null);
         return new PublishingRequestDao(queryObject);
     }
 
     @Override
-    public PublishingRequest getData() {
+    public PublishingRequestCase getData() {
         return data;
     }
 
     @Override
-    public void setData(PublishingRequest data) {
+    public void setData(PublishingRequestCase data) {
         this.data = data;
     }
 
@@ -86,13 +87,18 @@ public class PublishingRequestDao extends Dao<PublishingRequest>
     }
 
     public static String getContainedType() {
-        return PublishingRequest.TYPE;
+        return PublishingRequestCase.TYPE;
+    }
+
+    @Override
+    public final String getPrimaryKeySortKey() {
+        return String.format(PRIMARY_KEY_SORT_KEY_FORMAT, getType(), getIdentifier());
     }
 
 
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublishingRequest.TYPE;
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublishingRequestCase.TYPE;
     }
 
     @Override

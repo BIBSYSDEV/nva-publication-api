@@ -333,15 +333,11 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
         this.subjects = subjects;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(),
-                            getCreatedDate(),
-                            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
-                            getProjects(),
-                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
-    }
-
+    /**
+     * It compares two Resources ignoring the row version.
+     * @param o the other Resource.
+     * @return true if the two Resources are equivalent without considering the row version, false otherwise.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -367,6 +363,18 @@ public class Resource implements WithIdentifier, RowLevelSecurity, WithStatus, D
                && Objects.equals(getHandle(), resource.getHandle())
                && Objects.equals(getAdditionalIdentifiers(), resource.getAdditionalIdentifiers())
                && Objects.equals(getSubjects(), resource.getSubjects());
+    }
+
+    /**
+     * Calculates hashcode without considering the row version.
+     * @return the hashcode.
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getStatus(), getResourceOwner(), getPublisher(), getCreatedDate(),
+                            getModifiedDate(), getPublishedDate(), getIndexedDate(), getLink(), getFileSet(),
+                            getProjects(),
+                            getEntityDescription(), getDoi(), getHandle(), getAdditionalIdentifiers(), getSubjects());
     }
 }
 

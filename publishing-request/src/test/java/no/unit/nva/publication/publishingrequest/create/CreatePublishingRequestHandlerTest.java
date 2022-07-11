@@ -2,9 +2,7 @@ package no.unit.nva.publication.publishingrequest.create;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
-import static no.unit.nva.publication.PublicationServiceConfig.API_HOST;
-import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
-import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_MESSAGE_PATH;
+import static java.net.HttpURLConnection.HTTP_OK;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createAndPersistPublicationAndMarkForDeletion;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.createPersistAndPublishPublication;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils.setupMockClock;
@@ -32,13 +30,12 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.publishingrequest.PublishingRequestTestUtils;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.PublishingRequest;
+import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.GatewayResponse;
@@ -71,34 +68,25 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     @Test
-    void shouldAcceptTypedSupportRequest() throws ApiGatewayException, IOException {
+    void shouldCreateNewCaseWhenUserCreatesNewCase()
+        throws ApiGatewayException, IOException {
         var existingPublication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
-        var apiRequest = ownerRequestsToPublishOwnPublication(existingPublication);
-        handler.handleRequest(apiRequest, outputStream, context);
-        var response = GatewayResponse.fromOutputStream(outputStream, Void.class);
-        assertThat(response.getStatusCode(), is(equalTo(HttpURLConnection.HTTP_ACCEPTED)));
+        var httpRequest = createHttpRequest(existingPublication);
+        handler.handleRequest(httpRequest, outputStream, context);
+        var httpResponse = GatewayResponse.fromOutputStream(outputStream, PublishingRequestCaseDto.class);
+        var actualBody = httpResponse.getBodyObject(PublishingRequestCaseDto.class);
+        var actualId = actualBody.getId();
+        var persistedRequest = fetchCreatedRequestDirectlyFromService(actualId);
+
+        var expectedBody =
+            PublishingRequestCaseDto.create(persistedRequest.getIdentifier(), existingPublication.getIdentifier());
+        assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_OK)));
+        assertThat(actualBody, is(equalTo(expectedBody)));
     }
 
     @Test
-    void shouldPersistThePublishingRequestWhenOwnerWantsToPublishExistingDraftPublication()
-        throws ApiGatewayException, IOException {
-        var draftPublication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
-        var httpResponse = ownerCreatesPublishingRequestForDraftPublication(draftPublication, Void.class);
-        var persistedRequest = fetchPersistedPublishingRequest(draftPublication, httpResponse);
+    void shouldPersistThePublishingRequestWhenOwnerOpensNewCase() {
 
-        assertThat(persistedRequest.getResourceIdentifier(), is(equalTo(draftPublication.getIdentifier())));
-    }
-
-    @Test
-    void shouldReturnLocationHeaderWithUriOfPersistedPublishingRequest()
-        throws ApiGatewayException, IOException {
-        var draftPublication = PublishingRequestTestUtils.createAndPersistDraftPublication(resourceService);
-        var httpResponse = ownerCreatesPublishingRequestForDraftPublication(draftPublication, Void.class);
-        var actualLocationHeader = URI.create(httpResponse.getHeaders().get(HttpHeaders.LOCATION));
-        var persistedRequest = fetchPersistedPublishingRequest(draftPublication, httpResponse);
-        var expectedLocationHeader = createExpectedLocationHeader(draftPublication, persistedRequest);
-
-        assertThat(actualLocationHeader, is(equalTo(expectedLocationHeader)));
     }
 
     @Test
@@ -152,6 +140,45 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_NOT_FOUND)));
     }
 
+    private PublishingRequestCase fetchCreatedRequestDirectlyFromService(URI publishingRequestId)
+        throws NotFoundException {
+        var caseIdentifier = extractPublishingIdentifierFromPublishingRequestId(publishingRequestId);
+        var publicationIdentifier = extractPublicationIdentifierFromPublishingRequestId(publishingRequestId);
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var userInfo = UserInstance.fromPublication(publication);
+
+        var queryObject = PublishingRequestCase.createQuery(userInfo, publicationIdentifier, caseIdentifier);
+        return requestService.getPublishingRequest(queryObject);
+    }
+
+    private SortableIdentifier extractPublishingIdentifierFromPublishingRequestId(URI publishingRequestId) {
+        return attempt(() -> UriWrapper.fromUri(publishingRequestId).getLastPathElement())
+            .map(SortableIdentifier::new)
+            .orElseThrow();
+    }
+
+    private SortableIdentifier extractPublicationIdentifierFromPublishingRequestId(URI publishingRequestId) {
+        return UriWrapper.fromUri(publishingRequestId).getParent()
+            .flatMap(UriWrapper::getParent)
+            .map(UriWrapper::getLastPathElement)
+            .map(SortableIdentifier::new)
+            .orElseThrow();
+    }
+
+    private InputStream createHttpRequest(Publication existingPublication) throws JsonProcessingException {
+        var requestBody = new NewPublishingRequest();
+        var httpRequest =
+            new HandlerRequestBuilder<NewPublishingRequest>(
+            JsonUtils.dtoObjectMapper)
+            .withBody(requestBody)
+            .withNvaUsername(existingPublication.getResourceOwner().getOwner())
+            .withCustomerId(existingPublication.getPublisher().getId())
+            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                                       existingPublication.getIdentifier().toString()))
+            .build();
+        return httpRequest;
+    }
+
     private <T> GatewayResponse<T> ownerCreatesPublishingRequestForDraftPublication(Publication draftPublication,
                                                                                     Class<T> responseType)
         throws IOException {
@@ -161,34 +188,6 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         return GatewayResponse.fromOutputStream(outputStream, responseType);
     }
 
-    private PublishingRequest fetchPersistedPublishingRequest(Publication existingPublication,
-                                                              GatewayResponse<Void> response)
-        throws NotFoundException {
-        var queryObject = createQueryObjectForCreatedPublishingRequest(existingPublication, response);
-        return requestService.getPublishingRequest(queryObject);
-    }
-
-    private PublishingRequest createQueryObjectForCreatedPublishingRequest(Publication existingPublication,
-                                                                           GatewayResponse<Void> response) {
-        var requestIdentifier = attempt(() -> response.getHeaders().get(HttpHeaders.LOCATION))
-            .map(UriWrapper::fromUri)
-            .map(UriWrapper::getLastPathElement)
-            .map(SortableIdentifier::new)
-            .orElseThrow();
-
-        var resourceOwner = UserInstance.fromPublication(existingPublication);
-        return PublishingRequest.createQuery(resourceOwner, existingPublication.getIdentifier(), requestIdentifier);
-    }
-
-    private URI createExpectedLocationHeader(Publication existingPublication, PublishingRequest publishingRequest) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild(PUBLICATION_PATH)
-            .addChild(existingPublication.getIdentifier().toString())
-            .addChild(SUPPORT_MESSAGE_PATH)
-            .addChild(publishingRequest.getIdentifier().toString())
-            .getUri();
-    }
-
     private InputStream ownerRequestsToPublishOwnPublication(Publication existingPublication)
         throws JsonProcessingException {
         return requestToPublishPublication(existingPublication, existingPublication.getResourceOwner().getOwner());
@@ -196,8 +195,9 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
     private InputStream requestToPublishPublication(Publication existingPublication, String requester)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<PublicationPublishRequest>(JsonUtils.dtoObjectMapper)
-            .withBody(new PublicationPublishRequest())
+        return new HandlerRequestBuilder<NewPublishingRequest>(
+            JsonUtils.dtoObjectMapper)
+            .withBody(new NewPublishingRequest())
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
             .withPathParameters(

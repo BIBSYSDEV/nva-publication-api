@@ -35,7 +35,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.DynamoDBException;
-
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Resource;
@@ -66,7 +65,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     private final String tableName;
     private final Supplier<SortableIdentifier> identifierProvider;
 
-    public DoiRequestService(AmazonDynamoDB client,Clock clock) {
+    public DoiRequestService(AmazonDynamoDB client, Clock clock) {
         this(client,
              clock,
              DEFAULT_IDENTIFIER_PROVIDER);
@@ -111,7 +110,7 @@ public class DoiRequestService extends ServiceWithTransactions {
     }
 
     public SortableIdentifier createDoiRequest(UserInstance userInstance, SortableIdentifier resourceIdentifier)
-        throws BadRequestException{
+        throws BadRequestException {
         Publication publication = fetchPublication(userInstance, resourceIdentifier);
         return createDoiRequest(publication);
     }
