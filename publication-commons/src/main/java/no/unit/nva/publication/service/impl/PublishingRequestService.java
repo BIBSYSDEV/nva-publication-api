@@ -192,20 +192,12 @@ public class PublishingRequestService extends ServiceWithTransactions {
     }
 
     private TransactWriteItem createPublishingRequestInsertionEntry(PublishingRequestCase publicationRequest) {
-        PublishingRequestDao dynamoEntry = new PublishingRequestDao(publicationRequest);
+        var dynamoEntry = new PublishingRequestDao(publicationRequest);
         return newPutTransactionItem(dynamoEntry);
     }
 
     private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
         var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
         return newPutTransactionItem(identifierEntry);
-    }
-
-    private PublishingRequestDao createUpdatedPublishingRequestDao(PublishingRequestCase requestUpdate)
-        throws NotFoundException {
-        var publicationRequest = getPublishingRequest(requestUpdate);
-        var existingStatus = publicationRequest.getStatus();
-        publicationRequest.setStatus(existingStatus.changeStatus(requestUpdate.getStatus()));
-        return new PublishingRequestDao(publicationRequest);
     }
 }
