@@ -78,7 +78,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var actualBody = httpResponse.getBodyObject(PublishingRequestCaseDto.class);
         var actualId = actualBody.getId();
         var persistedRequest = fetchCreatedRequestDirectlyFromService(actualId);
-        var expectedBody=PublishingRequestCaseDto.createResponseObject(persistedRequest);
+        var expectedBody= PublishingRequestCaseDto.createResponseObject(persistedRequest);
         assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualBody, is(equalTo(expectedBody)));
     }
@@ -160,9 +160,8 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     }
 
     private InputStream createHttpRequest(Publication existingPublication) throws JsonProcessingException {
-        var requestBody = new NewPublishingRequest();
-        return new HandlerRequestBuilder<NewPublishingRequest>(
-        JsonUtils.dtoObjectMapper)
+        var requestBody = new PublishingRequestOpenCase();
+        return new HandlerRequestBuilder<PublishingRequestOpenCase>(JsonUtils.dtoObjectMapper)
         .withBody(requestBody)
         .withNvaUsername(existingPublication.getResourceOwner().getOwner())
         .withCustomerId(existingPublication.getPublisher().getId())
@@ -187,9 +186,9 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
 
     private InputStream requestToPublishPublication(Publication existingPublication, String requester)
         throws JsonProcessingException {
-        return new HandlerRequestBuilder<NewPublishingRequest>(
+        return new HandlerRequestBuilder<PublishingRequestOpenCase>(
             JsonUtils.dtoObjectMapper)
-            .withBody(new NewPublishingRequest())
+            .withBody(new PublishingRequestOpenCase())
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
             .withPathParameters(

@@ -1,9 +1,5 @@
 package no.unit.nva.publication.service.impl;
 
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME;
-import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
@@ -12,10 +8,9 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.GetItemRequest;
 import com.amazonaws.services.dynamodbv2.model.GetItemResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnValue;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.UpdateItemRequest;
 import java.time.Clock;
 import java.util.Map;
 import java.util.UUID;
@@ -23,7 +18,6 @@ import java.util.function.Supplier;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
-import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -47,7 +41,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     private final Clock clock;
     private final String tableName;
     private final Supplier<SortableIdentifier> identifierProvider;
-    private final ReadResourceService resourceService;
+    private final ResourceService resourceService;
 
     public PublishingRequestService(AmazonDynamoDB client, Clock clock) {
         this(client, clock, DEFAULT_IDENTIFIER_PROVIDER);
@@ -61,7 +55,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         this.clock = clock;
         this.tableName = RESOURCES_TABLE_NAME;
         this.identifierProvider = identifierProvider;
-        resourceService = new ReadResourceService(client, tableName);
+        resourceService = new ResourceService(client, clock, identifierProvider);
     }
 
     public PublishingRequestCase createPublishingRequest(PublishingRequestCase publishingRequest)
@@ -81,61 +75,42 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(queryObject.getIdentifier()));
     }
 
-    public void updatePublishingRequest(PublishingRequestCase requestUpdate) throws ApiGatewayException {
-
-        var updateItemRequest = createUpdateDatabaseItemRequest(requestUpdate);
-
-        var item = client.updateItem(updateItemRequest);
-        parseAttributeValuesMap(item.getAttributes(), PublishingRequestDao.class);
+    public void updatePublishingRequest(PublishingRequestCase requestUpdate) {
+        var entryUpdate = requestUpdate.copy();
+        entryUpdate.setModifiedDate(clock.instant());
+        entryUpdate.setRowVersion(UUID.randomUUID().toString());
+        var putItemRequest = cratePutItemRequest(entryUpdate);
+        client.putItem(putItemRequest);
     }
 
-    protected UpdateItemRequest createUpdateDatabaseItemRequest(PublishingRequestCase requestUpdate)
-        throws NotFoundException {
-        var now = nowAsString();
+    private PutItemRequest cratePutItemRequest(PublishingRequestCase entryUpdate) {
+        var dao = new PublishingRequestDao(entryUpdate);
 
-        var dao = createUpdatedPublishingRequestDao(requestUpdate);
-        var updateExpression = "SET"
-                               + "#data.#status = :status, "
-                               + "#data.#modifiedDate = :modifiedDate,"
-                               + "#data.#rowVersion = :rowVersion,"
-                               + "#PK1 = :PK1 ,"
-                               + "#SK1 = :SK1 ,"
-                               + "#PK2 = :PK2 ,"
-                               + "#SK2 = :SK2 ";
-
-        var conditionExpression = "#data.#resourceStatus <> :publishedStatus";
-
-        var expressionAttributeNames = Map.of(
+        final var expressionAttributeNames = Map.of(
             "#data", CONTAINED_DATA_FIELD_NAME,
-            "#status", PublishingRequestCase.STATUS_FIELD,
-            "#modifiedDate", PublishingRequestCase.MODIFIED_DATE_FIELD,
-            "#resourceStatus", PublishingRequestCase.RESOURCE_STATUS_FIELD,
-            "#rowVersion", DataEntry.ROW_VERSION,
-            "#PK1", BY_TYPE_CUSTOMER_STATUS_INDEX_PARTITION_KEY_NAME,
-            "#SK1", BY_TYPE_CUSTOMER_STATUS_INDEX_SORT_KEY_NAME,
-            "#PK2", BY_CUSTOMER_RESOURCE_INDEX_PARTITION_KEY_NAME,
-            "#SK2", BY_CUSTOMER_RESOURCE_INDEX_SORT_KEY_NAME
-
+            "#status", PublishingRequestCase.STATUS_FIELD
         );
-
-        var expressionAttributeValues = Map.of(
-            ":status", new AttributeValue(dao.getData().getStatus().name()),
-            ":modifiedDate", new AttributeValue(now),
-            ":publishedStatus", new AttributeValue(PublicationStatus.PUBLISHED.toString()),
-            ":rowVersion", new AttributeValue(UUID.randomUUID().toString()),
-            ":PK1", new AttributeValue(dao.getByTypeCustomerStatusPartitionKey()),
-            ":SK1", new AttributeValue(dao.getByTypeCustomerStatusSortKey()),
-            ":PK2", new AttributeValue(dao.getByCustomerAndResourcePartitionKey()),
-            ":SK2", new AttributeValue(dao.getByCustomerAndResourceSortKey())
+        final var expressionAttributeValues = Map.of(
+            ":status", new AttributeValue(dao.getData().getStatus().name())
         );
-        return new UpdateItemRequest()
+        return new PutItemRequest()
             .withTableName(tableName)
-            .withKey(dao.primaryKey())
-            .withUpdateExpression(updateExpression)
-            .withConditionExpression(conditionExpression)
+            .withItem(dao.toDynamoFormat())
+            .withConditionExpression("#data.#status <> :status")
             .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionAttributeValues)
-            .withReturnValues(ReturnValue.ALL_NEW);
+            .withExpressionAttributeValues(expressionAttributeValues);
+    }
+
+    public PublishingRequestCase getPublishingRequestByPublicationAndRequestIdentifiers(
+        SortableIdentifier publicationIdentifier,
+        SortableIdentifier publishingRequestIdentifier)
+        throws NotFoundException {
+        var publication = resourceService.getPublicationByIdentifier(publicationIdentifier);
+        var userInstance = UserInstance.fromPublication(publication);
+        var queryObject = PublishingRequestCase.createQuery(userInstance,
+                                                            publicationIdentifier,
+                                                            publishingRequestIdentifier);
+        return getPublishingRequest(queryObject);
     }
 
     @Override

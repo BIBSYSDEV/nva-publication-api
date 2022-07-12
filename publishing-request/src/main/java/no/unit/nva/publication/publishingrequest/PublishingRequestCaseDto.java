@@ -5,23 +5,16 @@ import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_PATH;
 import static no.unit.nva.publication.PublicationServiceConfig.SUPPORT_CASE_PATH;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-import com.fasterxml.jackson.annotation.JsonTypeName;
 import java.net.URI;
 import java.util.Objects;
-import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 
-@JsonTypeInfo(use = Id.NAME, property = "type")
-@JsonTypeName(PublishingRequestCaseDto.TYPE)
-public class PublishingRequestCaseDto {
+public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterface {
 
     public static final String MESSAGES = "messages";
-    public static final String TYPE = "PublishingRequestCase";
     public static final String ID = "id";
     public static final String JSON_LD_CONTEXT =
         "https://bibsysdev.github.io/src/publication-service/publishing-request-context.json";
@@ -41,7 +34,7 @@ public class PublishingRequestCaseDto {
 
     public  static PublishingRequestCaseDto createResponseObject(PublishingRequestCase request) {
         var id = createId(request);
-        return new PublishingRequestCaseDto(id,request.getStatus());
+        return new PublishingRequestCaseDto(id, request.getStatus());
     }
 
     private static URI createId(PublishingRequestCase request) {

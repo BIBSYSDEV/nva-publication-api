@@ -24,22 +24,28 @@ public class PublishingRequestCase
     public static final String TYPE = "PublishingRequestCase";
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
-    public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
+    public static final String CREATED_DATE_FIELD = "createdDate";
+    public static final String ROW_VERSION_FIELD = "rowVersion";
+    public static final String OWNER_FIELD = "owner";
+    public static final String CUSTOMER_ID_FIELD = "customerId";
+    public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
+    public static final String IDENTIFIER_FIELD = "identifier";
 
-    @JsonProperty
+    @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
-    @JsonProperty
+    @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
     private SortableIdentifier resourceIdentifier;
     @JsonProperty(STATUS_FIELD)
     private PublishingRequestStatus status;
-    @JsonProperty("customerId")
+    @JsonProperty(CUSTOMER_ID_FIELD)
     private URI customerId;
-    @JsonProperty("owner")
+    @JsonProperty(OWNER_FIELD)
     private String owner;
-    @JsonProperty
+    @JsonProperty(MODIFIED_DATE_FIELD)
     private Instant modifiedDate;
-    @JsonProperty
+    @JsonProperty(CREATED_DATE_FIELD)
     private Instant createdDate;
+    @JsonProperty(ROW_VERSION_FIELD)
     private String rowVersion;
 
     public PublishingRequestCase() {
@@ -198,7 +204,7 @@ public class PublishingRequestCase
         return copy;
     }
 
-    private PublishingRequestCase copy() {
+    public PublishingRequestCase copy() {
         var copy = new PublishingRequestCase();
         copy.setIdentifier(this.getIdentifier());
         copy.setStatus(this.getStatus());

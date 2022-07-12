@@ -315,7 +315,7 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
-  /{publicationIdentifier}/publishingrequest:
+  /{publicationIdentifier}/support-case:
     parameters:
       - in: path
         name: publicationIdentifier

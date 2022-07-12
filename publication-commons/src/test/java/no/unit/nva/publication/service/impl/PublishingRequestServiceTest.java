@@ -108,28 +108,30 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
         assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
     }
 
-    //TODO: add the expected functionality test in the UpdateHandler.
-    @Test
-    void shouldFailWhenPublicationRequestStatusIsSetToRejectedAfterApprove()
-        throws ApiGatewayException {
-        var publication = createPublication(owner);
-        var userInstance = createUserInstance(publication);
-        var publishingRequest =
-            publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
 
-        var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var approvePublishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
-                                                                                publication.getIdentifier(),
-                                                                                publishingRequest.getIdentifier(),
-                                                                                expectedNewPublicationRequestStatus);
-        publishingRequestService.updatePublishingRequest(approvePublishingRequest);
 
-        var updatedPublicationRequest = publishingRequestService.getPublishingRequest(approvePublishingRequest);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
-        var rejectPublishingRequest = rejectPublishingRequest(updatedPublicationRequest);
-        Executable action = () -> publishingRequestService.updatePublishingRequest(rejectPublishingRequest);
-        assertThrows(IllegalArgumentException.class, action);
-    }
+//    //TODO: add the expected functionality test in the UpdateHandler.
+//    @Test
+//    void shouldFailWhenPublicationRequestStatusIsSetToRejectedAfterApprove()
+//        throws ApiGatewayException {
+//        var publication = createPublication(owner);
+//        var userInstance = createUserInstance(publication);
+//        var publishingRequest =
+//            publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
+//
+//        var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
+//        var approvePublishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
+//                                                                                publication.getIdentifier(),
+//                                                                                publishingRequest.getIdentifier(),
+//                                                                                expectedNewPublicationRequestStatus);
+//        publishingRequestService.updatePublishingRequest(approvePublishingRequest);
+//
+//        var updatedPublicationRequest = publishingRequestService.getPublishingRequest(approvePublishingRequest);
+//        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
+//        var rejectPublishingRequest = rejectPublishingRequest(updatedPublicationRequest);
+//        Executable action = () -> publishingRequestService.updatePublishingRequest(rejectPublishingRequest);
+//        assertThrows(IllegalArgumentException.class, action);
+//    }
 
     private PublishingRequestCase rejectPublishingRequest(PublishingRequestCase publishingRequest) {
 

@@ -15,7 +15,8 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeName(PublishingRequestDao.TYPE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public class PublishingRequestDao extends Dao<PublishingRequestCase>
-    implements JoinWithResource, JsonSerializable {
+    implements JoinWithResource,
+               JsonSerializable {
 
     public static final String BY_RESOURCE_INDEX_ORDER_PREFIX = "d";
     public static final String TYPE = "PublishingRequestCase";
