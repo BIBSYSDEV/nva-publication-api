@@ -500,14 +500,14 @@ components:
       properties:
         type:
           type: string
-          id:
-            type: string
-            format: uri
-          status:
-            type: string
-            enum:
-              - PENDING
-              - APPROVED
+        id:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum:
+            - PENDING
+            - APPROVED
   securitySchemes:
     CognitoUserPool:
       type: apiKey
