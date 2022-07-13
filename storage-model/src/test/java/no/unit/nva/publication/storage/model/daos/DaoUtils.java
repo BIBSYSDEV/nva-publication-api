@@ -1,17 +1,16 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import java.time.Clock;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.AdditionalIdentifier;
@@ -20,8 +19,6 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.PublishingRequestCase;
-import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -66,16 +63,7 @@ public final class DaoUtils {
     }
 
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
-        var publication = PublicationGenerator.randomPublication();
-        var userInstance = UserInstance.fromPublication(publication);
-        var publishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
-                                                                         publication.getIdentifier(),
-                                                                         SortableIdentifier.next(),
-                                                                         PublishingRequestStatus.APPROVED);
-
-        publishingRequest.setRowVersion(UUID.randomUUID().toString());
-        publishingRequest.setCreatedDate(randomInstant());
-        publishingRequest.setModifiedDate(randomInstant());
+        var publishingRequest = randomPublishingRequest().approve();
         return (PublishingRequestDao) publishingRequest.toDao();
     }
 

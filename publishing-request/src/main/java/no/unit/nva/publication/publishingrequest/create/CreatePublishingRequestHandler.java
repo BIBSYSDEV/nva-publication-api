@@ -1,6 +1,6 @@
 package no.unit.nva.publication.publishingrequest.create;
 
-import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
+import static no.unit.nva.publication.PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.createUserInstance;
 import static no.unit.nva.publication.publishingrequest.PublishingRequestUtils.defaultRequestService;
 import static nva.commons.core.attempt.Try.attempt;
@@ -8,6 +8,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import java.net.HttpURLConnection;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -17,7 +18,7 @@ import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.core.JacocoGenerated;
 
 public class CreatePublishingRequestHandler extends
-                                            ApiGatewayHandler<NewPublishingRequest, PublishingRequestCaseDto> {
+                                            ApiGatewayHandler<PublishingRequestOpenCase, PublishingRequestCaseDto> {
 
     private final PublishingRequestService requestService;
 
@@ -27,15 +28,14 @@ public class CreatePublishingRequestHandler extends
     }
 
     public CreatePublishingRequestHandler(PublishingRequestService requestService) {
-        super(NewPublishingRequest.class);
+        super(PublishingRequestOpenCase.class);
         this.requestService = requestService;
     }
 
     @Override
-    protected PublishingRequestCaseDto processInput(
-        NewPublishingRequest input,
-        RequestInfo requestInfo,
-        Context context) throws ApiGatewayException {
+    protected PublishingRequestCaseDto processInput(PublishingRequestOpenCase input,
+                                                    RequestInfo requestInfo,
+                                                    Context context) throws ApiGatewayException {
         final var userInstance = createUserInstance(requestInfo);
         final var publicationIdentifier =
             new SortableIdentifier(requestInfo.getPathParameter(PUBLICATION_IDENTIFIER_PATH_PARAMETER));
@@ -46,11 +46,11 @@ public class CreatePublishingRequestHandler extends
                 .orElseThrow(fail -> handleErrors(fail.getException()));
 
         var persistedRequest = requestService.getPublishingRequest(newPublishingRequest);
-        return PublishingRequestCaseDto.create(persistedRequest);
+        return PublishingRequestCaseDto.createResponseObject(persistedRequest);
     }
 
     @Override
-    protected Integer getSuccessStatusCode(NewPublishingRequest input,
+    protected Integer getSuccessStatusCode(PublishingRequestOpenCase input,
                                            PublishingRequestCaseDto output) {
         return HttpURLConnection.HTTP_OK;
     }

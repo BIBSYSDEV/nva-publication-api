@@ -95,54 +95,23 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldPersistUpdatedStatusWhenPublishingRequestUpdateUpdatesStatus()
         throws ApiGatewayException {
         var publication = createPublication(owner);
-
         var publishingRequest = createPublishingRequest(publication);
-        var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var requestUpdate = PublishingRequestCase.createStatusUpdate(UserInstance.fromPublication(publication),
-                                                                     publication.getIdentifier(),
-                                                                     publishingRequest.getIdentifier(),
-                                                                     expectedNewPublicationRequestStatus);
+        var requestUpdate = publishingRequest.approve();
 
         publishingRequestService.updatePublishingRequest(requestUpdate);
         var updatedPublicationRequest = publishingRequestService.getPublishingRequest(requestUpdate);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
+        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
 
-    //TODO: add the expected functionality test in the UpdateHandler.
     @Test
-    void shouldFailWhenPublicationRequestStatusIsSetToRejectedAfterApprove()
-        throws ApiGatewayException {
+    void shouldRetrievePublishingRequestBasedOnPublicationAndPublishingRequestIdentifier() throws ApiGatewayException {
         var publication = createPublication(owner);
-        var userInstance = createUserInstance(publication);
-        var publishingRequest =
-            publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
+        var publishingRequest = createPublishingRequest(publication);
+        var retrievedPublishingRequest = publishingRequestService
+            .getPublishingRequestByPublicationAndRequestIdentifiers(publication.getIdentifier(),
+                                                                    publishingRequest.getIdentifier());
 
-        var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var approvePublishingRequest = PublishingRequestCase.createStatusUpdate(userInstance,
-                                                                                publication.getIdentifier(),
-                                                                                publishingRequest.getIdentifier(),
-                                                                                expectedNewPublicationRequestStatus);
-        publishingRequestService.updatePublishingRequest(approvePublishingRequest);
-
-        var updatedPublicationRequest = publishingRequestService.getPublishingRequest(approvePublishingRequest);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
-        var rejectPublishingRequest = rejectPublishingRequest(updatedPublicationRequest);
-        Executable action = () -> publishingRequestService.updatePublishingRequest(rejectPublishingRequest);
-        assertThrows(IllegalArgumentException.class, action);
-    }
-
-    private PublishingRequestCase rejectPublishingRequest(PublishingRequestCase publishingRequest) {
-
-        var newRequest = new PublishingRequestCase();
-        newRequest.setStatus(PublishingRequestStatus.REJECTED);
-        newRequest.setResourceIdentifier(publishingRequest.getResourceIdentifier());
-        newRequest.setIdentifier(publishingRequest.getIdentifier());
-        newRequest.setCreatedDate(publishingRequest.getCreatedDate());
-        newRequest.setOwner(publishingRequest.getOwner());
-        newRequest.setCustomerId(publishingRequest.getCustomerId());
-        newRequest.setRowVersion(publishingRequest.getRowVersion());
-        newRequest.setModifiedDate(publishingRequest.getModifiedDate());
-        return newRequest;
+        assertThat(retrievedPublishingRequest, is(equalTo(publishingRequest)));
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {
@@ -158,9 +127,5 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
 
     private PublishingRequestCase createPublishingRequest(Publication publication) throws ApiGatewayException {
         return publishingRequestService.createPublishingRequest(TestingUtils.createPublishingRequest(publication));
-    }
-
-    private UserInstance createUserInstance(Publication publication) {
-        return UserInstance.create(publication.getResourceOwner().getOwner(), publication.getPublisher().getId());
     }
 }

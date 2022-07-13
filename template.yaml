@@ -634,7 +634,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/publishingrequest
+            Path: /{publicationIdentifier}/support-case
             Method: post
             RestApiId: !Ref NvaPublicationApi
 
@@ -656,7 +656,7 @@ Resources:
         GetEvent:
           Type: Api
           Properties:
-            Path: /{publicationIdentifier}/publishingrequest
+            Path: /{publicationIdentifier}/support-case/{supportCaseIdentifier}
             Method: put
             RestApiId: !Ref NvaPublicationApi
 
