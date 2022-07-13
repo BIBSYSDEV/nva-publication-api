@@ -321,7 +321,6 @@ paths:
         name: publicationIdentifier
         schema:
           type: string
-          format: uuid
         required: true
         description: Identifier of the publication related to the publishing request
     post:
@@ -329,29 +328,29 @@ paths:
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
-        description: 'Request to publish a draft Publication'
+        description: 'Request to publish a draft Publication. Only type is required.'
         content:
           'application/json':
             schema:
-              $ref : '#/components/schemas/PublishingRequest'
+              $ref : '#/components/schemas/PublishingRequestCase'
             examples:
               request:
-                value: { "type" : "PublishingRequest" }
+                value: { "type" : "PublishingRequestCase" }
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishingRequest'
+                $ref: '#/components/schemas/PublishingRequestCase'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '502':
-          description: Bad Gateway
+        '500':
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -362,8 +361,21 @@ paths:
         responses: { }
         httpMethod: POST
         type: AWS_PROXY
+  /{publicationIdentifier}/support-case/{supportCaseIdentifier}:
+    parameters:
+      - in: path
+        name: publicationIdentifier
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: supportCaseIdentifier
+        schema:
+          type: string
+        required: true
+        description: Identifier of the publication related to the publishing request
     put:
-      summary: Update status for a publishing request for publication
+      summary: Update status for a support case for a publication
       security:
         - CognitoUserPool: [ 'https://api.nva.unit.no/scopes/backend', 'https://api.nva.unit.no/scopes/frontend','aws.cognito.signin.user.admin' ]
       requestBody:
@@ -371,18 +383,14 @@ paths:
         content:
           application/json:
             schema:
-              type: string
-              enum:
-                - PENDING
-                - REJECT
-                - APPROVE
+              $ref: '#/components/schemas/PublishingRequestCase'
       responses:
-        '202':
-          description: Accepted
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PublishingRequest'
+                $ref: '#/components/schemas/PublishingRequestCase'
         '400':
           description: Bad Request
           content:
@@ -395,8 +403,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Problem'
-        '502':
-          description: Bad Gateway
+        '500':
+          description: Internal Server Error
           content:
             application/json:
               schema:
@@ -487,11 +495,19 @@ components:
           enum:
             - DoiRequest
             - Support
-    PublishingRequest:
+    PublishingRequestCase:
       type: object
       properties:
         type:
           type: string
+          id:
+            type: string
+            format: uri
+          status:
+            type: string
+            enum:
+              - PENDING
+              - APPROVED
   securitySchemes:
     CognitoUserPool:
       type: apiKey

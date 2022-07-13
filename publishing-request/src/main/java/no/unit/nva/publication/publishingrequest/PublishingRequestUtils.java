@@ -11,7 +11,7 @@ import nva.commons.core.JacocoGenerated;
 //TODO: Rename or refactor class
 public final class PublishingRequestUtils {
 
-    public static final String PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER = "publishingRequestIdentifier";
+    public static final String PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER = "supportCaseIdentifier";
 
     private PublishingRequestUtils() {
 
