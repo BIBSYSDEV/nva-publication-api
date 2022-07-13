@@ -1,7 +1,10 @@
 package no.unit.nva.publication.service.impl;
 
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
@@ -11,18 +14,32 @@ import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.GetItemResult;
+import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsResult;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
+import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.TestingUtils;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
+import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.storage.model.daos.DynamoEntry;
+import no.unit.nva.publication.storage.model.daos.PublishingRequestDao;
+import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.ConflictException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -35,6 +52,7 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     private static final Instant PUBLICATION_CREATION_TIME = Instant.parse("2010-01-01T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_CREATION_TIME = Instant.parse("2012-02-02T10:15:30.00Z");
     private static final Instant PUBLICATION_REQUEST_UPDATE_TIME = Instant.parse("2013-02-02T10:15:30.00Z");
+    public static final int ONE_FOR_PUBLCATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL = 3;
 
     private ResourceService resourceService;
     private PublishingRequestService publishingRequestService;
@@ -112,6 +130,44 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
                                                                     publishingRequest.getIdentifier());
 
         assertThat(retrievedPublishingRequest, is(equalTo(publishingRequest)));
+    }
+
+    @Test
+    void shouldRetrieveEventuallyConsistentPublishingRequest() throws ApiGatewayException {
+        var client = mock(AmazonDynamoDB.class);
+        when(client.transactWriteItems(any())).thenReturn(new TransactWriteItemsResult());
+        var mockedResponse = new PublishingRequestDao(randomPublishingRequest()).toDynamoFormat();
+        when(client.getItem(any()))
+            .thenReturn(new GetItemResult().withItem(mockedPublicationResponse()))
+            .thenThrow(ResourceNotFoundException.class)
+            .thenReturn(new GetItemResult().withItem(mockedResponse));
+        var service = new PublishingRequestService(client, Clock.systemDefaultZone());
+        var response = service.createPublishingRequest(randomPublishingRequest());
+        var expectedDao = DynamoEntry.parseAttributeValuesMap(mockedResponse, PublishingRequestDao.class);
+        var expectedRequest = expectedDao.getData();
+        assertThat(response, is(equalTo(expectedRequest)));
+        verify(client,times(ONE_FOR_PUBLCATION_ONE_FAILING_FOR_NEW_CASE_AND_ONE_SUCCESSFUL)).getItem(any());
+    }
+
+    private Map<String, AttributeValue> mockedPublicationResponse() {
+        var publication = randomPublication();
+        publication.setStatus(PublicationStatus.DRAFT);
+        var resource = Resource.fromPublication(publication);
+        var dao = new ResourceDao(resource);
+        return dao.toDynamoFormat();
+    }
+
+    private PublishingRequestCase randomPublishingRequest() {
+        var request = new PublishingRequestCase();
+        request.setIdentifier(SortableIdentifier.next());
+        request.setOwner(randomString());
+        request.setResourceIdentifier(SortableIdentifier.next());
+        request.setStatus(PublishingRequestStatus.APPROVED);
+        request.setCreatedDate(randomInstant());
+        request.setModifiedDate(randomInstant());
+        request.setCustomerId(randomUri());
+        request.setStatus(randomElement(PublishingRequestStatus.values()));
+        return request;
     }
 
     private Publication createPublication(UserInstance owner) throws ApiGatewayException {
