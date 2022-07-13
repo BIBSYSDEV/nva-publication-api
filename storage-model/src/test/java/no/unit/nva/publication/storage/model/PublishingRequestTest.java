@@ -1,11 +1,14 @@
 package no.unit.nva.publication.storage.model;
 
+import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
+import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import java.time.Instant;
 import no.unit.nva.identifiers.SortableIdentifier;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -47,9 +50,16 @@ class PublishingRequestTest {
 
     private PublishingRequestCase samplePublishingRequest() {
         var userInstance = UserInstance.create(randomString(), randomUri());
-        return PublishingRequestCase.createStatusUpdate(userInstance,
-                                                        SortableIdentifier.next(),
-                                                        SortableIdentifier.next(),
-                                                        randomElement(PublishingRequestStatus.values()));
+        var sample = new PublishingRequestCase();
+        sample.setCreatedDate(randomInstant());
+        sample.setModifiedDate(randomInstant());
+        sample.setRowVersion(randomString());
+        sample.setStatus(randomElement(PublishingRequestStatus.values()));
+        sample.setIdentifier(SortableIdentifier.next());
+        sample.setResourceIdentifier(SortableIdentifier.next());
+        sample.setCustomerId(randomUri());
+        sample.setOwner(randomString());
+        assertThat(sample,doesNotHaveEmptyValues());
+        return sample;
     }
 }

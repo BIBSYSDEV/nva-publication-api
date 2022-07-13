@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.net.URI;
 import java.util.Objects;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import nva.commons.core.JacocoGenerated;
@@ -32,20 +33,20 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
         this.status = status;
     }
 
-    public  static PublishingRequestCaseDto createResponseObject(PublishingRequestCase request) {
+    public static PublishingRequestCaseDto createResponseObject(PublishingRequestCase request) {
         var id = createId(request);
         return new PublishingRequestCaseDto(id, request.getStatus());
     }
 
-    private static URI createId(PublishingRequestCase request) {
+    public static URI calculateId(SortableIdentifier publicationIdentifier,
+                                  SortableIdentifier publishingRequestIdentifier) {
         return UriWrapper.fromHost(API_HOST)
             .addChild(PUBLICATION_PATH)
-            .addChild(request.getResourceIdentifier().toString())
+            .addChild(publicationIdentifier.toString())
             .addChild(SUPPORT_CASE_PATH)
-            .addChild(request.getIdentifier().toString())
+            .addChild(publishingRequestIdentifier.toString())
             .getUri();
     }
-
 
     @JsonProperty(MESSAGES)
     public URI getMessagesEndpoint() {
@@ -63,6 +64,12 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
 
     @Override
     @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getId());
+    }
+
+    @Override
+    @JacocoGenerated
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -74,13 +81,11 @@ public class PublishingRequestCaseDto implements PublishingRequestCaseDtoInterfa
         return Objects.equals(getId(), that.getId());
     }
 
-    @Override
-    @JacocoGenerated
-    public int hashCode() {
-        return Objects.hash(getId());
-    }
-
     public PublishingRequestStatus getStatus() {
         return status;
+    }
+
+    private static URI createId(PublishingRequestCase request) {
+        return calculateId(request.getResourceIdentifier(), request.getIdentifier());
     }
 }

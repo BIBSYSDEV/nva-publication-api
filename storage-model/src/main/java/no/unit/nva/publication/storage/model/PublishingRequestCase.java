@@ -62,16 +62,6 @@ public class PublishingRequestCase
         return openingCaseObject;
     }
 
-    public static PublishingRequestCase createStatusUpdate(UserInstance userInstance,
-                                                           SortableIdentifier publicationIdentifier,
-                                                           SortableIdentifier publishingRequestIdentifier,
-                                                           PublishingRequestStatus publishingRequestStatus) {
-        PublishingRequestCase newPublishingRequest =
-            createPublishingRequestIdentifyingObject(userInstance, publicationIdentifier, publishingRequestIdentifier);
-        newPublishingRequest.setStatus(publishingRequestStatus);
-        return newPublishingRequest;
-    }
-
     public static PublishingRequestCase createQuery(UserInstance userInstance,
                                                     SortableIdentifier publicationIdentifier,
                                                     SortableIdentifier publishingRequestIdentifier) {

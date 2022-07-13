@@ -1,17 +1,16 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
+import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
-import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
 import java.net.URI;
-import java.util.UUID;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
@@ -67,15 +66,9 @@ class PublishingRequestDaoTest {
     private static PublishingRequestDao sampleApprovePublicationRequestDao() {
         var publication = PublicationGenerator.randomPublication();
         var userInstance = UserInstance.fromPublication(publication);
-        var publishingRequest =
-            PublishingRequestCase.createStatusUpdate(userInstance,
-                                                     publication.getIdentifier(),
-                                                     SortableIdentifier.next(),
-                                                     randomElement(PublishingRequestStatus.values()));
-        publishingRequest.setRowVersion(UUID.randomUUID().toString());
-        publishingRequest.setCreatedDate(randomInstant());
-        publishingRequest.setModifiedDate(randomInstant());
-        return (PublishingRequestDao) publishingRequest.toDao();
+        var publishingRequestCase = randomPublishingRequest(publication).approve();
+        publishingRequestCase.setStatus(randomElement(PublishingRequestStatus.values()));
+        return (PublishingRequestDao) publishingRequestCase.toDao();
     }
 
     private String expectedPublicationRequestPrimarySortKey(SortableIdentifier entryIdentifier) {

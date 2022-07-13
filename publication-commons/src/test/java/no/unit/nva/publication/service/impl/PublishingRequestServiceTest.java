@@ -95,17 +95,12 @@ class PublishingRequestServiceTest extends ResourcesLocalTest {
     void shouldPersistUpdatedStatusWhenPublishingRequestUpdateUpdatesStatus()
         throws ApiGatewayException {
         var publication = createPublication(owner);
-
         var publishingRequest = createPublishingRequest(publication);
-        var expectedNewPublicationRequestStatus = PublishingRequestStatus.APPROVED;
-        var requestUpdate = PublishingRequestCase.createStatusUpdate(UserInstance.fromPublication(publication),
-                                                                     publication.getIdentifier(),
-                                                                     publishingRequest.getIdentifier(),
-                                                                     expectedNewPublicationRequestStatus);
+        var requestUpdate = publishingRequest.approve();
 
         publishingRequestService.updatePublishingRequest(requestUpdate);
         var updatedPublicationRequest = publishingRequestService.getPublishingRequest(requestUpdate);
-        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(expectedNewPublicationRequestStatus)));
+        assertThat(updatedPublicationRequest.getStatus(), is(equalTo(PublishingRequestStatus.APPROVED)));
     }
 
     @Test

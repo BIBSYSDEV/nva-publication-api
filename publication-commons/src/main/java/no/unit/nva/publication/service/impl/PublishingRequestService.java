@@ -12,9 +12,11 @@ import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
+import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
@@ -36,6 +38,8 @@ public class PublishingRequestService extends ServiceWithTransactions {
         "Publication is already published.";
     public static final String MARKED_FOR_DELETION_ERROR =
         "Publication is marked for deletion and cannot be published.";
+    public static final String DOUBLE_QUOTES = "\"";
+    public static final String EMPTY_STRING = "";
     private static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_PROVIDER = SortableIdentifier::next;
     private final AmazonDynamoDB client;
     private final Clock clock;
@@ -75,30 +79,13 @@ public class PublishingRequestService extends ServiceWithTransactions {
             .orElseThrow(() -> handleFetchPublishingRequestByResourceError(queryObject.getIdentifier()));
     }
 
-    public void updatePublishingRequest(PublishingRequestCase requestUpdate) {
+    public PublishingRequestCase updatePublishingRequest(PublishingRequestCase requestUpdate) {
         var entryUpdate = requestUpdate.copy();
         entryUpdate.setModifiedDate(clock.instant());
         entryUpdate.setRowVersion(UUID.randomUUID().toString());
         var putItemRequest = cratePutItemRequest(entryUpdate);
         client.putItem(putItemRequest);
-    }
-
-    private PutItemRequest cratePutItemRequest(PublishingRequestCase entryUpdate) {
-        var dao = new PublishingRequestDao(entryUpdate);
-
-        final var expressionAttributeNames = Map.of(
-            "#data", CONTAINED_DATA_FIELD_NAME,
-            "#status", PublishingRequestCase.STATUS_FIELD
-        );
-        final var expressionAttributeValues = Map.of(
-            ":status", new AttributeValue(dao.getData().getStatus().name())
-        );
-        return new PutItemRequest()
-            .withTableName(tableName)
-            .withItem(dao.toDynamoFormat())
-            .withConditionExpression("#data.#status <> :status")
-            .withExpressionAttributeNames(expressionAttributeNames)
-            .withExpressionAttributeValues(expressionAttributeValues);
+        return entryUpdate;
     }
 
     public PublishingRequestCase getPublishingRequestByPublicationAndRequestIdentifiers(
@@ -132,6 +119,18 @@ public class PublishingRequestService extends ServiceWithTransactions {
     private static NotFoundException handleFetchPublishingRequestByResourceError(
         SortableIdentifier resourceIdentifier) {
         return new NotFoundException(PUBLISHING_REQUEST_NOT_FOUND_FOR_RESOURCE + resourceIdentifier.toString());
+    }
+
+    private PutItemRequest cratePutItemRequest(PublishingRequestCase entryUpdate) {
+        var dao = new PublishingRequestDao(entryUpdate);
+        var condition = new UpdateCaseButNotOwnerCondition(entryUpdate);
+
+        return new PutItemRequest()
+            .withTableName(tableName)
+            .withItem(dao.toDynamoFormat())
+            .withConditionExpression(condition.getConditionExpression())
+            .withExpressionAttributeNames(condition.getExpressionAttributeNames())
+            .withExpressionAttributeValues(condition.getExpressionAttributeValues());
     }
 
     private Publication fetchPublication(PublishingRequestCase publishingRequest)
@@ -199,5 +198,65 @@ public class PublishingRequestService extends ServiceWithTransactions {
     private TransactWriteItem createUniqueIdentifierEntry(PublishingRequestCase publicationRequest) {
         var identifierEntry = new IdentifierEntry(publicationRequest.getIdentifier().toString());
         return newPutTransactionItem(identifierEntry);
+    }
+
+    private class UpdateCaseButNotOwnerCondition {
+
+        private String conditionExpression;
+        private Map<String, String> expressionAttributeNames;
+        private Map<String, AttributeValue> expressionAttributeValues;
+
+        public UpdateCaseButNotOwnerCondition(PublishingRequestCase entryUpdate) {
+            createCondition(entryUpdate);
+        }
+
+        public String getConditionExpression() {
+            return conditionExpression;
+        }
+
+        public Map<String, String> getExpressionAttributeNames() {
+            return expressionAttributeNames;
+        }
+
+        public Map<String, AttributeValue> getExpressionAttributeValues() {
+            return expressionAttributeValues;
+        }
+
+        private void createCondition(PublishingRequestCase entryUpdate) {
+
+            this.expressionAttributeNames = Map.of(
+                "#data", CONTAINED_DATA_FIELD_NAME,
+                "#createdDate", PublishingRequestCase.CREATED_DATE_FIELD,
+                "#customerId", PublishingRequestCase.CUSTOMER_ID_FIELD,
+                "#identifier", PublishingRequestCase.IDENTIFIER_FIELD,
+                "#modifiedDate", PublishingRequestCase.MODIFIED_DATE_FIELD,
+                "#owner", PublishingRequestCase.OWNER_FIELD,
+                "#resourceIdentifier", PublishingRequestCase.RESOURCE_IDENTIFIER_FIELD,
+                "#rowVersion", PublishingRequestCase.ROW_VERSION_FIELD);
+
+            this.expressionAttributeValues =
+                Map.of(
+                    ":createdDate", new AttributeValue(dateAsString(entryUpdate.getCreatedDate())),
+                    ":customerId", new AttributeValue(entryUpdate.getCustomerId().toString()),
+                    ":identifier", new AttributeValue(entryUpdate.getIdentifier().toString()),
+                    ":modifiedDate", new AttributeValue(dateAsString(entryUpdate.getModifiedDate())),
+                    ":owner", new AttributeValue(entryUpdate.getOwner()),
+                    ":resourceIdentifier", new AttributeValue(entryUpdate.getResourceIdentifier().toString()),
+                    ":rowVersion", new AttributeValue(entryUpdate.getRowVersion()));
+
+            this.conditionExpression = "#data.#createdDate = :createdDate "
+                                       + "AND #data.#customerId = :customerId "
+                                       + "AND #data.#identifier = :identifier "
+                                       + "AND #data.#modifiedDate <> :modifiedDate "
+                                       + "AND #data.#owner = :owner "
+                                       + "AND #data.#resourceIdentifier = :resourceIdentifier "
+                                       + "AND #data.#rowVersion <> :rowVersion ";
+        }
+
+        private String dateAsString(Instant date) {
+            return attempt(() -> JsonUtils.dtoObjectMapper.writeValueAsString(date))
+                .map(dateStr -> dateStr.replace(DOUBLE_QUOTES, EMPTY_STRING))
+                .orElseThrow();
+        }
     }
 }

@@ -78,7 +78,7 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
         var actualBody = httpResponse.getBodyObject(PublishingRequestCaseDto.class);
         var actualId = actualBody.getId();
         var persistedRequest = fetchCreatedRequestDirectlyFromService(actualId);
-        var expectedBody= PublishingRequestCaseDto.createResponseObject(persistedRequest);
+        var expectedBody = PublishingRequestCaseDto.createResponseObject(persistedRequest);
         assertThat(httpResponse.getStatusCode(), is(equalTo(HTTP_OK)));
         assertThat(actualBody, is(equalTo(expectedBody)));
     }
@@ -162,12 +162,12 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
     private InputStream createHttpRequest(Publication existingPublication) throws JsonProcessingException {
         var requestBody = new PublishingRequestOpenCase();
         return new HandlerRequestBuilder<PublishingRequestOpenCase>(JsonUtils.dtoObjectMapper)
-        .withBody(requestBody)
-        .withNvaUsername(existingPublication.getResourceOwner().getOwner())
-        .withCustomerId(existingPublication.getPublisher().getId())
-        .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
-                                   existingPublication.getIdentifier().toString()))
-        .build();
+            .withBody(requestBody)
+            .withNvaUsername(existingPublication.getResourceOwner().getOwner())
+            .withCustomerId(existingPublication.getPublisher().getId())
+            .withPathParameters(Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                                       existingPublication.getIdentifier().toString()))
+            .build();
     }
 
     private <T> GatewayResponse<T> ownerCreatesPublishingRequestForDraftPublication(Publication draftPublication,
@@ -192,7 +192,8 @@ class CreatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withNvaUsername(requester)
             .withCustomerId(existingPublication.getPublisher().getId())
             .withPathParameters(
-                Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER, existingPublication.getIdentifier().toString()))
+                Map.of(PublicationServiceConfig.PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                       existingPublication.getIdentifier().toString()))
             .build();
     }
 }
