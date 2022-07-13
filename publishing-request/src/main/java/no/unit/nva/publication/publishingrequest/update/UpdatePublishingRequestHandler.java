@@ -38,7 +38,6 @@ public class UpdatePublishingRequestHandler
             readIdentifierFromPathParameter(requestInfo, PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER);
 
         validateInput(input, publicationIdentifier, publishingRequestIdentifier);
-
         var currentRequest =
             requestService.getPublishingRequestByPublicationAndRequestIdentifiers(publicationIdentifier,
                                                                                   publishingRequestIdentifier);

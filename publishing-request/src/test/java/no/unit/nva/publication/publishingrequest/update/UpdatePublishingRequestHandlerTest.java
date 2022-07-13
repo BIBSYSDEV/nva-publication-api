@@ -64,61 +64,6 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
                          publishingRequestWithInvalidPublishingRequestCaseStatus());
     }
 
-    private static InputStream publishingRequestWithInvalidPublishingRequestCaseStatus()
-        throws JsonProcessingException {
-        var publicationIdentifier = SortableIdentifier.next();
-        var publishingRequestIdentifier = SortableIdentifier.next();
-        var invalidBody = createInvalidBody(publicationIdentifier, publishingRequestIdentifier);
-        var customerId = randomUri();
-        return constructHttpRequest(publicationIdentifier,publishingRequestIdentifier,invalidBody,customerId);
-    }
-
-    private static InputStream publishingRequestWithIdConflictingWithRequestUri() throws JsonProcessingException {
-        var publicationIdentifier = SortableIdentifier.next();
-        var publishingRequestIdentifier = SortableIdentifier.next();
-        var requestUri = createRequestUri(publicationIdentifier, publishingRequestIdentifier);
-        var wrongCaseId = requestUri.getParent().orElseThrow()
-            .addChild(SortableIdentifier.next().toString())
-            .getUri();
-        var dto = new PublishingRequestCaseDto(wrongCaseId, PublishingRequestStatus.APPROVED);
-        var customerId = randomUri();
-        return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, dto, customerId);
-    }
-
-    private static InputStream constructHttpRequest(SortableIdentifier publicationIdentifier,
-                                                    SortableIdentifier publishingRequestIdentifier,
-                                                    Object dto,
-                                                    URI customerId) throws JsonProcessingException {
-        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
-            .withNvaUsername(randomString())
-            .withCustomerId(customerId)
-            .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
-            .withBody(dto)
-            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
-                                       publicationIdentifier.toString(),
-                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
-                                       publishingRequestIdentifier.toString()))
-            .build();
-    }
-
-    private static ObjectNode createInvalidBody(SortableIdentifier publicationIdentifier,
-                                                SortableIdentifier publishingRequestIdentifier) {
-        var uri = PublishingRequestCaseDto.calculateId(publicationIdentifier, publishingRequestIdentifier);
-        var invalidBody = JsonUtils.dtoObjectMapper.createObjectNode();
-        invalidBody.put(PublishingRequestCaseDto.ID, uri.toString());
-        invalidBody.put(PublishingRequestCaseDto.STATUS, randomString());
-        return invalidBody;
-    }
-
-    private static UriWrapper createRequestUri(SortableIdentifier publicationIdentifier,
-                                               SortableIdentifier publishingRequestIdentifier) {
-        return UriWrapper.fromHost(API_HOST)
-            .addChild(PUBLICATION_PATH)
-            .addChild(publicationIdentifier.toString())
-            .addChild(SUPPORT_CASE_PATH)
-            .addChild(publishingRequestIdentifier.toString());
-    }
-
     @BeforeEach
     public void setup() {
         super.init();
@@ -187,12 +132,74 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
         assertThat(problem.getDetail(), is(equalTo(AUTHORIZATION_ERROR)));
     }
 
-    @ParameterizedTest
+    @ParameterizedTest(name = "should return BadRequest when input is invalid")
     @MethodSource("invalidHttpRequests")
     void shouldReturnBadRequestWhenSubmittedRequestContainsInvalidData(InputStream httpRequest) throws IOException {
         handler.handleRequest(httpRequest, outputStream, CONTEXT);
         var response = GatewayResponse.fromOutputStream(outputStream, Problem.class);
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
+    }
+
+    private static InputStream publishingRequestWithInvalidPublishingRequestCaseStatus()
+        throws JsonProcessingException {
+        var publicationIdentifier = SortableIdentifier.next();
+        var publishingRequestIdentifier = SortableIdentifier.next();
+        var invalidBody = createInvalidBody(publicationIdentifier, publishingRequestIdentifier);
+        var customerId = randomUri();
+        return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, invalidBody, customerId);
+    }
+
+    private static InputStream publishingRequestWithIdConflictingWithRequestUri() throws JsonProcessingException {
+        var publicationIdentifier = SortableIdentifier.next();
+        var publishingRequestIdentifier = SortableIdentifier.next();
+        var requestUri = createRequestUri(publicationIdentifier, publishingRequestIdentifier);
+        var wrongCaseId = requestUri.getParent().orElseThrow()
+            .addChild(SortableIdentifier.next().toString())
+            .getUri();
+        var dto = new PublishingRequestCaseDto(wrongCaseId, PublishingRequestStatus.APPROVED);
+        var customerId = randomUri();
+        return constructHttpRequest(publicationIdentifier, publishingRequestIdentifier, dto, customerId);
+    }
+
+    private static InputStream constructHttpRequest(SortableIdentifier publicationIdentifier,
+                                                    SortableIdentifier publishingRequestIdentifier,
+                                                    Object dto,
+                                                    URI customerId) throws JsonProcessingException {
+        return new HandlerRequestBuilder<>(JsonUtils.dtoObjectMapper)
+            .withNvaUsername(randomString())
+            .withCustomerId(customerId)
+            .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString())
+            .withBody(dto)
+            .withPathParameters(Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER,
+                                       publicationIdentifier.toString(),
+                                       PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+                                       publishingRequestIdentifier.toString()))
+            .build();
+    }
+
+    private static ObjectNode createInvalidBody(SortableIdentifier publicationIdentifier,
+                                                SortableIdentifier publishingRequestIdentifier) {
+        var uri = PublishingRequestCaseDto.calculateId(publicationIdentifier, publishingRequestIdentifier);
+        var invalidBody = JsonUtils.dtoObjectMapper.createObjectNode();
+        invalidBody.put(PublishingRequestCaseDto.ID, uri.toString());
+        invalidBody.put(PublishingRequestCaseDto.STATUS, randomString());
+        return invalidBody;
+    }
+
+    private static UriWrapper createRequestUri(SortableIdentifier publicationIdentifier,
+                                               SortableIdentifier publishingRequestIdentifier) {
+        return UriWrapper.fromHost(API_HOST)
+            .addChild(PUBLICATION_PATH)
+            .addChild(publicationIdentifier.toString())
+            .addChild(SUPPORT_CASE_PATH)
+            .addChild(publishingRequestIdentifier.toString());
+    }
+
+    private static Map<String, String> constructPathParameters(Publication publication,
+                                                               PublishingRequestCase publishingRequest) {
+        return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
+                      PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
+                      publishingRequest.getIdentifier().toString());
     }
 
     private PublishingRequestCase createPendingPublishingRequest(Publication publication) throws ApiGatewayException {
@@ -236,13 +243,6 @@ class UpdatePublishingRequestHandlerTest extends ResourcesLocalTest {
             .withCustomerId(customerId)
             .withPathParameters(constructPathParameters(publication, publishingRequest))
             .withAccessRights(customerId, AccessRight.APPROVE_PUBLISH_REQUEST.toString());
-    }
-
-    private static Map<String, String> constructPathParameters(Publication publication,
-                                                               PublishingRequestCase publishingRequest) {
-        return Map.of(PUBLICATION_IDENTIFIER_PATH_PARAMETER, publication.getIdentifier().toString(),
-                      PUBLISHING_REQUEST_IDENTIFIER_PATH_PARAMETER,
-                      publishingRequest.getIdentifier().toString());
     }
 
     private PublishingRequestCase createPersistedPublishingRequest(Publication publication,
