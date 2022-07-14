@@ -45,6 +45,7 @@ import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -267,7 +268,8 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
 
     private Message createSupportMessage(Publication pub) throws NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
-        var messageIdentifier = messageService.createSimpleMessage(owner, pub, randomString());
+
+        var messageIdentifier = messageService.createMessage(owner, pub, randomString(), MessageType.SUPPORT);
         return messageService.getMessage(owner, messageIdentifier);
     }
 
@@ -312,7 +314,7 @@ class ListDoiRequestsHandlerTest extends ResourcesLocalTest {
 
     private MessageDto createDoiRequestMessage(Publication pub) throws  NotFoundException {
         UserInstance owner = UserInstance.fromPublication(pub);
-        var messageID = messageService.createDoiRequestMessage(owner, pub, randomString());
+        var messageID = messageService.createMessage(owner, pub, randomString(), MessageType.DOI_REQUEST);
         Message message = messageService.getMessage(owner, messageID);
         return MessageDto.fromMessage(message);
     }

@@ -19,6 +19,7 @@ import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.RowLevelSecurity;
 import no.unit.nva.publication.storage.model.UserInstance;
@@ -71,7 +72,8 @@ public final class DaoUtils {
         SortableIdentifier identifier = SortableIdentifier.next();
         UserInstance sender = UserInstance.create(randomString(), randomUri());
         Publication publication = PublicationGenerator.randomPublication();
-        Message message = Message.doiRequestMessage(sender, publication, randomString(), identifier, clock);
+        Message message = Message.create(sender, publication, randomString(), identifier, clock,
+                                         MessageType.DOI_REQUEST);
         assertThat(message, doesNotHaveEmptyValues());
         return new MessageDao(message);
     }

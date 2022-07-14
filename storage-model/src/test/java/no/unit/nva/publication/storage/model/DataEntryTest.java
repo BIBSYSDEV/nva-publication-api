@@ -73,7 +73,7 @@ class DataEntryTest {
     private static Message randomMessage(Publication publication) {
         var user = UserInstance.create(randomString(), randomUri());
         var clock = Clock.systemDefaultZone();
-        return Message.supportMessage(user, publication, randomString(), SortableIdentifier.next(), clock);
+        return Message.create(user, publication, randomString(), SortableIdentifier.next(), clock, MessageType.SUPPORT);
     }
 
     private static class Tuple {

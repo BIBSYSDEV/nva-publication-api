@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.TestingUtils.createPublicationForUser;
 import static no.unit.nva.publication.TestingUtils.randomUserInstance;
+import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -40,9 +41,12 @@ import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class MessageServiceTest extends ResourcesLocalTest {
 
@@ -59,7 +63,6 @@ class MessageServiceTest extends ResourcesLocalTest {
     public static final URI SOME_OTHER_ORG = URI.create("https://some.other.example.org/98765");
     public static final ResourceOwner RANDOM_RESOURCE_OWNER = new ResourceOwner(SOME_OTHER_OWNER, SOME_OTHER_ORG);
 
-    public static final String SAMPLE_HOST = "https://localhost/messages/";
 
     public static final int FIRST_ELEMENT = 0;
     private static final int SINGLE_EXPECTED_ELEMENT = 0;
@@ -71,25 +74,23 @@ class MessageServiceTest extends ResourcesLocalTest {
     @BeforeEach
     public void initialize() {
         super.init();
-        Clock clock = mockClock();
+        var clock = mockClock();
         messageService = new MessageService(client, clock);
         resourceService = new ResourceService(client, clock);
         owner = randomUserInstance();
     }
 
-    @Test
-    void createSimpleMessageStoresNewMessageInDatabase() throws ApiGatewayException {
-
+    @ParameterizedTest(name = "should persist message of type {0}")
+    @EnumSource(MessageType.class)
+    void shouldPersistMessageOfType(MessageType messageType) throws ApiGatewayException {
         var publication = createDraftPublication(owner);
         var messageText = randomString();
-
-        var messageIdentifier = createSimpleMessage(publication, messageText);
-        var savedMessage = fetchMessage(owner, messageIdentifier);
-
-        var expectedMessage =
-            constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication, messageText);
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
+        var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
+        var messageIdentifier =
+            messageService.createMessage(sender, publication, messageText, messageType);
+        var message = messageService.getMessage(owner, messageIdentifier);
+        var expectedMessage = constructExpectedMessage(messageIdentifier, publication, messageText, messageType);
+        Assertions.assertEquals(expectedMessage, message);
     }
 
     @Test
@@ -129,56 +130,19 @@ class MessageServiceTest extends ResourcesLocalTest {
         assertThat(resourceConversation.allMessages(), containsInAnyOrder(expectedMessages));
     }
 
-    @Test
-    void createSimpleMessageThrowsExceptionWhenDuplicateIdentifierIsInserted()
+    @ParameterizedTest(name = "should throw Exception when type is {0} and identifier is duplicate")
+    @EnumSource(MessageType.class)
+    void shouldThrowExceptionWhenDuplicateIdentifierIsInserted(MessageType messageType)
         throws ApiGatewayException {
         messageService = serviceProducingDuplicateIdentifiers();
         var publication = createDraftPublication(owner);
 
-        var actualIdentifier = createSimpleMessage(publication, randomString());
+        var actualIdentifier = createSimpleMessage(publication, randomString(), messageType);
 
         assertThat(actualIdentifier, is(equalTo(SOME_IDENTIFIER)));
 
-        Executable action = () -> createSimpleMessage(publication, randomString());
+        Executable action = () -> createSimpleMessage(publication, randomString(), messageType);
         assertThrows(TransactionFailedException.class, action);
-    }
-
-    @Test
-    void getMessageByOwnerAndIdReturnsStoredMessage() throws ApiGatewayException {
-        Publication publication = createDraftPublication(owner);
-        String messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
-        var savedMessage = fetchMessage(UserInstance.fromPublication(publication), messageIdentifier);
-        var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-                                                             messageText);
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-
-    @Test
-    void getMessageByKeyReturnsStoredMessage() throws ApiGatewayException {
-        var publication = createDraftPublication(owner);
-        var messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
-
-        var savedMessage = messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
-        var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-                                                             messageText);
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
-    }
-
-    @Test
-    void getMessageByIdAndOwnerReturnsStoredMessage() throws ApiGatewayException {
-        Publication publication = createDraftPublication(owner);
-        String messageText = randomString();
-        var messageIdentifier = createSimpleMessage(publication, messageText);
-        var sampleMessageUri = URI.create(SAMPLE_HOST + messageIdentifier.toString());
-        var savedMessage = fetchMessage(UserInstance.fromPublication(publication), sampleMessageUri);
-        var expectedMessage = constructExpectedSimpleMessage(savedMessage.getIdentifier(), publication,
-                                                             messageText);
-
-        assertThat(savedMessage, is(equalTo(expectedMessage)));
     }
 
     @Test
@@ -288,12 +252,11 @@ class MessageServiceTest extends ResourcesLocalTest {
 
     private List<Message> createOneMessagePerPublication(List<Publication> createdPublications)
         throws NotFoundException {
-        List<Message> savedMessages = new ArrayList<>();
-
+        var savedMessages = new ArrayList<Message>();
         for (Publication createdPublication : createdPublications) {
-            SortableIdentifier messageIdentifier = createSimpleMessage(createdPublication, randomString());
-            UserInstance owner = UserInstance.fromPublication(createdPublication);
-            Message savedMessage = fetchMessage(owner, messageIdentifier);
+            var messageIdentifier = createSimpleMessage(createdPublication, randomString(),randomMessageType());
+            var owner = UserInstance.fromPublication(createdPublication);
+            var savedMessage = fetchMessage(owner, messageIdentifier);
             savedMessages.add(savedMessage);
         }
         return savedMessages;
@@ -333,19 +296,19 @@ class MessageServiceTest extends ResourcesLocalTest {
         var publicationOwner = UserInstance.fromPublication(publication);
         return IntStream.range(0, NUMBER_OF_SAMPLE_MESSAGES).boxed()
             .map(ignoredValue -> randomString())
-            .map(message -> createSimpleMessage(publication, message))
+            .map(message -> createSimpleMessage(publication, message, randomMessageType()))
             .map(attempt(messageIdentifier -> fetchMessage(publicationOwner, messageIdentifier)))
             .map(Try::orElseThrow)
             .collect(Collectors.toList());
     }
 
+    private MessageType randomMessageType() {
+        return randomElement(MessageType.values());
+    }
+
     private Message fetchMessage(UserInstance publicationOwner, SortableIdentifier messageIdentifier)
         throws NotFoundException {
         return messageService.getMessage(publicationOwner, messageIdentifier);
-    }
-
-    private Message fetchMessage(UserInstance publicationOwner, URI messageId) throws NotFoundException {
-        return messageService.getMessage(publicationOwner, messageId);
     }
 
     private SortableIdentifier createDoiRequestMessage(Publication publication, String message) {
@@ -355,17 +318,14 @@ class MessageServiceTest extends ResourcesLocalTest {
     }
 
     private SortableIdentifier createDoiRequestMessage(Publication publication, String message, UserInstance sender) {
-        return attempt(() -> messageService.createDoiRequestMessage(sender, publication, message)).orElseThrow();
+        return attempt(
+            () -> messageService.createMessage(sender, publication, message, MessageType.DOI_REQUEST)).orElseThrow();
     }
 
-    private SortableIdentifier createSimpleMessage(Publication publication, String message) {
+    private SortableIdentifier createSimpleMessage(Publication publication, String message, MessageType messageType) {
         var publicationOwner = UserInstance.fromPublication(publication);
         var sender = UserInstance.create(SOME_SENDER, publicationOwner.getOrganizationUri());
-        return createSimpleMessage(publication, message, sender);
-    }
-
-    private SortableIdentifier createSimpleMessage(Publication publication, String message, UserInstance sender) {
-        return attempt(() -> messageService.createSimpleMessage(sender, publication, message)).orElseThrow();
+        return attempt(() -> messageService.createMessage(sender, publication, message, messageType)).orElseThrow();
     }
 
     private Clock mockClock() {
@@ -378,12 +338,13 @@ class MessageServiceTest extends ResourcesLocalTest {
         return clock;
     }
 
-    private Message constructExpectedSimpleMessage(SortableIdentifier messageIdentifier,
-                                                   Publication publication,
-                                                   String messageText) {
+    private Message constructExpectedMessage(SortableIdentifier messageIdentifier,
+                                             Publication publication,
+                                             String messageText,
+                                             MessageType messageType) {
         var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-        return Message.supportMessage(sender, publication, messageText, messageIdentifier, clock);
+        return Message.create(sender, publication, messageText, messageIdentifier, clock, messageType);
     }
 
     private Message constructExpectedDoiRequestMessage(SortableIdentifier messageIdentifier,
@@ -391,6 +352,6 @@ class MessageServiceTest extends ResourcesLocalTest {
                                                        String messageText) {
         var sender = UserInstance.create(SOME_SENDER, publication.getPublisher().getId());
         var clock = Clock.fixed(MESSAGE_CREATION_TIME, Clock.systemDefaultZone().getZone());
-        return Message.doiRequestMessage(sender, publication, messageText, messageIdentifier, clock);
+        return Message.create(sender, publication, messageText, messageIdentifier, clock, MessageType.DOI_REQUEST);
     }
 }

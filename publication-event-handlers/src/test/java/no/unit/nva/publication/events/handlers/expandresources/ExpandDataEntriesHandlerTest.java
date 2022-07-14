@@ -8,7 +8,6 @@ import static no.unit.nva.testutils.RandomDataGenerator.randomInstant;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
-import static nva.commons.core.ioutils.IoUtils.stringFromResources;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -20,7 +19,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.time.Clock;
 import java.util.Set;
 import java.util.UUID;
@@ -42,6 +40,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.s3.S3Driver;
@@ -203,7 +202,13 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         Publication publication = PublicationGenerator.randomPublication();
         UserInstance someUser = UserInstance.create(randomString(), randomUri());
         Clock clock = Clock.systemDefaultZone();
-        return Message.supportMessage(someUser, publication, randomString(), SortableIdentifier.next(), clock);
+        return Message.create(someUser,
+                              publication,
+                              randomString(),
+                              SortableIdentifier.next(),
+                              clock,
+                              MessageType.SUPPORT
+        );
     }
 
     private DoiRequest doiRequestForDraftResource() {

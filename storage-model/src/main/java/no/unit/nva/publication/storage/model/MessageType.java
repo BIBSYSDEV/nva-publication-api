@@ -9,9 +9,10 @@ import nva.commons.core.JacocoGenerated;
 
 public enum MessageType {
     SUPPORT("Support"),
-    DOI_REQUEST("DoiRequest");
+    DOI_REQUEST("DoiRequest"),
+    PUBLISHING_REQUEST("PublishingRequest");
 
-    protected static final String INVALID_MESSAGE_TYPE_ERROR = "Invalid Message type: ";
+    static final String INVALID_MESSAGE_TYPE_ERROR = "Invalid Message type: ";
 
     private final String value;
 

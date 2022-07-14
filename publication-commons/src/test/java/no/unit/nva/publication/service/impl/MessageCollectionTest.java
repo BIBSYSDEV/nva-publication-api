@@ -101,6 +101,6 @@ class MessageCollectionTest {
 
     private Message createSupportMessage(Publication samplePublication, String text) {
         var userInstance = UserInstance.fromPublication(samplePublication);
-        return Message.supportMessage(userInstance, samplePublication, text, SortableIdentifier.next(), CLOCK);
+        return Message.create(userInstance, samplePublication, text, SortableIdentifier.next(), CLOCK, MessageType.SUPPORT);
     }
 }

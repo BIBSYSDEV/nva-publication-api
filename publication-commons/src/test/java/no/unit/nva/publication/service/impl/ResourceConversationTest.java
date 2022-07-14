@@ -104,19 +104,13 @@ class ResourceConversationTest {
     }
 
     private Message doiRequestMessage(Publication publication) {
-        return Message.doiRequestMessage(SOME_USER,
-                                         publication,
-                                         randomString(),
-                                         SortableIdentifier.next(),
-                                         Clock.systemDefaultZone());
+        return Message.create(SOME_USER, publication, randomString(), SortableIdentifier.next(),
+                              Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
     }
 
     private Message supportMessage(Publication publication) {
-        return Message.supportMessage(SOME_USER,
-                                      publication,
-                                      randomString(),
-                                      SortableIdentifier.next(),
-                                      Clock.systemDefaultZone());
+        return Message.create(SOME_USER, publication, randomString(), SortableIdentifier.next(),
+                              Clock.systemDefaultZone(), MessageType.SUPPORT);
     }
 
     private ArrayList<Message> twoMessagesPerPublication(List<Publication> publications) {
@@ -134,11 +128,8 @@ class ResourceConversationTest {
 
     private Message createMessage(Publication publication) {
         waitForAvoidingSameTimeStampInMessages();
-        return Message.supportMessage(UserInstance.fromPublication(publication),
-                                      publication,
-                                      randomString(),
-                                      SortableIdentifier.next(),
-                                      Clock.systemDefaultZone());
+        return Message.create(UserInstance.fromPublication(publication), publication, randomString(),
+                              SortableIdentifier.next(), Clock.systemDefaultZone(), MessageType.SUPPORT);
     }
 
     private void waitForAvoidingSameTimeStampInMessages() {

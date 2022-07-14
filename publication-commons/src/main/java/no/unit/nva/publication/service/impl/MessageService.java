@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.InvalidInputException;
-
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.storage.model.Message;
 import no.unit.nva.publication.storage.model.MessageStatus;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
 import no.unit.nva.publication.storage.model.daos.MessageDao;
@@ -61,19 +61,16 @@ public class MessageService extends ServiceWithTransactions {
         this.identifierSupplier = identifierSupplier;
     }
 
-    public SortableIdentifier createSimpleMessage(UserInstance sender, Publication publication, String messageText) {
-        Message message = createNewSimpleMessage(sender, publication, messageText);
+    public SortableIdentifier createMessage(UserInstance sender,
+                                            Publication publication,
+                                            String messageText,
+                                            MessageType support) {
+        requireMessageIsNotBlank(messageText);
+        Message message = createMessageEntry(sender, publication, messageText, support);
         return writeMessageToDb(message);
     }
 
-    public SortableIdentifier createDoiRequestMessage(UserInstance sender,
-                                                      Publication publication,
-                                                      String messageText) {
-        Message message = createNewDoiRequestMessage(sender, publication, messageText);
-        return writeMessageToDb(message);
-    }
-
-    public SortableIdentifier writeMessageToDb(Message message)  {
+    public SortableIdentifier writeMessageToDb(Message message) {
         TransactWriteItem dataWriteItem = newPutTransactionItem(new MessageDao(message));
 
         IdentifierEntry identifierEntry = new IdentifierEntry(message.getIdentifier().toString());
@@ -82,11 +79,6 @@ public class MessageService extends ServiceWithTransactions {
         TransactWriteItemsRequest request = newTransactWriteItemsRequest(dataWriteItem, identifierWriteItem);
         sendTransactionWriteRequest(request);
         return message.getIdentifier();
-    }
-
-    public Message getMessage(UserInstance owner, URI messageId) throws NotFoundException {
-        SortableIdentifier identifier = SortableIdentifier.fromUri(messageId);
-        return getMessage(owner, identifier);
     }
 
     public Message getMessage(UserInstance owner, SortableIdentifier identifier) throws NotFoundException {
@@ -173,30 +165,16 @@ public class MessageService extends ServiceWithTransactions {
             .withKeyConditions(queryObject.fetchEntryCollectionByTypeCustomerStatusKey());
     }
 
-    private Message createNewSimpleMessage(UserInstance sender, Publication publication, String messageText
-
-    ) {
-        requireMessageIsNotBlank(messageText);
-        SortableIdentifier messageIdentifier = identifierSupplier.get();
-        return Message.supportMessage(
-            sender,
-            publication,
-            messageText,
-            messageIdentifier,
-            clockForTimestamps
-        );
-    }
-
-    private Message createNewDoiRequestMessage(UserInstance sender, Publication publication, String messageText) {
-        requireMessageIsNotBlank(messageText);
-        SortableIdentifier messageIdentifier = identifierSupplier.get();
-        return Message.doiRequestMessage(
-            sender,
-            publication,
-            messageText,
-            messageIdentifier,
-            clockForTimestamps
-        );
+    private Message createMessageEntry(UserInstance sender,
+                                       Publication publication,
+                                       String messageText,
+                                       MessageType messageType) {
+        return Message.create(sender,
+                              publication,
+                              messageText,
+                              identifierSupplier.get(),
+                              clockForTimestamps,
+                              messageType);
     }
 
     private void requireMessageIsNotBlank(String messageText) {

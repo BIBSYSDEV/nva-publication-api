@@ -43,8 +43,8 @@ public class MessageTypeTest {
         Publication publication = publicationWithIdentifier();
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
         UserInstance owner = UserInstance.create(publication.getOwner(), publication.getPublisher().getId());
-        Message message = Message.doiRequestMessage(owner, publication, randomString(), messageIdentifier,
-                                                    Clock.systemDefaultZone());
+        Message message = Message.create(owner, publication, randomString(), messageIdentifier,
+                                         Clock.systemDefaultZone(), MessageType.DOI_REQUEST);
 
         ObjectNode json = dynamoDbObjectMapper.convertValue(message, ObjectNode.class);
         json.put(MESSAGE_TYPE_FIELD, "DoiREquEst");
