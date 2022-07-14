@@ -20,6 +20,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -103,7 +104,7 @@ public class CreateDoiRequestHandler extends ApiGatewayHandler<CreateDoiRequest,
     private void sendMessage(CreateDoiRequest input, UserInstance owner, Publication publication) {
         String message = input.getMessage();
         if (StringUtils.isNotBlank(message)) {
-            messageService.createDoiRequestMessage(owner, publication, message);
+            messageService.createMessage(owner, publication, message, MessageType.DOI_REQUEST);
         }
     }
 

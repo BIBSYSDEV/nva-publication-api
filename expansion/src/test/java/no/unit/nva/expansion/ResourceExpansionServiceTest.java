@@ -31,7 +31,6 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.model.testing.PublicationInstanceBuilder;
-
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.ResourcesLocalTest;
@@ -41,6 +40,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
@@ -224,11 +224,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
 
     private Message sendSupportMessage(Publication createdPublication)
-        throws  NotFoundException {
+        throws NotFoundException {
         UserInstance userInstance = UserInstance.fromPublication(createdPublication);
-        SortableIdentifier identifier = messageService.createSimpleMessage(userInstance,
-                                                                           createdPublication,
-                                                                           randomString());
+
+        SortableIdentifier identifier = messageService.createMessage(userInstance, createdPublication,
+                                                                     randomString(), MessageType.SUPPORT);
         return messageService.getMessage(userInstance, identifier);
     }
 
@@ -351,13 +351,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         }
 
         private Message createSupportMessage() {
-            return attempt(() -> messageService.createSimpleMessage(userInstance, publication, randomString()))
+            return attempt(
+                () -> messageService.createMessage(userInstance, publication, randomString(), MessageType.SUPPORT))
                 .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
                 .orElseThrow();
         }
 
         private Message createDoiRequestMessage() {
-            return attempt(() -> messageService.createDoiRequestMessage(userInstance, publication, randomString()))
+            return attempt(() -> messageService.createMessage(userInstance,
+                                                              publication,
+                                                              randomString(),
+                                                              MessageType.DOI_REQUEST))
                 .map(messageIdentifier -> messageService.getMessage(userInstance, messageIdentifier))
                 .orElseThrow();
         }

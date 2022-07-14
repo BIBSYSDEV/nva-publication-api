@@ -29,7 +29,6 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.PublicationServiceConfig;
 import no.unit.nva.publication.exception.BadRequestException;
-
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
@@ -223,7 +222,8 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
 
     private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) throws NotFoundException {
         UserInstance owner = extractOwner(samplePublication);
-        return messageService.getMessage(owner, messageId);
+        var identifier= SortableIdentifier.fromUri(messageId);
+        return messageService.getMessage(owner, identifier);
     }
 
     private UserInstance extractOwner(Publication samplePublication) {

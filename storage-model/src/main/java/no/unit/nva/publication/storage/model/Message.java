@@ -48,23 +48,14 @@ public class Message implements WithIdentifier,
         return new MessageBuilder();
     }
 
-    public static Message doiRequestMessage(UserInstance sender,
-                                            Publication publication,
-                                            String messageText,
-                                            SortableIdentifier messageIdentifier,
-                                            Clock clock) {
-        return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-            .withMessageType(MessageType.DOI_REQUEST)
-            .build();
-    }
-
-    public static Message supportMessage(UserInstance sender,
+    public static Message create(UserInstance sender,
                                          Publication publication,
                                          String messageText,
                                          SortableIdentifier messageIdentifier,
-                                         Clock clock) {
+                                         Clock clock,
+                                        MessageType messageType) {
         return buildMessage(sender, publication, messageText, messageIdentifier, clock)
-            .withMessageType(MessageType.SUPPORT)
+            .withMessageType(messageType)
             .build();
     }
 
@@ -73,7 +64,7 @@ public class Message implements WithIdentifier,
                                          Publication publication,
                                          String messageText,
                                          Clock clock) {
-        return supportMessage(sender, publication, messageText, null, clock);
+        return create(sender, publication, messageText, null, clock, MessageType.SUPPORT);
     }
 
     public MessageType getMessageType() {

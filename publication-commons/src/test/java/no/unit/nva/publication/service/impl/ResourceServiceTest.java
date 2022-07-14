@@ -75,6 +75,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
@@ -820,8 +821,9 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         var samplePublication = createPublication(resourceService, PublicationGenerator.randomPublication());
         var sampleDoiRequestIdentifier = doiRequestService.createDoiRequest(samplePublication);
         var userInstance = UserInstance.create(samplePublication.getOwner(), samplePublication.getPublisher().getId());
-        var sampleMessageIdentifier = messageService.createSimpleMessage(userInstance, samplePublication,
-                                                                         randomString());
+
+        var sampleMessageIdentifier = messageService.createMessage(userInstance, samplePublication, randomString(),
+                                                                   MessageType.SUPPORT);
 
         var firstListingResult = fetchFirstDataEntry();
         var identifierInFirstScan = extractIdentifierFromFirstScanResult(firstListingResult);

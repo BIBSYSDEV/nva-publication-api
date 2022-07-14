@@ -44,6 +44,7 @@ import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.testutils.HandlerRequestBuilder;
 import nva.commons.apigateway.ApiGatewayHandler;
@@ -370,7 +371,9 @@ class ListMessagesHandlerTest extends ResourcesLocalTest {
 
     private Message createMessage(Publication publication, UserInstance sender)
         throws NotFoundException {
-        var messageIdentifier = messageService.createSimpleMessage(sender, publication, randomString());
+
+        var messageIdentifier = messageService.createMessage(sender, publication, randomString(),
+                                                             MessageType.SUPPORT);
         return messageService.getMessage(UserInstance.fromPublication(publication), messageIdentifier);
     }
 

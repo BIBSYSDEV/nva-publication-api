@@ -100,9 +100,7 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
                                               UserInstance sender,
                                               Publication publication) {
         var messageType = parseMessageType(input);
-        return MessageType.DOI_REQUEST.equals(messageType)
-                   ? messageService.createDoiRequestMessage(sender, publication, input.getMessage())
-                   : messageService.createSimpleMessage(sender, publication, input.getMessage());
+        return messageService.createMessage(sender, publication, input.getMessage(), messageType);
     }
 
     private MessageType parseMessageType(CreateMessageRequest input) {

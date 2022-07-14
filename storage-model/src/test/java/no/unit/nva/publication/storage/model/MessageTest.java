@@ -65,7 +65,8 @@ public class MessageTest {
         Publication publication = samplePublication(resourceIdentifier);
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
 
-        Message message = Message.doiRequestMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+        Message message = Message.create(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK,
+                                         MessageType.DOI_REQUEST);
         assertThat(message.isDoiRequestRelated(), is(equalTo(true)));
         assertThat(message.getResourceIdentifier(), is(equalTo(resourceIdentifier)));
     }
@@ -76,7 +77,8 @@ public class MessageTest {
         Publication publication = samplePublication(resourceIdentifier);
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
 
-        Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+        Message message = Message.create(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK,
+                                         MessageType.SUPPORT);
         assertThat(message.isDoiRequestRelated(), is(equalTo(false)));
         assertThat(message.getResourceIdentifier(), is(equalTo(resourceIdentifier)));
     }
@@ -86,7 +88,9 @@ public class MessageTest {
         SortableIdentifier resourceIdentifier = SortableIdentifier.next();
         Publication publication = samplePublication(resourceIdentifier);
         SortableIdentifier messageIdentifier = SortableIdentifier.next();
-        Message message = Message.supportMessage(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK);
+
+        Message message = Message.create(SAMPLE_SENDER, publication, SOME_MESSAGE, messageIdentifier, CLOCK,
+                                         MessageType.SUPPORT);
         assertThat(message, doesNotHaveEmptyValuesIgnoringFields(Set.of(MESSAGE_IDENTIFIER_FIELD)));
     }
 
@@ -94,10 +98,9 @@ public class MessageTest {
     void shouldReturnCopyWithoutLossOfInformation() {
         Clock clock = Clock.systemDefaultZone();
         Publication publication = PublicationGenerator.randomPublication();
-        Message message = Message.supportMessage(SAMPLE_SENDER, publication,
-                                                 randomString(),
-                                                 SortableIdentifier.next(),
-                                                 clock);
+
+        Message message = Message.create(SAMPLE_SENDER, publication, randomString(), SortableIdentifier.next(), clock,
+                                         MessageType.SUPPORT);
         var copy = message.copy().build();
         assertThat(copy, doesNotHaveEmptyValues());
         assertThat(copy, is(equalTo(message)));
