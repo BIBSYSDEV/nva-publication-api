@@ -17,7 +17,7 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
     @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
-    //TODO uncomment  @JsonSubTypes.Type(name = PublishingRequestCaseBo.TYPE, value = PublishingRequestCaseBo.class),
+    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
     @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
 })
 public interface DataEntry {

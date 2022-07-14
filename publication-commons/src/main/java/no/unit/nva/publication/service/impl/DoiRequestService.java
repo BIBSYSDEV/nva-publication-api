@@ -92,8 +92,7 @@ public class DoiRequestService extends ServiceWithTransactions {
         QueryRequest queryRequest = new QueryRequest()
             .withTableName(tableName)
             .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
-            .withKeyConditions(
-                queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
+            .withKeyConditions(queryObject.byResource(DoiRequestDao.joinByResourceContainedOrderedType()));
         QueryResult queryResult = client.query(queryRequest);
 
         Map<String, AttributeValue> item = parseQueryResultExpectingSingleItem(queryResult)

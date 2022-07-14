@@ -4,11 +4,8 @@ import static no.unit.nva.model.testing.PublicationGenerator.publicationWithIden
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -52,11 +49,6 @@ public class MessageTypeTest {
         Message actualMessage = dynamoDbObjectMapper.readValue(jsonString, Message.class);
         assertThat(actualMessage, is(equalTo(message)));
     }
-
-    @Test
-    void listGeneraSupportMessagesShouldExcludeOnlyDoiRequest() {
-        assertThat(MessageType.generalSupportMessageTypes(), hasSize(MessageType.values().length - 1));
-        assertThat(MessageType.generalSupportMessageTypes(), not(hasItem(MessageType.DOI_REQUEST)));
-    }
+    
 }
 
