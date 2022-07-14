@@ -20,6 +20,7 @@ import no.unit.nva.commons.json.JsonUtils;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import no.unit.nva.publication.storage.model.daos.IdentifierEntry;
@@ -68,9 +69,9 @@ public class PublishingRequestService extends ServiceWithTransactions {
         return fromPublication(associatePublication);
     }
 
-    public PublishingRequestCase getPublishingRequest(PublishingRequestCase queryObject)
+    public PublishingRequestCase getPublishingRequest(DataEntry dynamoEntry)
         throws NotFoundException {
-
+        var queryObject = (PublishingRequestCase)dynamoEntry;
         var queryResult = getFromDatabase(queryObject);
         return attempt(queryResult::getItem)
             .map(item -> parseAttributeValuesMap(item, PublishingRequestDao.class))
@@ -135,7 +136,8 @@ public class PublishingRequestService extends ServiceWithTransactions {
 
     private Publication fetchPublication(PublishingRequestCase publishingRequest)
         throws ApiGatewayException {
-        var userInstance = UserInstance.create(publishingRequest.getOwner(), publishingRequest.getCustomerId());
+        var userInstance = UserInstance.create(publishingRequest.getOwner(),
+                                               publishingRequest.getCustomerId());
         return resourceService.getPublication(userInstance, publishingRequest.getResourceIdentifier());
     }
 
@@ -145,7 +147,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
         var publishingRequest = createNewPublishingRequestEntry(publication);
         var request = createInsertionTransactionRequest(publishingRequest);
         sendTransactionWriteRequest(request);
-        return publishingRequest;
+        return fetchEventualConsistentDataEntry(publishingRequest, this::getPublishingRequest).orElseThrow();
     }
 
     private GetItemResult getFromDatabase(PublishingRequestCase queryObject) {

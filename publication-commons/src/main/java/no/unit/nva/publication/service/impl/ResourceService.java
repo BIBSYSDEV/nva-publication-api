@@ -60,7 +60,6 @@ import org.slf4j.LoggerFactory;
 public class ResourceService extends ServiceWithTransactions {
 
     public static final Supplier<SortableIdentifier> DEFAULT_IDENTIFIER_SUPPLIER = SortableIdentifier::next;
-    public static final int MAX_FETCH_ATTEMPTS = 10;
     public static final int AWAIT_TIME_BEFORE_FETCH_RETRY = 50;
     public static final String INVALID_PATH_ERROR =
         "The document path provided in the update expression is invalid for update";
@@ -296,7 +295,7 @@ public class ResourceService extends ServiceWithTransactions {
     }
 
     private Publication fetchSavedResource(Resource newResource) {
-        return fetchEventuallyConsistentResource(newResource)
+        return fetchEventualConsistentDataEntry(newResource, readResourceService::getResource)
             .map(Resource::toPublication)
             .orElse(null);
     }
@@ -370,20 +369,6 @@ public class ResourceService extends ServiceWithTransactions {
         UpdateItemRequest updateRequest = markForDeletionUpdateRequest(dao);
         return attempt(() -> sendUpdateRequest(updateRequest))
             .orElseThrow(failure -> markForDeletionError(failure, resource));
-    }
-
-    private Optional<Resource> fetchEventuallyConsistentResource(Resource newResource) {
-        Resource savedResource = null;
-        for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedResource == null; times++) {
-            savedResource = attempt(() -> readResourceService.getResource(newResource)).orElse(fail -> null);
-            attempt(this::waitBeforeFetching).orElseThrow();
-        }
-        return Optional.ofNullable(savedResource);
-    }
-
-    private Void waitBeforeFetching() throws InterruptedException {
-        Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
-        return null;
     }
 
     private ApiGatewayException markForDeletionError(Failure<Resource> failure, Resource resource) {

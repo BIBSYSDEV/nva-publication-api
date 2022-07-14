@@ -2,6 +2,7 @@ package no.unit.nva.publication.service.impl;
 
 import static no.unit.nva.publication.PublicationServiceConfig.dtoObjectMapper;
 import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_NOT_FOUND_MESSAGE;
+import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
 import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
@@ -18,19 +19,21 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
+import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.daos.Dao;
 import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
 import no.unit.nva.publication.storage.model.daos.DynamoEntry;
 import no.unit.nva.publication.storage.model.daos.ResourceDao;
 import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
 import nva.commons.core.attempt.Failure;
+import nva.commons.core.attempt.FunctionWithException;
 
 public abstract class ServiceWithTransactions {
 
     public static final String EMPTY_STRING = "";
     public static final String DOUBLE_QUOTES = "\"";
     public static final String RAWTYPES = "rawtypes";
-
+    private static final Integer MAX_FETCH_ATTEMPTS = 3;
     public static final String RESOURCE_FIELD_IN_RESOURCE_DAO = CONTAINED_DATA_FIELD_NAME;
     public static final String STATUS_FIELD_IN_RESOURCE = "status";
     public static final String MODIFIED_FIELD_IN_RESOURCE = "modifiedDate";
@@ -38,6 +41,22 @@ public abstract class ServiceWithTransactions {
     public static final int DOI_REQUEST_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 0;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_EXISTS = 1;
     private static final int RESOURCE_INDEX_IN_QUERY_RESULT_WHEN_DOI_REQUEST_NOT_EXISTS = 0;
+
+    protected <T extends DataEntry, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
+        T dynamoEntry,
+        FunctionWithException<T,T,E> nonEventuallyConsistentFetch) {
+        T savedEntry = null;
+        for (int times = 0; times < MAX_FETCH_ATTEMPTS && savedEntry == null; times++) {
+            savedEntry = attempt(() -> nonEventuallyConsistentFetch.apply(dynamoEntry)).orElse(fail -> null);
+            attempt(this::waitBeforeFetching).orElseThrow();
+        }
+        return Optional.ofNullable(savedEntry);
+    }
+
+    private Void waitBeforeFetching() throws InterruptedException {
+        Thread.sleep(AWAIT_TIME_BEFORE_FETCH_RETRY);
+        return null;
+    }
 
     protected static <T extends DynamoEntry> TransactWriteItem newPutTransactionItem(T data, String tableName) {
 
