@@ -1,5 +1,9 @@
 package no.unit.nva.publication.storage.model.daos;
 
+import static no.unit.nva.publication.storage.model.DatabaseConstants.BY_CUSTOMER_RESOURCE_INDEX_NAME;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
+import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import com.amazonaws.services.dynamodbv2.model.QueryRequest;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeName;
@@ -7,7 +11,6 @@ import java.net.URI;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.core.JacocoGenerated;
@@ -31,7 +34,20 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
         super();
         this.data = data;
     }
-
+    
+    public static QueryRequest queryPublishingRequestByResource(URI customerId,
+                                                                SortableIdentifier resourceIdentifier) {
+        var queryObject = PublishingRequestCase.createQuery(resourceIdentifier, customerId);
+        var dao = new PublishingRequestDao(queryObject);
+        
+        return new QueryRequest()
+            .withTableName(RESOURCES_TABLE_NAME)
+            .withIndexName(BY_CUSTOMER_RESOURCE_INDEX_NAME)
+            .withKeyConditions(dao.byResource(dao.joinByResourceOrderedType()));
+    }
+    
+    
+    
     public static PublishingRequestDao queryObject(PublishingRequestCase queryObject) {
         return new PublishingRequestDao(queryObject);
     }
@@ -49,7 +65,7 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
 
     @JsonIgnore
     public static String joinByResourceContainedOrderedType() {
-        return BY_RESOURCE_INDEX_ORDER_PREFIX + DatabaseConstants.KEY_FIELDS_DELIMITER + PublishingRequestCase.TYPE;
+        return BY_RESOURCE_INDEX_ORDER_PREFIX + KEY_FIELDS_DELIMITER + PublishingRequestCase.TYPE;
     }
 
     @Override

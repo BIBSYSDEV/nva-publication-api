@@ -6,7 +6,6 @@ plugins {
 dependencies {
     implementation project(":publication-constants")
     implementation project(":storage-model")
-
     implementation libs.nva.apigateway
     implementation libs.nva.core
     implementation libs.nva.json

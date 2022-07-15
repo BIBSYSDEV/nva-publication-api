@@ -44,7 +44,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ExpandedDataEntriesPersistenceHandlerTest {
-
+    
     private static final ResourceExpansionService resourceExpansionService = fakeExpansionService();
     //TODO: rewrite tests to include a local database instance instead of mocked services.
     private static final MessageService messageService = new FakeMessageService();
@@ -55,7 +55,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
     private S3Driver s3Writer;
     private URI eventUriInEventsBucket;
     private ByteArrayOutputStream output;
-
+    
     @BeforeEach
     public void init() {
         var eventsBucket = new FakeS3Client();
@@ -63,10 +63,10 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         s3Reader = new S3Driver(eventsBucket, "eventsBucket");
         s3Writer = new S3Driver(indexBucket, "indexBucket");
         handler = new ExpandedDataEntriesPersistenceHandler(s3Reader, s3Writer);
-
+        
         output = new ByteArrayOutputStream();
     }
-
+    
     @ParameterizedTest(name = "should emit event containing S3 URI to persisted expanded resource")
     @MethodSource("expandedEntriesProvider")
     void shouldEmitEventContainingS3UriToPersistedExpandedResource(ExpandedDataEntry update)
@@ -76,7 +76,7 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         assertThat(indexingEventPayload, is(not(emptyString())));
     }
-
+    
     @ParameterizedTest(name = "should store entry containing the data referenced in the received event")
     @MethodSource("expandedEntriesProvider")
     void shouldStoreEntryContainingTheDataReferencedInTheReceivedEvent(ExpandedDataEntry update)
@@ -87,25 +87,25 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(HELP_MESSAGE, indexDocument.getBody(), is(equalTo(update)));
     }
-
+    
     @ParameterizedTest(name = "should store entry containing the general type (index name) of the persisted event")
     @MethodSource("entriesWithExpectedTypesProvider")
     void shouldStoreEntryContainingTheIndexNameForThePersistedEntry(
         PersistedEntryWithExpectedType expectedPersistedEntry)
         throws IOException {
         eventUriInEventsBucket = s3Reader.insertEvent(UnixPath.of(randomString()),
-                                                      expectedPersistedEntry.entry.toJsonString());
+            expectedPersistedEntry.entry.toJsonString());
         EventReference outputEvent = sendEvent();
         String indexingEventPayload = s3Writer.readEvent(outputEvent.getUri());
         PersistedDocument indexDocument = PersistedDocument.fromJsonString(indexingEventPayload);
         assertThat(indexDocument.getConsumptionAttributes().getIndex(), is(equalTo(expectedPersistedEntry.index)));
     }
-
+    
     private static Stream<ExpandedDataEntry> expandedEntriesProvider() throws JsonProcessingException,
                                                                               NotFoundException {
         return Stream.of(randomResource(), randomDoiRequest(), randomResourceConversation());
     }
-
+    
     private static Stream<PersistedEntryWithExpectedType> entriesWithExpectedTypesProvider()
         throws JsonProcessingException, NotFoundException {
         return Stream.of(
@@ -113,18 +113,18 @@ class ExpandedDataEntriesPersistenceHandlerTest {
             new PersistedEntryWithExpectedType(randomDoiRequest(), DOI_REQUESTS_INDEX),
             new PersistedEntryWithExpectedType(randomResourceConversation(), MESSAGES_INDEX));
     }
-
+    
     private static ExpandedResource randomResource() throws JsonProcessingException {
         var publication = PublicationGenerator.randomPublication();
         return ExpandedResource.fromPublication(publication);
     }
-
+    
     private static ExpandedDoiRequest randomDoiRequest() throws NotFoundException {
         DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(
             Resource.fromPublication(PublicationGenerator.randomPublication()));
         return ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
     }
-
+    
     private static ExpandedResourceConversation randomResourceConversation() {
         var publication = PublicationGenerator.randomPublication();
         //TODO: create proper ExpandedResourceConversation
@@ -133,16 +133,16 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
         return expandedResourceConversation;
     }
-
+    
     private static ResourceExpansionServiceImpl fakeExpansionService() {
-        return new ResourceExpansionServiceImpl(null, null, null) {
+        return new ResourceExpansionServiceImpl(null, null, null, null) {
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return Set.of(randomUri());
             }
         };
     }
-
+    
     private EventReference sendEvent() throws JsonProcessingException {
         EventReference eventReference =
             new EventReference(EXPANDED_ENTRY_PERSISTED_EVENT_TOPIC, eventUriInEventsBucket);
@@ -150,12 +150,12 @@ class ExpandedDataEntriesPersistenceHandlerTest {
         handler.handleRequest(event, output, mock(Context.class));
         return objectMapper.readValue(output.toString(), EventReference.class);
     }
-
+    
     private static class PersistedEntryWithExpectedType {
-
+        
         final ExpandedDataEntry entry;
         final String index;
-
+        
         public PersistedEntryWithExpectedType(ExpandedDataEntry databaseEntry, String index) {
             this.entry = databaseEntry;
             this.index = index;

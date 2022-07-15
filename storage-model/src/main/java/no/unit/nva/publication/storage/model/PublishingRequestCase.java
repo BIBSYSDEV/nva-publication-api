@@ -20,7 +20,7 @@ public class PublishingRequestCase
                WithStatus,
                DataEntry,
                ConnectedToResource {
-
+    
     public static final String TYPE = "PublishingRequestCase";
     public static final String STATUS_FIELD = "status";
     public static final String MODIFIED_DATE_FIELD = "modifiedDate";
@@ -30,7 +30,7 @@ public class PublishingRequestCase
     public static final String CUSTOMER_ID_FIELD = "customerId";
     public static final String RESOURCE_IDENTIFIER_FIELD = "resourceIdentifier";
     public static final String IDENTIFIER_FIELD = "identifier";
-
+    
     @JsonProperty(IDENTIFIER_FIELD)
     private SortableIdentifier identifier;
     @JsonProperty(RESOURCE_IDENTIFIER_FIELD)
@@ -47,13 +47,13 @@ public class PublishingRequestCase
     private Instant createdDate;
     @JsonProperty(ROW_VERSION_FIELD)
     private String rowVersion;
-
+    
     public PublishingRequestCase() {
     }
-
+    
     public static PublishingRequestCase createOpeningCaseObject(UserInstance userInstance,
                                                                 SortableIdentifier publicationIdentifier) {
-
+        
         var openingCaseObject = new PublishingRequestCase();
         openingCaseObject.setOwner(userInstance.getUserIdentifier());
         openingCaseObject.setCustomerId(userInstance.getOrganizationUri());
@@ -61,113 +61,120 @@ public class PublishingRequestCase
         openingCaseObject.setStatus(PublishingRequestStatus.PENDING);
         return openingCaseObject;
     }
-
+    
     public static PublishingRequestCase createQuery(UserInstance userInstance,
                                                     SortableIdentifier publicationIdentifier,
                                                     SortableIdentifier publishingRequestIdentifier) {
         return createPublishingRequestIdentifyingObject(userInstance,
-                                                        publicationIdentifier,
-                                                        publishingRequestIdentifier);
+            publicationIdentifier,
+            publishingRequestIdentifier);
     }
-
+    
+    public static PublishingRequestCase createQuery(SortableIdentifier resourceIdentifier, URI customerId) {
+        var queryObject = new PublishingRequestCase();
+        queryObject.setResourceIdentifier(resourceIdentifier);
+        queryObject.setCustomerId(customerId);
+        return queryObject;
+    }
+    
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
     }
-
+    
     public void setResourceIdentifier(SortableIdentifier resourceIdentifier) {
         this.resourceIdentifier = resourceIdentifier;
     }
-
+    
     @Override
     public Publication toPublication() {
-
+        
         return new Publication.Builder()
             .withIdentifier(getResourceIdentifier())
             .withResourceOwner(new ResourceOwner(getOwner(), null))
             .withPublisher(new Organization.Builder().withId(this.getCustomerId()).build())
             .build();
     }
-
+    
     @Override
     public String getRowVersion() {
         return rowVersion;
     }
-
+    
     @Override
     public void setRowVersion(String rowVersion) {
         this.rowVersion = rowVersion;
     }
-
+    
     @Override
     public Dao<?> toDao() {
         return new PublishingRequestDao(this);
     }
-
+    
     @Override
     public URI getCustomerId() {
         return customerId;
     }
-
+    
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-
+    
     @Override
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
     @Override
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     @Override
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-
+    
     public PublishingRequestStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(PublishingRequestStatus status) {
         this.status = status;
     }
-
+    
     @Override
     public String getStatusString() {
         return status.name();
     }
-
+    
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-
+    
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-
+    
     public Instant getCreatedDate() {
         return createdDate;
     }
-
+    
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-
+    
     @Override
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getResourceIdentifier(), getStatus(), getCustomerId(), getOwner(),
-                            getModifiedDate(), getCreatedDate(), getRowVersion());
+            getModifiedDate(), getCreatedDate(), getRowVersion());
     }
-
+    
     @Override
     @JacocoGenerated
     public boolean equals(Object o) {
@@ -187,13 +194,13 @@ public class PublishingRequestCase
                && Objects.equals(getCreatedDate(), that.getCreatedDate())
                && Objects.equals(getRowVersion(), that.getRowVersion());
     }
-
+    
     public PublishingRequestCase approve() {
         var copy = copy();
         copy.setStatus(PublishingRequestStatus.APPROVED);
         return copy;
     }
-
+    
     public PublishingRequestCase copy() {
         var copy = new PublishingRequestCase();
         copy.setIdentifier(this.getIdentifier());
@@ -206,12 +213,12 @@ public class PublishingRequestCase
         copy.setOwner(this.getOwner());
         return copy;
     }
-
+    
     private static PublishingRequestCase createPublishingRequestIdentifyingObject(
         UserInstance userInstance,
         SortableIdentifier publicationIdentifier,
         SortableIdentifier publishingRequestIdentifier) {
-
+        
         var newPublishingRequest = new PublishingRequestCase();
         newPublishingRequest.setOwner(userInstance.getUserIdentifier());
         newPublishingRequest.setCustomerId(userInstance.getOrganizationUri());

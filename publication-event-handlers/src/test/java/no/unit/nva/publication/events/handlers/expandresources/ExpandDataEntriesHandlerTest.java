@@ -36,6 +36,7 @@ import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.service.ResourcesLocalTest;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DataEntry;
 import no.unit.nva.publication.storage.model.DoiRequest;
@@ -66,19 +67,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private S3Driver s3Driver;
     private FakeS3Client s3Client;
     private ResourceService resourceService;
-
+    
     @BeforeEach
     public void init() {
         super.init();
         this.output = new ByteArrayOutputStream();
         s3Client = new FakeS3Client();
         resourceService = new ResourceService(client, CLOCK);
-        MessageService messageService = new MessageService(client, CLOCK);
-        DoiRequestService doiRequestService = new DoiRequestService(client, CLOCK);
+        var messageService = new MessageService(client, CLOCK);
+        var publishingRequestService = new PublishingRequestService(client, CLOCK);
+        var doiRequestService = new DoiRequestService(client, CLOCK);
 
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
-            new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService);
+            new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService,
+                publishingRequestService);
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }

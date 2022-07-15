@@ -4,6 +4,7 @@ dependencies {
     implementation project(":publication-constants")
     implementation libs.aws.sdk.dynamodb
     implementation libs.nva.core
+    implementation libs.nva.apigateway
     implementation libs.nva.json
     implementation libs.nva.identifiers
 
@@ -20,6 +21,7 @@ dependencies {
     }
 
     testImplementation project(":publication-testing")
+    testImplementation project(":publication-commons")
     testImplementation libs.nva.testutils
     testImplementation libs.javafaker
     testImplementation libs.nva.datamodel.core

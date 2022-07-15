@@ -13,6 +13,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = ExpandedResource.TYPE, value = ExpandedResource.class),
     @JsonSubTypes.Type(name = ExpandedDoiRequest.TYPE, value = ExpandedDoiRequest.class),
     @JsonSubTypes.Type(name = ExpandedResourceConversation.TYPE, value = ExpandedResourceConversation.class),
+    @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
 })
 public interface ExpandedDataEntry extends JsonSerializable {
 
