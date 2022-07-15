@@ -16,7 +16,7 @@ import nva.commons.core.JacocoGenerated;
     @JsonSubTypes.Type(name = ExpandedPublishingRequest.TYPE, value = ExpandedPublishingRequest.class),
 })
 public interface ExpandedDataEntry extends JsonSerializable {
-
+    
     @JacocoGenerated
     @Override
     default String toJsonString() {
@@ -26,15 +26,12 @@ public interface ExpandedDataEntry extends JsonSerializable {
             throw new RuntimeException(e);
         }
     }
-
+    
     /**
-     * An identifier that identifies the specific entry uniquely. It is meant to be used only
-     * for persisting entries for usage from other services (such as the Search service or Analytics services)
+     * An identifier that identifies the specific entry uniquely. It is meant to be used only for persisting entries for
+     * usage from other services (such as the Search service or Analytics services)
+     *
      * @return a unique identifier.
      */
     SortableIdentifier identifyExpandedEntry();
-    
-    
-    
-    
 }
