@@ -774,7 +774,7 @@ Resources:
             Pattern:
               detail:
                 responsePayload:
-                  topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update" ]
+                  topic: [ "PublicationService.Resource.Update", "PublicationService.Message.Update", "PublicationService.DoiRequest.Update", "PublicationService.PublishingRequest.Update" ]
       EventInvokeConfig:
         DestinationConfig:
           OnSuccess:
