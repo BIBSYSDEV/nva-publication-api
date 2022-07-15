@@ -151,18 +151,14 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     }
     
     @Test
-    void handlerCreatesSupportMessageWhenClientDoesNotProvideMessageType()
-        throws IOException, NotFoundException {
-        CreateMessageRequest request = createSampleMessage(samplePublication, randomString());
+    void shouldReturnBadRequestWhenClientDoesNotProvideMessageType() throws IOException {
+        var request = createSampleMessage(samplePublication, randomString());
         request.setMessageType(null);
         
         input = createInput(request);
         handler.handleRequest(input, output, CONTEXT);
-        
-        URI messageId = extractLocationFromHttpHeaders();
-        Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
-        assertThat(message.getText(), is(equalTo(request.getMessage())));
-        assertThat(message.getMessageType(), is(equalTo(MessageType.SUPPORT)));
+        var response = GatewayResponse.fromOutputStream(output,Problem.class);
+        assertThat(response.getStatusCode(),is(equalTo(HTTP_BAD_REQUEST)));
     }
     
     private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
@@ -205,7 +201,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     
     private CreateMessageRequest createDoiRequestMessage() {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-        requestBody.setMessageType(MessageType.DOI_REQUEST.toString());
+        requestBody.setMessageType(MessageType.DOI_REQUEST);
         return requestBody;
     }
     
@@ -247,7 +243,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         CreateMessageRequest requestBody = new CreateMessageRequest();
         requestBody.setMessage(message);
         requestBody.setPublicationIdentifier(identifier);
-        requestBody.setMessageType(MessageType.SUPPORT.toString());
+        requestBody.setMessageType(MessageType.SUPPORT);
         return requestBody;
     }
     
