@@ -32,7 +32,6 @@ public class ExpandedPublishingRequest implements ExpandedDataEntry {
     public static ExpandedPublishingRequest create(PublishingRequestCase publishingRequestCase,
                                                    MessageService messageService) {
         var userInstance = UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
-        
         MessageCollection messageCollection = fetchAllMessagesForPublishingRequestCase(publishingRequestCase,
             messageService, userInstance);
         return new ExpandedPublishingRequest(publishingRequestCase, messageCollection);

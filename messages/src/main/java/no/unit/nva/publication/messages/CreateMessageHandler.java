@@ -8,7 +8,6 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.time.Clock;
 import java.util.Map;
-import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
@@ -16,7 +15,6 @@ import no.unit.nva.publication.exception.InvalidInputException;
 import no.unit.nva.publication.model.MessageDto;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -99,16 +97,9 @@ public class CreateMessageHandler extends ApiGatewayHandler<CreateMessageRequest
     private SortableIdentifier trySendMessage(CreateMessageRequest input,
                                               UserInstance sender,
                                               Publication publication) {
-        var messageType = parseMessageType(input);
-        return messageService.createMessage(sender, publication, input.getMessage(), messageType);
+        return messageService.createMessage(sender, publication, input.getMessage(), input.getMessageType());
     }
-
-    private MessageType parseMessageType(CreateMessageRequest input) {
-        return Optional.ofNullable(input.getMessageType())
-            .map(MessageType::parse)
-            .orElse(MessageType.SUPPORT);
-    }
-
+    
     private BadRequestException handleBadRequests(InvalidInputException exception) {
         return new BadRequestException(exception.getMessage(), exception);
     }

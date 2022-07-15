@@ -94,7 +94,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     
     private ExpandedDataEntry updatePublishingRequestConversation(Message message) {
         var publishingRequest = publishingRequestService
-            .getPublishingRequestByResourceIdentifier(message.getCustomerId(),message.getResourceIdentifier());
+            .getPublishingRequestByResourceIdentifier(message.getCustomerId(), message.getResourceIdentifier());
         return ExpandedPublishingRequest.create(publishingRequest, messageService);
     }
     

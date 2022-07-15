@@ -33,4 +33,8 @@ public interface ExpandedDataEntry extends JsonSerializable {
      * @return a unique identifier.
      */
     SortableIdentifier identifyExpandedEntry();
+    
+    
+    
+    
 }

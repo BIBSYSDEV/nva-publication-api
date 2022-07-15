@@ -56,8 +56,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
         expandedDoiRequest.setDoiRequestMessages(fetchDoiRequestMessagesForResource(messageService, doiRequest));
-        expandedDoiRequest
-            .setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, resourceExpansionService));
+        expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, resourceExpansionService));
         return expandedDoiRequest;
     }
 

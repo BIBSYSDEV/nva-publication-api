@@ -205,7 +205,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     
     private CreateMessageRequest createDoiRequestMessage() {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-        requestBody.setMessageType(MessageType.DOI_REQUEST.toString());
+        requestBody.setMessageType(MessageType.DOI_REQUEST);
         return requestBody;
     }
     
@@ -247,7 +247,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         CreateMessageRequest requestBody = new CreateMessageRequest();
         requestBody.setMessage(message);
         requestBody.setPublicationIdentifier(identifier);
-        requestBody.setMessageType(MessageType.SUPPORT.toString());
+        requestBody.setMessageType(MessageType.SUPPORT);
         return requestBody;
     }
     
