@@ -49,8 +49,7 @@ import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.zalando.problem.Problem;
 
 class CreateMessageHandlerTest extends ResourcesLocalTest {
-
-
+    
     public static final String SOME_CURATOR = "some@curator";
     public static final Context CONTEXT = mock(Context.class);
     public static final String ALLOW_ALL_ORIGIN = "*";
@@ -64,47 +63,51 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
     private Publication samplePublication;
     private Environment environment;
     private DoiRequestService doiRequestService;
-
+    
     @BeforeEach
     public void initialize() throws ApiGatewayException {
         super.init();
-
-        resourcesService = new ResourceService(client,  Clock.systemDefaultZone());
+        
+        resourcesService = new ResourceService(client, Clock.systemDefaultZone());
         messageService = new MessageService(client, Clock.systemDefaultZone());
-        doiRequestService = new DoiRequestService(client,  Clock.systemDefaultZone());
+        doiRequestService = new DoiRequestService(client, Clock.systemDefaultZone());
         environment = setupEnvironment();
         handler = new CreateMessageHandler(client, environment);
         output = new ByteArrayOutputStream();
         samplePublication = createSamplePublication();
     }
-
+    
+    public String extractTextFromOldestMessage(Publication doiRequest) {
+        return doiRequest.getDoiRequest().getMessages().get(0).getText();
+    }
+    
     @Test
     void handlerStoresMessageWhenCreateRequestIsReceivedByAuthenticatedUser()
         throws IOException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-
+        
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
         URI messageId = extractLocationFromHttpHeaders();
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
-
+    
     @Test
     void handlerReturnsLocationHeaderWithUriForGettingTheMessage()
         throws IOException, URISyntaxException, NotFoundException {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
-
+        
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
         URI messageId = extractLocationFromHttpHeaders();
-
+        
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
         URI expectedMessageId = constructExpectedMessageUri(message);
         assertThat(messageId, is(equalTo(expectedMessageId)));
         assertThat(message.getText(), is(equalTo(requestBody.getMessage())));
     }
-
+    
     @ParameterizedTest(name = "handler returns bad request when CreateRequest contains message: \"{0}\"")
     @NullAndEmptySource
     void handlerReturnsBadRequestWhenCreateRequestContainsNoText(String emptyMessage)
@@ -117,7 +120,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(MessageService.EMPTY_MESSAGE_ERROR));
     }
-
+    
     @Test
     void handlerReturnsBadRequestWhenCreateRequestContainsNonExistentPublicationIdentifier()
         throws IOException {
@@ -125,68 +128,64 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         var requestBody = createSampleMessage(invalidIdentifier, randomString());
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-
-        var response = GatewayResponse.fromOutputStream(output,Problem.class);
+        
+        var response = GatewayResponse.fromOutputStream(output, Problem.class);
         var problem = response.getBodyObject(Problem.class);
-
+        
         assertThat(response.getStatusCode(), is(equalTo(HTTP_BAD_REQUEST)));
         assertThat(problem.getDetail(), containsString(invalidIdentifier.toString()));
         assertThat(problem.getDetail(), containsString(PUBLICATION_NOT_FOUND_CLIENT_MESSAGE));
     }
-
+    
     @Test
     void handlerCreatesDoiRequestMessageWhenClientMarksMessageAsDoiRequestRelated()
         throws IOException, BadRequestException {
         createDoiRequestForSamplePublication();
         CreateMessageRequest requestBody = createDoiRequestMessage();
         postDoiRequestMessage(requestBody);
-
+        
         Publication[] doiRequests = listDoiRequestsAsPublicationOwner();
         String actualText = extractTextFromOldestMessage(doiRequests[0]);
-
+        
         assertThat(actualText, is(equalTo(requestBody.getMessage())));
     }
-
+    
     @Test
     void handlerCreatesSupportMessageWhenClientDoesNotProvideMessageType()
         throws IOException, NotFoundException {
         CreateMessageRequest request = createSampleMessage(samplePublication, randomString());
         request.setMessageType(null);
-
+        
         input = createInput(request);
         handler.handleRequest(input, output, CONTEXT);
-
+        
         URI messageId = extractLocationFromHttpHeaders();
         Message message = fetchMessageDirectlyFromDb(samplePublication, messageId);
         assertThat(message.getText(), is(equalTo(request.getMessage())));
         assertThat(message.getMessageType(), is(equalTo(MessageType.SUPPORT)));
     }
-
-    public String extractTextFromOldestMessage(Publication doiRequest) {
-        return doiRequest.getDoiRequest().getMessages().get(0).getText();
-    }
-
+    
     private URI constructExpectedMessageUri(Message message) throws URISyntaxException {
         String expectedPath = PublicationServiceConfig.MESSAGE_PATH + PATH_SEPARATOR + message.getIdentifier();
         return new URI(HTTPS, SOME_VALID_HOST, expectedPath, URI_EMPTY_FRAGMENT);
     }
-
+    
     private Environment setupEnvironment() {
         Environment environment = mock(Environment.class);
         when(environment.readEnv(ApiGatewayHandler.ALLOWED_ORIGIN_ENV)).thenReturn(ALLOW_ALL_ORIGIN);
         return environment;
     }
-
+    
     private Publication[] listDoiRequestsAsPublicationOwner() throws IOException {
         ListDoiRequestsHandler listDoiRequestsHandler = new ListDoiRequestsHandler(
             environment, doiRequestService, messageService);
         InputStream listDoiRequestsRequest = createListDoiRequestsHttpQuery();
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         listDoiRequestsHandler.handleRequest(listDoiRequestsRequest, output, CONTEXT);
-        var listDoiRequestsResponse = GatewayResponse.fromOutputStream(output,Publication[].class);
+        var listDoiRequestsResponse = GatewayResponse.fromOutputStream(output, Publication[].class);
         return listDoiRequestsResponse.getBodyObject(Publication[].class);
     }
-
+    
     private InputStream createListDoiRequestsHttpQuery() throws JsonProcessingException {
         UserInstance publicationOwner = extractOwner(samplePublication);
         return new HandlerRequestBuilder<Void>(messageTestsObjectMapper)
@@ -196,41 +195,41 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
             .withRoles("Creator")
             .build();
     }
-
+    
     private void postDoiRequestMessage(CreateMessageRequest requestBody) throws IOException {
         input = createInput(requestBody);
         handler.handleRequest(input, output, CONTEXT);
-        var response = GatewayResponse.fromOutputStream(output,Void.class);
+        var response = GatewayResponse.fromOutputStream(output, Void.class);
         assertThat(response.getStatusCode(), is(HttpURLConnection.HTTP_CREATED));
     }
-
+    
     private CreateMessageRequest createDoiRequestMessage() {
         CreateMessageRequest requestBody = createSampleMessage(samplePublication, randomString());
         requestBody.setMessageType(MessageType.DOI_REQUEST.toString());
         return requestBody;
     }
-
+    
     private void createDoiRequestForSamplePublication() throws BadRequestException {
         doiRequestService.createDoiRequest(extractOwner(samplePublication), samplePublication.getIdentifier());
     }
-
+    
     private URI extractLocationFromHttpHeaders() throws JsonProcessingException {
         var response = GatewayResponse.fromOutputStream(output, Void.class);
         String headerValue = response.getHeaders().get(HttpHeaders.LOCATION);
         return URI.create(headerValue);
     }
-
+    
     private Message fetchMessageDirectlyFromDb(Publication samplePublication, URI messageId) throws NotFoundException {
         UserInstance owner = extractOwner(samplePublication);
-        var identifier= SortableIdentifier.fromUri(messageId);
+        var identifier = SortableIdentifier.fromUri(messageId);
         return messageService.getMessage(owner, identifier);
     }
-
+    
     private UserInstance extractOwner(Publication samplePublication) {
         return UserInstance.create(samplePublication.getResourceOwner().getOwner(),
-                                   samplePublication.getPublisher().getId());
+            samplePublication.getPublisher().getId());
     }
-
+    
     private InputStream createInput(CreateMessageRequest requestBody)
         throws JsonProcessingException {
         return new HandlerRequestBuilder<CreateMessageRequest>(messageTestsObjectMapper)
@@ -239,11 +238,11 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
             .withCustomerId(samplePublication.getPublisher().getId())
             .build();
     }
-
+    
     private CreateMessageRequest createSampleMessage(Publication savedPublication, String message) {
         return createSampleMessage(savedPublication.getIdentifier(), message);
     }
-
+    
     private CreateMessageRequest createSampleMessage(SortableIdentifier identifier, String message) {
         CreateMessageRequest requestBody = new CreateMessageRequest();
         requestBody.setMessage(message);
@@ -251,7 +250,7 @@ class CreateMessageHandlerTest extends ResourcesLocalTest {
         requestBody.setMessageType(MessageType.SUPPORT.toString());
         return requestBody;
     }
-
+    
     private Publication createSamplePublication() throws ApiGatewayException {
         Publication publication = PublicationGenerator.randomPublication();
         UserInstance userInstance = UserInstance.fromPublication(publication);
