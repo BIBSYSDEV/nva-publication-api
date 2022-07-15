@@ -1,6 +1,5 @@
 package no.unit.nva.publication.storage.model;
 
-import static java.util.Objects.nonNull;
 import static no.unit.nva.publication.storage.model.DataEntry.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
@@ -25,7 +24,6 @@ public class Message implements WithIdentifier,
                                 ConnectedToResource,
                                 JsonSerializable {
 
-    public static final MessageType DEFAULT_MESSAGE_TYPE = MessageType.SUPPORT;
     public static final String TYPE = "Message";
     private SortableIdentifier identifier;
     private String owner;
@@ -68,7 +66,7 @@ public class Message implements WithIdentifier,
     }
 
     public MessageType getMessageType() {
-        return nonNull(messageType) ? messageType : DEFAULT_MESSAGE_TYPE;
+        return messageType;
     }
 
     public void setMessageType(MessageType messageType) {
@@ -118,33 +116,7 @@ public class Message implements WithIdentifier,
     public void setSender(String sender) {
         this.sender = sender;
     }
-
-    /**
-     * Deprecated method. Preserved for backwards compatibility.
-     *
-     * @return true if message is doi request related.
-     */
-    //Use getMessageType
-    @Deprecated
-    public boolean isDoiRequestRelated() {
-        return MessageType.DOI_REQUEST.equals(getMessageType());
-    }
-
-    /**
-     * Deprecated method. Preserved for backwards compatibility
-     *
-     * @param doiRequestRelated set true if Message is related to the respective DOI request.
-     */
-    //Use setMessageType
-    @Deprecated
-    public void setDoiRequestRelated(boolean doiRequestRelated) {
-        if (doiRequestRelated) {
-            setMessageType(MessageType.DOI_REQUEST);
-        } else {
-            setMessageType(MessageType.SUPPORT);
-        }
-    }
-
+    
     @Override
     public SortableIdentifier getResourceIdentifier() {
         return resourceIdentifier;
@@ -209,7 +181,6 @@ public class Message implements WithIdentifier,
     @JacocoGenerated
     public int hashCode() {
         return Objects.hash(getIdentifier(), getOwner(), getCustomerId(), getStatus(), getSender(),
-                            isDoiRequestRelated(),
                             getResourceIdentifier(), getText(), getCreatedTime(), getResourceTitle(), getMessageType());
     }
 
@@ -222,8 +193,7 @@ public class Message implements WithIdentifier,
             return false;
         }
         Message message = (Message) o;
-        return isDoiRequestRelated() == message.isDoiRequestRelated()
-               && Objects.equals(getIdentifier(), message.getIdentifier())
+        return Objects.equals(getIdentifier(), message.getIdentifier())
                && Objects.equals(getOwner(), message.getOwner())
                && Objects.equals(getCustomerId(), message.getCustomerId())
                && getStatus() == message.getStatus()
@@ -265,7 +235,7 @@ public class Message implements WithIdentifier,
             .withCustomerId(sender.getOrganizationUri())
             .withText(messageText)
             .withSender(sender.getUserIdentifier())
-            .withOwner(publication.getOwner())
+            .withOwner(publication.getResourceOwner().getOwner())
             .withResourceTitle(extractTitle(publication))
             .withCreatedTime(clock.instant())
             .withIdentifier(messageIdentifier)

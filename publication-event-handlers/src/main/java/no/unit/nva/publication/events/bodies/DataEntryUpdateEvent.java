@@ -19,7 +19,7 @@ import nva.commons.core.JacocoGenerated;
 public class DataEntryUpdateEvent implements JsonSerializable {
     
     public static final String RESOURCE_UPDATE_EVENT_TOPIC = "PublicationService.Resource.Update";
-    private static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
+    public static final String MESSAGE_UPDATE_EVENT_TOPIC = "PublicationService.Message.Update";
     private static final String DOI_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.DoiRequest.Update";
     private static final String PUBLISHING_REQUEST_UPDATE_EVENT_TOPIC = "PublicationService.PublishingRequest.Update";
     private static final String ACTION = "action";

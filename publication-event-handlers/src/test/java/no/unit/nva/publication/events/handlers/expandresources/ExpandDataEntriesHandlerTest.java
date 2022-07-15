@@ -53,7 +53,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
-
+    
     public static final Context CONTEXT = mock(Context.class);
     public static final String EXPECTED_ERROR_MESSAGE = "expected error message";
     public static final String IDENTIFIER_IN_RESOURCE_FILE = "017ca2670694-37f2c1a7-0105-452c-b7b3-1d90a44a11c0";
@@ -77,7 +77,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var messageService = new MessageService(client, CLOCK);
         var publishingRequestService = new PublishingRequestService(client, CLOCK);
         var doiRequestService = new DoiRequestService(client, CLOCK);
-
+        
         insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources();
         ResourceExpansionService resourceExpansionService =
             new ResourceExpansionServiceImpl(resourceService, messageService, doiRequestService,
@@ -85,9 +85,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         this.expandResourceHandler = new ExpandDataEntriesHandler(s3Client, resourceExpansionService);
         this.s3Driver = new S3Driver(s3Client, "ignoredForFakeS3Client");
     }
-
+    
     @Test
-    void shouldProduceAnExpandedDataEntryWhenInputIsADataEntryUpdateWithANewImage() throws IOException {
+    void shouldProduceAnExpandedDataEntryWhenInputHasNewImage() throws IOException {
         var oldImage = createPublishedPublication();
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
@@ -97,42 +97,42 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var blobObject = JsonUtils.dtoObjectMapper.readValue(eventBlobStoredInS3, ExpandedDataEntry.class);
         assertThat(blobObject.identifyExpandedEntry(), is(equalTo(newImage.getIdentifier())));
     }
-
+    
     @Test
-    void shouldNotProduceAnExpandedDataEntryWhenInputIsADataEntryUpdateWithOnlyAnOldImage() throws IOException {
+    void shouldNotProduceAnExpandedDataEntryWhenInputHasNoNewImage() throws IOException {
         var oldImage = createPublishedPublication();
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, DELETED_RESOURCE);
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var response = parseHandlerResponse();
         assertThat(response, is(equalTo(emptyEvent())));
     }
-
+    
     @Test
     void shouldLogFailingExpansionNotThrowExceptionAndEmitEmptyEvent() throws IOException {
         var oldImage = createPublishedPublication();
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-
+        
         var logger = LogUtils.getTestingAppenderForRootLogger();
-
+        
         expandResourceHandler = new ExpandDataEntriesHandler(s3Client, createFailingService());
         expandResourceHandler.handleRequest(request, output, CONTEXT);
-
+        
         assertThat(logger.getMessages(), containsString(EXPECTED_ERROR_MESSAGE));
         assertThat(logger.getMessages(), containsString(newImage.getIdentifier().toString()));
     }
-
+    
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDraftResources() throws IOException {
         var oldImage = createPublishedPublication().copy().withStatus(DRAFT).build();
         var newImage = createUpdatedVersionOfPublication(oldImage);
         var request = emulateEventEmittedByDataEntryUpdateHandler(oldImage, newImage);
-
+        
         expandResourceHandler.handleRequest(request, output, CONTEXT);
         var eventReference = parseHandlerResponse();
         assertThat(eventReference, is(equalTo(emptyEvent())));
     }
-
+    
     @Test
     void shouldIgnoreAndNotCreateEnrichmentEventForDoiRequestsOfDraftResources() throws IOException {
         var newImage = doiRequestForDraftResource();
@@ -141,7 +141,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var eventReference = parseHandlerResponse();
         assertThat(eventReference, is(equalTo(emptyEvent())));
     }
-
+    
     @Test
     void shouldAlwaysEmitEventsForMessages() throws IOException {
         var newImage = sampleMessage();
@@ -151,22 +151,22 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             objectMapper.readValue(output.toString(), EventReference.class);
         assertThat(eventReference, is(equalTo(emptyEvent())));
     }
-
+    
     private Publication createUpdatedVersionOfPublication(Publication oldImage) {
         return oldImage.copy().withModifiedDate(randomInstant(oldImage.getModifiedDate())).build();
     }
-
+    
     private InputStream emulateEventEmittedByDataEntryUpdateHandler(Object oldImage, Object newImage)
         throws IOException {
         var blobUri = createSampleBlob(oldImage, newImage);
         var event = new EventReference(RESOURCE_UPDATE_EVENT_TOPIC, blobUri);
         return EventBridgeEventBuilder.sampleLambdaDestinationsEvent(event);
     }
-
+    
     private Publication createPublishedPublication() {
         return PublicationGenerator.randomPublication().copy().withStatus(PublicationStatus.PUBLISHED).build();
     }
-
+    
     private URI createSampleBlob(Object oldImage, Object newImage) throws IOException {
         var oldImageResource = crateDataEntry(oldImage);
         var newImageResource = crateDataEntry(newImage);
@@ -175,9 +175,9 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         var filePath = UnixPath.of(UUID.randomUUID().toString());
         return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }
-
+    
     private DataEntry crateDataEntry(Object image) {
-
+        
         if (image instanceof Publication) {
             return Resource.fromPublication((Publication) image);
         } else if (image instanceof DoiRequest) {
@@ -188,7 +188,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             return null;
         }
     }
-
+    
     private Publication insertPublicationWithIdentifierAndAffiliationAsTheOneFoundInResources() {
         var publication = PublicationGenerator.randomPublication().copy()
             .withIdentifier(new SortableIdentifier(IDENTIFIER_IN_RESOURCE_FILE))
@@ -196,24 +196,24 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
             .build();
         return attempt(() -> resourceService.insertPreexistingPublication(publication)).orElseThrow();
     }
-
+    
     private EventReference emptyEvent() {
         return new EventReference(EMPTY_EVENT_TOPIC, null);
     }
-
+    
     private Message sampleMessage() {
         Publication publication = PublicationGenerator.randomPublication();
         UserInstance someUser = UserInstance.create(randomString(), randomUri());
         Clock clock = Clock.systemDefaultZone();
         return Message.create(someUser,
-                              publication,
-                              randomString(),
-                              SortableIdentifier.next(),
-                              clock,
-                              MessageType.SUPPORT
+            publication,
+            randomString(),
+            SortableIdentifier.next(),
+            clock,
+            MessageType.SUPPORT
         );
     }
-
+    
     private DoiRequest doiRequestForDraftResource() {
         Publication publication = PublicationGenerator.randomPublication().copy()
             .withStatus(DRAFT)
@@ -221,21 +221,21 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         Resource resource = Resource.fromPublication(publication);
         return DoiRequest.newDoiRequestForResource(resource);
     }
-
+    
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
             public ExpandedDataEntry expandEntry(DataEntry dataEntry) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
-
+            
             @Override
             public Set<URI> getOrganizationIds(DataEntry dataEntry) {
                 return null;
             }
         };
     }
-
+    
     private EventReference parseHandlerResponse() throws JsonProcessingException {
         return objectMapper.readValue(output.toString(), EventReference.class);
     }
