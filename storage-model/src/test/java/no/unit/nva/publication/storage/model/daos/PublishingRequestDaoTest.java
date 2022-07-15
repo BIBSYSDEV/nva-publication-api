@@ -85,7 +85,7 @@ class PublishingRequestDaoTest extends ResourcesLocalTest {
     void shouldQueryForPublishingRequestBasedOnCustomerIdAndResourceIdentifier() throws ApiGatewayException {
         var publication = createPublication();
         var userInstance = UserInstance.fromPublication(publication);
-        var query = PublishingRequestDao.fetchPublishingRequestByResource(publication.getPublisher().getId(),
+        var query = PublishingRequestDao.queryPublishingRequestByResource(publication.getPublisher().getId(),
             publication.getIdentifier());
         
         var publishingRequest =

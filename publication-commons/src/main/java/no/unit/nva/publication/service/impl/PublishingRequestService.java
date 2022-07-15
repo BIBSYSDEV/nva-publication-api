@@ -3,7 +3,7 @@ package no.unit.nva.publication.service.impl;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
 import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
-import static no.unit.nva.publication.storage.model.daos.PublishingRequestDao.fetchPublishingRequestByResource;
+import static no.unit.nva.publication.storage.model.daos.PublishingRequestDao.queryPublishingRequestByResource;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
@@ -107,7 +107,7 @@ public class PublishingRequestService extends ServiceWithTransactions {
     public PublishingRequestCase getPublishingRequestByResourceIdentifier(
         URI customerId,
         SortableIdentifier resourceIdentifier) {
-        var query = fetchPublishingRequestByResource(customerId, resourceIdentifier);
+        var query = queryPublishingRequestByResource(customerId, resourceIdentifier);
     
         var queryResult = client.query(query);
         return queryResult.getItems().stream()

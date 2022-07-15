@@ -35,7 +35,7 @@ public class PublishingRequestDao extends Dao<PublishingRequestCase>
         this.data = data;
     }
     
-    public static QueryRequest fetchPublishingRequestByResource(URI customerId,
+    public static QueryRequest queryPublishingRequestByResource(URI customerId,
                                                                 SortableIdentifier resourceIdentifier) {
         var queryObject = PublishingRequestCase.createQuery(resourceIdentifier, customerId);
         var dao = new PublishingRequestDao(queryObject);

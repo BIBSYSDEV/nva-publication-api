@@ -92,7 +92,6 @@ class ExpandedDataEntryTest {
     }
     
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
-        //TODO: create proper ExpandedResourceConversation
         var expandedResourceConversation = new ExpandedResourceConversation();
         expandedResourceConversation.setPublicationSummary(PublicationSummary.create(publication));
         expandedResourceConversation.setPublicationIdentifier(publication.getIdentifier());
