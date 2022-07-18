@@ -20,7 +20,7 @@ import nva.commons.core.JacocoGenerated;
 public class Message implements WithIdentifier,
                                 WithStatus,
                                 RowLevelSecurity,
-                                DataEntry,
+                                TicketEntry,
                                 ConnectedToResource,
                                 JsonSerializable {
 

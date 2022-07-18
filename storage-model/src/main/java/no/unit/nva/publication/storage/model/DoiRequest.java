@@ -38,7 +38,7 @@ public class DoiRequest
     implements WithIdentifier,
                RowLevelSecurity,
                WithStatus,
-               DataEntry,
+               TicketEntry,
                ConnectedToResource {
 
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";

@@ -1,58 +1,90 @@
 package no.unit.nva.expansion.model;
 
+import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import no.unit.nva.identifiers.SortableIdentifier;
+import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageCollection;
+import no.unit.nva.publication.model.PublicationSummary;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
 
-public class ExpandedPublishingRequest implements ExpandedDataEntry {
+public class ExpandedPublishingRequest implements ExpandedTicket {
     
     public static final String TYPE = "PublishingRequest";
     public static final String IDENTIFIER_FIELD = "identifier";
-    public static final String DATA_FIELD = "data";
     public static final String MESSAGES_FIELD = "messages";
     
     @JsonProperty(IDENTIFIER_FIELD)
-    private final SortableIdentifier identifier;
-    @JsonProperty(DATA_FIELD)
-    private final PublishingRequestCase dataEntry;
+    private SortableIdentifier identifier;
+    @JsonProperty(PUBLICATION_FIELD)
+    private PublicationSummary publicationSummary;
     @JsonProperty(MESSAGES_FIELD)
-    private final MessageCollection messages;
-    
-    public ExpandedPublishingRequest(PublishingRequestCase dataEntry, MessageCollection messages) {
-        this.dataEntry = dataEntry;
-        this.identifier = dataEntry.getIdentifier();
-        this.messages = messages;
-    }
+    private MessageCollection messages;
     
     public static ExpandedPublishingRequest create(PublishingRequestCase publishingRequestCase,
+                                                   ResourceService resourceService,
                                                    MessageService messageService) {
         var userInstance = UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
-        MessageCollection messageCollection = fetchAllMessagesForPublishingRequestCase(publishingRequestCase,
+        var messageCollection = fetchAllMessagesForPublishingRequestCase(publishingRequestCase,
             messageService, userInstance);
-        return new ExpandedPublishingRequest(publishingRequestCase, messageCollection);
+        var publication = fetchPublication(publishingRequestCase, resourceService);
+        return ExpandedPublishingRequest.create(publishingRequestCase, publication, messageCollection);
     }
     
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
     
+    public void setIdentifier(SortableIdentifier identifier) {
+        this.identifier = identifier;
+    }
+    
     @Override
     public String toJsonString() {
-        return ExpandedDataEntry.super.toJsonString();
+        return ExpandedTicket.super.toJsonString();
     }
     
     @Override
     public SortableIdentifier identifyExpandedEntry() {
-        return dataEntry.getIdentifier();
+        return getIdentifier();
     }
     
     public MessageCollection getMessages() {
         return messages;
+    }
+    
+    public void setMessages(MessageCollection messages) {
+        this.messages = messages;
+    }
+    
+    @Override
+    public PublicationSummary getPublicationSummary() {
+        return this.publicationSummary;
+    }
+    
+    public void setPublicationSummary(PublicationSummary publicationSummary) {
+        this.publicationSummary = publicationSummary;
+    }
+    
+    private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,
+                                                    Publication publication,
+                                                    MessageCollection messages) {
+        var entry = new ExpandedPublishingRequest();
+        entry.setIdentifier(dataEntry.getIdentifier());
+        entry.setPublicationSummary(PublicationSummary.create(publication));
+        entry.setMessages(messages);
+        return entry;
+    }
+    
+    private static Publication fetchPublication(PublishingRequestCase publishingRequestCase,
+                                                ResourceService resourceService) {
+        return attempt(() -> resourceService.getPublicationByIdentifier(publishingRequestCase.getResourceIdentifier()))
+            .orElseThrow();
     }
     
     private static MessageCollection fetchAllMessagesForPublishingRequestCase(

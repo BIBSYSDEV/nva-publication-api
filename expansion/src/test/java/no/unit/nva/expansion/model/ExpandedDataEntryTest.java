@@ -3,6 +3,8 @@ package no.unit.nva.expansion.model;
 import static no.unit.nva.expansion.ExpansionConfig.objectMapper;
 import static no.unit.nva.expansion.model.ExpandedResource.fromPublication;
 import static no.unit.nva.expansion.utils.PublicationJsonPointers.IDENTIFIER_JSON_PTR;
+import static no.unit.nva.model.testing.PublicationGenerator.randomPublication;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -12,52 +14,76 @@ import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.FakeResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionService;
+import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
-import no.unit.nva.model.testing.PublicationGenerator;
+import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.PublicationSummary;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
-import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class ExpandedDataEntryTest {
+class ExpandedDataEntryTest extends ResourcesLocalTest {
     
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
-    private static final MessageService messageService = new FakeMessageService();
-    private static final ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
+    private MessageService messageService = new FakeMessageService();
+    private ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
+    private ResourceService resourceService;
+    private DoiRequestService doiRequestService;
+    private PublishingRequestService publishingRequestService;
     
-    public static Stream<Class> entryProvider() {
+    public static Stream<Class> entryTypes() {
         JsonSubTypes[] annotations = ExpandedDataEntry.class.getAnnotationsByType(JsonSubTypes.class);
         Type[] types = annotations[0].value();
         return Arrays.stream(types).map(Type::value);
     }
     
+    @BeforeEach
+    public void setup() {
+        super.init();
+        var clock = Clock.systemDefaultZone();
+        this.resourceService = new ResourceService(client, clock);
+        this.messageService = new MessageService(client, clock);
+        this.doiRequestService = new DoiRequestService(client, clock);
+        this.publishingRequestService = new PublishingRequestService(client, clock);
+        this.resourceExpansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
+            doiRequestService, publishingRequestService);
+    }
+    
     @Test
-    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException {
-        var publication = PublicationGenerator.randomPublication();
+    void shouldReturnExpandedResourceWithoutLossOfInformation() throws JsonProcessingException, ApiGatewayException {
+        var publication = createPublication();
         var expandedResource = fromPublication(publication);
         var regeneratedPublication = objectMapper.readValue(expandedResource.toJsonString(), Publication.class);
         assertThat(regeneratedPublication, is(equalTo(publication)));
     }
     
     @Test
-    void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws NotFoundException {
-        var publication = PublicationGenerator.randomPublication();
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
+    void shouldReturnExpandedDoiRequestWithoutLossOfInformation() throws ApiGatewayException {
+        var publication = createPublication();
+        var doiRequest = createDoiRequest(publication);
         ExpandedDoiRequest expandedDoiRequest =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
         assertThat(expandedDoiRequest.toDoiRequest(), is(equalTo(doiRequest)));
@@ -66,16 +92,16 @@ class ExpandedDataEntryTest {
     @Test
     void expandedResourceShouldHaveTypePublicationInheritingTheTypeFromThePublicationWhenItIsSerialized()
         throws JsonProcessingException {
-        var publication = PublicationGenerator.randomPublication();
+        var publication = randomPublication();
         var expandedResource = fromPublication(publication);
         var json = objectMapper.readTree(expandedResource.toJsonString());
         assertThat(json.get(TYPE).textValue(), is(equalTo(EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY)));
     }
     
     @Test
-    void expandedDoiRequestShouldHaveTypeDoiRequest() throws NotFoundException {
-        var publication = PublicationGenerator.randomPublication();
-        var doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
+    void expandedDoiRequestShouldHaveTypeDoiRequest() throws ApiGatewayException {
+        var publication = createPublication();
+        var doiRequest = createDoiRequest(publication);
         var expandedResource =
             ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService);
         var json = objectMapper.convertValue(expandedResource, ObjectNode.class);
@@ -83,12 +109,30 @@ class ExpandedDataEntryTest {
     }
     
     @ParameterizedTest(name = "should return identifier using a non serializable method:{0}")
-    @MethodSource("entryProvider")
-    void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type) {
-        var expandedDataEntry = ExpandedDataEntryWithAssociatedPublication.create(type);
+    @MethodSource("entryTypes")
+    void shouldReturnIdentifierUsingNonSerializableMethod(Class<?> type) throws ApiGatewayException {
+        var expandedDataEntry =
+            ExpandedDataEntryWithAssociatedPublication.create(type, resourceExpansionService,
+                resourceService,
+                doiRequestService,
+                messageService);
         SortableIdentifier identifier = expandedDataEntry.getExpandedDataEntry().identifyExpandedEntry();
         SortableIdentifier expectedIdentifier = extractExpectedIdentifier(expandedDataEntry);
         assertThat(identifier, is(equalTo(expectedIdentifier)));
+    }
+    
+    private static ExpandedDoiRequest randomDoiRequest(Publication publication,
+                                                       ResourceExpansionService resourceExpansionService,
+                                                       DoiRequestService doiRequestService,
+                                                       MessageService messageService)
+        throws BadRequestException, NotFoundException {
+        var userInstance = UserInstance.fromPublication(publication);
+        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
+            publication.getIdentifier());
+        messageService.createMessage(userInstance, publication, randomString(), MessageType.DOI_REQUEST);
+        var doiRequest = doiRequestService.getDoiRequest(userInstance, doiRequestIdentifier);
+        return attempt(() -> ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService))
+            .orElseThrow();
     }
     
     private static ExpandedResourceConversation randomResourceConversation(Publication publication) {
@@ -98,10 +142,17 @@ class ExpandedDataEntryTest {
         return expandedResourceConversation;
     }
     
-    private static ExpandedDoiRequest randomDoiRequest(Publication publication) {
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(publication));
-        return attempt(() -> ExpandedDoiRequest.create(doiRequest, resourceExpansionService, messageService))
-            .orElseThrow();
+    private DoiRequest createDoiRequest(Publication publication) throws BadRequestException, NotFoundException {
+        var userInstance = UserInstance.fromPublication(publication);
+        var doiRequestIdentifier = doiRequestService.createDoiRequest(userInstance,
+            publication.getIdentifier());
+        return doiRequestService.getDoiRequest(userInstance,
+            doiRequestIdentifier);
+    }
+    
+    private Publication createPublication() throws ApiGatewayException {
+        var publication = randomPublication();
+        return resourceService.createPublication(UserInstance.fromPublication(publication), publication);
     }
     
     private SortableIdentifier extractExpectedIdentifier(ExpandedDataEntryWithAssociatedPublication generatedData) {
@@ -134,24 +185,37 @@ class ExpandedDataEntryTest {
         private final Publication publication;
         private final ExpandedDataEntry expandedDataEntry;
         
-        public ExpandedDataEntryWithAssociatedPublication(Publication publication, ExpandedDataEntry data) {
+        public ExpandedDataEntryWithAssociatedPublication(Publication publication,
+                                                          ExpandedDataEntry data) {
             this.publication = publication;
             this.expandedDataEntry = data;
         }
         
-        public static ExpandedDataEntryWithAssociatedPublication create(Class<?> expandedDataEntryClass) {
-            var publication = PublicationGenerator.randomPublication();
+        public static ExpandedDataEntryWithAssociatedPublication create(
+            Class<?> expandedDataEntryClass,
+            ResourceExpansionService resourceExpansionService,
+            ResourceService resourceService,
+            DoiRequestService doiRequestService,
+            MessageService messageService) throws ApiGatewayException {
+            var publication = createPublication(resourceService);
             if (expandedDataEntryClass.equals(ExpandedResource.class)) {
                 return createExpandedResource(publication);
             } else if (expandedDataEntryClass.equals(ExpandedDoiRequest.class)) {
-                return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication));
+                return new ExpandedDataEntryWithAssociatedPublication(publication, randomDoiRequest(publication,
+                    resourceExpansionService, doiRequestService, messageService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
-                    createExpandedPublishingRequest(publication));
+                    createExpandedPublishingRequest(publication, resourceService, messageService));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     randomResourceConversation(publication));
             }
+        }
+        
+        private static Publication createPublication(ResourceService resourceService) throws ApiGatewayException {
+            var publication = randomPublication();
+            publication = resourceService.createPublication(UserInstance.fromPublication(publication), publication);
+            return publication;
         }
         
         public Publication getPublication() {
@@ -162,15 +226,17 @@ class ExpandedDataEntryTest {
             return expandedDataEntry;
         }
         
-        private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(
-            Publication publication) {
+        private static ExpandedDataEntryWithAssociatedPublication createExpandedResource(Publication publication) {
             ExpandedResource expandedResource = attempt(() -> fromPublication(publication)).orElseThrow();
             return new ExpandedDataEntryWithAssociatedPublication(publication, expandedResource);
         }
         
-        private static ExpandedDataEntry createExpandedPublishingRequest(Publication publication) {
+        private static ExpandedDataEntry createExpandedPublishingRequest(
+            Publication publication,
+            ResourceService resourceService,
+            MessageService messageService) {
             PublishingRequestCase requestCase = createRequestCase(publication);
-            return ExpandedPublishingRequest.create(requestCase, messageService);
+            return ExpandedPublishingRequest.create(requestCase, resourceService, messageService);
         }
         
         private static PublishingRequestCase createRequestCase(Publication publication) {
