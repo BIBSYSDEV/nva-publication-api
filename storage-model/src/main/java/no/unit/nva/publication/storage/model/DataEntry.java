@@ -16,31 +16,29 @@ import no.unit.nva.publication.storage.model.daos.Dao;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({
     @JsonSubTypes.Type(name = Resource.TYPE, value = Resource.class),
-    @JsonSubTypes.Type(name = DoiRequest.TYPE, value = DoiRequest.class),
-    @JsonSubTypes.Type(name = PublishingRequestCase.TYPE, value = PublishingRequestCase.class),
-    @JsonSubTypes.Type(name = Message.TYPE, value = Message.class),
+    @JsonSubTypes.Type(TicketEntry.class)
 })
 public interface DataEntry {
-
+    
     String ROW_VERSION = "rowVersion";
-
+    
     Publication toPublication();
-
+    
     SortableIdentifier getIdentifier();
-
+    
     @JsonProperty(ROW_VERSION)
     String getRowVersion();
-
+    
     void setRowVersion(String rowVersion);
-
+    
     static String nextRowVersion() {
         return UUID.randomUUID().toString();
     }
-
+    
     default DataEntry refreshRowVersion() {
         setRowVersion(nextRowVersion());
         return this;
     }
-
+    
     Dao<?> toDao();
 }

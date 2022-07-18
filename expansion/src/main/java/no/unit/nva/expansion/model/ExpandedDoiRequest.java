@@ -24,10 +24,10 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeName(ExpandedDoiRequest.TYPE)
 @SuppressWarnings("PMD.TooManyFields")
-public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedDataEntry {
-
+public final class ExpandedDoiRequest implements WithOrganizationScope, ExpandedTicket {
+    
     public static final String TYPE = "DoiRequest";
-
+    
     @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty()
@@ -41,7 +41,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private URI customerId;
     @JsonProperty
     private String owner;
-    @JsonProperty("publication")
+    
     private PublicationSummary publicationSummary;
     @JsonProperty("doi")
     private URI doi;
@@ -51,12 +51,12 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private MessageCollection doiRequestMessages;
 
     public static ExpandedDoiRequest create(DoiRequest doiRequest,
-                                            ResourceExpansionService resourceExpansionService,
+                                            ResourceExpansionService expansionService,
                                             MessageService messageService)
         throws NotFoundException {
         var expandedDoiRequest = ExpandedDoiRequest.fromDoiRequest(doiRequest);
         expandedDoiRequest.setDoiRequestMessages(fetchDoiRequestMessagesForResource(messageService, doiRequest));
-        expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, resourceExpansionService));
+        expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         return expandedDoiRequest;
     }
 
@@ -127,7 +127,8 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     public void setOwner(String owner) {
         this.owner = owner;
     }
-
+    
+    @Override
     @JacocoGenerated
     public PublicationSummary getPublicationSummary() {
         return publicationSummary;

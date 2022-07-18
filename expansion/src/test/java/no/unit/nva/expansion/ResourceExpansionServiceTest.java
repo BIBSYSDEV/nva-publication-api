@@ -20,9 +20,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Stack;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -31,6 +33,7 @@ import no.unit.nva.expansion.model.ExpandedDoiRequest;
 import no.unit.nva.expansion.model.ExpandedPublishingRequest;
 import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
+import no.unit.nva.expansion.model.ExpandedTicket;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
@@ -49,6 +52,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.storage.model.TicketEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -66,7 +70,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private ResourceService resourceService;
     private MessageService messageService;
     private DoiRequestService doiRequestService;
-    private PublishingRequestService publisingRequestService;
+    private PublishingRequestService publishingRequestService;
     
     @BeforeEach
     void setUp() {
@@ -111,12 +115,12 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
     
     @ParameterizedTest(name = "should process all ResourceUpdate types:{0}")
-    @MethodSource("listResourceUpdateTypes")
+    @MethodSource("fetchDataEntryTypes")
     void shouldProcessAllResourceUpdateTypes(Class<?> resourceUpdateType)
         throws IOException, ApiGatewayException {
-        DataEntry resource = generateResourceUpdate(resourceUpdateType);
-        expansionService.expandEntry(resource);
-        assertDoesNotThrow(() -> expansionService.expandEntry(resource));
+        var resource = generateResourceUpdate(resourceUpdateType);
+        expansionService.expandEntry(resource.getDataEntry());
+        assertDoesNotThrow(() -> expansionService.expandEntry(resource.getDataEntry()));
     }
     
     @Test
@@ -190,8 +194,43 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             samplePublication.getPublishingRequestMessages());
     }
     
-    private static List<Class<?>> listResourceUpdateTypes() {
-        JsonSubTypes[] annotations = DataEntry.class.getAnnotationsByType(JsonSubTypes.class);
+    @ParameterizedTest(name = "should add resource title to expanded ticket:{0}")
+    @MethodSource("listTicketTypes")
+    void shouldAddResourceTitleToExpandedEntry(Class<?> type) throws ApiGatewayException, JsonProcessingException {
+        var resourceUpdate = generateResourceUpdate(type);
+        var ticket = (ExpandedTicket) expansionService.expandEntry(resourceUpdate.getDataEntry());
+        var expectedTitle = resourceUpdate.getPublication().getEntityDescription().getMainTitle();
+        assertThat(ticket.getPublicationSummary().getTitle(), is(equalTo(expectedTitle)));
+    }
+    
+    private static List<Class<?>> fetchDataEntryTypes() {
+        var types = fetchDirectSubtypes(DataEntry.class);
+        var nestedTypes = new Stack<Type>();
+        var result = new ArrayList<Class<?>>();
+        nestedTypes.addAll(types);
+        while (!nestedTypes.isEmpty()) {
+            var currentType = nestedTypes.pop();
+            if (isTypeWithSubtypes(currentType)) {
+                var subTypes = fetchDirectSubtypes(currentType.value());
+                nestedTypes.addAll(subTypes);
+            } else {
+                result.add(currentType.value());
+            }
+        }
+        return result;
+    }
+    
+    private static boolean isTypeWithSubtypes(Type type) {
+        return type.value().getAnnotationsByType(JsonSubTypes.class).length > 0;
+    }
+    
+    private static List<Type> fetchDirectSubtypes(Class<?> type) {
+        var annotations = type.getAnnotationsByType(JsonSubTypes.class);
+        return Arrays.asList(annotations[0].value());
+    }
+    
+    private static List<Class<?>> listTicketTypes() {
+        JsonSubTypes[] annotations = TicketEntry.class.getAnnotationsByType(JsonSubTypes.class);
         Type[] types = annotations[0].value();
         return Arrays.stream(types).map(Type::value).collect(Collectors.toList());
     }
@@ -257,7 +296,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private PublicationWithAllKindsOfCasesAndMessages createSamplePublicationWithConversations()
         throws ApiGatewayException {
         return new PublicationWithAllKindsOfCasesAndMessages(resourceService, doiRequestService, messageService,
-            publisingRequestService)
+            publishingRequestService)
             .create();
     }
     
@@ -274,11 +313,9 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         resourceService = new ResourceService(client, CLOCK);
         messageService = new MessageService(client, CLOCK);
         doiRequestService = new DoiRequestService(client, CLOCK);
-        publisingRequestService = new PublishingRequestService(client, CLOCK);
-        expansionService = new ResourceExpansionServiceImpl(resourceService,
-            messageService,
-            doiRequestService,
-            publisingRequestService);
+        publishingRequestService = new PublishingRequestService(client, CLOCK);
+        expansionService = new ResourceExpansionServiceImpl(resourceService, messageService,
+            doiRequestService, publishingRequestService);
     }
     
     private Publication createPublication() throws ApiGatewayException {
@@ -287,20 +324,24 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         return resourceService.createPublication(userInstance, publication);
     }
     
-    private DataEntry generateResourceUpdate(Class<?> resourceUpdateType) throws ApiGatewayException {
+    private DataEntryWithAssociatedPublication generateResourceUpdate(Class<?> resourceUpdateType)
+        throws ApiGatewayException {
         Publication createdPublication = createPublication();
         
         if (Resource.class.equals(resourceUpdateType)) {
-            return Resource.fromPublication(createdPublication);
+            var resource = Resource.fromPublication(createdPublication);
+            return new DataEntryWithAssociatedPublication(resource, createdPublication);
         }
         if (DoiRequest.class.equals(resourceUpdateType)) {
-            return createDoiRequest(createdPublication);
+            return new DataEntryWithAssociatedPublication(createDoiRequest(createdPublication), createdPublication);
         }
         if (Message.class.equals(resourceUpdateType)) {
-            return sendSupportMessage(createdPublication);
+            var message = sendSupportMessage(createdPublication);
+            return new DataEntryWithAssociatedPublication(message, createdPublication);
         }
         if (PublishingRequestCase.class.equals(resourceUpdateType)) {
-            return createPublishingRequest(createdPublication);
+            var request = createPublishingRequest(createdPublication);
+            return new DataEntryWithAssociatedPublication(request, createdPublication);
         }
         
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
@@ -324,6 +365,25 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Resource resource = Resource.fromPublication(createdPublication);
         
         return DoiRequest.newDoiRequestForResource(resource);
+    }
+    
+    private static class DataEntryWithAssociatedPublication {
+        
+        private final DataEntry dataEntry;
+        private final Publication publication;
+        
+        public DataEntryWithAssociatedPublication(DataEntry dataEntry, Publication publication) {
+            this.dataEntry = dataEntry;
+            this.publication = publication;
+        }
+        
+        public DataEntry getDataEntry() {
+            return dataEntry;
+        }
+        
+        public Publication getPublication() {
+            return publication;
+        }
     }
     
     private static class PublicationWithAllKindsOfCasesAndMessages {

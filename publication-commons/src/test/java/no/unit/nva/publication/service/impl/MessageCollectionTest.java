@@ -31,27 +31,27 @@ import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.Test;
 
 class MessageCollectionTest {
-
+    
     public static final Clock CLOCK = Clock.systemDefaultZone();
     public static final String TYPE_FIELD = "type";
     private static final String MESSAGE_TYPE_FIELD = "messageType";
-
+    
     @Test
     void emptyReturnsAnEmptyMessageCollection() {
         var emptyCollection = MessageCollection.empty(MessageType.SUPPORT);
         assertThat(emptyCollection.getMessages(), is(empty()));
     }
-
+    
     @Test
     void messageCollectionMessageTypeIsSerializedAsTheSuppliedEnumValue() throws JsonProcessingException {
         var emptyCollection = MessageCollection.empty(MessageType.SUPPORT);
         String jsonString = dtoObjectMapper.writeValueAsString(emptyCollection);
         ObjectNode json = (ObjectNode) dtoObjectMapper.readTree(jsonString);
-
+        
         String messageTypeValue = json.get(MESSAGE_TYPE_FIELD).textValue();
         assertThat(messageTypeValue, is(equalTo(MessageType.SUPPORT.getValue())));
     }
-
+    
     @Test
     void messageCollectionIsSerializedAndContainsAllMessagesAndMessageTypes() throws JsonProcessingException {
         var samplePublication = PublicationGenerator.randomPublication();
@@ -59,15 +59,15 @@ class MessageCollectionTest {
         MessageCollection messageCollection = createSupportMessagesCollection(samplePublication, messageTexts);
         var serialization = dtoObjectMapper.writeValueAsString(messageCollection);
         var json = dtoObjectMapper.readTree(serialization);
-
+        
         assertThat(json, is(jsonObject().where(TYPE_FIELD, is(jsonText(MessageCollection.TYPE_VALUE)))));
         var messageArray = (ArrayNode) json.get("messages");
-
+        
         assertThat(messageArray.size(), is(equalTo(messageTexts.size())));
         var actualMessageTexts = extractTestFromActualMessages(messageArray);
         assertThat(actualMessageTexts, contains(messageTexts.toArray(String[]::new)));
     }
-
+    
     @Test
     void messageCollectionPreservesInternalMessageStructureButDoesExposeItInSerialization()
         throws JsonProcessingException {
@@ -76,20 +76,20 @@ class MessageCollectionTest {
         var messageCollection = createSupportMessagesCollection(samplePublication, messageTexts);
         var serialization = dtoObjectMapper.writeValueAsString(messageCollection);
         var json = dtoObjectMapper.readTree(serialization);
-
+        
         var sampleMessage = messageCollection.getMessages().get(0);
         assertThat(sampleMessage, is(instanceOf(MessageDto.class)));
         assertThat(messageCollection.getMessagesInternalStructure().get(0), is(instanceOf(Message.class)));
         assertThat(json, is(jsonObject().where("messagesInternalStructure", is(jsonMissing()))));
     }
-
+    
     private List<String> extractTestFromActualMessages(ArrayNode messageArray) {
         return Streams.stream(messageArray.elements())
             .map(message -> message.get(MessageDto.TEXT_FIELD))
             .map(JsonNode::textValue)
             .collect(Collectors.toList());
     }
-
+    
     private MessageCollection createSupportMessagesCollection(Publication samplePublication,
                                                               List<String> messageTexts) {
         var messages = messageTexts.stream()
@@ -98,9 +98,14 @@ class MessageCollectionTest {
         return MessageCollection.groupMessagesByType(messages).stream()
             .collect(SingletonCollector.collect());
     }
-
+    
     private Message createSupportMessage(Publication samplePublication, String text) {
         var userInstance = UserInstance.fromPublication(samplePublication);
-        return Message.create(userInstance, samplePublication, text, SortableIdentifier.next(), CLOCK, MessageType.SUPPORT);
+        return Message.create(userInstance,
+            samplePublication,
+            text,
+            SortableIdentifier.next(),
+            CLOCK,
+            MessageType.SUPPORT);
     }
 }

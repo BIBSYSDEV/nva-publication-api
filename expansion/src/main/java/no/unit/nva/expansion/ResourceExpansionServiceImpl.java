@@ -95,7 +95,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     private ExpandedDataEntry updatePublishingRequestConversation(Message message) {
         var publishingRequest = publishingRequestService
             .getPublishingRequestByResourceIdentifier(message.getCustomerId(), message.getResourceIdentifier());
-        return ExpandedPublishingRequest.create(publishingRequest, messageService);
+        return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService);
     }
     
     private boolean isPublishingRequestMessage(Message message) {
@@ -103,7 +103,7 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     }
     
     private ExpandedDataEntry updatePublishingRequestCase(PublishingRequestCase dataEntry) {
-        return ExpandedPublishingRequest.create(dataEntry, messageService);
+        return ExpandedPublishingRequest.create(dataEntry, resourceService, messageService);
     }
     
     private boolean isDoiRequestMessage(Message message) {

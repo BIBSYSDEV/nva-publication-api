@@ -13,14 +13,14 @@ import nva.commons.apigateway.exceptions.NotFoundException;
 
 @JsonTypeName(ExpandedResourceConversation.TYPE)
 public class ExpandedResourceConversation extends ResourceConversation
-    implements WithOrganizationScope, ExpandedDataEntry {
-
+    implements WithOrganizationScope, ExpandedTicket {
+    
     public static final String TYPE = "PublicationConversation";
-
+    
     @JsonProperty("publicationIdentifier")
     private SortableIdentifier publicationIdentifier;
     private Set<URI> organizationIds;
-
+    
     public ExpandedResourceConversation() {
         super();
     }
