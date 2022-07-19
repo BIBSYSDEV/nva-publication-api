@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.model.business.DataEntry.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -15,12 +15,6 @@ import java.util.stream.Stream;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.model.business.DataEntry;
-import no.unit.nva.publication.model.business.DoiRequest;
-import no.unit.nva.publication.model.business.Message;
-import no.unit.nva.publication.model.business.MessageType;
-import no.unit.nva.publication.model.business.Resource;
-import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.publication.model.storage.Dao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -84,10 +78,10 @@ class DataEntryTest {
     
     private static class Tuple {
         
-        private final DataEntry left;
-        private final DataEntry right;
+        private final Entity left;
+        private final Entity right;
         
-        public Tuple(DataEntry left, DataEntry right) {
+        public Tuple(Entity left, Entity right) {
             
             this.left = left;
             this.right = right;

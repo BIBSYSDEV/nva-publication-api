@@ -8,7 +8,7 @@ import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.publication.events.bodies.ScanDatabaseRequest;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import nva.commons.core.JacocoGenerated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     @Override
     protected Void processInput(ScanDatabaseRequest input, AwsEventBridgeEvent<ScanDatabaseRequest> event,
                                 Context context) {
-        ListingResult<DataEntry> result =
+        ListingResult<Entity> result =
             resourceService.scanResources(input.getPageSize(), input.getStartMarker());
         resourceService.refreshResources(result.getDatabaseEntries());
         logger.info("Query starting point:" + input.getStartMarker());
@@ -58,7 +58,7 @@ public class EventBasedBatchScanHandler extends EventHandler<ScanDatabaseRequest
     
     private void sendEventToInvokeNewRefreshRowVersionExecution(ScanDatabaseRequest input,
                                                                 Context context,
-                                                                ListingResult<DataEntry> result) {
+                                                                ListingResult<Entity> result) {
         PutEventsRequestEntry newEvent = input
             .newScanDatabaseRequest(result.getStartMarker())
             .createNewEventEntry(EVENT_BUS_NAME, DETAIL_TYPE, context.getInvokedFunctionArn());

@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.storage.Dao;
 import no.unit.nva.publication.model.storage.DoiRequestDao;
 import no.unit.nva.publication.model.storage.DynamoEntry;
@@ -60,7 +60,7 @@ public abstract class ServiceWithTransactions {
         return new TransactWriteItemsRequest().withTransactItems(transactionItems);
     }
     
-    protected <T extends DataEntry, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
+    protected <T extends Entity, E extends Exception> Optional<T> fetchEventualConsistentDataEntry(
         T dynamoEntry,
         FunctionWithException<T, T, E> nonEventuallyConsistentFetch) {
         T savedEntry = null;

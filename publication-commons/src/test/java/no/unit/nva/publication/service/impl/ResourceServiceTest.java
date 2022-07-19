@@ -72,7 +72,7 @@ import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.model.ListingResult;
 import no.unit.nva.publication.model.PublishPublicationStatusResponse;
 import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
@@ -831,7 +831,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         var secondListingResult = fetchRestOfDatabaseEntries(firstListingResult);
         var identifiersFromSecondScan = secondListingResult
             .getDatabaseEntries().stream()
-            .map(DataEntry::getIdentifier)
+            .map(Entity::getIdentifier)
             .collect(Collectors.toList());
         
         var expectedIdentifiers =
@@ -859,7 +859,7 @@ public class ResourceServiceTest extends ResourcesLocalTest {
             resourceService.scanResources(numberOfTotalExpectedDatabaseEntries, null).getDatabaseEntries();
         
         for (var firstUpdate : firstUpdates) {
-            DataEntry secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
+            Entity secondUpdate = findMatchingSecondUpdate(secondUpdates, firstUpdate);
             assertThat(secondUpdate.getRowVersion(), is(not(equalTo(firstUpdate.getRowVersion()))));
         }
     }
@@ -888,36 +888,36 @@ public class ResourceServiceTest extends ResourcesLocalTest {
         return resourceService.createPublication(userInstance, sampleResource);
     }
     
-    private DataEntry findMatchingSecondUpdate(List<DataEntry> secondUpdates, DataEntry firstUpdate) {
+    private Entity findMatchingSecondUpdate(List<Entity> secondUpdates, Entity firstUpdate) {
         return secondUpdates.stream()
             .filter(resource -> resource.getIdentifier().equals(firstUpdate.getIdentifier()))
             .collect(SingletonCollector.collect());
     }
     
-    private List<DataEntry> createManySampleResources(int numberOfResources) {
+    private List<Entity> createManySampleResources(int numberOfResources) {
         return IntStream.range(0, numberOfResources)
             .boxed()
             .map(ignored -> PublicationGenerator.randomPublication())
             .map(attempt(p -> createPublication(resourceService, p)))
             .map(Try::orElseThrow)
             .map(Resource::fromPublication)
-            .map(resource -> (DataEntry) resource)
+            .map(resource -> (Entity) resource)
             .collect(Collectors.toList());
     }
     
-    private ListingResult<DataEntry> fetchRestOfDatabaseEntries(ListingResult<DataEntry> listingResult) {
+    private ListingResult<Entity> fetchRestOfDatabaseEntries(ListingResult<Entity> listingResult) {
         return resourceService.scanResources(BIG_PAGE, listingResult.getStartMarker());
     }
     
-    private SortableIdentifier extractIdentifierFromFirstScanResult(ListingResult<DataEntry> listingResult) {
+    private SortableIdentifier extractIdentifierFromFirstScanResult(ListingResult<Entity> listingResult) {
         return listingResult.getDatabaseEntries()
             .stream()
             .collect(SingletonCollector.collect())
             .getIdentifier();
     }
     
-    private ListingResult<DataEntry> fetchFirstDataEntry() {
-        ListingResult<DataEntry> listingResult = ListingResult.empty();
+    private ListingResult<Entity> fetchFirstDataEntry() {
+        ListingResult<Entity> listingResult = ListingResult.empty();
         while (listingResult.isEmpty()) {
             listingResult = resourceService.scanResources(1, listingResult.getStartMarker());
         }

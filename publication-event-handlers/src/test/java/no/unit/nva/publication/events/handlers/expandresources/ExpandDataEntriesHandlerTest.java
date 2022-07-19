@@ -38,7 +38,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
@@ -176,7 +176,7 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
         return s3Driver.insertFile(filePath, dataEntryUpdateEvent.toJsonString());
     }
     
-    private DataEntry crateDataEntry(Object image) {
+    private Entity crateDataEntry(Object image) {
         
         if (image instanceof Publication) {
             return Resource.fromPublication((Publication) image);
@@ -225,12 +225,12 @@ class ExpandDataEntriesHandlerTest extends ResourcesLocalTest {
     private ResourceExpansionService createFailingService() {
         return new ResourceExpansionService() {
             @Override
-            public ExpandedDataEntry expandEntry(DataEntry dataEntry) {
+            public ExpandedDataEntry expandEntry(Entity dataEntry) {
                 throw new RuntimeException(EXPECTED_ERROR_MESSAGE);
             }
             
             @Override
-            public Set<URI> getOrganizationIds(DataEntry dataEntry) {
+            public Set<URI> getOrganizationIds(Entity dataEntry) {
                 return null;
             }
         };

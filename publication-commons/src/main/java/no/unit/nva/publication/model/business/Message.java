@@ -1,6 +1,6 @@
 package no.unit.nva.publication.model.business;
 
-import static no.unit.nva.publication.model.business.DataEntry.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import java.net.URI;
@@ -17,8 +17,7 @@ import no.unit.nva.publication.model.storage.MessageDao;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
-public class Message implements WithIdentifier,
-                                WithStatus,
+public class Message implements WithStatus,
                                 RowLevelSecurity,
                                 TicketEntry,
                                 JsonSerializable {

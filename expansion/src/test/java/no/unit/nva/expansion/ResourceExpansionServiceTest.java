@@ -45,7 +45,7 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
 import no.unit.nva.publication.model.business.MessageType;
@@ -214,7 +214,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     }
     
     private static List<Class<?>> fetchDataEntryTypes() {
-        var types = fetchDirectSubtypes(DataEntry.class);
+        var types = fetchDirectSubtypes(Entity.class);
         var nestedTypes = new Stack<Type>();
         var result = new ArrayList<Class<?>>();
         nestedTypes.addAll(types);
@@ -357,7 +357,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + resourceUpdateType.getSimpleName());
     }
     
-    private DataEntry createPublishingRequest(Publication createdPublication) {
+    private Entity createPublishingRequest(Publication createdPublication) {
         var publishingRequest = new PublishingRequestCase();
         publishingRequest.setStatus(PublishingRequestStatus.PENDING);
         publishingRequest.setCustomerId(createdPublication.getPublisher().getId());
@@ -379,15 +379,15 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     
     private static class DataEntryWithAssociatedPublication {
         
-        private final DataEntry dataEntry;
+        private final Entity dataEntry;
         private final Publication publication;
         
-        public DataEntryWithAssociatedPublication(DataEntry dataEntry, Publication publication) {
+        public DataEntryWithAssociatedPublication(Entity dataEntry, Publication publication) {
             this.dataEntry = dataEntry;
             this.publication = publication;
         }
         
-        public DataEntry getDataEntry() {
+        public Entity getDataEntry() {
             return dataEntry;
         }
         

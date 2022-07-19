@@ -13,14 +13,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Stream;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class DataEntryUpdateEventTest {
     
     public static Stream<Class<?>> dataEntryTypeProvider() {
-        var types = fetchDirectSubtypes(DataEntry.class);
+        var types = fetchDirectSubtypes(Entity.class);
         var nestedTypes = new Stack<Type>();
         var result = new ArrayList<Class<?>>();
         nestedTypes.addAll(types);
@@ -54,8 +54,8 @@ class DataEntryUpdateEventTest {
         return Arrays.asList(annotations[0].value());
     }
     
-    private DataEntry createDataEntry(Class<?> type)
+    private Entity createDataEntry(Class<?> type)
         throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        return (DataEntry) type.getDeclaredConstructor().newInstance();
+        return (Entity) type.getDeclaredConstructor().newInstance();
     }
 }

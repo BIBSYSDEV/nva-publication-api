@@ -17,7 +17,7 @@ import no.unit.nva.events.handlers.EventHandler;
 import no.unit.nva.events.models.AwsEventBridgeEvent;
 import no.unit.nva.events.models.EventReference;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
-import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.Entity;
 import no.unit.nva.s3.S3Driver;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.attempt.Failure;
@@ -30,7 +30,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 
 public class DataEntryUpdateHandler extends EventHandler<EventReference, EventReference> {
     
-    public static final DataEntry NO_VALUE = null;
+    public static final Entity NO_VALUE = null;
     public static final URI BLOB_IS_EMPTY = null;
     public static final EventReference DO_NOT_EMIT_EVENT = null;
     private static final Logger logger = LoggerFactory.getLogger(DataEntryUpdateHandler.class);
@@ -91,13 +91,13 @@ public class DataEntryUpdateHandler extends EventHandler<EventReference, EventRe
         return attempt(() -> JsonUtils.dtoObjectMapper.readValue(s3Content, DynamodbStreamRecord.class)).orElseThrow();
     }
     
-    private DataEntry getDao(Map<String, AttributeValue> image) {
+    private Entity getDao(Map<String, AttributeValue> image) {
         return attempt(() -> toDao(image))
             .toOptional(this::logFailureInDebugging)
             .flatMap(Function.identity()).orElse(NO_VALUE);
     }
     
-    private void logFailureInDebugging(Failure<Optional<DataEntry>> fail) {
+    private void logFailureInDebugging(Failure<Optional<Entity>> fail) {
         logger.debug(ExceptionUtils.stackTraceInSingleLine(fail.getException()));
     }
 }

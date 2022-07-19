@@ -55,8 +55,7 @@ public class JoinWithResourceTest extends ResourcesLocalTest {
     }
     
     @Test
-    public void byResourceIdentifierKeyReturnsSingleTypeWhenLeftAndRightTypeAreEqual()
-        throws InvalidIssnException, MalformedURLException {
+    public void byResourceIdentifierKeyReturnsSingleTypeWhenLeftAndRightTypeAreEqual() {
         ResourceDao resourceDao = sampleResourceDao();
         DoiRequestDao doiRequestDao = doiRequestDao(resourceDao.getData());
         assertThat(doiRequestDao.getData().getResourceIdentifier(), is(equalTo(resourceDao.getData().getIdentifier())));

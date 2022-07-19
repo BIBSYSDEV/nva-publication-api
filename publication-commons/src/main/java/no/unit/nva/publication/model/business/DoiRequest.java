@@ -1,7 +1,7 @@
 package no.unit.nva.publication.model.business;
 
 import static java.util.Objects.isNull;
-import static no.unit.nva.publication.model.business.DataEntry.nextRowVersion;
+import static no.unit.nva.publication.model.business.Entity.nextRowVersion;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDataFromResource;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestCreatedDate;
 import static no.unit.nva.publication.model.business.DoiRequestUtils.extractDoiRequestModifiedDate;
@@ -35,8 +35,7 @@ import nva.commons.core.JacocoGenerated;
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
 public class DoiRequest
-    implements WithIdentifier,
-               RowLevelSecurity,
+    implements RowLevelSecurity,
                WithStatus,
                TicketEntry{
     
@@ -50,7 +49,6 @@ public class DoiRequest
     public static final String RESOURCE_IDENTIFIER_MISMATCH_ERROR = "Resource identifier mismatch";
     private static final URI UNKNOWN_USER_AFFILIATION = null;
     
-    @JsonProperty
     private SortableIdentifier identifier;
     @JsonProperty
     private SortableIdentifier resourceIdentifier;
