@@ -40,7 +40,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.SubTypeProvider;
+import no.unit.nva.publication.testing.TypeProvider;
 import no.unit.nva.s3.S3Driver;
 import no.unit.nva.stubs.FakeS3Client;
 import no.unit.nva.testutils.EventBridgeEventBuilder;
@@ -129,7 +129,7 @@ class ExpandedDataEntriesPersistenceHandlerTest extends ResourcesLocalTest {
     }
     
     private static Stream<Class<?>> expandedEntriesTypeProvider() {
-        return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
+        return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
     
     private PersistedEntryWithExpectedType generateExpandedEntry(Class<?> expandedEntryType)

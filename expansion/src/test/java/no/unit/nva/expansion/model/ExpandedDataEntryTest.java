@@ -16,7 +16,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.stream.Stream;
-import no.unit.nva.expansion.FakeResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.ResourceExpansionServiceImpl;
 import no.unit.nva.identifiers.SortableIdentifier;
@@ -33,7 +32,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.testing.SubTypeProvider;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -47,12 +46,12 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     public static final String TYPE = "type";
     public static final String EXPECTED_TYPE_OF_EXPANDED_RESOURCE_ENTRY = "Publication";
     private MessageService messageService = new FakeMessageService();
-    private ResourceExpansionService resourceExpansionService = new FakeResourceExpansionService();
+    private ResourceExpansionService resourceExpansionService;
     private ResourceService resourceService;
     private DoiRequestService doiRequestService;
     
     public static Stream<Class<?>> entryTypes() {
-        return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
+        return TypeProvider.listSubTypes(ExpandedDataEntry.class);
     }
     
     @BeforeEach
@@ -200,7 +199,7 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     resourceExpansionService, doiRequestService, messageService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
-                    createExpandedPublishingRequest(publication, resourceService, messageService));
+                    createExpandedPublishingRequest(publication, resourceService, messageService,resourceExpansionService));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     randomResourceConversation(publication));
@@ -229,9 +228,11 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
         private static ExpandedDataEntry createExpandedPublishingRequest(
             Publication publication,
             ResourceService resourceService,
-            MessageService messageService) {
+            MessageService messageService,
+            ResourceExpansionService resourceExpansionService) throws NotFoundException {
             PublishingRequestCase requestCase = createRequestCase(publication);
-            return ExpandedPublishingRequest.create(requestCase, resourceService, messageService);
+            return ExpandedPublishingRequest.create(requestCase, resourceService, messageService,
+                resourceExpansionService);
         }
         
         private static PublishingRequestCase createRequestCase(Publication publication) {

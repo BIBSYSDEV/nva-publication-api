@@ -58,7 +58,10 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         } else if (dataEntry instanceof Message) {
             return updateResourceConversations((Message) dataEntry);
         } else if (dataEntry instanceof PublishingRequestCase) {
-            return updatePublishingRequestCase((PublishingRequestCase) dataEntry);
+            return ExpandedPublishingRequest.create((PublishingRequestCase) dataEntry,
+                resourceService,
+                messageService,
+                this);
         }
         // will throw exception if we want to index a new type that we are not handling yet
         throw new UnsupportedOperationException(UNSUPPORTED_TYPE + dataEntry.getClass().getSimpleName());
@@ -92,18 +95,14 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
         return updateExpandedGeneralSupportConversation(message);
     }
     
-    private ExpandedDataEntry updatePublishingRequestConversation(Message message) {
+    private ExpandedDataEntry updatePublishingRequestConversation(Message message) throws NotFoundException {
         var publishingRequest = publishingRequestService
             .getPublishingRequestByResourceIdentifier(message.getCustomerId(), message.getResourceIdentifier());
-        return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService);
+        return ExpandedPublishingRequest.create(publishingRequest, resourceService, messageService, this);
     }
     
     private boolean isPublishingRequestMessage(Message message) {
         return MessageType.PUBLISHING_REQUEST.equals(message.getMessageType());
-    }
-    
-    private ExpandedDataEntry updatePublishingRequestCase(PublishingRequestCase dataEntry) {
-        return ExpandedPublishingRequest.create(dataEntry, resourceService, messageService);
     }
     
     private boolean isDoiRequestMessage(Message message) {

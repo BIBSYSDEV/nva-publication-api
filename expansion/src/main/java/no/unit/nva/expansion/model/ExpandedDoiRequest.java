@@ -45,7 +45,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private PublicationSummary publicationSummary;
     @JsonProperty("doi")
     private URI doi;
-    @JsonProperty
+    @JsonProperty(ORGANIZATION_IDS_FIELD)
     private Set<URI> organizationIds;
     @JsonProperty("messages")
     private MessageCollection doiRequestMessages;
