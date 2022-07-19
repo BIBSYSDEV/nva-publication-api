@@ -54,12 +54,15 @@ import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.Resource;
 import no.unit.nva.publication.storage.model.TicketEntry;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.paths.UriWrapper;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class ResourceExpansionServiceTest extends ResourcesLocalTest {
@@ -71,6 +74,11 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
     private MessageService messageService;
     private DoiRequestService doiRequestService;
     private PublishingRequestService publishingRequestService;
+    
+    public static Stream<Arguments> ticketTypeProvider() {
+        return TypeProvider.listSubTypes(TicketEntry.class)
+            .map(Arguments::arguments);
+    }
     
     @BeforeEach
     void setUp() {
@@ -85,7 +93,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         
         Publication createdPublication = createPublication();
         var expectedResourceOwnerAffiliation = createdPublication.getResourceOwner().getOwnerAffiliation();
-        Message message = sendSupportMessage(createdPublication);
+        var message = sendSupportMessage(createdPublication);
         
         ExpandedResourceConversation expandedResourceConversation =
             (ExpandedResourceConversation) expansionService.expandEntry(message);
@@ -93,15 +101,17 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
             containsInAnyOrder(expectedResourceOwnerAffiliation));
     }
     
-    @Test
-    void shouldReturnExpandedDoiRequestWithAffiliationContainedInCreatedPublication()
+    @DisplayName("should return ticket with the affiliation that is contained in the publication.")
+    @ParameterizedTest(name = "TicketType:{0}")
+    @MethodSource("ticketTypeProvider")
+    void shouldReturnExpandedTicketWithAffiliationContainedInCreatedPublication(
+        Class<? extends ExpandedTicket> ticketType)
         throws Exception {
-        Publication createdPublication = createPublication();
-        var expectedOrgId = createdPublication.getResourceOwner().getOwnerAffiliation();
-        
-        DoiRequest doiRequest = DoiRequest.newDoiRequestForResource(Resource.fromPublication(createdPublication));
-        ExpandedDoiRequest expandedDoiRequest = (ExpandedDoiRequest) expansionService.expandEntry(doiRequest);
-        assertThat(expandedDoiRequest.getOrganizationIds(), containsInAnyOrder(expectedOrgId));
+        var ticket = generateResourceUpdate(ticketType);
+        var publication = ticket.getPublication() ;
+        var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket.getDataEntry());
+        var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
+        assertThat(expandedTicket.getOrganizationIds(), containsInAnyOrder(expectedOrgId));
     }
     
     @ParameterizedTest(name = "should return framed index document for resources. Instance type:{0}")

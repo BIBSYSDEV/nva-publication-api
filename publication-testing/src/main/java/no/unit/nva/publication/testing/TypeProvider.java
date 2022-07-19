@@ -8,13 +8,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-public final class SubTypeProvider {
+public final class TypeProvider {
     
-    private SubTypeProvider() {
+    private TypeProvider() {
     
     }
     
-    public static Stream<Class<?>> dataEntryTypeProvider(Class<?> type) {
+    public static Stream<Class<?>> listSubTypes(Class<?> type) {
         var types = fetchDirectSubtypes(type);
         var result = new ArrayList<Class<?>>();
         var nestedTypes = new ArrayDeque<Type>(types);

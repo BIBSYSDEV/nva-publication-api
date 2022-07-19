@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import java.net.URI;
+import java.util.Set;
 import no.unit.nva.publication.model.PublicationSummary;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
@@ -15,7 +17,10 @@ import no.unit.nva.publication.model.PublicationSummary;
 public interface ExpandedTicket extends ExpandedDataEntry {
     
     String PUBLICATION_FIELD = "publication";
+    String ORGANIZATION_IDS_FIELD = "organizationIds";
     
     @JsonProperty(PUBLICATION_FIELD)
     PublicationSummary getPublicationSummary();
+    @JsonProperty(ORGANIZATION_IDS_FIELD)
+    Set<URI> getOrganizationIds();
 }

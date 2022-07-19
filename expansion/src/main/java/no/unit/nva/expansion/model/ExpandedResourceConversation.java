@@ -21,6 +21,7 @@ public class ExpandedResourceConversation extends ResourceConversation
     
     @JsonProperty("publicationIdentifier")
     private SortableIdentifier publicationIdentifier;
+    @JsonProperty(ORGANIZATION_IDS_FIELD)
     private Set<URI> organizationIds;
     
     public ExpandedResourceConversation() {

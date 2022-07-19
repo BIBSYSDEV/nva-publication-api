@@ -1,9 +1,14 @@
 package no.unit.nva.expansion.model;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.net.URI;
+import java.util.Collections;
 import java.util.Objects;
+import java.util.Set;
+import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageCollection;
@@ -14,6 +19,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
 public class ExpandedPublishingRequest implements ExpandedTicket {
@@ -28,6 +34,8 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     private PublicationSummary publicationSummary;
     @JsonProperty(MESSAGES_FIELD)
     private MessageCollection messages;
+    @JsonProperty("organizationIds")
+    private Set<URI> organizationIds;
     
     public ExpandedPublishingRequest() {
         this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
@@ -35,12 +43,16 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     
     public static ExpandedPublishingRequest create(PublishingRequestCase publishingRequestCase,
                                                    ResourceService resourceService,
-                                                   MessageService messageService) {
-        var userInstance = UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
-        var messageCollection = fetchAllMessagesForPublishingRequestCase(publishingRequestCase,
-            messageService, userInstance);
+                                                   MessageService messageService,
+                                                   ResourceExpansionService resourceExpansionService)
+        throws NotFoundException {
+        var userInstance =
+            UserInstance.create(publishingRequestCase.getOwner(), publishingRequestCase.getCustomerId());
+        var messageCollection =
+            fetchAllMessagesForPublishingRequestCase(publishingRequestCase, messageService, userInstance);
         var publication = fetchPublication(publishingRequestCase, resourceService);
-        return ExpandedPublishingRequest.create(publishingRequestCase, publication, messageCollection);
+        var organizationIds = resourceExpansionService.getOrganizationIds(publishingRequestCase);
+        return create(publishingRequestCase, publication, messageCollection, organizationIds);
     }
     
     @JacocoGenerated
@@ -77,6 +89,15 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return this.publicationSummary;
     }
     
+    @Override
+    public Set<URI> getOrganizationIds() {
+        return nonNull(organizationIds) ? organizationIds : Collections.emptySet();
+    }
+    
+    public void setOrganizationIds(Set<URI> organizationIds) {
+        this.organizationIds = organizationIds;
+    }
+    
     public void setPublicationSummary(PublicationSummary publicationSummary) {
         this.publicationSummary = publicationSummary;
     }
@@ -104,11 +125,13 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     
     private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,
                                                     Publication publication,
-                                                    MessageCollection messages) {
+                                                    MessageCollection messages,
+                                                    Set<URI> organizationIds) {
         var entry = new ExpandedPublishingRequest();
         entry.setIdentifier(dataEntry.getIdentifier());
         entry.setPublicationSummary(PublicationSummary.create(publication));
         entry.setMessages(messages);
+        entry.setOrganizationIds(organizationIds);
         return entry;
     }
     
