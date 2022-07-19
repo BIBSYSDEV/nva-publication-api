@@ -11,8 +11,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.identifiers.SortableIdentifier;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.MessageType;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.SingletonCollector;
 

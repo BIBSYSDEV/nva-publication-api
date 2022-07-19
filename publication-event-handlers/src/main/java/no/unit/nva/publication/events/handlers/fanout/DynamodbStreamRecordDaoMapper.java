@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.daos.Dao;
-import no.unit.nva.publication.storage.model.daos.DynamoEntry;
+import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
 import nva.commons.core.JacocoGenerated;
 
 //TODO: rename class to DynamoJsonToInternalModelEventHandler

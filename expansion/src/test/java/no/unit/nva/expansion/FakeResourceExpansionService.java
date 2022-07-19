@@ -3,7 +3,7 @@ package no.unit.nva.expansion;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import java.net.URI;
 import java.util.Set;
-import no.unit.nva.publication.storage.model.DataEntry;
+import no.unit.nva.publication.model.business.DataEntry;
 
 public class FakeResourceExpansionService extends ResourceExpansionServiceImpl {
     

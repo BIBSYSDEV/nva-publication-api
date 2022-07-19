@@ -10,7 +10,7 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.exception.TransactionFailedException;
 import no.unit.nva.publication.publishingrequest.PublishingRequestCaseDto;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.storage.model.PublishingRequestCase;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.ApiGatewayException;

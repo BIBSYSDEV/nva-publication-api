@@ -4,7 +4,7 @@ import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
 import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.UserInstance;
 
 //TODO: this is a quick fix. The best solution is to send messages to a real service connected to local database.
 public class FakeMessageService extends MessageService {

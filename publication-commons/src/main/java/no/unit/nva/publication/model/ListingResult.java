@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import no.unit.nva.publication.storage.model.DataEntry;
+import no.unit.nva.publication.model.business.DataEntry;
 import nva.commons.core.JacocoGenerated;
 
 public class ListingResult<T> {

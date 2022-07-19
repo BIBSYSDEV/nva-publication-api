@@ -8,8 +8,8 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.publication.events.bodies.DataEntryUpdateEvent;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
-import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
 import nva.commons.core.JacocoGenerated;
 
 public class DeletionProcessInitializationHandler

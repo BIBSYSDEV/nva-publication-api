@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import no.unit.nva.model.Organization;
-import no.unit.nva.publication.storage.model.UserInstance;
-import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
+import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
 
 public final class ResourceServiceUtils {
     

@@ -5,7 +5,7 @@ import static no.unit.nva.publication.service.impl.ReadResourceService.RESOURCE_
 import static no.unit.nva.publication.service.impl.ResourceService.AWAIT_TIME_BEFORE_FETCH_RETRY;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.KEY_NOT_EXISTS_CONDITION;
 import static no.unit.nva.publication.service.impl.ResourceServiceUtils.PRIMARY_KEY_EQUALITY_CONDITION_ATTRIBUTE_NAMES;
-import static no.unit.nva.publication.storage.model.daos.Dao.CONTAINED_DATA_FIELD_NAME;
+import static no.unit.nva.publication.model.storage.Dao.CONTAINED_DATA_FIELD_NAME;
 import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
 import com.amazonaws.services.dynamodbv2.model.Delete;
@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Optional;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.exception.TransactionFailedException;
-import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.daos.Dao;
-import no.unit.nva.publication.storage.model.daos.DoiRequestDao;
-import no.unit.nva.publication.storage.model.daos.DynamoEntry;
-import no.unit.nva.publication.storage.model.daos.ResourceDao;
-import no.unit.nva.publication.storage.model.daos.WithPrimaryKey;
+import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.storage.Dao;
+import no.unit.nva.publication.model.storage.DoiRequestDao;
+import no.unit.nva.publication.model.storage.DynamoEntry;
+import no.unit.nva.publication.model.storage.ResourceDao;
+import no.unit.nva.publication.model.storage.WithPrimaryKey;
 import nva.commons.core.attempt.Failure;
 import nva.commons.core.attempt.FunctionWithException;
 

@@ -24,9 +24,9 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
 import no.unit.nva.publication.model.MessageCollection;
 import no.unit.nva.publication.model.MessageDto;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.MessageType;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.core.SingletonCollector;
 import org.junit.jupiter.api.Test;
 
