@@ -49,7 +49,7 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     private Set<URI> organizationIds;
     @JsonProperty("messages")
     private MessageCollection doiRequestMessages;
-
+    
     public static ExpandedDoiRequest create(DoiRequest doiRequest,
                                             ResourceExpansionService expansionService,
                                             MessageService messageService)
@@ -59,70 +59,70 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         expandedDoiRequest.setOrganizationIds(fetchOrganizationIdsForViewingScope(doiRequest, expansionService));
         return expandedDoiRequest;
     }
-
+    
     public MessageCollection getDoiRequestMessages() {
         return doiRequestMessages;
     }
-
+    
     public void setDoiRequestMessages(MessageCollection doiRequestMessages) {
         this.doiRequestMessages = doiRequestMessages;
     }
-
+    
     @JacocoGenerated
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
-
+    
     @JacocoGenerated
     public void setIdentifier(SortableIdentifier identifier) {
         this.identifier = identifier;
     }
-
+    
     @JacocoGenerated
     public DoiRequestStatus getStatus() {
         return status;
     }
-
+    
     @JacocoGenerated
     public void setStatus(DoiRequestStatus status) {
         this.status = status;
     }
-
+    
     @JacocoGenerated
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-
+    
     @JacocoGenerated
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-
+    
     @JacocoGenerated
     public Instant getCreatedDate() {
         return createdDate;
     }
-
+    
     @JacocoGenerated
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-
+    
     @JacocoGenerated
     public URI getCustomerId() {
         return customerId;
     }
-
+    
     @JacocoGenerated
     public void setCustomerId(URI customerId) {
         this.customerId = customerId;
     }
-
+    
     @JacocoGenerated
     public String getOwner() {
         return owner;
     }
-
+    
     @JacocoGenerated
     public void setOwner(String owner) {
         this.owner = owner;
@@ -133,34 +133,34 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
     public PublicationSummary getPublicationSummary() {
         return publicationSummary;
     }
-
+    
     @JacocoGenerated
     public void setPublicationSummary(PublicationSummary publicationSummary) {
         this.publicationSummary = publicationSummary;
     }
-
+    
     @JacocoGenerated
     public URI getDoi() {
         return doi;
     }
-
+    
     @JacocoGenerated
     public void setDoi(URI doi) {
         this.doi = doi;
     }
-
+    
     @JacocoGenerated
     @Override
     public Set<URI> getOrganizationIds() {
         return organizationIds;
     }
-
+    
     @JacocoGenerated
     @Override
     public void setOrganizationIds(Set<URI> organizationIds) {
         this.organizationIds = organizationIds;
     }
-
+    
     public DoiRequest toDoiRequest() {
         DoiRequest doiRequest = new DoiRequest();
         doiRequest.setDoi(this.getDoi());
@@ -180,19 +180,19 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
         doiRequest.setStatus(this.getStatus());
         return doiRequest;
     }
-
+    
     @Override
     public SortableIdentifier identifyExpandedEntry() {
         return getIdentifier();
     }
-
+    
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getIdentifier(), getStatus(), getModifiedDate(), getCreatedDate(),
-                            getCustomerId(), getOwner(), getPublicationSummary(), getDoi(), getOrganizationIds());
+            getCustomerId(), getOwner(), getPublicationSummary(), getDoi(), getOrganizationIds());
     }
-
+    
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
@@ -213,28 +213,28 @@ public final class ExpandedDoiRequest implements WithOrganizationScope, Expanded
                && Objects.equals(getDoi(), that.getDoi())
                && Objects.equals(getOrganizationIds(), that.getOrganizationIds());
     }
-
+    
     private static Set<URI> fetchOrganizationIdsForViewingScope(DoiRequest doiRequest,
                                                                 ResourceExpansionService resourceExpansionService)
         throws NotFoundException {
         return resourceExpansionService.getOrganizationIds(doiRequest);
     }
-
+    
     private static MessageCollection fetchDoiRequestMessagesForResource(MessageService messageService,
                                                                         DoiRequest doiRequest) {
-
+        
         UserInstance userInstance = UserInstance.fromDoiRequest(doiRequest);
         return fetchAllMessagesForResource(messageService, doiRequest, userInstance)
             .map(conversation -> conversation.getMessageCollectionOfType(MessageType.DOI_REQUEST))
             .orElse(MessageCollection.empty(MessageType.DOI_REQUEST));
     }
-
+    
     private static Optional<ResourceConversation> fetchAllMessagesForResource(MessageService messageService,
                                                                               DoiRequest doiRequest,
                                                                               UserInstance userInstance) {
         return messageService.getMessagesForResource(userInstance, doiRequest.getResourceIdentifier());
     }
-
+    
     // should not become public. An ExpandedDoiRequest needs an Expansion service to be complete
     private static ExpandedDoiRequest fromDoiRequest(DoiRequest doiRequest) {
         ExpandedDoiRequest request = new ExpandedDoiRequest();

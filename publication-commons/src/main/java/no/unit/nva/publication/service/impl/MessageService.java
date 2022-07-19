@@ -64,9 +64,9 @@ public class MessageService extends ServiceWithTransactions {
     public SortableIdentifier createMessage(UserInstance sender,
                                             Publication publication,
                                             String messageText,
-                                            MessageType support) {
+                                            MessageType messageType) {
         requireMessageIsNotBlank(messageText);
-        Message message = createMessageEntry(sender, publication, messageText, support);
+        Message message = createMessageEntry(sender, publication, messageText, messageType);
         return writeMessageToDb(message);
     }
 
