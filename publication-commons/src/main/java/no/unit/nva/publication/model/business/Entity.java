@@ -32,6 +32,7 @@ public interface Entity {
     
     Publication toPublication();
     
+    //TODO: this does not belong here
     @JsonProperty(ROW_VERSION)
     String getRowVersion();
     
