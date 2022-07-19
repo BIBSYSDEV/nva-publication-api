@@ -108,7 +108,7 @@ class ResourceExpansionServiceTest extends ResourcesLocalTest {
         Class<? extends ExpandedTicket> ticketType)
         throws Exception {
         var ticket = generateResourceUpdate(ticketType);
-        var publication = ticket.getPublication() ;
+        var publication = ticket.getPublication();
         var expandedTicket = (ExpandedTicket) expansionService.expandEntry(ticket.getDataEntry());
         var expectedOrgId = publication.getResourceOwner().getOwnerAffiliation();
         assertThat(expandedTicket.getOrganizationIds(), containsInAnyOrder(expectedOrgId));

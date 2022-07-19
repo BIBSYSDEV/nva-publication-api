@@ -21,7 +21,6 @@ public class Message implements WithIdentifier,
                                 WithStatus,
                                 RowLevelSecurity,
                                 TicketEntry,
-                                ConnectedToResource,
                                 JsonSerializable {
     
     public static final String TYPE = "Message";

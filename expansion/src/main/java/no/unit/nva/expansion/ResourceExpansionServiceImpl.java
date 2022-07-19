@@ -15,11 +15,11 @@ import no.unit.nva.expansion.model.ExpandedResource;
 import no.unit.nva.expansion.model.ExpandedResourceConversation;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
+import no.unit.nva.publication.model.business.TicketEntry;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.model.business.ConnectedToResource;
 import no.unit.nva.publication.model.business.DataEntry;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.Message;
@@ -69,8 +69,8 @@ public class ResourceExpansionServiceImpl implements ResourceExpansionService {
     
     @Override
     public Set<URI> getOrganizationIds(DataEntry dataEntry) throws NotFoundException {
-        if (dataEntry instanceof ConnectedToResource) {
-            var resourceIdentifier = ((ConnectedToResource) dataEntry).getResourceIdentifier();
+        if (dataEntry instanceof TicketEntry) {
+            var resourceIdentifier = ((TicketEntry) dataEntry).getResourceIdentifier();
             var resource = resourceService.getResourceByIdentifier(resourceIdentifier);
             return Optional.ofNullable(resource.getResourceOwner().getOwnerAffiliation())
                 .stream()

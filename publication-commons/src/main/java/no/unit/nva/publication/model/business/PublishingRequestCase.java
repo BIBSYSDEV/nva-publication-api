@@ -18,8 +18,7 @@ public class PublishingRequestCase
     implements WithIdentifier,
                RowLevelSecurity,
                WithStatus,
-               TicketEntry,
-               ConnectedToResource {
+               TicketEntry {
     
     public static final String TYPE = "PublishingRequestCase";
     public static final String STATUS_FIELD = "status";

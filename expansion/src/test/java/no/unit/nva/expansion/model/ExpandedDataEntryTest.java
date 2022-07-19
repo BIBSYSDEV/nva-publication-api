@@ -22,16 +22,16 @@ import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.model.PublicationSummary;
-import no.unit.nva.publication.service.ResourcesLocalTest;
-import no.unit.nva.publication.service.impl.DoiRequestService;
-import no.unit.nva.publication.service.impl.MessageService;
-import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.model.business.DoiRequest;
 import no.unit.nva.publication.model.business.MessageType;
 import no.unit.nva.publication.model.business.PublishingRequestCase;
 import no.unit.nva.publication.model.business.PublishingRequestStatus;
 import no.unit.nva.publication.model.business.UserInstance;
+import no.unit.nva.publication.service.ResourcesLocalTest;
+import no.unit.nva.publication.service.impl.DoiRequestService;
+import no.unit.nva.publication.service.impl.MessageService;
+import no.unit.nva.publication.service.impl.PublishingRequestService;
+import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.testing.TypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
@@ -199,7 +199,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
                     resourceExpansionService, doiRequestService, messageService));
             } else if (expandedDataEntryClass.equals(ExpandedPublishingRequest.class)) {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
-                    createExpandedPublishingRequest(publication, resourceService, messageService,resourceExpansionService));
+                    createExpandedPublishingRequest(publication, resourceService, messageService,
+                        resourceExpansionService));
             } else {
                 return new ExpandedDataEntryWithAssociatedPublication(publication,
                     randomResourceConversation(publication));
