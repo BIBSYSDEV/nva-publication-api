@@ -22,6 +22,7 @@ public class UniqueDoiRequestEntry extends UniquenessEntry {
     public static UniqueDoiRequestEntry create(DoiRequestDao doiRequestDao) {
         return new UniqueDoiRequestEntry(doiRequestDao.getResourceIdentifier().toString());
     }
+
     
     @Override
     protected String getType() {

@@ -17,10 +17,9 @@ import java.util.Map;
 import java.util.Optional;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.business.Entity;
-import no.unit.nva.publication.storage.model.DatabaseConstants;
 import no.unit.nva.publication.model.business.RowLevelSecurity;
-import no.unit.nva.publication.model.business.WithIdentifier;
 import no.unit.nva.publication.model.business.WithStatus;
+import no.unit.nva.publication.storage.model.DatabaseConstants;
 import nva.commons.core.JacocoGenerated;
 
 @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
@@ -35,8 +34,7 @@ import nva.commons.core.JacocoGenerated;
 public abstract class Dao<R extends RowLevelSecurity & Entity>
     implements DynamoEntry,
                WithPrimaryKey,
-               WithByTypeCustomerStatusIndex,
-               WithIdentifier {
+               WithByTypeCustomerStatusIndex {
     
     public static final String URI_PATH_SEPARATOR = "/";
     public static final String CONTAINED_DATA_FIELD_NAME = "data";
@@ -126,11 +124,12 @@ public abstract class Dao<R extends RowLevelSecurity & Entity>
     @JsonIgnore
     public abstract URI getCustomerId();
     
+    @Override
     @JsonIgnore
-    @Override
-    public abstract SortableIdentifier getIdentifier();
+    public final SortableIdentifier getIdentifier() {
+        return getData().getIdentifier();
+    }
     
-    @Override
     @JacocoGenerated
     public final void setIdentifier(SortableIdentifier identifier) {
         throw new UnsupportedOperationException(UNSUPORTED_SET_IDENTIFIER_ERROR);

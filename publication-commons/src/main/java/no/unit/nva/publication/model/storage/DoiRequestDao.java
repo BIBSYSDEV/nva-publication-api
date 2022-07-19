@@ -87,11 +87,6 @@ public class DoiRequestDao extends Dao<DoiRequest>
     }
     
     @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
-    }
-    
-    @Override
     protected String getOwner() {
         return data.getOwner();
     }

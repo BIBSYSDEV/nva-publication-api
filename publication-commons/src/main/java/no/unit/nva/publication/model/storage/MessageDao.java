@@ -77,12 +77,7 @@ public class MessageDao extends Dao<Message>
     public URI getCustomerId() {
         return data.getCustomerId();
     }
-    
-    @Override
-    public SortableIdentifier getIdentifier() {
-        return data.getIdentifier();
-    }
-    
+
     @Override
     protected String getOwner() {
         return data.getOwner();

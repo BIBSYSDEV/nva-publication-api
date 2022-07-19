@@ -6,9 +6,11 @@ import static nva.commons.core.attempt.Try.attempt;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.Map;
+import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
@@ -17,6 +19,9 @@ import no.unit.nva.publication.storage.model.exceptions.EmptyValueMapException;
     @JsonSubTypes.Type(UniquenessEntry.class)
 })
 public interface DynamoEntry {
+    
+    @JsonIgnore
+    SortableIdentifier getIdentifier();
     
     static <T> T parseAttributeValuesMap(Map<String, AttributeValue> valuesMap, Class<T> daoClass) {
         if (nonNull(valuesMap) && !valuesMap.isEmpty()) {

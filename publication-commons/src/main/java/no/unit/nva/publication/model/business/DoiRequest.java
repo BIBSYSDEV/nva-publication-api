@@ -34,10 +34,7 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyFields"})
-public class DoiRequest
-    implements RowLevelSecurity,
-               WithStatus,
-               TicketEntry{
+public class DoiRequest implements WithStatus, TicketEntry{
     
     public static final String RESOURCE_STATUS_FIELD = "resourceStatus";
     public static final String STATUS_FIELD = "status";

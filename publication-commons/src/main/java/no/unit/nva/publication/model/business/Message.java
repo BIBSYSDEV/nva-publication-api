@@ -18,7 +18,6 @@ import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")
 public class Message implements WithStatus,
-                                RowLevelSecurity,
                                 TicketEntry,
                                 JsonSerializable {
     
