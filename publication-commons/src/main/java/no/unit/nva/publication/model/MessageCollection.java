@@ -11,8 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.MessageType;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
 import nva.commons.core.JacocoGenerated;
 
 @JsonTypeInfo(use = Id.NAME, property = "type")

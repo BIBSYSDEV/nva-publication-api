@@ -9,11 +9,11 @@ import java.util.Map;
 import java.util.Objects;
 import no.unit.nva.commons.json.JsonSerializable;
 import no.unit.nva.commons.json.JsonUtils;
-import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.PublishingRequestCase;
-import no.unit.nva.publication.storage.model.Resource;
+import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
 import nva.commons.core.JacocoGenerated;
 
 public class DataEntryUpdateEvent implements JsonSerializable {

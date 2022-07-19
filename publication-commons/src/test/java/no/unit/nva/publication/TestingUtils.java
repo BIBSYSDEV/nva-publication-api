@@ -8,8 +8,8 @@ import no.unit.nva.model.Organization;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.PublishingRequestCase;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.UserInstance;
 
 public final class TestingUtils {
     

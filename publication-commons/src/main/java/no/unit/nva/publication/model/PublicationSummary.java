@@ -16,9 +16,9 @@ import no.unit.nva.model.PublicationStatus;
 import no.unit.nva.model.instancetypes.PublicationInstance;
 import no.unit.nva.model.pages.Pages;
 import no.unit.nva.publication.PublicationServiceConfig;
-import no.unit.nva.publication.storage.model.ConnectedToResource;
-import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.model.business.ConnectedToResource;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
 import nva.commons.core.JacocoGenerated;
 import nva.commons.core.paths.UriWrapper;
 

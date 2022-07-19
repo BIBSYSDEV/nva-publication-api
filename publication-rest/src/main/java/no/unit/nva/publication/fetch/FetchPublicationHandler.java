@@ -19,7 +19,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.RequestUtil;
 import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.UserInstance;
 import no.unit.nva.transformer.Transformer;
 import nva.commons.apigateway.ApiGatewayHandler;
 import nva.commons.apigateway.RequestInfo;
@@ -123,7 +123,7 @@ public class FetchPublicationHandler extends ApiGatewayHandler<Void, String> {
         var owner = UserInstance.fromPublication(publication);
         var resourceIdentifier = publication.getIdentifier();
         return attempt(() -> doiRequestService.getDoiRequestByResourceIdentifier(owner, resourceIdentifier))
-            .map(no.unit.nva.publication.storage.model.DoiRequest::toPublication)
+            .map(no.unit.nva.publication.model.business.DoiRequest::toPublication)
             .map(Publication::getDoiRequest)
             .orElse(fail -> null);
     }

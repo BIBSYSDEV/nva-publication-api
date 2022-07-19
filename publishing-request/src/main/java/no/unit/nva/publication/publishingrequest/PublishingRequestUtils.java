@@ -3,7 +3,7 @@ package no.unit.nva.publication.publishingrequest;
 import static no.unit.nva.publication.PublicationServiceConfig.defaultDynamoDbClient;
 import java.time.Clock;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.RequestInfo;
 import nva.commons.apigateway.exceptions.UnauthorizedException;
 import nva.commons.core.JacocoGenerated;

@@ -11,7 +11,7 @@ import no.unit.nva.model.Publication;
 import no.unit.nva.publication.events.bodies.ResourceDraftedForDeletionEvent;
 import no.unit.nva.publication.exception.BadRequestException;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 

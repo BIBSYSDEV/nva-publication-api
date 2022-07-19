@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.model.testing.PublicationGenerator;
-import no.unit.nva.publication.storage.model.DoiRequest;
+import no.unit.nva.publication.model.business.DoiRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

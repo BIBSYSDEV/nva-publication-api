@@ -19,14 +19,14 @@ import no.unit.nva.publication.service.impl.DoiRequestService;
 import no.unit.nva.publication.service.impl.MessageService;
 import no.unit.nva.publication.service.impl.PublishingRequestService;
 import no.unit.nva.publication.service.impl.ResourceService;
-import no.unit.nva.publication.storage.model.ConnectedToResource;
-import no.unit.nva.publication.storage.model.DataEntry;
-import no.unit.nva.publication.storage.model.DoiRequest;
-import no.unit.nva.publication.storage.model.Message;
-import no.unit.nva.publication.storage.model.MessageType;
-import no.unit.nva.publication.storage.model.PublishingRequestCase;
-import no.unit.nva.publication.storage.model.Resource;
-import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.model.business.ConnectedToResource;
+import no.unit.nva.publication.model.business.DataEntry;
+import no.unit.nva.publication.model.business.DoiRequest;
+import no.unit.nva.publication.model.business.Message;
+import no.unit.nva.publication.model.business.MessageType;
+import no.unit.nva.publication.model.business.PublishingRequestCase;
+import no.unit.nva.publication.model.business.Resource;
+import no.unit.nva.publication.model.business.UserInstance;
 import nva.commons.apigateway.exceptions.NotFoundException;
 
 public class ResourceExpansionServiceImpl implements ResourceExpansionService {

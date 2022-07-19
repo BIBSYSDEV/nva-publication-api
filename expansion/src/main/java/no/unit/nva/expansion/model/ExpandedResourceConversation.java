@@ -9,7 +9,7 @@ import no.unit.nva.expansion.ResourceExpansionService;
 import no.unit.nva.expansion.WithOrganizationScope;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.publication.model.ResourceConversation;
-import no.unit.nva.publication.storage.model.Message;
+import no.unit.nva.publication.model.business.Message;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.JacocoGenerated;
 
