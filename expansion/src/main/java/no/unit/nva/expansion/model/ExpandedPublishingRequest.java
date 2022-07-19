@@ -1,7 +1,9 @@
 package no.unit.nva.expansion.model;
 
+import static java.util.Objects.isNull;
 import static nva.commons.core.attempt.Try.attempt;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import no.unit.nva.identifiers.SortableIdentifier;
 import no.unit.nva.model.Publication;
 import no.unit.nva.publication.model.MessageCollection;
@@ -12,6 +14,7 @@ import no.unit.nva.publication.service.impl.ResourceService;
 import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.UserInstance;
+import nva.commons.core.JacocoGenerated;
 
 public class ExpandedPublishingRequest implements ExpandedTicket {
     
@@ -26,6 +29,10 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     @JsonProperty(MESSAGES_FIELD)
     private MessageCollection messages;
     
+    public ExpandedPublishingRequest() {
+        this.messages = MessageCollection.empty(MessageType.PUBLISHING_REQUEST);
+    }
+    
     public static ExpandedPublishingRequest create(PublishingRequestCase publishingRequestCase,
                                                    ResourceService resourceService,
                                                    MessageService messageService) {
@@ -36,6 +43,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return ExpandedPublishingRequest.create(publishingRequestCase, publication, messageCollection);
     }
     
+    @JacocoGenerated
     public SortableIdentifier getIdentifier() {
         return identifier;
     }
@@ -44,6 +52,7 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         this.identifier = identifier;
     }
     
+    @JacocoGenerated
     @Override
     public String toJsonString() {
         return ExpandedTicket.super.toJsonString();
@@ -54,8 +63,9 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
         return getIdentifier();
     }
     
+    @JacocoGenerated
     public MessageCollection getMessages() {
-        return messages;
+        return isNull(messages) ? MessageCollection.empty(MessageType.PUBLISHING_REQUEST) : messages;
     }
     
     public void setMessages(MessageCollection messages) {
@@ -69,6 +79,27 @@ public class ExpandedPublishingRequest implements ExpandedTicket {
     
     public void setPublicationSummary(PublicationSummary publicationSummary) {
         this.publicationSummary = publicationSummary;
+    }
+    
+    @Override
+    @JacocoGenerated
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof ExpandedPublishingRequest)) {
+            return false;
+        }
+        ExpandedPublishingRequest that = (ExpandedPublishingRequest) o;
+        return Objects.equals(getIdentifier(), that.getIdentifier()) && Objects.equals(
+            getPublicationSummary(), that.getPublicationSummary()) && Objects.equals(getMessages(),
+            that.getMessages());
+    }
+    
+    @Override
+    @JacocoGenerated
+    public int hashCode() {
+        return Objects.hash(getIdentifier(), getPublicationSummary(), getMessages());
     }
     
     private static ExpandedPublishingRequest create(PublishingRequestCase dataEntry,

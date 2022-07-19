@@ -24,7 +24,7 @@ import nva.commons.core.paths.UriWrapper;
 
 @JsonTypeName(PublicationSummary.TYPE)
 public class PublicationSummary {
-
+    
     public static final String TYPE = "PublicationSummary";
     @JsonProperty("id")
     private URI publicationId;
@@ -48,7 +48,7 @@ public class PublicationSummary {
     private List<Contributor> contributors;
     @JsonProperty
     private PublicationStatus status;
-
+    
     public static PublicationSummary create(DoiRequest doiRequest) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setContributors(doiRequest.getContributors());
@@ -64,7 +64,7 @@ public class PublicationSummary {
         publicationSummary.setStatus(doiRequest.getResourceStatus());
         return publicationSummary;
     }
-
+    
     public static PublicationSummary create(Message message) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setPublicationId(extractPublicationId(message));
@@ -74,7 +74,7 @@ public class PublicationSummary {
         publicationSummary.setContributors(Collections.emptyList());
         return publicationSummary;
     }
-
+    
     public static PublicationSummary create(Publication publication) {
         var publicationSummary = new PublicationSummary();
         publicationSummary.setPublicationId(toPublicationId(publication.getIdentifier()));
@@ -97,88 +97,88 @@ public class PublicationSummary {
         }
         return publicationSummary;
     }
-
+    
     public PublicationStatus getStatus() {
         return status;
     }
-
+    
     public void setStatus(PublicationStatus status) {
         this.status = status;
     }
-
+    
     public URI getPublicationId() {
         return publicationId;
     }
-
+    
     public void setPublicationId(URI publicationId) {
         this.publicationId = publicationId;
     }
-
+    
     public SortableIdentifier getPublicationIdentifier() {
         return publicationIdentifier;
     }
-
+    
     public void setPublicationIdentifier(SortableIdentifier publicationIdentifier) {
         this.publicationIdentifier = publicationIdentifier;
     }
-
+    
     public String getTitle() {
         return title;
     }
-
+    
     public void setTitle(String title) {
         this.title = title;
     }
-
+    
     public Instant getModifiedDate() {
         return modifiedDate;
     }
-
+    
     public void setModifiedDate(Instant modifiedDate) {
         this.modifiedDate = modifiedDate;
     }
-
+    
     public PublicationInstance<? extends Pages> getPublicationInstance() {
         return publicationInstance;
     }
-
+    
     public void setPublicationInstance(
         PublicationInstance<? extends Pages> publicationInstance) {
         this.publicationInstance = publicationInstance;
     }
-
+    
     public PublicationDate getPublicationDate() {
         return publicationDate;
     }
-
+    
     public void setPublicationDate(PublicationDate publicationDate) {
         this.publicationDate = publicationDate;
     }
-
+    
     public String getPublicationYear() {
         return publicationYear;
     }
-
+    
     public void setPublicationYear(String publicationYear) {
         this.publicationYear = publicationYear;
     }
-
+    
     public List<Contributor> getContributors() {
-        return contributors;
+        return nonNull(contributors) ? contributors : Collections.emptyList();
     }
-
+    
     public void setContributors(List<Contributor> contributors) {
         this.contributors = contributors;
     }
-
+    
     @JacocoGenerated
     @Override
     public int hashCode() {
         return Objects.hash(getPublicationId(), getPublicationIdentifier(), getTitle(), getModifiedDate(),
-                            getPublicationInstance(), getPublicationDate(),
-                            getPublicationYear(), getContributors(), getStatus());
+            getPublicationInstance(), getPublicationDate(),
+            getPublicationYear(), getContributors(), getStatus());
     }
-
+    
     @JacocoGenerated
     @Override
     public boolean equals(Object o) {
@@ -199,28 +199,28 @@ public class PublicationSummary {
                && Objects.equals(getContributors(), that.getContributors())
                && getStatus() == that.getStatus();
     }
-
+    
     private static URI extractPublicationId(ConnectedToResource connectedToResource) {
         return toPublicationId(connectedToResource.getResourceIdentifier());
     }
-
+    
     private static URI toPublicationId(SortableIdentifier identifier) {
         return UriWrapper.fromUri(PublicationServiceConfig.ID_NAMESPACE)
             .addChild(identifier.toString()).getUri();
     }
-
+    
     public Instant getCreatedDate() {
         return createdDate;
     }
-
+    
     public void setCreatedDate(Instant createdDate) {
         this.createdDate = createdDate;
     }
-
+    
     public String getOwner() {
         return owner;
     }
-
+    
     public void setOwner(String owner) {
         this.owner = owner;
     }

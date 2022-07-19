@@ -9,14 +9,11 @@ import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.stream.Stream;
 import no.unit.nva.expansion.FakeResourceExpansionService;
@@ -36,6 +33,7 @@ import no.unit.nva.publication.storage.model.MessageType;
 import no.unit.nva.publication.storage.model.PublishingRequestCase;
 import no.unit.nva.publication.storage.model.PublishingRequestStatus;
 import no.unit.nva.publication.storage.model.UserInstance;
+import no.unit.nva.publication.testing.SubTypeProvider;
 import nva.commons.apigateway.exceptions.ApiGatewayException;
 import nva.commons.apigateway.exceptions.NotFoundException;
 import nva.commons.core.attempt.Try;
@@ -54,10 +52,8 @@ class ExpandedDataEntryTest extends ResourcesLocalTest {
     private DoiRequestService doiRequestService;
     private PublishingRequestService publishingRequestService;
     
-    public static Stream<Class> entryTypes() {
-        JsonSubTypes[] annotations = ExpandedDataEntry.class.getAnnotationsByType(JsonSubTypes.class);
-        Type[] types = annotations[0].value();
-        return Arrays.stream(types).map(Type::value);
+    public static Stream<Class<?>> entryTypes() {
+        return SubTypeProvider.dataEntryTypeProvider(ExpandedDataEntry.class);
     }
     
     @BeforeEach
