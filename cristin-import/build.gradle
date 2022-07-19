@@ -36,7 +36,6 @@ dependencies {
     implementation libs.typesafe.config
     implementation libs.bundles.logging
 
-    testImplementation project(":storage-model")
     testImplementation project(":publication-testing")
     testImplementation libs.javafaker
     testImplementation libs.nva.testutils
@@ -52,9 +51,6 @@ dependencies {
     compileOnly libs.aws.sdk2.eventbridge
     compileOnly libs.aws.sdk2.s3
 
-    compileOnly(project(":storage-model")) {
-        because "PMD complains for no/unit/nva/publication/storage/model/daos/DynamoEntry"
-    }
     compileOnly libs.nva.apigateway
     compileOnly libs.zalando
     compileOnly libs.aws.lambda.java.core

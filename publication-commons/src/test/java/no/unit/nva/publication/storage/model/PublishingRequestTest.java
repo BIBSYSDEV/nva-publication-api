@@ -1,6 +1,7 @@
 package no.unit.nva.publication.storage.model;
 
-import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
+
+import static no.unit.nva.publication.storage.model.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static org.hamcrest.MatcherAssert.assertThat;

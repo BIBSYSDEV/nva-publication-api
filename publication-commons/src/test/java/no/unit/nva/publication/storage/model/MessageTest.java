@@ -2,8 +2,8 @@ package no.unit.nva.publication.storage.model;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValuesIgnoringFields;
-import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.StorageModelConfig.dynamoDbObjectMapper;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
@@ -22,7 +22,7 @@ import no.unit.nva.model.ResourceOwner;
 import no.unit.nva.model.testing.PublicationGenerator;
 import org.junit.jupiter.api.Test;
 
-public class MessageTest {
+class MessageTest {
     
     public static final String SOME_SENDER = "some@sender";
     public static final URI SOME_ORG = URI.create("https://example.org/123");

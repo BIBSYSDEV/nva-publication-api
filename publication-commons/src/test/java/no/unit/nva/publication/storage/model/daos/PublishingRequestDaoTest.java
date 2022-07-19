@@ -1,10 +1,10 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.CUSTOMER_INDEX_FIELD_PREFIX;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.KEY_FIELDS_DELIMITER;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCE_INDEX_FIELD_PREFIX;
+import static no.unit.nva.publication.storage.model.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.storage.model.daos.DynamoEntry.parseAttributeValuesMap;
 import static no.unit.nva.testutils.RandomDataGenerator.randomElement;
 import static org.hamcrest.MatcherAssert.assertThat;

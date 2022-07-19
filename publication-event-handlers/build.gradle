@@ -1,6 +1,5 @@
 dependencies {
     implementation project(":publication-doi-commons")
-    implementation project(":storage-model")
     implementation project(":expansion")
     implementation project(":publication-commons")
     implementation project(":publication-rest")

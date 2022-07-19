@@ -1,10 +1,10 @@
 package no.unit.nva.publication.storage.model.daos;
 
 import static no.unit.nva.hamcrest.DoesNotHaveEmptyValues.doesNotHaveEmptyValues;
-import static no.unit.nva.publication.StorageModelTestUtils.randomPublishingRequest;
-import static no.unit.nva.publication.StorageModelTestUtils.randomString;
 import static no.unit.nva.publication.storage.model.DatabaseConstants.RESOURCES_TABLE_NAME;
+import static no.unit.nva.publication.storage.model.StorageModelTestUtils.randomPublishingRequest;
 import static no.unit.nva.publication.storage.model.daos.ResourceDao.CRISTIN_SOURCE;
+import static no.unit.nva.testutils.RandomDataGenerator.randomString;
 import static no.unit.nva.testutils.RandomDataGenerator.randomUri;
 import static nva.commons.core.attempt.Try.attempt;
 import static org.hamcrest.MatcherAssert.assertThat;
